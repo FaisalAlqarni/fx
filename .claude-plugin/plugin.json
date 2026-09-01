@@ -1,0 +1,37 @@
+{
+  "name": "fx",
+  "version": "0.1.0",
+  "description": "One opinionated engineering plugin: brainstorm, plan, implement, TDD, review, debug, architecture, prose and skill authoring. Exactly one claimant per intent.",
+  "author": {
+    "name": "Faisal Alqarni"
+  },
+  "license": "MIT",
+  "keywords": [
+    "tdd",
+    "code-review",
+    "debugging",
+    "planning",
+    "rails",
+    "dotnet"
+  ],
+  "skills": [
+    "./skills/fx-brainstorm",
+    "./skills/fx-plan",
+    "./skills/fx-implement",
+    "./skills/fx-tdd",
+    "./skills/fx-review",
+    "./skills/fx-architecture",
+    "./skills/fx-debug",
+    "./skills/fx-humanize",
+    "./skills/fx-authoring",
+    "./skills/research",
+    "./skills/prototype"
+  ],
+  "agents": [
+    "./agents/"
+  ],
+  "commands": [
+    "./commands/"
+  ],
+  "hooks": "./hooks/hooks.json"
+}

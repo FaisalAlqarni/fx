@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Ticket 03's gate: references are leaves. A lane pulls one file, not a graph.
+# Fails while any reference file names another reference file.
+set -u
+cd "$(dirname "$0")/.."
+
+fail=0
+while IFS= read -r src; do
+  while IFS= read -r hit; do
+    b=$(basename "$hit")
+    [ "$b" = "$(basename "$src")" ] && continue
+    if [ -e "references/vocab/$b" ] || [ -e "references/stacks/$b" ] \
+       || [ -e "references/testing/$b" ] || [ -e "references/$b" ]; then
+      echo "  $src -> $b"
+      fail=$((fail + 1))
+    fi
+  done < <(grep -ohE '`[A-Za-z0-9/._-]+\.md`' "$src" | tr -d '`' | sort -u)
+done < <(find references -name '*.md' | sort)
+
+if [ "$fail" -ne 0 ]; then
+  echo "FAIL: $fail reference-to-reference link(s)"
+  exit 1
+fi
+echo "OK: no reference links to another reference"
