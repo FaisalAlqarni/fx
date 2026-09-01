@@ -115,3 +115,368 @@ Its `description` still opens with what the skill *does* rather than a pure
 trigger list — an upstream choice, left unmodified to keep the diff at one
 line. If `fx-humanize` proves hard to trigger in practice, that is the first
 thing to change, and it costs the clean diff.
+
+---
+
+## 7. Nothing covers designing for testability under non-determinism
+
+**Found by dogfooding**, 2026-09-01, during the first real `fx-brainstorm` run:
+a design put a fire-and-forget thread on the redirect path, and the seam
+question — *how do you test that without asserting on a race* — had no answer
+anywhere in the plugin.
+
+What exists: `references/vocab/condition-based-waiting.md` — how to **wait** for
+an async result instead of sleeping. That is a tactic for code that is already
+async and already under test.
+
+What is missing is the decision **upstream** of it:
+
+- **`references/vocab/good-tests.md` has 0 mentions** of async, thread or
+  timing. The canonical "what a good test is" reference is silent on
+  non-deterministic code.
+- **`fx-tdd`'s seam section has 1 incidental mention.** The skill that decides
+  *where* tests go says nothing about the condition that most often forces that
+  choice.
+- Neither says the useful thing: **when behaviour is non-deterministic, the
+  seam is not optional — inject the collaborator and assert on it, rather than
+  asserting through the race.**
+
+Also unaddressed: connection-pool handling for a spawned thread (Rails), and
+that a test-only synchronous path means production runs code the tests never
+exercise.
+
+**Where it belongs:** a section in `good-tests.md`, plus one line in `fx-tdd`'s
+seam guidance pointing at it. `rails.md`'s Background jobs section should note
+the connection-pool rule.
+
+**Cost:** small — one reference section and two pointers. It was invisible until
+a real design hit it, which is the argument for dogfooding over more review.
+
+---
+
+## 8. `fx-implement` assumes a committed plan and an existing codebase
+
+**Found by dogfooding**, 2026-09-01, on the first real `fx-implement` run
+against a new project.
+
+**Gap A — nothing verifies the plan is committed before the worktree is made.**
+§1 goes straight from isolation-detection to worktree creation. A worktree is
+checked out from HEAD, so an uncommitted `tickets/` directory produces a
+worktree containing **no tickets**, and the failure surfaces only when the
+first implementer cannot find its brief — several dispatches later, as a
+confusing "file not found" rather than as the setup error it is.
+
+**Fix:** one check in §1 before creating the worktree — the plan directory must
+resolve inside HEAD's tree. Cheap: `git cat-file -e HEAD:docs/plans/<slug>/plan.md`.
+
+**Gap B — §2 assumes an existing codebase with a test suite.** It says to run
+`setup` and `test_all` from `.fx.json` and to run the baseline **before ticket
+01**, and to **ask** when `.fx.json` is missing. On a greenfield project that
+is circular: ticket 01 is what creates the app, the test framework and
+`.fx.json`. The "ask" branch therefore fires on **every** new project, turning
+the most routine case into a stall — against the skill's own "rulings, not
+stalls" principle.
+
+**Fix:** name the greenfield case in §2. When no `.fx.json` exists **and** the
+repo has no test suite, the baseline is 0 tests by definition; proceed and let
+ticket 01 establish both. Ask only when `.fx.json` is missing from a repo that
+plainly already has tests.
+
+**Both gaps share a shape with findings 1 and 2:** the skill was written
+against the case its author had in mind — an existing multi-engine Rails
+codebase — and the assumption was invisible until something else was tried.
+
+---
+
+## 9. `fx-plan` §8 offers one exit where it should offer four
+
+**Found by dogfooding**, 2026-09-01, reported by the user.
+
+§8 says: *"Plan and N tickets written… Review and tell me when to start."
+Approved → `fx-implement`.* The only branch anywhere in the skill is the
+red-team yes/skip in §7. A finished plan therefore has exactly one legitimate
+successor, and the skill's shape implies that starting is the expected answer.
+
+A plan is finished at the point where **four** next steps are all reasonable:
+
+1. **Start implementing** — hand to `fx-implement`
+2. **Red-team it** — `fx-devils-advocate` in plan mode (currently the only branch, and it sits in §7 rather than at the exit)
+3. **Keep discussing** — the plan is written but a decision inside it is not settled; go back to the interview rather than forward
+4. **Save for later** — the plan is good and the work is not for now. Nothing in fx currently acknowledges a plan that is deliberately parked
+
+**Fix:** replace §8's single prompt with the four-way choice, using the host's
+interactive question tool the way `fx-brainstorm` §3 already does. Move the
+red-team offer from §7 into that menu so there is one decision point rather
+than two.
+
+**Why it matters beyond convenience:** an interface offering one exit teaches
+the user that the other exits are not supported. Option 4 in particular has no
+representation anywhere in the plugin — there is no notion of a parked plan,
+and the ledger has no state for it.
+
+---
+
+## 10. `fx-implement` treats an uncommitted plan as blocking when it is not
+
+**Found by dogfooding**, 2026-09-01 — and the error was the controller's
+reasoning, not the skill's text, which is why it is worth recording.
+
+`git worktree add` works perfectly well against a dirty working tree.
+Uncommitted files do not prevent worktree creation. The only real consequence
+is that the **new worktree**, checked out from a commit, does not contain
+files that were never committed.
+
+That has two straightforward answers, neither of which requires the user to do
+anything:
+
+- pass the implementer **absolute paths** to the ticket files in the main
+  checkout — they exist on disk regardless of git state; or
+- **copy `docs/plans/<slug>/` into the worktree** and let the branch's first
+  commit carry it, which also keeps the ledger with the work.
+
+Instead the controller stopped and asked the user to commit. **DEBT #8's Gap A
+is therefore half wrong**: the check it proposes is useful as a *warning*, not
+as a gate. A skill that hard-blocks here trades a real capability for a
+precondition it did not need.
+
+**Fix:** §1 should say that an uncommitted plan is not a blocker, and name the
+copy-into-the-worktree behaviour as the default. Amend #8 Gap A from "verify
+before creating" to "warn, then carry the plan in".
+
+---
+
+## 11. The base-branch push hole (found and fixed)
+
+**Found by dogfooding**, 2026-09-01, verifying guard behaviour from inside a
+real worktree rather than a test fixture.
+
+Design decision D-A was implemented as "push is allowed from a worktree", full
+stop. The option the user selected read *"allowed on a **feature branch** in a
+worktree"*, and the standing rule is *"never commit or push to the base branch
+without explicit say-so."* A worktree does not change that —
+`git push origin main` from a feature worktree still lands on main.
+
+So the guard permitted precisely what the rule forbids. **Neither ticket 02's
+8 new assertions nor the fx red-team caught it**, because both tested the
+worktree-vs-main-checkout axis and neither tested the *target refspec*.
+
+Fixed: any push whose refspec names `main`, `master` or `trunk` is blocked
+everywhere — including `HEAD:main`, `feature:master`, `refs/heads/main` and
+`+main`. New suite `lib/base-branch.test.js`, **27 assertions**, with explicit
+false-positive guards: `maintenance`, `feature/main-nav` and `mastermind`
+remain pushable.
+
+Suite totals: 87 + 13 + 27 = **127**.
+
+---
+
+## 12. `check-ignore` on a directory that does not exist yet
+
+**Minor.** `fx-implement` §3 says to verify `.fx/` is git-ignored with
+`git check-ignore -q .fx` before writing to it. A `.fx/` pattern matches
+directories only, so the check **fails before the directory is created** — the
+exact moment the skill tells you to run it. The correct order is create, then
+check, or check the path with a trailing slash.
+
+Cost of getting it wrong: an agent following the skill literally sees "not
+ignored", adds a redundant `.gitignore` entry, and re-checks — noise rather
+than damage, but it reads as a failure when nothing is wrong.
+
+---
+
+## 13. `fx-implement` creates `.gitignore` before a greenfield generator runs
+
+**Found by dogfooding**, 2026-09-01, on ticket 01 — caught by the implementer,
+not by the controller.
+
+`fx-implement` §3 requires `.fx/` to be git-ignored before anything writes
+there, so the controller creates `.gitignore` during workspace setup. On a
+**greenfield** repo that happens *before* the project generator runs — and
+`rails new` (like most generators) only appends its `master.key` line when a
+`.gitignore` already exists, instead of writing its full default block.
+
+Result: `storage/*.sqlite3`, `log/*.log` and the bootsnap cache would have been
+committed. The implementer noticed and added the standard Rails stanza; nothing
+leaked. Had it not noticed, the first commit of every greenfield Rails project
+under fx would carry database files.
+
+**Fix:** §3 should say that on a repo with no application yet, `.fx/` and
+`.worktrees/` go in `.git/info/exclude` rather than `.gitignore` — same effect,
+invisible to the generator, and it leaves the project's own ignore file for the
+project to write.
+
+**Same shape as #8 and #10:** a step written for an existing codebase, applied
+to an empty one, doing quiet damage.
+
+---
+
+## 14. Ticket-authoring gap — verbatim specs that cannot run
+
+**Found by dogfooding**, 2026-09-01, ticket 01.
+
+`fx-plan` requires test code to be written out verbatim in the ticket, and
+`fx-implement` tells the implementer to use it exactly. Two of the specs I wrote
+were subtly unrunnable:
+
+- `RSpec.describe "POST /links"` with **no `type: :request`**, which under
+  rspec-rails 8's default generator output gets no `post`/`response` helpers.
+- An assertion of `/target_url/i` against an error body, which Rails'
+  `errors.full_messages` cannot satisfy (it humanizes to `"Target url"`) — so
+  the assertion silently dictated a non-default error format.
+
+Neither is caught by anything: `fx-plan`'s self-review checks placeholders,
+spec coverage and type consistency, and the red-team pass read for drift and
+correctness but did not execute anything.
+
+**Fix:** add one line to `fx-plan`'s quality red flags — *"a request spec must
+declare `type: :request` unless the project infers it, and an assertion on an
+error body must state the error contract rather than imply it."* The deeper fix
+is that verbatim test code in a plan is unexecuted code, and the only real
+defence is the implementer reporting when the given test does not run — which
+is exactly what happened here, so the loop worked.
+
+---
+
+## 15. `rails.md` was missing the `redirect_to` other-host trap (fixed)
+
+**Found by dogfooding**, 2026-09-01, ticket 02 — it bit a real implementer.
+
+Rails 7 changed `redirect_to` to default `allow_other_host: false`, raising
+`ActionController::Redirecting::UnsafeRedirectError` on any external URL. All
+four of the ticket's request specs failed on it, and the exception name does
+not mention the option that fixes it.
+
+This is precisely the class of content `references/stacks/rails.md` exists to
+carry — version-specific, invisible until it fires, and not something a
+competent agent reasons its way to. It was absent.
+
+**Fixed** — added under the traps section, framed as the security decision it
+is rather than as a flag to set: open redirect is a real vulnerability, and
+Rails made it opt-in so the choice appears in review. Verified the addition
+carries no project facts.
+
+**The wider point:** the stack profiles were written from my own recall of what
+trips people up. This one was missing because I have not personally been bitten
+by it recently. Every future gap in those files will be found the same way —
+by something failing — which argues for treating them as accumulating rather
+than complete.
+
+---
+
+## 16. Verification ran in the wrong context and still reported "verified"
+
+**Found by dogfooding**, 2026-09-01 — caught by ticket 02's reviewer, against
+the controller.
+
+The plan's Global Constraints carried *"Rack 2.2.9 has no
+`:unprocessable_content`"*, sourced from a red-team finding. I ran what I
+called an independent verification:
+
+```
+gem list -e rack           → rack (3.2.7, 2.2.9)     ← two versions, I read the tail
+ruby -e "require 'rack'"   → 2.2.9                    ← OUTSIDE the bundle
+```
+
+and reported it confirmed. Inside the bundle, Rails 7.2 resolves **3.2.7**,
+where the symbol exists. The command answered a real question; it was not the
+question that mattered.
+
+**No damage** — the change it justified (integer `422`) is correct under every
+Rack. The defect is in the verification, not the code.
+
+**What `fx-implement`'s exit gate already says, and what it is missing:** step 4
+is *"does the output actually confirm the claim?"* — which I skipped. But the
+gate never names **context** as a dimension: same command, different
+environment, different truth. `bundle exec` vs bare, container vs host, one
+engine vs another, test env vs development.
+
+**Fix:** add a line to `references/vocab/verification.md` — *"a command run in
+the wrong environment answers a different question. For anything version- or
+dependency-dependent, run it the way the project runs it (`bundle exec`, inside
+the container, with the app's env loaded) or the answer is about your machine,
+not the code."*
+
+**Why this one matters more than the others:** every other finding in this log
+was a gap in a skill. This one is a case of the verification ritual being
+performed and still producing a false confirmation — which is the failure mode
+the ritual exists to prevent, and the only one none of the reviewers upstream
+would have caught, because they all trusted the controller's "verified".
+
+---
+
+## 17. `fx-implement` says "never stop" but has no mechanism to not stop
+
+**Found by dogfooding**, 2026-09-01, reported by the user after the controller
+wrote a progress summary between every ticket.
+
+The skill is explicit — *"Do not pause to check in between tickets. Execute
+every ticket without stopping. 'Should I continue?' prompts and progress
+summaries waste the user's time"* — and the controller violated it four times
+running, in the same session that had the rule in context.
+
+Two separate problems:
+
+**The behavioural one.** "Narration: at most one short line between tool calls"
+is stated once, early, and then every *other* instruction in the skill asks for
+something written — ledger entries, rulings, adjudications, completion lines.
+The volume of required writing crowds out the one rule asking for silence, and
+a controller that dutifully records everything ends up producing exactly the
+progress summaries the skill forbids.
+
+**The structural one, which is the real gap.** A turn ends when the model stops
+calling tools. "Never stop" is a rule the skill cannot enforce, because
+stopping is not an action the model takes — it is what happens by default when
+a message ends. The skill needs to say what to *do* instead: **end every
+message with the next dispatch already in flight**, so the queue advances
+whether or not anyone replies.
+
+**Fix:** state it as a positive mechanic rather than a prohibition — *"the last
+tool call of every message is the next ticket's dispatch or its review. If you
+are about to write a summary and have no dispatch in flight, you have stopped."*
+Add the matching rationalization row: *"A progress summary would be helpful" →
+"They asked you to execute. The ledger is the record; write there, not here."*
+
+Related to #9: `fx-plan` offers one exit where four are reasonable, and
+`fx-implement` offers no exit where it should offer exactly one — done.
+
+---
+
+## 18. Every per-ticket review inherits the controller's blind spots
+
+**Found by dogfooding**, 2026-09-02, reported by the user.
+
+Task reviewers are dispatched with no session history — genuinely fresh — but
+with the controller's **question list**. `fx-implement` §3 mandates this: the
+Global Constraints block is called "the reviewer's attention lens", and the
+skill tells the controller to name what to check.
+
+That makes every per-ticket review a **directed search**. Anything the
+controller did not think to ask about is not examined by anyone. The controller
+wrote the plan and the tickets, so its blind spots are exactly the ones most
+likely to have produced defects — and they propagate into the gate meant to
+catch them.
+
+**Evidence from this very run:** the one finding that caught a controller error
+— a fact "verified" by running a command outside the bundle (DEBT #16) — came
+from a reviewer reading `Gemfile.lock` for an unrelated reason. It was outside
+the question list. Nothing in the process asked for it.
+
+**Partially covered:** `fx-implement`'s final broad review dispatches
+`fx-review` in branch mode, once, at the end. That is the only unprimed pass,
+it happens after every ticket has already been accepted, and by then the cost
+of a structural finding is highest.
+
+**The asymmetry:** `fx-devils-advocate` exists and is good, but its description
+scopes it to *design and plan documents*. There is no adversarial reviewer for
+**code**. Plans get red-teamed; implementations do not.
+
+**Fix, in preference order:**
+1. Widen `fx-devils-advocate` to a code mode — same hostility, pointed at a
+   diff, given the ticket and **no question list**: "find what is wrong."
+2. Add it to `fx-implement`'s ticket loop as an optional second gate on
+   tickets that touch security, data, or concurrency — not on every ticket,
+   which would double the dispatch cost for little return on mechanical work.
+3. At minimum, state in §3 that the constraints block focuses attention **and
+   therefore narrows it**, and that the controller should include one
+   open-ended prompt — "anything else that would bite us" — rather than only
+   its own list.

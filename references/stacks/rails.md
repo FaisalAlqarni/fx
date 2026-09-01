@@ -135,6 +135,26 @@ that cannot create a fixture without hitting the network.
 Validation and normalization of the model's *own* attributes are fine.
 Everything else belongs in the calling code or a service object.
 
+### `redirect_to` refuses other hosts
+
+Since Rails 7, `redirect_to` defaults to `allow_other_host: false` and raises
+`ActionController::Redirecting::UnsafeRedirectError` on any external URL. The
+failure is a 500 in a path that reads as obviously correct, and the exception
+name does not mention the option you need.
+
+```ruby
+redirect_to params[:url]                          # raises on any external host
+redirect_to url, allow_other_host: true           # deliberate, and now auditable
+```
+
+**The flag is not a workaround — it is the security decision made explicit.**
+Open redirect is a real vulnerability: an attacker supplies a URL on your
+domain that bounces the victim somewhere else, and the phishing link carries
+your hostname. Rails made you opt in so the decision appears in review.
+
+If external redirects are the product (a link shortener, an OAuth callback),
+set it and validate the target. If they are not, the exception found a bug.
+
 ### Strong parameters
 
 `permit!` and `params.to_unsafe_h` disable the protection entirely. Mass

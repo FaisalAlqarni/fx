@@ -323,3 +323,65 @@ against the criterion rather than against a real install.
 **`scripts/check-manifest` written**, built from the union of keys observed in
 working manifests, with `agents` explicitly listed as convention-only. Mutation
 tested: re-adding the `agents` key fails, declaring a non-existent skill fails.
+
+## Dogfood finding 1 — the guard blocked legitimate work
+
+First real use of fx on a new project. `git init` for a brand-new repo was
+**refused** by the guard:
+
+```
+[fx] `git init` writes to the main checkout. Commits and writes happen in a
+git worktree only — create one and work there.
+```
+
+Wrong. `git init` creates a **new** repository; it never touches the history or
+working tree of the checkout you happen to be standing in. It belongs beside
+`worktree add` in `ALLOWED_ON_MAIN` — which already exists precisely because
+blocking the command that *escapes* the main checkout makes the rule
+unsatisfiable. `git init` is the same category and I missed it. Same for
+`clone`.
+
+Fixed: `init` and `clone` added to `ALLOWED_ON_MAIN`, with 4 assertions. Suite
+83 → **87**. Re-verified that `commit`, `reset --hard`, `clean -fdx`, `push` to
+main and `branch -D` are all still blocked — the fix loosened nothing else.
+
+**Why 83 passing tests did not catch it:** every assertion was written from the
+ticket's own list of commands. Nobody asked "what does a person actually do on
+day one of a project". The suite tested the rules I thought of, which is the
+class of gap only real use finds. This is the argument for dogfooding over
+adding more unit tests to the same list.
+
+**Not yet live.** The installed copy at
+`~/.claude/plugins/cache/fx/fx/0.1.0` still has the old guard, so `git init`
+stays blocked in this session until the fix is committed, pushed and the plugin
+updated. The user runs git anyway, so it is not blocking the design work.
+
+## Dogfood finding 2 — the guard blocked writing documentation
+
+Writing a ticket file was refused. The command was a file write; the *heredoc
+body* contained example commands in its "Steps" section, and `splitSegments`
+splits on newlines, so lines inside the heredoc were parsed as commands the
+user was running.
+
+**Blast radius: any documentation containing an example.** A README, a runbook,
+a ticket, a plan. fx's own tickets are exactly this shape — the plugin could
+not have written its own ticket files through its own guard.
+
+Fixed: `stripHeredocs()` removes heredoc bodies before segmentation, handling
+`<<EOF`, `<<-EOF` (indented terminator), `<<'EOF'` and `<<"EOF"`, and multiple
+heredocs in one command. A real command *after* a heredoc is still caught.
+
+New regression suite `lib/heredoc.test.js` — **13 assertions**, including the
+negative cases proving nothing was loosened: newline chains, `cd &&` prefixes,
+force-push, hard reset. Main suite unchanged at **87**. Total **100**.
+
+**Why the 87 tests missed it:** every assertion was a bare command string.
+Nobody wrote a test where the command was a file write whose *content* looked
+like a command. The suite tested the guard's vocabulary, never its parser.
+Both findings so far are the same shape — the tests covered the rules I thought
+of, and dogfooding covered the ones I did not.
+
+**Consequence for this session:** the installed copy still carries the old
+guard, so heredocs containing example commands stay blocked here. Tickets are
+being written with the file tools instead, which do not route through the Bash
+hook. Both fixes go live when the plugin is updated.
