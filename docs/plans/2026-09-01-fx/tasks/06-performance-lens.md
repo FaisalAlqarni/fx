@@ -6,7 +6,7 @@
 
 **What to build:** a performance review lens that applies to this user's
 stacks — **or a recorded decision not to ship one.** Both are acceptable
-outcomes. This is separated from ticket 05 precisely because it is the one
+outcomes. This is separated from task 05 precisely because it is the one
 that might end in a deletion.
 
 Upstream `performance-optimizer` is **455 lines**, nearly as long as the other
@@ -24,7 +24,7 @@ React-render advice. The user's stacks are Rails and .NET.
 - Consumes: `fx-review` trigger table
 - Produces: either `fx-lens-performance`, or a documented absence — **the trigger table must not name an agent that does not exist**
 
-**Seam:** same as ticket 05.
+**Seam:** same as task 05.
 
 **Risks:** the tempting failure is adapting all 455 lines because they are
 there. Advice about webpack chunks and `useMemo` is not wrong, it is just not
@@ -34,7 +34,7 @@ and trains the user to ignore the output.
 
 **Idempotency:** either outcome is a single file write or a single doc edit.
 
-**Testing:** if shipped, same assertions as ticket 05. If dropped, assert the
+**Testing:** if shipped, same assertions as task 05. If dropped, assert the
 trigger table no longer names it.
 
 ## Acceptance criteria

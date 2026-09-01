@@ -103,7 +103,7 @@ if the file looks right.
 ## 3. Directories
 
 - `docs/plans/` — where `fx-brainstorm`, `fx-plan` and `fx-implement` keep
-  designs, plans, tickets and `state.md`. Committed.
+  designs, plans, tasks and `state.md`. Committed.
 - `.fx/` — ephemeral working files: reports, review packages. **Git-ignored**;
   verify with `check-ignore` before anything writes there.
 - `.worktrees/` — git-ignored.

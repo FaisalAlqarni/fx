@@ -9,7 +9,7 @@ which silently defeats everything below.
 
 | Work | Tier |
 |---|---|
-| Transcription — the ticket carries the test code, 1–2 files | cheapest |
+| Transcription — the task carries the test code, 1–2 files | cheapest |
 | Mechanical implementation, complete spec, 1–2 files | cheap / fast |
 | Single-file mechanical fixes | cheapest |
 | Multi-file integration, pattern matching, debugging | standard |
@@ -20,7 +20,7 @@ which silently defeats everything below.
 | Final whole-branch review | most capable — **not** the session default |
 
 **Use the least powerful model that can do the job.** Most implementation
-tickets are mechanical when the plan is well specified.
+tasks are mechanical when the plan is well specified.
 
 ## Turn count beats token price
 

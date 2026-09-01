@@ -161,8 +161,8 @@ against a new project.
 
 **Gap A — nothing verifies the plan is committed before the worktree is made.**
 §1 goes straight from isolation-detection to worktree creation. A worktree is
-checked out from HEAD, so an uncommitted `tickets/` directory produces a
-worktree containing **no tickets**, and the failure surfaces only when the
+checked out from HEAD, so an uncommitted `tasks/` directory produces a
+worktree containing **no tasks**, and the failure surfaces only when the
 first implementer cannot find its brief — several dispatches later, as a
 confusing "file not found" rather than as the setup error it is.
 
@@ -170,16 +170,16 @@ confusing "file not found" rather than as the setup error it is.
 resolve inside HEAD's tree. Cheap: `git cat-file -e HEAD:docs/plans/<slug>/plan.md`.
 
 **Gap B — §2 assumes an existing codebase with a test suite.** It says to run
-`setup` and `test_all` from `.fx.json` and to run the baseline **before ticket
+`setup` and `test_all` from `.fx.json` and to run the baseline **before task
 01**, and to **ask** when `.fx.json` is missing. On a greenfield project that
-is circular: ticket 01 is what creates the app, the test framework and
+is circular: task 01 is what creates the app, the test framework and
 `.fx.json`. The "ask" branch therefore fires on **every** new project, turning
 the most routine case into a stall — against the skill's own "rulings, not
 stalls" principle.
 
 **Fix:** name the greenfield case in §2. When no `.fx.json` exists **and** the
 repo has no test suite, the baseline is 0 tests by definition; proceed and let
-ticket 01 establish both. Ask only when `.fx.json` is missing from a repo that
+task 01 establish both. Ask only when `.fx.json` is missing from a repo that
 plainly already has tests.
 
 **Both gaps share a shape with findings 1 and 2:** the skill was written
@@ -192,7 +192,7 @@ codebase — and the assumption was invisible until something else was tried.
 
 **Found by dogfooding**, 2026-09-01, reported by the user.
 
-§8 says: *"Plan and N tickets written… Review and tell me when to start."
+§8 says: *"Plan and N tasks written… Review and tell me when to start."
 Approved → `fx-implement`.* The only branch anywhere in the skill is the
 red-team yes/skip in §7. A finished plan therefore has exactly one legitimate
 successor, and the skill's shape implies that starting is the expected answer.
@@ -229,7 +229,7 @@ files that were never committed.
 That has two straightforward answers, neither of which requires the user to do
 anything:
 
-- pass the implementer **absolute paths** to the ticket files in the main
+- pass the implementer **absolute paths** to the task files in the main
   checkout — they exist on disk regardless of git state; or
 - **copy `docs/plans/<slug>/` into the worktree** and let the branch's first
   commit carry it, which also keeps the ledger with the work.
@@ -256,7 +256,7 @@ worktree"*, and the standing rule is *"never commit or push to the base branch
 without explicit say-so."* A worktree does not change that —
 `git push origin main` from a feature worktree still lands on main.
 
-So the guard permitted precisely what the rule forbids. **Neither ticket 02's
+So the guard permitted precisely what the rule forbids. **Neither task 02's
 8 new assertions nor the fx red-team caught it**, because both tested the
 worktree-vs-main-checkout axis and neither tested the *target refspec*.
 
@@ -286,7 +286,7 @@ than damage, but it reads as a failure when nothing is wrong.
 
 ## 13. `fx-implement` creates `.gitignore` before a greenfield generator runs
 
-**Found by dogfooding**, 2026-09-01, on ticket 01 — caught by the implementer,
+**Found by dogfooding**, 2026-09-01, on task 01 — caught by the implementer,
 not by the controller.
 
 `fx-implement` §3 requires `.fx/` to be git-ignored before anything writes
@@ -310,11 +310,11 @@ to an empty one, doing quiet damage.
 
 ---
 
-## 14. Ticket-authoring gap — verbatim specs that cannot run
+## 14. Task-authoring gap — verbatim specs that cannot run
 
-**Found by dogfooding**, 2026-09-01, ticket 01.
+**Found by dogfooding**, 2026-09-01, task 01.
 
-`fx-plan` requires test code to be written out verbatim in the ticket, and
+`fx-plan` requires test code to be written out verbatim in the task, and
 `fx-implement` tells the implementer to use it exactly. Two of the specs I wrote
 were subtly unrunnable:
 
@@ -339,11 +339,11 @@ is exactly what happened here, so the loop worked.
 
 ## 15. `rails.md` was missing the `redirect_to` other-host trap (fixed)
 
-**Found by dogfooding**, 2026-09-01, ticket 02 — it bit a real implementer.
+**Found by dogfooding**, 2026-09-01, task 02 — it bit a real implementer.
 
 Rails 7 changed `redirect_to` to default `allow_other_host: false`, raising
 `ActionController::Redirecting::UnsafeRedirectError` on any external URL. All
-four of the ticket's request specs failed on it, and the exception name does
+four of the task's request specs failed on it, and the exception name does
 not mention the option that fixes it.
 
 This is precisely the class of content `references/stacks/rails.md` exists to
@@ -365,7 +365,7 @@ than complete.
 
 ## 16. Verification ran in the wrong context and still reported "verified"
 
-**Found by dogfooding**, 2026-09-01 — caught by ticket 02's reviewer, against
+**Found by dogfooding**, 2026-09-01 — caught by task 02's reviewer, against
 the controller.
 
 The plan's Global Constraints carried *"Rack 2.2.9 has no
@@ -407,10 +407,10 @@ would have caught, because they all trusted the controller's "verified".
 ## 17. `fx-implement` says "never stop" but has no mechanism to not stop
 
 **Found by dogfooding**, 2026-09-01, reported by the user after the controller
-wrote a progress summary between every ticket.
+wrote a progress summary between every task.
 
-The skill is explicit — *"Do not pause to check in between tickets. Execute
-every ticket without stopping. 'Should I continue?' prompts and progress
+The skill is explicit — *"Do not pause to check in between tasks. Execute
+every task without stopping. 'Should I continue?' prompts and progress
 summaries waste the user's time"* — and the controller violated it four times
 running, in the same session that had the rule in context.
 
@@ -431,7 +431,7 @@ message with the next dispatch already in flight**, so the queue advances
 whether or not anyone replies.
 
 **Fix:** state it as a positive mechanic rather than a prohibition — *"the last
-tool call of every message is the next ticket's dispatch or its review. If you
+tool call of every message is the next task's dispatch or its review. If you
 are about to write a summary and have no dispatch in flight, you have stopped."*
 Add the matching rationalization row: *"A progress summary would be helpful" →
 "They asked you to execute. The ledger is the record; write there, not here."*
@@ -441,7 +441,7 @@ Related to #9: `fx-plan` offers one exit where four are reasonable, and
 
 ---
 
-## 18. Every per-ticket review inherits the controller's blind spots
+## 18. Every per-task review inherits the controller's blind spots
 
 **Found by dogfooding**, 2026-09-02, reported by the user.
 
@@ -450,9 +450,9 @@ with the controller's **question list**. `fx-implement` §3 mandates this: the
 Global Constraints block is called "the reviewer's attention lens", and the
 skill tells the controller to name what to check.
 
-That makes every per-ticket review a **directed search**. Anything the
+That makes every per-task review a **directed search**. Anything the
 controller did not think to ask about is not examined by anyone. The controller
-wrote the plan and the tickets, so its blind spots are exactly the ones most
+wrote the plan and the tasks, so its blind spots are exactly the ones most
 likely to have produced defects — and they propagate into the gate meant to
 catch them.
 
@@ -463,7 +463,7 @@ the question list. Nothing in the process asked for it.
 
 **Partially covered:** `fx-implement`'s final broad review dispatches
 `fx-review` in branch mode, once, at the end. That is the only unprimed pass,
-it happens after every ticket has already been accepted, and by then the cost
+it happens after every task has already been accepted, and by then the cost
 of a structural finding is highest.
 
 **The asymmetry:** `fx-devils-advocate` exists and is good, but its description
@@ -472,11 +472,58 @@ scopes it to *design and plan documents*. There is no adversarial reviewer for
 
 **Fix, in preference order:**
 1. Widen `fx-devils-advocate` to a code mode — same hostility, pointed at a
-   diff, given the ticket and **no question list**: "find what is wrong."
-2. Add it to `fx-implement`'s ticket loop as an optional second gate on
-   tickets that touch security, data, or concurrency — not on every ticket,
+   diff, given the task and **no question list**: "find what is wrong."
+2. Add it to `fx-implement`'s task loop as an optional second gate on
+   tasks that touch security, data, or concurrency — not on every task,
    which would double the dispatch cost for little return on mechanical work.
 3. At minimum, state in §3 that the constraints block focuses attention **and
    therefore narrows it**, and that the controller should include one
    open-ended prompt — "anything else that would bite us" — rather than only
    its own list.
+
+---
+
+## 19. `fx-tdd` is orphaned — nothing routes to it during implementation
+
+**Found by dogfooding**, 2026-09-02.
+
+`implementer-prompt.md` contains **zero** mentions of `fx-tdd`. The task
+template says *"No code here — `fx-tdd` drives it from the failing test"*, but
+the prompt that actually reaches the implementer never tells it to invoke the
+lane. So `fx-tdd` — the discipline skill that owns the Iron Law, verify-RED and
+the seam rules — is not reached by the one workflow that writes code.
+
+It ran zero times across four tasks. The implementers did TDD because the
+tasks spelled out the steps, not because the lane enforced anything.
+
+**Fix:** one line in `implementer-prompt.md` — *"Invoke `fx-tdd` before writing
+any code; it owns the RED/GREEN discipline this task assumes."*
+
+---
+
+## 20. The five lens agents have exactly one door, and it is opened once
+
+**Found by dogfooding**, 2026-09-02.
+
+`fx-lens-database`, `-security`, `-a11y` and `-silent-failure` are named only
+in `skills/fx-review/SKILL.md`. `fx-implement` mentions `fx-review` exactly
+once — at the **final** review, after every task has already been accepted.
+
+So the entire lens layer is reachable through a single call, at the end. In
+this session the controller substituted its own final-review prompt, and
+**five agents never ran at all.** No warning, no gap in the output, nothing
+that would tell you the security and database lenses had never looked at a
+migration or an auth path.
+
+This also means lens findings arrive at the most expensive possible moment —
+after four tasks are committed — rather than on the diff that introduced
+them.
+
+**Fix:** `fx-implement`'s task loop should fire the lenses whose triggers the
+task's diff matches, at the per-task gate, not only at the end. The trigger
+tables already exist and are file-pattern based, so the controller can evaluate
+them from the diff it has already packaged.
+
+**The wider point, shared with #18:** a component reachable through exactly one
+call site is one deviation away from never running. Nothing in the plugin
+notices its own agents sitting idle.

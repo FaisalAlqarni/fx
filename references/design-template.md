@@ -65,7 +65,7 @@ decision-rich part**, not a working demo.
 
 ## Global Constraints
 
-Project-wide requirements that bind every ticket: version floors, dependency
+Project-wide requirements that bind every task: version floors, dependency
 limits, naming and copy rules, platform requirements, locale/RTL rules. One
 line each, exact values. `fx-plan` copies this section **verbatim** into
 `plan.md`, and `fx-review` hands it to reviewers as their attention lens.

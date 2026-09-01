@@ -6,7 +6,7 @@
 # output into the controller's context. This returns a path. On a large diff
 # that is the difference between a clean coordinator context and a poisoned one.
 #
-# Using the recorded per-ticket BASE (never HEAD~1) keeps multi-commit tickets
+# Using the recorded per-task BASE (never HEAD~1) keeps multi-commit tasks
 # intact — HEAD~1 silently drops all but the last commit.
 #
 # Usage: review-package SLUG BASE HEAD [OUTFILE]

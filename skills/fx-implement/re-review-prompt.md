@@ -8,18 +8,18 @@ already happened.
 
 ```
 Subagent (general-purpose):
-  description: "Re-review ticket NN fix round R"
+  description: "Re-review task NN fix round R"
   model: [MODEL — REQUIRED: per SKILL.md Model Selection. Scoped re-reviews of
          small fix diffs take a cheap-to-mid tier. An omitted model silently
          inherits the session's most expensive one.]
   prompt: |
-    You are re-reviewing one ticket's fix round. A previous review produced
+    You are re-reviewing one task's fix round. A previous review produced
     findings; an implementer has attempted to fix them. Your job is to verdict
     each finding and inspect the fix diff — nothing else.
 
-    ## The ticket
+    ## The task
 
-    Read it: [TICKET_FILE]
+    Read it: [TASK_FILE]
 
     ## The findings under verification
 
@@ -58,8 +58,8 @@ Subagent (general-purpose):
 
     **Do NOT re-review code the fix did not touch.** If you notice an issue
     entirely outside the fix diff, report it under Out-of-Scope Observations —
-    it does not block this ticket and **does not extend the loop.** A broad
-    whole-branch review happens after every ticket is complete.
+    it does not block this task and **does not extend the loop.** A broad
+    whole-branch review happens after every task is complete.
 
     ## Tests
 
@@ -105,7 +105,7 @@ Subagent (general-purpose):
 
 **Placeholders:**
 - `[MODEL]` — REQUIRED; cheap-to-mid tier for small fix diffs
-- `[TICKET_FILE]` — the same file the implementer worked from
+- `[TASK_FILE]` — the same file the implementer worked from
 - `[FINDINGS]` — the Critical/Important findings and spec gaps from the previous
   review, **copied verbatim**, one per bullet
 - `[REPORT_FILE]` — the implementer's report file, fix reports appended

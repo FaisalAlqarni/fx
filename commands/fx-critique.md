@@ -23,7 +23,7 @@ second-guess any of it.
 | Artifact | Mode |
 |---|---|
 | a design, architecture or spec document | **design** |
-| an implementation plan (`plan.md`, a ticket set) | **plan** |
+| an implementation plan (`plan.md`, a task set) | **plan** |
 
 In **plan mode**, pass the design document's path too when one exists beside
 the plan — the design↔plan cross-reference is half of that mode, and without

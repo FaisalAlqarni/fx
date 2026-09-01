@@ -5,7 +5,7 @@
 **Phase:** MVP
 
 **What to build:** fx installed and working on Claude Code and opencode, with
-the plugins it replaces removed. This is the ticket that makes everything else
+the plugins it replaces removed. This is the task that makes everything else
 real: until it passes, fx is a directory of markdown.
 
 **Files:**
@@ -14,11 +14,11 @@ real: until it passes, fx is a directory of markdown.
 - Remove: the superseded Claude Code plugins, then the `~/.agents/skills` copies
 
 **Interfaces:**
-- Consumes: everything tickets 01–07 produced
+- Consumes: everything tasks 01–07 produced
 - Produces: a working install on both runtimes
 
 **Seam:** a live session on each runtime. Nothing here is verifiable by reading
-files — the whole ticket is behavioural.
+files — the whole task is behavioural.
 
 **Risks:**
 - **Ordering.** Remove mattpocock, humanizer and `ui-ux-pro-max` from
@@ -34,7 +34,7 @@ files — the whole ticket is behavioural.
 **Idempotency:** installs are re-runnable; removals are guarded by existence
 checks; every removal is listed before it is executed.
 
-**Testing:** end to end on both runtimes — the only ticket where that is possible.
+**Testing:** end to end on both runtimes — the only task where that is possible.
 
 ## Acceptance criteria
 - [ ] Claude Code: fx installs; all 9 lanes + 2 procedures appear; `/fx:*` commands resolve

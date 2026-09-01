@@ -2,14 +2,14 @@
 name: fx-plan
 description: >
   Use when an approved design exists and the work needs breaking down, or on
-  "break this down", "make tickets", "write the plan", "how do we build this",
+  "break this down", "make tasks", "write the plan", "how do we build this",
   "what are the steps", "plan this out", "sequence this work". Requires an
   approved design — if there is none, use fx-brainstorm.
 ---
 
 # fx-plan
 
-Announce: "Using fx-plan to break this into tickets."
+Announce: "Using fx-plan to break this into tasks."
 
 Input: `docs/plans/YYYY-MM-DD-<slug>/design.md`, approved.
 No approved design → stop and route to `fx-brainstorm`. Do not plan from a
@@ -20,7 +20,7 @@ conversation alone.
 Write the plan assuming the implementer has **zero context for this codebase
 and questionable taste**. Document what they need: which files to touch, the
 code and interfaces involved, the tests, the docs to check, how to verify.
-Give them the whole plan as **bite-sized tickets**.
+Give them the whole plan as **bite-sized tasks**.
 
 Assume they are a **skilled developer** who knows **almost nothing about our
 toolset or problem domain**, and **does not know good test design well**. That
@@ -47,7 +47,7 @@ subsystem. **Each plan must produce working, testable software on its own.**
 
 ## 3. Map the file structure
 
-Before defining tickets, map which files will be created or modified and what
+Before defining tasks, map which files will be created or modified and what
 each is responsible for. **This is where decomposition decisions get locked in.**
 
 - Design units with clear boundaries and well-defined interfaces. One clear
@@ -61,16 +61,16 @@ each is responsible for. **This is where decomposition decisions get locked in.*
   large files, do not unilaterally restructure — but if a file you are
   modifying has grown unwieldy, including a split in the plan is reasonable.
 
-This structure informs the ticket decomposition. Each ticket produces
+This structure informs the task decomposition. Each task produces
 self-contained changes that make sense independently.
 
 ## 4. Draft vertical slices
 
 **Explore the codebase first** if you haven't already — you cannot size a
-ticket against code you haven't read. Look specifically for **prefactoring
+task against code you haven't read. Look specifically for **prefactoring
 opportunities** that would make the implementation easier.
 
-Each ticket is a **tracer bullet**: a narrow but COMPLETE path through every
+Each task is a **tracer bullet**: a narrow but COMPLETE path through every
 layer — schema, domain, controller/endpoint, view/API, tests. **Vertical, never
 a horizontal slice of one layer.**
 
@@ -81,25 +81,25 @@ a horizontal slice of one layer.**
 Look for prefactoring opportunities that make the implementation easier, and
 sequence them first.
 
-Ticket titles and descriptions use the domain vocabulary from `CONTEXT.md`, and
+Task titles and descriptions use the domain vocabulary from `CONTEXT.md`, and
 respect the ADRs in the area you are touching.
 
-**Right-sizing.** A ticket is the smallest unit that carries its own test cycle
+**Right-sizing.** A task is the smallest unit that carries its own test cycle
 and is worth a fresh reviewer's gate. Fold setup, configuration, scaffolding
-and documentation into the ticket whose deliverable needs them. Split only
-where a reviewer could meaningfully reject one ticket while approving its
-neighbor. Every ticket ends with an independently testable deliverable.
+and documentation into the task whose deliverable needs them. Split only
+where a reviewer could meaningfully reject one task while approving its
+neighbor. Every task ends with an independently testable deliverable.
 
-**Blocking edges.** Give each ticket the tickets that must complete before it
-can start. A ticket with no blockers can start immediately. Number from `01` in
+**Blocking edges.** Give each task the tasks that must complete before it
+can start. A task with no blockers can start immediately. Number from `01` in
 dependency order, blockers first.
 
-These edges define the **frontier** `fx-implement` works: any ticket whose
+These edges define the **frontier** `fx-implement` works: any task whose
 blockers are all done. For a purely linear chain that means top to bottom. Get
 them right — an edge that isn't a real dependency serialises work for nothing,
-and a missing one lets a ticket start against code that doesn't exist yet.
+and a missing one lets a task start against code that doesn't exist yet.
 
-**Each step within a ticket is one action** — write the failing test, run it,
+**Each step within a task is one action** — write the failing test, run it,
 implement, run it, run the suite, commit. Two actions in one step means the
 implementer can half-finish it and still tick the box.
 
@@ -112,19 +112,19 @@ green.** Do not force it into a tracer bullet. Sequence it **expand–contract**
 
 1. **Expand** — add the new form beside the old, so nothing breaks.
 2. **Migrate** — move call sites over in batches sized by blast radius (per
-   engine, per directory). Each batch is its own ticket, blocked by the expand.
+   engine, per directory). Each batch is its own task, blocked by the expand.
    Each stays green **because the old form still exists.**
-3. **Contract** — delete the old form once no caller remains, in a ticket
+3. **Contract** — delete the old form once no caller remains, in a task
    blocked by every migrate batch.
 
 **When even the batches cannot stay green alone**, keep the sequence but let
 them share an integration branch that all block a final integrate-and-verify
-ticket. **Green is promised only at that final ticket** — say so explicitly in
-each batch ticket, or the implementer will chase a green that cannot exist.
+task. **Green is promised only at that final task** — say so explicitly in
+each batch task, or the implementer will chase a green that cannot exist.
 
 ### Phasing
 
-More than 10 tickets → phase into independently shippable slices:
+More than 10 tasks → phase into independently shippable slices:
 
 - **MVP** — the smallest slice that provides value
 - **Core** — the complete happy path
@@ -133,27 +133,27 @@ More than 10 tickets → phase into independently shippable slices:
 
 **Each phase must be mergeable on its own.**
 
-## 5. Write plan.md and the tickets
+## 5. Write plan.md and the tasks
 
 ```
 docs/plans/YYYY-MM-DD-<slug>/
   design.md        (already exists — never edit it from here)
   plan.md
-  tickets/01-<slug>.md …
+  tasks/01-<slug>.md …
 ```
 
-One ticket per file. **Never a single combined tickets file.**
+One task per file. **Never a single combined tasks file.**
 
 ## 6. Self-review — you run this, not a subagent
 
 Fresh eyes on the design, then check the plan against it.
 
 1. **Spec coverage.** Walk each requirement in `design.md`. Can you point to a
-   ticket that implements it? List the gaps — and **add a ticket for each.**
+   task that implements it? List the gaps — and **add a task for each.**
 2. **Placeholder scan.** Every pattern in "No placeholders" below. Fix them.
 3. **Type consistency.** Do the signatures and property names used in later
-   tickets match what earlier tickets declared? `clearLayers()` in ticket 03
-   and `clearFullLayers()` in ticket 07 is a bug.
+   tasks match what earlier tasks declared? `clearLayers()` in task 03
+   and `clearFullLayers()` in task 07 is a bug.
 
 Fix inline. No need to re-review — fix and move on.
 
@@ -164,11 +164,11 @@ recommendation** so it can be waved through.
 
 **Recommend YES when any of:** `Complexity: High` · any `HIGH` risk in the
 header · a wide refactor · a data migration or anything irreversible · 10+
-tickets · auth, payment, or security-critical paths.
+tasks · auth, payment, or security-critical paths.
 
 **Recommend SKIP otherwise.** Most plans do not need it.
 
-> "Plan written: N tickets. Red-team it before we start?
+> "Plan written: N tasks. Red-team it before we start?
 > Recommended: <yes|skip> — <one-line reason>."
 
 On approval — or on `/fx:critique plan <file>` at any time — dispatch
@@ -183,7 +183,7 @@ disposition to `state.md`, and carry on. The methodology is identical; only the
 
 ## 8. Handoff
 
-"Plan and N tickets written to `docs/plans/<slug>/`. Review and tell me when to
+"Plan and N tasks written to `docs/plans/<slug>/`. Review and tell me when to
 start." **Wait.**
 
 Approved → `fx-implement`. Never begin implementing from here.
@@ -195,7 +195,7 @@ Approved → `fx-implement`. Never begin implementing from here.
 ```markdown
 # <Feature> — implementation plan
 
-> **For agents:** implement ticket by ticket via `fx-implement`.
+> **For agents:** implement task by task via `fx-implement`.
 > Steps use `- [ ]` checkboxes.
 
 **Design:** `./design.md`
@@ -212,11 +212,11 @@ Approved → `fx-implement`. Never begin implementing from here.
 
 <The design's project-wide requirements — version floors, dependency limits,
 naming and copy rules, platform requirements, locale/RTL rules. One line each,
-**exact values copied verbatim from the design.** Every ticket's requirements
+**exact values copied verbatim from the design.** Every task's requirements
 implicitly include this section, and it is what the reviewer is handed as its
 attention lens.>
 
-## Tickets
+## Tasks
 
 | # | Title | Blocked by | Delivers | Phase |
 |---|-------|-----------|----------|-------|
@@ -224,7 +224,7 @@ attention lens.>
 | 02 | … | 01 | … | MVP |
 ```
 
-## tickets/NN-<slug>.md template
+## tasks/NN-<slug>.md template
 
 ````markdown
 # 03 — <title>
@@ -245,10 +245,10 @@ perspective. Not a layer-by-layer implementation list.
   to be worth naming; `existing.rb:123-145` is not.
 
 **Interfaces:**
-- Consumes: `Bar#baz(id:) -> Baz`  (from ticket 01)
+- Consumes: `Bar#baz(id:) -> Baz`  (from task 01)
 - Produces: `Foo.call(bar:, at:) -> Result<Foo, Error>`
 
-  The implementer sees only its own ticket. **This block is how it learns the
+  The implementer sees only its own task. **This block is how it learns the
   names and types its neighbours use.** Exact signatures, or it is useless.
 
 **Seam:** <the confirmed seam this is tested at, from design.md>
@@ -256,8 +256,8 @@ perspective. Not a layer-by-layer implementation list.
 **Risks:** <what could go wrong here and how to avoid it — omit if none>
 
 **Idempotency:** <why re-running this is safe — existence guards,
-`IF NOT EXISTS`, upserts, commit-only-if-dirty. **Required for any ticket that
-mutates state or commits**, because a resumed run re-executes tickets and a
+`IF NOT EXISTS`, upserts, commit-only-if-dirty. **Required for any task that
+mutates state or commits**, because a resumed run re-executes tasks and a
 non-idempotent one corrupts state or double-writes.>
 
 **Testing:** <how this deliverable is verified — unit / integration / system>
@@ -304,7 +304,7 @@ git add engines/core/app/domain/foo.rb engines/core/spec/domain/foo_spec.rb
 git commit -m "feat(core): add Foo"
 ```
 
-No attribution trailers. Then continue to the next ticket — never stop and
+No attribution trailers. Then continue to the next task — never stop and
 wait.
 ````
 
@@ -313,7 +313,7 @@ behavioral spec and it makes verify-RED possible. The implementation is
 `fx-tdd`'s job, doubles the plan's size, and is the part most likely to rot.
 
 **Exception:** a snippet that encodes a decision more precisely than prose can
-— a state machine, a schema, a type shape — is inlined in the relevant ticket,
+— a state machine, a schema, a type shape — is inlined in the relevant task,
 trimmed to the decision-rich part. Note that it came from a prototype.
 
 ---
@@ -325,18 +325,18 @@ Every step contains the actual content the implementer needs. Never write:
 - "TBD", "TODO", "implement later", "fill in details"
 - "Add appropriate error handling" / "add validation" / "handle edge cases"
 - "Write tests for the above" — without the actual test code
-- "Similar to ticket N" — repeat it; tickets get read out of order
+- "Similar to task N" — repeat it; tasks get read out of order
 - A step describing *what* to do without showing *how*
-- References to types, functions or methods that no ticket defines
+- References to types, functions or methods that no task defines
 
 ## Quality red flags — check before presenting
 
-- [ ] Every ticket names its files (no line-number ranges)
-- [ ] Every ticket has `Interfaces: Consumes / Produces` with exact signatures
+- [ ] Every task names its files (no line-number ranges)
+- [ ] Every task has `Interfaces: Consumes / Produces` with exact signatures
 - [ ] Blocking edges are real dependencies, not just ordering preferences
-- [ ] Every mutating or committing ticket declares its idempotency
-- [ ] Testing strategy present at both header and ticket level
-- [ ] Each phase ships independently (10+ tickets)
+- [ ] Every mutating or committing task declares its idempotency
+- [ ] Testing strategy present at both header and task level
+- [ ] Each phase ships independently (10+ tasks)
 - [ ] No step says "add validation"
 - [ ] No step instructs a push, a merge, or an attribution trailer
 - [ ] A wide refactor is sequenced expand–contract, not forced into a slice

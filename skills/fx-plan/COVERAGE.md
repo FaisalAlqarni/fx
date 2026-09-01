@@ -2,7 +2,7 @@
 
 Sources:
 - `soe:writing-plans` (your fork) — claims 1–127
-- `mattpocock:to-tickets` @ 1.2.3 — claims 128–194
+- `mattpocock:to-tasks` @ 1.2.3 — claims 128–194
 - `soe:adversarial-review` (your fork) — claims 195–267
 
 Verdicts: **K** kept inline · **A** kept in `agents/fx-devils-advocate.md` ·
@@ -18,9 +18,9 @@ A claim with no verdict is a build error.
 | 1–2 | S | Frontmatter rewritten; triggers point at `docs/plans/<slug>/` |
 | 3 | S | `Gate type: judgment` per `soe-modes` — soe's mode system is not absorbed |
 | 4–5 | K | **Audience: zero context, questionable taste** — restored; it sets the detail level |
-| 6–11 | K | Document files, code, testing, docs to check, how to test; whole plan as bite-sized tickets |
+| 6–11 | K | Document files, code, testing, docs to check, how to test; whole plan as bite-sized tasks |
 | 12–14 | K | DRY · YAGNI · TDD |
-| 15 | S | "frequent commits" → one commit per ticket, in the worktree, no trailers |
+| 15 | S | "frequent commits" → one commit per task, in the worktree, no trailers |
 | 16–18 | K | **Skilled dev, knows nothing of our toolset, doesn't know good test design** — restored |
 | 19 | K | Announce line |
 | 20 | S | Worktree created "at execution time" → `fx-implement` §Setup owns it |
@@ -32,11 +32,11 @@ A claim with no verdict is a build error.
 | 50–54 | K | Requirements Restatement as step 1, the format, wait for confirmation, the reason |
 | 55–68 | K | Header template entire: Goal, Architecture, Stack, **Complexity**, **Risks HIGH/MEDIUM + mitigation**, **Testing unit/integration/E2E**, Global Constraints + verbatim rule + implicit-inclusion rule |
 | 57 | S | "REQUIRED SUB-SKILL: soe:subagent-driven-development or soe:executing-plans" → `fx-implement`, one path |
-| 69–70, 72 | K | Ticket header; Create / Test file lines |
+| 69–70, 72 | K | Task header; Create / Test file lines |
 | 71 | S | `Modify: path.py:123-145` → **path only, no line-number ranges** (they rot within a day) |
-| 73–75 | K | `Interfaces: Consumes / Produces` **and its reason** — the implementer sees only its own ticket |
+| 73–75 | K | `Interfaces: Consumes / Produces` **and its reason** — the implementer sees only its own task |
 | 76 | S | `Depends-on:` → `Blocked by:` (one vocabulary, shared with the frontier) |
-| 77–78 | K | Per-ticket Risks and Testing |
+| 77–78 | K | Per-task Risks and Testing |
 | 79–82 | K | **Idempotency required**, the definition, the resume reason, the guard examples |
 | 83–84, 86 | K | Steps 1, 2, 4 — test code and exact commands with expected output |
 | 85 | S | "Step 3: write minimal implementation" **with code** → step kept, code removed. Pre-writing the implementation defeats TDD, doubles the plan, and rots fastest |
@@ -45,13 +45,13 @@ A claim with no verdict is a build error.
 | 95 | K | Exact file paths always |
 | 96 | S | "Complete code in every step" → **test code yes, implementation code no** (prototype-snippet exception retained) |
 | 97 | K | Exact commands with expected output |
-| 98 | K | DRY, YAGNI, TDD (commits per ticket) |
+| 98 | K | DRY, YAGNI, TDD (commits per task) |
 | 99–104 | K | Phasing at 10+: MVP / Core / Hardening / Polish, each mergeable alone |
 | 105–110 | K | All six quality red flags; 3 more added (interfaces present, no push/trailer steps, wide refactor sequenced) |
-| 111–118 | K | Self-review: yours not a subagent's; spec coverage; placeholder scan; type consistency + the `clearLayers` example; fix inline; add a ticket for any uncovered requirement |
+| 111–118 | K | Self-review: yours not a subagent's; spec coverage; placeholder scan; type consistency + the `clearLayers` example; fix inline; add a task for any uncovered requirement |
 | 119–127 | S | Execution-handoff choice (subagent-driven vs inline) → one path, `fx-implement`. `executing-plans` is absorbed and subagents are always available |
 
-## mattpocock:to-tickets (128–194)
+## mattpocock:to-tasks (128–194)
 
 | Claims | Verdict | Note |
 |---|---|---|
@@ -61,16 +61,16 @@ A claim with no verdict is a build error.
 | 132–133 | S | "tracker should have been provided / run `/setup-matt-pocock-skills`" → `/fx:setup`; tracker is `docs/plans/` |
 | 134–135 | S | Gather from conversation / fetch a passed reference → input is always `design.md` |
 | 136–141 | K | Explore the codebase; domain glossary; respect ADRs; prefactor; *"make the change easy, then make the easy change"* |
-| 142–148 | K | All four vertical-slice rules; blocking edges; no-blocker tickets start immediately |
+| 142–148 | K | All four vertical-slice rules; blocking edges; no-blocker tasks start immediately |
 | 149–157 | K | Wide-refactor definition, blast radius, the no-slice-lands-green reason, expand / migrate / contract with their blocking structure and the still-green reason |
-| 158–159 | K | **The integration-branch third case** — restored; green promised only at the final integrate-and-verify ticket, and tickets must say so |
-| 160–167 | S | The granularity quiz — **cut by your decision.** Step 8 shows the ticket table against real files, which is the same question asked once, against the artifact |
-| 168–170 | K | Publish the approved tickets; tickets identical whichever tracker, only edge shape changes |
-| 171–173 | S→K | `.scratch/<slug>/issues/NN-<slug>.md` → `docs/plans/<slug>/tickets/NN-<slug>.md`. Numbering from 01 in dependency order, "Blocked by" text, **one ticket per file, never a combined file** — all kept |
+| 158–159 | K | **The integration-branch third case** — restored; green promised only at the final integrate-and-verify task, and tasks must say so |
+| 160–167 | S | The granularity quiz — **cut by your decision.** Step 8 shows the task table against real files, which is the same question asked once, against the artifact |
+| 168–170 | K | Publish the approved tasks; tasks identical whichever tracker, only edge shape changes |
+| 171–173 | S→K | `.scratch/<slug>/issues/NN-<slug>.md` → `docs/plans/<slug>/tasks/NN-<slug>.md`. Numbering from 01 in dependency order, "Blocked by" text, **one task per file, never a combined file** — all kept |
 | 174–178 | S | GitHub/Linear publishing, native blocking links, `ready-for-agent` label on a remote tracker → local files only; **nothing goes to GitHub** |
 | 179–180 | K | Work the frontier; linear chain means top to bottom |
 | 181 | K | "Do not close or modify any parent issue" → **never edit `design.md` from here** |
-| 182–187 | K | Local ticket template: title, What to build, Blocked by, Status, acceptance criteria |
+| 182–187 | K | Local task template: title, What to build, Blocked by, Status, acceptance criteria |
 | 188–191 | S | Remote-issue template — no remote tracker |
 | 192 | S | "Avoid specific file paths **or code snippets**" → **paths yes (no line numbers), test code yes, implementation code no.** A path is a stable hypothesis; a path with line numbers rots; a signature is a contract |
 | 193–194 | K | Prototype-snippet exception, trimmed to the decision-rich part |
@@ -112,4 +112,4 @@ A claim with no verdict is a build error.
 - Red-team is opt-in with a recommendation, never automatic
 - `docs/plans/<slug>/` as a directory, always
 - Local files only; nothing published to GitHub
-- Commits per ticket with **no attribution trailers**
+- Commits per task with **no attribution trailers**

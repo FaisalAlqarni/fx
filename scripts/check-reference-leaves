@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Ticket 03's gate: references are leaves. A lane pulls one file, not a graph.
+# Task 03's gate: references are leaves. A lane pulls one file, not a graph.
 # Fails while any reference file names another reference file.
 set -u
 cd "$(dirname "$0")/.."

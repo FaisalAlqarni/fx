@@ -14,7 +14,7 @@ A claim with no verdict is a build error.
 
 | Claims | Verdict | Note |
 |---|---|---|
-| 1–2 | S | Frontmatter replaced by `fx-implement`'s own; triggers rewritten for `docs/plans/<slug>/tickets/` |
+| 1–2 | S | Frontmatter replaced by `fx-implement`'s own; triggers rewritten for `docs/plans/<slug>/tasks/` |
 | 3–8 | K | Intro, why-subagents, the three reasons, core principle |
 | 9 | K | Narration: at most one short line between tool calls |
 | 10–13 | K | Continuous execution + the reason |
@@ -26,7 +26,7 @@ A claim with no verdict is a build error.
 | 62 | K | Isolated workspace |
 | 63 | K | Never start on main/master without explicit consent |
 | 64–66 | K | Compaction fact, the re-dispatch anecdote, ledger-not-todos |
-| 67–68 | S | `scripts/sdd-workspace` derived a path (`dirname plan.md` here), it did no work. Deleted. The workspace **splits by lifetime**: durable `docs/plans/<slug>/` (design, plan, tickets, state.md — committed) and ephemeral `.fx/<slug>/` (reports, review packages — git-ignored, `check-ignore` verified before use) |
+| 67–68 | S | `scripts/sdd-workspace` derived a path (`dirname plan.md` here), it did no work. Deleted. The workspace **splits by lifetime**: durable `docs/plans/<slug>/` (design, plan, tasks, state.md — committed) and ephemeral `.fx/<slug>/` (reports, review packages — git-ignored, `check-ignore` verified before use) |
 | 69 | K | Another slug's directory is never yours to read or write |
 | 70–74 | K | Ledger check, resume rules, mid-loop rule, foreign-ledger rule, identity first line |
 | 75–76 | K | Ledger as recovery map; trust it over recollection after compaction |
@@ -38,17 +38,17 @@ A claim with no verdict is a build error.
 | 118–119 | K | Context-residency fact; artifacts as files |
 | 120–123 | K | Waiting on subagents: no polling, no open-ended wait, bounded 5–10 min stretches, reconcile children, the reason |
 | 124 | K | Record BASE before dispatching |
-| 125–126 | S | `scripts/task-brief` → the ticket file **is** the brief (one file per ticket already). Script deleted |
+| 125–126 | S | `scripts/task-brief` → the task file **is** the brief (one file per task already). Script deleted |
 | 127–133 | K | The five dispatch contents; exact values only in the brief; never make a subagent read the whole plan |
 | 134–135 | K | Report file naming + the short return contract |
-| 136–139 | K | One ticket not session history; the 42k-char anecdote; what a fresh subagent needs |
+| 136–139 | K | One task not session history; the 42k-char anecdote; what a fresh subagent needs |
 | 140–142 | S | "implementer never dispatches subagents" → narrowed: read-only `Explore` allowed; **no reviewer, no writer**. Both original reasons kept verbatim |
 | 143 | K | Carry a pointer to parked findings in the area |
 | 144 | K | Record agent identity for rounds 1–3 |
 | 145 | K | Never parallel implementers — **reason replaced**: shared test environment, not file conflicts (worktrees solve files; they don't give a second Postgres) |
 | 146 | K | implementer-prompt.md |
 | 147–162 | K | All four statuses, all BLOCKED sub-rules incl. "plan itself is wrong", never-ignore-an-escalation, answer questions properly. **Added**: BLOCKED-5 skip-and-continue, per the never-stall-the-queue decision |
-| 163–166 | K | Ticket-scoped gates; never skip; never accept a missing verdict; self-review never replaces |
+| 163–166 | K | Task-scoped gates; never skip; never accept a missing verdict; self-review never replaces |
 | 167–171 | K | review-package as a file; the bash-less fallback; the "never enters your context" reason; never `HEAD~1`; never dispatch without a diff file |
 | 172–180 | K | Three paths + constraints; attention-lens framing; verbatim copying; no open-ended directives; no re-running tests; **the anti-pre-judging rule and its four trigger phrases** |
 | 181–183 | K | ⚠️ Cannot-verify items: don't block, you resolve each, confirmed gap enters the loop |

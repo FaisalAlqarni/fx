@@ -1,6 +1,6 @@
 # fx — implementation plan (Plan 1 of 2: finish the build)
 
-> **For agents:** implement ticket by ticket via `fx-implement`.
+> **For agents:** implement task by task via `fx-implement`.
 > Steps use `- [ ]` checkboxes.
 
 **Design:** `./design.md`
@@ -9,12 +9,12 @@
 **Stack:** Markdown skills · Node (hooks, guard) · Claude Code plugin manifest · opencode plugin API.
 **Complexity:** Medium
 **Risks:**
-- HIGH: 69 unanchored `references/…` paths break silently once installed — the lane keeps working, it just never loads the reference. Mitigated by ticket 01 anchoring them all and asserting zero bare paths remain.
-- MEDIUM: `fx-lens-performance` is 455 upstream lines, possibly mostly React/bundle advice that does not apply. Mitigated by reading before adapting, with deletion an accepted outcome (ticket 06).
+- HIGH: 69 unanchored `references/…` paths break silently once installed — the lane keeps working, it just never loads the reference. Mitigated by task 01 anchoring them all and asserting zero bare paths remain.
+- MEDIUM: `fx-lens-performance` is 455 upstream lines, possibly mostly React/bundle advice that does not apply. Mitigated by reading before adapting, with deletion an accepted outcome (task 06).
 - MEDIUM: opencode's `experimental.chat.system.transform` may change. Mitigated by the documented `AGENTS.md` fallback; not re-litigated here.
 - LOW: merging three references into one loses a distinction someone wanted. Mitigated by keeping every heading.
 
-**Testing:** Unit: `lib/git-guard.test.js` (extended in 02). Integration: hook and plugin adapters exercised end to end. E2E: install on both runtimes (ticket 08). **Behavioural testing of the nine skills is Plan 2 and explicitly not here.**
+**Testing:** Unit: `lib/git-guard.test.js` (extended in 02). Integration: hook and plugin adapters exercised end to end. E2E: install on both runtimes (task 08). **Behavioural testing of the nine skills is Plan 2 and explicitly not here.**
 
 ## Global Constraints
 
@@ -29,7 +29,7 @@
 - Every agent file **pins its model explicitly**; an omitted model inherits the session's.
 - Lens agents are read-only: `tools: Read, Grep, Glob, Bash`.
 
-## Tickets
+## Tasks
 
 | # | Title | Blocked by | Delivers | Phase |
 |---|-------|-----------|----------|-------|

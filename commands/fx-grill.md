@@ -31,7 +31,7 @@ becomes the second claimant, and the problem fx exists to end is back.
 So, explicitly, this command **never**:
 
 - classifies the topic as spike / bounded / architectural
-- writes a `design.md`, a `plan.md`, a ticket or any other artifact
+- writes a `design.md`, a `plan.md`, a task or any other artifact
 - runs an approval gate, because there is nothing to approve — no work follows
 - hands off to `fx-plan`, `fx-implement` or `fx-tdd`
 - writes or edits code

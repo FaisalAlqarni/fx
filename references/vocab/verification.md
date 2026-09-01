@@ -3,7 +3,7 @@
 **Evidence before claims, always.**
 
 The Iron Law and the gate function live inline in `fx-implement` — they fire
-on every ticket. This file holds what is consulted on demand: the failures
+on every task. This file holds what is consulted on demand: the failures
 table, the rationalizations, the per-domain patterns, and the scope of the
 rule.
 
@@ -81,8 +81,8 @@ inlined in `fx-tdd`, because that is where regression tests get written.
 - Any variation of a success or completion claim
 - **Any expression of satisfaction**
 - Any positive statement about the state of the work
-- Committing, or marking a ticket complete
-- Moving to the next ticket
+- Committing, or marking a task complete
+- Moving to the next task
 - Delegating to an agent
 
 ## What the rule covers

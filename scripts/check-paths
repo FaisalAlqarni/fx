@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ticket 01's gate. Two failures, both silent in production:
+"""Task 01's gate. Two failures, both silent in production:
 
   1. An unanchored `references/...` path. Once fx is installed, the session's
      cwd is the USER'S repo, so a bare path resolves there, finds nothing, and

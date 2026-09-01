@@ -30,7 +30,7 @@ Two rungs work → take the higher one and move on.
 
 **A bug report names a symptom.** Before editing, find every caller of the
 function you are about to touch. One guard in the shared function is a smaller
-diff than a guard in every caller — and patching only the path the ticket names
+diff than a guard in every caller — and patching only the path the task names
 leaves every sibling caller broken.
 
 **Rules:** no interface with one implementation, no factory for one product, no
@@ -60,7 +60,7 @@ logic breaks. Trivial one-liners need none.
 |---|---|
 | new feature · "let's build" · any creative work | `fx-brainstorm` |
 | an approved design exists | `fx-plan` |
-| tickets exist, build them | `fx-implement` |
+| tasks exist, build them | `fx-implement` |
 | writing or changing code with logic | `fx-tdd` |
 | review a diff, branch or PR | `fx-review` |
 | structure of existing code is the problem | `fx-architecture` |

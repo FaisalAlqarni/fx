@@ -9,19 +9,19 @@ description: >
 
 # fx-review
 
-Announce: "Using fx-review (<ticket|branch> mode)."
+Announce: "Using fx-review (<task|branch> mode)."
 
 **Review early, review often.**
 
 ## Two modes
 
-- **ticket** — called by `fx-implement` after each ticket. Correctness + Spec,
-  scoped to that ticket. Mid-tier model. Lenses off unless the ticket touches
+- **task** — called by `fx-implement` after each task. Correctness + Spec,
+  scoped to that task. Mid-tier model. Lenses off unless the task touches
   auth, payment, or a migration.
 - **branch** — called at the end of a run, or by you on a branch or PR. All
   axes plus every triggered lens, most capable model.
 
-**Mandatory:** after each ticket in `fx-implement` · after a major feature ·
+**Mandatory:** after each task in `fx-implement` · after a major feature ·
 before a merge.
 **Valuable:** when stuck (fresh perspective) · before a refactor (baseline) ·
 after fixing a complex bug.
@@ -40,10 +40,10 @@ git log <fixed-point>..HEAD --oneline
 
 **A bad ref or an empty diff fails HERE**, not inside five parallel subagents.
 
-In **ticket mode** the fixed point is the BASE `fx-implement` recorded before
-dispatching that ticket's implementer. In **branch mode** it is the merge-base.
+In **task mode** the fixed point is the BASE `fx-implement` recorded before
+dispatching that task's implementer. In **branch mode** it is the merge-base.
 **Never `HEAD~1`** — it silently drops all but the last commit of a
-multi-commit ticket.
+multi-commit task.
 
 ## 2. Decide which passes run — and say so in one line
 
@@ -75,7 +75,7 @@ job, and it fires on the same diffs. See `OPEN-DECISIONS.md` D5.
 
 ## 3. Find the spec
 
-In order: the ticket file (ticket mode) → `docs/plans/<slug>/design.md` matching
+In order: the task file (task mode) → `docs/plans/<slug>/design.md` matching
 the branch → a path the user passed → **ask.**
 
 Nothing exists and the user says there is no spec → **skip the Spec axis and

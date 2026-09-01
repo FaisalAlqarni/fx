@@ -82,7 +82,7 @@ Verdicts: **K** kept inline · **R** kept in `../../references/vocab/good-tests.
 | 122–123 | K | Tautological anti-pattern, all three examples, and the independent-source-of-truth rule |
 | 124–125 | K | Horizontal slicing; vertical slices; tracer bullets responding to the last cycle |
 | 126–127 | K | Red before green, no speculation; one seam, one test, one implementation per cycle |
-| 128 | S | **"Refactoring is not part of the loop"** → refactor kept, **bounded to code this ticket wrote**. Wider restructuring goes to `fx-review`/`fx-architecture`. mattpocock is arguing against module-scale refactors creeping in, which the bound prevents |
+| 128 | S | **"Refactoring is not part of the loop"** → refactor kept, **bounded to code this task wrote**. Wider restructuring goes to `fx-review`/`fx-architecture`. mattpocock is arguing against module-scale refactors creeping in, which the bound prevents |
 
 ## soe:test-driven-development (129–195)
 

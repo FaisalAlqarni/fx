@@ -160,6 +160,6 @@ Optional, only when they add genuine value — most ADRs need none:
 
 `fx-brainstorm` (terms resolving mid-interview) · `fx-architecture` (naming a
 deepened module, recording a rejection so future reviews don't re-suggest it) ·
-`fx-plan` (ticket titles use the glossary's vocabulary).
+`fx-plan` (task titles use the glossary's vocabulary).
 
 An ADR in the area you're touching **records a decision not to re-litigate.**

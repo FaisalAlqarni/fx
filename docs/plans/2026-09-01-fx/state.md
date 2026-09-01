@@ -1,6 +1,6 @@
 # fx ledger — plan: docs/plans/2026-09-01-fx/plan.md
 
-## Ticket 01: complete
+## Task 01: complete
 
 Plugin layout, three manifests, 54 reference paths anchored across 14 files.
 All six acceptance criteria pass. Guard suite 69/69 from the new location; both
@@ -10,7 +10,7 @@ Implemented in the main session rather than by a dispatched subagent — a
 deviation from this skill, recorded rather than hidden.
 
 **Ruling: anchoring uses paths relative to the citing file, not
-`${CLAUDE_PLUGIN_ROOT}`.** — The ticket suggested the env var, but it is
+`${CLAUDE_PLUGIN_ROOT}`.** — The task suggested the env var, but it is
 Claude-Code-only and fx ships to opencode as well. `../../references/…` from a
 skill resolves on any runtime with no environment at all. — Cost if wrong: a
 runtime that resolves relative paths against cwd rather than the file would
@@ -37,23 +37,23 @@ stopping to request a commit would park the whole plan on a one-line action.
 Once the user makes an initial commit, later work can move to a worktree
 normally.
 
-## Ruling: tickets 02–07 dispatched concurrently
+## Ruling: tasks 02–07 dispatched concurrently
 
 The skill says implementers never run in parallel. **Its stated reason is a
 shared test environment** — concurrent runs producing false RED and false
-GREEN. That reason does not hold here: 02 is the only ticket that executes a
+GREEN. That reason does not hold here: 02 is the only task that executes a
 test suite (`lib/git-guard.test.js`), and the others run either
 `scripts/check-paths`, which is read-only, or nothing.
 
 - **Ruling:** dispatch 02–07 concurrently, since no two share a test
-  environment. — Cost if wrong: a false GREEN on one ticket, caught by the
+  environment. — Cost if wrong: a false GREEN on one task, caught by the
   task review that follows each.
-- **Ruling:** no subagent edits `.claude-plugin/plugin.json`. Four tickets
+- **Ruling:** no subagent edits `.claude-plugin/plugin.json`. Four tasks
   (04, 05, 06, 07) would otherwise write the same file concurrently. The
   controller applies every manifest change centrally after the subagents
   return. — Cost if wrong: none; it removes the only real write conflict.
 
-## Ticket 02: complete
+## Task 02: complete
 
 D-A implemented. `push` removed from the unconditional block, so it falls
 through to the ordinary path: worktree allows, main checkout blocks. Force
@@ -81,11 +81,11 @@ is blocked absolutely — no reflog reaches it and it destroys work for everyone
 who has that branch. Added `--delete`, `-d` and `:refspec` deletion to the
 always-blocked rules, with three assertions.
 
-**Ruling: `--force-with-lease` is blocked with `--force`.** — The ticket said
+**Ruling: `--force-with-lease` is blocked with `--force`.** — The task said
 "`--force` variants"; lease or not, it rewrites published history. — Cost if
 wrong: an agent cannot do a safe force-push and must ask. Acceptable.
 
-## Ticket 06: complete — no agent shipped
+## Task 06: complete — no agent shipped
 
 Verdict: **~15% applicable, ~370 of 455 lines stack-irrelevant.** Zero mentions
 of Rails, ActiveRecord, Sidekiq, .NET, EF Core, RSpec or ERB anywhere in the
@@ -105,7 +105,7 @@ implementer's permitted file set.
 
 **Review condition, not yet satisfied.** This justification rests on
 `fx-lens-database` actually covering that residue — and the implementer checked
-the *upstream* `ecc:database-reviewer`, because ticket 05 had not landed yet.
+the *upstream* `ecc:database-reviewer`, because task 05 had not landed yet.
 **When 05 lands, confirm the delivered `fx-lens-database` really covers N+1,
 missing indexes and unbounded results.** If it does not, D5's argument fails
 and the gap is real.
@@ -116,10 +116,10 @@ cache-key churn, EF Core `AsNoTracking` and client-side evaluation. None of it
 exists upstream. Cheapest fix is an app-layer section in `fx-lens-database`'s
 brief rather than a second dispatch.
 
-## Ticket 07: complete
+## Task 07: complete
 
 Three commands written — `fx-critique` (46 ln), `fx-grill` (64), `fx-level` (61).
-Ticket check RED before, PASS after. `check-paths` GREEN at 50 citations.
+Task check RED before, PASS after. `check-paths` GREEN at 50 citations.
 
 **Task review: verified.** `/fx:level`'s file mentions were checked rather than
 counted — `CLAUDE.md`, `settings.json` and `agents/` appear only inside an
@@ -136,7 +136,7 @@ gate, no handoff) and a handover rule: the moment the topic turns out to touch
 this repo's code, stop and hand to `fx-brainstorm`. The one-claimant rationale
 is stated inline so it survives an editor who does not know why it is there.
 
-## Ticket 03: complete
+## Task 03: complete
 
 D-C implemented. Three files merged into `references/vocab/codebase-design.md`
 (286 lines); `deepening.md` and `design-it-twice.md` deleted. Absorbed H1s
@@ -149,8 +149,8 @@ none dropped. Word count grew slightly, so this was a merge, not a truncation.
 
 **The leaf invariant now holds for the first time.** `check-reference-leaves`
 was written first and run RED (`FAIL: 7 reference-to-reference link(s)`), then
-GREEN. The implementer's gate is better than the ticket's snippet: it catches
-slash-bearing paths, which the ticket's version would have missed on
+GREEN. The implementer's gate is better than the task's snippet: it catches
+slash-bearing paths, which the task's version would have missed on
 `rails.md → references/stacks/observability.md` — the very link the controller
 introduced during Section 3.
 
@@ -166,7 +166,7 @@ technique it described survives, rephrased via `rspec --seed`.
 reference-to-reference `.md` link and the file ships with the plugin, so it is
 outside this invariant. Noted, not fixed.
 
-## Ticket 05: complete
+## Task 05: complete
 
 Four lenses shipped: `database` 121 ln / opus · `security` 134 / opus ·
 `a11y` 132 / sonnet · `silent-failure` 120 / sonnet. All four read-only
@@ -179,7 +179,7 @@ not relabelled — Supabase RLS → Rails multi-tenant scoping + EF Core, npm/ex
 Arabic/RTL first-class. The a11y source shipped `tools: Read, Write, Edit` and
 an ADR-authoring template; both were dropped, making it a pure lens as required.
 
-**D5's review condition is now satisfied.** Ticket 06 dropped the performance
+**D5's review condition is now satisfied.** Task 06 dropped the performance
 lens arguing the usable residue was already `fx-lens-database`'s — but it
 checked the *upstream* source, because 05 had not landed. The delivered file
 was checked directly and does carry it, in both stacks' terms:
@@ -189,19 +189,19 @@ was checked directly and does carry it, in both stacks' terms:
 > set-based statement would do; `SELECT *` where a projection belongs. ·
 > `OFFSET` pagination on a table that grows without bound.
 
-D5 stands. The two tickets resolved consistently despite running concurrently
+D5 stands. The two tasks resolved consistently despite running concurrently
 and neither being able to see the other's output.
 
 `fx-review`'s trigger table needed no edit — all four names resolve to shipped
-files, and the table already reflects ticket 06's removal.
+files, and the table already reflects task 06's removal.
 
-## Ticket 04: complete
+## Task 04: complete
 
 D-B implemented. `research` (12 ln) and `prototype` (26 ln + LOGIC.md + UI.md)
 copied. Verified against upstream: `LOGIC.md` and `UI.md` **byte-identical**;
 `prototype/SKILL.md` differs only in its `description`; `research/SKILL.md`
 differs in its `description` plus **exactly one** appended paragraph, as the
-ticket allowed.
+task allowed.
 
 **The `agents/` decision: not copied.** Inspected rather than assumed — it is a
 three-line `openai.yaml` Codex interface manifest, inert under Claude Code, and
@@ -240,7 +240,7 @@ Concurrent dispatch was safe in practice: three agents edited `SURFACE.md` and
 `design.md` in disjoint sections with no conflict, and the one real contention
 point — `plugin.json` — was reserved for the controller and never touched.
 
-## Ticket 08: partial — install documented, execution is the user's
+## Task 08: partial — install documented, execution is the user's
 
 `INSTALL.md` written for both runtimes. Researched rather than assumed, after
 being wrong about opencode twice already.
@@ -270,7 +270,7 @@ subagent probe, and removing the superseded plugins from both pools. Outward-
 facing and destructive; ordering matters (`~/.agents/skills` last, only after
 opencode is confirmed).
 
-## Ticket 08 revised: opencode install is standalone
+## Task 08 revised: opencode install is standalone
 
 The first `INSTALL.md` treated opencode as a second install alongside Claude
 Code. It is now independent — an opencode-only user never touches `~/.claude`.
@@ -309,13 +309,13 @@ First real install attempt failed:
 Validation errors: agents: Invalid input
 ```
 
-Cause: ticket 01 declared `"agents": ["./agents/"]`. **Agents are discovered by
+Cause: task 01 declared `"agents": ["./agents/"]`. **Agents are discovered by
 convention from `./agents/` and must not be declared.** Verified against every
 installed plugin that works — ECC and humanizer both ship an `agents/`
 directory and neither has an `agents` key. `skills` and `commands` as directory
 arrays are fine; `hooks` as a string path is fine. Only `agents` was invalid.
 
-This slipped through because ticket 01's acceptance criterion was *"declares
+This slipped through because task 01's acceptance criterion was *"declares
 skills, commands, agents and hooks explicitly — never by convention"*. The
 criterion was wrong, not the implementation, and every check I wrote asserted
 against the criterion rather than against a real install.
@@ -346,7 +346,7 @@ Fixed: `init` and `clone` added to `ALLOWED_ON_MAIN`, with 4 assertions. Suite
 main and `branch -D` are all still blocked — the fix loosened nothing else.
 
 **Why 83 passing tests did not catch it:** every assertion was written from the
-ticket's own list of commands. Nobody asked "what does a person actually do on
+task's own list of commands. Nobody asked "what does a person actually do on
 day one of a project". The suite tested the rules I thought of, which is the
 class of gap only real use finds. This is the argument for dogfooding over
 adding more unit tests to the same list.
@@ -358,14 +358,14 @@ updated. The user runs git anyway, so it is not blocking the design work.
 
 ## Dogfood finding 2 — the guard blocked writing documentation
 
-Writing a ticket file was refused. The command was a file write; the *heredoc
+Writing a task file was refused. The command was a file write; the *heredoc
 body* contained example commands in its "Steps" section, and `splitSegments`
 splits on newlines, so lines inside the heredoc were parsed as commands the
 user was running.
 
 **Blast radius: any documentation containing an example.** A README, a runbook,
-a ticket, a plan. fx's own tickets are exactly this shape — the plugin could
-not have written its own ticket files through its own guard.
+a task, a plan. fx's own tasks are exactly this shape — the plugin could
+not have written its own task files through its own guard.
 
 Fixed: `stripHeredocs()` removes heredoc bodies before segmentation, handling
 `<<EOF`, `<<-EOF` (indented terminator), `<<'EOF'` and `<<"EOF"`, and multiple
@@ -382,6 +382,6 @@ Both findings so far are the same shape — the tests covered the rules I though
 of, and dogfooding covered the ones I did not.
 
 **Consequence for this session:** the installed copy still carries the old
-guard, so heredocs containing example commands stay blocked here. Tickets are
+guard, so heredocs containing example commands stay blocked here. Tasks are
 being written with the file tools instead, which do not route through the Bash
 hook. Both fixes go live when the plugin is updated.

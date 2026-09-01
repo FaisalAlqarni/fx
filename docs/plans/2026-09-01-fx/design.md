@@ -88,8 +88,8 @@ Selectable. Exactly one claimant per intent. All ≤ 500 lines.
 | Lane | Does | Invoked by | Depends on |
 |---|---|---|---|
 | `fx-brainstorm` | Classify → clustered rounds → sectioned design → gate | new feature, "let's build" | `grilling`, `domain-modeling`, `design-template`, `visual-companion` |
-| `fx-plan` | Vertical tracer tickets, blocking edges, Consumes/Produces | an approved design exists | `fx-devils-advocate`, `/fx:critique` |
-| `fx-implement` | Works the frontier: worktree, fresh subagent per ticket, rulings not stalls | tickets exist | 4 prompt files, `review-package`, `worktree-setup`, `model-selection`, `verification` |
+| `fx-plan` | Vertical tracer tasks, blocking edges, Consumes/Produces | an approved design exists | `fx-devils-advocate`, `/fx:critique` |
+| `fx-implement` | Works the frontier: worktree, fresh subagent per task, rulings not stalls | tasks exist | 4 prompt files, `review-package`, `worktree-setup`, `model-selection`, `verification` |
 | `fx-tdd` | Iron Law, verify-RED (runtime **and** compile-time), confirmed seams | writing code with logic | `good-tests`, `codebase-design`, `.fx.json` |
 | `fx-review` | Two axes reported separately + triggered risk lenses | review a diff or branch | `reviewer-prompt`, 5 lens agents, `fowler-smells`, `receiving-review` |
 | `fx-architecture` | Deepening opportunities in existing code, local HTML report | structure is the problem | `HTML-REPORT.md`, `codebase-design` |
@@ -183,7 +183,7 @@ which is why each one is load-bearing rather than convenient.
 | `PREAMBLE.md` via hook | ladder, routing, non-negotiables, prose rule | **A subagent reads neither `CLAUDE.md` nor memory.** This is the sole path to it |
 | `.fx.json` | test/setup/lint commands, `stacks`, coverage | The only place a command is allowed to come from. Guessing is prohibited everywhere else |
 | `repo.md` | project structure, patterns, local decisions | Loaded on demand — too large for always-on context |
-| `state.md` (ledger) | which tickets are done, every ruling | **Conversation memory does not survive compaction.** This does |
+| `state.md` (ledger) | which tasks are done, every ruling | **Conversation memory does not survive compaction.** This does |
 
 ### A cold start, traced
 
@@ -195,14 +195,14 @@ session opens
 "implement the login feature"
   └─ routing table (in preamble) ────────► fx-brainstorm      [deterministic]
      └─ design approved ─────────────────► docs/plans/<slug>/design.md
-        └─ fx-plan ─────────────────────► tickets/NN-*.md
+        └─ fx-plan ─────────────────────► tasks/NN-*.md
            └─ fx-implement
               ├─ reads .fx.json ─────────► setup + test_all, run once
               ├─ reads stacks/<n>.md ────► per entry in `stacks`; missing = fine
               ├─ reads repo.md ──────────► structure and patterns
               ├─ creates worktree ───────► guard permits `worktree add` on main
-              └─ per ticket:
-                   dispatch subagent ────► ticket + PREAMBLE (via SubagentStart)
+              └─ per task:
+                   dispatch subagent ────► task + PREAMBLE (via SubagentStart)
                                            NOT the session history
                    ← report ────────────► .fx/<slug>/reports/     [ephemeral]
                    append ruling ───────► docs/plans/<slug>/state.md [durable]
@@ -221,14 +221,14 @@ the direct answer to the selection randomness fx was built to end.
 
 ### What a subagent receives, exactly
 
-Its ticket · the preamble · explicit instructions the controller composed.
+Its task · the preamble · explicit instructions the controller composed.
 **Not** the session history — that is the point of dispatching one. The
 controller therefore has to put everything needed *into* the brief, and the
 non-negotiables arrive by hook rather than by hope.
 
 ### State splits by lifetime
 
-- **`docs/plans/<slug>/`** — design, plan, tickets, `state.md`. Committed. The
+- **`docs/plans/<slug>/`** — design, plan, tasks, `state.md`. Committed. The
   record of what was decided and what happened.
 - **`.fx/<slug>/`** — reports, review packages. Git-ignored, verified with
   `check-ignore` before anything writes there. Verbose and regenerable.
@@ -296,11 +296,11 @@ need.
 | Failure | Mechanism |
 |---|---|
 | Wrong lane selected | Routing table in the preamble, ahead of description matching; each lane declares what it does *not* own |
-| Subagent claims success falsely | Task review per ticket in a separate context; "evidence before claims"; RED output pasted into `state.md` as proof |
+| Subagent claims success falsely | Task review per task in a separate context; "evidence before claims"; RED output pasted into `state.md` as proof |
 | Fix loop thrashing | 3-fix circuit breaker, then stop and report |
 | Context compaction mid-run | Ledger is authoritative over recollection — `state.md` plus `git log`, never memory |
 | Command not derivable | Write `null` and **ask**. Never infer a test command from the file tree |
-| Baseline suite already failing | Report and ask before ticket 01 — a dirty baseline makes every later failure ambiguous |
+| Baseline suite already failing | Report and ask before task 01 — a dirty baseline makes every later failure ambiguous |
 | Missing stack profile | Not an error. Degrade — traps are lost, function is not |
 | Missing reference file | Proceed, and say which one was missing |
 

@@ -10,7 +10,7 @@ lanes sit at the repo root instead of `skills/`, and 69 `references/…` paths a
 relative to nothing, so once installed they resolve against the *user's* repo
 and silently find nothing.
 
-This is a prefactor. It runs first so no later ticket writes a file into a
+This is a prefactor. It runs first so no later task writes a file into a
 layout that is about to move.
 
 **Files:**

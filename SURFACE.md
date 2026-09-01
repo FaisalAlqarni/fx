@@ -16,8 +16,8 @@ lists; none summarizes a workflow.
 | Skill | Owns | Status |
 |---|---|---|
 | `fx-brainstorm` | Entry point. Classify → clustered rounds + ledger → sectioned design → gate | ✅ |
-| `fx-plan` | Vertical tracer tickets, blocking edges, Consumes/Produces | ✅ |
-| `fx-implement` | Works the frontier, worktree, fresh subagent per ticket, rulings not stalls | ✅ |
+| `fx-plan` | Vertical tracer tasks, blocking edges, Consumes/Produces | ✅ |
+| `fx-implement` | Works the frontier, worktree, fresh subagent per task, rulings not stalls | ✅ |
 | `fx-tdd` | Iron Law, verify-RED (runtime **and** compile-time), confirmed seams | ✅ |
 | `fx-review` | Two axes reported separately + triggered risk lenses | ✅ |
 | `fx-architecture` | Deepening opportunities in existing code, local HTML report | ✅ |
@@ -174,7 +174,7 @@ three ways. Enforced by `scripts/check-reference-leaves`. See the design doc §2
 |---|---|
 | new feature · "let's build" · any creative work | `fx-brainstorm` |
 | an approved design exists | `fx-plan` |
-| tickets exist, build them | `fx-implement` |
+| tasks exist, build them | `fx-implement` |
 | writing or changing code with logic | `fx-tdd` |
 | review a diff, branch or PR | `fx-review` |
 | structure of existing code is the problem | `fx-architecture` |

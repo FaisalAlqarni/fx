@@ -311,7 +311,7 @@ Fix inline. No need to re-review — fix and move on.
 Then:
 
 > "Design written to `<path>`. Please review it and let me know if you want any
-> changes before we break it into tickets."
+> changes before we break it into tasks."
 
 **Wait for the response.** Changes requested → make them and re-run the
 self-review. Proceed only once approved.

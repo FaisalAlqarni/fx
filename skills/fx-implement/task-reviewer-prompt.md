@@ -1,27 +1,27 @@
 # Task Reviewer Prompt Template
 
-The reviewer reads one ticket's diff once and returns two verdicts: spec
+The reviewer reads one task's diff once and returns two verdicts: spec
 compliance and code quality.
 
-**Purpose:** verify one ticket's implementation matches its requirements —
+**Purpose:** verify one task's implementation matches its requirements —
 nothing more, nothing less — and is well built.
 
 ```
 Subagent (general-purpose):
-  description: "Review ticket NN (spec + quality)"
+  description: "Review task NN (spec + quality)"
   model: [MODEL — REQUIRED: per SKILL.md Model Selection. An omitted model
          silently inherits the session's most expensive one.]
   prompt: |
-    You are reviewing one ticket's implementation: first whether it matches
-    its requirements, then whether it is well built. This is a ticket-scoped
+    You are reviewing one task's implementation: first whether it matches
+    its requirements, then whether it is well built. This is a task-scoped
     gate, not a merge review — a broad whole-branch review happens separately
-    after every ticket is complete.
+    after every task is complete.
 
     ## What was requested
 
-    Read the ticket: [TICKET_FILE]
+    Read the task: [TASK_FILE]
 
-    Global constraints from the design/plan that bind this ticket:
+    Global constraints from the design/plan that bind this task:
     [GLOBAL_CONSTRAINTS]
 
     ## What the implementer claims they built
@@ -106,13 +106,13 @@ Subagent (general-purpose):
     - **Misunderstood** — the right feature built the wrong way, or the wrong
       problem solved
 
-    If the ticket lists several files each with its own change (a batched
+    If the task lists several files each with its own change (a batched
     dispatch), check the diff against that list **file by file**: every listed
     file must have its hunk. A listed file the diff never touches is a Missing
     finding, no matter how clean the rest of the batch looks.
 
     If a requirement cannot be verified from this diff alone — it lives in
-    unchanged code, or spans tickets — report it as a **⚠️ item** instead of
+    unchanged code, or spans tasks — report it as a **⚠️ item** instead of
     broadening your search.
 
     ## Part 2: code quality
@@ -121,7 +121,7 @@ Subagent (general-purpose):
     premature abstraction? edge cases handled?
 
     **Tests:** do the new and changed tests verify **real behavior, not
-    mocks**? Are the ticket's edge cases covered? Any tautological assertion —
+    mocks**? Are the task's edge cases covered? Any tautological assertion —
     one that recomputes the expected value the way the code does, so it passes
     by construction?
 
@@ -144,14 +144,14 @@ Subagent (general-purpose):
 
     Categorize by actual severity. Not everything is Critical.
 
-    **Important** means this ticket cannot be trusted until it is fixed:
+    **Important** means this task cannot be trusted until it is fixed:
     incorrect or fragile behavior, a missed requirement, or maintainability
     damage you would block a merge over — verbatim duplication of a logic
     block, swallowed errors, tests that assert nothing.
 
     "Coverage could be broader" and polish suggestions are **Minor**.
 
-    If the ticket explicitly mandates something this rubric calls a defect (a
+    If the task explicitly mandates something this rubric calls a defect (a
     test that asserts nothing, verbatim duplication of a logic block), that IS
     a finding — report it as **Important, labeled plan-mandated**. The plan's
     authorship does not grade its own work; the human decides.
@@ -182,13 +182,13 @@ Subagent (general-purpose):
 
     ### Assessment
 
-    **Ticket quality:** [Approved | Needs fixes]
+    **Task quality:** [Approved | Needs fixes]
     **Reasoning:** [1–2 sentences, technical.]
 ```
 
 **Placeholders:**
 - `[MODEL]` — REQUIRED, per Model Selection
-- `[TICKET_FILE]` — REQUIRED, the same file the implementer worked from
+- `[TASK_FILE]` — REQUIRED, the same file the implementer worked from
 - `[GLOBAL_CONSTRAINTS]` — the binding requirements copied **verbatim** from
   `plan.md` or `design.md`: exact values, formats, and stated relationships
   between components. Not process rules — those are already in this template
@@ -199,4 +199,4 @@ Subagent (general-purpose):
   package never enters the controller's context
 
 **Reviewer returns:** spec verdict (✅/❌/⚠️) · strengths · issues
-(Critical/Important/Minor) · ticket-quality verdict.
+(Critical/Important/Minor) · task-quality verdict.

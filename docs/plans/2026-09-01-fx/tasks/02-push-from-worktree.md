@@ -24,7 +24,7 @@ commit to it there in the first place — so this does not weaken that rule.
 
 **Risks:** `push` currently returns early from `alwaysBlocked()`. Removing that
 without confirming the main-checkout path catches it would allow push
-everywhere — the exact inversion of the rule. Ticket 03's mutation discipline
+everywhere — the exact inversion of the rule. Task 03's mutation discipline
 applies: break it deliberately and watch the test fail.
 
 **Idempotency:** pure code change, no state.

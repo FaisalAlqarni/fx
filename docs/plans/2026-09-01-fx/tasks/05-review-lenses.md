@@ -5,11 +5,11 @@
 **Phase:** MVP
 
 **What to build:** `fx-review`'s trigger table names five lens agents and none
-exist. This delivers four of them; the fifth is ticket 06 because it needs a
+exist. This delivers four of them; the fifth is task 06 because it needs a
 judgment call the others do not.
 
 Batched deliberately: four files of the same shape, adapted from the same
-source family, against one rubric. Splitting them into four tickets would pay
+source family, against one rubric. Splitting them into four tasks would pay
 four dispatch and review cycles for work a single reviewer can assess in one
 pass.
 

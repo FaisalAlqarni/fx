@@ -27,7 +27,7 @@ A claim with no verdict is a build error.
 | 16 | K | `git log <fp>..HEAD --oneline` |
 | 17–18 | K | Validate the ref resolves and the diff is non-empty **before** spawning, and the reason |
 | 19–20 | K | Find the spec, in order |
-| 21 | S | Issue references in commit messages (`#123`, `Closes #45`, GitLab `!67`) fetched from a hosted tracker → local: the ticket file, then `design.md` |
+| 21 | S | Issue references in commit messages (`#123`, `Closes #45`, GitLab `!67`) fetched from a hosted tracker → local: the task file, then `design.md` |
 | 22–25 | K | A path the user passed; a spec file matching the branch; ask; **skip the axis and report "no spec available"** |
 | 26–27 | K | Standards sources — anything documenting how code should be written |
 | 28 | K | The baseline applies even when a repo documents nothing |
@@ -54,9 +54,9 @@ A claim with no verdict is a build error.
 | 67–68 | S | Frontmatter merged |
 | 69–70 | K | Dispatch a reviewer to catch issues before they cascade; **precisely crafted context, never your session history** |
 | 71 | K | **"Review early, review often."** Restored |
-| 72–74 | K | **Mandatory triggers** — after each ticket in `fx-implement`, after a major feature, before a merge. Restored |
+| 72–74 | K | **Mandatory triggers** — after each task in `fx-implement`, after a major feature, before a merge. Restored |
 | 75–77 | K | **Valuable triggers** — when stuck, before a refactor, after a complex bug fix. Restored |
-| 78–79 | S | `BASE_SHA=$(git rev-parse HEAD~1)` → the recorded per-ticket BASE, or the merge-base in branch mode. **Never `HEAD~1`** |
+| 78–79 | S | `BASE_SHA=$(git rev-parse HEAD~1)` → the recorded per-task BASE, or the merge-base in branch mode. **Never `HEAD~1`** |
 | 80 | K/P | Dispatch a `general-purpose` subagent filling the template |
 | 81–84 | P | All four placeholders |
 | 85–88 | K | Fix Critical immediately · fix Important before proceeding · note Minor for later · push back with reasoning if the reviewer is wrong |
@@ -132,7 +132,7 @@ A claim with no verdict is a build error.
 - **The lens trigger table** — five risk lenses fire on what the diff touches,
   not by default. Eight parallel passes on a three-line diff would cost ~195k
   tokens of pure overhead.
-- **Ticket mode vs branch mode**, with effort and model scaled to each.
+- **Task mode vs branch mode**, with effort and model scaled to each.
 - **`/code-review ultra` is user-triggered and billed** — the skill cannot
   launch it, and says so rather than trying.
 - **`--comment` publishes outward** — never offered, explicit request only.

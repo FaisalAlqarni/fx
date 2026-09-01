@@ -1,7 +1,7 @@
 # Broad Reviewer Prompt Template
 
-For **branch mode**: the whole-branch review after every ticket is complete.
-Per-ticket reviews use `fx-implement/task-reviewer-prompt.md` instead.
+For **branch mode**: the whole-branch review after every task is complete.
+Per-task reviews use `fx-implement/task-reviewer-prompt.md` instead.
 
 **Purpose:** review completed work against its requirements and quality
 standards before it cascades into more work.

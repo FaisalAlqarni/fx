@@ -155,7 +155,7 @@ and give an opinionated recommendation.
 ## 4. Handoff
 
 A candidate that survives grilling is a **design, not an implementation.**
-Route it to `fx-plan` — tickets, blocking edges, and **expand–contract if it is
+Route it to `fx-plan` — tasks, blocking edges, and **expand–contract if it is
 a wide refactor.** Never start editing from here.
 
 ## Testing strategy for a deepening — replace, don't layer

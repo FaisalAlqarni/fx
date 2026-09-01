@@ -80,13 +80,13 @@ Do **everything design mode does** on the plan itself, **and** a
 
 - **Faithfulness** — does the plan actually implement what the design
   specifies? Walk the design's requirements and confirm each is covered by a
-  ticket.
+  task.
 - **Drift** — has the plan quietly changed decisions the design made? A
   different approach, a different contract, a different sequencing, without
   justification.
-- **Gaps** — design requirements with **no corresponding ticket**: silently
+- **Gaps** — design requirements with **no corresponding task**: silently
   dropped scope.
-- **Scope creep** — tickets that implement things the design never asked for:
+- **Scope creep** — tasks that implement things the design never asked for:
   gold-plating, unrequested features, speculative work.
 
 **If the design document is not available**, say so explicitly, fall back to
