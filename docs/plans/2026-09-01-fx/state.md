@@ -269,3 +269,57 @@ symlinked entry point (4,789 chars injected, force-push blocked).
 subagent probe, and removing the superseded plugins from both pools. Outward-
 facing and destructive; ordering matters (`~/.agents/skills` last, only after
 opencode is confirmed).
+
+## Ticket 08 revised: opencode install is standalone
+
+The first `INSTALL.md` treated opencode as a second install alongside Claude
+Code. It is now independent — an opencode-only user never touches `~/.claude`.
+
+**Audit result:** the core is already runtime-neutral. `PREAMBLE.md` 0/1 files
+mention Claude Code, `agents/` 0/5, `references/` 1/24. The gap was **agents and
+commands**, whose frontmatter the two runtimes read differently:
+
+| | Claude Code | opencode |
+|---|---|---|
+| tool restriction | `tools:` | `permission:` |
+| model id | `opus` | `anthropic/claude-opus-5` |
+| subagent | implied by directory | `mode: subagent` |
+| command prompt | file body | `template:` (required) |
+
+Copying the files across would have produced agents opencode does not treat as
+subagents, unpinned models silently inheriting the session's most expensive
+one, and — worst — **lenses whose read-only restriction is not enforced**,
+because it lives in `tools:`, which opencode does not read.
+
+**`scripts/fx-opencode-install` written.** Symlinks skills/references/plugin
+(single source, `git pull` updates the install) and *generates* agents and
+commands with translated frontmatter. Verified in a sandbox destination: 11
+skills, 5 agents, 4 commands, all frontmatter valid, all four lenses carrying
+`edit: deny / write: deny / bash: allow`, zero `CLAUDE_PLUGIN_ROOT` references
+in the output, and the reference-resolution probe passing.
+
+The installer refuses to replace a real file or directory, and fails loudly if
+references do not resolve rather than leaving a silently broken install.
+
+## Install failure — manifest fixed
+
+First real install attempt failed:
+
+```
+Validation errors: agents: Invalid input
+```
+
+Cause: ticket 01 declared `"agents": ["./agents/"]`. **Agents are discovered by
+convention from `./agents/` and must not be declared.** Verified against every
+installed plugin that works — ECC and humanizer both ship an `agents/`
+directory and neither has an `agents` key. `skills` and `commands` as directory
+arrays are fine; `hooks` as a string path is fine. Only `agents` was invalid.
+
+This slipped through because ticket 01's acceptance criterion was *"declares
+skills, commands, agents and hooks explicitly — never by convention"*. The
+criterion was wrong, not the implementation, and every check I wrote asserted
+against the criterion rather than against a real install.
+
+**`scripts/check-manifest` written**, built from the union of keys observed in
+working manifests, with `agents` explicitly listed as convention-only. Mutation
+tested: re-adding the `agents` key fails, declaring a non-existent skill fails.

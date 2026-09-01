@@ -21,13 +21,14 @@ PREAMBLE.md   injected into every session AND every subagent
 
 ## Install
 
+The two installs are **independent** — neither runtime requires the other.
+
+**opencode** — `./scripts/fx-opencode-install`. Nothing reads `~/.claude`.
+
 **Claude Code** — `/plugin marketplace add FaisalAlqarni/fx` then
 `/plugin install fx@fx`.
 
-**opencode** — three symlinks; it does not read Claude Code marketplaces.
-
-Full steps, and why the `references` symlink is not optional:
-[`INSTALL.md`](INSTALL.md).
+Full steps for both: [`INSTALL.md`](INSTALL.md).
 
 Then, in each repository you work in:
 

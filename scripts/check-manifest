@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""Validate .claude-plugin/plugin.json before an install tries to.
+
+Written after a real failure: `agents: ["./agents/"]` was rejected with
+"agents: Invalid input". Agents are discovered by convention from ./agents/ —
+no plugin that installs cleanly declares an `agents` key at all.
+
+Checks:
+  1. No key outside the set observed in working plugin manifests.
+  2. Every declared path exists on disk.
+  3. Every declared skill directory holds a SKILL.md.
+  4. Convention-discovered directories exist if their content does.
+"""
+import json
+import pathlib
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+MANIFEST = ROOT / ".claude-plugin" / "plugin.json"
+
+# Union of keys seen in plugins that install successfully.
+# `agents` is deliberately ABSENT — declaring it fails validation.
+ALLOWED = {
+    "name", "version", "description", "author", "homepage", "repository",
+    "license", "keywords", "skills", "commands", "hooks", "mcpServers",
+    "userConfig",
+}
+CONVENTION_ONLY = {"agents"}
+
+errors = []
+d = json.loads(MANIFEST.read_text())
+
+for k in d:
+    if k in CONVENTION_ONLY:
+        errors.append(f"`{k}` must NOT be declared — it is discovered from ./{k}/. "
+                      f"Declaring it fails install with '{k}: Invalid input'.")
+    elif k not in ALLOWED:
+        errors.append(f"unknown key `{k}` — not seen in any working manifest")
+
+for key in ("skills", "commands"):
+    for entry in d.get(key, []):
+        p = (ROOT / entry.lstrip("./")).resolve()
+        if not p.exists():
+            errors.append(f"{key}: declared path does not exist: {entry}")
+        elif key == "skills" and p.is_dir() and not (p / "SKILL.md").exists():
+            errors.append(f"skills: {entry} has no SKILL.md")
+
+hooks = d.get("hooks")
+if hooks and not (ROOT / hooks.lstrip("./")).exists():
+    errors.append(f"hooks: file does not exist: {hooks}")
+
+# Convention directories: present on disk but never declared.
+for conv in CONVENTION_ONLY:
+    dirp = ROOT / conv
+    if dirp.is_dir():
+        n = len(list(dirp.glob("*.md")))
+        print(f"convention: ./{conv}/ holds {n} file(s), correctly undeclared")
+
+if errors:
+    print(f"\nFAIL: {len(errors)} manifest problem(s)")
+    for e in errors:
+        print(f"  {e}")
+    sys.exit(1)
+
+print(f"OK: manifest valid — {len(d.get('skills', []))} skills declared, "
+      f"{len(d.get('commands', []))} command path(s), hooks wired")

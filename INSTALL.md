@@ -1,97 +1,104 @@
 # Installing fx
 
-Two runtimes, two mechanisms. Both read the **same files** — one clone, no copies
-to keep in sync.
-
----
-
-## Claude Code
-
-```bash
-/plugin marketplace add FaisalAlqarni/fx
-/plugin install fx@fx
-```
-
-Or from a local clone, without GitHub:
-
-```bash
-/plugin marketplace add /development/fx
-/plugin install fx@fx
-```
-
-Restart the session. `SessionStart`, `SubagentStart` and the Bash `PreToolUse`
-guard come from `hooks/hooks.json` and need no further setup.
-
----
 
 ## opencode
 
-opencode does **not** read Claude Code plugin marketplaces. It scans its own
-directories, so fx is wired in with symlinks — the repo stays the single source.
 
 ```bash
-FX=/development/fx          # wherever you cloned it
-OC=~/.config/opencode
-
-mkdir -p "$OC/plugins"
-ln -sfn "$FX/skills"        "$OC/skills"
-ln -sfn "$FX/references"    "$OC/references"
-ln -sfn "$FX/plugins/fx.js" "$OC/plugins/fx.js"
+git clone https://github.com/FaisalAlqarni/fx.git ~/src/fx
+cd ~/src/fx
+./scripts/fx-opencode-install
 ```
 
-Three links, and **the second one is not optional.**
+That is the whole install. Add `--dry-run` first to see what it would do, or
+`--dest <path>` to install somewhere other than `~/.config/opencode`.
 
-### Why `references` is symlinked too
+### What it does, and why it is not just copying files
+
+**Symlinked** — `skills/`, `references/`, `plugins/fx.js`. The repo stays the
+single source, so `git pull` updates the install with nothing to re-run.
+
+**Generated** — `agents/` and `commands/`, because the two runtimes disagree on
+frontmatter and a straight copy would be silently wrong:
+
+| | Claude Code | opencode |
+|---|---|---|
+| tool restriction | `tools: Read, Grep, Glob, Bash` | `permission: {edit: deny, write: deny, bash: allow}` |
+| model id | `model: opus` | `model: anthropic/claude-opus-5` |
+| subagent marker | implied by directory | `mode: subagent` |
+| command prompt | the file body | `template:` field, **required** |
+
+Copying the Claude Code files across would produce agents opencode does not
+treat as subagents, unpinned models that silently inherit the session's most
+expensive one, and **review lenses whose read-only restriction is not enforced**
+— it lives in `tools:`, which opencode does not read.
+
+Generated files carry a header saying so. Edit the source in the repo and
+re-run; do not edit the generated copy.
+
+### The one thing that breaks silently
+
+`skills/` and `references/` **must be siblings** under the destination.
 
 Every lane cites its references as `../../references/vocab/x.md`, relative to
-the skill file. Symlinking individual skills breaks that: Node resolves through
-to the real path, but an agent resolving from the symlink location lands in
-`~/.config/opencode/references`, which would not exist.
+the skill file. If you symlink skills individually, the skill still loads and
+every reference silently resolves to nothing. The installer links both and then
+probes the path, failing loudly if it does not resolve:
 
-Linking `skills` and `references` as **siblings** makes both resolution paths
-work. Verified: all four sampled skills resolve their references through the
-symlinked tree, and the plugin loads its `lib/` and `PREAMBLE.md` correctly from
-a symlinked entry point.
-
-Do **not** symlink skills one by one. It appears to work — the skill loads —
-and then every reference silently fails to resolve, which is the failure mode
-this plugin exists to avoid.
-
-### Verify the install
-
-```bash
-# skills visible
-ls ~/.config/opencode/skills
-
-# references resolve from the symlinked tree
-node -e "console.log(require('fs').existsSync(
-  require('path').join(process.env.HOME,'.config/opencode/skills/fx-tdd/../../references/vocab/good-tests.md')
-) ? 'ok' : 'BROKEN')"
+```
+reference resolution through the symlinked tree: OK
+skills: 11  agents: 5  commands: 4
 ```
 
-Then, in a session, confirm the guard is live — `git commit` on a main checkout
-must be refused, and the same command inside a worktree must succeed.
+### Verify
+
+```bash
+ls ~/.config/opencode/skills          # 11 entries
+```
+
+Then in a session, confirm the guard is live: `git commit` on a main checkout
+must be refused, and the same command inside a git worktree must succeed.
 
 ### Subagents
 
 opencode implements subagents as **child sessions**, so the same
-`experimental.chat.system.transform` hook covers them. Claude Code needs two
-separate events for this.
+`experimental.chat.system.transform` hook that injects the preamble covers them.
 
 That follows from the architecture but is not documented outright. **Probe it
 once** with a throwaway subagent and confirm the preamble is present before
 relying on it.
 
-### If the hook name changes
+### If the hook is renamed
 
-`experimental.chat.system.transform` carries an `experimental.` prefix. If it is
-renamed, the stable fallback is `~/.config/opencode/AGENTS.md`, which every
-session including child sessions reads. Paste `PREAMBLE.md` there — the guard in
+`experimental.chat.system.transform` carries an `experimental.` prefix. If it
+changes, the fallback is `~/.config/opencode/AGENTS.md`, which every session
+including child sessions reads — paste `PREAMBLE.md` there. The git guard in
 `tool.execute.before` is unaffected either way.
 
 ---
 
-## Per repository, both runtimes
+## Claude Code — standalone
+
+**opencode is not required.**
+
+```
+/plugin marketplace add FaisalAlqarni/fx
+/plugin install fx@fx
+```
+
+Or from a local clone, with no GitHub:
+
+```
+/plugin marketplace add /path/to/fx
+/plugin install fx@fx
+```
+
+Restart the session. `SessionStart`, `SubagentStart` and the Bash `PreToolUse`
+guard are registered by `hooks/hooks.json` and need no further setup.
+
+---
+
+## Per repository — either runtime
 
 ```
 /fx:setup
@@ -104,19 +111,20 @@ project's structure and patterns — **for your review before it lands**.
 
 ## Removing the plugins fx replaces
 
-**Order matters.** Do this only after fx is confirmed working in *both*
-runtimes.
+Only relevant if you were running them. **Order matters.**
 
-`~/.agents/skills/` is a second pool that Claude Code cannot see. Uninstalling
-the Claude Code plugins removes nothing from it, so the selection contest fx
-exists to end survives there until it is cleared deliberately.
+`~/.agents/skills/` is a second pool. opencode reads it; Claude Code cannot see
+it. Uninstalling Claude Code plugins removes nothing from there, so the
+selection contest fx exists to end survives until it is cleared deliberately.
 
 ```bash
-# 1. Claude Code
+# Claude Code
 /plugin uninstall superpowers mattpocock-skills ecc ponytail humanizer
 
-# 2. only after opencode is confirmed working — inspect before deleting
-ls ~/.agents/skills
+# opencode's pools — inspect before deleting anything
+ls ~/.agents/skills ~/.claude/skills
 ```
 
-Removing them first leaves opencode with neither fx nor its predecessors.
+If you use **both** runtimes, clear `~/.agents/skills` **last**, after
+confirming fx works in opencode. Doing it first leaves opencode with neither fx
+nor its predecessors.

@@ -40,7 +40,7 @@ referenced file existing on disk. Runs in CI-less form: one command, exits
 non-zero on failure.
 
 ## Acceptance criteria
-- [ ] `.claude-plugin/plugin.json` declares `skills`, `commands`, `agents` and `hooks` explicitly — never by convention
+- [x] `.claude-plugin/plugin.json` declares `skills`, `commands` and `hooks`. **`agents` must NOT be declared** — it is discovered from `./agents/`, and declaring it fails install with `agents: Invalid input`. Verified against every working plugin manifest on this machine
 - [ ] All 9 lanes live under `skills/`
 - [ ] **Zero** bare `references/…` paths remain in any skill, sidecar or agent file
 - [ ] Every referenced reference file exists — no dangling pointer

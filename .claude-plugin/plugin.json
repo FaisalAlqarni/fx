@@ -27,9 +27,6 @@
     "./skills/research",
     "./skills/prototype"
   ],
-  "agents": [
-    "./agents/"
-  ],
   "commands": [
     "./commands/"
   ],

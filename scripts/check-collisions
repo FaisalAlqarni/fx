@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+"""List every skill pool the runtime will load, and flag intent collisions.
+
+fx does not read skills. The **runtime** loads every pool into one selection
+list, so a skill you install in a repo sits beside the fx lanes as an equal
+candidate. fx's one-claimant-per-intent guarantee holds *within fx* — it cannot
+extend to pools fx does not own.
+
+That is fine when a repo skill is repo-specific (deploy steps, a data import).
+It is a problem when it claims an intent a lane already owns: two claimants for
+"run the tests first" is the exact condition fx was built to end.
+
+    scripts/check-collisions [repo-path]
+
+Exit 1 if a repo-local skill looks like it contests an fx lane.
+"""
+import pathlib
+import re
+import sys
+
+# Intents fx lanes own. A repo skill matching one of these is the risk case.
+LANE_INTENTS = {
+    "fx-tdd": ["tdd", "test.first", "red.green", "write.*test"],
+    "fx-debug": ["debug", "root.cause", "bug", "troubleshoot"],
+    "fx-review": ["code.review", "review.*(diff|pr|branch)", "critique.*code"],
+    "fx-plan": ["plan", "ticket", "break.*down.*task"],
+    "fx-implement": ["implement", "execute.*plan", "work.*ticket"],
+    "fx-brainstorm": ["brainstorm", "design.*doc", "spec", "requirement"],
+    "fx-architecture": ["architect", "refactor.*structure", "codebase.*design"],
+    "fx-humanize": ["humaniz", "de.slop", "prose", "writing.*style"],
+    "fx-authoring": ["writing.*skill", "author.*skill", "skill.*creat"],
+}
+
+HOME = pathlib.Path.home()
+
+
+def pools(repo):
+    yield "repo  .opencode/skills", repo / ".opencode" / "skills"
+    yield "repo  .claude/skills", repo / ".claude" / "skills"
+    yield "repo  .agents/skills", repo / ".agents" / "skills"
+    yield "user  ~/.config/opencode/skills", HOME / ".config" / "opencode" / "skills"
+    yield "user  ~/.claude/skills", HOME / ".claude" / "skills"
+    yield "user  ~/.agents/skills", HOME / ".agents" / "skills"
+
+
+def describe(skill_dir):
+    f = skill_dir / "SKILL.md"
+    if not f.exists():
+        return ""
+    m = re.search(r"^description:\s*(?:>\s*\n((?:[ \t]+.*\n?)+)|(.+))$",
+                  f.read_text(), re.M)
+    if not m:
+        return ""
+    return (m.group(1) or m.group(2) or "").replace("\n", " ").lower()
+
+
+def main():
+    repo = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else ".").resolve()
+    seen, collisions, total = {}, [], 0
+
+    for label, path in pools(repo):
+        if not path.is_dir():
+            continue
+        entries = sorted(p for p in path.iterdir() if (p / "SKILL.md").exists())
+        if not entries:
+            continue
+        print(f"\n{label}  ({len(entries)})")
+        for e in entries:
+            total += 1
+            print(f"    {e.name}")
+            if e.name in seen:
+                collisions.append(f"name `{e.name}` appears in both {seen[e.name]} and {label}")
+            seen[e.name] = label
+
+            if e.name.startswith("fx-") or e.name in ("research", "prototype"):
+                continue
+            text = f"{e.name} {describe(e)}"
+            for lane, patterns in LANE_INTENTS.items():
+                if any(re.search(p, text) for p in patterns):
+                    collisions.append(
+                        f"`{e.name}` ({label.strip()}) looks like it contests `{lane}`")
+                    break
+
+    print(f"\n{total} skills across all pools")
+    if not collisions:
+        print("no collisions — one claimant per intent holds")
+        return 0
+
+    print(f"\n{len(collisions)} possible collision(s):")
+    for c in collisions:
+        print(f"  ! {c}")
+    print("\nThese are CANDIDATES for judgment, not verdicts — the match is on name\n"
+          "and description text, so a skill can be flagged and still be fine.\n"
+          "`postgres` and `mysql` are the known example: they trigger on \"working\n"
+          "with a Postgres database\", which no fx lane claims.\n\n"
+          "A real second claimant makes selection non-deterministic. Either remove\n"
+          "it, or narrow its description so the two triggers cannot both match.")
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
