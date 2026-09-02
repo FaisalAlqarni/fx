@@ -27,21 +27,11 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-git-guard.js\"",
-            "timeout": 5
-          }
-        ]
-      },
-      {
         "matcher": "*",
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-lane-check.js\"",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-pretooluse.js\"",
             "timeout": 5
           }
         ]
