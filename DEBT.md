@@ -1090,3 +1090,55 @@ boundary. `check-prose` also gained a per-block parenthesis-balance gate.
 3. **Run it on a copy and read the diff first.** That step was taken, once, and
    the sample happened to contain no lists. One sample from one file is not a
    review of a 65-file rewrite.
+
+
+---
+
+## 38. Two sections of `fx-implement` contradict each other, and the permissive one wins
+
+**Measured 2026-09-03**, in the retest that otherwise showed the chain working.
+
+The controller set up the worktree, wrote the ledger, ran task 01, dispatched
+task 02, adjudicated its concerns, dispatched the fix, and then **stopped at 2
+of 13 tasks** with a message ending "waiting on the task 02 fix" and nothing
+queued behind it. It resumed only because a human relayed the fix report by
+hand. Left alone it would have waited forever.
+
+**The skill says both things.**
+
+> **Rulings, not stalls.** Stopping is not something you do, it is what happens
+> when a message ends with nothing queued behind it. So the rule is positive:
+> the last tool call of every message is the next task's dispatch or its review.
+
+> **Waiting on dispatched subagents.** Genuinely idle: wait in bounded
+> five-to-ten-minute stretches, posting one status line and reconciling live
+> children between them.
+
+The second sanctions exactly what the first forbids, and it is the one that
+applies at the moment of the stall, because the controller genuinely was waiting
+on a child. **When two rules in one document disagree, the one that fits the
+current situation wins, and here that is the permissive one.**
+
+**The wait guidance was written for a dispatch model this harness does not
+have.** It assumes the controller keeps taking turns while a child runs, so a
+"bounded wait" is a real activity it can perform and then re-check. In this
+harness a subagent is asynchronous and the controller's turn simply ends; it is
+re-invoked on a completion notification. A bounded wait is therefore not a thing
+the controller can do at all. It either queues another tool call or it is gone.
+
+**Fixed 2026-09-03.** The two sections are reconciled into one rule that holds
+under async dispatch: while any child is outstanding, the controller's
+last tool call is either the next independent task's dispatch (the frontier
+usually has one) or a read of a report file that has already landed. If the
+frontier is genuinely empty and every remaining task blocks on the outstanding
+child, that is the only legitimate end-of-turn, and it must be recorded in the
+ledger as such, so a stall is distinguishable from a wait by reading the ledger
+rather than by trusting what the chat said. The bounded-wait paragraph is gone:
+it described an option this harness does not offer.
+
+**Related, and smaller.** The fix subagent also tried to message the controller
+directly, failed to resolve its address, and routed through the main session. Its
+report file had already landed, which is the channel the template actually
+specifies, so nothing was lost. Worth noting only because a subagent reaching for
+a channel the template never gave it is a sign the template's return path is not
+obvious from inside the prompt.

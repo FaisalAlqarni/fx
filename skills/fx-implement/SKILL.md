@@ -80,6 +80,32 @@ parked on a question costs their whole day and buys nothing.
 
 For those, stop and ask. Everything else: rule, ledger, continue.
 
+### Waiting on a child is not one of them
+
+A dispatched subagent runs **asynchronously**. Your turn ends when you stop
+emitting tool calls, and you are woken again by its completion, not by a timer.
+So there is no such thing as waiting a few minutes and checking back: **you
+either queue another tool call or you are gone until something external arrives.**
+
+Measured, in a 13-task plan: the controller dispatched a fix, ended its message
+with "waiting on the task 02 fix" and nothing queued, and stopped at 2 of 13. It
+resumed only because a human relayed the report by hand.
+
+So while any child is outstanding, your last tool call is one of:
+
+1. **The next task on the frontier.** Reviews and independent tasks may run
+   while an implementer works. The frontier usually has something.
+2. **A read of a report file that has already landed.** The report file is the
+   return channel, not a message from the child. Check for it.
+3. **Ledger work**: the ruling you just made, the review package for the task in
+   flight, the next dispatch prompt.
+
+**Only when the frontier is genuinely empty and every remaining task blocks on
+the outstanding child** may a message end with nothing queued. That is rare.
+When it happens, write one ledger line saying so and naming what you are blocked
+on, so a stall can be told apart from a wait by reading the ledger. A turn that
+ends with no queued call and no such line is a stall, whatever it says in chat.
+
 ## When this skill applies
 
 | Condition | Route |
@@ -249,13 +275,12 @@ everything a subagent prints back: stays resident in your context for the rest
 of the session and is re-read on every later turn. **Hand artifacts over as
 files.**
 
-**Waiting on dispatched subagents.** Never poll with short timeouts, never sit
-in a silent open-ended wait. While local work remains (ledger updates, the
-next review package, reading reports) keep working; results arrive on their
-own. Genuinely idle: wait in bounded five-to-ten-minute stretches, posting one
-status line and reconciling live children between them. **This keeps nearly
-all of a long wait's efficiency while catching a stuck child within minutes,
-not at session end.**
+**Waiting on dispatched subagents.** Never poll with short timeouts. While local
+work remains (ledger updates, the next review package, reading reports) keep
+working; results arrive on their own. There is no bounded-wait option: see
+"Waiting on a child is not one of them" above. Dispatch is asynchronous, so a
+message that ends with nothing queued ends your turn until something external
+wakes you, and a controller that believed it was waiting has in fact stopped.
 
 **Serial implementers.** Never dispatch implementation subagents in parallel: the **shared test environment** (one Postgres, one ClickHouse, one Redis,
 one broker set) means a worktree is a second checkout, not a second database.
