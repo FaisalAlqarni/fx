@@ -805,3 +805,39 @@ declared, with the reason written into the script so nobody re-adds it.
 **The lesson, third time this session:** anything discovered by convention must
 not also be declared. The manifest's job is to name what is *not* in a standard
 location. `agents`, `hooks` — and the gate that catches this now knows both.
+
+---
+
+## 29. The tickets → tasks rename broke every plan that already existed
+
+**Found by dogfooding**, 2026-09-02, on the first run after the rename shipped.
+
+`fx-implement`'s trigger is a **filesystem predicate**: *"Use when
+`docs/plans/<slug>/tasks/` exists."* The rename changed the predicate in 372
+places and changed nothing on disk. A plan generated an hour earlier by the
+pre-rename plugin has a `tickets/` directory, so the trigger cannot match it.
+
+Measured: an agent was pointed at a repo containing a full design, a plan and
+13 task files, and told "the plan is in there, build it." It built the whole
+thing — 97 passing specs, a real security hole found and fixed — **without
+`fx-implement` ever running.** No worktree, no ledger, no per-task review, no
+lens dispatch.
+
+**A vocabulary change is a breaking change when the vocabulary is a trigger.**
+Renaming prose is free; renaming a path that a skill matches against is a
+migration, and this one had neither a migration nor a fallback.
+
+**Fix, both halves:**
+
+1. `fx-implement` should accept **either** directory, preferring `tasks/` and
+   treating `tickets/` as the legacy name, for as long as old plans exist. A
+   trigger that recognises only the current vocabulary silently abandons every
+   artifact produced before it.
+2. `/fx:setup` should rename `tickets/` to `tasks/` where it finds one, so the
+   legacy path drains rather than persisting forever.
+
+**The general rule this earns:** before renaming anything a skill matches on —
+a directory, a filename, a marker, a frontmatter key — grep for artifacts
+already carrying the old name, and either migrate them or accept both. The
+gates in `scripts/` check the plugin against itself; none of them can see a
+user's repo, which is where the old name actually lives.
