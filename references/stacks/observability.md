@@ -2,12 +2,12 @@
 
 Wide events (canonical log lines), plus this project's tracing topology.
 
-Absorbed from `advantage-backend/.claude/logging-best-practices/` — a skill
+Absorbed from `advantage-backend/.claude/logging-best-practices/`: a skill
 that sat in the wrong directory and **never loaded once** between Feb and Sep
 2026. Its examples used checkout/cart domains with a note apologising for them;
 they are rewritten here in the real domain.
 
-Sources: [Stripe — Canonical Log Lines](https://stripe.com/blog/canonical-log-lines) ·
+Sources: [Stripe: Canonical Log Lines](https://stripe.com/blog/canonical-log-lines) ·
 [Observability Wide Events 101](https://boristane.com/blog/observability-wide-events-101/) ·
 [loggingsucks.com](https://loggingsucks.com)
 
@@ -16,7 +16,7 @@ Sources: [Stripe — Canonical Log Lines](https://stripe.com/blog/canonical-log-
 ## The core rule
 
 **Emit one context-rich event per request per service.** Not ten scattered log
-lines — one wide event, built up through the request, emitted once at
+lines: one wide event, built up through the request, emitted once at
 completion.
 
 Scattered lines cannot answer *"show me every campaign send that failed for
@@ -103,7 +103,7 @@ end
 
 ## Sidekiq
 
-Workers have no request, so they need their own concern — same shape:
+Workers have no request, so they need their own concern: same shape:
 
 ```ruby
 module SidekiqWideEventLogging
@@ -134,7 +134,7 @@ end
 
 ## Correlating across engines
 
-Any split into separate processes — services, mounted engines, workers — means
+Any split into separate processes (services, mounted engines, workers) means
 one user action produces events in several places. **Without a propagated
 request ID they cannot be joined.**
 
@@ -155,10 +155,10 @@ Now `WHERE request_id = 'req_abc'` returns the whole flow across engines.
 
 ## What goes in an event
 
-**High cardinality** — fields with millions of distinct values: `request_id`,
+**High cardinality**: fields with millions of distinct values: `request_id`,
 `user.id`, `organization.id`. Without them you cannot debug *one* customer.
 
-**High dimensionality** — many fields, 20–100+. Every extra dimension is
+**High dimensionality**: many fields, 20 to 100+. Every extra dimension is
 another question answerable without a deploy.
 
 **Business context, always.** Not just technical fields:
@@ -174,13 +174,13 @@ That turns *"something broke"* into *"an enterprise organisation's 48,500-recipi
 SMS campaign failed with the new dispatch pipeline enabled."* One of those you
 can prioritise.
 
-**Environment characteristics, always** — `commit_hash`, `version`, `engine`,
+**Environment characteristics, always**: `commit_hash`, `version`, `engine`,
 `rails_env`, `instance_id`. This is how you correlate a spike with a deploy, or
 find that only one engine is affected. Capture once at boot (`ENV_CONTEXT`
 above), never per-request.
 
 **Locale, if the app is localized.** Include the request's active locale.
-Locale-specific bugs — formatting, direction, translation fallbacks — are
+Locale-specific bugs (formatting, direction, translation fallbacks) are
 invisible without it, and they are invisible *to you* if your own locale is the
 one that works.
 
@@ -206,7 +206,7 @@ trace as a child span, or start its own **root** trace linked back to it.
 Both are defensible: nesting shows the full user-initiated causal chain in one
 view; a separate root keeps request traces short and makes job latency its own
 first-class signal. What is not defensible is being inconsistent, or changing it
-casually — every saved query and dashboard depends on the choice.
+casually: every saved query and dashboard depends on the choice.
 
 **Whichever a project picks is a decision, not a default. Check `repo.md`
 before changing it.**
@@ -221,7 +221,7 @@ before changing it.**
 | Technical fields only | You learn *that* it broke, never *who for* |
 | Unstructured strings | Not queryable, so not useful at scale |
 | Field names differing per engine | Every future query pays for it |
-| Logging only anticipated failures | Production bugs are the ones you did not predict — that is the whole case for wide events |
+| Logging only anticipated failures | Production bugs are the ones you did not predict: that is the whole case for wide events |
 
 ## The unknown-unknowns test
 

@@ -1,7 +1,7 @@
 # Scoped Re-Review Prompt Template
 
 Dispatched after a fix round. The re-reviewer verdicts each finding and checks
-the fix diff for new breakage. **It is not a fresh review** — the full review
+the fix diff for new breakage. **It is not a fresh review**: the full review
 already happened.
 
 **Purpose:** verify each finding was addressed, and that the fix broke nothing.
@@ -104,14 +104,14 @@ Subagent (general-purpose):
 ```
 
 **Placeholders:**
-- `[MODEL]` — REQUIRED; cheap-to-mid tier for small fix diffs
-- `[TASK_FILE]` — the same file the implementer worked from
-- `[FINDINGS]` — the Critical/Important findings and spec gaps from the previous
+- `[MODEL]`: REQUIRED; cheap-to-mid tier for small fix diffs
+- `[TASK_FILE]`: the same file the implementer worked from
+- `[FINDINGS]`: the Critical/Important findings and spec gaps from the previous
   review, **copied verbatim**, one per bullet
-- `[REPORT_FILE]` — the implementer's report file, fix reports appended
-- `[FIX_BASE_SHA]` — the head the previous review saw
+- `[REPORT_FILE]`: the implementer's report file, fix reports appended
+- `[FIX_BASE_SHA]`: the head the previous review saw
 - `[HEAD_SHA]`
-- `[DIFF_FILE]` — the path `scripts/review-package <slug> FIX_BASE HEAD` printed
+- `[DIFF_FILE]`: the path `scripts/review-package <slug> FIX_BASE HEAD` printed
 
 **Re-reviewer returns:** per-finding verdicts (ADDRESSED / NOT ADDRESSED) · new
 breakage in the fix diff · out-of-scope observations · a round verdict.

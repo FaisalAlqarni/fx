@@ -1,4 +1,4 @@
-# 08 — Install on both runtimes
+# 08: Install on both runtimes
 
 **Status:** ready-for-agent
 **Blocked by:** 01, 02, 03, 04, 05, 06, 07
@@ -14,11 +14,11 @@ real: until it passes, fx is a directory of markdown.
 - Remove: the superseded Claude Code plugins, then the `~/.agents/skills` copies
 
 **Interfaces:**
-- Consumes: everything tasks 01–07 produced
+- Consumes: everything tasks 01 to 07 produced
 - Produces: a working install on both runtimes
 
 **Seam:** a live session on each runtime. Nothing here is verifiable by reading
-files — the whole task is behavioural.
+files: the whole task is behavioural.
 
 **Risks:**
 - **Ordering.** Remove mattpocock, humanizer and `ui-ux-pro-max` from
@@ -34,16 +34,16 @@ files — the whole task is behavioural.
 **Idempotency:** installs are re-runnable; removals are guarded by existence
 checks; every removal is listed before it is executed.
 
-**Testing:** end to end on both runtimes — the only task where that is possible.
+**Testing:** end to end on both runtimes: the only task where that is possible.
 
 ## Acceptance criteria
 - [ ] Claude Code: fx installs; all 9 lanes + 2 procedures appear; `/fx:*` commands resolve
-- [ ] Claude Code: `SessionStart` injects the preamble; **`SubagentStart` injects it into a dispatched subagent** — verified by probe, not assumed
+- [ ] Claude Code: `SessionStart` injects the preamble; **`SubagentStart` injects it into a dispatched subagent**: verified by probe, not assumed
 - [ ] Claude Code: the guard blocks a commit on the main checkout and allows one in a worktree, live
 - [ ] opencode: preamble injected; **verified by throwaway subagent probe that it reaches a child session**
 - [ ] opencode: `tool.execute.before` blocks the same commit
 - [ ] Superseded plugins removed from Claude Code
-- [ ] `~/.agents/skills/` copies removed — **after** the opencode install is confirmed working
+- [ ] `~/.agents/skills/` copies removed: **after** the opencode install is confirmed working
 - [ ] No skill name appears twice across either pool
 - [ ] `references/` loads from an installed location, not from the development directory
 
@@ -58,7 +58,7 @@ dupes=$(cat <(ls ~/.claude/skills 2>/dev/null) <(ls ~/.agents/skills 2>/dev/null
 [ "$dupes" -eq 0 ] || { echo "FAIL: $dupes duplicated skill names across pools"; exit 1; }
 ```
 
-- [ ] **2. Run it — verify RED**
+- [ ] **2. Run it: verify RED**
 
 Expected: FAIL while both pools still hold the old plugins.
 
@@ -66,6 +66,6 @@ Expected: FAIL while both pools still hold the old plugins.
 
 - [ ] **4. Install fx on opencode and run the subagent probe**
 
-- [ ] **5. Remove the superseded plugins — Claude Code first, then `~/.agents/skills`**
+- [ ] **5. Remove the superseded plugins: Claude Code first, then `~/.agents/skills`**
 
-- [ ] **6. Run the check — verify GREEN, and re-run the guard suite from the installed location**
+- [ ] **6. Run the check: verify GREEN, and re-run the guard suite from the installed location**

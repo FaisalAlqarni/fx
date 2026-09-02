@@ -1,13 +1,13 @@
 # Rails
 
-Ecosystem knowledge. True in any Rails repo — nothing here describes a
+Ecosystem knowledge. True in any Rails repo: nothing here describes a
 particular project.
 
 **This file never names a command, a port, a directory layout or a gem
 choice.** Those belong to `.fx.json` and `repo.md`. If something here is only
 true of one codebase, it is in the wrong file.
 
-Written against **Rails 7.x–8.x**. Where the two differ, both are marked.
+Written against **Rails 7.x:8.x**. Where the two differ, both are marked.
 
 ---
 
@@ -19,7 +19,7 @@ Written against **Rails 7.x–8.x**. Where the two differ, both are marked.
 |---|---|
 | `.rspec` file, or `spec/` with `rails_helper.rb` | RSpec |
 | `test/` with `test_helper.rb` | Minitest |
-| both present | the one with more recent files — then say so and ask |
+| both present | the one with more recent files, then say so and ask |
 
 The exact command comes from `.fx.json`, never from guessing. Rails does not
 have one runner; `rails test`, `bundle exec rspec`, and a `docker compose exec`
@@ -53,7 +53,7 @@ after_commit  :notify   # correct
 ```
 
 An `after_save` enqueue can be picked up by a worker in another process before
-the transaction commits — the worker queries for a row that is not visible yet
+the transaction commits: the worker queries for a row that is not visible yet
 and fails intermittently. This is the single most common source of "works
 locally, flakes in production" in Rails.
 
@@ -80,12 +80,12 @@ do not. Say which you meant.
 ### `includes` vs `preload` vs `eager_load`
 
 `includes` chooses for you, and its choice changes when a `where` references
-the association — silently switching from two queries to a `LEFT JOIN` with
+the association: silently switching from two queries to a `LEFT JOIN` with
 different `DISTINCT` semantics.
 
-- `preload` — always separate queries. Cannot filter on the association.
-- `eager_load` — always one `LEFT JOIN`. Can filter.
-- `includes` — picks one. Use it only when you do not care which.
+- `preload`: always separate queries. Cannot filter on the association.
+- `eager_load`: always one `LEFT JOIN`. Can filter.
+- `includes`: picks one. Use it only when you do not care which.
 
 Filtering on an included association without `references` raises in Rails 7+.
 
@@ -95,7 +95,7 @@ Filtering on an included association without `references` raises in Rails 7+.
 Nothing warns you until the table is large enough to matter in production and
 not in development.
 
-Caveat: `find_each` ignores your `order` — it forces primary-key order.
+Caveat: `find_each` ignores your `order`: it forces primary-key order.
 
 ### Migrations
 
@@ -147,7 +147,7 @@ redirect_to params[:url]                          # raises on any external host
 redirect_to url, allow_other_host: true           # deliberate, and now auditable
 ```
 
-**The flag is not a workaround — it is the security decision made explicit.**
+**The flag is not a workaround: it is the security decision made explicit.**
 Open redirect is a real vulnerability: an attacker supplies a URL on your
 domain that bounces the victim somewhere else, and the phishing link carries
 your hostname. Rails made you opt in so the decision appears in review.
@@ -170,9 +170,9 @@ Prefer the level that has a real boundary:
 | Test | When |
 |---|---|
 | model / plain object | logic that does not need a request |
-| **request spec** | anything HTTP — routing, params, auth, status, response |
+| **request spec** | anything HTTP: routing, params, auth, status, response |
 | controller spec | avoid; deprecated since Rails 5, does not exercise the middleware stack |
-| system / feature | only when the behaviour genuinely needs a browser — slowest by an order of magnitude |
+| system / feature | only when the behaviour genuinely needs a browser: slowest by an order of magnitude |
 
 Test through the public interface. A test that calls `send(:private_method)` is
 asserting the implementation, and it will break on every refactor while
@@ -224,10 +224,10 @@ Two facts hold everywhere:
 
 ## Rails 8 differences
 
-- **Solid Queue / Solid Cache / Solid Cable** are the defaults — database-backed
+- **Solid Queue / Solid Cache / Solid Cable** are the defaults: database-backed
   rather than Redis. A Rails 8 app may have no Redis at all.
 - **Kamal** ships as the default deploy path.
 - **Propshaft** replaces Sprockets. Asset helpers behave differently and
   Sprockets-era manifests do not apply.
-- Authentication generator ships in core — a repo may have hand-rolled auth
+- Authentication generator ships in core: a repo may have hand-rolled auth
   where you would expect Devise.

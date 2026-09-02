@@ -2,9 +2,10 @@
 name: fx-plan
 description: >
   Use when an approved design exists and the work needs breaking down, or on
-  "break this down", "make tasks", "write the plan", "how do we build this",
-  "what are the steps", "plan this out", "sequence this work". Requires an
-  approved design — if there is none, use fx-brainstorm.
+  "break this down", "make tasks", "write the plan", "what are the steps",
+  "sequence this work". Requires an approved design; if there is none, use
+  fx-brainstorm. Skip it and the design gets built from memory, which a
+  compacted session does not have.
 ---
 
 # fx-plan
@@ -29,7 +30,7 @@ guessing on their behalf.
 
 DRY. YAGNI. TDD.
 
-## 1. Restate the requirements — before writing anything
+## 1. Restate the requirements: before writing anything
 
 **Requirements as I understand them:**
 - <requirement, in your own words>
@@ -42,7 +43,7 @@ implementation. This is the cheapest gate in the whole pipeline.
 ## 2. Scope check
 
 If the design covers multiple independent subsystems it should have been split
-during brainstorming. If it wasn't, say so and suggest separate plans — one per
+during brainstorming. If it wasn't, say so and suggest separate plans: one per
 subsystem. **Each plan must produce working, testable software on its own.**
 
 ## 3. Map the file structure
@@ -58,7 +59,7 @@ each is responsible for. **This is where decomposition decisions get locked in.*
 - **Files that change together live together.** Split by responsibility, not by
   technical layer.
 - In existing codebases, follow established patterns. If the codebase uses
-  large files, do not unilaterally restructure — but if a file you are
+  large files, do not unilaterally restructure, but if a file you are
   modifying has grown unwieldy, including a split in the plan is reasonable.
 
 This structure informs the task decomposition. Each task produces
@@ -66,17 +67,17 @@ self-contained changes that make sense independently.
 
 ## 4. Draft vertical slices
 
-**Explore the codebase first** if you haven't already — you cannot size a
+**Explore the codebase first** if you haven't already: you cannot size a
 task against code you haven't read. Look specifically for **prefactoring
 opportunities** that would make the implementation easier.
 
 Each task is a **tracer bullet**: a narrow but COMPLETE path through every
-layer — schema, domain, controller/endpoint, view/API, tests. **Vertical, never
+layer: schema, domain, controller/endpoint, view/API, tests. **Vertical, never
 a horizontal slice of one layer.**
 
 - Demoable or verifiable on its own
 - **Sized to fit one fresh context window**
-- Prefactoring first — *"make the change easy, then make the easy change"*
+- Prefactoring first: *"make the change easy, then make the easy change"*
 
 Look for prefactoring opportunities that make the implementation easier, and
 sequence them first.
@@ -96,40 +97,40 @@ dependency order, blockers first.
 
 These edges define the **frontier** `fx-implement` works: any task whose
 blockers are all done. For a purely linear chain that means top to bottom. Get
-them right — an edge that isn't a real dependency serialises work for nothing,
+them right: an edge that isn't a real dependency serialises work for nothing,
 and a missing one lets a task start against code that doesn't exist yet.
 
-**Each step within a task is one action** — write the failing test, run it,
+**Each step within a task is one action**: write the failing test, run it,
 implement, run it, run the suite, commit. Two actions in one step means the
 implementer can half-finish it and still tick the box.
 
 ### Wide refactors are the exception
 
-A **wide refactor** is one mechanical change — rename a column, retype a shared
-symbol — whose **blast radius** fans across the whole codebase, so a single
+A **wide refactor** is one mechanical change (rename a column, retype a shared
+symbol) whose **blast radius** fans across the whole codebase, so a single
 edit breaks thousands of call sites at once and **no vertical slice can land
-green.** Do not force it into a tracer bullet. Sequence it **expand–contract**:
+green.** Do not force it into a tracer bullet. Sequence it **expand:contract**:
 
-1. **Expand** — add the new form beside the old, so nothing breaks.
-2. **Migrate** — move call sites over in batches sized by blast radius (per
+1. **Expand**: add the new form beside the old, so nothing breaks.
+2. **Migrate**: move call sites over in batches sized by blast radius (per
    engine, per directory). Each batch is its own task, blocked by the expand.
    Each stays green **because the old form still exists.**
-3. **Contract** — delete the old form once no caller remains, in a task
+3. **Contract**: delete the old form once no caller remains, in a task
    blocked by every migrate batch.
 
 **When even the batches cannot stay green alone**, keep the sequence but let
 them share an integration branch that all block a final integrate-and-verify
-task. **Green is promised only at that final task** — say so explicitly in
+task. **Green is promised only at that final task**: say so explicitly in
 each batch task, or the implementer will chase a green that cannot exist.
 
 ### Phasing
 
 More than 10 tasks → phase into independently shippable slices:
 
-- **MVP** — the smallest slice that provides value
-- **Core** — the complete happy path
-- **Hardening** — edge cases, error handling
-- **Polish** — optimization, monitoring
+- **MVP**: the smallest slice that provides value
+- **Core**: the complete happy path
+- **Hardening**: edge cases, error handling
+- **Polish**: optimization, monitoring
 
 **Each phase must be mergeable on its own.**
 
@@ -144,18 +145,18 @@ docs/plans/YYYY-MM-DD-<slug>/
 
 One task per file. **Never a single combined tasks file.**
 
-## 6. Self-review — you run this, not a subagent
+## 6. Self-review: you run this, not a subagent
 
 Fresh eyes on the design, then check the plan against it.
 
 1. **Spec coverage.** Walk each requirement in `design.md`. Can you point to a
-   task that implements it? List the gaps — and **add a task for each.**
+   task that implements it? List the gaps, and **add a task for each.**
 2. **Placeholder scan.** Every pattern in "No placeholders" below. Fix them.
 3. **Type consistency.** Do the signatures and property names used in later
    tasks match what earlier tasks declared? `clearLayers()` in task 03
    and `clearFullLayers()` in task 07 is a bug.
 
-Fix inline. No need to re-review — fix and move on.
+Fix inline. No need to re-review: fix and move on.
 
 ## 7. Red-team recommendation
 
@@ -168,19 +169,19 @@ tasks · auth, payment, or security-critical paths.
 
 **Recommend SKIP otherwise.** Most plans do not need it.
 
-## 8. Handoff — four ways to leave a finished plan
+## 8. Handoff: four ways to leave a finished plan
 
 A finished plan has **four** legitimate next steps, not one. Offer all four
 through the host's interactive question tool, the way `fx-brainstorm` §3
-already does — never a bare "tell me when to start."
+already does: never a bare "tell me when to start."
 
 > "Plan and N tasks written to `docs/plans/<slug>/`. What next?"
-> 1. **Start implementing** — hand off to `fx-implement`
-> 2. **Red-team it** — `fx-devils-advocate` in plan mode. Recommended:
->    <yes|skip> — <one-line reason from §7>
-> 3. **Keep discussing** — a decision in the plan isn't actually settled;
+> 1. **Start implementing**: hand off to `fx-implement`
+> 2. **Red-team it**: `fx-devils-advocate` in plan mode. Recommended:
+>    <yes|skip>: <one-line reason from §7>
+> 3. **Keep discussing**: a decision in the plan isn't actually settled;
 >    back to the interview
-> 4. **Save for later** — the plan is good, the work isn't for now
+> 4. **Save for later**: the plan is good, the work isn't for now
 
 **Wait for the answer. Do not default to option 1.**
 
@@ -190,14 +191,14 @@ already does — never a bare "tell me when to start."
   `plan.md` (also reachable any time via `/fx:critique plan <file>`). Present
   its numbered findings, then ask: discuss all / discuss some / continue. Do
   not start resolving until the user picks. Once resolved, ask this same
-  four-way question again — the plan changed.
+  four-way question again: the plan changed.
 - **Keep discussing** → return to §1. The plan document stays on disk; treat
   the unresolved point as an open question and re-run the interview around it.
 - **Save for later** → **fx has no representation for this anywhere else.**
   There is no "parked" state in the ledger and nothing revisits this plan on
-  its own — until that exists, do the manual equivalent: leave the plan
+  its own: until that exists, do the manual equivalent: leave the plan
   directory as it is (already durable, already on disk), write one line to
-  `docs/plans/<slug>/state.md` — `Parked <date>: <one-line reason>` — and
+  `docs/plans/<slug>/state.md`: `Parked <date>: <one-line reason>`, and
   stop. Nothing else. Resuming later means a human opens the plan and picks
   this same menu again by hand.
 
@@ -211,10 +212,25 @@ identical to the interactive path; only the "who decides" step changes.
 
 ## plan.md template
 
-```markdown
-# <Feature> — implementation plan
+The block at the top is not decoration. Whoever builds this plan is very likely
+a **different session** from the one that wrote it, opening a repo of finished
+artifacts with no memory of how they got there. The routing table they see is
+generic and is read before they have looked at the repo. This file is the one
+thing guaranteed to be read by anyone about to act on it, so the handoff lives
+here or nowhere. Copy it verbatim.
 
-> **For agents:** implement task by task via `fx-implement`.
+```markdown
+# <Feature>: implementation plan
+
+> **Build this with `fx-implement`. Do not execute the tasks directly.**
+>
+> The tasks below are deliberately detailed. That makes them easy to follow and
+> it is exactly why the lane gets skipped: nothing looks missing. What is
+> missing is everything a task file cannot hold, and it is what `fx-implement`
+> supplies: a worktree so the main checkout is never written to, a ledger that
+> survives compaction, a fresh subagent per task, a review while each diff is
+> still small, and lens dispatch on what the diff actually touched.
+>
 > Steps use `- [ ]` checkboxes.
 
 **Design:** `./design.md`
@@ -331,32 +347,30 @@ wait.
 behavioral spec and it makes verify-RED possible. The implementation is
 `fx-tdd`'s job, doubles the plan's size, and is the part most likely to rot.
 
-**Exception:** a snippet that encodes a decision more precisely than prose can
-— a state machine, a schema, a type shape — is inlined in the relevant task,
+**Exception:** a snippet that encodes a decision more precisely than prose can: a state machine, a schema, a type shape: is inlined in the relevant task,
 trimmed to the decision-rich part. Note that it came from a prototype.
 
 **Test code in a task is code nobody has run.** You write it out in full and
-`fx-implement` uses it exactly, but neither of you compiles or executes it —
-the only check it gets before RED is your own read-through, and a spec that
+`fx-implement` uses it exactly, but neither of you compiles or executes it: the only check it gets before RED is your own read-through, and a spec that
 omits `type: :request` or asserts an error body through a regex that happens
 to match still looks correct on the page. When the implementer reports "the
-given test does not run," that is not the plan failing — it is the intended
+given test does not run," that is not the plan failing: it is the intended
 defence catching what a read-through couldn't, working as designed. Expect it.
 
 ---
 
-## No placeholders — these are plan failures
+## No placeholders: these are plan failures
 
 Every step contains the actual content the implementer needs. Never write:
 
 - "TBD", "TODO", "implement later", "fill in details"
 - "Add appropriate error handling" / "add validation" / "handle edge cases"
-- "Write tests for the above" — without the actual test code
-- "Similar to task N" — repeat it; tasks get read out of order
+- "Write tests for the above": without the actual test code
+- "Similar to task N": repeat it; tasks get read out of order
 - A step describing *what* to do without showing *how*
 - References to types, functions or methods that no task defines
 
-## Quality red flags — check before presenting
+## Quality red flags: check before presenting
 
 - [ ] Every task names its files (no line-number ranges)
 - [ ] Every task has `Interfaces: Consumes / Produces` with exact signatures
@@ -366,7 +380,7 @@ Every step contains the actual content the implementer needs. Never write:
 - [ ] Each phase ships independently (10+ tasks)
 - [ ] No step says "add validation"
 - [ ] No step instructs a push, a merge, or an attribution trailer
-- [ ] A wide refactor is sequenced expand–contract, not forced into a slice
+- [ ] A wide refactor is sequenced expand:contract, not forced into a slice
 - [ ] Every request/integration spec declares its type (`type: :request`)
       unless the project infers it from file location
 - [ ] Every assertion on an error body states the error contract (exact

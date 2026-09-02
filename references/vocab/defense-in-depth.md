@@ -21,7 +21,7 @@ Apply this **after** the root cause is found, not instead of finding it.
 
 ## The four layers
 
-### Layer 1 — Entry-point validation
+### Layer 1: Entry-point validation
 
 Reject obviously invalid input at the API boundary.
 
@@ -33,7 +33,7 @@ def self.create(name:, account:)
 end
 ```
 
-### Layer 2 — Business-logic validation
+### Layer 2: Business-logic validation
 
 Ensure the data makes sense for **this** operation.
 
@@ -44,7 +44,7 @@ def deliver(campaign:, account:)
 end
 ```
 
-### Layer 3 — Environment guards
+### Layer 3: Environment guards
 
 Prevent dangerous operations in specific contexts. This is the layer people
 skip, and it's the one that catches the truly expensive mistakes.
@@ -64,7 +64,7 @@ if (_env.IsProduction() && _options.AllowDestructiveMigration)
         "Destructive migration is not permitted in production");
 ```
 
-### Layer 4 — Debug instrumentation
+### Layer 4: Debug instrumentation
 
 Capture context for forensics, before the operation.
 
@@ -77,11 +77,11 @@ end
 
 ## Applying the pattern
 
-1. **Trace the data flow** — where does the bad value originate, and where is
+1. **Trace the data flow**: where does the bad value originate, and where is
    it used?
-2. **Map all checkpoints** — list every point the data passes through
-3. **Add validation at each layer** — entry, business, environment, debug
-4. **Test each layer** — try to bypass layer 1, and verify layer 2 catches it
+2. **Map all checkpoints**: list every point the data passes through
+3. **Add validation at each layer**: entry, business, environment, debug
+4. **Test each layer**: try to bypass layer 1, and verify layer 2 catches it
 
 ## Worked example
 
@@ -93,12 +93,12 @@ wrong tenant.
 
 **Four layers added:**
 
-- **Layer 1** — `Campaign.schedule!` validates the account is present and not
+- **Layer 1**: `Campaign.schedule!` validates the account is present and not
   archived
-- **Layer 2** — `CampaignDispatcher` validates the campaign belongs to the
+- **Layer 2**: `CampaignDispatcher` validates the campaign belongs to the
   account
-- **Layer 3** — the dispatcher refuses to run when `Current.account` is unset
-- **Layer 4** — tagged logging of tenant and caller before dispatch
+- **Layer 3**: the dispatcher refuses to run when `Current.account` is unset
+- **Layer 4**: tagged logging of tenant and caller before dispatch
 
 ## The key insight
 

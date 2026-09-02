@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Build the two directories lib/git-guard.test.js needs: a main checkout and a
+# linked worktree.
+#
+# WHY THIS IS NOT JUST `git init && git commit && git worktree add`
+#
+# Because the guard blocks that. `git commit` on a main checkout is refused, and
+# the fixture repo is a main checkout like any other. The guard cannot tell a
+# throwaway fixture from the user's work, and it should not try: a predicate
+# with an "unless it looks like a test" branch is a predicate someone will make
+# their repo look like.
+#
+# So the fixture gets built the way git itself builds one, by writing the
+# linked-worktree metadata directly. `git init` is allowed on a main checkout,
+# and everything else here is a plain file write. No commit is needed: the guard
+# reads `git rev-parse --git-dir` against `--git-common-dir`, and those differ as
+# soon as the metadata exists, with or without any history.
+#
+#   scripts/make-git-fixture <dir>     ->  prints "<dir>/m <dir>/w"
+#
+# Typical use:
+#   node lib/git-guard.test.js $(scripts/make-git-fixture /tmp/fx-fixture)
+
+set -euo pipefail
+base="${1:?usage: make-git-fixture <dir>}"
+
+rm -rf "$base"
+mkdir -p "$base/m" "$base/w"
+git init -q "$base/m"
+
+abs_m="$(cd "$base/m" && pwd)"
+wt="$abs_m/.git/worktrees/w"
+mkdir -p "$wt"
+
+# What `git worktree add` writes, minus the checkout it cannot do without a commit.
+printf 'gitdir: %s\n' "$wt" > "$base/w/.git"
+printf '%s/.git\n' "$(cd "$base/w" && pwd)" > "$wt/gitdir"
+printf '../..\n'  > "$wt/commondir"
+printf 'ref: refs/heads/feat\n' > "$wt/HEAD"
+
+# Prove it before handing it to a test suite. A fixture that silently is not a
+# worktree would make every "allowed in a worktree" assertion pass for the wrong
+# reason, which is the failure mode a guard test exists to rule out.
+in_w_dir="$(git -C "$base/w" rev-parse --git-dir)"
+in_w_common="$(git -C "$base/w" rev-parse --git-common-dir)"
+in_m_dir="$(git -C "$base/m" rev-parse --git-dir)"
+in_m_common="$(git -C "$base/m" rev-parse --git-common-dir)"
+
+[ "$in_w_dir" != "$in_w_common" ] || { echo "fixture broken: w is not a worktree ($in_w_dir)" >&2; exit 1; }
+[ "$in_m_dir" = "$in_m_common" ]  || { echo "fixture broken: m is not a main checkout ($in_m_dir)" >&2; exit 1; }
+
+echo "$base/m $base/w"

@@ -4,8 +4,9 @@ description: >
   Use when encountering any bug, test failure, or unexpected behavior, BEFORE
   proposing fixes. Also on "debug this", "diagnose", "why is this failing",
   "this is broken", "it throws", "it's slow", "flaky test", "regression",
-  "build failure", "why is this happening". Covers correctness bugs,
-  performance regressions and non-deterministic failures.
+  "build failure". Covers correctness bugs, performance regressions and
+  non-deterministic failures. Skip it and the fix lands on the first plausible
+  cause, which moves the symptom instead of removing it.
 ---
 
 # fx-debug
@@ -40,7 +41,7 @@ too**) · you're in a hurry (**rushing guarantees rework**) · it's wanted fixed
 NOW (**systematic is faster than thrashing**).
 
 **Complete each phase before proceeding to the next.** This is a discipline for
-hard bugs — **skip a phase only when you can state the justification, and state
+hard bugs: **skip a phase only when you can state the justification, and state
 it.** ("A minimal repro already exists from the bug report, so Phase 2 is
 done.") An unstated skip is not a justified one, and no justification reaches
 the Iron Law: root cause always precedes a fix.
@@ -49,7 +50,7 @@ the Iron Law: root cause always precedes a fix.
 
 This skill has you show commands, outputs and captured artifacts.
 
-**Redact every secret first** — write `<REDACTED>` in its place. Build loops
+**Redact every secret first**: write `<REDACTED>` in its place. Build loops
 against environment variables, so the credential stays in the environment
 rather than in what you show. **Captured artifacts carry auth headers:** quote
 only the lines that carry the signal.
@@ -61,12 +62,12 @@ anywhere.
 
 ---
 
-## Phase 1 — Build a feedback loop
+## Phase 1: Build a feedback loop
 
 **This is the skill. Everything else is mechanical.**
 
 If you have a tight pass/fail signal that goes **red on this bug**, you will
-find the cause — bisection, hypothesis testing and instrumentation all just
+find the cause: bisection, hypothesis testing and instrumentation all just
 consume it. **If you don't have one, no amount of staring at code will save
 you.**
 
@@ -75,8 +76,7 @@ give up.**
 
 ### Inputs that shape the loop
 
-- **Read the error message carefully.** Don't skip past errors or warnings —
-  they often contain the exact solution. Read stack traces **completely**. Note
+- **Read the error message carefully.** Don't skip past errors or warnings:   they often contain the exact solution. Read stack traces **completely**. Note
   line numbers, file paths, error codes.
 - **Check recent changes.** What changed that could cause this? `git diff`,
   recent commits, new dependencies, config changes, environmental differences.
@@ -85,29 +85,29 @@ give up.**
 
 ### Ten ways to build the loop
 
-1. **Failing test** at whatever seam reaches the bug — unit, integration, e2e.
+1. **Failing test** at whatever seam reaches the bug: unit, integration, e2e.
 2. **HTTP script** (curl) against a running dev server.
 3. **CLI invocation** with a fixture input, diffing stdout against a known-good
    snapshot.
 4. **Headless browser script** driving the UI, asserting on DOM/console/network.
-5. **Replay a captured trace** — save a real request, payload or event log to
+5. **Replay a captured trace**: save a real request, payload or event log to
    disk and replay it through the code path in isolation.
-6. **Throwaway harness** — a minimal subset of the system (one service, mocked
+6. **Throwaway harness**: a minimal subset of the system (one service, mocked
    deps) that exercises the bug path with a single function call.
-7. **Property / fuzz loop** — "sometimes wrong output" → run 1000 random inputs
+7. **Property / fuzz loop**: "sometimes wrong output" → run 1000 random inputs
    and look for the failure mode.
-8. **Bisection harness** — appeared between two known states (commit, dataset,
+8. **Bisection harness**: appeared between two known states (commit, dataset,
    version)? Automate "boot at state X, check, repeat" so `git bisect run` can
    drive it.
-9. **Differential loop** — same input through old vs new (or two configs), diff
+9. **Differential loop**: same input through old vs new (or two configs), diff
    the outputs.
-10. **HITL bash script — last resort.** If a human must click, drive *them*
+10. **HITL bash script: last resort.** If a human must click, drive *them*
     with `scripts/hitl-loop.template.sh` so the loop is still structured.
     Captured output feeds back to you.
 
 **Build the right feedback loop and the bug is 90% fixed.**
 
-### Tighten it — treat the loop as a product
+### Tighten it: treat the loop as a product
 
 - **Faster?** Cache setup, skip unrelated init, narrow the test scope.
 - **Sharper signal?** Assert on the specific symptom, not "didn't crash".
@@ -119,8 +119,7 @@ deterministic one is a debugging superpower.**
 
 **Non-deterministic bugs:** the goal is not a clean repro but a **higher
 reproduction rate.** Loop the trigger 100×, parallelise, add stress, narrow
-timing windows, inject sleeps. **A 50%-flake bug is debuggable; 1% is not** —
-keep raising the rate until it is.
+timing windows, inject sleeps. **A 50%-flake bug is debuggable; 1% is not**: keep raising the rate until it is.
 
 ### When you genuinely cannot build a loop
 
@@ -135,16 +134,16 @@ keep raising the rate until it is.
 
 ### Phase 1 is done when
 
-You can name **one command you have already run at least once** — show the
-invocation and its output, redacted — and it is:
+You can name **one command you have already run at least once**: show the
+invocation and its output, redacted, and it is:
 
-- [ ] **Red-capable** — drives the actual bug code path and asserts the user's
+- [ ] **Red-capable**: drives the actual bug code path and asserts the user's
       exact symptom, so it goes red on this bug and green once fixed. Not "runs
       without erroring": it must catch **this** bug.
-- [ ] **Deterministic** — same verdict every run (flaky bugs: a pinned, high
+- [ ] **Deterministic**: same verdict every run (flaky bugs: a pinned, high
       reproduction rate).
-- [ ] **Fast** — seconds, not minutes.
-- [ ] **Agent-runnable** — you can run it unattended; a human in the loop only
+- [ ] **Fast**: seconds, not minutes.
+- [ ] **Agent-runnable**: you can run it unattended; a human in the loop only
       via `scripts/hitl-loop.template.sh`.
 
 **If you catch yourself reading code to build a theory before this command
@@ -155,7 +154,7 @@ skill prevents.
 
 ---
 
-## Phase 2 — Reproduce and minimise
+## Phase 2: Reproduce and minimise
 
 Run the loop. Watch it go red.
 
@@ -165,21 +164,21 @@ Confirm:
   failure that happens to be nearby. **Wrong bug = wrong fix.**
 - The failure is reproducible across multiple runs (or, for non-deterministic
   bugs, at a high enough rate to debug against).
-- You have **captured the exact symptom** — error message, wrong output, slow
-  timing — so later phases can verify the fix actually addresses it.
+- You have **captured the exact symptom**: error message, wrong output, slow
+  timing, so later phases can verify the fix actually addresses it.
 - **Can you trigger it reliably, and what are the exact steps?** Write the
-  steps down — the command, the input, the state, the sequence. They are what
+  steps down: the command, the input, the state, the sequence. They are what
   the regression test is built from in Phase 5, and what the user needs if you
   have to hand the bug back.
-- **Not reproducible at all? Gather more data — don't guess.** An
+- **Not reproducible at all? Gather more data: don't guess.** An
   unreproducible bug is a Phase 1 failure, not a licence to hypothesise.
 
 **Minimise.** Shrink the repro to the smallest scenario that still goes red.
 Cut inputs, callers, config, data and steps **one at a time**, re-running after
 each cut. Keep only what is load-bearing.
 
-**Why:** a minimal repro shrinks the hypothesis space in Phase 3 — fewer moving
-parts left to suspect — and becomes the clean regression test in Phase 5.
+**Why:** a minimal repro shrinks the hypothesis space in Phase 3: fewer moving
+parts left to suspect, and becomes the clean regression test in Phase 5.
 
 **Done when every remaining element is load-bearing:** removing any one of them
 makes the loop go green.
@@ -188,12 +187,12 @@ makes the loop go green.
 
 ---
 
-## Phase 3 — Hypothesise
+## Phase 3: Hypothesise
 
-**Generate 3–5 ranked hypotheses before testing any of them.** Single-hypothesis
+**Generate 3 to 5 ranked hypotheses before testing any of them.** Single-hypothesis
 generation **anchors on the first plausible idea.**
 
-**Each must be falsifiable — state the prediction it makes:**
+**Each must be falsifiable: state the prediction it makes:**
 
 > "If `<X>` is the cause, then `<changing Y>` will make the bug disappear /
 > `<changing Z>` will make it worse."
@@ -201,12 +200,12 @@ generation **anchors on the first plausible idea.**
 **If you cannot state the prediction, the hypothesis is a vibe. Discard or
 sharpen it.**
 
-### Generating candidates — pattern analysis
+### Generating candidates: pattern analysis
 
 - **Find working examples.** Locate similar *working* code in the same
   codebase. What works that's similar to what's broken?
 - **Compare against references.** Implementing a pattern? Read the reference
-  implementation **COMPLETELY** — don't skim, read every line. Understand it
+  implementation **COMPLETELY**: don't skim, read every line. Understand it
   fully before applying it.
 - **Identify differences.** What differs between working and broken? **List
   every difference, however small. Don't assume "that can't matter".**
@@ -217,12 +216,12 @@ sharpen it.**
 
 The user often has domain knowledge that re-ranks it instantly ("we just
 deployed a change to #3"), or knows which ones they've already ruled out.
-**Cheap checkpoint, big time saver. Don't block on it** — proceed with your
+**Cheap checkpoint, big time saver. Don't block on it**: proceed with your
 ranking if they're away.
 
 ---
 
-## Phase 4 — Instrument and test
+## Phase 4: Instrument and test
 
 **Each probe must map to a specific prediction from Phase 3. Change one
 variable at a time.**
@@ -240,7 +239,7 @@ top.**
 2. **Targeted logs at the boundaries that distinguish hypotheses.**
 3. **Never "log everything and grep".**
 
-**Tag every debug log with a unique prefix** — `[DEBUG-a4f2]`. Cleanup becomes
+**Tag every debug log with a unique prefix**: `[DEBUG-a4f2]`. Cleanup becomes
 a single grep. **Untagged logs survive; tagged logs die.**
 
 ### Multi-component systems
@@ -265,7 +264,7 @@ Full technique: `../../references/vocab/root-cause-tracing.md`.
 ### Performance regressions
 
 **For performance, logs are usually wrong.** Establish a **baseline
-measurement** — timing harness, profiler, query plan — then bisect.
+measurement**: timing harness, profiler, query plan, then bisect.
 **Measure first, fix second.**
 
 ### When you don't know
@@ -274,7 +273,7 @@ Say **"I don't understand X."** Don't pretend to know. Ask. Research more.
 
 ---
 
-## Phase 4.5 — The circuit breaker
+## Phase 4.5: The circuit breaker
 
 **If a fix doesn't work: STOP. Count how many you have tried.**
 
@@ -295,19 +294,19 @@ sheer inertia? Should we refactor the architecture rather than continue fixing
 symptoms?
 
 **Discuss with the user before attempting more fixes. This is NOT a failed
-hypothesis — this is a wrong architecture.** Route it to `fx-architecture`.
+hypothesis: this is a wrong architecture.** Route it to `fx-architecture`.
 
 ---
 
-## Phase 5 — Fix and regression test
+## Phase 5: Fix and regression test
 
-**Write the regression test before the fix — but only if there is a correct
+**Write the regression test before the fix, but only if there is a correct
 seam for it.**
 
 A **correct seam** is one where the test exercises the real bug pattern **as it
-occurs at the call site.** If the only available seam is too shallow — a
+occurs at the call site.** If the only available seam is too shallow: a
 single-caller test when the bug needs multiple callers, a unit test that can't
-replicate the chain that triggered it — **a regression test there gives false
+replicate the chain that triggered it: **a regression test there gives false
 confidence.**
 
 **If no correct seam exists, that itself is the finding.** Note it: the
@@ -318,10 +317,10 @@ With a correct seam:
 
 1. Turn the **minimised repro** into a failing test at that seam. **An
    automated test in the project's framework where one exists** (rspec, xUnit,
-   JUnit, XCTest — `.fx.json` names the runner); **a one-off test script if
+   JUnit, XCTest: `.fx.json` names the runner); **a one-off test script if
    there is no framework at that seam.** A script that reproduces and asserts
    is worth more than no test at all, and it can be promoted later.
-2. **Watch it fail.** Use `fx-tdd` for the RED/GREEN mechanics — including
+2. **Watch it fail.** Use `fx-tdd` for the RED/GREEN mechanics: including
    which RED is valid (runtime vs compile-time) and the anti-tautology rules.
 3. Apply the fix.
 4. Watch it pass.
@@ -331,10 +330,10 @@ With a correct seam:
 time. **No "while I'm here" improvements. No bundled refactoring.**
 
 Verify: the test passes · no other tests broken · the issue is actually
-resolved. Apply `fx-implement`'s Iron Law before claiming success — **evidence
+resolved. Apply `fx-implement`'s Iron Law before claiming success: **evidence
 before claims.**
 
-### Defense in depth — optional, after the root cause is found
+### Defense in depth: optional, after the root cause is found
 
 When the bug was caused by invalid data flowing through layers, **one
 validation can be bypassed** by a different code path, a refactor, or a mock.
@@ -344,14 +343,14 @@ See `../../references/vocab/defense-in-depth.md`.
 
 ---
 
-## Phase 6 — Cleanup
+## Phase 6: Cleanup
 
 **Required before declaring done.**
 
-- [ ] The original repro no longer reproduces — **re-run the Phase 1 loop**
+- [ ] The original repro no longer reproduces: **re-run the Phase 1 loop**
 - [ ] The regression test passes (**or the absence of a correct seam is
       documented**)
-- [ ] **All `[DEBUG-...]` instrumentation removed** — grep the prefix
+- [ ] **All `[DEBUG-...]` instrumentation removed**: grep the prefix
 - [ ] Throwaway prototypes deleted, or moved to a clearly-marked debug location
 - [ ] **The hypothesis that turned out correct is stated in the commit message,
       so the next debugger learns**
@@ -365,14 +364,14 @@ timing-dependent, or external:
 
 1. You've completed the process.
 2. Document what you investigated.
-3. Implement appropriate handling — retry, timeout, a clear error message.
+3. Implement appropriate handling: retry, timeout, a clear error message.
 4. Add monitoring/logging for future investigation.
 
 **But: 95% of "no root cause" cases are incomplete investigation.**
 
 ---
 
-## Red flags — STOP, return to Phase 1
+## Red flags: STOP, return to Phase 1
 
 - "Quick fix for now, investigate later"
 - "Just try changing X and see if it works"
@@ -381,9 +380,9 @@ timing-dependent, or external:
 - "It's probably X, let me fix that"
 - "I don't fully understand but this might work"
 - "Pattern says X but I'll adapt it differently"
-- "Here are the main problems:" — listing fixes without investigation
+- "Here are the main problems:": listing fixes without investigation
 - Proposing solutions before tracing the data flow
-- "One more fix attempt" — when you've already tried 2+
+- "One more fix attempt": when you've already tried 2+
 - Each fix reveals a new problem in a different place
 - Reading code to build a theory before a red-capable command exists
 
@@ -391,7 +390,7 @@ timing-dependent, or external:
 
 **If 3+ fixes have failed: question the architecture (Phase 4.5).**
 
-## Signals from the user — STOP, return to Phase 1
+## Signals from the user: STOP, return to Phase 1
 
 | They say | It means |
 |---|---|
@@ -421,7 +420,7 @@ timing-dependent, or external:
 |---|---|---|
 | 1. Feedback loop | Build a red-capable, deterministic, fast, agent-runnable command | One command, already run |
 | 2. Reproduce + minimise | Watch it go red; cut until every element is load-bearing | A minimal repro |
-| 3. Hypothesise | 3–5 ranked, falsifiable, each with a prediction | A ranked list, shown |
+| 3. Hypothesise | 3 to 5 ranked, falsifiable, each with a prediction | A ranked list, shown |
 | 4. Instrument | One probe per prediction, one variable at a time | Confirmed cause, or a new hypothesis |
 | 4.5 Circuit breaker | 3 failed fixes → question the architecture | An architectural discussion |
 | 5. Fix + test | Regression test at a correct seam, then the fix | Bug resolved, loop green |
@@ -429,9 +428,9 @@ timing-dependent, or external:
 
 ## Supporting techniques
 
-- `../../references/vocab/root-cause-tracing.md` — trace backward through the call
+- `../../references/vocab/root-cause-tracing.md`: trace backward through the call
   stack to the original trigger
-- `../../references/vocab/defense-in-depth.md` — validate at every layer after
+- `../../references/vocab/defense-in-depth.md`: validate at every layer after
   finding the root cause
-- `../../references/vocab/condition-based-waiting.md` — replace arbitrary timeouts
+- `../../references/vocab/condition-based-waiting.md`: replace arbitrary timeouts
   with condition polling

@@ -1,4 +1,4 @@
-# fx — design
+# fx: design
 
 One personal plugin replacing superpowers, mattpocock-skills, ecc, ponytail and
 humanizer.
@@ -7,7 +7,7 @@ humanizer.
 
 Sections: architecture · components · data flow · error handling · testing.
 
-Supporting material: `SURFACE.md` (inventory) · `OPEN-DECISIONS.md` (D1–D5) ·
+Supporting material: `SURFACE.md` (inventory) · `OPEN-DECISIONS.md` (D1:D5) ·
 `DEBT.md` (known gaps) · `tasks/todo.md` (build state).
 
 ---
@@ -22,8 +22,8 @@ among identical claims is effectively random, so the same request produced a
 different methodology on each run. The plugins were not individually bad; the
 **overlap** was.
 
-The measured mechanism: subagents receive the full skill listing (~450–500
-entries), and ECC's appear as **bare names with no descriptions** — nothing to
+The measured mechanism: subagents receive the full skill listing (~450 to 500
+entries), and ECC's appear as **bare names with no descriptions**: nothing to
 select on but the name.
 
 ### The organising rule
@@ -31,15 +31,14 @@ select on but the name.
 **Correction, measured 2026-09-02.** The account above is true but downstream
 of a blunter mechanism. **The skill listing has a budget.** With ~480 skills
 installed it truncates: descriptions are shown until the budget runs out, then
-entries degrade to bare names. Seven fx skills — `fx-debug`, `fx-tdd`,
-`fx-architecture`, `fx-authoring`, `fx-humanize`, `prototype`, `research` —
-appeared as names with **no description text at all**. Disabling the superseded
+entries degrade to bare names. Seven fx skills (`fx-debug`, `fx-tdd`,
+`fx-architecture`, `fx-authoring`, `fx-humanize`, `prototype`, `research`) appeared as names with **no description text at all**. Disabling the superseded
 plugins dropped the field to ~40 and every description became visible, with no
 frontmatter change.
 
 So description discipline is necessary and does nothing while the description
 is invisible; it was being graded on work the harness never displayed. And
-**consolidation is the primary lever** — not mainly because it ends a contest
+**consolidation is the primary lever**: not mainly because it ends a contest
 between rival claims, but because it keeps the field under the size where
 descriptions are shown at all.
 
@@ -49,12 +48,12 @@ Three tiers, distinguished by whether the model may select them:
 
 | Tier | Selectable | Count | Rule |
 |---|---|---|---|
-| **Lanes** | yes | 9 | One per intent. Descriptions are pure trigger lists — never a workflow summary |
-| **Procedures** | yes | **2** | `research` and `prototype` — copied verbatim, descriptions rewritten as trigger lists. Called by a lane, never an entry point |
+| **Lanes** | yes | 9 | One per intent. Descriptions are pure trigger lists: never a workflow summary |
+| **Procedures** | yes | **2** | `research` and `prototype`: copied verbatim, descriptions rewritten as trigger lists. Called by a lane, never an entry point |
 | **References** | **no** | 24 | Loaded on demand by a lane. Cannot enter a selection contest at all |
 
 The reference tier is what makes the rule affordable. Depth grows **downward**
-into `references/`, never sideways into sibling skills — so covering more
+into `references/`, never sideways into sibling skills, so covering more
 ground never adds another claimant.
 
 A documented failure keeps the description discipline honest: a description
@@ -69,7 +68,7 @@ that summarised a workflow ("code review between tasks") caused an agent to run
 | Repo | *this* project's structure and patterns | `repo.md` | regenerated when the project moves |
 | Machine | commands, stack list, coverage | `.fx.json` | changes with tooling |
 
-**Sole ownership per fact** — no fact appears in two layers, so nothing can
+**Sole ownership per fact**: no fact appears in two layers, so nothing can
 drift out of agreement. The required layer is `.fx.json`; an ecosystem profile
 is optional enrichment, which is what makes fx work on a stack nobody has
 written a profile for.
@@ -96,7 +95,7 @@ Every unit answers three questions: what it does, how you invoke it, what it
 depends on. Anything a lane cannot be understood without is inline; everything
 else is a reference it pulls.
 
-### Lanes — 9 built, 1 deferred
+### Lanes: 9 built, 1 deferred
 
 Selectable. Exactly one claimant per intent. All ≤ 500 lines.
 
@@ -109,22 +108,22 @@ Selectable. Exactly one claimant per intent. All ≤ 500 lines.
 | `fx-review` | Two axes reported separately + triggered risk lenses | review a diff or branch | `reviewer-prompt`, 5 lens agents, `fowler-smells`, `receiving-review` |
 | `fx-architecture` | Deepening opportunities in existing code, local HTML report | structure is the problem | `HTML-REPORT.md`, `codebase-design` |
 | `fx-debug` | Feedback loop first, 3-fix circuit breaker, correct-seam rule | bug, test failure | `root-cause-tracing`, `defense-in-depth`, `condition-based-waiting`, `hitl-loop` |
-| `fx-humanize` | Prose de-slopification | a document needs fixing | none — verbatim upstream, one line changed |
+| `fx-humanize` | Prose de-slopification | a document needs fixing | none: verbatim upstream, one line changed |
 | `fx-authoring` | Writing skills, agents, dispatch prompts, `CLAUDE.md` | editing a `SKILL.md` | `persuasion-principles`, `skill-testing`, `anthropic-best-practices` |
-| `fx-design` | **Deferred — D1.** Nothing owns visual work in the interim | — | — |
+| `fx-design` | **Deferred: D1.** Nothing owns visual work in the interim |: |: |
 
-### Agents — 1 built, 5 pending
+### Agents: 1 built, 5 pending
 
 All read-only (`Read, Grep, Glob, Bash`); tool restriction is enforced by the
 harness, so a lens physically cannot write.
 
-`fx-devils-advocate` (built) — adversarial review of a design or plan.
+`fx-devils-advocate` (built): adversarial review of a design or plan.
 Five review lenses pending: `database`, `security`, `a11y`, `silent-failure`,
 `performance`. Each pins its model explicitly; `security` and `database` at top
 tier because they fire only on migrations and auth paths, so **simple diffs pay
 nothing.**
 
-### Procedures — 2 built
+### Procedures: 2 built
 
 `research` and `prototype` are copied verbatim from the upstream mattpocock
 plugin. The bodies are untouched; only the `description` frontmatter is
@@ -134,8 +133,7 @@ skill *does* and would put the procedure into a selection contest with a lane.
 module names, file paths or internal service names**, because a search leaves
 this machine.
 
-`prototype` is invoked by `fx-brainstorm` §4, alongside the visual companion —
-a picture answers *what would it look like*, a prototype answers *would it
+`prototype` is invoked by `fx-brainstorm` §4, alongside the visual companion: a picture answers *what would it look like*, a prototype answers *would it
 work*. §1's terminal-state rule names it as the one mid-interview exception,
 so calling it does not read as a forbidden handoff. A grep for `prototype` in
 `fx-brainstorm/SKILL.md` is the standing assertion that the wiring is real;
@@ -143,9 +141,9 @@ its absence is what let the false claim survive before.
 
 Neither ships upstream's `agents/openai.yaml`: it is a Codex interface
 manifest for a runtime fx does not target, and it duplicates the description
-we just rewrote — a second place for it to drift.
+we just rewrote: a second place for it to drift.
 
-### Commands — 1 built, 3 pending
+### Commands: 1 built, 3 pending
 
 | Command | Does |
 |---|---|
@@ -154,7 +152,7 @@ we just rewrote — a second place for it to drift.
 | `/fx:grill` | The interview technique standalone, for decisions not heading for code |
 | `/fx:level` | Writes `lite\|full\|ultra` |
 
-### Delivery — built
+### Delivery: built
 
 `PREAMBLE.md` (~1,173 tok) · `lib/git-guard.js` (shared predicate, 69 tests) ·
 `hooks/fx-context.js` · `hooks/fx-git-guard.js` · `plugins/fx.js`.
@@ -162,12 +160,12 @@ we just rewrote — a second place for it to drift.
 The guard is one module behind two adapters **specifically so the two runtimes
 cannot enforce different rules.**
 
-### References — 24, none selectable
+### References: 24, none selectable
 
 `vocab/` 15 · `stacks/` 4 · `testing/` 4 · `design-template.md`.
 
 **The leaf property holds.** It was recorded as "verified" in `SURFACE.md`
-before it was true — seven references linked to another, and three formed a
+before it was true: seven references linked to another, and three formed a
 cycle:
 
 ```
@@ -183,7 +181,7 @@ The cycle was the symptom that `codebase-design`, `deepening` and
 enforced by `scripts/check-reference-leaves`.
 
 `root-cause-tracing.md` also pointed at `find-polluter.sh` "in the upstream
-skill directory", which stops existing once superpowers is uninstalled — that
+skill directory", which stops existing once superpowers is uninstalled: that
 sentence is gone.
 
 ---
@@ -197,7 +195,7 @@ which is why each one is load-bearing rather than convenient.
 |---|---|---|
 | `PREAMBLE.md` via hook | ladder, routing, non-negotiables, prose rule | **A subagent reads neither `CLAUDE.md` nor memory.** This is the sole path to it |
 | `.fx.json` | test/setup/lint commands, `stacks`, coverage | The only place a command is allowed to come from. Guessing is prohibited everywhere else |
-| `repo.md` | project structure, patterns, local decisions | Loaded on demand — too large for always-on context |
+| `repo.md` | project structure, patterns, local decisions | Loaded on demand: too large for always-on context |
 | `state.md` (ledger) | which tasks are done, every ruling | **Conversation memory does not survive compaction.** This does |
 
 ### A cold start, traced
@@ -225,11 +223,11 @@ session opens
 
 ### Two routing paths, deliberately
 
-**Deterministic** — the routing table sits in the preamble, so it is in context
+**Deterministic**: the routing table sits in the preamble, so it is in context
 before any skill is selected, and a subagent gets the same copy. It does not
 depend on description matching.
 
-**Model-selected** — descriptions as trigger lists, one claimant per intent.
+**Model-selected**: descriptions as trigger lists, one claimant per intent.
 
 The table is the fallback that makes the second path's failure cheap. This is
 the direct answer to the selection randomness fx was built to end.
@@ -237,15 +235,15 @@ the direct answer to the selection randomness fx was built to end.
 ### What a subagent receives, exactly
 
 Its task · the preamble · explicit instructions the controller composed.
-**Not** the session history — that is the point of dispatching one. The
+**Not** the session history: that is the point of dispatching one. The
 controller therefore has to put everything needed *into* the brief, and the
 non-negotiables arrive by hook rather than by hope.
 
 ### State splits by lifetime
 
-- **`docs/plans/<slug>/`** — design, plan, tasks, `state.md`. Committed. The
+- **`docs/plans/<slug>/`**: design, plan, tasks, `state.md`. Committed. The
   record of what was decided and what happened.
-- **`.fx/<slug>/`** — reports, review packages. Git-ignored, verified with
+- **`.fx/<slug>/`**: reports, review packages. Git-ignored, verified with
   `check-ignore` before anything writes there. Verbose and regenerable.
 
 Another slug's directory is never read or written.
@@ -254,7 +252,7 @@ Another slug's directory is never read or written.
 
 Session or subagent, Claude Code or opencode, the same module decides. The
 attribution rule in particular **only** survives into a subagent through this
-path — a subagent that never read `CLAUDE.md` is still stopped from writing a
+path: a subagent that never read `CLAUDE.md` is still stopped from writing a
 `Co-Authored-By` trailer.
 
 ### Nothing flows outward
@@ -267,7 +265,7 @@ opened in a local browser.
 ## 4. Error handling
 
 The design assumption is that **the agent is the unreliable component.** Not
-the network, not the disk — the thing composing the commands. Every mechanism
+the network, not the disk: the thing composing the commands. Every mechanism
 below exists because an agent will confidently do the wrong thing.
 
 ### Fail closed, including at load time
@@ -283,7 +281,7 @@ below exists because an agent will confidently do the wrong thing.
 | `PREAMBLE.md` unreadable | session says rules are NOT loaded, do not commit | ✅ |
 
 **This section found a live bug.** The guard originally wrapped only the
-`inspect()` call, so a missing module crashed the hook with exit 1 — which
+`inspect()` call, so a missing module crashed the hook with exit 1, which
 Claude Code treats as a *non-blocking* error, and **the git command ran.** The
 guard failed open, silently, in exactly the situation where it mattered. Now
 the `require` is wrapped too and any load failure denies everything.
@@ -291,17 +289,17 @@ the `require` is wrapped too and any load failure denies everything.
 ### No override, and that is the design
 
 There is no unlock command and no expiring token. A false positive is resolved
-by the user running the command themselves in their own terminal — which keeps
+by the user running the command themselves in their own terminal, which keeps
 the human in the loop instead of teaching the agent a bypass.
 
-### Known gap — the guard only sees Bash
+### Known gap: the guard only sees Bash
 
 `Write` and `Edit` do not pass through it. An agent can therefore **edit files
 in the main checkout**; it simply cannot commit them.
 
 Judged acceptable, not overlooked: uncommitted edits are visible in
-`git status` and reversible, while the irreversible steps — commit, push,
-`reset --hard`, `clean -f` — are all blocked. Extending the guard to `Write`
+`git status` and reversible, while the irreversible steps (commit, push,
+`reset --hard`, `clean -f`) are all blocked. Extending the guard to `Write`
 would also have to permit `/fx:setup` writing `repo.md`, `.fx.json` and
 `docs/plans/` on the main checkout, which is most of the exceptions it would
 need.
@@ -313,10 +311,10 @@ need.
 | Wrong lane selected | Routing table in the preamble, ahead of description matching; each lane declares what it does *not* own |
 | Subagent claims success falsely | Task review per task in a separate context; "evidence before claims"; RED output pasted into `state.md` as proof |
 | Fix loop thrashing | 3-fix circuit breaker, then stop and report |
-| Context compaction mid-run | Ledger is authoritative over recollection — `state.md` plus `git log`, never memory |
+| Context compaction mid-run | Ledger is authoritative over recollection: `state.md` plus `git log`, never memory |
 | Command not derivable | Write `null` and **ask**. Never infer a test command from the file tree |
-| Baseline suite already failing | Report and ask before task 01 — a dirty baseline makes every later failure ambiguous |
-| Missing stack profile | Not an error. Degrade — traps are lost, function is not |
+| Baseline suite already failing | Report and ask before task 01: a dirty baseline makes every later failure ambiguous |
+| Missing stack profile | Not an error. Degrade: traps are lost, function is not |
 | Missing reference file | Proceed, and say which one was missing |
 
 ### Open gaps, recorded rather than smoothed over
@@ -328,7 +326,7 @@ need.
 2. **Nothing checks the reviewer.** A task-review subagent that rubber-stamps
    is indistinguishable from one that verified.
 3. **The leakage check is a manual grep.** Nothing stops the next stack profile
-   from smuggling project facts into a portable file — which already happened
+   from smuggling project facts into a portable file, which already happened
    once, in `observability.md`.
 
 ---
@@ -339,7 +337,7 @@ need.
 
 A skill is a prompt. Its test is a **behavioural experiment**: dispatch a
 fresh-context subagent into a scenario built to make the wrong choice
-attractive, and read what it actually does. There is no assertion — the output
+attractive, and read what it actually does. There is no assertion: the output
 is a transcript, judged.
 
 `references/vocab/skill-testing.md` carries the method, mapped onto TDD:
@@ -351,7 +349,7 @@ is a transcript, judged.
 | **REFACTOR** | Collect the rationalizations it invented, counter each one, re-run until no new ones appear |
 
 Pressure comes from combining forces: time, money, authority, sunk cost. The
-four scenarios in `references/testing/` do exactly this — one opens with a
+four scenarios in `references/testing/` do exactly this: one opens with a
 production outage at "$15,000/minute" and a manager demanding an immediate fix,
 which is precisely the situation where systematic debugging gets abandoned.
 
@@ -367,14 +365,14 @@ which is precisely the situation where systematic debugging gets abandoned.
 Mutation testing is the part that matters: a suite that passes on first run
 proves nothing until you have watched it fail.
 
-### What is not tested — all nine skills
+### What is not tested: all nine skills
 
 **`fx-authoring`'s own Iron Law is `NO SKILL WITHOUT A FAILING TEST FIRST`, and
 zero of the nine have had it applied.** By the standard these skills enforce on
 everything else, all nine are untested code.
 
 The risk is inverted: **the deterministic parts are tested and the
-probabilistic parts are not** — and the probabilistic parts are where both the
+probabilistic parts are not**, and the probabilistic parts are where both the
 value and the failure modes live.
 
 This is not hypothetical. A description that summarised a workflow instead of
@@ -386,7 +384,7 @@ and it was found by accident.
 
 fx is "tested" when:
 
-1. Every lane has a **baseline** transcript — the scenario run without it
+1. Every lane has a **baseline** transcript: the scenario run without it
 2. Every discipline lane (`fx-tdd`, `fx-debug`, `fx-implement`) survives 3+
    combined-pressure scenarios with no new rationalization
 3. Every `description` is micro-tested against a no-guidance control, 5+ reps,
@@ -394,7 +392,7 @@ fx is "tested" when:
 
 ### Cost, and the affordable middle
 
-The full pass is a project in its own right — upstream reports six iterations
+The full pass is a project in its own right: upstream reports six iterations
 to harden a *single* discipline skill, and every scenario is a fresh subagent
 dispatch.
 
@@ -402,7 +400,7 @@ dispatch.
 They are the highest-leverage text in the plugin, the cheapest to test, and the
 one place with a documented failure to check against.
 
-**Priority:** `fx-tdd` and `fx-debug` first — both are discipline skills whose
+**Priority:** `fx-tdd` and `fx-debug` first: both are discipline skills whose
 entire value is resisting rationalization under pressure, which is exactly what
 these scenarios measure. `fx-debug`'s four scenarios are already written and
 need one line re-pointed each. `fx-humanize` and the references need no testing
@@ -415,44 +413,43 @@ at all: no rule to violate.
 Self-review per `fx-brainstorm` §8. Four checks; three found real defects, all
 fixed inline except where noted.
 
-### 1. Placeholder scan — clean
+### 1. Placeholder scan: clean
 
 No TBD/TODO/FIXME. Every count in the document was checked against the
 filesystem: 9 lanes, 24 references (15 vocab · 4 stacks · 4 testing · 1
 template), 1 agent, 1 command, 69 guard assertions, longest lane 481 lines
 (cap 500). All correct.
 
-### 2. Internal consistency — 3 defects
+### 2. Internal consistency: 3 defects
 
 **a. §1 said 20 references, §2 said 26.** Fixed to 26; now 24 after D-C.
 
 **b. The Procedures tier was described but empty.** §1 declared a tier of 2;
-§2 never listed it; neither file exists; and **no lane references either one** —
-`fx-brainstorm` does not call `prototype`, contradicting `SURFACE.md`'s claim
+§2 never listed it; neither file exists; and **no lane references either one**: `fx-brainstorm` does not call `prototype`, contradicting `SURFACE.md`'s claim
 that it does. Both documents now say so. **Decided 2026-09-01: copy and wire.** Copy both verbatim from the installed
 mattpocock plugin, add the one `research` paragraph, and wire `prototype` into
 `fx-brainstorm` §4 so the claim becomes true.
 
-**c. "Every reference is a leaf — verified" was false, and had been since
+**c. "Every reference is a leaf: verified" was false, and had been since
 Section 1.** Seven cross-links, three forming a cycle. That claim was the
 justification for the load-cost bound in §1, so the architecture rested on an
 invariant nobody had checked. Corrected in both documents.
 
-### 3. Scope — decompose into two plans
+### 3. Scope: decompose into two plans
 
 The remaining work is not one plan. **Build** (5 lens agents, 3 commands,
 procedures decision, repo/install) is mechanical and bounded. **Testing** (§5)
 is open-ended behavioural work with a different unit of progress. Cutting them
 as one plan would let the cheap half hide the expensive half.
 
-### 4. Ambiguity — 2 unresolved, both the user's call
+### 4. Ambiguity: 2 unresolved, both the user's call
 
 **a. "No write commit at all" on the main checkout.** Read as *no commits*
-(enforced) or *no file writes either* (not enforced — `Write`/`Edit` bypass the
+(enforced) or *no file writes either* (not enforced: `Write`/`Edit` bypass the
 guard). Currently implemented as the former; §4 records why.
 
 **b. `push`.** Blocked everywhere, including inside a worktree, on the offline
-rule — but "within a worktree do whatever you like" and the memory line "never
+rule, but "within a worktree do whatever you like" and the memory line "never
 push **to the base branch** without explicit say-so" both read as permitting a
 push from a feature branch. **Open since Section 1, flagged three times, still
 unanswered.** One line in `lib/git-guard.js` changes it.
@@ -476,7 +473,7 @@ copied verbatim; `prototype` wired into `fx-brainstorm` §4. The tier stops bein
 described-but-absent.
 
 **D-C · The reference cycle is merged.** `codebase-design`, `deepening` and
-`design-it-twice` become one file — the cycle was the symptom that they are one
+`design-it-twice` become one file: the cycle was the symptom that they are one
 topic. The two remaining stray links are removed afterwards, restoring the leaf
 invariant that §1's load-cost bound depends on.
 

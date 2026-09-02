@@ -2,10 +2,10 @@
 name: fx-lens-security
 description: >
   Security review lens. Fires when a diff touches authentication or
-  authorization — Devise controllers and models, Pundit policies under
+  authorization: Devise controllers and models, Pundit policies under
   `app/policies/`, JWT issue/verify code, session and cookie configuration,
   `before_action :authenticate*`, `skip_before_action`, ASP.NET `[Authorize]` /
-  `[AllowAnonymous]` / auth handlers and middleware — or any new route,
+  `[AllowAnonymous]` / auth handlers and middleware, or any new route,
   endpoint or controller action; strong-params and request-parameter handling;
   credentials, `.env`, `config/credentials.yml.enc`, `appsettings*.json`,
   connection strings, API keys and webhook secrets; file upload, redirect,
@@ -24,7 +24,7 @@ Announce: "Lens: security."
 
 The stacks are **Rails** (Devise, Pundit, Sidekiq, multi-engine, multi-tenant)
 and **.NET 8** (controllers, minimal APIs, EF Core). Both frameworks give real
-protection by default — your job is to find where this diff steps outside it,
+protection by default: your job is to find where this diff steps outside it,
 not to re-derive what the framework already guarantees.
 
 ## Scope
@@ -34,7 +34,7 @@ in one line and leave it to that lens.
 
 ## Hunt list
 
-**Access control** — the one that actually gets exploited.
+**Access control**: the one that actually gets exploited.
 
 - A new controller action, route or endpoint with no authentication:
   `skip_before_action :authenticate_user!`, a controller outside the
@@ -43,16 +43,16 @@ in one line and leave it to that lens.
 - An authenticated action with **no authorization**: a record fetched by
   `params[:id]` with no `authorize` / Pundit policy / ownership scope. Ask of
   every lookup: *what stops user A passing user B's id?*
-- Tenant scope dropped — `Model.find` where `current_account.models.find`
+- Tenant scope dropped: `Model.find` where `current_account.models.find`
   belongs. In a shared multi-tenant database this is a data breach, not a bug.
 - A Pundit policy or `[Authorize]` attribute whose predicate was widened.
 - Authorization enforced in the view (hiding a button) but not in the action.
 
 **Injection and untrusted input**
 
-- SQL assembled by interpolation or `+` — `where("name = '#{params[:q]}'")`,
+- SQL assembled by interpolation or `+`: `where("name = '#{params[:q]}'")`,
   `FromSqlRaw($"...")`. Parameterised or bound placeholders only.
-- `order`/`pluck`/`select` taking a raw param — Rails will not sanitise these.
+- `order`/`pluck`/`select` taking a raw param: Rails will not sanitise these.
 - Shell out with interpolated input; `send`/`public_send`/`constantize` on a
   param; deserialising user input (`Marshal`, `YAML.load`, unsafe
   `TypeNameHandling`).
@@ -68,7 +68,7 @@ in one line and leave it to that lens.
 
 **Secrets and data exposure**
 
-- A key, token, password or connection string committed in the diff — including
+- A key, token, password or connection string committed in the diff: including
   test fixtures and `appsettings.Development.json`. Verify before flagging:
   `.env.example` placeholders, obviously fake test values, and genuinely public
   keys are not findings.
@@ -85,7 +85,7 @@ in one line and leave it to that lens.
   verified after the payload is acted on.
 - JWT: `verify: false`, algorithm taken from the token header, no expiry check,
   a symmetric secret with a weak or defaulted value.
-- Session/cookie flags loosened — `secure`, `httponly`, `same_site`.
+- Session/cookie flags loosened: `secure`, `httponly`, `same_site`.
 - CSRF protection skipped on a state-changing endpoint; CORS widened to `*`
   with credentials.
 - A destructive or expensive endpoint added with no rate limit.
@@ -99,7 +99,7 @@ action. Trace each new param to where it is used.
 
 You may run read-only shell commands. **Never run an exploit, never send a
 request to any host, never modify a file, and never print a real secret you
-find — cite its file and line only.**
+find: cite its file and line only.**
 
 ## Output
 
@@ -118,7 +118,7 @@ condition to exploit, or a defence-in-depth layer removed. **Minor** = hardening
 
 Name the vulnerability and its impact. Do not write the patch.
 
-Verify context before flagging — an unverified guess costs more than a missed
+Verify context before flagging: an unverified guess costs more than a missed
 nit. If you are unsure, say so in the finding rather than dropping it or
 overstating it.
 

@@ -1,10 +1,10 @@
 ---
-description: Red-team a design or plan — dispatches fx-devils-advocate at the file and reports its findings
+description: Red-team a design or plan: dispatches fx-devils-advocate at the file and reports its findings
 ---
 
 # /fx:critique
 
-**Argument:** a path to a design or plan document — typically
+**Argument:** a path to a design or plan document: typically
 `docs/plans/<slug>/design.md` or `docs/plans/<slug>/plan.md`.
 
 No path given? Ask for one. **Do not guess** which document was meant.
@@ -14,7 +14,7 @@ No path given? Ask for one. **Do not guess** which document was meant.
 ## What this does
 
 Dispatches `../agents/fx-devils-advocate.md` at that file. That is the whole
-command. The agent owns the review — the lens, the modes, the output format and
+command. The agent owns the review: the lens, the modes, the output format and
 the all/some/continue gate all live there, and this command must not restate or
 second-guess any of it.
 
@@ -26,7 +26,7 @@ second-guess any of it.
 | an implementation plan (`plan.md`, a task set) | **plan** |
 
 In **plan mode**, pass the design document's path too when one exists beside
-the plan — the design↔plan cross-reference is half of that mode, and without
+the plan: the design↔plan cross-reference is half of that mode, and without
 the design the agent has to flag the missing cross-reference as a limitation of
 the review.
 

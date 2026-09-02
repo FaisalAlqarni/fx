@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 'use strict';
-// Claude Code — SessionStart and SubagentStart.
+// Claude Code: SessionStart and SubagentStart.
 //
 // Two events, one text. The subagent case is the one that matters: a dispatched
 // subagent reads neither CLAUDE.md nor memory, so without this hook the
@@ -27,12 +27,23 @@ process.stdin.on('end', () => {
          + 'and tell the user the plugin is misinstalled.';
   }
 
+  const cwd = input.cwd || process.cwd();
+
   // A repo may add its own context; the plugin never writes to it.
-  const repoMd = path.join(input.cwd || process.cwd(), 'repo.md');
-  if (fs.existsSync(repoMd)) {
+  if (fs.existsSync(path.join(cwd, 'repo.md'))) {
     text += `\n\nThis repository has a \`repo.md\` describing its structure, `
           + `patterns and local decisions. Read it before changing code here.\n`;
   }
+
+  // Route on what is actually on disk. The static table above is generic and is
+  // read before the agent has looked at the repo; this names the real plan, the
+  // real path and the real count, at the one event that fires reliably.
+  // DEBT #33. Best effort: never let it stop a session from starting.
+  try {
+    const { describePlans } = require('../lib/plan-state');
+    const plans = describePlans(cwd);
+    if (plans) text += `\n\n${plans}`;
+  } catch { /* the preamble alone is still worth emitting */ }
 
   process.stdout.write(JSON.stringify({
     hookSpecificOutput: {

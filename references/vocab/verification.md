@@ -2,7 +2,7 @@
 
 **Evidence before claims, always.**
 
-The Iron Law and the gate function live inline in `fx-implement` — they fire
+The Iron Law and the gate function live inline in `fx-implement`: they fire
 on every task. This file holds what is consulted on demand: the failures
 table, the rationalizations, the per-domain patterns, and the scope of the
 rule.
@@ -38,7 +38,7 @@ rule.
 ## Context is a dimension, not a detail
 
 A command run in the wrong environment answers a **different question**, not a
-wrong one — that is what makes it dangerous. It exits 0, it prints real
+wrong one: that is what makes it dangerous. It exits 0, it prints real
 output, and none of the five steps (IDENTIFY / RUN / READ / VERIFY / claim)
 catches it, because all five can be followed correctly and the environment
 can still be wrong. Add a sixth check before you claim anything
@@ -53,10 +53,10 @@ the environment the project actually runs in?**
 | a command in the engine that owns the file | the same command from repo root, or another engine | Multi-engine repos resolve dependencies and routes per engine; running from the wrong one silently answers for the wrong app. |
 
 **The rule:** for anything version-, dependency-, or environment-dependent,
-run it the way the project runs it — `bundle exec`, inside the container,
+run it the way the project runs it: `bundle exec`, inside the container,
 with the app's env loaded, in the right engine. Otherwise the answer is about
 your machine, not about the code, and reporting it as verification is the
-same failure as not running the command at all — you just get to feel worse
+same failure as not running the command at all: you just get to feel worse
 about it, later, when it's found by someone else.
 
 ## Key patterns
@@ -68,7 +68,7 @@ about it, later, when it's found by someone else.
 ❌ "Should pass now" · "Looks correct"
 ```
 
-**Regression tests — the red-green proof**
+**Regression tests: the red-green proof**
 
 ```
 ✅ Write → run (passes) → REVERT the fix → run (MUST FAIL) → restore → run (passes)

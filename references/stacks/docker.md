@@ -1,6 +1,6 @@
 # Docker
 
-Ecosystem knowledge. True in any containerized repo — nothing here describes a
+Ecosystem knowledge. True in any containerized repo: nothing here describes a
 particular compose file.
 
 **This file never names a service, an image, a port or a Makefile target.**
@@ -13,7 +13,7 @@ Those belong to `.fx.json` and `repo.md`.
 **Find out whether the repo drives Docker through a wrapper.** A `Makefile`,
 `bin/` script or `Taskfile` that fronts compose exists because the raw commands
 need flags nobody wants to retype. Bypassing it with a bare `docker compose up`
-skips those flags and produces a subtly different environment — a missing
+skips those flags and produces a subtly different environment: a missing
 override file, a missing profile, the wrong env file.
 
 `.fx.json` carries the commands. Use them.
@@ -25,7 +25,7 @@ depends on how the file got into the container:
 
 | The file arrived via | Change appears |
 |---|---|
-| bind mount (`./src:/app/src`) | immediately — restart at most |
+| bind mount (`./src:/app/src`) | immediately: restart at most |
 | `COPY` in the Dockerfile | only after `build` |
 | a dependency manifest | after `build`, and only if the cache broke |
 
@@ -48,19 +48,18 @@ RUN npm ci                                 # cached until the manifest does
 COPY . .                                   # changes constantly
 ```
 
-Reversed — `COPY . .` before installing dependencies — every source edit
+Reversed: `COPY . .` before installing dependencies: every source edit
 invalidates the install layer and every build reinstalls everything. This is
 the single largest cause of slow builds, and it looks harmless.
 
 A dependency cache in a **named volume** survives rebuilds entirely. It also
-means a manifest change may not take effect until the volume is refreshed —
-know which of the two mechanisms the repo uses before diagnosing a stale
+means a manifest change may not take effect until the volume is refreshed: know which of the two mechanisms the repo uses before diagnosing a stale
 dependency.
 
 ## `.dockerignore`
 
 Without it, the entire working directory is sent to the daemon as build
-context — `node_modules`, `vendor`, `.git`, build output, logs, local
+context: `node_modules`, `vendor`, `.git`, build output, logs, local
 databases. Symptoms: slow builds with no obvious cause, and images far larger
 than the source.
 
@@ -73,8 +72,7 @@ Build in one stage, copy only the artifact into a minimal final stage. The
 compiler, dev headers and package caches never reach the shipped image.
 
 Two mistakes: copying the whole build stage forward (which defeats the point),
-and `apt-get install` without `rm -rf /var/lib/apt/lists/*` in the same `RUN`
-— a separate `RUN` leaves the cache in the earlier layer, where it still counts
+and `apt-get install` without `rm -rf /var/lib/apt/lists/*` in the same `RUN`: a separate `RUN` leaves the cache in the earlier layer, where it still counts
 against image size.
 
 ## Secrets
@@ -84,7 +82,7 @@ is not secret.** Environment values are baked into the image and readable by
 anyone who can pull it. A `COPY` of a credential file persists in that layer
 even if a later layer deletes it.
 
-Secrets arrive at **runtime** — an env file that is not committed, a mounted
+Secrets arrive at **runtime**: an env file that is not committed, a mounted
 file, or a secrets manager. If a credential appears in a `Dockerfile`, that is
 a finding, not a style note.
 
@@ -93,13 +91,13 @@ a finding, not a style note.
 - **`docker-compose.override.yml` is loaded automatically** and merged over the
   base. A setting that "does not apply" is usually being overridden there. Any
   other file needs an explicit `-f`, and passing `-f` **replaces** the default
-  set rather than adding to it — so `-f docker-compose.test.yml` alone drops
+  set rather than adding to it, so `-f docker-compose.test.yml` alone drops
   the override that was previously implicit.
 - **`depends_on` waits for start, not for readiness.** Without
   `condition: service_healthy` and a `healthcheck`, an app container races its
   database and fails on first connection. Retries in the app are the more
-  robust fix; the healthcheck is the cheaper one.
-- **Named volumes persist across `down`.** `down -v` removes them — that is
+  thorough fix; the healthcheck is the cheaper one.
+- **Named volumes persist across `down`.** `down -v` removes them: that is
   data loss, and for a development database it is usually not what was wanted.
   `down` then `up` is almost always the intended pair.
 - A volume declared but never mounted, or mounted at the wrong path, fails
@@ -126,18 +124,18 @@ changes DNS resolution behaviour and produces different locale handling. A
 switch to alpine for size is not a like-for-like substitution and should be
 tested, not assumed.
 
-Pin to a specific version, never `latest` — a rebuild months later silently
+Pin to a specific version, never `latest`: a rebuild months later silently
 picks up a new major.
 
 ## Diagnosing
 
 In order, cheapest first:
 
-1. `ps` — is it running, or restart-looping?
-2. `logs` — the error is usually there and usually at the top, not the bottom.
-3. `exec` a shell — is the file present, at the expected path, with the
+1. `ps`: is it running, or restart-looping?
+2. `logs`: the error is usually there and usually at the top, not the bottom.
+3. `exec` a shell: is the file present, at the expected path, with the
    expected content?
 4. Only then read the application code.
 
 A container that exits immediately with no logs has almost always failed at
-`CMD`/`ENTRYPOINT` — wrong path, not executable, or wrong architecture.
+`CMD`/`ENTRYPOINT`: wrong path, not executable, or wrong architecture.

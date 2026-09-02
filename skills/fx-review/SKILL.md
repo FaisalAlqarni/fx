@@ -2,9 +2,10 @@
 name: fx-review
 description: >
   Use when changed code needs checking: "review this", "review the branch",
-  "review the PR", "check my changes", "look this over", "is this good",
-  "review since X", "did I miss anything", or after finishing an
-  implementation. For EXISTING code with no diff, use fx-architecture instead.
+  "review the PR", "check my changes", "is this good", "did I miss anything",
+  or after finishing an implementation. For EXISTING code with no diff, use
+  fx-architecture instead. Skip it and the only reviewer is the author, half an
+  hour after writing it.
 ---
 
 # fx-review
@@ -15,10 +16,10 @@ Announce: "Using fx-review (<task|branch> mode)."
 
 ## Two modes
 
-- **task** — called by `fx-implement` after each task. Correctness + Spec,
+- **task**: called by `fx-implement` after each task. Correctness + Spec,
   scoped to that task. Mid-tier model. Lenses off unless the task touches
   auth, payment, or a migration.
-- **branch** — called at the end of a run, or by you on a branch or PR. All
+- **branch**: called at the end of a run, or by you on a branch or PR. All
   axes plus every triggered lens, most capable model.
 
 **Mandatory:** after each task in `fx-implement` · after a major feature ·
@@ -27,15 +28,15 @@ before a merge.
 after fixing a complex bug.
 
 **A constraints block narrows as well as focuses.** Every brief below names
-what the reviewer should look for — that's what makes it a directed search
+what the reviewer should look for: that's what makes it a directed search
 instead of a wander, and also exactly what makes it blind to anything the
 brief didn't think to name. The controller wrote the task and the plan, so
 its blind spots are the ones most likely to have produced the defect, and a
 reviewer handed only the controller's list will not go looking for them.
-Task mode's cost budget doesn't allow fixing this per task — see the unprimed
+Task mode's cost budget doesn't allow fixing this per task: see the unprimed
 pass below instead.
 
-## 1. Pin the fixed point — before spawning anything
+## 1. Pin the fixed point: before spawning anything
 
 Whatever the user named: a SHA, a branch, a tag, `main`, `HEAD~5`. Not named?
 In a worktree, default to the merge-base with the base branch. Still unclear?
@@ -51,37 +52,37 @@ git log <fixed-point>..HEAD --oneline
 
 In **task mode** the fixed point is the BASE `fx-implement` recorded before
 dispatching that task's implementer. In **branch mode** it is the merge-base.
-**Never `HEAD~1`** — it silently drops all but the last commit of a
+**Never `HEAD~1`**: it silently drops all but the last commit of a
 multi-commit task.
 
-## 2. Decide which passes run — and say so in one line
+## 2. Decide which passes run, and say so in one line
 
 **Always:**
 
-- **Correctness** — run `/code-review` at an effort matched to the diff:
-  small and mechanical → low–medium; wide, subtle, or security-touching →
-  high–max. **`/code-review ultra` is user-triggered and billed — you cannot
+- **Correctness**: run `/code-review` at an effort matched to the diff:
+  small and mechanical → low:medium; wide, subtle, or security-touching →
+  high:max. **`/code-review ultra` is user-triggered and billed: you cannot
   launch it.** If a change warrants it, say so and stop there.
-- **Spec** — whenever a spec exists (step 3).
+- **Spec**: whenever a spec exists (step 3).
 
 **Conditional:**
 
-- **Standards** — when the diff exceeds ~3 files or ~150 lines. Below that the
+- **Standards**: when the diff exceeds ~3 files or ~150 lines. Below that the
   smell baseline has nothing to bite on.
-- **Lenses** — by the trigger table below. **Match on authored content, not on
+- **Lenses**: by the trigger table below. **Match on authored content, not on
   file extension.** A greenfield first commit contains the entire generated
   skeleton, so an extension trigger fires on files nobody wrote: measured, the
   a11y lens matched `app/views/layouts/mailer.html.erb` from `rails new` on a
   JSON-only API. Before dispatching, confirm the triggering files carry changes
   someone actually made. Eight parallel passes on a
   three-line diff is indefensible; each dispatch costs a full subagent.
-- **Unprimed adversarial pass** — **branch mode only**, once per branch, not
+- **Unprimed adversarial pass**: **branch mode only**, once per branch, not
   per task. Dispatch `fx-devils-advocate` in code mode against the whole diff,
-  given the task file but **no question list** — see step 5. Skip it in task
+  given the task file but **no question list**: see step 5. Skip it in task
   mode: dispatching an unprimed reviewer alongside the primed one on every
   task doubles the per-task cost for findings that are mostly mechanical and
   already caught by Correctness and Standards. A branch's worth of changes is
-  where an unprimed pass earns its cost — it's the one place structural blind
+  where an unprimed pass earns its cost: it's the one place structural blind
   spots have had room to accumulate.
 
 | Lens | Fires when the diff touches |
@@ -91,7 +92,7 @@ multi-commit task.
 | `fx-lens-a11y` | `.erb`, `.css`, view partials, Compose `.kt`, SwiftUI `.swift`, anything with user-facing strings |
 | `fx-lens-silent-failure` | `rescue`, `catch`, `except`, Sidekiq workers, broker consumers, attribution code |
 
-There is deliberately **no performance lens** — query-shape performance (N+1,
+There is deliberately **no performance lens**: query-shape performance (N+1,
 missing indexes, `SELECT *`, unbounded result sets) is `fx-lens-database`'s
 job, and it fires on the same diffs. See `OPEN-DECISIONS.md` D5.
 
@@ -108,8 +109,8 @@ rather than guessing where specs live.
 
 ## 4. Find the standards
 
-Whatever the repo documents — `CONTRIBUTING.md`, `docs/DESIGN/*`,
-`.rubocop.yml`, `.editorconfig` — **plus** the smell baseline in
+Whatever the repo documents (`CONTRIBUTING.md`, `docs/DESIGN/*`,
+`.rubocop.yml`, `.editorconfig`) **plus** the smell baseline in
 `../../references/vocab/fowler-smells.md`, which applies even when a repo documents
 nothing.
 
@@ -121,12 +122,12 @@ Two rules bind the baseline:
   Feature Envy"), **never a hard violation.** Documented-standard breaches can
   be hard; baseline smells cannot.
 
-**Skip anything tooling already enforces** — rubocop, erb_lint, `dotnet
+**Skip anything tooling already enforces**: rubocop, erb_lint, `dotnet
 format`, ktlint, SwiftLint. Never spend a reviewer on what a linter catches.
 
 ## 5. Dispatch in parallel
 
-Every pass is read-only and independent, so they run concurrently — **and in
+Every pass is read-only and independent, so they run concurrently: **and in
 separate subagents, so they don't pollute each other's context.** A Standards
 reviewer that has read the Spec findings starts agreeing with them.
 
@@ -135,21 +136,21 @@ large diff burns the context window you need to keep driving the work. Dispatch
 a reviewer: the diff and the evaluation live in its context, and only the
 findings come back.
 
-**Hand each one precisely crafted context — never your session's history.**
+**Hand each one precisely crafted context: never your session's history.**
 That keeps the reviewer on the work product, not on your thought process.
 
-**Standards brief** — the diff command and commit list · the standards files
+**Standards brief**: the diff command and commit list · the standards files
 you found · **the full smell baseline pasted in** (the subagent has no other
 access to it) · the brief:
 
 > "Report, per file/hunk where relevant: (a) every place the diff violates a
-> documented standard — cite the standard, file and rule; (b) any baseline
-> smell you spot — name it and quote the hunk. Distinguish hard violations from
+> documented standard: cite the standard, file and rule; (b) any baseline
+> smell you spot: name it and quote the hunk. Distinguish hard violations from
 > judgement calls: documented-standard breaches can be hard, baseline smells
 > are always judgement calls, and a documented repo standard overrides the
 > baseline. Skip anything tooling enforces. Under 400 words."
 
-**Spec brief** — the diff command and commit list · the spec path or contents ·
+**Spec brief**: the diff command and commit list · the spec path or contents ·
 the brief:
 
 > "Report: (a) requirements the spec asked for that are missing or partial;
@@ -157,23 +158,22 @@ the brief:
 > (c) requirements that look implemented but where the implementation looks
 > wrong. Quote the spec line for each finding. Under 400 words."
 
-**Lens briefs** — the `fx-lens-*` agents, each given the diff command and the
+**Lens briefs**: the `fx-lens-*` agents, each given the diff command and the
 paths that triggered it. Read-only by construction.
 
-**Branch mode also dispatches the broad reviewer** — [reviewer-prompt.md](./reviewer-prompt.md),
+**Branch mode also dispatches the broad reviewer**: [reviewer-prompt.md](./reviewer-prompt.md),
 on the most capable available model, pointed at the ledger's deferred-minor and
 parked lines so it can triage what must be fixed before merge.
 
-**Branch mode also dispatches the unprimed adversarial pass** — `fx-devils-
+**Branch mode also dispatches the unprimed adversarial pass**: `fx-devils-
 advocate`, code mode, given the diff command and the task file, **with no
 constraints block and no question list.** Its brief is one open-ended prompt,
-not a checklist: "read this diff like you were told nothing about it —
-anything else that would bite us?" If you have other passes' findings or the
+not a checklist: "read this diff like you were told nothing about it: anything else that would bite us?" If you have other passes' findings or the
 plan's accepted-risks notes on hand, pass those along only so it can recognize
-a settled decision and not re-report it as a discovery — never as a scope for
+a settled decision and not re-report it as a discovery: never as a scope for
 what to look at.
 
-## 6. Aggregate — do NOT merge or rerank
+## 6. Aggregate: do NOT merge or rerank
 
 Present each pass under its own heading, verbatim or lightly cleaned:
 
@@ -195,7 +195,7 @@ pass, Standards fail.** Reporting them separately is what stops one axis from
 masking the other. Merging them destroys the entire point.
 
 End with: total findings **per axis**, and the worst issue **within each axis**.
-**No single winner across axes** — that is the reranking the separation exists
+**No single winner across axes**: that is the reranking the separation exists
 to prevent.
 
 Severity within an axis: **Critical** (bugs, security, data loss, broken
@@ -208,13 +208,13 @@ Read `../../references/vocab/receiving-review.md` before implementing anything. 
 form:
 
 1. **READ** the complete feedback without reacting.
-2. **UNDERSTAND** — restate the requirement in your own words, or ask.
+2. **UNDERSTAND**: restate the requirement in your own words, or ask.
 3. **VERIFY** against the codebase. A finding is a claim, not a fact.
-4. **EVALUATE** — is it technically sound for THIS codebase, stack and version?
-5. **RESPOND** — technical acknowledgment or reasoned push-back.
+4. **EVALUATE**: is it technically sound for THIS codebase, stack and version?
+5. **RESPOND**: technical acknowledgment or reasoned push-back.
 6. **IMPLEMENT** one item at a time, testing each.
 
-**If any item is unclear, STOP — do not implement anything yet.** Ask about the
+**If any item is unclear, STOP: do not implement anything yet.** Ask about the
 unclear ones first. Items are often related; partial understanding produces the
 wrong implementation.
 
@@ -222,7 +222,7 @@ wrong implementation.
 (refactors, logic). Test each fix individually, then verify no regressions.
 
 **Fix Critical immediately. Fix Important before proceeding. Note Minor for
-later** — record them where the final branch review will see them, rather than
+later**: record them where the final branch review will see them, rather than
 letting them evaporate.
 
 **If the reviewer is wrong:** push back with technical reasoning · **show the
@@ -249,7 +249,7 @@ heard it.
 
 `--fix` applies findings to the working tree. Forward it when asked.
 
-`--comment` posts findings as inline PR comments — **that publishes outward.**
+`--comment` posts findings as inline PR comments: **that publishes outward.**
 Never offer it; use it only on an explicit request in that message.
 
 ## Red flags

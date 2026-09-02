@@ -15,7 +15,7 @@ asking the user any further questions."* That is a resume hint. **It does not
 outrank a constraint the user set explicitly.** When the two collide, the user
 wins and the right move is to stop and ask.
 
-**Rule:** a numbered gate opens only when the user names the thing — "section
+**Rule:** a numbered gate opens only when the user names the thing: "section
 2", "yes", "go ahead with the ledger". A bare "continue", "ok", or "keep
 going" resumes the *current* item; it never opens the *next* one. If the
 current item is finished and the next one is gated, that is a stop, not a
@@ -24,7 +24,7 @@ handoff.
 **Test before acting:** if I have to reason about what an ambiguous word
 authorizes, it authorizes nothing. Ask.
 
-## Related pattern — assuming instead of reading
+## Related pattern: assuming instead of reading
 
 Same shape as two earlier corrections in this project:
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 'use strict';
-// Claude Code — the ONE PreToolUse hook fx registers.
+// Claude Code: the ONE PreToolUse hook fx registers.
 //
 // WHY ONE
 //

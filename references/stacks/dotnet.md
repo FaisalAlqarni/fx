@@ -1,6 +1,6 @@
 # .NET
 
-Ecosystem knowledge. True in any .NET repo — nothing here describes a
+Ecosystem knowledge. True in any .NET repo: nothing here describes a
 particular solution.
 
 **This file never names a command, a project layout, a package feed or a
@@ -26,7 +26,7 @@ per framework and the solution may scope it to one project. Take the command
 from `.fx.json`.
 
 If `coverlet.collector` is referenced, coverage is collected by
-`--collect:"XPlat Code Coverage"` — it does not run by default and produces no
+`--collect:"XPlat Code Coverage"`: it does not run by default and produces no
 threshold unless one is configured.
 
 ## The traps
@@ -44,7 +44,7 @@ a web project and then deadlocks the moment the same code is called from a
 desktop app, a test with a custom context, or a library consumer.
 
 **`async void` is unrecoverable.** An exception thrown from `async void` cannot
-be caught by the caller — it goes straight to the process. The only legitimate
+be caught by the caller: it goes straight to the process. The only legitimate
 use is an event handler. Everything else returns `Task`.
 
 **Propagate `CancellationToken`.** A method that accepts one and does not pass
@@ -64,7 +64,7 @@ services.AddScoped<DbContext>();    // now effectively a singleton
 
 `DbContext` is **not thread-safe**. This is how a solution gets intermittent
 "A second operation started on this context" in production and never in tests.
-`ValidateScopes` catches it in Development only — it is off in Production by
+`ValidateScopes` catches it in Development only: it is off in Production by
 default.
 
 ### EF Core
@@ -74,7 +74,7 @@ default.
   problem.
 - **Client-side evaluation was removed in EF Core 3.** A `Where` that cannot be
   translated now *throws* rather than silently pulling the table into memory.
-  That is an improvement — do not "fix" it by inserting `.ToList()` before the
+  That is an improvement: do not "fix" it by inserting `.ToList()` before the
   filter, which restores the original bug.
 - **`SaveChanges` in a loop** issues a round trip per iteration. Batch, then
   save once.
@@ -109,7 +109,7 @@ If it cannot be handled, do not catch it.
 
 ### `HttpClient`
 
-`new HttpClient()` per call exhausts sockets under load — the connections sit
+`new HttpClient()` per call exhausts sockets under load: the connections sit
 in `TIME_WAIT` and the failure appears as intermittent timeouts long after the
 code that caused it. Use `IHttpClientFactory`, or one long-lived static
 instance.
@@ -126,13 +126,13 @@ anything stored or transmitted.
 A `DateTime` round-tripped through most serializers loses its `Kind`, so
 `Utc` comes back as `Unspecified` and comparisons quietly shift.
 
-.NET 8 adds `TimeProvider` — inject it rather than reading the clock directly,
+.NET 8 adds `TimeProvider`: inject it rather than reading the clock directly,
 and tests stop needing to sleep.
 
 ### Nullable reference types
 
 `<Nullable>enable</Nullable>` is compile-time only. It does not validate
-anything at a trust boundary — deserialized JSON, EF materialization and
+anything at a trust boundary: deserialized JSON, EF materialization and
 reflection all produce `null` in non-nullable fields without a warning.
 Validate input regardless of the annotation.
 
@@ -143,7 +143,7 @@ provably true, it is a latent `NullReferenceException`.
 
 `record` gives value equality; `class` gives reference equality. Changing one
 to the other silently changes the behaviour of every `Equals`, dictionary key
-and `Distinct()` in the codebase — with no compile error.
+and `Distinct()` in the codebase: with no compile error.
 
 Mutable `struct` types are a bug generator: methods on a copy mutate the copy.
 
@@ -160,7 +160,7 @@ explicitly.
 
 | Test | When |
 |---|---|
-| plain unit | domain logic with no I/O — fastest and most of the suite |
+| plain unit | domain logic with no I/O: fastest and most of the suite |
 | `WebApplicationFactory<T>` | the HTTP surface: routing, model binding, auth, status codes |
 | database integration | query behaviour that a fake cannot represent |
 
@@ -172,7 +172,7 @@ speed on logic that does not depend on the store; use a real instance
 
 ### Mocking
 
-Mock what you own and what has a real boundary — a port, a clock, an HTTP
+Mock what you own and what has a real boundary: a port, a clock, an HTTP
 client. Mocking a type you do not own couples the test to a third party's
 internals, and it will pass while production fails.
 
@@ -181,14 +181,14 @@ A test with five mocks is describing a design problem, not testing behaviour.
 ### Architecture tests
 
 If the solution references `NetArchTest` or a similar library, layering rules
-are **executable** — dependency direction is enforced by a test, not by
+are **executable**: dependency direction is enforced by a test, not by
 convention. Read those tests before proposing a structural change: they will
 tell you the intended direction faster than reading the projects will, and a
 change that violates one fails the build.
 
 ## .NET 8 notes
 
-- **Keyed services** — `AddKeyedScoped` / `[FromKeyedServices]`. Multiple
+- **Keyed services**: `AddKeyedScoped` / `[FromKeyedServices]`. Multiple
   implementations of one interface no longer need a factory.
 - **Minimal APIs** are a full alternative to controllers; a solution may use
   either or both. Do not convert one to the other as a side effect.

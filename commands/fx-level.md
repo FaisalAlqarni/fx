@@ -1,10 +1,10 @@
 ---
-description: Set the fx ceremony level — writes lite|full|ultra to ~/.claude/fx.json, and touches nothing else
+description: Set the fx ceremony level: writes lite|full|ultra to ~/.claude/fx.json, and touches nothing else
 ---
 
 # /fx:level
 
-**Argument:** `lite`, `full` or `ultra`. Anything else is rejected — do not
+**Argument:** `lite`, `full` or `ultra`. Anything else is rejected: do not
 coerce a near-miss, ask.
 
 No argument? Print the current value from `~/.claude/fx.json` (`full` when the
@@ -23,7 +23,7 @@ One file, one key.
 
 ## Writing it
 
-A **single-key overwrite that preserves every other key** — `fx.json` is a
+A **single-key overwrite that preserves every other key**: `fx.json` is a
 shared file and may already hold state this command knows nothing about. Read,
 set `level`, write back:
 
@@ -39,7 +39,7 @@ fs.writeFileSync(f,JSON.stringify(j,null,2)+"\n");' <lite|full|ultra>
 Idempotent: running it twice with the same value leaves the same file.
 
 **If the existing file is not valid JSON, `JSON.parse` throws and nothing is
-written. That is the correct outcome — stop and report it.** Do not "repair" it
+written. That is the correct outcome: stop and report it.** Do not "repair" it
 by writing a fresh `{"level": ...}`, which would silently delete whatever the
 user had in there.
 
@@ -47,12 +47,12 @@ user had in there.
 
 | Value | Means |
 |---|---|
-| `lite` | Least ceremony — the lanes run their short paths |
+| `lite` | Least ceremony: the lanes run their short paths |
 | `full` | The default, and the assumed value when the key is absent |
-| `ultra` | Most ceremony — the lanes run everything they have |
+| `ultra` | Most ceremony: the lanes run everything they have |
 
 The value is machine state: one key, read by whoever reads it. **This command
-writes it and does nothing else** — it does not re-run a lane, re-read a
+writes it and does nothing else**: it does not re-run a lane, re-read a
 design, or apply the new level to work already in flight. The next invocation
 picks it up.
 

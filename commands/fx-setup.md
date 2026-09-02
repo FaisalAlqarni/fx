@@ -1,5 +1,5 @@
 ---
-description: Set up fx in this repository — .fx.json, repo.md, and the directories the lanes expect
+description: Set up fx in this repository: .fx.json, repo.md, and the directories the lanes expect
 ---
 
 # /fx:setup
@@ -12,7 +12,7 @@ of those is not written until the user has reviewed it.**
 
 ---
 
-## 1. `.fx.json` — machine facts
+## 1. `.fx.json`: machine facts
 
 Written at the repo root. This is the file that makes fx work on a stack that
 has no profile, so **it is not optional**.
@@ -35,26 +35,26 @@ has no profile, so **it is not optional**.
 | `test_one` | Single-test command. `{file}` and `{line}` are substituted |
 | `test_all` | The full suite, as CI runs it |
 | `setup` | From a clean checkout to a runnable state |
-| `lint` | Empty if the repo has no linter — **do not invent one** |
+| `lint` | Empty if the repo has no linter: **do not invent one** |
 | `coverage` / `coverage_floor` | `null` when the repo has no coverage tooling. `fx-tdd` enforces a floor only when both are set |
 
 **Derive every command; never invent one.** Read, in this order: a `Makefile`
 or `Taskfile`, `bin/` scripts, CI workflow files, then the package manifest
 (`Gemfile`, `.csproj`/`.sln`, `package.json`, `composer.json`, `pubspec.yaml`).
-CI is the most reliable source — it is the command that must actually work.
+CI is the most reliable source: it is the command that must actually work.
 
 If the repo fronts Docker with a wrapper, **the wrapper is the command.** A raw
 `docker compose` line that skips the wrapper's flags produces a different
 environment.
 
 **Verify before writing.** Run `test_all` and `setup` once. A command that does
-not run is worse than a missing one — a missing command makes an agent ask,
+not run is worse than a missing one: a missing command makes an agent ask,
 while a wrong one makes it conclude the build is broken.
 
 If a command cannot be determined, write `null` and say so in the report. Never
 guess.
 
-## 2. `repo.md` — the project, in prose
+## 2. `repo.md`: the project, in prose
 
 Root of the repo. **Exhaustive**: this is the file that stops every future
 agent from re-deriving the same structure.
@@ -64,25 +64,25 @@ descriptions of one fact will drift. Point, don't copy.
 
 Survey the repo, then write:
 
-- **What it is** — one paragraph, the domain, not the tech
-- **Structure** — every significant directory and what belongs in it. Deep
+- **What it is**: one paragraph, the domain, not the tech
+- **Structure**: every significant directory and what belongs in it. Deep
   enough that an agent can place a new file without guessing
-- **Patterns in use** — the conventions this codebase actually follows, with a
+- **Patterns in use**: the conventions this codebase actually follows, with a
   pointer to a real file demonstrating each. Naming, layering, error handling,
   where business logic lives, how requests are authorized
-- **Techniques** — anything non-obvious the codebase does deliberately: caching
+- **Techniques**: anything non-obvious the codebase does deliberately: caching
   strategy, background job conventions, multi-tenancy, feature flags, i18n
-- **Local decisions that override the ecosystem defaults** — where this project
+- **Local decisions that override the ecosystem defaults**: where this project
   deliberately does something `../references/stacks/*.md` would not predict, and
   why. **This section is the most valuable one**; it is the only place the
   contradiction gets recorded
-- **Traps specific to here** — what has bitten someone, and what not to touch
+- **Traps specific to here**: what has bitten someone, and what not to touch
   without asking
 
 Anchor claims in real paths. A pattern described without a file to look at is
 an assertion; with one it is checkable.
 
-### The review gate — REQUIRED
+### The review gate: REQUIRED
 
 **Present the draft. Do not write the file until the user has responded.**
 
@@ -93,7 +93,7 @@ future agent follows.
 Show the draft, and flag separately:
 
 - anything inferred from a single example
-- anything the repo appears to do inconsistently — say so rather than picking
+- anything the repo appears to do inconsistently: say so rather than picking
   the majority silently
 - any section that came out thin because the repo was unclear
 
@@ -102,23 +102,34 @@ if the file looks right.
 
 ## 3. Directories
 
-- `docs/plans/` — where `fx-brainstorm`, `fx-plan` and `fx-implement` keep
+- `docs/plans/`: where `fx-brainstorm`, `fx-plan` and `fx-implement` keep
   designs, plans, tasks and `state.md`. Committed.
-- `.fx/` — ephemeral working files: reports, review packages. **Git-ignored**;
+- `.fx/`: ephemeral working files: reports, review packages. **Git-ignored**;
   verify with `check-ignore` before anything writes there.
-- `.worktrees/` — git-ignored.
+- `.worktrees/`: git-ignored.
 
 Add `.fx/` and `.worktrees/` to `.gitignore` if absent. Do not touch existing
 entries.
 
+**Migrate any legacy plan directory.** Plans written before the rename hold
+`docs/plans/<slug>/tickets/` where current ones hold `tasks/`. For each one
+found, `git mv` it to `tasks/`, and update any path referring to it inside
+`plan.md`, `design.md` and `state.md`.
+
+`fx-implement` accepts both names, so nothing is broken while a `tickets/`
+survives. Migrating here is what drains the old name out rather than carrying
+it forever. Report each directory renamed; if the repo has uncommitted changes
+in one, say so and leave it alone rather than mixing a rename into the user's
+working tree.
+
 ## 4. Wiring
 
 - **One line in `CLAUDE.md`** (and `AGENTS.md` if present) pointing at
-  `repo.md`. One line only — `repo.md` is loaded on demand, and inlining it
+  `repo.md`. One line only: `repo.md` is loaded on demand, and inlining it
   would put the whole project description in every session's context, which is
   the cost this design exists to avoid.
 - For opencode, the fx block goes in `AGENTS.md`. **Never write to
-  `~/.claude/CLAUDE.md`** — that is the user's file.
+  `~/.claude/CLAUDE.md`**: that is the user's file.
 
 ## Report
 

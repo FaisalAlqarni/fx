@@ -13,12 +13,12 @@ cd ~/src/fx
 That is the whole install. Add `--dry-run` first to see what it would do, or
 `--dest <path>` to install somewhere other than `~/.config/opencode`.
 
-### What it does, and why it is not just copying files
+### What it does, and why copying the files is not enough
 
-**Symlinked** — `skills/`, `references/`, `plugins/fx.js`. The repo stays the
+**Symlinked**: `skills/`, `references/`, `plugins/fx.js`. The repo stays the
 single source, so `git pull` updates the install with nothing to re-run.
 
-**Generated** — `agents/` and `commands/`, because the two runtimes disagree on
+**Generated**: `agents/` and `commands/`, because the two runtimes disagree on
 frontmatter and a straight copy would be silently wrong:
 
 | | Claude Code | opencode |
@@ -30,8 +30,7 @@ frontmatter and a straight copy would be silently wrong:
 
 Copying the Claude Code files across would produce agents opencode does not
 treat as subagents, unpinned models that silently inherit the session's most
-expensive one, and **review lenses whose read-only restriction is not enforced**
-— it lives in `tools:`, which opencode does not read.
+expensive one, and **review lenses whose read-only restriction is not enforced**: it lives in `tools:`, which opencode does not read.
 
 Generated files carry a header saying so. Edit the source in the repo and
 re-run; do not edit the generated copy.
@@ -72,12 +71,12 @@ relying on it.
 
 `experimental.chat.system.transform` carries an `experimental.` prefix. If it
 changes, the fallback is `~/.config/opencode/AGENTS.md`, which every session
-including child sessions reads — paste `PREAMBLE.md` there. The git guard in
+including child sessions reads: paste `PREAMBLE.md` there. The git guard in
 `tool.execute.before` is unaffected either way.
 
 ---
 
-## Claude Code — standalone
+## Claude Code: standalone
 
 **opencode is not required.**
 
@@ -98,14 +97,14 @@ guard are registered by `hooks/hooks.json` and need no further setup.
 
 ---
 
-## Per repository — either runtime
+## Per repository: either runtime
 
 ```
 /fx:setup
 ```
 
-Writes `.fx.json` (test commands, `stacks`) and generates `repo.md` — this
-project's structure and patterns — **for your review before it lands**.
+Writes `.fx.json` (test commands, `stacks`) and generates `repo.md` (this
+project's structure and patterns) **for your review before it lands**.
 
 ---
 

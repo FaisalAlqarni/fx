@@ -22,7 +22,7 @@ Announce: "Lens: a11y."
 
 Target is **WCAG 2.2 AA**. The main stack is server-rendered **Rails ERB with
 Turbo and Stimulus**, a token-based CSS design system, and **Arabic as the
-default locale with RTL throughout** — direction and localisation failures are
+default locale with RTL throughout**: direction and localisation failures are
 first-class findings here, not an afterthought.
 
 ## Scope
@@ -34,12 +34,12 @@ finding; an unusable interface is.
 
 **Names and semantics**
 
-- Icon-only button or link with no accessible name — no text, no `aria-label`,
+- Icon-only button or link with no accessible name: no text, no `aria-label`,
   no visually-hidden span. The most common failure in this codebase.
 - `<div>` or `<span>` with a click handler (or a Stimulus `data-action`) where
   a `<button>` or `<a>` belongs: no keyboard activation, no role, not in tab
   order.
-- Form input with no associated `<label>` — placeholder is not a label. Check
+- Form input with no associated `<label>`: placeholder is not a label. Check
   `label_for` matches the field id, including inside `form_with` blocks and
   nested/indexed fields.
 - Heading levels skipped, or a heading used for its size.
@@ -54,15 +54,15 @@ finding; an unusable interface is.
   handled, background still tabbable.
 - `tabindex` greater than 0; focus outline removed in CSS with nothing
   replacing it.
-- Custom widget (tabs, combobox, toggle) with no keyboard model — arrow keys,
+- Custom widget (tabs, combobox, toggle) with no keyboard model: arrow keys,
   Enter/Space, Escape.
 - A Turbo Stream or Stimulus update that replaces the element the user was
   focused on and drops focus to `<body>`.
 
 **Dynamic content**
 
-- Content that appears after an action — validation errors, toasts, search
-  results, async chart loads — with no `aria-live` region or focus move, so a
+- Content that appears after an action: validation errors, toasts, search
+  results, async chart loads: with no `aria-live` region or focus move, so a
   screen reader user is never told anything happened.
 - Form errors shown only in colour or only at the top, not tied to the field
   via `aria-describedby` / `aria-invalid`.
@@ -72,7 +72,7 @@ finding; an unusable interface is.
 
 - Information carried by colour alone: status dots, chart series, a red border
   as the only error signal.
-- Text or UI contrast below 4.5:1 / 3:1 — check the token values in the design
+- Text or UI contrast below 4.5:1 / 3:1: check the token values in the design
   system rather than eyeballing the hex.
 - Fixed heights or `overflow: hidden` that clip reflowed text at 200% zoom.
 - Interactive target under 24x24 CSS px with no spacing around it.
@@ -86,7 +86,7 @@ finding; an unusable interface is.
 - Directional icons (chevrons, arrows, back buttons) not mirrored in RTL.
 - A user-facing string hardcoded in the template instead of `t(...)`, or added
   to `en.yml` with no `ar.yml` counterpart.
-- Layout that assumes LTR ordering — flex/grid order, absolute positioning.
+- Layout that assumes LTR ordering: flex/grid order, absolute positioning.
 
 **Native**
 
@@ -98,8 +98,7 @@ a non-semantic element, touch target below 48dp. SwiftUI: missing
 
 Read the changed templates and the CSS they use. Grep the design system's token
 file before judging a colour. Grep both locale files when a string appears.
-Check the Stimulus controller behind any `data-controller` the markup adds —
-the barrier is often in the JS, not the ERB.
+Check the Stimulus controller behind any `data-controller` the markup adds: the barrier is often in the JS, not the ERB.
 
 Read-only shell commands only. Do not run a browser, do not edit markup.
 

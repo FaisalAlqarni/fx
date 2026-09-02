@@ -24,15 +24,15 @@ technical correctness over social comfort.**
 
 - "You're absolutely right!"
 - "Great point!" / "Excellent feedback!"
-- "Let me implement that now" — before verification
+- "Let me implement that now": before verification
 - "Thanks for catching that!"
-- "Thanks for [anything]" — **any gratitude expression**
+- "Thanks for [anything]": **any gratitude expression**
 
 **Instead:** restate the technical requirement · ask a clarifying question ·
 push back with technical reasoning if it's wrong · or just start working.
 **Actions > words.**
 
-**Why no thanks:** actions speak. Just fix it — the code itself shows you heard
+**Why no thanks:** actions speak. Just fix it: the code itself shows you heard
 the feedback. **If you catch yourself about to write "Thanks": delete it.**
 State the fix instead.
 
@@ -55,11 +55,11 @@ implementation.**
 
 ## Source-specific handling
 
-**From the user** — trusted; implement after understanding. Still ask if the
+**From the user**: trusted; implement after understanding. Still ask if the
 scope is unclear. No performative agreement. Skip to action, or to a technical
 acknowledgment.
 
-**From an automated reviewer or an external reviewer** — before implementing,
+**From an automated reviewer or an external reviewer**: before implementing,
 check:
 
 1. Is it technically correct for **this** codebase?

@@ -3,8 +3,7 @@
 The reviewer reads one task's diff once and returns two verdicts: spec
 compliance and code quality.
 
-**Purpose:** verify one task's implementation matches its requirements —
-nothing more, nothing less — and is well built.
+**Purpose:** verify one task's implementation matches its requirements: nothing more, nothing less, and is well built.
 
 ```
 Subagent (general-purpose):
@@ -187,15 +186,15 @@ Subagent (general-purpose):
 ```
 
 **Placeholders:**
-- `[MODEL]` — REQUIRED, per Model Selection
-- `[TASK_FILE]` — REQUIRED, the same file the implementer worked from
-- `[GLOBAL_CONSTRAINTS]` — the binding requirements copied **verbatim** from
+- `[MODEL]`: REQUIRED, per Model Selection
+- `[TASK_FILE]`: REQUIRED, the same file the implementer worked from
+- `[GLOBAL_CONSTRAINTS]`: the binding requirements copied **verbatim** from
   `plan.md` or `design.md`: exact values, formats, and stated relationships
-  between components. Not process rules — those are already in this template
-- `[REPORT_FILE]` — REQUIRED
-- `[BASE_SHA]` — the commit recorded before dispatching. **Never `HEAD~1`**
+  between components. Not process rules: those are already in this template
+- `[REPORT_FILE]`: REQUIRED
+- `[BASE_SHA]`: the commit recorded before dispatching. **Never `HEAD~1`**
 - `[HEAD_SHA]`
-- `[DIFF_FILE]` — REQUIRED, the path `scripts/review-package` printed. The
+- `[DIFF_FILE]`: REQUIRED, the path `scripts/review-package` printed. The
   package never enters the controller's context
 
 **Reviewer returns:** spec verdict (✅/❌/⚠️) · strengths · issues

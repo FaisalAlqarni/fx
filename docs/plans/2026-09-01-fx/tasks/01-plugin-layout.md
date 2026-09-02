@@ -1,7 +1,7 @@
-# 01 — Plugin layout and anchored reference paths
+# 01: Plugin layout and anchored reference paths
 
 **Status:** ready-for-agent
-**Blocked by:** None — can start immediately
+**Blocked by:** None: can start immediately
 **Phase:** MVP
 
 **What to build:** fx becomes a directory Claude Code can install, and every
@@ -21,17 +21,16 @@ layout that is about to move.
 
 **Interfaces:**
 - Produces: `${CLAUDE_PLUGIN_ROOT}` as the anchor every reference path uses
-- Produces: plugin root layout — `skills/` `agents/` `commands/` `hooks/` `lib/` `references/`
+- Produces: plugin root layout: `skills/` `agents/` `commands/` `hooks/` `lib/` `references/`
 - Consumes: nothing
 
-**Seam:** the installed plugin directory — assert on file layout and on the
+**Seam:** the installed plugin directory: assert on file layout and on the
 absence of bare `references/` paths, not on prose.
 
-**Risks:** a moved skill that keeps a stale relative path fails **silently** —
-the lane still runs, it just never loads the reference. The grep assertion in
+**Risks:** a moved skill that keeps a stale relative path fails **silently**: the lane still runs, it just never loads the reference. The grep assertion in
 the acceptance criteria is the only thing that catches it, so it must be exact.
 
-**Idempotency:** re-running is safe — moves are `git mv` guarded by a
+**Idempotency:** re-running is safe: moves are `git mv` guarded by a
 destination-exists check; the manifest write is a full overwrite; the path
 rewrite is a no-op once no bare paths remain.
 
@@ -40,10 +39,10 @@ referenced file existing on disk. Runs in CI-less form: one command, exits
 non-zero on failure.
 
 ## Acceptance criteria
-- [x] `.claude-plugin/plugin.json` declares `skills`, `commands` and `hooks`. **`agents` must NOT be declared** — it is discovered from `./agents/`, and declaring it fails install with `agents: Invalid input`. Verified against every working plugin manifest on this machine
+- [x] `.claude-plugin/plugin.json` declares `skills`, `commands` and `hooks`. **`agents` must NOT be declared**: it is discovered from `./agents/`, and declaring it fails install with `agents: Invalid input`. Verified against every working plugin manifest on this machine
 - [ ] All 9 lanes live under `skills/`
 - [ ] **Zero** bare `references/…` paths remain in any skill, sidecar or agent file
-- [ ] Every referenced reference file exists — no dangling pointer
+- [ ] Every referenced reference file exists: no dangling pointer
 - [ ] `hooks/hooks.json` registers `SessionStart` (matcher `startup|resume|clear|compact`), `SubagentStart`, and `PreToolUse` on Bash, all via `${CLAUDE_PLUGIN_ROOT}`
 - [ ] `lib/git-guard.test.js` still passes 69/69 from the new location
 
@@ -57,7 +56,7 @@ bare=$(grep -rlE '`references/[a-z/-]+\.(md|dot|ts)`' skills agents commands 2>/
 [ "$bare" -eq 0 ] || { echo "FAIL: $bare files carry unanchored reference paths"; exit 1; }
 ```
 
-- [ ] **2. Run it — verify RED**
+- [ ] **2. Run it: verify RED**
 
 Expected: FAIL, naming 7 lanes. That count is the proof the check works; a
 check that passes before the fix is testing nothing.
@@ -68,6 +67,6 @@ check that passes before the fix is testing nothing.
 
 - [ ] **5. Write the three manifests**
 
-- [ ] **6. Run the check — verify GREEN, and run the guard suite**
+- [ ] **6. Run the check: verify GREEN, and run the guard suite**
 
 Expected: check exits 0; `node lib/git-guard.test.js <main> <worktree>` → 69 passed.

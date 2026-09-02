@@ -21,11 +21,21 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 EXEMPT = ('skills/fx-humanize/', 'references/testing/', 'upstream/', '.git/',
-          'scripts/check-prose')
+          'scripts/check-prose', 'lib/fix-dashes.test.py',
+          # Anthropic's own skill-authoring guide, carried verbatim. Editing its
+          # prose would make it a local fork of a document whose value is that
+          # it is not one.
+          'skills/fx-authoring/anthropic-best-practices.md')
 
 # Stock AI vocabulary. Word-boundary matched so "delved" and "leverage" in a
 # code identifier do not fire.
-STOCK = ['delve', 'leverage', 'seamless', 'robust', 'comprehensive', 'crucial',
+# `leverage` is listed in its VERB forms only. fx uses the noun as a term of
+# art: `references/vocab/codebase-design.md` defines "leverage at the interface"
+# alongside module, depth and seam, and "the highest-leverage text in the plugin"
+# is ordinary English. The stock-AI tell is the verb ("leveraging X to Y"), and
+# banning the noun flagged twelve correct uses of fx's own vocabulary.
+STOCK = ['delve', 'leveraging', 'leverages', 'leveraged',
+         'seamless', 'robust', 'comprehensive', 'crucial',
          'utilize', 'pivotal', 'testament to', 'in the realm of',
          'it is important to note', 'plays a vital role']
 HEDGE = ["it's not just", 'it is not just', "isn't just", 'not only that']
@@ -41,35 +51,175 @@ def files(paths):
             yield p, rel
 
 
+FENCE = re.compile(r'(^```.*?^```)', re.M | re.S)
+
+# A line that opens a new block: list item, heading, quote, table row. A dash on
+# one of these belongs to that block and cannot pair with a dash on another.
+BLOCK_START = re.compile(r'^[ \t]*(?:[-*+>#|]|\d+[.)])')
+BLOCK_PAIR = re.compile(r'(?<=\S)[ \n][—–][ \n]([^\n]*(?:\n[^\n]*)??)[ \n][—–][ \n](?=\S)')
+# A parenthetical lives inside one sentence. A terminator inside the span means
+# the two dashes belong to different sentences and are not a pair.
+SENTENCE_END = re.compile(r'[.!?]["”’)]?[ \n]')
+
+
+def _pair(m):
+    """Turn a matched dash pair into parentheses, or decline and leave it."""
+    span = m.group(0)
+    inner = m.group(1)
+    # The opening dash's own line, reconstructed from what precedes the match.
+    head = m.string[:m.start()].rsplit('\n', 1)[-1]
+    if BLOCK_START.match(head + ' '):
+        # The pair may still be legitimate within this one item, but only if it
+        # closes on the same line. Anything else is item-to-item bleed.
+        if '\n' in span:
+            return span
+    if '|' in head or head.lstrip().startswith('#'):
+        return span                       # a table cell or a heading, never a paren
+    if any(BLOCK_START.match(l) for l in inner.split('\n')[1:]):
+        return span                       # the span swallowed the start of a new block
+    if SENTENCE_END.search(inner):
+        # Two consecutive sentences, each with its own single dash. Pairing them
+        # wraps a parenthesis around the sentence boundary: "you have already
+        # stopped (queue the next one. Progress summaries waste time) they asked".
+        return span
+    return f' ({inner}) '
+
+
+def blocks(text):
+    """Yield (first-line-number, text) for each paragraph outside fenced code.
+
+    Paragraph, not line: markdown wraps sentences, so a legitimate parenthesis
+    routinely opens on one line and closes on the next. Only a whole block that
+    fails to close indicates real damage.
+    """
+    infence = False
+    buf, start = [], 1
+    for n, line in enumerate(text.splitlines(), 1):
+        if line.lstrip().startswith('```'):
+            infence = not infence
+            continue
+        if infence:
+            continue
+        if line.strip():
+            if not buf:
+                start = n
+            buf.append(line)
+        elif buf:
+            yield start, '\n'.join(buf)
+            buf = []
+    if buf:
+        yield start, '\n'.join(buf)
+
+
+def fix_dashes(text):
+    """Replace em and en dashes with punctuation that reads.
+
+    The first version of this was a single `' — ' -> ': '` substitution, and it
+    produced sentences worse than the ones it replaced: "in every caller: and
+    patching only the path", "Project facts: structure, patterns, test commands:
+    are in repo.md". Both come from treating one dash at a time when the dash is
+    half of a pair, or when the next word is a conjunction that already carries
+    the join.
+
+    So the rules run in order, most specific first, and they run on the whole
+    text rather than line by line because markdown wraps sentences and half the
+    pairs straddle a newline. Fenced code is left alone: a dash inside a code
+    block is usually an operator or sample output, and rewriting it would change
+    what the example means.
+
+    Whatever survives all four rules needs a human. That is the point: the
+    remaining cases are judgement, and a fixer that guesses at them produces
+    text nobody wrote and nobody checked.
+    """
+    parts = FENCE.split(text)
+    for i, seg in enumerate(parts):
+        if seg.startswith('```'):
+            continue
+
+        # 1. Ranges: "2–3 sentences" is a range, not a clause break. Only when
+        #    the dash is tight against both digits. "100 — 6 engines" is a
+        #    clause break that happens to sit between two numbers, and reading
+        #    it as a range produced "100 to 6 engines".
+        seg = re.sub(r'(\d)[—–](\d)', r'\1 to \2', seg)
+
+        # 2. A dash before a conjunction is redundant: the conjunction already
+        #    joins the clauses. Comma is what was meant.
+        seg = re.sub(r'[ \n][—–][ \n]*(?=(and|but|so|or|nor|yet|then|because|which)\b)',
+                     ', ', seg)
+
+        # 3. Paired dashes are parentheses, but ONLY inside one block of prose.
+        #    This rule, unguarded, is what produced 272 mismatched parens: every
+        #    item in a list carries its own dash, so item 1's opened a paren
+        #    that item 2's closed. Same across table cells. So the span may not
+        #    contain a line that starts a new block, and neither end may sit on
+        #    a table row or a heading, where a paren is never what was meant.
+        seg = BLOCK_PAIR.sub(_pair, seg)
+
+        # 4. What is left is a single dash introducing an explanation, which is
+        #    what a colon is for.
+        seg = re.sub(r'[ \n][—–][ \n]', ': ', seg)
+        seg = re.sub(r'[—–]', ':', seg)          # any hard-up-against-a-word remainder
+
+        parts[i] = seg
+    return ''.join(parts)
+
+
 def main():
     argv = [a for a in sys.argv[1:] if not a.startswith('--')]
     fix = '--fix-dashes' in sys.argv
-    dash_lines = stock_hits = 0
+    dash_lines = stock_hits = unbalanced = 0
     report = []
 
     for p, rel in files(argv):
         text = p.read_text()
         if fix:
-            new = re.sub(r' [—–] ', ': ', text)
+            new = fix_dashes(text)
             if new != text:
                 p.write_text(new)
                 text = new
 
+        # A block whose parentheses do not close is almost always this script's
+        # own damage: --fix-dashes turns a matched pair of dashes into a pair of
+        # parens, and a pairing rule that guesses wrong leaves one of each in
+        # different places. Counting dashes cannot see it, because the broken
+        # output has no dashes left in it, so the dash gate goes green on text
+        # nobody could read. DEBT #37.
+        for start, block in blocks(text):
+            if block.count('(') != block.count(')'):
+                unbalanced += 1
+                report.append(f'  {rel}:{start}  unclosed parenthesis in this block')
+
+        # Fenced code is skipped here for the same reason --fix-dashes skips it:
+        # a dash in a sample command, a tree diagram or an output template is
+        # part of the example. Counting what the fixer will never touch means a
+        # gate that cannot go green, which is a gate people learn to ignore.
+        infence = False
         for n, line in enumerate(text.splitlines(), 1):
+            if line.lstrip().startswith('```'):
+                infence = not infence
+                continue
+            if infence:
+                continue
             if '—' in line or '–' in line:
                 dash_lines += 1
                 report.append(f'  {rel}:{n}  dash')
             low = line.lower()
+            # A line that names three or more of these is the rule being stated,
+            # not the rule being broken. PREAMBLE.md and DEBT.md both quote the
+            # banned list verbatim.
+            if sum(1 for w in STOCK if re.search(rf'\b{re.escape(w)}\b', low)) >= 3:
+                continue
             for w in STOCK + HEDGE:
                 if re.search(rf'\b{re.escape(w)}\b', low):
                     stock_hits += 1
                     report.append(f'  {rel}:{n}  "{w}"')
 
     if not report:
-        print('OK: no dashes, no stock vocabulary')
+        print('OK: no dashes, no stock vocabulary, parentheses balanced')
         return 0
 
-    print(f'FAIL: {dash_lines} lines with a dash, {stock_hits} stock-vocabulary hits')
+    print(f'FAIL: {dash_lines} lines with a dash, {stock_hits} stock-vocabulary '
+          f'hits, {unbalanced} block(s) with an unclosed parenthesis')
     for r in report[:40]:
         print(r)
     if len(report) > 40:

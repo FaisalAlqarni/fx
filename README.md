@@ -101,11 +101,11 @@ PREAMBLE.md   injected into every session AND every subagent
 
 ## Install
 
-The two installs are **independent** — neither runtime requires the other.
+The two installs are **independent**: neither runtime requires the other.
 
-**opencode** — `./scripts/fx-opencode-install`. Nothing reads `~/.claude`.
+**opencode**: `./scripts/fx-opencode-install`. Nothing reads `~/.claude`.
 
-**Claude Code** — `/plugin marketplace add FaisalAlqarni/fx` then
+**Claude Code**: `/plugin marketplace add FaisalAlqarni/fx` then
 `/plugin install fx@fx`.
 
 Full steps for both: [`INSTALL.md`](INSTALL.md).
@@ -116,22 +116,43 @@ Then, in each repository you work in:
 /fx:setup
 ```
 
-which writes `.fx.json` (commands, stacks) and generates `repo.md` — the
-project's structure and patterns — for your review before it lands.
+which writes `.fx.json` (commands, stacks) and generates `repo.md` (the
+project's structure and patterns) for your review before it lands.
 
 ## The rules it enforces
 
 The git guard is not advisory. On the main checkout every mutating git command
 is refused; inside a worktree you are free. Attribution trailers
 (`Co-Authored-By`, `Claude-Session`, "Generated with") are blocked in commit
-messages everywhere — including inside a dispatched subagent, which reads
+messages everywhere: including inside a dispatched subagent, which reads
 neither `CLAUDE.md` nor memory and would otherwise never see the rule.
 
 ## Tests
 
+Three of the suites need a main checkout and a linked worktree to run against.
+Build them first. `make-git-fixture` writes the worktree metadata directly,
+because the obvious route (init, commit, add a worktree) is blocked at the
+commit by fx's own guard: a scratch fixture repo is a main checkout like any
+other, and the guard is right not to try to tell them apart.
+
 ```
-node lib/git-guard.test.js <main-checkout> <worktree>
-scripts/check-paths
+FIX=$(scripts/make-git-fixture /tmp/fx-fixture)
+
+node lib/git-guard.test.js   $FIX      # 87 assertions
+node lib/base-branch.test.js $FIX      # 27
+node lib/heredoc.test.js     $FIX      # 13
+node lib/plan-state.test.js            # 17
+python3 lib/fix-dashes.test.py         # 15
 ```
 
-The nine skills themselves are **not** behaviourally tested yet — see `DEBT.md`.
+Gates, all of which exit non-zero on a problem:
+
+```
+scripts/check-manifest           keys the installer accepts, and the two it rejects
+scripts/check-paths              every reference citation resolves
+scripts/check-reference-leaves   no reference links to another reference
+scripts/check-prose              no dashes, no stock vocabulary, parens balanced
+scripts/check-collisions         other installed skills contesting an fx lane
+```
+
+The nine skills themselves are **not** behaviourally tested yet: see `DEBT.md`.

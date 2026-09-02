@@ -3,7 +3,7 @@
 
 fx does not read skills. The **runtime** loads every pool into one selection
 list, so a skill you install in a repo sits beside the fx lanes as an equal
-candidate. fx's one-claimant-per-intent guarantee holds *within fx* — it cannot
+candidate. fx's one-claimant-per-intent guarantee holds *within fx*: it cannot
 extend to pools fx does not own.
 
 That is fine when a repo skill is repo-specific (deploy steps, a data import).
@@ -88,13 +88,13 @@ def main():
         print("    cannot be selected on merit. Measured: at ~480 skills, seven fx")
         print("    skills showed no description; at ~40, all of them did.")
     if not collisions:
-        print("no collisions — one claimant per intent holds")
+        print("no collisions: one claimant per intent holds")
         return 0
 
     print(f"\n{len(collisions)} possible collision(s):")
     for c in collisions:
         print(f"  ! {c}")
-    print("\nThese are CANDIDATES for judgment, not verdicts — the match is on name\n"
+    print("\nThese are CANDIDATES for judgment, not verdicts: the match is on name\n"
           "and description text, so a skill can be flagged and still be fine.\n"
           "`postgres` and `mysql` are the known example: they trigger on \"working\n"
           "with a Postgres database\", which no fx lane claims.\n\n"

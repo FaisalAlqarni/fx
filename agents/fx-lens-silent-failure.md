@@ -24,7 +24,7 @@ Announce: "Lens: silent-failure."
 
 The question you ask of every path in the diff: **when this breaks in
 production at 3am, can a human see that it broke, and why?** Anything that
-answers "no" is a finding — regardless of how tidy the code looks.
+answers "no" is a finding: regardless of how tidy the code looks.
 
 ## Hunt list
 
@@ -33,7 +33,7 @@ answers "no" is a finding — regardless of how tidy the code looks.
 - `rescue` with an empty body, or a body that only `return nil` / `return []`.
 - `rescue nil`, `rescue => e` with `e` never used, bare `rescue Exception`,
   `catch (Exception) { }`, `catch` that returns a default.
-- A rescue so broad it also hides `NoMethodError` and typos — the handler
+- A rescue so broad it also hides `NoMethodError` and typos: the handler
   written for a network timeout that now eats every bug beneath it.
 - `.catch(() => [])` and equivalents on the JS/Stimulus side.
 
@@ -50,7 +50,7 @@ answers "no" is a finding — regardless of how tidy the code looks.
 
 **Logging that is not observability**
 
-- `log.error` with no exception, no identifier, no input — an alert nobody can
+- `log.error` with no exception, no identifier, no input: an alert nobody can
   act on.
 - Wrong severity: a real failure logged at `debug` or `info`, so it never
   reaches an alert.
@@ -60,7 +60,7 @@ answers "no" is a finding — regardless of how tidy the code looks.
 
 **Lost propagation**
 
-- Re-raising a new generic error without the original as cause — stack trace
+- Re-raising a new generic error without the original as cause: stack trace
   and root cause gone.
 - An async path whose exception is never awaited or observed: a bare
   `async void`, an un-awaited `Task`, a thread or `Concurrent::Promise` whose
@@ -72,7 +72,7 @@ answers "no" is a finding — regardless of how tidy the code looks.
 
 **Missing handling entirely**
 
-- An external HTTP call with no timeout — the failure mode is a hung worker,
+- An external HTTP call with no timeout: the failure mode is a hung worker,
   not an error.
 - File, network, broker or DB work with no error path at all.
 - Multi-step write with no transaction, or a transaction whose rollback path
@@ -84,7 +84,7 @@ answers "no" is a finding — regardless of how tidy the code looks.
 
 Read the diff. For each rescue or catch, find the caller and answer: what does
 the caller now believe happened? Grep for the swallowing helper's other call
-sites — one guard usually feeds many paths. Check whether anything downstream
+sites: one guard usually feeds many paths. Check whether anything downstream
 could distinguish this failure from an empty success.
 
 Read-only shell commands only.

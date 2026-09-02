@@ -18,39 +18,39 @@ Consulted by `fx-brainstorm` (unit boundaries), `fx-tdd` (where a seam goes),
 Use these terms exactly. **Don't substitute "component", "service", "API", or
 "boundary".** Consistent language is the whole point.
 
-**Module** — anything with an interface and an implementation. Deliberately
+**Module**: anything with an interface and an implementation. Deliberately
 scale-agnostic: a function, a class, a package, a tier-spanning slice.
 *Avoid:* unit, component, service.
 
-**Interface** — everything a caller must know to use the module correctly: the
+**Interface**: everything a caller must know to use the module correctly: the
 type signature, but also **invariants, ordering constraints, error modes,
 required configuration, and performance characteristics.**
-*Avoid:* API, signature — too narrow, they refer only to the type-level surface.
+*Avoid:* API, signature: too narrow, they refer only to the type-level surface.
 
-**Implementation** — what's inside a module, its body of code. Distinct from
+**Implementation**: what's inside a module, its body of code. Distinct from
 **adapter**: a thing can be a small adapter with a large implementation (a
 Postgres repository) or a large adapter with a small implementation (an
 in-memory fake). Reach for "adapter" when the seam is the topic;
 "implementation" otherwise.
 
-**Depth** — **leverage at the interface.** The amount of behaviour a caller (or
+**Depth**: **leverage at the interface.** The amount of behaviour a caller (or
 a test) can exercise per unit of interface they have to learn. A module is
 **deep** when a large amount of behaviour sits behind a small interface,
 **shallow** when the interface is nearly as complex as the implementation.
 
-**Seam** *(Michael Feathers)* — a place where you can alter behaviour **without
+**Seam** *(Michael Feathers)*: a place where you can alter behaviour **without
 editing in that place**; the *location* at which a module's interface lives.
 Where to put the seam is its own design decision, distinct from what goes
-behind it. *Avoid:* boundary — overloaded with DDD's bounded context.
+behind it. *Avoid:* boundary: overloaded with DDD's bounded context.
 
-**Adapter** — a concrete thing that satisfies an interface at a seam. Describes
+**Adapter**: a concrete thing that satisfies an interface at a seam. Describes
 **role** (what slot it fills), not substance (what's inside).
 
-**Leverage** — what callers get from depth. More capability per unit of
+**Leverage**: what callers get from depth. More capability per unit of
 interface they learn. One implementation pays back across N call sites and M
 tests.
 
-**Locality** — what maintainers get from depth. Change, bugs, knowledge and
+**Locality**: what maintainers get from depth. Change, bugs, knowledge and
 verification **concentrate in one place** rather than spreading across callers.
 Fix once, fixed everywhere.
 
@@ -124,7 +124,7 @@ simpler test setup.
 
 ## Relationships
 
-- A **Module** has exactly one **Interface** — the surface it presents to
+- A **Module** has exactly one **Interface**: the surface it presents to
   callers and tests.
 - **Depth** is a property of a **Module**, measured against its **Interface**.
 - A **Seam** is where a **Module**'s **Interface** lives.
@@ -134,11 +134,11 @@ simpler test setup.
 ## Rejected framings
 
 - **Depth as a ratio of implementation-lines to interface-lines** (Ousterhout)
-  — rewards padding the implementation. Use depth-as-leverage instead.
+ : rewards padding the implementation. Use depth-as-leverage instead.
 - **"Interface" as the language's `interface` keyword, or a class's public
-  methods** — too narrow. Interface here includes *every fact a caller must
+  methods**: too narrow. Interface here includes *every fact a caller must
   know*.
-- **"Boundary"** — overloaded with DDD's bounded context. Say **seam** or
+- **"Boundary"**: overloaded with DDD's bounded context. Say **seam** or
   **interface**.
 
 ## Deepening
@@ -160,14 +160,14 @@ directly. No adapter needed.
 
 #### 2. Local-substitutable
 
-Dependencies with local test stand-ins — a real Postgres in Docker, an
+Dependencies with local test stand-ins: a real Postgres in Docker, an
 in-memory filesystem, a test ClickHouse.
 
 **Deepenable if the stand-in exists.** The deepened module is tested with the
 stand-in running in the suite. **The seam is internal; no port at the module's
 external interface.**
 
-#### 3. Remote but owned — ports & adapters
+#### 3. Remote but owned: ports & adapters
 
 Your own services across a network boundary: another engine over gRPC, an
 internal API, a queue consumer.
@@ -180,7 +180,7 @@ Recommendation shape: *"Define a port at the seam, implement an HTTP adapter
 for production and an in-memory adapter for testing, so the logic sits in one
 deep module even though it's deployed across a network."*
 
-#### 4. True external — mock
+#### 4. True external: mock
 
 Third-party services you don't control: a payment gateway, an SMS provider, a
 push service.
@@ -191,7 +191,7 @@ tests provide a mock adapter.
 ### Seam discipline
 
 - **One adapter means a hypothetical seam. Two adapters means a real one.**
-  Don't introduce a port unless at least two adapters are justified — typically
+  Don't introduce a port unless at least two adapters are justified: typically
   production plus test. **A single-adapter seam is just indirection.**
 - **Internal seams vs external seams.** A deep module can have internal seams,
   private to its implementation and used by its own tests, as well as the
@@ -215,7 +215,7 @@ For exploring alternative interfaces for a chosen deepening candidate, using
 parallel sub-agents. After Ousterhout: **your first idea is unlikely to be the
 best.**
 
-Vocabulary: the Glossary above — module · interface · seam · adapter ·
+Vocabulary: the Glossary above: module · interface · seam · adapter ·
 leverage.
 
 ### 1. Frame the problem space
@@ -226,7 +226,7 @@ space for the chosen candidate:
 - The **constraints** any new interface would need to satisfy
 - The **dependencies** it relies on, and which category they fall into
   (see *Dependency categories* above)
-- A rough **illustrative code sketch** to ground the constraints — not a
+- A rough **illustrative code sketch** to ground the constraints: not a
   proposal, just a way to make the constraints concrete
 
 Show this to the user, then **immediately proceed to step 2.** The user reads
@@ -237,19 +237,19 @@ and thinks while the sub-agents work in parallel.
 Spawn **3 or more in parallel.** Each must produce a **radically different**
 interface for the deepened module.
 
-Prompt each with a **separate technical brief** — file paths, coupling details,
+Prompt each with a **separate technical brief**: file paths, coupling details,
 the dependency category from *Dependency categories* above, what sits behind
 the seam. **The brief is independent of the user-facing explanation from step
 1.**
 
 Give each a different design constraint:
 
-- **Agent 1** — "Minimize the interface: aim for 1–3 entry points max. Maximise
+- **Agent 1**: "Minimize the interface: aim for 1 to 3 entry points max. Maximise
   leverage per entry point."
-- **Agent 2** — "Maximise flexibility: support many use cases and extension."
-- **Agent 3** — "Optimise for the most common caller: make the default case
+- **Agent 2**: "Maximise flexibility: support many use cases and extension."
+- **Agent 3**: "Optimise for the most common caller: make the default case
   trivial."
-- **Agent 4** *(if applicable)* — "Design around ports & adapters for
+- **Agent 4** *(if applicable)*: "Design around ports & adapters for
   cross-seam dependencies."
 
 **Include both this file's vocabulary and the project's `CONTEXT.md`
@@ -258,12 +258,12 @@ the architecture language *and* the domain language.
 
 Each sub-agent outputs:
 
-1. **Interface** — types, methods, params, plus **invariants, ordering, error
+1. **Interface**: types, methods, params, plus **invariants, ordering, error
    modes**
 2. **Usage example** showing how callers use it
 3. **What the implementation hides** behind the seam
 4. **Dependency strategy and adapters** (see *Dependency categories* above)
-5. **Trade-offs** — where leverage is high, where it's thin
+5. **Trade-offs**: where leverage is high, where it's thin
 
 ### 3. Present and compare
 
@@ -281,6 +281,6 @@ elements from different designs would combine well, propose a hybrid.
 ## Companion references
 
 None. Deepening and design-it-twice used to be peer files and are now sections
-of this one — a lane pulls this single file and has the whole topic. References
+of this one: a lane pulls this single file and has the whole topic. References
 are leaves: no reference links to another reference, because nested references
 get partially read.

@@ -16,10 +16,10 @@ the real dependency proves slow or external.
 
 ---
 
-## Principle 1 — Name the break
+## Principle 1: Name the break
 
 Before writing the test body, answer: **what production change should make this
-test fail — and is that change a bug or a decision?** A test earns its place by
+test fail, and is that change a bug or a decision?** A test earns its place by
 catching a wrong branch, a missing side effect, a wrong argument, a boundary
 case, or a broken contract.
 
@@ -27,7 +27,7 @@ case, or a broken contract.
 
 Use literals and hand-checked fixtures. Table-driven tests with literal
 expected values are the preferred shape. An expectation computed by the code
-under test — or its helpers — passes no matter what that code does.
+under test, or its helpers: passes no matter what that code does.
 
 ```ruby
 # ❌ Mirror assertion: the same builder computes both sides — always true
@@ -50,8 +50,8 @@ expect(calculate_total([{ price: 10 }, { price: 5 }])).to eq(15)
 
 ### No change detectors
 
-If only intentional decisions can fail a test — a constant's value, exact
-message wording, private structure — it fires on redesign and sleeps through
+If only intentional decisions can fail a test (a constant's value, exact
+message wording, private structure) it fires on redesign and sleeps through
 bugs. Test the behavior that depends on the decision: not
 `expect(MAX_RETRIES).to eq(5)` but *"a failing call is retried 5 times and the
 6th attempt never happens."*
@@ -65,10 +65,10 @@ by the consuming agent's behavior; prose for humans earns no test at all.
 
 ### Your code, not the framework
 
-Test the contract your code makes at its boundaries — the route you register,
+Test the contract your code makes at its boundaries: the route you register,
 the query you emit, the payload you produce. Upstream mechanics are their
 maintainers' tests to write. (The classic: asserting that your router invokes a
-registered handler — that is Rails' test, not yours.)
+registered handler: that is Rails' test, not yours.)
 
 When upstream behavior genuinely surprised you, write **one** narrow
 characterization test naming the assumption.
@@ -96,12 +96,11 @@ BEFORE writing the test body:
 
 ---
 
-## Principle 2 — Exercise the real thing
+## Principle 2: Exercise the real thing
 
 ### The mock earns no assertions
 
-A mock assertion passes when the mock is present and fails when it is absent —
-it says nothing about the component. Assert the real component's behavior; if
+A mock assertion passes when the mock is present and fails when it is absent: it says nothing about the component. Assert the real component's behavior; if
 the mock is what you're checking, unmock it or delete the assertion.
 
 The user's correction, verbatim: **"Are we testing the behavior of a mock?"**
@@ -125,7 +124,7 @@ end
 ### Mock at system boundaries only
 
 **Mock:** external APIs (payment, email, SMS) · time and randomness · the file
-system (sometimes) · databases (sometimes — prefer a real test DB).
+system (sometimes) · databases (sometimes: prefer a real test DB).
 
 **Never mock:** your own classes and modules · internal collaborators ·
 anything you control.
@@ -158,15 +157,14 @@ inside the mock, and it's visible which endpoints a test exercises.
 
 ### Make doubles specific
 
-When arguments, call counts, or ordering are part of the contract, assert them
-— a fake that accepts anything verifies nothing. Give each branch (success,
+When arguments, call counts, or ordering are part of the contract, assert them: a fake that accepts anything verifies nothing. Give each branch (success,
 error, malformed) its own fixture or spy, so the wrong branch cannot satisfy
 the expectation.
 
 ### Mirror real data completely
 
-Mock the **complete** structure as it exists in reality — every documented
-field — not just the ones your test reads. **Partial mocks fail silently when
+Mock the **complete** structure as it exists in reality (every documented
+field) not just the ones your test reads. **Partial mocks fail silently when
 downstream code reads an omitted field: the test passes while integration
 breaks.**
 
@@ -179,32 +177,32 @@ class own this resource's lifecycle? Wrong answers → test utility.
 ### Prefer real components over complex mocks
 
 When mock setup outgrows the test logic, when mocks miss methods the real
-components have, or when tests break because the mock changed — switch to an
+components have, or when tests break because the mock changed: switch to an
 integration test with real components.
 
 The user's question, verbatim: **"Do we need to be using a mock here?"**
 
 ### Testing non-deterministic behavior
 
-When behavior is genuinely non-deterministic — a background thread, a job
-queue, a timer, a race between two writers — **the seam is not optional.**
+When behavior is genuinely non-deterministic (a background thread, a job
+queue, a timer, a race between two writers) **the seam is not optional.**
 Inject the collaborator that decides timing and assert on it directly, rather
 than asserting on the outcome through the race it creates.
 
 **Polling with a deadline is not the fix.** A test that fires the async work,
 then polls until a row appears or a deadline expires, looks like it handles
-the non-determinism — it works around it instead. It **passes for the wrong
+the non-determinism: it works around it instead. It **passes for the wrong
 implementation**: code that writes synchronously on the calling thread
 satisfies the same poll, so the test cannot tell "runs in the background" from
 "runs immediately." And it **hangs or flakes for the right one**: real async
 work has real tail latency (GC pause, pool contention, a slow runner), so a
 deadline short enough to keep the suite fast is too short for the slow tail,
 and one long enough to survive it slows every run. Neither failure is about
-your code — both are about testing a race instead of the decision that
+your code: both are about testing a race instead of the decision that
 produces it.
 
 **Inject the collaborator.** Give the code the thing that runs the async
-work — an executor, a job class, a scheduler — as an argument, not a
+work (an executor, a job class, a scheduler) as an argument, not a
 hardcoded `Thread.new`. The test substitutes one it controls and asserts the
 work was scheduled, with no polling and no deadline:
 
@@ -221,7 +219,7 @@ end
 ```
 
 **A returned handle is a legitimate seam.** If the work must run elsewhere,
-return something the caller — and the test — can join: a `Thread`, a
+return something the caller, and the test: can join: a `Thread`, a
 `Future`, a job ID to wait on directly instead of inferring completion from a
 side effect. `result = notify_subscribers(event); result.join; assert …`
 exercises the same path production uses and fails deterministically instead
@@ -230,11 +228,10 @@ of flakily.
 **A test-only synchronous path is a real trade, not a shortcut.** Running
 inline under test and async in production (`inline: true`, `Rails.env.test?`)
 is a legitimate seam with one real cost: production runs code the tests never
-exercise — the actual thread, the actual queue, the actual race. That trade is
+exercise: the actual thread, the actual queue, the actual race. That trade is
 correct when the async wrapper is thin and already trustworthy (a job
 library, a pool from a gem) and what you're protecting is the logic *inside*
-the block. It stops being correct once the async mechanics themselves —
-retry, ordering, backpressure — are what you're building; that needs its own
+the block. It stops being correct once the async mechanics themselves (retry, ordering, backpressure) are what you're building; that needs its own
 test that runs for real.
 
 **A spawned thread in Rails needs its own connection.** ActiveRecord checks a
@@ -245,7 +242,7 @@ waiting for a connection a transactional test fixture is holding. This is
 also why a spawned thread can appear not to see data a test just wrote: a
 request spec rolls back its transaction at the end, and a thread on a
 different connection sees only what committed outside it. **That behavior is
-a property of the test harness, not of the code under test** — decide it
+a property of the test harness, not of the code under test**: decide it
 deliberately rather than debugging it as a feature bug.
 
 ### Gate function
@@ -298,7 +295,7 @@ describing HOW not WHAT · verifying through a side channel.
 
 ## Tests ship with the implementation
 
-The TDD cycle — failing test, minimal implementation, refactor — is what
+The TDD cycle (failing test, minimal implementation, refactor) is what
 "complete" means. Ship the tests the behavior needs and **only** those: trivial
 code and human prose earn none, and a test written to satisfy process costs
 maintenance forever.
@@ -314,14 +311,14 @@ fail for each realistic mutation:
 - Empty or default return
 - Missing validation for zero, empty, nil, unauthorized, or malformed input
 
-**A mutation nothing catches marks the behavior as unprotected — or the test as
+**A mutation nothing catches marks the behavior as unprotected, or the test as
 tautological.**
 
 ## Quick reference
 
 | When you… | Do |
 |---|---|
-| Write any test | Name the break it catches — a bug, not a decision |
+| Write any test | Name the break it catches: a bug, not a decision |
 | Build an expected value | Derive it by hand; never with the code under test |
 | Test a script or document | Run it and assert effects; never grep its text |
 | Reach for a dependency test | Test your boundary contract, not their mechanics |

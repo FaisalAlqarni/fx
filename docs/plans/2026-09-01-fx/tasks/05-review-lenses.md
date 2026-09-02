@@ -1,4 +1,4 @@
-# 05 — Four review lenses
+# 05: Four review lenses
 
 **Status:** ready-for-agent
 **Blocked by:** 01
@@ -15,11 +15,10 @@ pass.
 
 **Files:**
 - Create: `agents/fx-lens-database.md`, `fx-lens-security.md`, `fx-lens-a11y.md`, `fx-lens-silent-failure.md`
-- Modify: `.claude-plugin/plugin.json` — declare them
+- Modify: `.claude-plugin/plugin.json`: declare them
 - Verify: `skills/fx-review/SKILL.md` trigger table matches the names shipped
 
-**Source (line counts as found):** `~/.claude/plugins/marketplaces/ecc/agents/` —
-`database-reviewer` 100 · `security-reviewer` 117 · `a11y-architect` 149 ·
+**Source (line counts as found):** `~/.claude/plugins/marketplaces/ecc/agents/`: `database-reviewer` 100 · `security-reviewer` 117 · `a11y-architect` 149 ·
 `silent-failure-hunter` 59.
 
 **Interfaces:**
@@ -29,8 +28,8 @@ pass.
 **Seam:** agent frontmatter and the `fx-review` trigger table. Assert the names
 match on both sides.
 
-**Risks:** an omitted `model:` silently inherits the session's — usually the
-most expensive — which quietly reverses the cost argument these lenses were
+**Risks:** an omitted `model:` silently inherits the session's: usually the
+most expensive, which quietly reverses the cost argument these lenses were
 justified by. Pin `security` and `database` at top tier, `a11y` and
 `silent-failure` mid. Sources are stack-flavoured for other ecosystems; adapt
 triggers to real file patterns rather than copying upstream's.
@@ -41,7 +40,7 @@ triggers to real file patterns rather than copying upstream's.
 file; no agent declares a write tool.
 
 ## Acceptance criteria
-- [ ] Four agents exist, each **read-only** — no `Write`, `Edit` or `NotebookEdit`
+- [ ] Four agents exist, each **read-only**: no `Write`, `Edit` or `NotebookEdit`
 - [ ] Each pins `model:` explicitly at the agreed tier
 - [ ] Every name in `fx-review`'s trigger table resolves to a shipped file
 - [ ] Triggers name file patterns that occur in this user's repos
@@ -60,7 +59,7 @@ for a in database security a11y silent-failure; do
 done
 ```
 
-- [ ] **2. Run it — verify RED**
+- [ ] **2. Run it: verify RED**
 
 Expected: FAIL on the first missing file.
 
@@ -68,6 +67,6 @@ Expected: FAIL on the first missing file.
 
 - [ ] **4. Adapt each: triggers, model, read-only tools**
 
-- [ ] **5. Run the check — verify GREEN**
+- [ ] **5. Run the check: verify GREEN**
 
 - [ ] **6. Cross-check the trigger table** in `fx-review` against the four names.

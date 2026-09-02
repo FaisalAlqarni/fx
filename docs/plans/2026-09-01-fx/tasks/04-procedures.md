@@ -1,4 +1,4 @@
-# 04 — Procedures: copy and wire
+# 04: Procedures: copy and wire
 
 **Status:** ready-for-agent
 **Blocked by:** 01
@@ -6,15 +6,15 @@
 
 **What to build:** design decision D-B. The Procedures tier stops being
 described-but-absent. `research` and `prototype` are copied verbatim, and
-`prototype` is actually called by `fx-brainstorm` — which the documentation has
+`prototype` is actually called by `fx-brainstorm`, which the documentation has
 claimed all along while no such call existed.
 
 **Files:**
 - Create: `skills/research/SKILL.md` (12 upstream lines + one added paragraph)
 - Create: `skills/prototype/SKILL.md` (26 ln), `skills/prototype/LOGIC.md`, `skills/prototype/UI.md`
-- Modify: `skills/fx-brainstorm/SKILL.md` — §4 invokes `prototype`
-- Modify: `.claude-plugin/plugin.json` — declare both
-- Modify: `SURFACE.md`, design doc §1/§2 — tier count 0 → 2
+- Modify: `skills/fx-brainstorm/SKILL.md`: §4 invokes `prototype`
+- Modify: `.claude-plugin/plugin.json`: declare both
+- Modify: `SURFACE.md`, design doc §1/§2: tier count 0 → 2
 
 **Source:** `~/.claude/plugins/cache/claude-plugins-official/mattpocock-skills/1.2.3/skills/engineering/{research,prototype}/`
 
@@ -24,8 +24,7 @@ claimed all along while no such call existed.
 
 **Seam:** skill selection. A procedure must not contest a lane.
 
-**Risks:** the upstream `prototype/` ships an `agents/` subdirectory —
-**inspect it before copying**, do not assume it belongs. The added `research`
+**Risks:** the upstream `prototype/` ships an `agents/` subdirectory: **inspect it before copying**, do not assume it belongs. The added `research`
 paragraph is the one deliberate modification: query terms may not carry module
 names, file paths or internal service names. Anything more makes it a rewrite,
 not a copy.
@@ -52,7 +51,7 @@ already present.
 grep -q 'prototype' skills/fx-brainstorm/SKILL.md || { echo "FAIL: fx-brainstorm does not call prototype"; exit 1; }
 ```
 
-- [ ] **2. Run it — verify RED**
+- [ ] **2. Run it: verify RED**
 
 Expected: FAIL. This is the assertion whose absence let the false claim survive.
 
@@ -62,4 +61,4 @@ Expected: FAIL. This is the assertion whose absence let the false claim survive.
 
 - [ ] **5. Wire `prototype` into `fx-brainstorm` §4**
 
-- [ ] **6. Run the check — verify GREEN, and diff both against upstream**
+- [ ] **6. Run the check: verify GREEN, and diff both against upstream**

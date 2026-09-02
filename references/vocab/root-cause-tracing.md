@@ -1,6 +1,6 @@
 # Root Cause Tracing
 
-Bugs often manifest **deep in the call stack** — a file created in the wrong
+Bugs often manifest **deep in the call stack**: a file created in the wrong
 location, a database opened with the wrong path, a job enqueued to the wrong
 queue. Your instinct is to fix where the error appears. **That is treating a
 symptom.**
@@ -15,7 +15,7 @@ original trigger, then fix at the source.**
 - It's unclear where the invalid data originated
 - You need to find which test or code path triggers the problem
 
-Can't trace backwards — genuine dead end? Then fix at the symptom point, and
+Can't trace backwards: genuine dead end? Then fix at the symptom point, and
 say that's what you're doing and why.
 
 ## The tracing process
@@ -55,7 +55,7 @@ let(:account) { Current.account }   # read before the around-hook set it
 ```
 
 **Root cause:** a top-level binding read a value before it was initialized.
-**Fix at the source** — make the accessor raise when read too early — not at
+**Fix at the source** (make the accessor raise when read too early) not at
 `Delivery.create!`.
 
 ## Adding stack traces when you can't trace manually
@@ -73,10 +73,10 @@ end
 ```
 
 - **Use the loudest channel available.** In specs, a suppressed logger hides
-  everything — `warn`/`$stderr` survives where `Rails.logger` may not.
+  everything: `warn`/`$stderr` survives where `Rails.logger` may not.
 - **Include context:** the value, the ambient state it should match, relevant
   environment variables, timestamps.
-- **Capture the call chain** — `caller` in Ruby, `Environment.StackTrace` in
+- **Capture the call chain**: `caller` in Ruby, `Environment.StackTrace` in
   C#, `Thread.currentThread().stackTrace` in Kotlin.
 - **Tag it** with a unique prefix (`[DEBUG-a4f2]`) so cleanup is one grep, per
   `fx-debug` Phase 4.
@@ -88,7 +88,7 @@ docker compose exec shared bundle exec rspec path/to/spec.rb 2>&1 | grep 'DEBUG-
 ```
 
 **Analysing the traces:** look for the test or entry-point file name · find the
-line number triggering the call · identify the pattern — same caller? same
+line number triggering the call · identify the pattern: same caller? same
 parameter? same tenant?
 
 ## Finding which test causes pollution

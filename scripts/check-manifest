@@ -2,7 +2,7 @@
 """Validate .claude-plugin/plugin.json before an install tries to.
 
 Written after a real failure: `agents: ["./agents/"]` was rejected with
-"agents: Invalid input". Agents are discovered by convention from ./agents/ —
+"agents: Invalid input". Agents are discovered by convention from ./agents/ :
 no plugin that installs cleanly declares an `agents` key at all.
 
 Checks:
@@ -19,7 +19,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / ".claude-plugin" / "plugin.json"
 
 # Union of keys seen in plugins that install successfully.
-# `agents` is deliberately ABSENT — declaring it fails validation.
+# `agents` is deliberately ABSENT: declaring it fails validation.
 ALLOWED = {
     "name", "version", "description", "author", "homepage", "repository",
     "license", "keywords", "skills", "commands", "mcpServers", "userConfig",
@@ -35,10 +35,10 @@ d = json.loads(MANIFEST.read_text())
 
 for k in d:
     if k in CONVENTION_ONLY:
-        errors.append(f"`{k}` must NOT be declared — it is discovered from ./{k}/. "
+        errors.append(f"`{k}` must NOT be declared: it is discovered from ./{k}/. "
                       f"Declaring it fails install with '{k}: Invalid input'.")
     elif k not in ALLOWED:
-        errors.append(f"unknown key `{k}` — not seen in any working manifest")
+        errors.append(f"unknown key `{k}`: not seen in any working manifest")
 
 for key in ("skills", "commands"):
     for entry in d.get(key, []):
@@ -65,5 +65,5 @@ if errors:
         print(f"  {e}")
     sys.exit(1)
 
-print(f"OK: manifest valid — {len(d.get('skills', []))} skills declared, "
+print(f"OK: manifest valid: {len(d.get('skills', []))} skills declared, "
       f"{len(d.get('commands', []))} command path(s), hooks wired")

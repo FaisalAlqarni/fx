@@ -4,7 +4,7 @@ The single canonical preamble. Injected into every session **and every
 dispatched subagent**, on both runtimes, from this one file.
 
 Subagents read neither `CLAUDE.md` nor memory. Anything that must hold for a
-subagent has to be here — that is the whole reason this file exists, and the
+subagent has to be here: that is the whole reason this file exists, and the
 reason it stays short.
 
 ---
@@ -30,12 +30,12 @@ Two rungs work → take the higher one and move on.
 
 **A bug report names a symptom.** Before editing, find every caller of the
 function you are about to touch. One guard in the shared function is a smaller
-diff than a guard in every caller — and patching only the path the task names
+diff than a guard in every caller, and patching only the path the task names
 leaves every sibling caller broken.
 
 **Rules:** no interface with one implementation, no factory for one product, no
 config for a value that never changes. No scaffolding "for later". Deletion
-over addition. Boring over clever — clever is what someone decodes at 3am.
+over addition. Boring over clever: clever is what someone decodes at 3am.
 Fewest files, shortest working diff.
 
 ### When NOT to be lazy
@@ -50,8 +50,7 @@ the reading. Laziness that skips comprehension ships a confident wrong fix
 dressed as efficiency. The smallest change in the wrong place is not lazy, it
 is a second bug.
 
-Non-trivial logic — a branch, a loop, a parser, a money or security path —
-leaves **one runnable check** behind: the smallest thing that fails if the
+Non-trivial logic (a branch, a loop, a parser, a money or security path) leaves **one runnable check** behind: the smallest thing that fails if the
 logic breaks. Trivial one-liners need none.
 
 ## Routing
@@ -69,9 +68,9 @@ logic breaks. Trivial one-liners need none.
 | editing a `SKILL.md` / `CLAUDE.md` / `AGENTS.md` | `fx-authoring` |
 | any chart or dashboard | `dataviz` |
 | library / framework / API docs | `context7` |
-| `.erb` · CSS · anything visual | **no owner yet** — apply the project's tokens and shared-partial contract, flag anything beyond that |
+| `.erb` · CSS · anything visual | **no owner yet**: apply the project's tokens and shared-partial contract, flag anything beyond that |
 
-Project facts — structure, patterns, test commands — are in `repo.md` and
+Project facts (structure, patterns, test commands) are in `repo.md` and
 `.fx.json` at the repo root. **Never guess a test command.**
 
 ## Non-negotiables
@@ -82,7 +81,7 @@ Project facts — structure, patterns, test commands — are in `repo.md` and
   write. Hard rule, no exceptions.
 - **Nothing leaves the machine.** No publishing, uploading or posting unless the
   user initiates it. Reports are local files. Pushing a worktree branch is the
-  one exception — never force-push, never push from the main checkout.
+  one exception: never force-push, never push from the main checkout.
 - **Arabic is the default locale**; RTL support throughout.
 - **Evidence before claims.** "Tests pass" means you ran them and read the
   output. If a step was skipped, say so.
@@ -91,7 +90,7 @@ Project facts — structure, patterns, test commands — are in `repo.md` and
 
 Applies to **every** output, without exception: chat, **code comments**,
 commit messages, ADRs, design docs, subagent reports, ledger entries, PR
-bodies. Comments are the highest-volume prose you write — they are covered.
+bodies. Comments are the highest-volume prose you write: they are covered.
 
 No inflated claims. No "it's not X, it's Y". No stock AI vocabulary
 (*delve, leverage, robust, seamless, comprehensive, crucial*). No vague
@@ -105,9 +104,9 @@ greps for it.
 
 **A comment says why, not what.** The code already says what. A comment
 restating it is noise that rots the moment the code moves. Write the reason,
-the constraint, or the thing that bit someone — or write nothing.
+the constraint, or the thing that bit someone, or write nothing.
 
 Code first, then at most three short lines: what was skipped, when to add it.
-If the explanation is longer than the code, delete the explanation — every
+If the explanation is longer than the code, delete the explanation: every
 paragraph defending a simplification is complexity smuggled back as prose.
 Explanation the user actually asked for is not debt; give it in full.

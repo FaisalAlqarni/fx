@@ -1,4 +1,4 @@
-# 02 — `push` allowed from a worktree
+# 02: `push` allowed from a worktree
 
 **Status:** ready-for-agent
 **Blocked by:** 01
@@ -9,8 +9,8 @@ branch inside a worktree and is still refused on the main checkout. Today it is
 refused everywhere, which means an agent working in an isolated worktree cannot
 open a PR or share a branch.
 
-The main-checkout block already prevents pushing the base branch — you cannot
-commit to it there in the first place — so this does not weaken that rule.
+The main-checkout block already prevents pushing the base branch: you cannot
+commit to it there in the first place, so this does not weaken that rule.
 
 **Files:**
 - Modify: `lib/git-guard.js`
@@ -24,7 +24,7 @@ commit to it there in the first place — so this does not weaken that rule.
 
 **Risks:** `push` currently returns early from `alwaysBlocked()`. Removing that
 without confirming the main-checkout path catches it would allow push
-everywhere — the exact inversion of the rule. Task 03's mutation discipline
+everywhere: the exact inversion of the rule. Task 03's mutation discipline
 applies: break it deliberately and watch the test fail.
 
 **Idempotency:** pure code change, no state.
@@ -49,14 +49,14 @@ blocked('git push origin main',    MAIN, 'push from the main checkout');
 blocked('git push --force',        WT,   'force push is still absolute');
 ```
 
-- [ ] **2. Run it — verify RED**
+- [ ] **2. Run it: verify RED**
 
 Run: `node lib/git-guard.test.js <main> <worktree>`
-Expected: FAIL — the first assertion, because `push` is unconditionally blocked.
+Expected: FAIL: the first assertion, because `push` is unconditionally blocked.
 
 - [ ] **3. Implement the minimum that passes**
 
-- [ ] **4. Run it — verify GREEN**
+- [ ] **4. Run it: verify GREEN**
 
 - [ ] **5. Mutation check**
 

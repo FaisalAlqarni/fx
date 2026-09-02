@@ -1,4 +1,4 @@
-# Grilling — the interview technique
+# Grilling: the interview technique
 
 A relentless interview until you reach a **shared understanding**. Used by
 `fx-brainstorm` (designing) and `fx-architecture` (working a candidate), and
@@ -10,8 +10,7 @@ idea.
 Map the subject as a **tree**: every decision branches into the decisions that
 hang off it.
 
-The **frontier** is every decision whose prerequisites are already settled —
-the questions you can ask *now* without guessing at answers you haven't heard
+The **frontier** is every decision whose prerequisites are already settled: the questions you can ask *now* without guessing at answers you haven't heard
 yet.
 
 Work the tree in **rounds**. Each round's answers reshape it: settled decisions
@@ -23,7 +22,7 @@ belongs to a later round, not this one.**
 
 ## Round size
 
-**2–4 related questions per round — one topic per round.**
+**2 to 4 related questions per round: one topic per round.**
 
 - One question at a time loses the tree: when an answer opens a new branch, the
   branches you hadn't reached yet vanish silently.
@@ -36,7 +35,7 @@ becomes a signal rather than a chore.
 
 ## How to ask
 
-Use the host's interactive question tool — `AskUserQuestion` in Claude Code
+Use the host's interactive question tool: `AskUserQuestion` in Claude Code
 (max 4 questions × 4 options; put your recommendation first, labeled
 "(Recommended)"; `multiSelect` where the choices aren't mutually exclusive).
 
@@ -64,8 +63,8 @@ ships with an unexplored area nobody noticed.
 ## Facts are your job; decisions are theirs
 
 **Never ask the user for anything you could look up yourself.** When a frontier
-question needs a fact from the environment — the filesystem, the code, a
-config, a tool's behavior — dispatch a read-only agent to find it.
+question needs a fact from the environment (the filesystem, the code, a
+config, a tool's behavior) dispatch a read-only agent to find it.
 
 **Don't block on it.** A running exploration is an unsettled prerequisite, so
 only the questions downstream of it wait for the result. Ask the rest of the
