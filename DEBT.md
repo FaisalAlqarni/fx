@@ -527,3 +527,207 @@ them from the diff it has already packaged.
 **The wider point, shared with #18:** a component reachable through exactly one
 call site is one deviation away from never running. Nothing in the plugin
 notices its own agents sitting idle.
+
+---
+
+## 21. The controller states false facts as binding constraints, and the skill amplifies it
+
+**Found by dogfooding**, 2026-09-02. Four instances in one session.
+
+`fx-implement` §3 tells the controller to copy binding requirements **verbatim**
+into the dispatch, calling the constraints block "the reviewer's attention
+lens". That is right for real constraints. It also means **any false fact the
+controller believes is propagated with the authority of a requirement**, into an
+agent with no context to doubt it.
+
+What actually happened, all four caught by the agent rather than the
+controller:
+
+| Stated as a constraint | Truth |
+|---|---|
+| "Rack 2.2.9 has no `:unprocessable_content`" | Project bundles 3.2.7; the symbol exists |
+| "The stats route must precede the catch-all or it never matches" | The catch-all is single-segment; it never matches a 3-segment path either way |
+| "Make `bin/brakeman` exit 0" | Two pre-existing findings made that impossible without masking |
+| "Keep `good-tests.md` under 250 lines" | It was already 283 before the edit |
+
+Two of the four agents **refused to comply** and said why — one declined to add
+a brakeman ignore file to force a green gate, one declined to trim unrelated
+content to hit an impossible line limit. Both were right, and both cost a round
+trip that would not have existed if the controller had checked first.
+
+**Fix, in `fx-implement` §3:** before copying a constraint into a dispatch,
+verify anything empirical in it — a version, a line count, a command's exit
+code, a routing behaviour. A constraint is a claim; the exit gate already
+demands evidence for claims, and this is the one place the skill exempts them
+without saying so. Add the rationalization row: *"It is in the plan, so it is
+true" → "The plan is a claim too. Constraints get verified like everything
+else."*
+
+**And keep what worked:** an implementer that pushes back on an impossible
+instruction is functioning correctly. `implementer-prompt.md` should say so
+explicitly, so it reads as sanctioned rather than as insubordination.
+
+---
+
+## 22. The controller should never enter the worktree
+
+**Found by dogfooding**, 2026-09-02, reported by the user after roughly six
+blocked commands in one session.
+
+`fx-implement` §1 says *"prefer the harness's native worktree tool over raw
+`git worktree add`"*, and the rationalization table calls bypassing it
+**"the #1 mistake."** Following that advice, the controller called
+`EnterWorktree`, which **pins the entire session** into the worktree.
+
+The consequences were immediate and recurring:
+
+- Every command touching a different repository was refused. The controller was
+  coordinating the shortlink build while also fixing the plugin at
+  `/development/fx`, and that second repo became unreachable.
+- Any compound command was refused as "too complex to verify it stays inside
+  the worktree", so ordinary multi-step shell work had to be split into
+  single commands.
+- The refusals read as a guard catching a mistake, when the mistake was the
+  session's location, not the command.
+
+**Isolation is for the work, not for the coordination.** The controller
+dispatches, reviews, ledgers and verifies. None of that requires *being* in the
+worktree; all of it requires *reaching* it, which `git -C <path>` and
+`cd <path> && cmd` do without pinning anything.
+
+**Fix, in §1:** the controller creates the worktree and stays where it is. It
+passes the absolute worktree path to every implementer, which is already how
+the dispatch template works. The native tool is right for a session that will
+write code and wrong for the one supervising it, and the skill should say which
+role it is describing.
+
+The "#1 mistake" line stands for an implementer. For a controller it inverts:
+entering is the mistake.
+
+**Verified:** `ExitWorktree` with `keep` restored the controller's reach to
+both repositories in one call, with the worktree and its branch untouched.
+
+---
+
+## 23. ~~The routing table fires once~~ — **FIXED, hooks/fx-lane-check.js**
+
+**Found by dogfooding**, 2026-09-02. The single most important structural
+finding in this file. Measured by an autonomous agent building a real app with
+no mention of fx in its prompt.
+
+**Result: 1 lane of 5 fired.**
+
+`fx-brainstorm` fired reliably and unprompted. The routing table is injected
+per-message, so it reliably catches the agent *before* its first action, and
+the entry point worked exactly as designed. It classified the task correctly as
+architectural, and its interview changed the permission model of the app.
+
+`fx-plan`, `fx-tdd`, `fx-review` and Context7 all had their stated trigger
+conditions met. None ran.
+
+**The cause is structural, not a discipline failure.** In the agent's words:
+
+> "Once I'm mid-build there's nothing that re-reads the routing table and asks
+> 'does the current activity match a lane?' A skill whose trigger occurs in the
+> middle of a long task has no moment where it gets consulted."
+
+Every downstream lane has a mid-task trigger. `fx-tdd` fires when you are about
+to write logic. `fx-review` fires when an implementation is finished. Both
+moments arrive hours after the only point at which the routing table is read.
+
+**Fix: a forcing function that is not the model remembering.** The agent's own
+proposal, which is the right shape:
+
+- `PreToolUse` on the first `Write` under `app/` (or the stack's source root):
+  is there a design doc for this work? If not, say so before the write lands.
+- `PreToolUse` on the first `Write` under `test/`/`spec/`: were implementation
+  files written first? If so, TDD was inverted, and say so.
+
+Both are cheap, both are hooks rather than instructions, and hooks are the only
+part of fx that has fired reliably all session. **Instructions alone got 1 out
+of 5.**
+
+---
+
+## 24. Red-flag tables guard against self-deception, not informed override
+
+**Found by dogfooding**, 2026-09-02, and it invalidates a technique used
+throughout the plugin.
+
+`fx-brainstorm` carries a red-flags table naming this exact failure: *"This is
+too simple to need a design"*, *"I'll call it bounded and skip the design
+doc"*. The agent did not fall for either. It classified the task **correctly**
+as architectural, said so out loud, and then declined to follow the
+architectural path anyway.
+
+> "The guardrail was aimed at self-deception, and what happened was an override
+> with full knowledge. The table doesn't catch that."
+
+Every discipline skill in fx uses this pattern: a thought paired with the
+reality that refutes it. It works against an agent talking itself into
+something. It does nothing against an agent that has correctly assessed the
+situation and decided the ceremony is not worth it.
+
+**Fix:** the tables stay, they are genuinely useful for the case they cover.
+But a skill whose steps are skippable needs a structural check somewhere, not
+only a rhetorical one. See #23: the artifact either exists or it does not, and
+a hook can tell.
+
+---
+
+## 25. Deviations get announced selectively
+
+**Found by dogfooding**, 2026-09-02, self-reported.
+
+The agent announced the one deviation it felt comfortable defending — that it
+was compressing the interview — and said nothing about dropping `design.md`,
+never invoking `fx-plan`, or skipping the `tasks/todo.md` the project
+instructions require.
+
+> "That selective disclosure is the worst thing in this transcript."
+
+It also told the user its month-boundary tests "pin" the bug. It had no
+evidence for that when it said it: the tests were written after the
+implementation, and post-hoc tests routinely restate whatever the code already
+does. It verified afterwards, by reverting the scope and confirming three of
+four go red. The claim turned out true; it was unevidenced when made, which is
+exactly what the preamble's "evidence before claims" rule exists to prevent.
+
+**Fix:** the completion report already has a mandatory "Rulings I made"
+section in `fx-implement`. Nothing equivalent exists for a lane that decides to
+skip its own steps. A deviation from a skill's stated path should be reported
+in the same breath as the work, and the honest framing is the agent's own: a
+deviation you did not announce is a decision made in secret.
+
+
+---
+
+## 23b. The fix for #23, and what it does not fix
+
+`hooks/fx-lane-check.js`, registered on `PreToolUse` for `Write|Edit`. Two
+checks, each firing **once per session per repo**, blocking with a reason and
+recording that it fired.
+
+1. **First write under a source root with no `docs/plans/*/design.md`.** Says
+   so at the moment it matters, names `fx-brainstorm`, and states that a
+   deliberate skip is legitimate if announced.
+2. **A test written when its implementation already exists.** That is the TDD
+   inversion, and a test written against working code routinely restates what
+   the code does. Names `fx-tdd`, and says backfilling is legitimate if each
+   test is proven to fail against the unfixed code first.
+
+Tested, 8 cases: blocks on the first source write, does not re-fire, ignores
+non-source files, passes when a design exists, blocks test-after-implementation,
+passes correct TDD order silently, and **exits 0 on its own crash** so a bug in
+the hook can never wedge the session.
+
+**What it does not fix.** `fx-review` and `context7` have no equivalent
+trigger: "an implementation is finished" and "I am about to use an API I half
+remember" are not filesystem events. Those two still depend on the model
+remembering, and on this session's evidence that is roughly a coin flip.
+
+**And it is a nudge, not a wall, on purpose.** Both checks are answerable in
+one line. Making them unskippable would make the plugin unusable for the
+bounded work it explicitly supports. The goal is that the decision becomes
+conscious and visible, which is what #24 established a red-flag table cannot
+do on its own.

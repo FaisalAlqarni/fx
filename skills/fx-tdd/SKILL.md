@@ -104,6 +104,10 @@ not a session to run.**
 Test names and interface vocabulary come from `CONTEXT.md`; respect the ADRs in
 the area you're touching.
 
+Behavior that is non-deterministic (a thread, a job, a timer) makes the seam
+mandatory, not optional — see "Testing non-deterministic behavior" in
+`../../references/vocab/good-tests.md`.
+
 ## Step 0 — Define the API (features only)
 
 Before writing tests for a new feature, pin down what you're building **so RED

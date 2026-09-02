@@ -43,6 +43,10 @@ Subagent (general-purpose):
 
     ## Before you begin
 
+    **Invoke `fx-tdd` before writing any code.** It owns the RED/GREEN
+    discipline this task assumes — the Iron Law and verify-RED live there, not
+    here; the TDD rules below are the summary, not a substitute.
+
     If you have questions about the requirements, the acceptance criteria, the
     approach, the dependencies, or anything unclear — **ask them now.** Raise
     concerns before starting work.

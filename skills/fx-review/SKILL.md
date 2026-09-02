@@ -26,6 +26,15 @@ before a merge.
 **Valuable:** when stuck (fresh perspective) · before a refactor (baseline) ·
 after fixing a complex bug.
 
+**A constraints block narrows as well as focuses.** Every brief below names
+what the reviewer should look for — that's what makes it a directed search
+instead of a wander, and also exactly what makes it blind to anything the
+brief didn't think to name. The controller wrote the task and the plan, so
+its blind spots are the ones most likely to have produced the defect, and a
+reviewer handed only the controller's list will not go looking for them.
+Task mode's cost budget doesn't allow fixing this per task — see the unprimed
+pass below instead.
+
 ## 1. Pin the fixed point — before spawning anything
 
 Whatever the user named: a SHA, a branch, a tag, `main`, `HEAD~5`. Not named?
@@ -61,6 +70,14 @@ multi-commit task.
   smell baseline has nothing to bite on.
 - **Lenses** — by the trigger table below. Eight parallel passes on a
   three-line diff is indefensible; each dispatch costs a full subagent.
+- **Unprimed adversarial pass** — **branch mode only**, once per branch, not
+  per task. Dispatch `fx-devils-advocate` in code mode against the whole diff,
+  given the task file but **no question list** — see step 5. Skip it in task
+  mode: dispatching an unprimed reviewer alongside the primed one on every
+  task doubles the per-task cost for findings that are mostly mechanical and
+  already caught by Correctness and Standards. A branch's worth of changes is
+  where an unprimed pass earns its cost — it's the one place structural blind
+  spots have had room to accumulate.
 
 | Lens | Fires when the diff touches |
 |---|---|
@@ -142,6 +159,15 @@ paths that triggered it. Read-only by construction.
 on the most capable available model, pointed at the ledger's deferred-minor and
 parked lines so it can triage what must be fixed before merge.
 
+**Branch mode also dispatches the unprimed adversarial pass** — `fx-devils-
+advocate`, code mode, given the diff command and the task file, **with no
+constraints block and no question list.** Its brief is one open-ended prompt,
+not a checklist: "read this diff like you were told nothing about it —
+anything else that would bite us?" If you have other passes' findings or the
+plan's accepted-risks notes on hand, pass those along only so it can recognize
+a settled decision and not re-report it as a discovery — never as a scope for
+what to look at.
+
 ## 6. Aggregate — do NOT merge or rerank
 
 Present each pass under its own heading, verbatim or lightly cleaned:
@@ -152,6 +178,7 @@ Present each pass under its own heading, verbatim or lightly cleaned:
 ## Spec
 ## Lens: database      (only those that fired)
 ## Lens: security
+## Unprimed adversarial pass   (branch mode only)
 ```
 
 **Never merge findings across axes. Never rank them against each other.**
@@ -230,3 +257,4 @@ Never offer it; use it only on an explicit request in that message.
 - Implementing a finding you haven't verified
 - Proceeding with an unfixed Critical
 - Spending a reviewer on what the linter already catches
+- Skipping the unprimed adversarial pass in branch mode, or handing it a question list

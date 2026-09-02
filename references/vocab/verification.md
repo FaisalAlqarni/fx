@@ -33,6 +33,31 @@ rule.
 | "I'm tired" | Exhaustion ≠ excuse. |
 | "A partial check is enough" | Partial proves nothing. |
 | "Different words, so the rule doesn't apply" | Spirit over letter. |
+| "I ran the command and read the output" | In which environment? Same command, different context, different truth. |
+
+## Context is a dimension, not a detail
+
+A command run in the wrong environment answers a **different question**, not a
+wrong one — that is what makes it dangerous. It exits 0, it prints real
+output, and none of the five steps (IDENTIFY / RUN / READ / VERIFY / claim)
+catches it, because all five can be followed correctly and the environment
+can still be wrong. Add a sixth check before you claim anything
+version-dependent, dependency-dependent, or environment-dependent: **is this
+the environment the project actually runs in?**
+
+| Ran this | Not this | Because |
+|---|---|---|
+| `bundle exec ruby -e "require 'rack'"` | `ruby -e "require 'rack'"` | Bare Ruby resolves whatever gem is installed globally; the bundle resolves what the Gemfile.lock actually pins. Two different Rack versions, two different answers. |
+| `docker compose exec app rspec` | `rspec` on the host | The container has its own Ruby, gems, and env vars. A host run can pass or fail for reasons that don't exist inside the container. |
+| `RAILS_ENV=test bin/rails runner '...'` | `bin/rails runner '...'` (defaults to development) | Different env, different database, different feature flags, different loaded initializers. |
+| a command in the engine that owns the file | the same command from repo root, or another engine | Multi-engine repos resolve dependencies and routes per engine; running from the wrong one silently answers for the wrong app. |
+
+**The rule:** for anything version-, dependency-, or environment-dependent,
+run it the way the project runs it — `bundle exec`, inside the container,
+with the app's env loaded, in the right engine. Otherwise the answer is about
+your machine, not about the code, and reporting it as verification is the
+same failure as not running the command at all — you just get to feel worse
+about it, later, when it's found by someone else.
 
 ## Key patterns
 

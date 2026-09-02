@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+"""Grep the prose rules that were previously enforced by nobody.
+
+Every other invariant in fx has a gate: check-paths, check-reference-leaves,
+check-manifest, three guard suites. Prose had none, so it was the only rule
+that failed silently and everywhere. The em-dash count across fx's own files
+was 272 lines while PREAMBLE.md told everyone not to do it.
+
+An unmeasurable rule is one nobody checks. This makes it measurable.
+
+    scripts/check-prose [path ...]      default: the whole plugin
+    scripts/check-prose --fix-dashes    rewrite ' — ' as ': ' where unambiguous
+
+Upstream-verbatim files are exempt: fx-humanize is byte-identical to its
+source, and references/testing/ holds upstream pressure scenarios. Changing
+them would be a local modification we deliberately do not carry.
+"""
+import pathlib
+import re
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+EXEMPT = ('skills/fx-humanize/', 'references/testing/', 'upstream/', '.git/',
+          'scripts/check-prose')
+
+# Stock AI vocabulary. Word-boundary matched so "delved" and "leverage" in a
+# code identifier do not fire.
+STOCK = ['delve', 'leverage', 'seamless', 'robust', 'comprehensive', 'crucial',
+         'utilize', 'pivotal', 'testament to', 'in the realm of',
+         'it is important to note', 'plays a vital role']
+HEDGE = ["it's not just", 'it is not just', "isn't just", 'not only that']
+
+
+def files(paths):
+    for base in (paths or [ROOT]):
+        base = pathlib.Path(base)
+        for p in ([base] if base.is_file() else sorted(base.rglob('*.md'))):
+            rel = str(p.relative_to(ROOT)) if p.is_relative_to(ROOT) else str(p)
+            if any(e in rel for e in EXEMPT):
+                continue
+            yield p, rel
+
+
+def main():
+    argv = [a for a in sys.argv[1:] if not a.startswith('--')]
+    fix = '--fix-dashes' in sys.argv
+    dash_lines = stock_hits = 0
+    report = []
+
+    for p, rel in files(argv):
+        text = p.read_text()
+        if fix:
+            new = re.sub(r' [—–] ', ': ', text)
+            if new != text:
+                p.write_text(new)
+                text = new
+
+        for n, line in enumerate(text.splitlines(), 1):
+            if '—' in line or '–' in line:
+                dash_lines += 1
+                report.append(f'  {rel}:{n}  dash')
+            low = line.lower()
+            for w in STOCK + HEDGE:
+                if re.search(rf'\b{re.escape(w)}\b', low):
+                    stock_hits += 1
+                    report.append(f'  {rel}:{n}  "{w}"')
+
+    if not report:
+        print('OK: no dashes, no stock vocabulary')
+        return 0
+
+    print(f'FAIL: {dash_lines} lines with a dash, {stock_hits} stock-vocabulary hits')
+    for r in report[:40]:
+        print(r)
+    if len(report) > 40:
+        print(f'  ... and {len(report) - 40} more')
+    print('\n`scripts/check-prose --fix-dashes` rewrites " — " as ": " where that reads.')
+    print('Everything else is a judgement call and stays yours.')
+    return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())

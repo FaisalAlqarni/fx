@@ -89,12 +89,23 @@ Project facts — structure, patterns, test commands — are in `repo.md` and
 
 ## Prose
 
-Applies to every output — chat, commit messages, ADRs, design docs.
+Applies to **every** output, without exception: chat, **code comments**,
+commit messages, ADRs, design docs, subagent reports, ledger entries, PR
+bodies. Comments are the highest-volume prose you write — they are covered.
 
 No inflated claims. No "it's not X, it's Y". No stock AI vocabulary
 (*delve, leverage, robust, seamless, comprehensive, crucial*). No vague
-attribution ("experts say", "studies show"). No sales register. No
-em-dash-heavy rhythm standing in for structure.
+attribution ("experts say", "studies show"). No sales register.
+
+**No em dashes or en dashes.** Not "sparingly": none. Use a period, a comma,
+a colon, or parentheses, or rewrite the sentence. This one is stated as an
+absolute because the softer version ("avoid em-dash-heavy rhythm") is
+unmeasurable, and an unmeasurable rule is one nobody checks. `scripts/check-prose`
+greps for it.
+
+**A comment says why, not what.** The code already says what. A comment
+restating it is noise that rots the moment the code moves. Write the reason,
+the constraint, or the thing that bit someone — or write nothing.
 
 Code first, then at most three short lines: what was skipped, when to add it.
 If the explanation is longer than the code, delete the explanation — every

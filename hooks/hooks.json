@@ -4,14 +4,24 @@
       {
         "matcher": "startup|resume|clear|compact",
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-context.js\"", "timeout": 5, "statusMessage": "Loading fx..." }
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-context.js\"",
+            "timeout": 5,
+            "statusMessage": "Loading fx..."
+          }
         ]
       }
     ],
     "SubagentStart": [
       {
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-context.js\"", "timeout": 5, "statusMessage": "Loading fx..." }
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-context.js\"",
+            "timeout": 5,
+            "statusMessage": "Loading fx..."
+          }
         ]
       }
     ],
@@ -19,7 +29,21 @@
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-git-guard.js\"", "timeout": 5 }
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-git-guard.js\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-lane-check.js\"",
+            "timeout": 5
+          }
         ]
       }
     ]

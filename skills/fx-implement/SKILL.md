@@ -15,18 +15,23 @@ Execute the plan by dispatching a **fresh implementer subagent per task**, a
 **task review** (spec compliance + code quality) after each, and a **broad
 whole-branch review** at the end.
 
-**Why subagents:** isolated context, precisely constructed. They **never
-inherit your session's history** — you build exactly what they need, which also
-preserves your own context for coordination.
+**Why subagents:** isolated, precisely-built context. They never inherit your
+session's history, which also keeps your own context clean for coordination.
 
-**Narration:** at most one short line between tool calls. The ledger and the
-tool results carry the record.
+**Narration:** at most one short line between tool calls. The ledger is the
+record, the chat is not — every entry, ruling and completion line this skill
+asks you to write belongs in the ledger. Writing it again in chat is the
+progress summary the next section forbids.
 
 ## Rulings, not stalls
 
-**Do not pause to check in between tasks.** Execute every task without
-stopping. "Should I continue?" prompts and progress summaries waste the user's
-time — they asked you to execute the plan, so execute it.
+**Stopping is not something you do — it's what happens when a message ends
+with nothing queued behind it.** So the rule is positive: **the last tool call
+of every message is the next task's dispatch or its review.** If you are about
+to write a summary and no dispatch is in flight, you have already stopped —
+queue the next one instead of explaining why you paused. "Should I continue?"
+prompts and progress summaries waste the user's time — they asked you to
+execute the plan, so execute it.
 
 A running plan does not wait on a human. Conflicts, ambiguities, task
 defects, a cap you would have asked to exceed — **decide them.** The design is
@@ -69,6 +74,13 @@ main/master without explicit consent.
 
 Full procedure and its rationalizations: `../../references/vocab/worktree-setup.md`.
 
+**An uncommitted plan is not a blocker.** `git worktree add` works fine
+against a dirty tree. The only real consequence: a worktree checked out from a
+commit won't contain files that were never committed, so an uncommitted
+`docs/plans/<slug>/` opens with no tasks in it. **Fix:** copy
+`docs/plans/<slug>/` into the worktree once it exists, so the branch's first
+commit carries it — and the ledger travels with the work. Warn; do not gate.
+
 **Detached HEAD: do not commit.** Those commits become unreachable the moment
 HEAD moves. Create a branch first.
 
@@ -77,16 +89,20 @@ HEAD moves. Create a branch first.
 Run the `setup` and `test_all` commands from **`.fx.json`** — never guess them.
 Rails is not `npm install`; .NET is not `pytest`.
 
-No `.fx.json`, or the command is `null`? **Ask.** Do not infer a command from
-the file tree and run it.
+No `.fx.json`, or the command is `null`? **Ask** — with one greenfield
+exception: no `.fx.json` **and** no test suite means the baseline is 0 tests
+by definition. Proceed; task 01 establishes both the app and `.fx.json`.
+Asking here would turn every new project into a stall. Ask only when
+`.fx.json` is missing from a repo that plainly already has tests.
 
 Then load `../../references/stacks/<name>.md` for each entry in `stacks`. These carry
 ecosystem traps only. **A name with no file is not an error** — it means no
 traps file exists for that stack yet, and nothing else changes.
 
-Run the baseline suite **before task 01**. A dirty baseline makes every later
-failure ambiguous. Failures → report them and ask whether to proceed or
-investigate; that call is the user's.
+Run the baseline suite **before task 01** — greenfield excepted, where 0 tests
+*is* the baseline and there is nothing yet to run. A dirty baseline makes
+every later failure ambiguous. Failures → report them and ask whether to
+proceed or investigate; that call is the user's.
 
 Report:
 
@@ -98,25 +114,33 @@ Ready to implement <feature>
 
 ### 3. Two workspaces, split by lifetime
 
-**Durable — `docs/plans/<slug>/`, committed:**
-`design.md` · `plan.md` · `tasks/NN-*.md` · `state.md` (the ledger).
+**Durable — `docs/plans/<slug>/`, committed:** `design.md` · `plan.md` ·
+`tasks/NN-*.md` · `state.md` (the ledger).
 This is the record of what was decided and what happened. **Never delete it.**
 
-**Ephemeral — `.fx/<slug>/`, git-ignored:**
-`reports/NN-*-report.md` (implementer reports) · `review/*.diff` (review
-packages).
-These are working artifacts: verbose, and regenerable from git. **Verify
-`.fx/` is git-ignored before writing to it** (`git check-ignore -q .fx`); if it
-isn't, add it to `.gitignore` first — the same rule that protects `.worktrees/`.
+**Ephemeral — `.fx/<slug>/`, git-ignored:** `reports/NN-*-report.md`
+(implementer reports) · `review/*.diff` (review packages).
+These are working artifacts: verbose, and regenerable from git. **Create the
+directory, then verify it is ignored** (`git check-ignore -q .fx`) — a `.fx/`
+pattern matches directories only, so checking before it exists always fails;
+that's the wrong moment, not "not ignored". If it fails once created, add
+`.fx/` and `.worktrees/` to the ignore file.
+
+**On a repo with no application yet**, put those entries in
+`.git/info/exclude` instead of `.gitignore`. Most generators, `rails new`
+included, only append their own line onto an *existing* `.gitignore` instead
+of writing their full default block — a pre-existing `.gitignore` at
+generation time silently commits database files and logs. `.git/info/exclude`
+has the same effect, is invisible to the generator, and leaves the project's
+own ignore file for the project to write.
 
 Another slug's directory is never yours to read or write.
 
 ### 4. The ledger
 
-**Conversation memory does not survive compaction.** In real sessions,
-controllers that lost their place have re-dispatched entire completed task
-sequences — the single most expensive failure observed. Track progress in a
-file, not only in todos.
+**Conversation memory does not survive compaction.** Controllers that lost
+their place have re-dispatched entire completed task sequences — the single
+most expensive failure observed. Track progress in a file, not only in todos.
 
 The ledger is `docs/plans/<slug>/state.md`, first line
 `# fx ledger — plan: docs/plans/<slug>/plan.md`.
@@ -155,11 +179,10 @@ you checked as you check it**. Look for:
 
 **The scan's output is a table, not a verdict.**
 
-- One row for **every pair** of tasks sharing a file or an interface: the two
+- One row for **every pair** of tasks sharing a file or interface: the two
   tasks, what one Produces against what the other Consumes, what you found.
-- One row for **every task**: whether its own text agrees with itself — the
-  tests it specifies against the code it specifies, the files it creates
-  against the files it later touches.
+- One row for **every task**: whether its own text agrees with itself — tests
+  specified against code specified, files created against files later touched.
 
 **"The scan is clean" without those rows is not a scan you ran.**
 
@@ -190,23 +213,20 @@ everything a subagent prints back — stays resident in your context for the res
 of the session and is re-read on every later turn. **Hand artifacts over as
 files.**
 
-**Waiting on dispatched subagents.** Never poll a wait interface with short
-timeouts, and never sit in one silent open-ended wait either. While you have
-local work — ledger updates, packaging the next review, reading reports — keep
-working; child results arrive on their own. When genuinely idle, wait in
-bounded stretches (five to ten minutes where the platform allows); between
-stretches post one line of status and reconcile your live children: list them,
-and chase any that finished without reporting. **A bounded stretch keeps nearly
-all of a long wait's efficiency while guaranteeing a stuck or lost child is
-noticed within minutes, not at the end of the session.**
+**Waiting on dispatched subagents.** Never poll with short timeouts, never sit
+in a silent open-ended wait. While local work remains — ledger updates, the
+next review package, reading reports — keep working; results arrive on their
+own. Genuinely idle: wait in bounded five-to-ten-minute stretches, posting one
+status line and reconciling live children between them. **This keeps nearly
+all of a long wait's efficiency while catching a stuck child within minutes,
+not at session end.**
 
-**Serial implementers.** Never dispatch implementation subagents in parallel.
-The reason is the **shared test environment** — one Postgres, one ClickHouse,
-one Redis, one broker set. A worktree is a second checkout, not a second
-database. Concurrent test runs produce false RED and false GREEN, which poisons
-every verification downstream. Relax only if `.fx.json` sets
-`isolated_test_execution: true`. Parallelism belongs to reviews
-(read-only) and to batched same-shape work.
+**Serial implementers.** Never dispatch implementation subagents in parallel
+— the **shared test environment** (one Postgres, one ClickHouse, one Redis,
+one broker set) means a worktree is a second checkout, not a second database.
+Concurrent test runs produce false RED and false GREEN, poisoning every
+verification downstream. Relax only if `.fx.json` sets
+`isolated_test_execution: true`. Parallelism belongs to reviews and batched work.
 
 ### 1. Dispatch the implementer
 
@@ -231,10 +251,9 @@ in the task file**, never restated in the dispatch, so there is one source of
 truth.
 
 **A dispatch describes one task, not the session's history.** Do not paste
-accumulated prior-task summaries ("state after tasks 1–3"). *A real
-session's dispatch hit 42k characters, 99% of it pasted history.* A fresh
-subagent needs its task, the interfaces it touches, and the Global
-Constraints. Nothing else.
+accumulated prior-task summaries — *a real session's dispatch hit 42k
+characters, 99% of it pasted history.* A fresh subagent needs its task, the
+interfaces it touches, and the Global Constraints. Nothing else.
 
 **Report file:** name it after the task (`tasks/03-foo.md` →
 `.fx/<slug>/reports/03-foo-report.md`) and put the path in the dispatch. The implementer
@@ -270,10 +289,8 @@ them and proceed.
 1. Context problem → more context, re-dispatch, same model.
 2. Needs more reasoning → re-dispatch on a more capable model.
 3. Task too large → break it into smaller pieces.
-4. **The plan itself is wrong** → rule on the correction, ledger it, re-dispatch
-   with the ruling carried in the dispatch.
-5. Genuinely unblockable → **skip it, ledger why, take the next unblocked
-   task.** Never stop the queue for one task.
+4. **The plan itself is wrong** → rule on it, ledger it, re-dispatch with the ruling carried.
+5. Genuinely unblockable → **skip it, ledger why, take the next unblocked task.** Never stop the queue for one task.
 
 **Never ignore an escalation, and never force the same model to retry without
 changing something.** If the implementer says it is stuck, something has to
@@ -304,15 +321,24 @@ Use the **BASE you recorded before dispatching** — never `HEAD~1`, which
 silently drops all but the last commit of a multi-commit task.
 **Never dispatch a task reviewer without a diff file.**
 
+**Lens dispatch.** After packaging the diff, check the task's changed file
+paths against the lens trigger patterns in `../fx-review/SKILL.md` (§2's
+table) and dispatch any lens whose triggers match — `fx-lens-database`,
+`-security`, `-a11y`, `-silent-failure` — alongside the task reviewer, same
+diff file. This is the only door those agents have below the final review;
+skip it and an auth path or a migration ships with nobody having looked.
+Reference the table, don't copy it — fire on matching diffs, not on every
+task. A lens finding enters the fix loop below like any other.
+
 The reviewer gets three paths — the task file, the report file, the review
 package — plus the Global Constraints that bind the task.
 
 **The Global Constraints block is the reviewer's attention lens.** Copy the
-binding requirements **verbatim** from the plan or design: exact values, exact
-formats, and the stated relationships between components ("same layout as X",
-"matches Y"). The reviewer's template already carries the process rules (YAGNI,
-test hygiene, review method); the constraints block is for what THIS project's
-design demands.
+binding requirements **verbatim** from the plan or design: exact values,
+formats, and stated relationships between components ("same layout as X",
+"matches Y"). The reviewer's template already carries process rules (YAGNI,
+test hygiene, review method); this block is for what THIS project's design
+demands.
 
 - Do not add open-ended directives ("check all uses", "run race tests if
   useful") without a concrete, task-specific reason.
@@ -325,12 +351,11 @@ design demands.
   defect", "at most Minor", or "the plan chose" — stop. You are pre-judging,
   usually to spare yourself a review loop.**
 
-**⚠️ Cannot-verify-from-diff items.** The reviewer may flag requirements that
-live in unchanged code or span tasks. These do not block the rest of the
-review, but **you must resolve each one yourself before marking the task
-complete** — you hold the plan and the cross-task context the reviewer lacks.
-Confirm one is a real gap and it becomes a failed spec review: it enters the fix
-loop with the others.
+**⚠️ Cannot-verify-from-diff items.** The reviewer may flag requirements living
+in unchanged code or spanning tasks. These don't block the rest of the review,
+but **you must resolve each one yourself before marking the task complete** —
+you hold context the reviewer lacks. Confirm one is a real gap and it enters
+the fix loop like any other.
 
 Template: [task-reviewer-prompt.md](./task-reviewer-prompt.md)
 
@@ -379,23 +404,22 @@ defect in your dispatch, not a reason to retry.**
 
 ## Final review
 
-Package the whole branch:
-`scripts/review-package <PLAN> <MERGE_BASE> <HEAD>` where `MERGE_BASE` is
-`git merge-base <base-branch> HEAD`. Include the printed path in the dispatch,
-**so the final reviewer reads one file instead of re-deriving the branch diff
-with git commands.**
+Package the whole branch: `scripts/review-package <PLAN> <MERGE_BASE> <HEAD>`
+where `MERGE_BASE` is `git merge-base <base-branch> HEAD`. Include the printed
+path in the dispatch, **so the final reviewer reads one file instead of
+re-deriving the branch diff with git commands.**
 
 Dispatch `fx-review` in branch mode on the **most capable available model**.
 Point it at the ledger's **deferred-minor and parked lines** so it can triage
 which must be fixed before merge.
 
-If it returns findings: **ONE fix subagent with the complete findings list — not
-one fixer per finding.** *Per-finding fixers each rebuild context and re-run
-suites; a real session's final-review fix wave cost more than all its tasks
-combined.* Then exactly **one** scoped re-review of the fix wave. Adjudicate
-residuals as at the breaker: park with rulings, or rule the load-bearing ones
-and ledger the decision. **There is no second fix wave** — residual load-bearing
-findings surface to the user in the completion report.
+If it returns findings: **ONE fix subagent with the complete findings list —
+not one fixer per finding.** *Per-finding fixers rebuild context and re-run
+suites each time; a real session's final-review fix wave cost more than all
+its tasks combined.* Then exactly **one** scoped re-review. Adjudicate
+residuals as at the breaker — park with rulings, or rule and ledger the
+load-bearing ones. **No second fix wave**: residuals surface to the user in
+the completion report.
 
 Only the four stop conditions stop you here.
 
@@ -431,20 +455,15 @@ without having run verification.**
 **The rule applies to** exact phrases, paraphrases, synonyms, implications of
 success, and any communication suggesting completion or correctness.
 
-Full rationalization table and per-domain patterns:
-`../../references/vocab/verification.md`.
-
 ## Completion report
 
 No merge, no PR, no push. Report:
 
 - **Landed** — tasks complete, with per-task test evidence.
-- **Rulings I made** — **every** ledger line containing `Ruling:` — preflight
-  rulings, parked findings, breaker adjudications, all of them — in the order
-  you made them, each with what it costs if wrong. **The list is exhaustive: if
-  the ledger holds a ruling, the list holds it.** *That list is the only place
-  the decisions you took on the user's behalf reach them — they read it and
-  rework whatever you got wrong. A ruling that dies unreported was a decision
+- **Rulings I made** — **every** ledger line containing `Ruling:`, in the
+  order made, each with what it costs if wrong. **Exhaustive: if the ledger
+  holds a ruling, the list holds it.** *It's the only place decisions made on
+  the user's behalf reach them — a ruling that dies unreported was a decision
   made in secret.*
 - **Parked** — deferred findings and why.
 - **Skipped** — blocked tasks and what unblocks them.
@@ -452,9 +471,8 @@ No merge, no PR, no push. Report:
   worktree path so the user can review and merge.
 
 **Clean up the ephemeral half only.** When the final review is clean, delete
-`.fx/<slug>/` — reports and review packages are regenerable from git. **Never
-delete `docs/plans/<slug>/`**: it is committed and durable, and it is the
-record. Sibling directories belong to other work; leave them alone.
+`.fx/<slug>/` — regenerable from git. **Never delete `docs/plans/<slug>/`**:
+committed, durable, the record. Sibling directories belong to other work.
 
 ## Common rationalizations
 
@@ -470,7 +488,7 @@ record. Sibling directories belong to other work; leave them alone.
 | "Ledger bookkeeping is overhead" | The ledger is what survives compaction. Controllers without one have re-dispatched entire completed sequences. |
 | "The implementer spawned its own reviewer — free extra assurance" | A duplicate seat on the same diff. The task review is the gate. A worker-spawned reviewer is a defect to flag, not rigor. |
 | "I'll just ask whether this is right" | Rule it, ledger it, continue. |
-| "A progress summary would be helpful" | They asked you to execute. Execute. |
+| "A progress summary would be helpful" | They asked you to execute. The ledger is the record; write there, not here. |
 | "I remember finishing that task" | Trust the ledger, not your memory. |
 | "This task is blocked, I'll stop" | Skip it, ledger it, take the next unblocked one. |
 | "I'll run these in parallel to save time" | Implementers never run in parallel — the test environment is shared. |

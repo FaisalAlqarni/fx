@@ -184,6 +184,70 @@ integration test with real components.
 
 The user's question, verbatim: **"Do we need to be using a mock here?"**
 
+### Testing non-deterministic behavior
+
+When behavior is genuinely non-deterministic — a background thread, a job
+queue, a timer, a race between two writers — **the seam is not optional.**
+Inject the collaborator that decides timing and assert on it directly, rather
+than asserting on the outcome through the race it creates.
+
+**Polling with a deadline is not the fix.** A test that fires the async work,
+then polls until a row appears or a deadline expires, looks like it handles
+the non-determinism — it works around it instead. It **passes for the wrong
+implementation**: code that writes synchronously on the calling thread
+satisfies the same poll, so the test cannot tell "runs in the background" from
+"runs immediately." And it **hangs or flakes for the right one**: real async
+work has real tail latency (GC pause, pool contention, a slow runner), so a
+deadline short enough to keep the suite fast is too short for the slow tail,
+and one long enough to survive it slows every run. Neither failure is about
+your code — both are about testing a race instead of the decision that
+produces it.
+
+**Inject the collaborator.** Give the code the thing that runs the async
+work — an executor, a job class, a scheduler — as an argument, not a
+hardcoded `Thread.new`. The test substitutes one it controls and asserts the
+work was scheduled, with no polling and no deadline:
+
+```ruby
+# Hard to test — the seam is buried inside the method
+def notify_subscribers(event)
+  Thread.new { SubscriberMailer.broadcast(event) }
+end
+
+# Testable — the collaborator is a seam
+def notify_subscribers(event, executor: Concurrent::SingleThreadExecutor.new)
+  executor.post { SubscriberMailer.broadcast(event) }
+end
+```
+
+**A returned handle is a legitimate seam.** If the work must run elsewhere,
+return something the caller — and the test — can join: a `Thread`, a
+`Future`, a job ID to wait on directly instead of inferring completion from a
+side effect. `result = notify_subscribers(event); result.join; assert …`
+exercises the same path production uses and fails deterministically instead
+of flakily.
+
+**A test-only synchronous path is a real trade, not a shortcut.** Running
+inline under test and async in production (`inline: true`, `Rails.env.test?`)
+is a legitimate seam with one real cost: production runs code the tests never
+exercise — the actual thread, the actual queue, the actual race. That trade is
+correct when the async wrapper is thin and already trustworthy (a job
+library, a pool from a gem) and what you're protecting is the logic *inside*
+the block. It stops being correct once the async mechanics themselves —
+retry, ordering, backpressure — are what you're building; that needs its own
+test that runs for real.
+
+**A spawned thread in Rails needs its own connection.** ActiveRecord checks a
+connection out of the pool per thread; a thread you spawn does not inherit
+the request's connection or transaction and must check out its own
+(`ActiveRecord::Base.connection_pool.with_connection { … }`), or it blocks
+waiting for a connection a transactional test fixture is holding. This is
+also why a spawned thread can appear not to see data a test just wrote: a
+request spec rolls back its transaction at the end, and a thread on a
+different connection sees only what committed outside it. **That behavior is
+a property of the test harness, not of the code under test** — decide it
+deliberately rather than debugging it as a feature bug.
+
 ### Gate function
 
 ```

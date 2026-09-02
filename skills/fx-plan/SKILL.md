@@ -157,10 +157,10 @@ Fresh eyes on the design, then check the plan against it.
 
 Fix inline. No need to re-review — fix and move on.
 
-## 7. Offer the red-team — do not run it unprompted
+## 7. Red-team recommendation
 
-`fx-devils-advocate` costs a full subagent pass. **Offer it with a
-recommendation** so it can be waved through.
+Decide the recommendation now; it is offered as one option in §8, not as a
+separate prompt. `fx-devils-advocate` costs a full subagent pass.
 
 **Recommend YES when any of:** `Complexity: High` · any `HIGH` risk in the
 header · a wide refactor · a data migration or anything irreversible · 10+
@@ -168,25 +168,44 @@ tasks · auth, payment, or security-critical paths.
 
 **Recommend SKIP otherwise.** Most plans do not need it.
 
-> "Plan written: N tasks. Red-team it before we start?
-> Recommended: <yes|skip> — <one-line reason>."
+## 8. Handoff — four ways to leave a finished plan
 
-On approval — or on `/fx:critique plan <file>` at any time — dispatch
-`fx-devils-advocate` in **plan mode** against `plan.md`.
-Present its numbered findings, then ask: discuss all / discuss some / continue.
-**Do not start resolving until the user picks.**
+A finished plan has **four** legitimate next steps, not one. Offer all four
+through the host's interactive question tool, the way `fx-brainstorm` §3
+already does — never a bare "tell me when to start."
 
-**Unattended runs:** when there is no human to pick, do not stall. Feed the
-findings into **one** bounded plan revision, log each finding and its
-disposition to `state.md`, and carry on. The methodology is identical; only the
-"who decides" step changes.
+> "Plan and N tasks written to `docs/plans/<slug>/`. What next?"
+> 1. **Start implementing** — hand off to `fx-implement`
+> 2. **Red-team it** — `fx-devils-advocate` in plan mode. Recommended:
+>    <yes|skip> — <one-line reason from §7>
+> 3. **Keep discussing** — a decision in the plan isn't actually settled;
+>    back to the interview
+> 4. **Save for later** — the plan is good, the work isn't for now
 
-## 8. Handoff
+**Wait for the answer. Do not default to option 1.**
 
-"Plan and N tasks written to `docs/plans/<slug>/`. Review and tell me when to
-start." **Wait.**
+- **Start implementing** → hand off to `fx-implement`. Never begin
+  implementing from here.
+- **Red-team it** → dispatch `fx-devils-advocate` in **plan mode** against
+  `plan.md` (also reachable any time via `/fx:critique plan <file>`). Present
+  its numbered findings, then ask: discuss all / discuss some / continue. Do
+  not start resolving until the user picks. Once resolved, ask this same
+  four-way question again — the plan changed.
+- **Keep discussing** → return to §1. The plan document stays on disk; treat
+  the unresolved point as an open question and re-run the interview around it.
+- **Save for later** → **fx has no representation for this anywhere else.**
+  There is no "parked" state in the ledger and nothing revisits this plan on
+  its own — until that exists, do the manual equivalent: leave the plan
+  directory as it is (already durable, already on disk), write one line to
+  `docs/plans/<slug>/state.md` — `Parked <date>: <one-line reason>` — and
+  stop. Nothing else. Resuming later means a human opens the plan and picks
+  this same menu again by hand.
 
-Approved → `fx-implement`. Never begin implementing from here.
+**Unattended runs:** no human to pick → do not stall. Apply the §7
+recommendation (run the red-team pass if it said YES, feed findings into
+**one** bounded plan revision, log each finding and its disposition to
+`state.md`), then default to **start implementing**. The methodology is
+identical to the interactive path; only the "who decides" step changes.
 
 ---
 
@@ -316,6 +335,14 @@ behavioral spec and it makes verify-RED possible. The implementation is
 — a state machine, a schema, a type shape — is inlined in the relevant task,
 trimmed to the decision-rich part. Note that it came from a prototype.
 
+**Test code in a task is code nobody has run.** You write it out in full and
+`fx-implement` uses it exactly, but neither of you compiles or executes it —
+the only check it gets before RED is your own read-through, and a spec that
+omits `type: :request` or asserts an error body through a regex that happens
+to match still looks correct on the page. When the implementer reports "the
+given test does not run," that is not the plan failing — it is the intended
+defence catching what a read-through couldn't, working as designed. Expect it.
+
 ---
 
 ## No placeholders — these are plan failures
@@ -340,3 +367,7 @@ Every step contains the actual content the implementer needs. Never write:
 - [ ] No step says "add validation"
 - [ ] No step instructs a push, a merge, or an attribution trailer
 - [ ] A wide refactor is sequenced expand–contract, not forced into a slice
+- [ ] Every request/integration spec declares its type (`type: :request`)
+      unless the project infers it from file location
+- [ ] Every assertion on an error body states the error contract (exact
+      message, key, or status) rather than a pattern that happens to match it
