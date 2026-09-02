@@ -82,6 +82,11 @@ def main():
                     break
 
     print(f"\n{total} skills across all pools")
+    if total > 150:
+        print(f"  ! {total} is past the point where the skill listing truncates.")
+        print("    Descriptions degrade to bare names, and a skill nobody can read")
+        print("    cannot be selected on merit. Measured: at ~480 skills, seven fx")
+        print("    skills showed no description; at ~40, all of them did.")
     if not collisions:
         print("no collisions — one claimant per intent holds")
         return 0

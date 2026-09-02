@@ -68,7 +68,12 @@ multi-commit task.
 
 - **Standards** — when the diff exceeds ~3 files or ~150 lines. Below that the
   smell baseline has nothing to bite on.
-- **Lenses** — by the trigger table below. Eight parallel passes on a
+- **Lenses** — by the trigger table below. **Match on authored content, not on
+  file extension.** A greenfield first commit contains the entire generated
+  skeleton, so an extension trigger fires on files nobody wrote: measured, the
+  a11y lens matched `app/views/layouts/mailer.html.erb` from `rails new` on a
+  JSON-only API. Before dispatching, confirm the triggering files carry changes
+  someone actually made. Eight parallel passes on a
   three-line diff is indefensible; each dispatch costs a full subagent.
 - **Unprimed adversarial pass** — **branch mode only**, once per branch, not
   per task. Dispatch `fx-devils-advocate` in code mode against the whole diff,

@@ -731,3 +731,44 @@ one line. Making them unskippable would make the plugin unusable for the
 bounded work it explicitly supports. The goal is that the decision becomes
 conscious and visible, which is what #24 established a red-flag table cannot
 do on its own.
+
+---
+
+## 26. The real mechanism was listing truncation, not weak descriptions
+
+**Found by dogfooding**, 2026-09-02, the moment the superseded plugins were
+disabled. This corrects the design's problem statement.
+
+`design.md` §1 says the problem is that five plugins each claimed the same
+intents, so selection among identical claims was effectively random. True, but
+downstream of something more basic.
+
+**With ~480 skills installed, the skill listing truncates.** Descriptions are
+included until a budget runs out, then entries degrade to bare names. Measured:
+`fx-debug`, `fx-tdd`, `fx-architecture`, `fx-authoring`, `fx-humanize`,
+`prototype` and `research` all appeared as **names with no description text**.
+A probe judging on descriptions alone said so explicitly and picked non-fx
+skills for two of four tasks, because the fx skills in those categories had
+nothing to judge.
+
+Disabling the superseded plugins dropped the field to roughly 40 skills.
+**Every fx skill now shows its full description. No frontmatter changed.**
+
+**What this means for fx:**
+
+- The description discipline — trigger lists, one claimant per intent — is
+  necessary but does nothing while the description is invisible. It was being
+  graded on work the harness never displayed.
+- The routing table in `PREAMBLE.md` was doing all the tie-breaking, which is
+  why every probe reported "ambiguous" or "arbitrary" and named the table as
+  the reason.
+- **Consolidation is the primary lever, and it works for a reason the design
+  never stated.** Absorbing five plugins into one is not mainly about ending a
+  contest between rival claims; it is about staying under the budget where
+  descriptions are shown at all.
+
+**Fix:** state this in `design.md` §1 as the mechanism, above the
+one-claimant-per-intent rule, since it is the constraint that makes that rule
+effective. Add a line to `scripts/check-collisions`: report the **total** skill
+count across all pools, and warn past the point where truncation begins, since
+that is the number that decides whether any of this works.

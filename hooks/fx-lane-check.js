@@ -27,7 +27,17 @@
 const fs = require('fs');
 const path = require('path');
 
+// Detect source by EXTENSION, not by directory. A flat project — app.rb and
+// db.rb at the repo root, no app/ or src/ — is normal, and a directory-prefix
+// check silently matches nothing there. Measured: an autonomous Rack build put
+// every file at the root and this hook never fired. Same failure class it
+// exists to catch.
+const CODE_EXT = new Set(['.rb', '.py', '.js', '.mjs', '.ts', '.tsx', '.jsx',
+  '.go', '.rs', '.java', '.cs', '.kt', '.swift', '.php', '.ex', '.exs', '.rake']);
 const SOURCE_DIRS = ['app/', 'src/', 'lib/', 'internal/', 'pkg/', 'cmd/'];
+// Config and scaffolding are not "writing the implementation".
+const NOT_SOURCE = /^(config|db\/migrate|bin|script|vendor|node_modules|\.)/;
+const CONFIGISH = /^(Gemfile|Rakefile|config\.ru|package\.json|.*\.config\.[jt]s|.*rc)$/;
 const TEST_DIRS = ['test/', 'tests/', 'spec/', '__tests__/'];
 const TEST_NAME = /(_test|_spec|\.test|\.spec)\./;
 
@@ -62,11 +72,12 @@ process.stdin.on('end', () => {
     try { fs.mkdirSync(stateDir, { recursive: true }); fs.writeFileSync(mark(name), ''); } catch { /* best effort */ }
   };
 
-  const inSource = SOURCE_DIRS.some((d) => rel.startsWith(d));
+  const ext = path.extname(rel);
+  const isCode = CODE_EXT.has(ext) && !CONFIGISH.test(path.basename(rel)) && !NOT_SOURCE.test(rel);
   const inTest = TEST_DIRS.some((d) => rel.startsWith(d)) || TEST_NAME.test(path.basename(rel));
 
   // --- Check 1: writing source with no design anywhere ---------------------
-  if (inSource && !inTest && !alreadyFired('design')) {
+  if (isCode && !inTest && !alreadyFired('design')) {
     let hasDesign = false;
     try {
       const plans = path.join(cwd, 'docs', 'plans');
@@ -97,9 +108,9 @@ process.stdin.on('end', () => {
     const base = path.basename(rel).replace(TEST_NAME, '.').replace(/^(test_)/, '');
     const stem = base.replace(/\.[^.]+$/, '');
     let impl = null;
-    for (const d of SOURCE_DIRS) {
-      const dir = path.join(cwd, d);
-      if (!fs.existsSync(dir)) continue;
+    const roots = SOURCE_DIRS.map((d) => path.join(cwd, d)).filter(fs.existsSync);
+    roots.push(cwd);                                   // flat layouts keep source at the root
+    for (const dir of roots) {
       const stack = [dir];
       while (stack.length && !impl) {
         const cur = stack.pop();
@@ -107,7 +118,10 @@ process.stdin.on('end', () => {
         try { entries = fs.readdirSync(cur, { withFileTypes: true }); } catch { continue; }
         for (const e of entries) {
           const p = path.join(cur, e.name);
-          if (e.isDirectory()) { stack.push(p); continue; }
+          if (e.isDirectory()) {
+            if (!/^(\.|node_modules|vendor|tmp|log|test|spec)$/.test(e.name)) stack.push(p);
+            continue;
+          }
           if (e.name.replace(/\.[^.]+$/, '') === stem) { impl = path.relative(cwd, p); break; }
         }
       }

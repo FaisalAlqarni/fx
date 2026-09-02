@@ -28,6 +28,21 @@ select on but the name.
 
 ### The organising rule
 
+**Correction, measured 2026-09-02.** The account above is true but downstream
+of a blunter mechanism. **The skill listing has a budget.** With ~480 skills
+installed it truncates: descriptions are shown until the budget runs out, then
+entries degrade to bare names. Seven fx skills — `fx-debug`, `fx-tdd`,
+`fx-architecture`, `fx-authoring`, `fx-humanize`, `prototype`, `research` —
+appeared as names with **no description text at all**. Disabling the superseded
+plugins dropped the field to ~40 and every description became visible, with no
+frontmatter change.
+
+So description discipline is necessary and does nothing while the description
+is invisible; it was being graded on work the harness never displayed. And
+**consolidation is the primary lever** — not mainly because it ends a contest
+between rival claims, but because it keeps the field under the size where
+descriptions are shown at all.
+
 **Exactly one claimant per intent.** Everything else follows from it.
 
 Three tiers, distinguished by whether the model may select them:

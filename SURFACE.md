@@ -13,6 +13,21 @@ files and stays cheap until the repo exists.
 Model-selectable, exactly one claimant each. All descriptions are pure trigger
 lists; none summarizes a workflow.
 
+**Line budget, revised 2026-09-02.** The 500-line cap was justified as
+"paid per subagent dispatch". That was wrong: a lane's `SKILL.md` is read once
+by whoever invokes it, and a dispatched implementer reads
+`implementer-prompt.md`, not the skill. The real justification is dilution —
+a longer skill binds less per line, which this session demonstrated when an
+agent read `fx-brainstorm` in full, classified correctly, and overrode it.
+
+So the budget is now **by role, not one number**: a coordinator lane
+(`fx-implement`, read once per session, procedure-heavy) may run to ~550. A
+discipline lane (`fx-tdd`, `fx-debug`, read at the moment of temptation) stays
+tight, because dilution is the whole risk there. `fx-implement` sits at 527
+after absorbing ten fixes, and that is accepted rather than compressed —
+compressing it risked losing a rule, and splitting it behind a pointer would
+recreate DEBT #20.
+
 | Skill | Owns | Status |
 |---|---|---|
 | `fx-brainstorm` | Entry point. Classify → clustered rounds + ledger → sectioned design → gate | ✅ |

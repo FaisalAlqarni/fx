@@ -74,6 +74,17 @@ main/master without explicit consent.
 
 Full procedure and its rationalizations: `../../references/vocab/worktree-setup.md`.
 
+**You create the worktree. You do not enter it.** Isolation is for the work,
+not for the coordination. A native worktree tool typically **pins the whole
+session**, and a pinned controller cannot reach any other repository, cannot
+run compound commands, and reads every refusal as a guard catching a mistake
+when the mistake was its own location. Pass the absolute worktree path to each
+implementer, which is what the dispatch template already does, and reach it
+yourself with `git -C <path>` or `cd <path> && …`.
+
+The "#1 mistake" warning above is written for an implementer. For a controller
+it inverts: entering is the mistake.
+
 **An uncommitted plan is not a blocker.** `git worktree add` works fine
 against a dirty tree. The only real consequence: a worktree checked out from a
 commit won't contain files that were never committed, so an uncommitted
@@ -333,6 +344,17 @@ task. A lens finding enters the fix loop below like any other.
 The reviewer gets three paths — the task file, the report file, the review
 package — plus the Global Constraints that bind the task.
 
+**Verify a constraint before you copy it.** This block carries the authority
+of a requirement into an agent with no context to doubt it, so a false belief
+of yours becomes a false rule for them. **A constraint is a claim, and the exit
+gate already demands evidence for claims** — this is the one place the skill
+silently exempted them. Check anything empirical: a version, a line count, an
+exit code, a routing behaviour. In one measured session four constraints were
+false, and two agents refused to comply rather than obey them.
+
+**An agent that pushes back on an impossible instruction is working
+correctly.** Treat it as a signal about your dispatch, not as insubordination.
+
 **The Global Constraints block is the reviewer's attention lens.** Copy the
 binding requirements **verbatim** from the plan or design: exact values,
 formats, and stated relationships between components ("same layout as X",
@@ -460,6 +482,12 @@ success, and any communication suggesting completion or correctness.
 No merge, no PR, no push. Report:
 
 - **Landed** — tasks complete, with per-task test evidence.
+- **Deviations** — every step of this skill you skipped, compressed or
+  reordered, each with the reason. Announcing only the deviations you are
+  comfortable defending is the failure mode: a measured run disclosed a
+  compressed interview and stayed silent about dropping the design doc, the
+  plan and the todo file. **A deviation you did not announce is a decision made
+  in secret**, and it is indistinguishable from not having noticed.
 - **Rulings I made** — **every** ledger line containing `Ruling:`, in the
   order made, each with what it costs if wrong. **Exhaustive: if the ledger
   holds a ruling, the list holds it.** *It's the only place decisions made on
