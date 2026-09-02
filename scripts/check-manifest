@@ -22,10 +22,13 @@ MANIFEST = ROOT / ".claude-plugin" / "plugin.json"
 # `agents` is deliberately ABSENT — declaring it fails validation.
 ALLOWED = {
     "name", "version", "description", "author", "homepage", "repository",
-    "license", "keywords", "skills", "commands", "hooks", "mcpServers",
-    "userConfig",
+    "license", "keywords", "skills", "commands", "mcpServers", "userConfig",
 }
-CONVENTION_ONLY = {"agents"}
+# Discovered automatically from their standard location. Declaring one is not
+# redundant, it is an ERROR: `agents` fails validation outright, and
+# `hooks: ./hooks/hooks.json` double-loads and takes the entire hooks block
+# down with it, silently, while skills and agents still load fine.
+CONVENTION_ONLY = {"agents", "hooks"}
 
 errors = []
 d = json.loads(MANIFEST.read_text())

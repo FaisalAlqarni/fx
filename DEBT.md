@@ -772,3 +772,36 @@ one-claimant-per-intent rule, since it is the constraint that makes that rule
 effective. Add a line to `scripts/check-collisions`: report the **total** skill
 count across all pools, and warn past the point where truncation begins, since
 that is the number that decides whether any of this works.
+
+---
+
+## 28. `hooks` is convention-discovered too, and declaring it fails silently
+
+**Found by dogfooding**, 2026-09-02, on the first clean install of the updated
+plugin.
+
+```
+Failed to load hooks from .../hooks/hooks.json: Duplicate hooks file detected:
+./hooks/hooks.json resolves to already-loaded file. The standard
+hooks/hooks.json is loaded automatically, so manifest.hooks should only
+reference additional hook files.
+```
+
+Identical in shape to the `agents` bug in #3's neighbourhood, and worse in
+consequence. `agents: [...]` fails validation loudly and the install stops.
+**`hooks: "./hooks/hooks.json"` lets skills, agents and commands all load
+normally and silently drops the entire hooks block** — so the plugin reports
+itself installed and enabled, every skill is listed, and the preamble
+injection, the git guard and the lane check are all simply absent.
+
+That is the worst failure shape available: the parts you can see work, and the
+parts that enforce the rules do not.
+
+**Fix applied:** the `hooks` key is removed from `plugin.json`;
+`hooks/hooks.json` is found by convention. `scripts/check-manifest` now treats
+`agents` and `hooks` alike as convention-only and rejects either being
+declared, with the reason written into the script so nobody re-adds it.
+
+**The lesson, third time this session:** anything discovered by convention must
+not also be declared. The manifest's job is to name what is *not* in a standard
+location. `agents`, `hooks` — and the gate that catches this now knows both.
