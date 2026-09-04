@@ -1,5 +1,5 @@
 ---
-description: Set up fx in this repository: .fx.json, repo.md, and the directories the lanes expect
+description: Set up fx in this repository: reads the machine facts, asks what the repo cannot tell it, then writes .fx.json, repo.md, an optional CONTEXT.md and the directories the lanes expect
 ---
 
 # /fx:setup
@@ -54,7 +54,38 @@ while a wrong one makes it conclude the build is broken.
 If a command cannot be determined, write `null` and say so in the report. Never
 guess.
 
-## 2. `repo.md`: the project, in prose
+## 2. Ask what the repo cannot tell you
+
+**Facts are your job; decisions and vocabulary are the user's.** Step 1 read the
+repository, which is the right way to learn a test command and the wrong way to
+learn what a word means here. Ask, in clustered rounds, using the host's
+interactive question tool. Two rounds, 2 to 4 questions each, one topic per
+round, exactly as `fx-brainstorm` does.
+
+**Round 1, the domain.** What this project is for in one line; the three or four
+terms someone must use correctly to be understood here, and what each means;
+anything the code does deliberately that looks like a mistake.
+
+**Round 2, the workflow.** What must be true before a change ships; which branch
+is the base; where worktrees go; anything an agent should not touch without
+asking.
+
+Offer your own reading as the first option every time, drawn from step 1, so the
+common answer is one keystroke. You are asking to be corrected, not
+interviewing from nothing.
+
+### `CONTEXT.md`, only if terms actually resolved
+
+If round 1 produced terms with settled meanings, write them to `CONTEXT.md` as a
+glossary and nothing else: the term, what it means here, and what it is often
+confused with. **No implementation detail, no file paths.**
+
+If nothing resolved, **write no file** and say so. The glossary exists so a
+later session can catch the code drifting from what the user meant, and a
+glossary generated from a reading of that same code cannot perform that check
+against itself. Answers make it legitimate; inference does not.
+
+## 3. `repo.md`: the project, in prose
 
 Root of the repo. **Exhaustive**: this is the file that stops every future
 agent from re-deriving the same structure.
@@ -100,7 +131,7 @@ Show the draft, and flag separately:
 Then apply corrections and write. **A skipped review is a failed setup**, even
 if the file looks right.
 
-## 3. Directories
+## 4. Directories
 
 - `docs/plans/`: where `fx-brainstorm`, `fx-plan` and `fx-implement` keep
   designs, plans, tasks and `state.md`. Committed.
@@ -122,7 +153,7 @@ it forever. Report each directory renamed; if the repo has uncommitted changes
 in one, say so and leave it alone rather than mixing a rename into the user's
 working tree.
 
-## 4. Wiring
+## 5. Wiring
 
 - **One line in `CLAUDE.md`** (and `AGENTS.md` if present) pointing at
   `repo.md`. One line only: `repo.md` is loaded on demand, and inlining it
@@ -131,10 +162,22 @@ working tree.
 - For opencode, the fx block goes in `AGENTS.md`. **Never write to
   `~/.claude/CLAUDE.md`**: that is the user's file.
 
+## What setup deliberately does not create
+
+- **`CONTEXT.md` from inference.** Step 2 writes it from the user's answers, or
+  not at all. What setup never does is generate a glossary by reading the code,
+  because the file exists to catch the code drifting from what the user meant.
+- **`CLAUDE.md` or `AGENTS.md` themselves.** Setup adds one line to them and
+  nothing else. Writing the file is the host's `init` command and the user's
+  call, and inlining the project description there would put it in every
+  session's context, which is the cost `repo.md` exists to avoid.
+- **`docs/adr/`.** Created when the first decision needs recording.
+
 ## Report
 
 What was written, every command with its source (`Makefile:12`, `ci.yml:31`),
-every command that came out `null`, and every `repo.md` section flagged during
+whether `CONTEXT.md` exists (and if not, that it is written when the first
+term resolves), every command that came out `null`, and every `repo.md` section flagged during
 review.
 
 Print it. Do not commit.
