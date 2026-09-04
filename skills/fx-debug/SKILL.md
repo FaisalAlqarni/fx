@@ -76,7 +76,8 @@ give up.**
 
 ### Inputs that shape the loop
 
-- **Read the error message carefully.** Don't skip past errors or warnings:   they often contain the exact solution. Read stack traces **completely**. Note
+- **Read the error message carefully.** Don't skip past errors or warnings:
+  they often contain the exact solution. Read stack traces **completely**. Note
   line numbers, file paths, error codes.
 - **Check recent changes.** What changed that could cause this? `git diff`,
   recent commits, new dependencies, config changes, environmental differences.
@@ -320,7 +321,7 @@ With a correct seam:
    JUnit, XCTest: `.fx.json` names the runner); **a one-off test script if
    there is no framework at that seam.** A script that reproduces and asserts
    is worth more than no test at all, and it can be promoted later.
-2. **Watch it fail.** Use `fx-tdd` for the RED/GREEN mechanics: including
+2. **Watch it fail.** Invoke `fx:fx-tdd` for the RED/GREEN mechanics: including
    which RED is valid (runtime vs compile-time) and the anti-tautology rules.
 3. Apply the fix.
 4. Watch it pass.

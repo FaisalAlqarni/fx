@@ -106,10 +106,10 @@ Read-only shell commands only. Do not run a browser, do not edit markup.
 
 Findings only, worst first.
 
-```
-Lens: a11y — N findings
+```markdown
+Lens: a11y: N findings
 
-1. [Critical] <file>:<line> — <barrier> → <who is blocked, and from what> (WCAG <SC>).
+1. [Critical] <file>:<line>: <barrier> → <who is blocked, and from what> (WCAG <SC>).
 2. [Important] ...
 ```
 

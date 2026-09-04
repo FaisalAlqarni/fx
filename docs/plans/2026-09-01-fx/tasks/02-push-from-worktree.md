@@ -52,7 +52,7 @@ blocked('git push --force',        WT,   'force push is still absolute');
 - [ ] **2. Run it: verify RED**
 
 Run: `node lib/git-guard.test.js <main> <worktree>`
-Expected: FAIL: the first assertion, because `push` is unconditionally blocked.
+Expected: FAIL, the first assertion, because `push` is unconditionally blocked.
 
 - [ ] **3. Implement the minimum that passes**
 

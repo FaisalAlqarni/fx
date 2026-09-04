@@ -6,16 +6,16 @@ already happened.
 
 **Purpose:** verify each finding was addressed, and that the fix broke nothing.
 
-```
+```markdown
 Subagent (general-purpose):
   description: "Re-review task NN fix round R"
-  model: [MODEL — REQUIRED: per SKILL.md Model Selection. Scoped re-reviews of
+  model: [MODEL, REQUIRED: per SKILL.md Model Selection. Scoped re-reviews of
          small fix diffs take a cheap-to-mid tier. An omitted model silently
          inherits the session's most expensive one.]
   prompt: |
     You are re-reviewing one task's fix round. A previous review produced
     findings; an implementer has attempted to fix them. Your job is to verdict
-    each finding and inspect the fix diff — nothing else.
+    each finding and inspect the fix diff: nothing else.
 
     ## The task
 
@@ -23,7 +23,7 @@ Subagent (general-purpose):
 
     ## The findings under verification
 
-    [FINDINGS — copied verbatim from the previous review, one per bullet]
+    [FINDINGS: copied verbatim from the previous review, one per bullet]
 
     ## The fix
 
@@ -34,7 +34,7 @@ Subagent (general-purpose):
     **Head:** [HEAD_SHA]
     **Diff file:** [DIFF_FILE]
 
-    Read the diff file once — it contains the fix commits, a stat summary, and
+    Read the diff file once: it contains the fix commits, a stat summary, and
     the fix diff with surrounding context. Do not re-run git commands. If the
     diff file is missing, fetch it yourself:
     `git diff --stat [FIX_BASE_SHA]..[HEAD_SHA]` and
@@ -57,7 +57,7 @@ Subagent (general-purpose):
     finding. Inspect the fix diff for new problems the fix itself introduced.
 
     **Do NOT re-review code the fix did not touch.** If you notice an issue
-    entirely outside the fix diff, report it under Out-of-Scope Observations —
+    entirely outside the fix diff, report it under Out-of-Scope Observations:
     it does not block this task and **does not extend the loop.** A broad
     whole-branch review happens after every task is complete.
 
@@ -68,10 +68,29 @@ Subagent (general-purpose):
     confirm the fix report names the covering tests and shows their output, and
     verify the claims against the diff. **Do not re-run the suite to confirm
     their report.** Run a test only when reading the code raises a specific
-    doubt no existing run answers — and then a focused test, never a
+    doubt no existing run answers, and then a focused test, never a
     package-wide suite.
 
     Warnings or noise in the reported output are findings.
+
+    ## Write your findings to a file, then summarise
+
+    **Write the full findings to [FINDINGS_FILE] before your final message.**
+    Then reply with the verdict, the counts by severity, and that path.
+
+    Your findings are the only copy of work nobody can redo cheaply. An
+    implementer's work survives in the commit; a review's exists in one message
+    and nowhere else. Spend that message on a correction, a clarification, or an
+    answer to a follow-up, and the findings go with it.
+
+    Measured: a whole-branch review ran twenty minutes across a hundred tool
+    calls, then used its final message to correct one of its own claims. The
+    correction was right and worth making. **The findings never reached the
+    controller at all**, and two further exchanges asking for them produced two
+    more messages that were not them.
+
+    So the file is written first and the message points at it. Then a follow-up
+    can be answered freely, because the findings are already safe.
 
     ## Output format
 
@@ -83,8 +102,8 @@ Subagent (general-purpose):
 
     For each finding in order:
 
-    - **[finding one-liner]** — ADDRESSED | NOT ADDRESSED, with file:line
-      evidence. **"Attempted" is not addressed** — the specific defect must no
+    - **[finding one-liner]**: ADDRESSED | NOT ADDRESSED, with file:line
+      evidence. **"Attempted" is not addressed**: the specific defect must no
       longer exist.
 
     ### New breakage in the fix diff
@@ -100,10 +119,12 @@ Subagent (general-purpose):
     ### Verdict
 
     **Fix round:** [All findings addressed, no new Critical/Important breakage |
-    Findings remain open] — list the open ones.
+    Findings remain open]: list the open ones.
 ```
 
 **Placeholders:**
+- `[FINDINGS_FILE]`: REQUIRED, the per-finding verdicts, written before the
+  summary
 - `[MODEL]`: REQUIRED; cheap-to-mid tier for small fix diffs
 - `[TASK_FILE]`: the same file the implementer worked from
 - `[FINDINGS]`: the Critical/Important findings and spec gaps from the previous

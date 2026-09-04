@@ -148,11 +148,11 @@ A numbered list. Each finding is one line: a short title, then a one-sentence
 statement of the problem and which lens or cross-reference check it fails.
 **Order by severity: integrity and faithfulness first.**
 
-```
-Adversarial review — {design|plan|code} mode — <file|diff>
+```markdown
+Adversarial review ({design|plan|code} mode) <file|diff>
 
-1. <short title> — <one-sentence problem + which lens/cross-ref it fails>.
-2. <short title> — <…>.
+1. <short title>: <one-sentence problem + which lens/cross-ref it fails>.
+2. <short title>: <…>.
 ```
 
 In plan mode, findings 1..k are plan-internal; call out the design↔plan
@@ -163,10 +163,10 @@ that weren't.
 
 Then ask, offering exactly three options:
 
-```
-1. Discuss all — walk every finding one by one.
-2. Discuss some — you pick which findings to dig into.
-3. Continue — proceed as the reviewer sees fit (I'll resolve/fold in the rest).
+```markdown
+1. Discuss all: walk every finding one by one.
+2. Discuss some: you pick which findings to dig into.
+3. Continue: proceed as the reviewer sees fit (I'll resolve/fold in the rest).
 
 Which?
 ```

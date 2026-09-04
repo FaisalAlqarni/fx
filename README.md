@@ -88,14 +88,14 @@ and any commit message carrying an attribution trailer.
 
 ## Layout
 
-```
-skills/       9 lanes — model-selectable, one per intent
-agents/       review lenses + the devil's advocate — read-only
+```markdown
+skills/       9 lanes: model-selectable, one per intent
+agents/       review lenses + the devil's advocate: read-only
 commands/     /fx:setup and friends
 references/   loaded on demand by a lane, never selectable
 hooks/        Claude Code: preamble injection + git guard
 plugins/      opencode: the same two jobs, same shared lib
-lib/          git-guard.js — one predicate, both runtimes
+lib/          git-guard.js: one predicate, both runtimes
 PREAMBLE.md   injected into every session AND every subagent
 ```
 

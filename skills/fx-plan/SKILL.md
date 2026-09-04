@@ -136,9 +136,9 @@ More than 10 tasks → phase into independently shippable slices:
 
 ## 5. Write plan.md and the tasks
 
-```
+```markdown
 docs/plans/YYYY-MM-DD-<slug>/
-  design.md        (already exists — never edit it from here)
+  design.md        (already exists: never edit it from here)
   plan.md
   tasks/01-<slug>.md …
 ```
@@ -192,6 +192,21 @@ already does: never a bare "tell me when to start."
   its numbered findings, then ask: discuss all / discuss some / continue. Do
   not start resolving until the user picks. Once resolved, ask this same
   four-way question again: the plan changed.
+
+  **Then re-run §6.1 over what the findings changed.** Only over that: a
+  finding that alters a requirement lands after the coverage walk has already
+  passed, so nothing checks it, and a requirement that grew a second half keeps
+  the task that owned its first half. For each resolved finding, name the task
+  that now owns the changed requirement, and if the change added a place the
+  behaviour must appear, say which task owns **that** place.
+
+  Measured: a finding moved a marker "to the CSV **and** to the claim page".
+  The model method existed, the CSV column was written, both were tested, and
+  **nothing rendered it in any view**. No task's acceptance criteria carried the
+  second half. Every task passed its own review, the story was half met, and it
+  surfaced only because an implementer on an unrelated task happened to notice,
+  nine tasks later. The coverage walk in §6 would have caught it; it had already
+  run.
 - **Keep discussing** → return to §1. The plan document stays on disk; treat
   the unresolved point as an open question and re-run the interview around it.
 - **Save for later** → **fx has no representation for this anywhere else.**
@@ -235,17 +250,17 @@ here or nowhere. Copy it verbatim.
 
 **Design:** `./design.md`
 **Goal:** one sentence describing what this builds.
-**Architecture:** 2–3 sentences on the approach.
+**Architecture:** 2 to 3 sentences on the approach.
 **Stack:** key technologies.
 **Complexity:** High | Medium | Low
 **Risks:**
-- HIGH: <risk> — <mitigation>
-- MEDIUM: <risk> — <mitigation>
+- HIGH: <risk>: <mitigation>
+- MEDIUM: <risk>: <mitigation>
 **Testing:** Unit: <what> · Integration: <what> · E2E: <if applicable>
 
 ## Global Constraints
 
-<The design's project-wide requirements — version floors, dependency limits,
+<The design's project-wide requirements: version floors, dependency limits,
 naming and copy rules, platform requirements, locale/RTL rules. One line each,
 **exact values copied verbatim from the design.** Every task's requirements
 implicitly include this section, and it is what the reviewer is handed as its
@@ -262,10 +277,10 @@ attention lens.>
 ## tasks/NN-<slug>.md template
 
 ````markdown
-# 03 — <title>
+# 03: <title>
 
 **Status:** ready-for-agent
-**Blocked by:** 01, 02   (or "None — can start immediately")
+**Blocked by:** 01, 02   (or "None: can start immediately")
 **Phase:** MVP
 
 **What to build:** the end-to-end behavior this makes work, from the user's
@@ -276,7 +291,7 @@ perspective. Not a layer-by-layer implementation list.
 - Modify: `engines/core/app/models/bar.rb`
 - Test:   `engines/core/spec/domain/foo_spec.rb`
 
-  No line-number ranges — they rot within a day. File paths are stable enough
+  No line-number ranges: they rot within a day. File paths are stable enough
   to be worth naming; `existing.rb:123-145` is not.
 
 **Interfaces:**
@@ -288,18 +303,51 @@ perspective. Not a layer-by-layer implementation list.
 
 **Seam:** <the confirmed seam this is tested at, from design.md>
 
-**Risks:** <what could go wrong here and how to avoid it — omit if none>
+**Risks:** <what could go wrong here and how to avoid it: omit if none>
 
-**Idempotency:** <why re-running this is safe — existence guards,
+**Idempotency:** <why re-running this is safe: existence guards,
 `IF NOT EXISTS`, upserts, commit-only-if-dirty. **Required for any task that
 mutates state or commits**, because a resumed run re-executes tasks and a
 non-idempotent one corrupts state or double-writes.>
 
-**Testing:** <how this deliverable is verified — unit / integration / system>
+**Testing:** <how this deliverable is verified: unit / integration / system>
 
 ## Acceptance criteria
 - [ ] …
 - [ ] …
+
+<!--
+Two rules for writing these, both learned by watching criteria pass over a
+broken feature.
+
+**A criterion that says a thing exists is satisfied by a test that asks for it
+directly, and that does not prove anyone can get to it.** Per-record tests fetch
+the record's path, which is right for testing the page and silently assumes a
+route in that nothing checks. Measured: a claimant's rejected claim showed the
+rejection reason and the resubmit control, both tested, both reviewed, and the
+list those claims appeared in linked no row. The feature was unreachable for its
+entire audience and every criterion passed. When a story depends on someone
+arriving somewhere, say so in the criterion and assert it by **following the
+link**, not by fetching the path.
+
+**Reachability has two halves, and following the link only proves the first.**
+Getting to the control is one; the control pointing at the right thing is the
+other. Measured on the very next task, after the rule above was already in
+force: a test correctly followed the edit link out of a list, then hand-built
+the `PATCH` it expected the form to send. Repointing that form at the wrong
+route left **the whole suite green** while the real button posted to `create`,
+failed on a missing field, and rendered a different page. Assert against what
+the page actually contains, the form's own `action` and `method`, not against
+the route you believe it uses.
+
+**Write criteria for the successful path, not only its guards.** Refusals are
+easy to state and easy to test, so a task drifts into a list of them. Measured:
+an admin task carried "demoting the last manager is refused" and "deactivating
+the last manager is refused" and never "an admin deactivates a user through the
+screen". A correct model method with no control anywhere would have passed the
+whole file. The refusals are the fence; the story is the field.
+-->
+
 
 ## Steps
 
@@ -313,18 +361,18 @@ RSpec.describe Foo do
 end
 ```
 
-- [ ] **2. Run it — verify RED**
+- [ ] **2. Run it: verify RED**
 
 Run: `docker compose exec shared bundle exec rspec engines/core/spec/domain/foo_spec.rb`
-Expected: FAIL — `uninitialized constant Foo`
+Expected: FAIL, `uninitialized constant Foo`
 (Compile-time RED is equally valid on C#/Kotlin/Swift.)
 
 - [ ] **3. Implement the minimum that passes**
 
-No code here — `fx-tdd` drives it from the failing test. Pre-writing the
+No code here: `fx-tdd` drives it from the failing test. Pre-writing the
 implementation defeats TDD and goes stale.
 
-- [ ] **4. Run it — verify GREEN**
+- [ ] **4. Run it: verify GREEN**
 
 Run: same command. Expected: PASS, output pristine.
 
@@ -339,9 +387,21 @@ git add engines/core/app/domain/foo.rb engines/core/spec/domain/foo_spec.rb
 git commit -m "feat(core): add Foo"
 ```
 
-No attribution trailers. Then continue to the next task — never stop and
+No attribution trailers. Then continue to the next task: never stop and
 wait.
 ````
+
+**Stage by path, never `-A` or `.`, and write the paths into the task.** The
+example above does this and it is a rule, not a style. The working tree during a
+task holds things the task did not write: the controller's ledger edits land
+there continuously, and a second writer's half-finished work lands there if two
+tasks ever overlap. `-A` sweeps all of it into the task's commit, which is how a
+task diff stops being the thing its review was scoped to.
+
+Measured: every task commit in one build carried the ledger, because the
+generated tasks used `-A` while this template used explicit paths. The
+implementer noticed and reported it as expected behaviour, which it had become.
+The **Files** section already lists exactly what to stage.
 
 **Test code is written out; implementation code is not.** The test is the
 behavioral spec and it makes verify-RED possible. The implementation is

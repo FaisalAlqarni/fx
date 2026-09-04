@@ -60,6 +60,11 @@ BLOCK_PAIR = re.compile(r'(?<=\S)[ \n][—–][ \n]([^\n]*(?:\n[^\n]*)??)[ \n][�
 # A parenthetical lives inside one sentence. A terminator inside the span means
 # the two dashes belong to different sentences and are not a pair.
 SENTENCE_END = re.compile(r'[.!?]["”’)]?[ \n]')
+# A run of three or more spaces inside a line means columns: a tree, an aligned
+# table, a definition list. Each entry is its own thought, so a dash on one line
+# cannot pair with a dash on the next. This is the 272-line paren defect in the
+# shape BLOCK_START misses, because `skills/  9 lanes` is not a list marker.
+ALIGNED = re.compile(r'\S {3,}\S')
 
 
 def _pair(m):
@@ -73,6 +78,8 @@ def _pair(m):
         # closes on the same line. Anything else is item-to-item bleed.
         if '\n' in span:
             return span
+    if '\n' in span and (ALIGNED.search(head) or ALIGNED.search(inner)):
+        return span                       # columns, not prose: entry-to-entry bleed
     if '|' in head or head.lstrip().startswith('#'):
         return span                       # a table cell or a heading, never a paren
     if any(BLOCK_START.match(l) for l in inner.split('\n')[1:]):
@@ -83,6 +90,58 @@ def _pair(m):
         # stopped (queue the next one. Progress summaries waste time) they asked".
         return span
     return f' ({inner}) '
+
+
+# A fenced block is exempt only when it holds code. Most fences in this
+# repository hold neither code nor sample output: they hold the prompt text a
+# dispatched subagent reads as its instructions, which is the highest-leverage
+# prose here and was the only prose the checker never read.
+#
+# Prose fences are tagged ```markdown rather than inferred. A bare fence stays
+# code, because it routinely is: `lib/fix-dashes.test.py` pins the case where
+# guessing rewrote `let x = a - b` inside one. Tagging says which fences are
+# text at the site, where the person adding one can see the rule.
+FENCE_TICKS = re.compile(r'^(\s*)(`{3,})(.*)$')
+OPTION_LABEL = re.compile(r'^\s*[A-Za-z0-9]\)', re.M)
+FENCE_LANG = re.compile(r'^\s*```+\s*`*([A-Za-z0-9_+#.-]*)')
+
+
+def code_fence(line):
+    """True when this fence opener starts a block of code rather than prose."""
+    m = FENCE_LANG.match(line)
+    lang = (m.group(1) if m else '').lower()
+    return lang not in ('markdown', 'md')
+
+
+def nested_fence_defects(text):
+    """Language-tagged closing fences in the literal content of an outer block.
+
+    A template wrapped in a ````four-tick```` fence holds ```three-tick``` fences
+    as literal text. They are content, not structure, so markdown parses the file
+    happily and every fence-aware check stays green while the template teaches a
+    broken closer. Retagging prose fences in bulk produced exactly this: two
+    closers inside `fx-plan`'s task template became ```markdown, and the only
+    reader that would ever notice is a human copying the template.
+    """
+    out, outer, inner = [], None, None
+    for n, line in enumerate(text.splitlines(), 1):
+        m = FENCE_TICKS.match(line)
+        if not m:
+            continue
+        ticks, info = len(m.group(2)), m.group(3).strip()
+        if outer is None:
+            outer = ticks
+            continue
+        if ticks >= outer and not info:
+            outer = inner = None
+            continue
+        if inner is None:
+            inner = ticks
+        elif ticks >= inner:
+            if info:
+                out.append((n, line.strip()))
+            inner = None
+    return out
 
 
 def blocks(text):
@@ -96,7 +155,7 @@ def blocks(text):
     buf, start = [], 1
     for n, line in enumerate(text.splitlines(), 1):
         if line.lstrip().startswith('```'):
-            infence = not infence
+            infence = code_fence(line) if not infence else False
             continue
         if infence:
             continue
@@ -133,7 +192,7 @@ def fix_dashes(text):
     """
     parts = FENCE.split(text)
     for i, seg in enumerate(parts):
-        if seg.startswith('```'):
+        if seg.startswith('```') and code_fence(seg.splitlines()[0]):
             continue
 
         # 1. Ranges: "2–3 sentences" is a range, not a clause break. Only when
@@ -156,9 +215,22 @@ def fix_dashes(text):
         seg = BLOCK_PAIR.sub(_pair, seg)
 
         # 4. What is left is a single dash introducing an explanation, which is
-        #    what a colon is for.
-        seg = re.sub(r'[ \n][—–][ \n]', ': ', seg)
-        seg = re.sub(r'[—–]', ':', seg)          # any hard-up-against-a-word remainder
+        #    what a colon is for. Decided per line, because both of the things
+        #    that make a colon the wrong choice are line-local. A dash at the
+        #    end of a line was previously matched together with its own newline,
+        #    so the replacement ate the line break and stranded the next line's
+        #    indentation mid-sentence: `my report":     that review is`. And a
+        #    line already carrying a colon reads as a stutter when handed a
+        #    second one: `Lens: security: N findings`.
+        lines = seg.split('\n')
+        for j, line in enumerate(lines):
+            if '—' not in line and '–' not in line:
+                continue
+            mark = ',' if ':' in re.sub(r'[—–]', '', line) else ':'
+            line = re.sub(r'[ \t]*[—–][ \t]*$', mark, line)
+            line = re.sub(r'[ \t][—–][ \t]', mark + ' ', line)
+            lines[j] = re.sub(r'[—–]', mark, line)
+        seg = '\n'.join(lines)
 
         parts[i] = seg
     return ''.join(parts)
@@ -167,7 +239,7 @@ def fix_dashes(text):
 def main():
     argv = [a for a in sys.argv[1:] if not a.startswith('--')]
     fix = '--fix-dashes' in sys.argv
-    dash_lines = stock_hits = unbalanced = 0
+    dash_lines = stock_hits = unbalanced = bad_fences = 0
     report = []
 
     for p, rel in files(argv):
@@ -184,8 +256,15 @@ def main():
         # different places. Counting dashes cannot see it, because the broken
         # output has no dashes left in it, so the dash gate goes green on text
         # nobody could read. DEBT #37.
+        # A lettered or numbered option label ("A)", "3)") is a list marker, not
+        # half a pair. Prompt templates offering a choice are full of them.
+        for n, line in nested_fence_defects(text):
+            bad_fences += 1
+            report.append(f'  {rel}:{n}  closing fence carries a language: {line}')
+
         for start, block in blocks(text):
-            if block.count('(') != block.count(')'):
+            body = OPTION_LABEL.sub('', block)
+            if body.count('(') != body.count(')'):
                 unbalanced += 1
                 report.append(f'  {rel}:{start}  unclosed parenthesis in this block')
 
@@ -196,7 +275,7 @@ def main():
         infence = False
         for n, line in enumerate(text.splitlines(), 1):
             if line.lstrip().startswith('```'):
-                infence = not infence
+                infence = code_fence(line) if not infence else False
                 continue
             if infence:
                 continue
@@ -219,7 +298,8 @@ def main():
         return 0
 
     print(f'FAIL: {dash_lines} lines with a dash, {stock_hits} stock-vocabulary '
-          f'hits, {unbalanced} block(s) with an unclosed parenthesis')
+          f'hits, {unbalanced} block(s) with an unclosed parenthesis, '
+          f'{bad_fences} mis-tagged closing fence(s)')
     for r in report[:40]:
         print(r)
     if len(report) > 40:

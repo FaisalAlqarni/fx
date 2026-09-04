@@ -29,6 +29,21 @@ wrapper are all normal, and only the repo knows which.
 
 Ranked by how often they are gotten wrong, not by severity.
 
+### Bootsnap caches YAML by mtime and size, so a same-length revert does nothing
+
+Editing a locale file, running a test, then reverting the string **to one of the
+same byte length within the same second** leaves the old parsed value live.
+Bootsnap keys its YAML cache on mtime plus size, and neither changed.
+
+This matters most where it is least expected: **mutation-proving a translation**.
+You break a string, watch the test fail, restore it, and the test keeps failing,
+which reads as "my revert did not work" and sends you looking for a problem that
+is not there. Measured on a build where the mutation and the original were the
+same length in Arabic.
+
+`rm -rf tmp/cache/bootsnap` clears it. Do that between a locale mutation and its
+revert, or change the length when you mutate.
+
 ### Time
 
 `Time.now` and `Date.today` read the **system** zone. Rails apps run on

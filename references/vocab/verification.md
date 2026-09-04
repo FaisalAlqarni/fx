@@ -59,6 +59,64 @@ your machine, not about the code, and reporting it as verification is the
 same failure as not running the command at all: you just get to feel worse
 about it, later, when it's found by someone else.
 
+### An exit code is not a result
+
+**Read the first line of output before you believe the exit code.** A test
+runner given no arguments prints `usage:` and exits non-zero. A command that
+did not run at all is indistinguishable from a failing one if you only look at
+`$?`, and the direction of the mistake is always toward alarm: nothing ran, and
+you report a red gate.
+
+Measured: three fx guard suites were recorded as broken at HEAD. They take a
+main checkout and a worktree as arguments, documented in the README two lines
+above the command. Run correctly they pass 87, 27 and 13.
+
+**Re-running is not a second opinion.** That claim was "confirmed" by stashing
+every local change, re-running, and seeing the same failures, which proved only
+that the breakage predated the change. **A wrong method returns the same wrong
+answer before and after, and the stability of a wrong answer reads exactly like
+confirmation.** Repeating a measurement tests whether it is stable; it never
+tests whether it is the right measurement. Those need different checks, and only
+the second one is worth doing before you report.
+
+Before recording any check as failing: read its first line, and check how the
+project says to invoke it.
+
+**And a pipe eats the status you meant to read.** `cmd | head -6` followed by
+`echo $?` reports `head`'s exit, which is almost always 0. So the shape people
+reach for when a command is chatty, pipe it somewhere short and print the
+status, is the shape that silently replaces the answer with a constant.
+
+Measured: a check was briefed to a subagent as "exits 0, so read the output
+rather than the code". It exits 1. The 0 came from `head`. The subagent ran the
+command straight and reported the real code, which is the only reason the brief
+was corrected rather than propagated.
+
+Use `${PIPESTATUS[0]}`, or `set -o pipefail`, or run the command unpiped when
+the status is the thing you are claiming. **The two rules pair: read the first
+line of output, and make sure the status you quote belongs to the command you
+are talking about.**
+
+### A report you have not received is not a report
+
+If you delegate a check, its result is evidence when it **arrives and you read
+it**, and not before. An in-flight check is a plan. Writing up its expected
+conclusion, in the same voice as the things you measured, converts a plan into a
+claim without anyone deciding to.
+
+Measured: a branch review dispatched two checks, received one, and presented
+items from both as verified. Asked about it afterwards it ran the mutations
+itself, and **one of the three claims was false**: the test it said would stay
+green failed, because the test enforced exactly what its name said. The other
+two held. So the honest disclosure cost one finding and saved the credibility of
+the rest.
+
+Two habits fix it. Keep delegated results in a different column from things you
+ran, and never merge the columns while one is empty. And if a result has not
+arrived by the time you report, **say that**: "dispatched, no result yet" is a
+sentence a reader can act on, where a confident paragraph about what it probably
+found is not.
+
 ## Key patterns
 
 **Tests**
@@ -70,9 +128,9 @@ about it, later, when it's found by someone else.
 
 **Regression tests: the red-green proof**
 
-```
+```markdown
 ✅ Write → run (passes) → REVERT the fix → run (MUST FAIL) → restore → run (passes)
-❌ "I've written a regression test"  — without the red-green cycle
+❌ "I've written a regression test" : without the red-green cycle
 ```
 
 A regression test never seen failing is not a regression test. This one is also
@@ -80,9 +138,9 @@ inlined in `fx-tdd`, because that is where regression tests get written.
 
 **Build**
 
-```
+```markdown
 ✅ [run the build] [see: exit 0] → "Build passes"
-❌ "The linter passed"  — the linter doesn't check compilation
+❌ "The linter passed" : the linter doesn't check compilation
 ```
 
 **Requirements**

@@ -63,12 +63,55 @@ defects, a cap you would have asked to exceed: **decide them.** The design is
 the binding authority, the plan is its argument, and your judgment settles what
 neither answers. Record every decision in the ledger:
 
-```
-Ruling: <what you decided> — <why> — <what it costs if wrong>
+```markdown
+Ruling: <what you decided>. Why: <why>. Cost if wrong: <what it costs>,
+        caught by <the checkpoint that would catch it, if one would>.
 ```
 
 **Reason:** a wrong ruling costs rework the user can see and undo. A session
 parked on a question costs their whole day and buys nothing.
+
+**Name the checkpoint that would catch it.** A cost with no catcher is a
+prediction; a cost with one is an assignment, and the reviewer who reads the
+ledger inherits it. Measured on a twelve-task build: a task 02 ruling recorded
+"a dead controller survives until 09, which the task review would catch". It
+did survive, and **that review caught it, eight tasks later**, because the
+ruling had told it to look. Rulings whose cost lands on a later task are the
+ones worth this, and they are exactly the ones the session that made them will
+not be around to check.
+
+If nothing would catch it, say that. A ruling nobody downstream can verify is
+one to raise with the user rather than bank.
+
+**A reviewer's citation is a claim, not a check.** You already treat an
+implementer's "I did X" as unverified. Apply the same rule to a review's "the
+file says X at lines 40 to 48". Citing a line number is what verification looks
+like, which is exactly why it slips through: the number does the work of
+evidence without being evidence. **Before any ruling or ledger line repeats what
+a review says a file contains, open the file at those lines and quote what is
+there.**
+
+**And your own claims are claims.** You are the only participant here with no
+reviewer, and your ledger is the most durable artifact in the run, because every
+later reviewer is told to check provenance against it. Three shapes account for
+every controller error measured so far, and each is cheap to catch:
+
+- **A grep generalised past its scope.** You searched a diff and stated the
+  result about the codebase.
+- **A citation repeated unopened.** Someone gave you a file and line numbers.
+  Open them.
+- **An inference across two files stated as a reading of one.** If you concluded
+  it, say you concluded it, and name both files.
+
+Before a ledger line asserts what a file contains, read that file. Before it
+asserts what the codebase does, search the codebase and not the diff.
+
+Measured: a controller verified about forty implementer claims by executing
+something, several found wanting, and made four false claims of its own, every
+one self-generated. It ran the forty expensive checks and skipped the cheap
+ones on itself. Its own summary: "none of them went through the check I applied
+to everyone else's work." Of five bad verification probes in the same run, the
+probe was wrong every time and the code was right.
 
 **Four things stop you, and only these:**
 
@@ -82,16 +125,24 @@ For those, stop and ask. Everything else: rule, ledger, continue.
 
 ### Waiting on a child is not one of them
 
-A dispatched subagent runs **asynchronously**. Your turn ends when you stop
-emitting tool calls, and you are woken again by its completion, not by a timer.
-So there is no such thing as waiting a few minutes and checking back: **you
-either queue another tool call or you are gone until something external arrives.**
+Dispatch is **non-blocking**, and this was measured with a two-level probe
+rather than inferred. The Agent tool returns in about a second with an id and no
+result. Roughly sixty seconds later, when the child finished, the runtime
+re-invoked the parent on its own and delivered the result then, with no human
+and no other session involved.
 
-Measured, in a 13-task plan: the controller dispatched a fix, ended its message
-with "waiting on the task 02 fix" and nothing queued, and stopped at 2 of 13. It
-resumed only because a human relayed the report by hand.
+**Two consequences, and they pull in opposite directions.**
 
-So while any child is outstanding, your last tool call is one of:
+You are safe. Ending a turn with a child outstanding does not strand you: its
+completion wakes you. So do not poll, do not sleep, and do not invent a bounded
+wait.
+
+You are also idle. The wake comes when the child finishes, which means every
+minute it runs is a minute you spent doing nothing, and a thirteen-task plan run
+one child at a time is thirteen serial waits. That is the real cost, and it is
+not a safety problem, it is a throughput one.
+
+So while a child is outstanding, prefer to have your last tool call be one of:
 
 1. **The next task on the frontier.** Reviews and independent tasks may run
    while an implementer works. The frontier usually has something.
@@ -100,11 +151,16 @@ So while any child is outstanding, your last tool call is one of:
 3. **Ledger work**: the ruling you just made, the review package for the task in
    flight, the next dispatch prompt.
 
-**Only when the frontier is genuinely empty and every remaining task blocks on
-the outstanding child** may a message end with nothing queued. That is rare.
-When it happens, write one ledger line saying so and naming what you are blocked
-on, so a stall can be told apart from a wait by reading the ledger. A turn that
-ends with no queued call and no such line is a stall, whatever it says in chat.
+When the frontier is genuinely empty and every remaining task blocks on the
+outstanding child, ending the turn is correct and safe. Write one ledger line
+naming what you are blocked on, so that a later reader can tell a deliberate
+wait from a stall. **The ledger line is the whole difference between the two**,
+because from the outside they look identical.
+
+The stall this section guards against is the other one: ending a turn with
+**nothing outstanding at all**. Nothing will wake you then, because nothing is
+running. That is what "Rulings, not stalls" above is about, and it is the case
+where a plan quietly stops at task 2 of 13.
 
 ## When this skill applies
 
@@ -332,6 +388,40 @@ rounds 1 to 3 resume this agent.
 
 Template: [implementer-prompt.md](./implementer-prompt.md)
 
+**Write the dispatch, then send it. Do not compose it in the tool call.**
+
+```
+.fx/dispatch/<NN>-implementer.md      also -task-reviewer, -re-review
+.fx/dispatch/branch-review.md         and -fix-wave
+```
+
+Copy the template, fill every placeholder, add the task's own context, and give
+it a first line naming what it is:
+
+```markdown
+<!-- fx-dispatch: role=implementer task=07 template=implementer-prompt.md -->
+```
+
+Then dispatch that file's contents. Roles: `implementer`, `task-reviewer`,
+`re-review`, `branch-review`. Anything that is genuinely not a lane dispatch
+gets `role=adhoc reason=<why>`, which is a real answer and not a workaround.
+
+**Why a file rather than composing in the call.** Measured over one twelve-task
+build: 26 of 26 writer and reviewer dispatches were composed in the tool call
+from memory, and each dropped whichever clause was not in mind that minute.
+`fx:fx-tdd` was never invoked once across 111 subagents. The ledger handoff, the
+no-subagent rule, the findings file and the deviation disclosure were each lost
+the same way and separately rediscovered as debt. Tailoring was not the problem
+and is still wanted: the briefs carrying ledger rulings and named risks are why
+several defects were caught. Reconstruction was the problem.
+
+The file makes the omission visible. `lib/dispatch-tokens.js` holds the clauses
+each role must carry and the `Agent` branch in the PreToolUse hook reads them,
+so a dispatch that declares a role and is not that role is refused, and one with
+no marker while a plan is underway is warned about. Adding a rule to a template
+without adding it to that table leaves the rule advisory, which is the failure
+this whole arrangement exists to end.
+
 ### 2. Handle the report
 
 Implementers report one of four statuses.
@@ -427,6 +517,18 @@ in unchanged code or spanning tasks. These don't block the rest of the review,
 but **you must resolve each one yourself before marking the task complete**: you hold context the reviewer lacks. Confirm one is a real gap and it enters
 the fix loop like any other.
 
+**Pass the reviewer a findings path too.** It fills `[FINDINGS_FILE]`, and it
+is the difference between a review you can act on and one you have to commission
+twice. A review's findings exist in one message and nowhere else; put them on
+disk before that message is spent. Beside the ledger, never under `.fx/`, which
+is git-ignored.
+
+**Pass the reviewer the ledger path.** It fills `[LEDGER_FILE]`, and it is how
+a ruling made many tasks ago gets checked: the implementer was never told about
+it, because rulings are yours and a fresh subagent gets the task file only. Pass
+the path, not an extract. Choosing which old rulings are relevant is the
+review's job, and doing it for them looks like help and works like a filter.
+
 Template: [task-reviewer-prompt.md](./task-reviewer-prompt.md)
 
 ### 4. The fix loop
@@ -472,6 +574,38 @@ that runs them and it reads neither CLAUDE.md nor memory.
 `fx-pretooluse` rejects violations at the hook level. **A rejected commit is a
 defect in your dispatch, not a reason to retry.**
 
+## Before the final review: one coverage audit
+
+Dispatch **one** read-only agent against `design.md`, every task file, and the
+ledger, with one question: **is there any behaviour the design commits to that
+no task's acceptance criteria carry?**
+
+Every other check in this lane verifies work against its task file. Nothing
+verifies the task files against the design, except the coverage walk in
+`fx-plan` §6.1, which runs before the red team and never again. So a
+requirement that changed after planning, or a story split across two places
+where the plan picked up one, passes every gate in the build.
+
+Tell it to look for these shapes, which is where the misses actually were:
+
+- **A story that must land in two places** (a file *and* a screen, a model rule
+  *and* its surfacing) where one half has an owner. Measured: a marker written
+  to a CSV, tested at two seams, rendered in no view. Found nine tasks late, by
+  an implementer working on something else.
+- **A criterion satisfied by requesting a URL directly**, which never asserts
+  anyone can reach the page. Measured: a rejected claim's reason and resubmit
+  control, both tested, on a page nothing linked to.
+- **Criteria that are all refusals.** The guards get stated and the story does
+  not. Measured on a task caught *before* dispatch: every criterion refused
+  something, none said the successful action happens through the screen.
+- **The reverse direction:** what the tasks assume that no story states. That is
+  where undocumented load-bearing rules live, and they are invisible to a review
+  that reads the task file.
+
+Run it before the final review, not after: a finding here is a task to add or a
+criterion to amend, and both are cheaper than a finding in the merge review.
+Ledger everything it returns, including what it clears.
+
 ## Final review
 
 Package the whole branch: `scripts/review-package <PLAN> <MERGE_BASE> <HEAD>`
@@ -479,7 +613,7 @@ where `MERGE_BASE` is `git merge-base <base-branch> HEAD`. Include the printed
 path in the dispatch, **so the final reviewer reads one file instead of
 re-deriving the branch diff with git commands.**
 
-Dispatch `fx-review` in branch mode on the **most capable available model**.
+Invoke `fx:fx-review` in branch mode on the **most capable available model**.
 Point it at the ledger's **deferred-minor and parked lines** so it can triage
 which must be fixed before merge.
 
@@ -523,6 +657,24 @@ without having run verification.**
 
 **The rule applies to** exact phrases, paraphrases, synonyms, implications of
 success, and any communication suggesting completion or correctness.
+
+### Run what the repository's own gate runs
+
+"The suite is green" is not "this merges". Before the completion report, open
+the CI configuration and **run every command it runs**, reading each exit code.
+A repository that gates on a linter and a security scanner has told you what
+passing means there, and a suite that passes while two of four jobs fail is a
+branch that cannot merge.
+
+Measured: a twelve-task build ran its suite after every task and every fix
+round, green each time. **Nobody opened `.github/workflows/ci.yml` once.** The
+final review found the linter exiting 1 on four offences that had been reported
+as pre-existing at task 09 and owned by nobody, and the scanner exiting 3. Both
+had been red the entire build, and the item that made them visible was a
+reviewer running the file rather than the tests.
+
+The offences themselves were two spaces. The cost was that a branch reported
+ready for twelve tasks was not.
 
 ## Completion report
 

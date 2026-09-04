@@ -12,7 +12,7 @@ ADRs in the area being touched.
 
 **Date:** YYYY-MM-DD
 **Status:** ready-for-agent
-**Glossary:** <path to the relevant CONTEXT.md — note if terms were added or
+**Glossary:** <path to the relevant CONTEXT.md: note if terms were added or
 sharpened during this session>
 
 ## Problem Statement
@@ -47,11 +47,11 @@ The decisions that were made. May include:
 - API contracts
 - Specific interactions
 
-**Do NOT include specific file paths or code snippets — they go stale very
+**Do NOT include specific file paths or code snippets: they go stale very
 quickly.**
 
-*Exception:* a snippet that encodes a decision more precisely than prose can —
-a state machine, a reducer, a schema, a type shape — inlined within the
+*Exception:* a snippet that encodes a decision more precisely than prose can
+(a state machine, a reducer, a schema, a type shape) inlined within the
 relevant decision, noted as coming from a prototype, and **trimmed to the
 decision-rich part**, not a working demo.
 
@@ -61,7 +61,7 @@ decision-rich part**, not a working demo.
 - What makes a good test here: **only external behavior, never implementation
   details**
 - Which modules will be tested
-- **Prior art** — similar types of tests already in this codebase
+- **Prior art**: similar types of tests already in this codebase
 
 ## Global Constraints
 
@@ -77,7 +77,7 @@ What this design deliberately does not cover.
 ## Open Questions
 
 Empty by the time the design is published. If anything remains, it is a
-decision the user deferred — say so explicitly and record what happens without
+decision the user deferred: say so explicitly and record what happens without
 it.
 
 ## Further Notes

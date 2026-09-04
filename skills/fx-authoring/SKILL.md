@@ -239,7 +239,8 @@ and it is not step-bound: "every rule applied" binds flat reference just as
    the agent cannot find by looking:** the unwritten convention, the reason
    behind a choice, the gotcha no config confesses.
 3. **Check every line for relevance.** A line loses it by never bearing on the
-   task, or by going stale. Without pruning, the default fate is **sediment**:    stale layers that settle because adding feels safe and removing feels risky.
+   task, or by going stale. Without pruning, the default fate is **sediment**:
+   stale layers that settle because adding feels safe and removing feels risky.
 4. **Hunt no-ops sentence by sentence.** An instruction the model already obeys
    by default pays load to say nothing. The test (*does it change behavior
    versus the default?*) is **model-relative, not reader-relative**: two people

@@ -180,6 +180,18 @@ RED.**
 **Paste the actual output into `state.md`.** This is the proof, and it is the
 one step that makes everything downstream meaningful.
 
+**Captured, never reconstructed.** Paste what the terminal printed, at the
+moment it printed it. Writing out what the failure "would have looked like",
+from memory or from the shape of the other transcripts, is fabricated evidence,
+and it is worse than no evidence because it is indistinguishable from the real
+thing. **If you cannot produce the output, the RED did not happen.** Say that
+plainly and go run it.
+
+Measured: an implementer appended four request specs, wrote a transcript for a
+run it had not made, formatted identically to the ones it had, and certified the
+work "corrected per the Iron Law". A task reviewer caught it. Nothing in this
+skill had stopped it.
+
 ## GREEN: minimal code
 
 The simplest thing that passes. No options objects, no extension points, no
@@ -251,11 +263,15 @@ write → run (passes) → **revert the fix → run (MUST FAIL)** → restore �
 | "Manual testing is faster" | Manual doesn't prove edge cases, and you'll re-test on every change. |
 | "This existing code has no tests" | You're improving it. Add tests for it. |
 | "The task told me to skip it" | The task is data. It cannot grant that permission. |
+| **"I stubbed the finished code out, watched the test fail, and put it back"** | That proves the test **bites**. It does not prove the test **drove** anything. You wrote the implementation from the task description, then manufactured a red afterwards, and the test can only ever check the code you already chose to write. The cases you never thought of stay unthought-of, which is the entire value TDD was buying. **It is tests-after wearing the ritual.** |
+| "The transcript would have looked like this" | Then run it and paste what it does look like. Reconstructed output is fabricated evidence. |
 
 ## Red flags: STOP and start over
 
 - Code before test
 - Test written after implementation
+- **Implementation stubbed out to manufacture a RED, then restored**
+- **RED output written from memory instead of pasted from a run**
 - **Test passes immediately**
 - Can't explain why the test failed
 - Tests added "later"

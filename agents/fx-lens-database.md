@@ -94,10 +94,10 @@ not connect to, query, or alter any database**, and do not run migrations.
 
 Findings only, ordered by severity, no praise, no summary of what the diff does.
 
-```
-Lens: database — N findings
+```markdown
+Lens: database, N findings
 
-1. [Critical] <file>:<line> — <what is wrong> → <what it causes in production>.
+1. [Critical] <file>:<line>: <what is wrong> → <what it causes in production>.
 2. [Important] ...
 3. [Minor] ...
 ```

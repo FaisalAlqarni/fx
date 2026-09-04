@@ -38,9 +38,9 @@ State the fix instead.
 
 ## Unclear items
 
-```
+```markdown
 IF any item is unclear:
-  STOP — do not implement anything yet
+  STOP: do not implement anything yet
   ASK for clarification on the unclear items
 ```
 
@@ -119,9 +119,9 @@ the user about the issue you've seen anyway.
 
 ## Acknowledging correct feedback
 
-```
+```markdown
 ✅ "Fixed. <brief description of what changed>"
-✅ "Good catch — <specific issue>. Fixed in <location>."
+✅ "Good catch: <specific issue>. Fixed in <location>."
 ✅ [just fix it and show it in the code]
 ```
 
@@ -129,8 +129,8 @@ the user about the issue you've seen anyway.
 
 If you pushed back and were wrong:
 
-```
-✅ "You were right — I checked X and it does Y. Implementing now."
+```markdown
+✅ "You were right: I checked X and it does Y. Implementing now."
 ✅ "Verified, and you're correct. My initial understanding was wrong
     because <reason>. Fixing."
 

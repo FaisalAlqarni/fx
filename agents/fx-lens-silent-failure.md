@@ -93,10 +93,10 @@ Read-only shell commands only.
 
 Findings only, worst first.
 
-```
-Lens: silent-failure — N findings
+```markdown
+Lens: silent-failure, N findings
 
-1. [Critical] <file>:<line> — <what is swallowed> → <what a human loses when it fires>.
+1. [Critical] <file>:<line>: <what is swallowed> → <what a human loses when it fires>.
 2. [Important] ...
 ```
 

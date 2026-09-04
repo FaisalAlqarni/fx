@@ -9,7 +9,8 @@ confirmed as a real gap.
 
 **Two routes leave the loop before it starts.**
 
-- **Minor findings never enter the loop.** Record them as you go:   `Task <NN>: minor (deferred): <one-liner>`, and point the final
+- **Minor findings never enter the loop.** Record them as you go:
+  `Task <NN>: minor (deferred): <one-liner>`, and point the final
   whole-branch review at that list so it can triage what must be fixed before
   merge. *A roll-up nobody reads is a silent discard.*
 - **A plan-mandated finding is yours to rule on.** Weigh the finding against the

@@ -106,6 +106,32 @@ greps for it.
 restating it is noise that rots the moment the code moves. Write the reason,
 the constraint, or the thing that bit someone, or write nothing.
 
+**And never claim more than the thing claims.** This applies to every name and
+description you write: a test's name, a comment above a guard, a summary in a
+report, a directive's neighbouring line in a config file. **A description that
+overstates is worse than a narrow one, because the next reader believes it and
+stops looking.** Four measured instances in one build: a test named for two UI
+controls that compared two strings; a report saying "covers both pairs" of a
+test that renders no view; a comment claiming a case discriminated when the
+fixture made it identical either way; and `ProtectSystem=full` under a comment
+saying "everything else stays read-only" when the directive leaves the
+application's own checkout writable.
+
+The check is cheap and mechanical: read the claim, then ask what would have to
+break for it to fail. If nothing would, narrow the words until something would.
+
+**Precision is not accuracy, and replacing a vague truth with a precise
+falsehood is a regression.** A fifth instance arrived inside the fix for the
+fourth: a runbook said "Rails creates the database world readable", which was
+true and unspecific. The repair replaced it with a mechanism, that the file
+lands `0640` because an earlier step's umask is still in effect. The umask was
+in a subshell, the step opened a new shell anyway, and the file is measured at
+`0644`. The sentence became more confident, more detailed, and wrong, and it was
+the sentence telling an operator what it costs to skip a `chmod`.
+
+When you sharpen a claim, measure the sharpened version. **The vaguer sentence
+was carrying its uncertainty honestly**; a precise one has to earn it.
+
 Code first, then at most three short lines: what was skipped, when to add it.
 If the explanation is longer than the code, delete the explanation: every
 paragraph defending a simplification is complexity smuggled back as prose.

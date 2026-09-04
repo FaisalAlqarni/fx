@@ -100,6 +100,51 @@ CASES = [
     ('a dash hard against a word still goes',
      f'the em{EM}dash rule\n',
      'the em:dash rule\n'),
+
+    # Measured on the fx prompt templates: a dash sitting at end of line was
+    # matched with its own newline, so the replacement ate the line break and
+    # left the next line's indentation stranded mid-sentence:
+    #   '...my report":     that review is already scheduled.'
+    ('a dash at end of line keeps the line break and the indentation',
+     f'yourself thinking "an independent review would help" {EM}\n'
+     '    that review is already scheduled.\n',
+     'yourself thinking "an independent review would help":\n'
+     '    that review is already scheduled.\n'),
+
+    ('the same, unindented',
+     f'the failure must be caused by the missing behavior {EM}\n'
+     'not by a typo.\n',
+     'the failure must be caused by the missing behavior:\n'
+     'not by a typo.\n'),
+
+    # A colon already on the line means a second one reads as a stutter:
+    # 'Lens: security: N findings', '[MODEL: REQUIRED: ...]'.
+    ('a line that already has a colon takes a comma instead',
+     f'Lens: security {EM} N findings\n',
+     'Lens: security, N findings\n'),
+
+    ('the colon may follow the dash and still forces a comma',
+     f'model: [MODEL {EM} REQUIRED: per SKILL.md Model Selection]\n',
+     'model: [MODEL, REQUIRED: per SKILL.md Model Selection]\n'),
+
+    ('a line with no colon is unaffected by that rule',
+     f'the output is pristine {EM} no stray warnings.\n',
+     'the output is pristine: no stray warnings.\n'),
+
+    # The 272-line paren defect again, in a shape the list-marker guard misses:
+    # a tree or aligned table whose entries are columns, not list items. Each
+    # line carries its own dash, so line 1's opened a paren line 2's closed:
+    #   'skills/  9 lanes (model-selectable, one per intent
+    #    agents/  the devil's advocate) read-only'
+    ('does not pair across the entries of an aligned block',
+     f'skills/       9 lanes {EM} model-selectable, one per intent\n'
+     f'agents/       review lenses {EM} read-only\n',
+     'skills/       9 lanes: model-selectable, one per intent\n'
+     'agents/       review lenses: read-only\n'),
+
+    ('still pairs within one aligned entry',
+     f'skills/       9 lanes {EM} model-selectable {EM} one per intent\n',
+     'skills/       9 lanes (model-selectable) one per intent\n'),
 ]
 
 fails = 0

@@ -325,9 +325,9 @@ tested: re-adding the `agents` key fails, declaring a non-existent skill fails.
 First real use of fx on a new project. `git init` for a brand-new repo was
 **refused** by the guard:
 
-```
+```markdown
 [fx] `git init` writes to the main checkout. Commits and writes happen in a
-git worktree only — create one and work there.
+git worktree only: create one and work there.
 ```
 
 Wrong. `git init` creates a **new** repository; it never touches the history or

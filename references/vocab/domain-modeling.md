@@ -142,7 +142,7 @@ and increment.
 ```markdown
 # <Short title of the decision>
 
-<1–3 sentences: what's the context, what did we decide, and why.>
+<1 to 3 sentences: what's the context, what did we decide, and why.>
 ```
 
 **That's it.** An ADR can be a single paragraph. The value is in recording

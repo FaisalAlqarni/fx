@@ -57,7 +57,7 @@ exists=$([ -e agents/fx-lens-performance.md ] && echo 1 || echo 0)
 
 - [ ] **2. Run it: verify RED**
 
-Expected: FAIL: the table names it today and the file does not exist.
+Expected: FAIL, the table names it today and the file does not exist.
 
 - [ ] **3. Read the source in full and write the verdict**
 

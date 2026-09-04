@@ -105,10 +105,10 @@ find: cite its file and line only.**
 
 Findings only, worst first.
 
-```
-Lens: security — N findings
+```markdown
+Lens: security, N findings
 
-1. [Critical] <file>:<line> — <the vulnerability> → <what an attacker gets>.
+1. [Critical] <file>:<line>: <the vulnerability> → <what an attacker gets>.
 2. [Important] ...
 ```
 

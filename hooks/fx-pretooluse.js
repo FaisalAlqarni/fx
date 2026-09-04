@@ -38,6 +38,12 @@ try {
 } catch {
   laneCheck = () => null;            // advice only; never block because it is missing
 }
+let dispatchCheck;
+try {
+  ({ dispatchCheck } = require('../lib/dispatch-tokens'));
+} catch {
+  dispatchCheck = () => null;        // same: a missing clause table must not block a dispatch
+}
 
 process.on('uncaughtException', (e) =>
   deny(`hook crashed (${e.message}). Denying rather than assuming this is safe.`));
@@ -62,6 +68,27 @@ process.stdin.on('end', () => {
       verdict = { allow: false, reason: `git guard failed to evaluate this command (${e.message}). Denying rather than assuming it is safe.` };
     }
     if (!verdict.allow) deny(verdict.reason);
+    process.exit(0);
+  }
+
+  if (tool === 'Agent' || tool === 'Task') {
+    // Advice-shaped, like the lane check: a bug here must never wedge a run, so
+    // every failure path allows. `deny` is a deliberate verdict, not an error:
+    // it fires only when a dispatch declares a role and then is not that role.
+    let verdict = null;
+    try {
+      verdict = dispatchCheck({
+        prompt: ti.prompt,
+        subagentType: ti.subagent_type,
+        cwd,
+      });
+    } catch {
+      verdict = null;
+    }
+    if (verdict && verdict.verdict === 'deny') deny(verdict.reason);
+    if (verdict && verdict.verdict === 'warn') {
+      process.stderr.write(`[fx] ${verdict.reason}\n`);
+    }
     process.exit(0);
   }
 

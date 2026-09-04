@@ -247,10 +247,10 @@ deliberately rather than debugging it as a feature bug.
 
 ### Gate function
 
-```
+```markdown
 BEFORE adding a mock or test helper:
   List the real method's side effects; keep the ones the test
-  depends on real — mock the slow/external level below them.
+  depends on real: mock the slow/external level below them.
 
   Mock responses mirror the complete real structure.
 
@@ -314,6 +314,47 @@ fail for each realistic mutation:
 **A mutation nothing catches marks the behavior as unprotected, or the test as
 tautological.**
 
+### Never revert a mutation with the version control system
+
+Mutating production code means editing a file you are probably also *working
+in*. Undoing that edit with `git checkout <path>`, `git restore <path>` or a
+hard reset discards **every unstaged change in that file**, not just the
+mutation, and it does so without a word.
+
+Measured: an implementer mid-way through a thirteen-item round mutated two
+files, reverted them that way, and lost a new constant, a new method and a
+deletion it had already made. It found out on an unrelated grep. Its own
+account of why this is worse than an ordinary mistake: **"the suite is green"
+would have been true at the moment the work was gone.** The mutation had been
+undone, the tests passed, and the passing suite was measuring a file that had
+quietly travelled back in time.
+
+So: copy the file aside and copy it back, or mutate a throwaway export of the
+commit rather than the tree you are editing. Then diff the restored file against
+the copy and say you did. A restore you did not verify is a claim, and this is
+the one place where the usual safety net, a failing test, cannot catch you.
+
+### The mutation you used tells you what the test covers
+
+Run the check in reverse and it reads the test's real scope back to you. **A
+test proved by mutating a config file covers that config file. It does not cover
+the code that reads it**, however its name reads.
+
+Measured: an accessibility test was reported as covering two UI controls. Its
+author proved it by breaking a translation string, and it duly failed. A
+reviewer then wired one control's accessible name to the wrong key, a real
+defect on the rendered page, and **the whole suite stayed green**. The test
+compared two strings and never rendered the view. The author's own account of
+it: a test proved by editing a locale file cannot be proving anything about the
+markup.
+
+So when you write down the mutation as evidence, read it once more and ask
+whether it lives in the same layer as the thing you are claiming. If it does
+not, the test is fine and the claim is not: narrow the name and say what it
+pins. **A test whose description claims more than it does is worse than a
+narrow one honestly labelled**, because the next person reads the claim and
+stops looking.
+
 ## Quick reference
 
 | When you… | Do |
@@ -328,6 +369,8 @@ tautological.**
 | Need cleanup only tests use | Put it in test utilities |
 | Watch mock setup balloon | Switch to an integration test with real components |
 | Finish a test file | Run the mutation check |
+| Record a mutation as evidence | Check it lives in the same layer as your claim |
+| Revert a mutation | Copy the file back; never `checkout`/`restore` the path |
 
 ## Warning signs
 
