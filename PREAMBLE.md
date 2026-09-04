@@ -78,6 +78,24 @@ symptom.
 lane. A user who wanted the lane skipped will say so in those words, and asking
 is cheap; inferring it from brevity is not.
 
+## Non-negotiables
+
+- **No attribution trailers.** Never `Co-Authored-By`, `Claude-Session`, or
+  "Generated with" in a commit message, PR body, or anywhere else.
+- **Work happens in a worktree.** Set one up before you start, so the branch you
+  are building on is never the one the user is standing in. This is a workflow,
+  not a wall: commits belong wherever the work is, and the work belongs in a
+  worktree.
+- **Integration is the user's decision, and you ask for it.** Merging, opening a
+  PR, or moving the base branch are not steps you take at the end of a task.
+  Present the options and wait. The base branch is theirs to move.
+- **Nothing leaves the machine.** No publishing, uploading or posting unless the
+  user initiates it. Reports are local files. Pushing a feature branch is the
+  one exception, and it names its target: never force-push, never a bare `push`.
+- **Arabic is the default locale**; RTL support throughout.
+- **Evidence before claims.** "Tests pass" means you ran them and read the
+  output. If a step was skipped, say so.
+
 ## The ladder
 
 You are a lazy senior developer. Lazy means efficient, not careless. The best
@@ -137,6 +155,7 @@ excuse you from calling them.
 | structure of existing code is the problem | `fx-architecture` |
 | bug · test failure · unexpected behavior | `fx-debug` |
 | a prose document needs fixing | `fx-humanize` |
+| over-engineering · "is this too much" · shrink this | `ponytail` if installed; fx has no lane for it |
 | editing a `SKILL.md` / `CLAUDE.md` / `AGENTS.md` | `fx-authoring` |
 | any chart or dashboard | `dataviz` |
 | library / framework / API docs | `context7` |
@@ -144,19 +163,6 @@ excuse you from calling them.
 
 Project facts (structure, patterns, test commands) are in `repo.md` and
 `.fx.json` at the repo root. **Never guess a test command.**
-
-## Non-negotiables
-
-- **No attribution trailers.** Never `Co-Authored-By`, `Claude-Session`, or
-  "Generated with" in a commit message, PR body, or anywhere else.
-- **Commits only inside a git worktree.** On the main checkout: no commit, no
-  write. Hard rule, no exceptions.
-- **Nothing leaves the machine.** No publishing, uploading or posting unless the
-  user initiates it. Reports are local files. Pushing a worktree branch is the
-  one exception: never force-push, never push from the main checkout.
-- **Arabic is the default locale**; RTL support throughout.
-- **Evidence before claims.** "Tests pass" means you ran them and read the
-  output. If a step was skipped, say so.
 
 ## Prose
 

@@ -652,7 +652,8 @@ ready for twelve tasks was not.
 
 ## Completion report
 
-No merge, no PR, no push. Report:
+You do not integrate the work. You report it, then **offer the choice and
+wait**. Report:
 
 - **Landed**: tasks complete, with per-task test evidence.
 - **Deviations**: every step of this skill you skipped, compressed or
@@ -670,6 +671,31 @@ No merge, no PR, no push. Report:
 - **Skipped**: blocked tasks and what unblocks them.
 - **Needs you**: anything that hit a stop condition, plus the branch name and
   worktree path so the user can review and merge.
+
+### Then ask, and stop
+
+Present exactly these, and wait for an answer. Do not recommend one, do not
+explain them, and do not start any of them.
+
+```markdown
+The work is on `<branch>` in `<worktree path>`. What next?
+
+1. Merge it into `<base branch>` locally
+2. Push the branch and open a pull request
+3. Leave it as it is, I will handle it
+4. Discard it
+
+Which?
+```
+
+**Why an offer rather than a rule.** A prohibition invites the reading that
+found its way around it: a measured run treated "commit it" as the say-so that
+made a base-branch commit fine, because the rule said "no exceptions" while the
+user's own version had a carve-out. An offer has nothing to interpret. The base
+branch moves when the user says which option, and not before.
+
+Options 1 and 2 are theirs to choose and yours to then perform. Option 4 deletes
+work: confirm the branch name back to them before doing it.
 
 **Clean up the ephemeral half only.** When the final review is clean, delete
 `.fx/<slug>/`: regenerable from git. **Never delete `docs/plans/<slug>/`**:

@@ -2650,3 +2650,148 @@ and then read the resulting silence as evidence that instruction does not work.
 The first section is the one that survives; everything after it competes. Put
 the sentence that makes the rest reachable at the top, and audit that position
 the way you would audit a guard, because it fails silently and completely.
+
+## 72. #47 is a bypass of the hard rule, not an inconvenience
+
+Recorded at #47 as a false positive: the guard refuses
+`cd <worktree> && git commit` while allowing `git -C <worktree> commit`, and the
+entry framed the cost as friction. **The same defect runs the other way, and
+that direction is a hole in the rule the user has stated twice.**
+
+Found by accident. An experiment set the guard to warn-only to test whether
+prose alone holds the rule, and dispatched an agent into a scratch repository on
+`main`. The agent committed. **The attempts log was empty**: the guard had not
+warned, because it never objected at all.
+
+Reproduced directly against `lib/git-guard.js`:
+
+```
+block   git commit -m x                      cwd = the repo
+ALLOW   git commit -m x                      cwd = a non-repo
+ALLOW   cd <repo> && git commit -m x         cwd = a non-repo
+ALLOW   cd <repo> && git add a && git -c user.name=x commit -m y
+block   git -C <repo> commit -m x            cwd = a non-repo
+```
+
+`inspect()` resolves the repository from `g.dir` or the reported cwd and never
+reads `cd`. When a session's cwd is not a repository, `locate()` returns
+`{repo: false}`, the loop hits `continue`, and **anything reached through `cd`
+is allowed**. The `-C` form is caught because it names its directory in a way
+the parser already understands.
+
+**What this changes about the guard debate.** The measured catches are real: two
+attribution trailers and four main-checkout writes, all stopped. But the guard
+protects the rule **only for commands whose directory it can see**, and `cd` is
+the idiom agents reach for first. So the honest position is not "the guard works
+and prose does not". It is that the guard has been partially blind, and nobody
+knew because the blind spot is silent by construction.
+
+#47 moves from deferred to the first thing to fix, and its severity line was
+wrong: it is not friction, it is the rule failing open.
+
+**And the prose arm was inconclusive, for a reason worth keeping.** The agent
+did not ignore the rule. It reasoned: *"the repo's first commit; 'commit it' was
+the explicit say-so"*. `PREAMBLE.md` says "no commit, no write. Hard rule, no
+exceptions", while the rule as the user actually states it carries a carve-out:
+never without explicit say-so. The agent found the carve-out and applied it to a
+direct instruction to commit. **Two statements of one rule disagreed, and the
+agent picked the one with a door in it.** The experiment cannot separate "prose
+fails" from "this prose is ambiguous" until the two wordings agree.
+
+## 73. The branch rule was ours, so it got superpowers' shape instead of a guard
+
+Checked before copying, and the premise turned out to be wrong in a useful way:
+**superpowers has no rule against committing to a main checkout.** Zero hits
+tree-wide. It has none about attribution trailers either.
+`finishing-a-development-branch` does the opposite of what I assumed: it
+switches **to** the base branch, merges the feature branch in, and pushes.
+
+Its entire mechanism for keeping the base branch clean is a human gate:
+
+```
+1. Merge back to <base-branch> locally
+2. Push and create a Pull Request
+3. Keep the branch as-is (I'll handle it later)
+4. Discard this work
+
+Which option?
+```
+
+So there was no wheel to reinvent. The rule is the user's, and fx had built a
+198-line guard to enforce it, which produced five debt entries and one silent
+bypass (#72).
+
+**What replaced it.** The guard stopped resolving repositories entirely.
+`locate()`, `READ_ONLY` and `ALLOWED_ON_MAIN` are gone, and with them the whole
+class of failure that #46 and #47 lived in: the guard no longer has an opinion
+about where you are, so it cannot be wrong about it. `PREAMBLE.md` now states a
+workflow ("work happens in a worktree") and a gate ("integration is the user's
+decision, and you ask for it") in place of a prohibition, and `fx-implement`
+ends by presenting superpowers' four options and waiting.
+
+**What the guard kept, and why each is a narrow bridge rather than an open
+field:** attribution trailers, force push, deleting a remote branch,
+`--no-verify`, `reset --hard`, `clean -f`, `branch -D`, `stash drop`,
+`checkout .`, `tag -d`, and pushes that target the base branch. Every one is
+irreversible, outward, or both.
+
+**One rule was added, and it replaces cwd introspection with arithmetic.** A
+bare `git push` follows the current branch, which may be the base branch, and
+the guard no longer asks git where it is. So a push must name a target:
+`git push` and `git push origin HEAD` are refused, `git push origin feature` is
+fine anywhere. The dangerous case became unreachable without any knowledge of
+the filesystem.
+
+**And a hole that predated all of this got closed.** `bash -c 'git push origin
+main'` was allowed, because `parseGit` saw `bash` and stopped. It is the exact
+mirror of #46: a search tool's argument is data and must not be scanned, and a
+shell's `-c` argument is a command and must be. Both were wrong, in opposite
+directions, for the same reason.
+
+`git-guard.js` 198 to 176 lines, suites 127 to 120 assertions, and the five
+location tests that lost their subject were re-anchored to the base-branch rule
+rather than deleted, because what they actually covered was the parser.
+
+## 74. ponytail is not replaced, it is deferred to
+
+`README.md`, `INSTALL.md`, `SURFACE.md` and the marketplace description all
+claimed fx replaces ponytail. It never did. **ponytail is installed and running
+right now**, and it is a substantial plugin in its own right: its own hooks, an
+MCP server, a Gemini extension, an opencode config, a pi extension, six skills,
+commands, scripts and benchmarks. fx absorbed none of it.
+
+The claim was #58 in fx's own front door, and it was also a collision risk: two
+plugins asserting the same intent while only one has a lane for it.
+
+Removed from all four places. `PREAMBLE.md` gains a routing row naming ponytail
+as the owner of the over-engineering intent, conditioned on it being installed,
+and saying plainly that fx has no lane for it. That is the honest arrangement:
+fx does the pipeline, ponytail does over-engineering, neither pretends to the
+other's job.
+
+The ladder text stays in `PREAMBLE.md`. It arrived from ponytail and is now
+general guidance fx references throughout, and it is injected rather than
+claimed as a lane, so it contests nothing.
+
+## 75. The skills were already reusable, which is worth recording rather than building
+
+The stated goal was that fx's skills work without the pipeline. Checked before
+changing anything: **nine of eleven already do.**
+
+```
+fx-tdd  fx-debug  fx-review  fx-architecture  fx-humanize
+fx-authoring  prototype  research  fx-brainstorm       standalone
+fx-plan        requires an approved design
+fx-implement   requires docs/plans/<slug>/tasks/
+```
+
+The two exceptions are genuine prerequisites rather than coupling: a plan needs
+a design to plan from, an implementation needs tasks to implement. Nothing to
+loosen.
+
+**And a mandatory `fx-humanize` invocation inside `fx-brainstorm` was declined
+for the same reason.** `fx-humanize` fires on its own (5 of 5 in the lane
+harness), prose already has three layers covering it, and a required sub-skill
+call would couple two independent lanes, which is the opposite of the goal that
+prompted the request. It went into `fx-brainstorm`'s existing self-review as a
+fifth check naming the skill: a pointer, not a gate.

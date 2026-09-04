@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "fx",
-  "description": "Personal engineering plugin. Replaces superpowers, mattpocock-skills, ecc, ponytail and humanizer with one non-overlapping set.",
+  "description": "Personal engineering plugin. Replaces superpowers, mattpocock-skills and ecc with one non-overlapping set. Defers to ponytail where it is installed.",
   "owner": { "name": "Faisal Alqarni" },
   "plugins": [
     { "name": "fx", "description": "Exactly one claimant per intent. Rails and .NET.", "source": "./", "category": "workflow" }

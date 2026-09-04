@@ -118,7 +118,7 @@ selection contest fx exists to end survives until it is cleared deliberately.
 
 ```bash
 # Claude Code
-/plugin uninstall superpowers mattpocock-skills ecc ponytail humanizer
+/plugin uninstall superpowers mattpocock-skills ecc humanizer
 
 # opencode's pools — inspect before deleting anything
 ls ~/.agents/skills ~/.claude/skills

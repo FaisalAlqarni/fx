@@ -1,6 +1,6 @@
 # fx
 
-One engineering plugin. Replaces superpowers, mattpocock-skills, ecc, ponytail
+One engineering plugin. Replaces superpowers, mattpocock-skills and ecc
 and humanizer with a set that does not overlap.
 
 **Exactly one claimant per intent.** Four skills claiming "TDD" is why skill

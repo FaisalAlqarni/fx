@@ -297,7 +297,7 @@ and Sep 2026.
 `context7` · `figma` · `chrome-devtools-mcp` · `playwright` · `ruby-lsp` ·
 `security-guidance` · `claude-md-management` · `claude-code-setup`
 
-**Uninstalled:** `ecc` · `superpowers` · `mattpocock-skills` · `ponytail` ·
+**Uninstalled:** `ecc` · `superpowers` · `mattpocock-skills` ·
 `humanizer` · `frontend-design` · `code-simplifier` · `sp-ecc` · `soe` ·
 `kotlin-lsp` · **`impeccable`** · `ui-ux-pro-max` *(pending D2: its corpus may
 still be absorbed before removal)*
