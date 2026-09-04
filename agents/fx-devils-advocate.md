@@ -118,8 +118,8 @@ find fault with: line by line, no assumption that the author's plan was
 sound.
 
 **Accepted-risks context.** Before you hunt, read whatever the task or plan
-records as a deliberate, already-made decision: a `ponytail:` comment, a
-"skipped: X, add when Y" line, an ADR, a constraints block you were handed
+records as a deliberate, already-made decision: a "skipped: X, add when Y"
+line, a ledger `Ruling:`, an ADR, a constraints block you were handed
 for context only. A finding that re-reports a decision already made and
 recorded on purpose is not a discovery, it's noise; **do not raise it unless
 you think the decision itself was wrong**, and if you do, say explicitly that

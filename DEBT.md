@@ -2409,3 +2409,48 @@ can land any of this. And the check in #66 is corrected: compare against
 `~/.claude/plugins/cache/*/<plugin>/<version>/`, and confirm the version in
 `plugin.json` changed, because same version means same cache no matter what the
 files say.
+
+## 68. The fix was 48 lines of prose, and the machinery was the mistake
+
+The user's diagnosis, in their words: "we strayed from the core implementation
+and overengineered the plugin badly." They were right, and it is measurable.
+
+superpowers answers "the model does not invoke skills" with
+`skills/using-superpowers/SKILL.md`, 87 lines, injected at SessionStart by a
+single hook. One rule ("even a 1% chance, you MUST invoke it") and a table of
+the rationalizations an agent uses to avoid it. **One hook. 629 lines of code in
+the whole plugin. No guard, no PreToolUse.**
+
+fx dropped that skill in consolidation and kept a **routing table that names
+lanes and never tells anyone to invoke one.** When lanes then did not fire, fx
+grew a git guard, a lane check, three hooks and 1,417 lines of code, and across
+one twelve-task build `fx-tdd` was invoked **0 times by 111 subagents.**
+
+Ported the imperative into `PREAMBLE.md`: the 1% rule, invoke-do-not-read, the
+addressable name, an explicit clause binding subagents, lane ordering, and a
+rationalization table built from **fx's own measured excuses** rather than
+superpowers' generic ones. Its first row is the exact sentence this controller
+wrote into twelve dispatches.
+
+**A/B against the same prompt, same six assistant turns, one variable:**
+
+```
+control    (48 lines removed)     Skill tool uses: 0    lanes: none
+treatment  (imperative present)   Skill tool uses: 1    lanes: fx:fx-tdd
+```
+
+**The bitter part is that fx's plumbing was always better.** fx registers
+`SubagentStart`, which no source plugin does, so it already injected into every
+subagent: the exact place `fx-tdd` needed demanding. The delivery was right and
+carrying the wrong payload, and the response to the silence was to build more
+delivery.
+
+**The general rule, and it is the ladder's own rung 1 applied to fx itself:**
+before building a mechanism to make agents obey, check whether anything has
+actually told them to. Enforcement is what you reach for after instruction has
+failed, and instruction had never been tried.
+
+Open, and now decidable rather than arguable: `lib/dispatch-tokens.js` and the
+`Agent` branch were built hours before this measurement. They solve a real
+thing (a controller dropping clauses) and may be redundant now. The lane
+harness is how that gets settled with evidence rather than taste.
