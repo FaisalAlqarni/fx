@@ -22,7 +22,7 @@ agent read `fx-brainstorm` in full, classified correctly, and overrode it.
 So the budget is now **by role, not one number**: a coordinator lane
 (`fx-implement`, read once per session, procedure-heavy) may run to ~550. A
 discipline lane (`fx-tdd`, `fx-debug`, read at the moment of temptation) stays
-tight, because dilution is the whole risk there. `fx-implement` sits at 527
+tight, because dilution is the whole risk there. `fx-implement` sits at 726, over its own ~550 budget and worth a prune
 after absorbing ten fixes, and that is accepted rather than compressed: compressing it risked losing a rule, and splitting it behind a pointer would
 recreate DEBT #20.
 
@@ -97,7 +97,7 @@ PREAMBLE.md                          ← single source, fx owns it
  │                 + lib/plan-state.js  names unfinished plans found on disk
  │               hooks/fx-pretooluse.js  PreToolUse · all tools
  │                 + lib/git-guard.js   fail closed
- │                 + lib/lane-check.js  fail open (dead for writes, DEBT #30)
+ │                 + lib/lane-check.js  fail open (fires for dispatched subagents, DEBT #30/#48)
  └─ opencode     plugins/fx.js          experimental.chat.system.transform
                                         tool.execute.before
 ```
@@ -234,7 +234,8 @@ this repo uses"* plus the detection rule: never *"use RSpec"*.
 |---|---|
 | `observability.md` | ✅ written |
 | `rails.md` | ⏳ exemplar: sets the shape, since no template ships |
-| `dotnet.md` · `docker.md` · `frontend.md` · `data.md` | ✗ |
+| `dotnet.md` · `docker.md` | ✓ |
+| `frontend.md` · `data.md` | ✗ |
 | ~~`android.md`~~ · ~~`ios.md`~~ | dropped: D4, D5 |
 
 **Adding a stack later:** write the file. No template, no `/fx:stack` command.

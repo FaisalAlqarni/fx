@@ -2454,3 +2454,199 @@ Open, and now decidable rather than arguable: `lib/dispatch-tokens.js` and the
 `Agent` branch were built hours before this measurement. They solve a real
 thing (a controller dropping clauses) and may be redundant now. The lane
 harness is how that gets settled with evidence rather than taste.
+
+## 69. What else the consolidation dropped
+
+An audit of the five source plugins against fx, prompted by the user's
+observation that fx had strayed from the core implementation. #68 covers the
+headline. The rest, ranked by how load-bearing the missing thing was:
+
+**A behavioural test harness.** superpowers shipped `tests/skill-triggering/`,
+148 lines, running `claude -p --output-format stream-json` and grepping for
+`"name":"Skill"`. That is the experiment #44 says "would actually test it" and
+which had never run. **Ported** as `tests/lane-triggering/`, and it carries the
+detail that matters most: `--plugin-dir` points the run at the working tree, so
+it sidesteps the version-keyed cache that produced #66 and #67. You can test
+what you just wrote.
+
+**No CI.** All four sources wired their checks to run automatically. fx has no
+`.github/`, no Makefile, no `package.json`; five gates and five suites that run
+only when a human types them. That is how #49 happened (prose gate reporting
+clean over 117 dashes) and how #67 happened (version not bumped). Ponytail's
+`check-versions.js`, 77 lines asserting that every version-bearing file agrees,
+is the gate that would have caught #67 exactly.
+
+**No mid-session channel.** fx injects at SessionStart and SubagentStart and
+never again. ECC registers a PostToolUse monitor and Stop hooks. Every fx
+guarantee after the first message rests on the model remembering. Worth the
+shape, not the implementation: ECC's own delivery gate is unregistered and
+warning-only.
+
+**`/fx:level` writes a key nothing reads.** `commands/fx-level.md` writes
+`level: lite|full|ultra` to `~/.claude/fx.json`; zero readers across
+`PREAMBLE.md`, `skills/`, `lib/`, `hooks/`, `agents/`, `plugins/`. Its own text
+claims "the lanes run their short paths". Ponytail's equivalent filters the
+injected text on every injection and is load-bearing. Wire it or delete it;
+left in place because deleting a user-facing command is the user's call.
+
+**Dangling references.** `agents/fx-devils-advocate.md` told reviewers to
+respect a `ponytail:` marker fx never defines: **fixed**, now naming markers fx
+has. Still open: `references/vocab/persuasion-principles.md` (187 lines) is
+assigned to `fx-authoring` by `design.md` and named by no skill;
+`references/testing/test-pressure-*.md` (209 lines) are referenced from a
+COVERAGE note and no live skill; `skills/fx-authoring/` has no `COVERAGE.md`
+though it absorbed roughly 2,400 lines.
+
+**`TodoWrite` appears zero times in fx.** superpowers materialised a checklist
+twice. fx's answer is the ledger, which is better under compaction and exists
+only inside `fx-implement`. Outside a lane there is no progress materialisation,
+which is #25.
+
+**Worktrees are never removed.** Nothing in fx calls `git worktree remove` or
+`ExitWorktree`.
+
+**ponytail is the one plugin fx does not actually replace.** Its ladder text
+survived into `PREAMBLE.md` and its dual injection survived as
+`hooks/fx-context.js`. Genuinely gone: three forced-output-grammar lanes, in
+particular `ponytail-review` with a closed five-tag set and a required
+`net: -<N> lines possible.` footer. **fx has no over-engineering-only review
+lane**, which is precisely the lane that would have caught what #68 records.
+`README.md` claiming fx "replaces ponytail" is the #58 pattern in fx's own
+front door.
+
+**humanizer is byte-exact**, 456 lines both sides, a two-byte delta in the
+frontmatter name. Nothing mechanical was lost; it shipped no hook and no
+validator that reads a user document.
+
+**Doc drift, fixed in passing:** `SURFACE.md` called `lane-check.js` dead when
+markers on disk prove it fires, marked `dotnet.md` and `docker.md` unwritten
+when both exist, and budgeted `fx-implement` at 527 lines when it is **726,
+over its own stated ~550 ceiling.** That last number is the over-engineering
+visible in fx's own accounting, and much of the excess was added by this
+session.
+
+## 70. `fx-review` does not fire on its own headline trigger
+
+First finding from the ported harness, and it is one no amount of reading would
+have produced.
+
+```
+fx-tdd  fx-debug  fx-architecture  fx-brainstorm  fx-humanize   PASS
+fx-review                                                       FAIL
+```
+
+Four naive prompts failed, including "Review this diff before I merge it",
+which is nearly verbatim from the description's own trigger list. The run
+carried the injected imperative and still invoked nothing: it reviewed the diff
+inline, competently, in four turns.
+
+**Diagnosed rather than guessed.** Naming the skill explicitly fires
+`fx:fx-review` immediately, so the skill is reachable and the **description** is
+what fails. Two intermediate fixes did not move it: the stakes clause was
+rewritten (it read "skip it and the only reviewer is the author", which does not
+bite when the model is a fresh reviewer of someone else's diff, the common case)
+and a rationalization row was added for "I can do this directly, and do it
+well". Both are improvements and neither changed the verdict.
+
+**The pattern the suite exposes.** The five lanes that pass name workflows the
+model has no native habit for: driving from a failing test, diagnosing before
+fixing, restructuring, interviewing a design, rewriting prose. **Reviewing is
+something the model already does constantly and does well.** A description that
+merely describes the workflow loses to an established behaviour; it has to
+displace one. That is a different authoring problem and it probably applies to
+any future lane that overlaps a native strength.
+
+Two aggravating facts, neither the cause: `scripts/check-collisions` reports a
+`code-review` skill in `~/.agents/skills` and a `security-review` alongside 213
+skills in the opencode directory, so the intent is contested; and the built-in
+`/code-review` command claims the same ground. Neither won here. **Nothing was
+invoked at all**, which is why this is a description problem rather than a
+routing one.
+
+**Then measured properly, with `fx-authoring`'s method. It is not the wording.**
+
+Baseline, 5 fresh-context reps of one prompt: **0/5, zero variance.** A hard
+failure, not noise. Then, each 5 reps unless noted:
+
+| condition | fire rate |
+|---|---|
+| baseline description | 0/5 |
+| variant A: `BEFORE` clause, six synonyms collapsed to three, workflow summary removed | 0/5 |
+| variant B: leads with the gap rather than the activity, `fx-architecture` off-ramp removed | 0/5 |
+| realistic multi-file diff supplied as a fixture | 0/5 |
+| a real repository with 8 uncommitted files, "review my changes first" | 0/1, 11 turns |
+| the skill named explicitly | **fires immediately** |
+
+Five hypotheses falsified. **Not availability**: a run asked to list its skills
+returns `fx:fx-review` among them. **Not truncation** (#26): other lanes fire in
+the same runs, so descriptions are reaching the model. **Not the harness**:
+`fx-tdd`, `fx-debug`, `fx-architecture`, `fx-brainstorm` and `fx-humanize` all
+fire in it. **Not prompt triviality**: a two-file diff and a real repository
+both failed. **Not the three wordings above.**
+
+`fx-authoring` treats variance as the diagnostic: scattered outcomes mean a weak
+pointer that tighter wording fixes. **Zero variance in the other direction means
+something systematic**, and three rewrites moving it not at all is the evidence
+that the description is not the lever.
+
+**Best remaining hypothesis, untested:** reviewing is a strong native behaviour,
+and a review request reads as a request for an answer rather than for a process.
+The model is already producing the deliverable by the time a lane could apply.
+That is a different problem from a weak trigger and probably needs a different
+instrument.
+
+**The doctrinally clean option, and it is fx's own:** `fx-authoring`'s
+Invocation section says to pick model-invocation "only when the agent must reach
+it on its own", and that a skill which "only ever fires by hand" should be
+user-invoked, paying zero context load. `fx-review` demonstrably only fires by
+hand. Marking it `disable-model-invocation: true` would stop paying context for
+a pointer that never fires and stop the description claiming a reach it does not
+have, which is #58 in fx's own frontmatter. **Not done: that is a real
+behavioural change to the plugin and belongs to the user.**
+
+Also recorded: three of the four failures were the test being wrong before the
+lane was. A prompt referring to repo state cannot fire anything in a scratch
+directory, and a pasted snippet with no diff is `fx-architecture`'s case by
+fx's own description. The harness now carries that warning in its header, and
+it is the reason `fx-plan` and `fx-implement` are excluded from `run-all.sh`.
+
+## 71. The imperative worked. It was buried, and burial is total.
+
+#70 concluded that `fx-review`'s description was not the lever, after three
+rewrites moved a 0/5 not at all. Correct, and it stopped one step short. The
+lever was **where the imperative sits in `PREAMBLE.md`.**
+
+Same words, same prompt, same fixture, five reps each:
+
+| preamble | fire rate |
+|---|---:|
+| imperative at line 56 of 210, after "The ladder" | **0/5** |
+| imperative first, preamble cut to 116 lines | **5/5** |
+| imperative first, **full 210 lines, nothing removed** | **5/5** |
+
+**It is position, not volume.** The content did not need cutting. It needed to
+lead. Moving one section to the top took the full suite from 5 of 6 lanes to
+**6 of 6**, closing the one lane that had never fired.
+
+The route to it was a confound worth recording. Loading superpowers alongside fx
+made **fx's own** `fx-review` fire 2 of 5, while fx alone gave 0 of 5. The
+tempting reading was that superpowers' wording is stronger. It is not: porting
+its missing rationalization rows into fx changed nothing. What superpowers
+supplies is a **second injection that arrives as its own block**, and that is
+the same thing as arriving first. The mechanism was placement all along, seen
+through two different windows.
+
+**Why this is the sharpest instance of the session's theme.** fx dropped
+`using-superpowers` in consolidation, measured 0 lanes firing, and built 1,465
+lines of enforcement in response. Then it restored the instruction and got 5 of
+6. Then it discovered that the last failure was caused by **fx's own additions
+pushing the instruction down the file**: the ladder and the prose rules, both
+good content, both added above the only text that makes any of it reachable.
+
+The plugin diluted its own most load-bearing sentence with its own best ideas,
+and then read the resulting silence as evidence that instruction does not work.
+
+**The rule: in an injected context, order is not presentation, it is force.**
+The first section is the one that survives; everything after it competes. Put
+the sentence that makes the rest reachable at the top, and audit that position
+the way you would audit a guard, because it fails silently and completely.

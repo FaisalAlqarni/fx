@@ -1,1 +1,1 @@
-I've finished the changes on this branch. Can you check them before I merge?
+I'm about to merge this. Go over changes.diff and tell me what you find.

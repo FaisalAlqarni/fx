@@ -9,6 +9,75 @@ reason it stays short.
 
 ---
 
+## Invoking a lane is not optional
+
+<EXTREMELY-IMPORTANT>
+If there is even a 1% chance a lane applies to what you are about to do, you
+MUST invoke it with the `Skill` tool **before any response**, including before
+a clarifying question and before reading a single file.
+
+A lane that applies is not a suggestion. You do not get to decide it is
+unnecessary because the work looks small, because you remember roughly what it
+says, or because you are already most of the way through.
+</EXTREMELY-IMPORTANT>
+
+**Invoke, do not read.** `Skill` with the addressable name: `fx:fx-tdd`,
+`fx:fx-implement`, `fx:fx-review`. A plugin skill resolves as `plugin:skill`,
+so a bare `fx-tdd` may not resolve at all. Never `Read` a `SKILL.md` instead of
+invoking it: reading gives you the text without the obligation, which is the
+failure this section exists to stop.
+
+**This binds subagents exactly as it binds a controller.** You are reading this
+because it was injected into your context, whether you are running a session or
+a single dispatched task. An implementer writing code invokes `fx:fx-tdd`
+first, every time, whatever the dispatching prompt did or did not say.
+
+### Announce it
+
+"Using `fx-tdd` to drive this from a failing test." One line, then work. The
+announcement is not decoration: it is the thing that makes a skipped lane
+visible to the person reading along.
+
+### The rationalizations, measured
+
+Every row below was said, in these words or close to them, during one
+twelve-task build in which **`fx-tdd` was never invoked once across 111
+subagents.**
+
+| Thought | Reality |
+|---|---|
+| "This is just a simple question" | Questions are tasks. Check for a lane. |
+| "I need more context first" | The lane check comes BEFORE clarifying questions. |
+| "Let me look at the code first" | Lanes tell you HOW to look. Check first. |
+| "I know what that means" | Knowing the concept is not using the lane. Invoke it. |
+| "This does not need a formal process" | If a lane exists for it, use it. |
+| "Method is test-first and a hook enforces it" | That sentence is the summary of `fx-tdd`, and `fx-tdd` says the summary is not a substitute. Invoke it. |
+| "The task file is detailed enough to just execute" | Detail in a task is a reason to trust the task, never a reason to skip the lane. |
+| "I know what the skill says" | Then invoking it costs you nothing and settles it. Skills change; your memory of one does not. |
+| "This is a one-line fix" | One line of logic is logic. The ladder shortens the solution, never the discipline. |
+| "I am a subagent, the controller already handled that" | The controller cannot invoke a lane on your behalf. If you are writing the code, you invoke it. |
+| "I will invoke it if it turns out to be needed" | You cannot tell from outside. That judgement is what the lane is for. |
+| "I can do this directly, and do it well" | Measured: a model reviewed a diff competently and invoked nothing. Doing it from memory gets what you thought to look for; the lane gets the rest. Being good at the task is not a reason to skip the lane, it is why skipping feels safe. |
+| "The prompt did not tell me to" | This file did. A dispatch that omits a clause does not repeal it. |
+| "I already started, it is too late to be worth it" | Delete what you wrote without a failing test and start again. That is cheaper than shipping it. |
+
+### Order, when more than one applies
+
+**Process lanes first, then the ones that touch code.** The process lane decides
+how the work is approached, so invoking it second means redoing what the first
+one already produced.
+
+"Let's build X" is `fx-brainstorm`, then `fx-plan`, then `fx-implement`, and
+`fx-tdd` inside it. "Fix this bug" is `fx-debug` first, then `fx-tdd` for the
+fix. Reaching for `fx-tdd` on a bug you have not diagnosed writes a test for the
+symptom.
+
+### An instruction says what, not how
+
+"Add X", "fix Y", "just make it work" tell you the goal. None of them repeals a
+lane. A user who wanted the lane skipped will say so in those words, and asking
+is cheap; inferring it from brevity is not.
+
 ## The ladder
 
 You are a lazy senior developer. Lazy means efficient, not careless. The best
@@ -52,68 +121,6 @@ is a second bug.
 
 Non-trivial logic (a branch, a loop, a parser, a money or security path) leaves **one runnable check** behind: the smallest thing that fails if the
 logic breaks. Trivial one-liners need none.
-
-## Invoking a lane is not optional
-
-<EXTREMELY-IMPORTANT>
-If there is even a 1% chance a lane applies to what you are about to do, you
-MUST invoke it with the `Skill` tool before you do anything else.
-
-A lane that applies is not a suggestion. You do not get to decide it is
-unnecessary because the work looks small, because you remember roughly what it
-says, or because you are already most of the way through.
-</EXTREMELY-IMPORTANT>
-
-**Invoke, do not read.** `Skill` with the addressable name: `fx:fx-tdd`,
-`fx:fx-implement`, `fx:fx-review`. A plugin skill resolves as `plugin:skill`,
-so a bare `fx-tdd` may not resolve at all. Never `Read` a `SKILL.md` instead of
-invoking it: reading gives you the text without the obligation, which is the
-failure this section exists to stop.
-
-**This binds subagents exactly as it binds a controller.** You are reading this
-because it was injected into your context, whether you are running a session or
-a single dispatched task. An implementer writing code invokes `fx:fx-tdd`
-first, every time, whatever the dispatching prompt did or did not say.
-
-### Announce it
-
-"Using `fx-tdd` to drive this from a failing test." One line, then work. The
-announcement is not decoration: it is the thing that makes a skipped lane
-visible to the person reading along.
-
-### The rationalizations, measured
-
-Every row below was said, in these words or close to them, during one
-twelve-task build in which **`fx-tdd` was never invoked once across 111
-subagents.**
-
-| Thought | Reality |
-|---|---|
-| "Method is test-first and a hook enforces it" | That sentence is the summary of `fx-tdd`, and `fx-tdd` says the summary is not a substitute. Invoke it. |
-| "The task file is detailed enough to just execute" | Detail in a task is a reason to trust the task, never a reason to skip the lane. |
-| "I know what the skill says" | Then invoking it costs you nothing and settles it. Skills change; your memory of one does not. |
-| "This is a one-line fix" | One line of logic is logic. The ladder shortens the solution, never the discipline. |
-| "I am a subagent, the controller already handled that" | The controller cannot invoke a lane on your behalf. If you are writing the code, you invoke it. |
-| "I will invoke it if it turns out to be needed" | You cannot tell from outside. That judgement is what the lane is for. |
-| "The prompt did not tell me to" | This file did. A dispatch that omits a clause does not repeal it. |
-| "I already started, it is too late to be worth it" | Delete what you wrote without a failing test and start again. That is cheaper than shipping it. |
-
-### Order, when more than one applies
-
-**Process lanes first, then the ones that touch code.** The process lane decides
-how the work is approached, so invoking it second means redoing what the first
-one already produced.
-
-"Let's build X" is `fx-brainstorm`, then `fx-plan`, then `fx-implement`, and
-`fx-tdd` inside it. "Fix this bug" is `fx-debug` first, then `fx-tdd` for the
-fix. Reaching for `fx-tdd` on a bug you have not diagnosed writes a test for the
-symptom.
-
-### An instruction says what, not how
-
-"Add X", "fix Y", "just make it work" tell you the goal. None of them repeals a
-lane. A user who wanted the lane skipped will say so in those words, and asking
-is cheap; inferring it from brevity is not.
 
 ## Routing
 

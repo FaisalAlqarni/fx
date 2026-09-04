@@ -54,6 +54,11 @@ LOG="$OUT/stream.json"
 
 # A scratch cwd, so the run cannot be steered by whatever repo you happen to
 # be sitting in, and cannot write to it either.
+#
+# CONSEQUENCE, and it bit once: a prompt that refers to repo state ("the changes
+# on this branch") cannot trigger anything here, because there is no repo. The
+# model goes looking, finds nothing, and the lane never fires. That is the test
+# being wrong, not the lane. A prompt must carry its own subject.
 WORK="$OUT/work"
 mkdir -p "$WORK"
 

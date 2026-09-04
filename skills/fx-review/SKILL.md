@@ -4,8 +4,9 @@ description: >
   Use when changed code needs checking: "review this", "review the branch",
   "review the PR", "check my changes", "is this good", "did I miss anything",
   or after finishing an implementation. For EXISTING code with no diff, use
-  fx-architecture instead. Skip it and the only reviewer is the author, half an
-  hour after writing it.
+  fx-architecture instead. Skip it and the review is whatever you happened to
+  notice on one read: no lens dispatch, no severity discipline, and none of
+  the categories you did not think to look for.
 ---
 
 # fx-review
