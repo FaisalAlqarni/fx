@@ -56,7 +56,7 @@ A claim with no verdict is a build error.
 
 ### Unreferenced files in the upstream skill directory
 
-`CREATION-LOG.md`, `test-academic.md`, `test-pressure-1..3.md`,
+`CREATION-LOG.md` and the upstream pressure scenarios,
 `condition-based-waiting-example.ts`: **D**, the skill's own development
 artifacts, mentioned nowhere in it.
 `find-polluter.sh`: **S**, its technique is described inline in

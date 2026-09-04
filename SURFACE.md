@@ -164,7 +164,6 @@ files, which no priority order resolves honestly.
 | `/fx:setup` | Writes `.fx.json` · the `AGENTS.md` fx block (opencode delivery) · `docs/plans/` + `docs/agents/*` · `.gitignore` entries for `.fx/` and `.worktrees/` |
 | `/fx:critique` | Dispatches `fx-devils-advocate` at any design or plan |
 | `/fx:grill` | The interview technique standalone: no classification, no gate. For decisions not heading for code |
-| `/fx:level` | Writes `lite\|full\|ultra` to `~/.claude/fx.json` |
 
 **`/fx:help` cut**: it printed the routing table, which the preamble already
 carries in every session and every subagent. A command that prints what you are
@@ -175,7 +174,6 @@ already looking at is a no-op paying maintenance.
 ```
 design-template.md
 vocab/  codebase-design · defense-in-depth · domain-modeling · fowler-smells
-        good-tests · grilling · model-selection · persuasion-principles
         receiving-review · root-cause-tracing · skill-testing · verification
         worktree-setup
 ```

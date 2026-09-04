@@ -388,39 +388,13 @@ rounds 1 to 3 resume this agent.
 
 Template: [implementer-prompt.md](./implementer-prompt.md)
 
-**Write the dispatch, then send it. Do not compose it in the tool call.**
-
-```
-.fx/dispatch/<NN>-implementer.md      also -task-reviewer, -re-review
-.fx/dispatch/branch-review.md         and -fix-wave
-```
-
-Copy the template, fill every placeholder, add the task's own context, and give
-it a first line naming what it is:
-
-```markdown
-<!-- fx-dispatch: role=implementer task=07 template=implementer-prompt.md -->
-```
-
-Then dispatch that file's contents. Roles: `implementer`, `task-reviewer`,
-`re-review`, `branch-review`. Anything that is genuinely not a lane dispatch
-gets `role=adhoc reason=<why>`, which is a real answer and not a workaround.
-
-**Why a file rather than composing in the call.** Measured over one twelve-task
-build: 26 of 26 writer and reviewer dispatches were composed in the tool call
-from memory, and each dropped whichever clause was not in mind that minute.
-`fx:fx-tdd` was never invoked once across 111 subagents. The ledger handoff, the
-no-subagent rule, the findings file and the deviation disclosure were each lost
-the same way and separately rediscovered as debt. Tailoring was not the problem
-and is still wanted: the briefs carrying ledger rulings and named risks are why
-several defects were caught. Reconstruction was the problem.
-
-The file makes the omission visible. `lib/dispatch-tokens.js` holds the clauses
-each role must carry and the `Agent` branch in the PreToolUse hook reads them,
-so a dispatch that declares a role and is not that role is refused, and one with
-no marker while a plan is underway is warned about. Adding a rule to a template
-without adding it to that table leaves the rule advisory, which is the failure
-this whole arrangement exists to end.
+**Fill the template rather than composing from memory.** Measured over one
+twelve-task build: 26 of 26 dispatches were written in the tool call, and each
+dropped whichever clause was not in mind that minute. `fx:fx-tdd` was never
+invoked once across 111 subagents. Tailoring is still wanted, and the briefs
+carrying ledger rulings and named risks are why several defects were caught.
+Reconstruction is the part that fails: open the template, fill it, then add the
+task's own context.
 
 ### 2. Handle the report
 

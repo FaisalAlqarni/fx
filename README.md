@@ -142,7 +142,6 @@ node lib/git-guard.test.js   $FIX      # 87 assertions
 node lib/base-branch.test.js $FIX      # 27
 node lib/heredoc.test.js     $FIX      # 13
 node lib/plan-state.test.js            # 17
-python3 lib/fix-dashes.test.py         # 15
 ```
 
 Gates, all of which exit non-zero on a problem:

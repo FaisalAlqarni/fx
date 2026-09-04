@@ -9,7 +9,6 @@ was 272 lines while PREAMBLE.md told everyone not to do it.
 An unmeasurable rule is one nobody checks. This makes it measurable.
 
     scripts/check-prose [path ...]      default: the whole plugin
-    scripts/check-prose --fix-dashes    rewrite ' — ' as ': ' where unambiguous
 
 Upstream-verbatim files are exempt: fx-humanize is byte-identical to its
 source, and references/testing/ holds upstream pressure scenarios. Changing
@@ -49,47 +48,6 @@ def files(paths):
             if any(e in rel for e in EXEMPT):
                 continue
             yield p, rel
-
-
-FENCE = re.compile(r'(^```.*?^```)', re.M | re.S)
-
-# A line that opens a new block: list item, heading, quote, table row. A dash on
-# one of these belongs to that block and cannot pair with a dash on another.
-BLOCK_START = re.compile(r'^[ \t]*(?:[-*+>#|]|\d+[.)])')
-BLOCK_PAIR = re.compile(r'(?<=\S)[ \n][—–][ \n]([^\n]*(?:\n[^\n]*)??)[ \n][—–][ \n](?=\S)')
-# A parenthetical lives inside one sentence. A terminator inside the span means
-# the two dashes belong to different sentences and are not a pair.
-SENTENCE_END = re.compile(r'[.!?]["”’)]?[ \n]')
-# A run of three or more spaces inside a line means columns: a tree, an aligned
-# table, a definition list. Each entry is its own thought, so a dash on one line
-# cannot pair with a dash on the next. This is the 272-line paren defect in the
-# shape BLOCK_START misses, because `skills/  9 lanes` is not a list marker.
-ALIGNED = re.compile(r'\S {3,}\S')
-
-
-def _pair(m):
-    """Turn a matched dash pair into parentheses, or decline and leave it."""
-    span = m.group(0)
-    inner = m.group(1)
-    # The opening dash's own line, reconstructed from what precedes the match.
-    head = m.string[:m.start()].rsplit('\n', 1)[-1]
-    if BLOCK_START.match(head + ' '):
-        # The pair may still be legitimate within this one item, but only if it
-        # closes on the same line. Anything else is item-to-item bleed.
-        if '\n' in span:
-            return span
-    if '\n' in span and (ALIGNED.search(head) or ALIGNED.search(inner)):
-        return span                       # columns, not prose: entry-to-entry bleed
-    if '|' in head or head.lstrip().startswith('#'):
-        return span                       # a table cell or a heading, never a paren
-    if any(BLOCK_START.match(l) for l in inner.split('\n')[1:]):
-        return span                       # the span swallowed the start of a new block
-    if SENTENCE_END.search(inner):
-        # Two consecutive sentences, each with its own single dash. Pairing them
-        # wraps a parenthesis around the sentence boundary: "you have already
-        # stopped (queue the next one. Progress summaries waste time) they asked".
-        return span
-    return f' ({inner}) '
 
 
 # A fenced block is exempt only when it holds code. Most fences in this
@@ -170,88 +128,14 @@ def blocks(text):
         yield start, '\n'.join(buf)
 
 
-def fix_dashes(text):
-    """Replace em and en dashes with punctuation that reads.
-
-    The first version of this was a single `' — ' -> ': '` substitution, and it
-    produced sentences worse than the ones it replaced: "in every caller: and
-    patching only the path", "Project facts: structure, patterns, test commands:
-    are in repo.md". Both come from treating one dash at a time when the dash is
-    half of a pair, or when the next word is a conjunction that already carries
-    the join.
-
-    So the rules run in order, most specific first, and they run on the whole
-    text rather than line by line because markdown wraps sentences and half the
-    pairs straddle a newline. Fenced code is left alone: a dash inside a code
-    block is usually an operator or sample output, and rewriting it would change
-    what the example means.
-
-    Whatever survives all four rules needs a human. That is the point: the
-    remaining cases are judgement, and a fixer that guesses at them produces
-    text nobody wrote and nobody checked.
-    """
-    parts = FENCE.split(text)
-    for i, seg in enumerate(parts):
-        if seg.startswith('```') and code_fence(seg.splitlines()[0]):
-            continue
-
-        # 1. Ranges: "2–3 sentences" is a range, not a clause break. Only when
-        #    the dash is tight against both digits. "100 — 6 engines" is a
-        #    clause break that happens to sit between two numbers, and reading
-        #    it as a range produced "100 to 6 engines".
-        seg = re.sub(r'(\d)[—–](\d)', r'\1 to \2', seg)
-
-        # 2. A dash before a conjunction is redundant: the conjunction already
-        #    joins the clauses. Comma is what was meant.
-        seg = re.sub(r'[ \n][—–][ \n]*(?=(and|but|so|or|nor|yet|then|because|which)\b)',
-                     ', ', seg)
-
-        # 3. Paired dashes are parentheses, but ONLY inside one block of prose.
-        #    This rule, unguarded, is what produced 272 mismatched parens: every
-        #    item in a list carries its own dash, so item 1's opened a paren
-        #    that item 2's closed. Same across table cells. So the span may not
-        #    contain a line that starts a new block, and neither end may sit on
-        #    a table row or a heading, where a paren is never what was meant.
-        seg = BLOCK_PAIR.sub(_pair, seg)
-
-        # 4. What is left is a single dash introducing an explanation, which is
-        #    what a colon is for. Decided per line, because both of the things
-        #    that make a colon the wrong choice are line-local. A dash at the
-        #    end of a line was previously matched together with its own newline,
-        #    so the replacement ate the line break and stranded the next line's
-        #    indentation mid-sentence: `my report":     that review is`. And a
-        #    line already carrying a colon reads as a stutter when handed a
-        #    second one: `Lens: security: N findings`.
-        lines = seg.split('\n')
-        for j, line in enumerate(lines):
-            if '—' not in line and '–' not in line:
-                continue
-            mark = ',' if ':' in re.sub(r'[—–]', '', line) else ':'
-            line = re.sub(r'[ \t]*[—–][ \t]*$', mark, line)
-            line = re.sub(r'[ \t][—–][ \t]', mark + ' ', line)
-            lines[j] = re.sub(r'[—–]', mark, line)
-        seg = '\n'.join(lines)
-
-        parts[i] = seg
-    return ''.join(parts)
-
-
 def main():
     argv = [a for a in sys.argv[1:] if not a.startswith('--')]
-    fix = '--fix-dashes' in sys.argv
     dash_lines = stock_hits = unbalanced = bad_fences = 0
     report = []
 
     for p, rel in files(argv):
         text = p.read_text()
-        if fix:
-            new = fix_dashes(text)
-            if new != text:
-                p.write_text(new)
-                text = new
-
         # A block whose parentheses do not close is almost always this script's
-        # own damage: --fix-dashes turns a matched pair of dashes into a pair of
         # parens, and a pairing rule that guesses wrong leaves one of each in
         # different places. Counting dashes cannot see it, because the broken
         # output has no dashes left in it, so the dash gate goes green on text
@@ -268,7 +152,6 @@ def main():
                 unbalanced += 1
                 report.append(f'  {rel}:{start}  unclosed parenthesis in this block')
 
-        # Fenced code is skipped here for the same reason --fix-dashes skips it:
         # a dash in a sample command, a tree diagram or an output template is
         # part of the example. Counting what the fixer will never touch means a
         # gate that cannot go green, which is a gate people learn to ignore.
@@ -304,7 +187,6 @@ def main():
         print(r)
     if len(report) > 40:
         print(f'  ... and {len(report) - 40} more')
-    print('\n`scripts/check-prose --fix-dashes` rewrites " — " as ": " where that reads.')
     print('Everything else is a judgement call and stays yours.')
     return 1
 
