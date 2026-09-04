@@ -2369,3 +2369,43 @@ real measurement of the wrong artifact.
 The guard against it is one line before any claim about fx's runtime behaviour:
 `md5sum` the file you edited against the one under `CLAUDE_PLUGIN_ROOT`. If they
 differ, the session is measuring history.
+
+## 67. The plugin root is a version-keyed cache, so editing fx changes nothing
+
+`CLAUDE_PLUGIN_ROOT` resolves to `~/.claude/plugins/cache/<mp>/<plugin>/<version>/`,
+not to the marketplace clone and not to the working tree. **The path contains the
+version**, so the cache refreshes when the version changes and not when the
+files do.
+
+Measured. `/plugin` reported "fx is already at the latest version (0.1.0)" and
+`/reload-plugins` reported "7 plugins, 12 hooks". Both were true and neither
+changed what executes: the cache still held the hook from 00:35 while the
+marketplace clone had been updated at 19:15 and the working tree was newer
+again. Three copies, two of them decorative.
+
+This is #66 with a second floor. #66 said a session that edits fx is not running
+the fx it edits, and prescribed comparing md5 against `CLAUDE_PLUGIN_ROOT`. That
+prescription was **checking the wrong file**: it compared against the marketplace
+clone, which also is not what runs. The correct comparison is against the
+versioned cache path.
+
+**It produced two false conclusions in one session, both stated with confidence
+before being caught.** First, a dispatch probe came back unrefused and was read
+as "PreToolUse does not fire for Agent". Second, after the marketplace copy was
+updated and matched, the same probe came back unrefused again and the reading
+held. Both measured a stale cache. When the cache was finally synced by hand the
+probe refused immediately, naming all four missing clauses, so **the assumption
+had been true the whole time and was twice reported false.**
+
+A third error sat inside the same investigation: a guard test written as
+`grep 'git a''dd'` concluded "the git guard is not running". The shell
+concatenates that, but the command string the hook inspects never contains the
+literal, so the guard was correct to ignore it. `git archive` proved the guard
+was running normally. **Three wrong conclusions, one hour, all from measuring
+something adjacent to the claim.**
+
+Two fixes. The version is bumped to `0.1.1`, without which no `/plugin update`
+can land any of this. And the check in #66 is corrected: compare against
+`~/.claude/plugins/cache/*/<plugin>/<version>/`, and confirm the version in
+`plugin.json` changed, because same version means same cache no matter what the
+files say.

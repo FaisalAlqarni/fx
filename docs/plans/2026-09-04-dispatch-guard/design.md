@@ -1,6 +1,20 @@
 # Dispatch guard: making the lane's guarantees checkable
 
-**Status:** design, not approved. Nothing implemented.
+**Status:** implemented and verified live. Steps 1 to 6 complete.
+
+All four verdicts confirmed against a running guard, after the cache was synced:
+
+```
+deny   malformed role=implementer   -> REFUSED, naming all four missing clauses
+allow  well-formed role=implementer -> dispatched
+adhoc  role=adhoc reason=...        -> dispatched
+warn   no marker, plan present      -> dispatched with a warning
+```
+
+The payload assumption in Risks below is **confirmed true**: PreToolUse fires
+for `Agent` and `tool_input.prompt` and `subagent_type` both reach the hook. It
+was twice reported false first, against a stale version-keyed cache. See
+DEBT #67.
 
 ## The problem, measured
 
