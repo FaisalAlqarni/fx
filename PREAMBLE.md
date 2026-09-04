@@ -159,7 +159,7 @@ excuse you from calling them.
 | editing a `SKILL.md` / `CLAUDE.md` / `AGENTS.md` | `fx-authoring` |
 | any chart or dashboard | `dataviz` |
 | library / framework / API docs | `context7` |
-| `.erb` · CSS · anything visual | **no owner yet**: apply the project's tokens and shared-partial contract, flag anything beyond that |
+| a screen or component, and how it looks | `fx-design` |
 
 Project facts (structure, patterns, test commands) are in `repo.md` and
 `.fx.json` at the repo root. **Never guess a test command.**

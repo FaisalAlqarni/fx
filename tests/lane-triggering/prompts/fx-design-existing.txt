@@ -1,0 +1,1 @@
+Our dashboard looks bland and generic. Rework how it looks.

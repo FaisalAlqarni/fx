@@ -167,8 +167,8 @@ def main():
                 report.append(f'  {rel}:{n}  dash')
             low = line.lower()
             # A line that names three or more of these is the rule being stated,
-            # not the rule being broken. PREAMBLE.md and DEBT.md both quote the
-            # banned list verbatim.
+            # not the rule being broken. PREAMBLE.md quotes the banned list
+            # verbatim, and so does any document explaining the rule.
             if sum(1 for w in STOCK if re.search(rf'\b{re.escape(w)}\b', low)) >= 3:
                 continue
             for w in STOCK + HEDGE:

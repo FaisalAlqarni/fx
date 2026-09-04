@@ -124,6 +124,7 @@ Model-selectable. Nine lanes own an intent; two are procedures a lane calls.
 | `fx-tdd` | writing or changing code with logic, in any language |
 | `fx-review` | a diff, branch or PR needs checking |
 | `fx-architecture` | the structure of existing code is the problem |
+| `fx-design` | a screen or component, and how it looks. Any template language |
 | `fx-debug` | a bug, a test failure, anything unexpected |
 | `fx-humanize` | prose reads like a brochure. 35 patterns, upstream verbatim |
 | `fx-authoring` | editing a SKILL.md, CLAUDE.md, or a dispatch prompt |
@@ -137,6 +138,7 @@ Model-selectable. Nine lanes own an intent; two are procedures a lane calls.
 | `/fx:setup` | per repository: reads the machine facts, asks what the repo cannot tell it, writes `.fx.json`, `repo.md`, and `CONTEXT.md` if terms resolved |
 | `/fx:critique` | red-teams a design or plan through `fx-devils-advocate` |
 | `/fx:grill` | the stress-test interview alone, for a decision not heading to code |
+| `/fx:handoff` | prints a block you paste into another session, on this machine or any other |
 
 ## Install
 
@@ -197,5 +199,6 @@ scripts/check-collisions         other installed skills contesting an fx lane
 ```
 
 `fx-plan` and `fx-implement` are absent from the lane suite on purpose: their
-triggers need repository state a scratch directory cannot supply. Everything
-else in `DEBT.md`.
+triggers need repository state a scratch directory cannot supply.
+
+The decisions behind fx's shape are in `docs/adr/`.

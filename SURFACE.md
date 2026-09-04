@@ -1,14 +1,13 @@
 # The fx surface: Section 1, agreed
 
-What ships, decided. Deferred items are in `OPEN-DECISIONS.md`; known gaps in
-`DEBT.md`.
+What ships, decided. The reasoning behind these choices is in `docs/adr/`.
 
 Working name is **`fx`**: still a placeholder. Renaming is a `sed` across
 files and stays cheap until the repo exists.
 
 ---
 
-## Lanes: 9 written, 1 deferred
+## Lanes: 10 written
 
 Model-selectable, exactly one claimant each. All descriptions are pure trigger
 lists; none summarizes a workflow.
@@ -37,7 +36,7 @@ recreate DEBT #20.
 | `fx-debug` | Feedback loop first, 3-fix circuit breaker, correct-seam rule | ✅ |
 | `fx-humanize` | Prose de-slopification (verbatim upstream, one line changed) | ✅ |
 | `fx-authoring` | Writing skills, agents, dispatch prompts, CLAUDE.md | ✅ |
-| **`fx-design`** | **Deferred: see D1.** Nothing owns design in the interim | ⏸ |
+| `fx-design` | A screen or component and how it looks. Any template language | ✅ |
 
 ## Procedures: 2
 
@@ -164,6 +163,7 @@ files, which no priority order resolves honestly.
 | `/fx:setup` | Writes `.fx.json` · the `AGENTS.md` fx block (opencode delivery) · `docs/plans/` + `docs/agents/*` · `.gitignore` entries for `.fx/` and `.worktrees/` |
 | `/fx:critique` | Dispatches `fx-devils-advocate` at any design or plan |
 | `/fx:grill` | The interview technique standalone: no classification, no gate. For decisions not heading for code |
+| `/fx:handoff` | Compacts the session into a block printed for copying. Not saved: the reason to hand off by hand is that the next session cannot read this disk |
 
 **`/fx:help` cut**: it printed the routing table, which the preamble already
 carries in every session and every subagent. A command that prints what you are
@@ -196,7 +196,7 @@ three ways. Enforced by `scripts/check-reference-leaves`. See the design doc §2
 | review a diff, branch or PR | `fx-review` |
 | structure of existing code is the problem | `fx-architecture` |
 | bug · test failure · unexpected behavior | `fx-debug` |
-| **`.erb` · CSS · anything visual** | **No owner yet.** Apply the project's CSS tokens and the shared-partial contract; flag anything beyond that. See D1 |
+| a screen or component, and how it looks | `fx-design` |
 | a prose document needs fixing | `fx-humanize` |
 | editing a SKILL.md / CLAUDE.md / AGENTS.md | `fx-authoring` |
 | any chart or dashboard | built-in `dataviz` |

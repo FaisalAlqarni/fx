@@ -1,6 +1,6 @@
 {
   "name": "fx",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "One opinionated engineering plugin: brainstorm, plan, implement, TDD, review, debug, architecture, prose and skill authoring. Exactly one claimant per intent.",
   "author": {
     "name": "Faisal Alqarni"

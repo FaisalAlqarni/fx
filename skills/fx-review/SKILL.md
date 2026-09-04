@@ -95,7 +95,7 @@ multi-commit task.
 
 There is deliberately **no performance lens**: query-shape performance (N+1,
 missing indexes, `SELECT *`, unbounded result sets) is `fx-lens-database`'s
-job, and it fires on the same diffs. See `OPEN-DECISIONS.md` D5.
+job, and it fires on the same diffs.
 
 ## 3. Find the spec
 

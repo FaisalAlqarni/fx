@@ -1,7 +1,7 @@
 # Section 3: stack profiles
 
-Closes `DEBT.md` #2: four files point at `references/stacks/<stack>.md` and the
-directory does not exist.
+Closes the dead-pointer gap: four files pointed at
+`references/stacks/<stack>.md` and the directory did not exist.
 
 ## Decided
 
