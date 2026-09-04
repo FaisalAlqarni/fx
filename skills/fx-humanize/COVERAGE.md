@@ -43,7 +43,7 @@ Upstream directory also contains:
 |---|---|
 | `LICENSE` | **Copy** — MIT. Required; the skill declares `license: MIT` in its frontmatter |
 | `README.md` | Skip — repo-level docs, not skill content, unreferenced by `SKILL.md` |
-| `AGENTS.md` | Skip — contribution conventions for the humanizer repo |
+| `AGENTS.md` | Skip — contribution conventions for the humanizer repo. Its Plain Language section is the one portable part, and it is carried in `PREAMBLE.md` rather than here, because it governs every output rather than this skill |
 | `agents/openai.yaml` | Skip — an OpenAI packaging manifest, unreferenced |
 | `scripts/validate-package.py` | Skip — the upstream repo's own packaging check |
 

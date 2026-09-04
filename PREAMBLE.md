@@ -180,6 +180,19 @@ absolute because the softer version ("avoid em-dash-heavy rhythm") is
 unmeasurable, and an unmeasurable rule is one nobody checks. `scripts/check-prose`
 greps for it.
 
+**Write plainly, which is a positive instruction and not the absence of the
+ones above.** Lead with the main point. Say who acts: active voice, not "it was
+decided". Use one term for one thing and keep using it. Prefer the common word.
+
+**Never rewrite an identifier, a command, a path, a schema field or a
+quotation.** Plain language governs the prose around them, never them. This is
+the clause that keeps a prose pass from editing meaning: a bulk rewriter here
+once turned `let x = a - b` into something else inside a code fence, and the
+gate stayed green because it was looking at prose.
+
+`fx:fx-humanize` carries the full treatment, 35 patterns with examples, for when
+a document needs more than these few lines.
+
 **A comment says why, not what.** The code already says what. A comment
 restating it is noise that rots the moment the code moves. Write the reason,
 the constraint, or the thing that bit someone, or write nothing.
