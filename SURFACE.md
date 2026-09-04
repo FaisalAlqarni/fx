@@ -131,7 +131,7 @@ merge.
 ### The git guard: one condition, no unlock
 
 ```
-GIT_DIR == GIT_COMMON   →  main checkout   →  BLOCK every mutating git command
+the guard no longer resolves repositories at all: where you commit is the workflow's business
 GIT_DIR != GIT_COMMON   →  in a worktree   →  allow
 ```
 
@@ -140,7 +140,7 @@ commit at all: hard rule."** No unlock command, no expiring token, no escape
 hatch to maintain.
 
 `push` follows the same condition: allowed from a worktree branch, so an agent
-can open a PR from the branch it just built; refused on the main checkout, which
+can open a PR from the branch it just built; a bare push is refused because it names no target, which
 already cannot hold a commit to push.
 
 Always blocked regardless of location:

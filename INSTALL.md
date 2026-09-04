@@ -46,7 +46,7 @@ probes the path, failing loudly if it does not resolve:
 
 ```
 reference resolution through the symlinked tree: OK
-skills: 11  agents: 5  commands: 4
+skills: 11  agents: 5  commands: 3
 ```
 
 ### Verify
@@ -55,8 +55,10 @@ skills: 11  agents: 5  commands: 4
 ls ~/.config/opencode/skills          # 11 entries
 ```
 
-Then in a session, confirm the guard is live: `git commit` on a main checkout
-must be refused, and the same command inside a git worktree must succeed.
+Then in a session, confirm the guard is live: `git branch -D fx-guard-probe`
+must be refused, worktree or not. It is one of the absolutes, so being in a
+worktree does not change the answer, and the probe is harmless either way:
+with no guard, git simply reports that the branch does not exist.
 
 ### Subagents
 

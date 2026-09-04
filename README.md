@@ -1,7 +1,8 @@
 # fx
 
-One engineering plugin. Replaces superpowers, mattpocock-skills and ecc
-and humanizer with a set that does not overlap.
+One engineering plugin. Replaces superpowers, mattpocock-skills, ecc and
+humanizer with a set that does not overlap. Defers to `ponytail` where it is
+installed.
 
 **Exactly one claimant per intent.** Four skills claiming "TDD" is why skill
 selection was effectively random; the fix is that only one ever claims it.
@@ -54,8 +55,9 @@ what scales with simplicity is the artifact, never the approval.
         |      plus fx-devils-advocate (code mode), unprimed, once per branch
         |
         v
-  verification before any completion claim, then the git commands, printed.
-  fx never commits for you and never pushes.
+  verification before any completion claim, then four options and a stop:
+  merge | push and open a PR | leave it | discard. The base branch moves
+  when you say which, and not before.
 ```
 
 ### What the lenses are, and when they fire
@@ -78,26 +80,63 @@ PREAMBLE.md ---> SessionStart  ---> every session
                  (subagents read neither CLAUDE.md nor memory:
                   this is the only channel that reaches them)
 
-lib/git-guard.js -> PreToolUse on Bash -> every command, both runtimes
+hooks/fx-pretooluse.js -> PreToolUse, every tool
+   + lib/git-guard.js   -> Bash: the absolutes, fail closed
+   + lib/lane-check.js  -> Write/Edit: one nudge per session, fail open
 ```
 
-The guard is not advisory. On the main checkout every mutating git command is
-refused. Inside a worktree you are free, except for the absolutes: force push,
-pushing the base branch, `reset --hard`, `clean -f`, remote branch deletion,
-and any commit message carrying an attribution trailer.
+**The guard does not police where you are.** Which branch you commit on is the
+workflow's business: work happens in a worktree because `fx-implement` sets one
+up, and integration is a question you get asked rather than a wall you hit.
+
+What it does refuse, anywhere, because each is irreversible or leaves the
+machine: force push, pushing the base branch, a bare `push` that names no
+target, deleting a remote branch, `--no-verify`, `reset --hard`, `clean -f`,
+`branch -D`, `stash drop`, `checkout .`, `tag -d`, and any commit carrying an
+attribution trailer. A `sh -c` wrapper does not get you past it; a `grep` for
+one of those strings is data and does.
 
 ## Layout
 
 ```markdown
-skills/       9 lanes: model-selectable, one per intent
-agents/       review lenses + the devil's advocate: read-only
-commands/     /fx:setup and friends
+skills/       11: 9 lanes plus prototype and research
+agents/       4 review lenses + the devil's advocate: read-only
+commands/     3: /fx:setup, /fx:critique, /fx:grill
 references/   loaded on demand by a lane, never selectable
-hooks/        Claude Code: preamble injection + git guard
-plugins/      opencode: the same two jobs, same shared lib
-lib/          git-guard.js: one predicate, both runtimes
+hooks/        Claude Code: preamble injection, git guard, lane check
+plugins/      opencode: preamble and guard, same shared lib
+lib/          git-guard.js, lane-check.js, plan-state.js
+tests/        lane-triggering: does a naive prompt reach the lane
 PREAMBLE.md   injected into every session AND every subagent
 ```
+
+## The skills
+
+Model-selectable. Nine lanes own an intent; two are procedures a lane calls.
+**Nine of the eleven work standalone**, with no plan and no pipeline: only
+`fx-plan` and `fx-implement` need an artifact to start from.
+
+| Skill | Use when |
+|---|---|
+| `fx-brainstorm` | any new work. Classify, interview, design, gate |
+| `fx-plan` | a design is approved and needs breaking into tasks |
+| `fx-implement` | `docs/plans/<slug>/tasks/` exists and needs building |
+| `fx-tdd` | writing or changing code with logic, in any language |
+| `fx-review` | a diff, branch or PR needs checking |
+| `fx-architecture` | the structure of existing code is the problem |
+| `fx-debug` | a bug, a test failure, anything unexpected |
+| `fx-humanize` | prose reads like a brochure. 35 patterns, upstream verbatim |
+| `fx-authoring` | editing a SKILL.md, CLAUDE.md, or a dispatch prompt |
+| `prototype` | a question needs something runnable to settle it |
+| `research` | the answer lives outside this repository |
+
+## The commands
+
+| Command | Does |
+|---|---|
+| `/fx:setup` | per repository: reads the machine facts, asks what the repo cannot tell it, writes `.fx.json`, `repo.md`, and `CONTEXT.md` if terms resolved |
+| `/fx:critique` | red-teams a design or plan through `fx-devils-advocate` |
+| `/fx:grill` | the stress-test interview alone, for a decision not heading to code |
 
 ## Install
 
@@ -116,16 +155,9 @@ Then, in each repository you work in:
 /fx:setup
 ```
 
-which writes `.fx.json` (commands, stacks) and generates `repo.md` (the
-project's structure and patterns) for your review before it lands.
-
-## The rules it enforces
-
-The git guard is not advisory. On the main checkout every mutating git command
-is refused; inside a worktree you are free. Attribution trailers
-(`Co-Authored-By`, `Claude-Session`, "Generated with") are blocked in commit
-messages everywhere: including inside a dispatched subagent, which reads
-neither `CLAUDE.md` nor memory and would otherwise never see the rule.
+which reads the machine facts, then asks two short rounds about what the code
+cannot tell it (the domain vocabulary, what "done" means here), and writes
+`.fx.json`, `repo.md` and `CONTEXT.md` for your review before any of it lands.
 
 ## Tests
 
@@ -138,10 +170,20 @@ other, and the guard is right not to try to tell them apart.
 ```
 FIX=$(scripts/make-git-fixture /tmp/fx-fixture)
 
-node lib/git-guard.test.js   $FIX      # 87 assertions
+node lib/git-guard.test.js   $FIX      # 80 assertions
 node lib/base-branch.test.js $FIX      # 27
 node lib/heredoc.test.js     $FIX      # 13
 node lib/plan-state.test.js            # 17
+```
+
+And the one test that measures behaviour rather than files: does a naive
+prompt actually make the model invoke the lane? It runs `claude -p` against
+`--plugin-dir`, so it tests the working tree and not the installed copy, which
+is the distinction that cost this project two false conclusions.
+
+```
+tests/lane-triggering/run-all.sh              # 6 lanes, one run each
+tests/lane-triggering/run-reps.sh fx-tdd prompts/fx-tdd.txt 5
 ```
 
 Gates, all of which exit non-zero on a problem:
@@ -154,4 +196,6 @@ scripts/check-prose              no dashes, no stock vocabulary, parens balanced
 scripts/check-collisions         other installed skills contesting an fx lane
 ```
 
-The nine skills themselves are **not** behaviourally tested yet: see `DEBT.md`.
+`fx-plan` and `fx-implement` are absent from the lane suite on purpose: their
+triggers need repository state a scratch directory cannot supply. Everything
+else in `DEBT.md`.
