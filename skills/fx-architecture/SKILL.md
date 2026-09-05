@@ -1,12 +1,12 @@
 ---
 name: fx-architecture
 description: >
-  Use when the structure of EXISTING code is the problem: "restructure this",
-  "this is a mess", "what's shallow here", "where should the seam go", "this is
-  hard to test", "audit the architecture", "find refactoring opportunities",
-  "deepen this module". For a DIFF, changed code, use fx-review instead. Skip it
-  and the restructuring runs on intuition, and a seam moved for the wrong reason
-  costs more to undo than the mess it replaced.
+  Use when EXISTING code is the wrong shape: "restructure this", "this is a
+  mess", "where should the seam go", "this is hard to test", "deepen this
+  module", and equally when there is simply too much of it: "is this
+  over-engineered", "what can we delete", "simplify this", "did we overbuild".
+  For a DIFF, use fx-review. Skip it and complexity gets judged against taste,
+  because nothing established what the code is actually required to do.
 ---
 
 # fx-architecture
@@ -43,6 +43,16 @@ Decide where to look before you look.**
 
 Read the domain glossary (`CONTEXT.md`, or `CONTEXT-MAP.md` → the relevant
 context) and any ADRs **in the area you're touching, first**: before the code.
+
+**Anchor the requirements before you scan.** Who uses this, what it must do, the
+scale it actually runs at, the team that maintains it. One or two lines is
+enough, and where the repo cannot tell you, say what you assumed.
+
+This is what makes the **five tests** in `codebase-design.md` usable: deletion,
+replacement, new hire, scale, resume. Complexity is only excessive relative to a
+requirement, so a scan that skips this step reports taste as though it were a
+finding. **Excess complexity is a deepening opportunity like any other**, and
+often the cheapest: the fix is subtraction, and the diff gets shorter.
 On a multi-engine repo, that means the engine's own `CONTEXT.md`; the root map
 points the way. Never scan every engine at once.
 

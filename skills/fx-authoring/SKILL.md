@@ -133,6 +133,27 @@ take. The body becomes documentation they skip.**
 | ✅ | `Use when executing implementation plans with independent tasks in the current session` |
 | ✅ | `Use when implementing any feature or bugfix, before writing implementation code` |
 
+### Widening a description, and when to stop
+
+A lane may legitimately claim a second intent when the two are species of one
+genus. `fx-architecture` owns code that is the wrong shape, and code there is
+simply too much of is a wrong shape, so both belong to it.
+
+**Widening is not free and the cost is invisible.** New triggers compete with
+the existing ones for the same attention, so a lane can gain an intent and
+quietly lose the one it already had. Nothing in the frontmatter shows this.
+
+**So measure it, do not reason about it.** Keep a prompt per intent in
+`tests/lane-triggering/prompts/`, named `<lane>.txt` and
+`<lane>__<variant>.txt`, and require both to pass. When `fx-architecture` took
+on over-engineering, the new prompt went 1/5 to 5/5 and the original held at
+3/3. **The second number is the one that decides whether the widening was
+allowed to stand.**
+
+**Stop at two, and split instead when either is true:** a third intent wants in,
+or the skill's name no longer describes what it claims. A name that has to be
+explained is the tell that the lane became a bucket.
+
 ## Match the form to the failure
 
 **Before writing guidance, classify the baseline failure. The form that

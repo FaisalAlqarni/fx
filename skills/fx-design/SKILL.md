@@ -143,6 +143,11 @@ Before you call it done, remove one thing.
   rather than left and right, and no icon whose meaning depends on a direction
   it no longer points.
 
+For the mechanical rules underneath this floor, read
+`../../references/stacks/web.md`: forms, content that varies in length,
+localisation, layout shift, theming and interface copy. **It is the checklist;
+this skill is the judgment.**
+
 ## 8. Writing is design content
 
 Words exist to make the interface easier to use, not to decorate it.

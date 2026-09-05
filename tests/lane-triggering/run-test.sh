@@ -62,6 +62,12 @@ LOG="$OUT/stream.json"
 WORK="$OUT/work"
 mkdir -p "$WORK"
 
+# Optional per-lane fixture, same contract as run-reps.sh: some triggers cannot
+# fire in an empty directory, and a miss caused by an absent subject reads
+# exactly like a miss caused by the description. It runs inside the scratch cwd,
+# so it can only write there.
+[ -f "$SCRIPT_DIR/fixtures/${LANE}.sh" ] && ( cd "$WORK" && bash "$SCRIPT_DIR/fixtures/${LANE}.sh" >/dev/null 2>&1 )
+
 echo "lane        $LANE"
 echo "prompt      $PROMPT_FILE"
 echo "plugin dir  $PLUGIN_DIR   (the working tree, not the cache)"

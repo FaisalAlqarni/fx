@@ -97,6 +97,29 @@ simplify the parameters? Can I hide more complexity inside?
 - **One adapter means a hypothetical seam. Two adapters means a real one.**
   Don't introduce a seam unless something actually varies across it.
 
+### Four more tests, from the same family
+
+The deletion test asks whether a module earns its keep. These four ask whether
+it was ever solving a problem someone had. Adapted from `vanity-engineering-review`.
+
+- **The replacement test.** Could 90% of this job be done by something obvious
+  and boring? A custom framework that duplicates a standard library, a
+  hand-rolled cache in front of a database that was never slow.
+- **The new hire test.** Could someone unfamiliar learn this in an hour? If
+  understanding it requires knowing why it was built, the design is carrying
+  history rather than structure.
+- **The scale test.** Is the complexity matched to the **actual** scale, or to
+  an imagined future one? Sharding for a table with 4,000 rows is not
+  preparation, it is cost taken early against a bet nobody placed.
+- **The resume test.** Is this here because it is the right tool, or because it
+  is an impressive one? The tell is a technology chosen before the problem was
+  stated.
+
+**Requirements first, or all four misfire.** You cannot judge whether complexity
+is matched to scale without knowing the real scale, who uses this, and what it
+must actually do. Establish that before scoring anything, or "simpler" turns
+into "worse" and the review does damage.
+
 ## Designing for testability
 
 **1. Accept dependencies, don't create them.**

@@ -1,8 +1,8 @@
 # fx
 
 One engineering plugin. Replaces superpowers, mattpocock-skills, ecc and
-humanizer with a set that does not overlap. Defers to `ponytail` where it is
-installed.
+humanizer with a set that does not overlap. It does not replace `ponytail`,
+which is a separate plugin fx absorbed nothing from.
 
 **Exactly one claimant per intent.** Four skills claiming "TDD" is why skill
 selection was effectively random; the fix is that only one ever claims it.
@@ -200,5 +200,10 @@ scripts/check-collisions         other installed skills contesting an fx lane
 
 `fx-plan` and `fx-implement` are absent from the lane suite on purpose: their
 triggers need repository state a scratch directory cannot supply.
+
+A lane with two intents keeps a prompt for each: `<lane>.txt` and
+`<lane>__<variant>.txt`, both required to pass. That is the regression net for
+widening a description, which can add one trigger and silently cost another.
+A lane needing a subject on disk gets `fixtures/<lane>.sh`.
 
 The decisions behind fx's shape are in `docs/adr/`.

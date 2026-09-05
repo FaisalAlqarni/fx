@@ -54,9 +54,9 @@ interface manifest for a runtime fx does not target, and it restates the
 
 **Dropped:** `wizard`, `resolving-merge-conflicts`: merge conflicts are handled
 by hand, and infra-setup wizards are rare here.
-**Removed from inventory:** the 7 Android skills (D4).
+**Removed from inventory:** the 7 Android skills (`docs/adr/0012`).
 
-## Agents: 5 (performance lens cut, D5)
+## Agents: 5 (performance lens cut, `docs/adr/0008`)
 
 | Agent | Source | Lines | Note |
 |---|---|---|---|
@@ -65,7 +65,7 @@ by hand, and infra-setup wizards are rare here.
 | `fx-lens-security` | `ecc:security-reviewer` | 117 | Devise / devise-jwt / Pundit surface |
 | `fx-lens-a11y` | `ecc:a11y-architect` | 149 | axe-core-rspec + Arabic RTL |
 | `fx-lens-silent-failure` | `ecc:silent-failure-hunter` | 59 | Sidekiq workers, broker consumers |
-| ~~`fx-lens-performance`~~ | `ecc:performance-optimizer` | 455 | **Cut: D5.** ~370 of 455 lines are React/webpack/bundle advice; the usable residue is `fx-lens-database`'s |
+| ~~`fx-lens-performance`~~ | `ecc:performance-optimizer` | 455 | **Cut: `docs/adr/0008`.** ~370 of 455 lines are React/webpack/bundle advice; the usable residue is `fx-lens-database`'s |
 
 **Models pinned per lens:** `security` and `database` at top tier; `a11y`,
 `silent-failure` and `performance` at mid-tier. Those two don't fire on simple
@@ -230,11 +230,13 @@ this repo uses"* plus the detection rule: never *"use RSpec"*.
 
 | File | Status |
 |---|---|
-| `observability.md` | ✅ written |
-| `rails.md` | ⏳ exemplar: sets the shape, since no template ships |
-| `dotnet.md` · `docker.md` | ✓ |
-| `frontend.md` · `data.md` | ✗ |
-| ~~`android.md`~~ · ~~`ios.md`~~ | dropped: D4, D5 |
+| `rails.md` | ✓ exemplar: sets the shape, since no template ships |
+| `dotnet.md` · `docker.md` · `observability.md` | ✓ |
+| `react.md` | ✓ library rules, plus component API shape. `[Next]` marks what needs a framework |
+| `web.md` | ✓ browser rules true under any renderer. Cedes accessibility to `fx-lens-a11y` |
+| `data.md` | ✗ the standalone `postgres` skill serves it |
+| ~~`frontend.md`~~ | dropped: "frontend" is not one ecosystem. **The browser is**, which is what `web.md` covers; the frameworks get their own files |
+| ~~`android.md`~~ · ~~`ios.md`~~ | dropped: project facts, see `docs/adr/0012` |
 
 **Adding a stack later:** write the file. No template, no `/fx:stack` command.
 
@@ -299,7 +301,7 @@ and Sep 2026.
 
 **Uninstalled:** `ecc` · `superpowers` · `mattpocock-skills` ·
 `humanizer` · `frontend-design` · `code-simplifier` · `sp-ecc` · `soe` ·
-`kotlin-lsp` · **`impeccable`** · `ui-ux-pro-max` *(pending D2: its corpus may
+`kotlin-lsp` · **`impeccable`** · `ui-ux-pro-max` *(pending: `docs/adr/0012` "Still undecided"; its corpus may
 still be absorbed before removal)*
 
 Built-ins that stay and are used, not replaced: `/code-review` (the correctness

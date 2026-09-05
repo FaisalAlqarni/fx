@@ -115,6 +115,11 @@ Whatever the repo documents (`CONTRIBUTING.md`, `docs/DESIGN/*`,
 `../../references/vocab/fowler-smells.md`, which applies even when a repo documents
 nothing.
 
+**When the diff touches browser-delivered markup, styles or interface strings,
+add `../../references/stacks/web.md`** as a second baseline: forms,
+localisation, layout shift, theming, hydration and copy. Accessibility is not in
+it, because `fx-lens-a11y` owns that and fires on the same diffs.
+
 Two rules bind the baseline:
 
 - **The repo overrides.** A documented repo standard always wins; where it

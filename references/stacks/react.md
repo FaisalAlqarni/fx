@@ -25,6 +25,7 @@ actually costs time.
 - [Re-renders](#re-renders)
 - [Rendering and the DOM](#rendering-and-the-dom)
 - [JavaScript in hot paths](#javascript-in-hot-paths)
+- [Component APIs](#component-apis) · composition over boolean props
 - [Server rendering](#server-rendering) **[Next]**
 - [Embedded React](#embedded-react) · React inside a server-rendered app
 
@@ -107,6 +108,37 @@ Only inside a loop or a render that runs often. Outside one, clarity wins.
   in place, and mutating props or state is a bug that presents as a missing
   re-render.
 - Compare lengths before comparing arrays element by element.
+
+## Component APIs
+
+Sourced from Vercel's `composition-patterns`. This is about the shape of a
+component's interface, where the rest of this file is about what it costs to
+run.
+
+- **Boolean props are how a component rots.** Each one looks small and they
+  multiply: `isCompact`, `hasIcon`, `showHeader`, and then the combinations
+  nobody tested. When you reach for the second one, the answer is usually
+  composition rather than a third.
+- **Explicit variants beat boolean modes.** `<ButtonDanger>` says what it is;
+  `<Button danger>` invites `danger` plus `primary` and a question about which
+  wins.
+- **Compound components for anything with parts.** A shared context lets
+  `<Select>` and `<Select.Option>` coordinate without the parent passing an
+  array of option objects down through props it has to keep in sync.
+- **Put state in a provider when siblings need it**, rather than lifting it to a
+  common ancestor and threading it back down. The provider is then the only
+  place that knows how the state is managed, so how it is stored can change
+  without touching a consumer.
+- **`children` over a `renderX` prop.** A render prop is a callback that returns
+  markup; children is the language feature for the same thing, and it reads in
+  the order it renders.
+
+**[React 19]** `forwardRef` is no longer needed: `ref` is an ordinary prop, and
+`use()` replaces `useContext()`.
+
+**Embedded islands rarely need most of this.** A mount point rendering one
+widget has no component library and no sibling-state problem. The boolean-prop
+rule still applies the moment a second flag appears.
 
 ## Server rendering
 

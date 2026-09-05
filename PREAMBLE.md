@@ -155,7 +155,7 @@ excuse you from calling them.
 | structure of existing code is the problem | `fx-architecture` |
 | bug · test failure · unexpected behavior | `fx-debug` |
 | a prose document needs fixing | `fx-humanize` |
-| over-engineering · "is this too much" · shrink this | `ponytail` if installed; fx has no lane for it |
+| over-engineering · "is this too much" · what can we delete | `fx-architecture` |
 | editing a `SKILL.md` / `CLAUDE.md` / `AGENTS.md` | `fx-authoring` |
 | any chart or dashboard | `dataviz` |
 | library / framework / API docs | `context7` |
