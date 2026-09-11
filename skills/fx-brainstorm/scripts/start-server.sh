@@ -163,13 +163,33 @@ WORK_DIR="${PROJECT_DIR}/.fx/${PLAN_SLUG}/companion"
 export BRAINSTORM_PORT_FILE="${WORK_DIR}/.last-port"
 export BRAINSTORM_TOKEN_FILE="${WORK_DIR}/.last-token"
 
+# A refusal is one line of JSON on standard output, which is what the caller
+# reads. Quotes and backslashes are dropped and line breaks flattened so the
+# line stays valid JSON.
+refuse() {
+  local msg="${1//[\"\\]/}"
+  msg="${msg//[$'\t\r\n']/ }"
+  echo "{\"error\": \"${msg}\"}"
+  exit 1
+}
+
+# git's error lines out of what it wrote to standard error, or all of it when
+# no line is marked as one. With GIT_TRACE set, trace lines come first.
+git_error() {
+  local marked
+  marked="$(grep -E '^(fatal|error):' <<<"$1")"
+  printf '%s' "${marked:-$1}"
+}
+
 # Decide whether the project is in a git repository before anything is written.
 # Two answers are safe to act on: git says yes, or no .git entry exists at or
 # above the project. A .git entry git will not answer for (git missing from
 # PATH, or the repository refused for its ownership) is refused: nothing could
-# confirm the session key stays out of a commit.
+# confirm the session key stays out of a commit. The answer is read from
+# standard output alone, so trace or advisory text on standard error cannot
+# turn a yes into a refusal.
 IN_GIT_REPO="false"
-if GIT_ANSWER="$(git -C "$PROJECT_DIR" rev-parse --is-inside-work-tree 2>&1)" && [[ "$GIT_ANSWER" == "true" ]]; then
+if GIT_ANSWER="$(git -C "$PROJECT_DIR" rev-parse --is-inside-work-tree 2>/dev/null)" && [[ "$GIT_ANSWER" == "true" ]]; then
   IN_GIT_REPO="true"
 else
   dir="$PROJECT_PHYS"
@@ -178,11 +198,10 @@ else
       if ! command -v git >/dev/null 2>&1; then
         why="git is not on PATH"
       else
-        why="git would not answer: ${GIT_ANSWER%%$'\n'*}"
-        why="${why//[\"\\]/}"
+        GIT_ERR="$(git -C "$PROJECT_DIR" rev-parse --is-inside-work-tree 2>&1 >/dev/null)"
+        why="git would not answer: $(git_error "${GIT_ERR:-it printed ${GIT_ANSWER:-nothing}}")"
       fi
-      echo "{\"error\": \"${dir}/.git exists but ${why}, so nothing can confirm the session key stays out of a commit. Fix that and start again.\"}"
-      exit 1
+      refuse "${dir}/.git exists but ${why}, so nothing can confirm the session key stays out of a commit. Fix that and start again."
     fi
     [[ "$dir" == "/" ]] && break
     dir="$(dirname "$dir")"
@@ -194,37 +213,91 @@ PID_FILE="${STATE_DIR}/server.pid"
 LOG_FILE="${STATE_DIR}/server.log"
 SERVER_ID_FILE="${STATE_DIR}/server-instance-id"
 
+# A symbolic link on the state path, committed or not, sends every directory
+# and file below it wherever the link points, outside the project. Refuse one
+# before anything is created.
+for p in "${PROJECT_DIR}/.fx" "${PROJECT_DIR}/.fx/.gitignore" "${PROJECT_DIR}/.fx/${PLAN_SLUG}" \
+         "$WORK_DIR" "$BRAINSTORM_TOKEN_FILE" "$BRAINSTORM_PORT_FILE" "${WORK_DIR}/${SESSION_ID}" "$STATE_DIR"; do
+  if [[ -L "$p" ]]; then
+    refuse "${p} is a symbolic link, so the session key and state would be written wherever it points. Remove the link and start again."
+  fi
+done
+
 # The state directory exists before the ignore check, so the check sees what git
 # will see: a directory-only rule applies only once the directory is there.
 mkdir -p "$STATE_DIR"
 
-# Every file carrying the session key, or written beside it, must be ignored.
-session_files_ignored() {
-  local f
+# Append one line, keeping an unterminated last line whole. Fails when a write does.
+append_line() {
+  if [[ -s "$2" && -n "$(tail -c1 "$2")" ]]; then
+    printf '\n' >> "$2" || return 1
+  fi
+  printf '%s\n' "$1" >> "$2"
+}
+
+# Why the first session file git does not ignore is not ignored, or nothing
+# when every one is. check-ignore exits 1 for a path it does not ignore and 128
+# when git itself fails, and no rule ignores a tracked file.
+session_files_not_ignored() {
+  local f rel err rule
   for f in "$BRAINSTORM_TOKEN_FILE" "$BRAINSTORM_PORT_FILE" "$PID_FILE" "$LOG_FILE" "${STATE_DIR}/server-info"; do
-    git -C "$PROJECT_DIR" check-ignore -q "${f#"${PROJECT_DIR}"/}" || return 1
+    rel="${f#"${PROJECT_DIR}"/}"
+    err="$(git -C "$PROJECT_DIR" check-ignore -q -- "$rel" 2>&1)"
+    case $? in
+      0) continue ;;
+      1)
+        if git -C "$PROJECT_DIR" ls-files --error-unmatch -- "$rel" >/dev/null 2>&1; then
+          echo "${rel} is tracked by git, and no ignore rule applies to a tracked file"
+        else
+          rule="$(git -C "$PROJECT_DIR" check-ignore -v -n -- "$rel" 2>/dev/null)"
+          rule="${rule%%$'\t'*}"
+          [[ "$rule" == "::" ]] && rule=""
+          echo "${rel} is not git-ignored (last matching rule: ${rule:-none})"
+        fi
+        ;;
+      *) echo "git check-ignore failed on ${rel}: $(git_error "$err")" ;;
+    esac
+    return
   done
 }
 
-# In a git repository that does not ignore them yet, add .fx/ to the local
-# exclude file, never the project's .gitignore, as fx-implement does. --git-path
-# resolves the shared exclude file from inside a linked worktree.
-if [[ "$IN_GIT_REPO" == "true" ]] && ! session_files_ignored; then
-  EXCLUDE_FILE="$(git -C "$PROJECT_DIR" rev-parse --path-format=absolute --git-path info/exclude 2>/dev/null)"
-  if [[ -n "$EXCLUDE_FILE" ]] && ! grep -qxF '.fx/' "$EXCLUDE_FILE" 2>/dev/null; then
-    mkdir -p "$(dirname "$EXCLUDE_FILE")"
-    # Keep an unterminated last line whole.
-    if [[ -s "$EXCLUDE_FILE" && -n "$(tail -c1 "$EXCLUDE_FILE")" ]]; then
-      printf '\n' >> "$EXCLUDE_FILE"
+# In a git repository that does not ignore the session files yet, add .fx/ to
+# the local exclude file. The project's own .gitignore is never edited: it stays
+# the project's to change. --git-path resolves the shared exclude file from
+# inside a linked worktree.
+if [[ "$IN_GIT_REPO" == "true" ]]; then
+  WHY="$(session_files_not_ignored)"
+  if [[ -n "$WHY" ]]; then
+    EXCLUDE_FILE="$(git -C "$PROJECT_DIR" rev-parse --path-format=absolute --git-path info/exclude 2>/dev/null)"
+    if [[ -z "$EXCLUDE_FILE" ]]; then
+      err="$(git -C "$PROJECT_DIR" rev-parse --path-format=absolute --git-path info/exclude 2>&1 >/dev/null)"
+      refuse "git could not locate the local exclude file ($(git_error "${err:-it printed nothing}")), and ${WHY}. Fix that and start again."
     fi
-    printf '.fx/\n' >> "$EXCLUDE_FILE"
-    echo "fx companion: added .fx/ to ${EXCLUDE_FILE} so the session key is never committed." >&2
+    if ! grep -qxF '.fx/' "$EXCLUDE_FILE" 2>/dev/null; then
+      err="$( { mkdir -p "$(dirname "$EXCLUDE_FILE")" && append_line '.fx/' "$EXCLUDE_FILE"; } 2>&1 )" \
+        || refuse "could not write the local exclude file ${EXCLUDE_FILE} (${err}), and ${WHY}. Fix that and start again."
+      echo "fx companion: added .fx/ to ${EXCLUDE_FILE} so the session key is never committed." >&2
+    fi
   fi
-  # A .gitignore rule can re-include .fx/ over the exclude file. Fail closed,
-  # before the server starts, so no key is written.
-  if ! session_files_ignored; then
-    echo '{"error": ".fx/ is still not git-ignored (a .gitignore rule re-includes it), so the session key would be committable. Remove that rule and start again."}'
-    exit 1
+fi
+
+# fx's own ignore file, written before any session file. `*` ignores everything
+# under .fx/, this file included, whether or not the project is a git repository
+# yet, so a later `git init && git add -A` stages none of it. A rule in a
+# .gitignore above .fx/ cannot re-include what it ignores, and `*` stays the
+# last line so an earlier negation in this file cannot either.
+FX_IGNORE="${PROJECT_DIR}/.fx/.gitignore"
+if [[ "$(tail -n1 "$FX_IGNORE" 2>/dev/null)" != "*" ]]; then
+  err="$(append_line '*' "$FX_IGNORE" 2>&1)" \
+    || refuse "could not write ${FX_IGNORE} (${err}), so nothing keeps the session key out of a commit. Fix that and start again."
+fi
+
+# Fail closed before the server starts, so no key is written. With .fx/.gitignore
+# in place, a session file git still does not ignore is tracked, or git failed.
+if [[ "$IN_GIT_REPO" == "true" ]]; then
+  WHY="$(session_files_not_ignored)"
+  if [[ -n "$WHY" ]]; then
+    refuse "${WHY}, so the session key would be committable. Fix that and start again."
   fi
 fi
 

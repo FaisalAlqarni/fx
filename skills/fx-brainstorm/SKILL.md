@@ -180,7 +180,8 @@ nothing else**, then wait:
 
 Accept → start the server with `--open`, calling `scripts/start-server.sh` by its
 absolute path under this skill's base directory, with `--project-dir` set to the
-project root and `--slug` set to the design's slug; the exact command is in the
+project root and `--slug` set to the plan directory's full dated name,
+`YYYY-MM-DD-<slug>`, as `docs/plans/` holds it; the exact command is in the
 Details file below. Decline → continue text-only and
 **don't offer again** unless they raise it. If no visual question ever arises,
 never offer it.
