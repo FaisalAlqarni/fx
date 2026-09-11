@@ -1,5 +1,4 @@
--- A missing index on a foreign key. This is the database lens's finding.
--- The pipeline lens must say nothing about this file.
+-- Table for outbound campaign sends.
 CREATE TABLE sends (
   id BIGSERIAL PRIMARY KEY,
   campaign_id BIGINT NOT NULL,
