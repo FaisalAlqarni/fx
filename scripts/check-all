@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# The repository's own combined gate: runs every gate and suite the README
+# documents, in order, and stops at the first failure, naming it.
+#
+# check-collisions is deliberately EXCLUDED (Ruling A,
+# docs/plans/2026-09-11-fx-audit/tasks/01-machine-facts.md). It reports on
+# skill directories under the user's home directory that contest fx's lanes,
+# which is machine state outside this repository, not something this
+# checkout can fix. It is red at baseline here and cannot be made green from
+# inside this repository, so folding it in would make a permanently red gate
+# that everyone learns to ignore. It stays a documented, manually run check:
+#
+#     scripts/check-collisions
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+run() {
+  local name="$1"; shift
+  echo "== $name =="
+  if ! "$@"; then
+    echo "FAIL: $name"
+    exit 1
+  fi
+}
+
+run check-manifest         scripts/check-manifest
+run check-paths            scripts/check-paths
+run check-reference-leaves scripts/check-reference-leaves
+run check-prose            scripts/check-prose
+
+echo "== make-git-fixture =="
+if ! FIX=$(scripts/make-git-fixture /tmp/fx-fixture); then
+  echo "FAIL: make-git-fixture"
+  exit 1
+fi
+read -r MAIN WT <<<"$FIX"
+
+run git-guard.test.js   node lib/git-guard.test.js   "$MAIN" "$WT"
+run base-branch.test.js node lib/base-branch.test.js "$MAIN" "$WT"
+run heredoc.test.js     node lib/heredoc.test.js     "$MAIN" "$WT"
+run plan-state.test.js  node lib/plan-state.test.js
+
+echo "ALL GREEN"

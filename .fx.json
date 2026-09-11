@@ -1,0 +1,10 @@
+{
+  "stacks": [],
+  "test_one": null,
+  "test_scope": null,
+  "test_all": "scripts/check-all",
+  "setup": null,
+  "lint": null,
+  "coverage": null,
+  "coverage_floor": null
+}
