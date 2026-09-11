@@ -11,7 +11,8 @@
 #                         and persist after the server stops. The session key, PID
 #                         and log go to the git-ignored <project>/.fx/<slug>/companion/.
 #                         Without it, <slug> is _companion-unfiled, which is not a plan.
-#   --project-dir <path>  Project root (default: the current directory).
+#   --project-dir <path>  Project root (default: the current directory). Refused
+#                         when it is this skill's directory or inside it.
 #   --host <bind-host>    Host/interface to bind (default: 127.0.0.1).
 #                         Use 0.0.0.0 in remote/containerized environments.
 #   --url-host <host>     Hostname shown in returned URL JSON.
@@ -77,6 +78,16 @@ PROJECT_DIR="$(cd "${PROJECT_DIR:-.}" 2>/dev/null && pwd)" || {
   echo '{"error": "--project-dir is not a directory"}'
   exit 1
 }
+
+# Never the skill's own directory or anything inside it: the mockups would land
+# inside the plugin, and a plugin update drops them. The repository holding the
+# plugin is still a valid project.
+SKILL_DIR="$(cd "$SCRIPT_DIR/.." && pwd -P)"
+PROJECT_PHYS="$(cd "$PROJECT_DIR" && pwd -P)"
+if [[ "${PROJECT_PHYS}/" == "${SKILL_DIR}/"* ]]; then
+  echo "{\"error\": \"the project directory ${PROJECT_PHYS} is inside the fx-brainstorm skill directory ${SKILL_DIR}. Pass --project-dir with the project root.\"}"
+  exit 1
+fi
 
 # One path segment: the slug names a directory under docs/plans/ and .fx/.
 if [[ -n "$SLUG" ]] && ! [[ "$SLUG" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
@@ -152,12 +163,53 @@ WORK_DIR="${PROJECT_DIR}/.fx/${PLAN_SLUG}/companion"
 export BRAINSTORM_PORT_FILE="${WORK_DIR}/.last-port"
 export BRAINSTORM_TOKEN_FILE="${WORK_DIR}/.last-token"
 
-# The state directory holds the session key. In a git repository that does not
-# ignore it yet, add .fx/ to the local exclude file, never the project's
-# .gitignore, as fx-implement does. --git-path resolves the shared exclude file
-# from inside a linked worktree.
-if git -C "$PROJECT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
-   && ! git -C "$PROJECT_DIR" check-ignore -q ".fx/${PLAN_SLUG}/companion"; then
+# Decide whether the project is in a git repository before anything is written.
+# Two answers are safe to act on: git says yes, or no .git entry exists at or
+# above the project. A .git entry git will not answer for (git missing from
+# PATH, or the repository refused for its ownership) is refused: nothing could
+# confirm the session key stays out of a commit.
+IN_GIT_REPO="false"
+if GIT_ANSWER="$(git -C "$PROJECT_DIR" rev-parse --is-inside-work-tree 2>&1)" && [[ "$GIT_ANSWER" == "true" ]]; then
+  IN_GIT_REPO="true"
+else
+  dir="$PROJECT_PHYS"
+  while :; do
+    if [[ -e "${dir}/.git" ]]; then
+      if ! command -v git >/dev/null 2>&1; then
+        why="git is not on PATH"
+      else
+        why="git would not answer: ${GIT_ANSWER%%$'\n'*}"
+        why="${why//[\"\\]/}"
+      fi
+      echo "{\"error\": \"${dir}/.git exists but ${why}, so nothing can confirm the session key stays out of a commit. Fix that and start again.\"}"
+      exit 1
+    fi
+    [[ "$dir" == "/" ]] && break
+    dir="$(dirname "$dir")"
+  done
+fi
+
+STATE_DIR="${WORK_DIR}/${SESSION_ID}/state"
+PID_FILE="${STATE_DIR}/server.pid"
+LOG_FILE="${STATE_DIR}/server.log"
+SERVER_ID_FILE="${STATE_DIR}/server-instance-id"
+
+# The state directory exists before the ignore check, so the check sees what git
+# will see: a directory-only rule applies only once the directory is there.
+mkdir -p "$STATE_DIR"
+
+# Every file carrying the session key, or written beside it, must be ignored.
+session_files_ignored() {
+  local f
+  for f in "$BRAINSTORM_TOKEN_FILE" "$BRAINSTORM_PORT_FILE" "$PID_FILE" "$LOG_FILE" "${STATE_DIR}/server-info"; do
+    git -C "$PROJECT_DIR" check-ignore -q "${f#"${PROJECT_DIR}"/}" || return 1
+  done
+}
+
+# In a git repository that does not ignore them yet, add .fx/ to the local
+# exclude file, never the project's .gitignore, as fx-implement does. --git-path
+# resolves the shared exclude file from inside a linked worktree.
+if [[ "$IN_GIT_REPO" == "true" ]] && ! session_files_ignored; then
   EXCLUDE_FILE="$(git -C "$PROJECT_DIR" rev-parse --path-format=absolute --git-path info/exclude 2>/dev/null)"
   if [[ -n "$EXCLUDE_FILE" ]] && ! grep -qxF '.fx/' "$EXCLUDE_FILE" 2>/dev/null; then
     mkdir -p "$(dirname "$EXCLUDE_FILE")"
@@ -168,20 +220,16 @@ if git -C "$PROJECT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
     printf '.fx/\n' >> "$EXCLUDE_FILE"
     echo "fx companion: added .fx/ to ${EXCLUDE_FILE} so the session key is never committed." >&2
   fi
-  # A .gitignore rule can re-include .fx/ over the exclude file. Fail closed.
-  if ! git -C "$PROJECT_DIR" check-ignore -q ".fx/${PLAN_SLUG}/companion"; then
+  # A .gitignore rule can re-include .fx/ over the exclude file. Fail closed,
+  # before the server starts, so no key is written.
+  if ! session_files_ignored; then
     echo '{"error": ".fx/ is still not git-ignored (a .gitignore rule re-includes it), so the session key would be committable. Remove that rule and start again."}'
     exit 1
   fi
 fi
 
-STATE_DIR="${WORK_DIR}/${SESSION_ID}/state"
-PID_FILE="${STATE_DIR}/server.pid"
-LOG_FILE="${STATE_DIR}/server.log"
-SERVER_ID_FILE="${STATE_DIR}/server-instance-id"
-
-# Create the session's content and state directories
-mkdir -p "${SESSION_DIR}/content" "$STATE_DIR"
+# Create the session's content directory
+mkdir -p "${SESSION_DIR}/content"
 
 SERVER_ID=""
 if [[ -r /dev/urandom ]]; then

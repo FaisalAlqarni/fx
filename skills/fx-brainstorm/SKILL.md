@@ -178,7 +178,10 @@ nothing else**, then wait:
 > diagrams and comparisons in a browser tab as we go. It's still new and can be
 > token-intensive. Want me to? I'll open it for you."
 
-Accept → start the server with `--open`. Decline → continue text-only and
+Accept → start the server with `--open`, calling `scripts/start-server.sh` by its
+absolute path under this skill's base directory, with `--project-dir` set to the
+project root and `--slug` set to the design's slug; the exact command is in the
+Details file below. Decline → continue text-only and
 **don't offer again** unless they raise it. If no visual question ever arises,
 never offer it.
 
