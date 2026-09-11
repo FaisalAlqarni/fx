@@ -3102,3 +3102,54 @@ skills 12 to 13, and both command tables and the Layout lines that name
 `/fx:fx-audit`. That recount is owed by a ruling, not a finding, and runs as task
 09's fix round once task 08's fix round lands, checked by a scoped re-review
 against the filesystem.
+
+## Task 08 fix round 1: landed and verified
+
+Commit `0098ed6`, a rename with edits, `commands/fx-audit.md` to
+`skills/fx-audit/SKILL.md`, 261 lines, no trailer, parent `89f3e9d`. Verified
+myself:
+
+```
+frontmatter                  name fx-audit, one-line description, disable-model-invocation: true
+typed name                   /fx:fx-audit twice; /fx:audit nowhere
+citations                    ../../references/audit-template.md and design-template.md
+fixes present by search      "no dedicated pass", git show for reference rows,
+                             untracked files through --others --exclude-standard
+check-manifest               OK, 11 skills declared; fx-audit undeclared, like fx-design
+check-paths                  55; check-artifacts exit 0; prose gate exit 0
+```
+
+**Probe logs checked by me, not taken from the report,** in
+`fr1-run-green3.json` and `fr1-run-resume3.json`: zero `find /`, zero searches
+for a template, zero reads of `settings.json`, `installed_plugins` or `/proc`.
+The resume checksum files are identical before and after, `d2de033e`, with the
+same modification time. The committed skill hashes to `debf4982`, the value
+recorded at round 3, so the probes ran the committed text.
+
+**Not established by me:** my search found no template read by path in the
+stream logs, so "the agent was given where the templates are" rests on the
+implementer's debug-log evidence, 13 skills loaded and templates read at worktree
+paths. The re-review is asked to judge it. Two searches also came back empty,
+"start over" for M10 and a clean result for "the target" for M1; both are named
+risks for the re-review.
+
+**Concerns carried:** Phases 3 and 4 have never run live; whether the second
+runtime reaches the skill or honours the flag is unverified; `fx-audit` and
+`fx-design` are both undeclared in the manifest.
+
+Packaged at `.fx/2026-09-11-fx-audit/review/89f3e9d..0098ed6.diff`.
+
+Record committed `0753dd1`: the ledger and task 09's findings.
+
+## Dispatched after 0753dd1, each launch confirmed before this entry
+
+- **Task 08 fix round 1 scoped re-review**, top tier, read-only, no nested
+  sessions, not to run `check-all`. All fifteen findings, Rulings AE, AF and AD,
+  and eight named risks: M10's way to start over, the remaining "the target",
+  loading while undeclared, the indirect base-directory proof, the committed text
+  against the round 3 checksum, resume byte-identity, the second runtime, and
+  Phases 3 and 4 read as an agent would run them.
+- **Task 09 fix round 1**, resuming the original implementer, the only writer:
+  commands 5 to 4 and skills 12 to 13 in both documents, `fx-audit` described as
+  a user-invoked skill, neither lane nor procedure nor command, and still listed
+  where a user looks for what to type. The manifest is not touched.
