@@ -3275,3 +3275,61 @@ because the slug and resume rules change.
 N2 to N5 and the restored Ruling AC sentence, is told N1 and the installer are not
 its to touch, and must prove from the `fr2-` logs that a resume after the Phase 1
 gate does not ask the Phase 3 gate question.
+
+## Task 08 fix round 2: landed and verified
+
+Commit `c9f69f4`, `skills/fx-audit/SKILL.md` only, 274 lines, no trailer, parent
+`1e0a5c9`. Read at the lines the implementer cited:
+
+```
+N3, 59-69        scope normalized; ".", omitted and root are one scope; the name is
+                 the repo, or repo + scope with "/" as "+", "%" and "+" escaped first
+N3, 90-101       an existing directory with no 01-current.md continues Phase 1;
+                 one recording another scope is reported, never continued
+N2, 106-109      a differing --against keeps the recorded reference and says how
+                 to compare against the new one: start over
+N4, 120-121      state 4 applies only when 03-gaps.md exists
+N5, 194-197      the file set excludes ':(exclude)docs/plans/<slug>'
+AC, 249-251      "so opening it fetches nothing from any host" restored at the step
+check-paths      55; prose gate exit 0
+```
+
+Probe logs checked by me: `fr2-run-green1.json` and `fr2-run-resume1.json` each
+show zero `find /`, zero template searches, zero `settings.json` or `/proc` reads.
+The checksum files match, `c7b50ba4`, with the same modification time.
+
+One departure, reported: Phase 1's scope line now says "the normalized scope", to
+match N3.
+
+Packaged at `.fx/2026-09-11-fx-audit/review/1e0a5c9..c9f69f4.diff`.
+
+Record committed `e258c10`: the ledger and round 1's re-review findings.
+
+**Task 08 fix round 2 scoped re-review:** dispatched, launch confirmed. Mid tier,
+read-only, no nested sessions. Told to run the exclude pathspec in a scratch
+repository for the root and a subdirectory scope, apply the naming rule to eight
+scopes including `a/b`, `a-b`, `a+b` and `a%2Bb`, walk the five resume states for
+three directory shapes, and check the probe logs itself.
+
+## The final review's carried findings, gathered into one file
+
+`docs/plans/2026-09-11-fx-audit/final-review-carried.md` gathers every item this
+ledger deferred to the final review or parked for the user, from a search of the
+ledger for those markers, so the final reviewers triage them without searching
+several thousand lines. It groups two items flagged to triage before merge (the
+`/tmp` fixture leak and review worktrees with no ignore check or removal), the
+deferred Minors by task, the decisions parked for the user, findings outside
+every task, and what was never observed. It says the ledger wins where they
+disagree.
+
+**Two corrections made while writing it, both found by checking:**
+
+- I first wrote that review worktrees are named in `skills/fx-review` and in
+  `skills/fx-architecture`. A search finds exactly one place,
+  `skills/fx-review/reviewer-prompt.md:58`. Corrected before any reviewer read it.
+- The prose gate failed on a balanced parenthesis: a wrapped list item's
+  continuation line began with the number 3 and a closing parenthesis. Rewrapped,
+  the gate passes, which shows it reads a leading number and closing parenthesis
+  as a list marker. **A fourth blind spot in
+  `check-prose`**, beside the three already recorded, and added to the file's
+  findings outside every task.
