@@ -1697,9 +1697,11 @@ and the script says so, and neither plan scanner treats that as a plan.
 **A correction to my own task file.** Task 04 said `check-all` would show six
 gates. Under Ruling A it runs five: manifest, paths, reference leaves, prose and
 now artifacts. The implementer did not pad the count, which was right. For task
-09: `README.md` documents six gates, because it still lists `check-collisions`
-as a manually run gate, while `check-all` runs five. Both numbers are correct and
-describe different things.
+09: `README.md`'s gates block lists five, four of the gates `check-all` runs plus
+the manually run `check-collisions`, and no `check-artifacts`; after task 09 adds
+it, the block lists six while `check-all` runs five. Both numbers will be correct
+and describe different things. *(Corrected in place: this line first said the
+README already documented six gates. A grep of `README.md:194-198` disproved it.)*
 
 The implementer removed the footer's GitHub link along with the logo, following
 my criterion of no `https://` at all. My own step 7 said a link is not a fetch, so
@@ -2203,3 +2205,240 @@ Not fixed by adding a pass to the audit: that changes the design the user approv
 
 Cost if wrong: an audit that misses a queue defect a dedicated pass would have
 caught, stated rather than hidden. Caught by the user at the completion report.
+
+## Task 04 fix round 1: landed and verified
+
+Commit `77f8b3e`, three files under `skills/fx-brainstorm/`, no trailer, parent
+`41c0d7d`. Verified myself:
+
+```
+bash -n start-server.sh              exit 0
+documented starts                    visual-companion.md:41,67,76,83,92,100, all
+                                     bash <skill-dir>/scripts/start-server.sh --project-dir <project-root>
+skill-directory refusal              start-server.sh:85-88
+git cannot answer                    start-server.sh:167-184, looks for a .git entry at or above the project
+ignore check after mkdir             start-server.sh:199-205, on each state file path
+check-artifacts                      exit 0, 6 exempted
+```
+
+`SKILL.md:181` still mentions `scripts/start-server.sh`, in a sentence that goes
+on to say how to call it; left to the re-review, which is asked about it.
+
+**One departure, accepted provisionally.** The re-include reproduction now starts
+instead of being refused: with the check after `mkdir`, the exclude line it
+appends makes git ignore the session files, and `git status` stays clean. The
+refusal is proven on a variant the exclude line cannot fix. The re-review is
+asked to run it, not accept it.
+
+Concerns handed to the re-review as named risks: a stray `.git` above a
+non-repository refuses it; a refused start leaves the exclude line and an empty
+directory; three state files are not checked one by one; `<skill-dir>` depends on
+the agent knowing the skill's base directory.
+
+The implementer called `check-artifacts` with `bash`, which is Python; it hung and
+was killed with nothing left behind. The report's output is from a direct run.
+
+Record committed `89aa044`: the ledger and the task 05 and task 07 round 4
+findings.
+
+## Dispatched after 89aa044, each launch confirmed before this entry
+
+- **Task 07 fix round 5 under Ruling Y**, a fresh implementer on the top tier,
+  the last round. Carries a copy test: the fence copied literally holds no
+  invented target and no bare fallback line. The only writer.
+- **Task 04 fix round 1 scoped re-review**, top tier because it judges shell
+  control flow guarding a session key. Told to run every case itself in scratch
+  repositories under the job's directory, never to start the companion in this
+  worktree, and not to run `check-all`. Handed six named risks.
+
+Queued for the writer slot: task 05 round 5 under Ruling Z, then task 06.
+
+## Task 07 fix round 5: landed and verified
+
+Commit `85901b9`, `references/audit-template.md` only, no trailer, parent
+`89aa044`. The copy test, run by me on the first `markdown` fence under the
+`03-gaps.md` heading:
+
+```
+fence lines copied           40, from "# Gap report: <slug>" to the lens findings line
+entry-shaped lines           1, the bracketed placeholder
+bare None lines              0
+worked-example text          0
+markdown fences in section   3: the skeleton, then the two worked examples after it
+```
+
+My first attempt at this test printed zeros because `in` is a reserved word in
+awk and the script never ran. Those zeros were not a result, and the table above
+is from the corrected run.
+
+The empty case is now quoted inline at the end of the paragraph, as **Areas not
+covered** quotes its own. The worked examples sit after the closing fence in two
+labelled `markdown` fences, each stating its count. No mention of the design
+template; leaf and prose gates exit 0. Packaged at
+`.fx/2026-09-11-fx-audit/review/89aa044..85901b9.diff`.
+
+The implementer's concern goes to task 08's brief: the section now holds three
+`markdown` fences, so the command must identify the skeleton as the first.
+
+## Dispatched after 85901b9, each launch confirmed before this entry
+
+- **Task 05 fix round 5 under Ruling Z**, a fresh implementer on the top tier,
+  the last round. Carries the record-integrity proofs, one blind smoke run with a
+  fixed prompt, and an instruction to stop rather than tune if the run misses row
+  6 or reports rows 1 to 5. The only writer.
+- **Task 07 fix round 5 scoped re-review**, mid tier, read-only, not to run
+  `check-all`. Told to run the copy test itself and to judge whether a finished
+  field has one form or two.
+
+## Task 04: complete, fix round 1 closed
+
+Scoped re-review: **all three findings ADDRESSED, 0 Critical, 0 Important, 1
+Minor.** Findings at `docs/plans/2026-09-11-fx-audit/findings/04-fix-round1-findings.md`.
+Every case was run in scratch repositories under the job's directory, not read:
+
+- git removed from `PATH`, and git refusing the repository for ownership: both
+  refused, nothing written, `git status` empty;
+- the ledger's re-include rules: starts, and all session files show as ignored
+  while running and after stop, because no `.gitignore` pattern matches `.fx`
+  itself, so the exclude line ignores that directory and git never looks inside
+  it. My provisional acceptance of the implementer's departure stands;
+- a rule the exclude line cannot fix, `!.fx/` first: refused;
+- the skill directory, through a symlink, a trailing slash or a subdirectory:
+  refused; the plugin root and lookalike siblings: not refused;
+- the documented start as printed, from another directory: files land in the
+  project's plan directory. `<skill-dir>` resolves on both runtimes, since each
+  prints the skill's base directory when it loads.
+
+**Deferred to the final review, Minor, added to task 04's earlier list:**
+
+- `start-server.sh:172` merges git's stderr into the answer, so a healthy
+  repository with `GIT_TRACE` set is refused. It fails closed and names the cause.
+- `server-instance-id`, `events` and `server-stopped` are not checked one by one,
+  and a deliberate re-include rule naming them makes them committable while the
+  checked files stay ignored. The reviewer searched all three for the key and
+  found it in none, so Ruling T holds; `events` holds the user's click choices.
+- An empty `.git` directory above a non-repository project refuses it, naming the
+  path. Rare, and closed rather than open.
+- A refused start leaves the exclude line and an empty state directory.
+
+Task 04 is complete: review approved with its Minors, and fix round 1 closed.
+
+## Task 07: complete, fix round 5 closed
+
+Scoped re-review: **ADDRESSED, 0 Critical, 0 Important, 1 Minor.** Findings at
+`docs/plans/2026-09-11-fx-audit/findings/07-fix-round5-findings.md`. Its own copy
+test matches mine: one bracketed placeholder, no bare "None" line, no example
+text. The table of contents and every other section are unchanged, and the count
+line is byte-identical to round 4's.
+
+**Deferred to the final review, Minor:** the worked examples at
+`references/audit-template.md:146-163` show the field as a bare label with the
+entries below, while the sibling count fields at `:123-129` keep their sentence
+with only the number filled in. Both examples still count correctly, and it sits
+outside the fence an author copies.
+
+For task 08's brief: the section holds three `markdown` fences, and the skeleton
+is the first.
+
+Task 07 is complete, at the fifth and last round.
+
+## Task 08's probe run, checked against this machine before its brief
+
+Three more corrections to the task file, found by checking the CLI and the plugin
+install rather than trusting the step text.
+
+1. **The probe points at the wrong checkout.** Steps 2 and 4 pass
+   `--plugin-dir /development/fx`, which is the main checkout on the base branch.
+   It has none of this branch's work, so the green run could never find the
+   command, and any run that did would be testing stale files. The brief passes
+   the worktree, `/development/fx/.worktrees/fx-audit`.
+2. **`--max-turns` is unconfirmed.** Claude Code 2.1.268's `--help` does not list
+   it. `claude --max-turns 1 --version` exits 0, but a version request may return
+   before other options are validated, so that proves nothing. The implementer
+   confirms it in the first real run and reads the run's own output for an
+   unknown-option error, or bounds the run another way the CLI documents.
+3. **Two copies of fx would load.** The cache holds `fx@fx`, and it is enabled in
+   the user settings. `--plugin-dir` adds the worktree copy for that session
+   alongside it. The command and `fx-lens-pipeline` exist only in the worktree
+   copy, so resolving either proves the worktree loaded. Every skill and hook
+   exists in both, so the brief requires the implementer to establish which copy
+   served the run, and to disable the cached copy for that session only if the
+   CLI documents a way. It never changes the user's settings.
+
+Cost if wrong: a probe that reports green on the wrong files. Caught by task 08's
+review, which is handed these three.
+
+## Task 09's counts, checked on disk before its brief
+
+```
+skill directories          12; plugin.json declares 11, fx-design undeclared
+agents/*.md                6
+commands/*.md              4, task 08 makes 5
+references markdown files  21 across references/, vocab/ and stacks/
+scripts/check-*            7: five check-all gates, check-collisions, check-all
+README Layout              skills 11, agents "4 review lenses", commands 3
+README Gates block         5 listed, no check-artifacts (README.md:194-198)
+README Tests block         no mention of the lens fixture
+SURFACE headings           Lanes: 10, Agents: 5, Commands: 4, References: 24
+```
+
+Task 09's stated mismatches all hold. My own earlier line about the README's gate
+count did not, and is corrected in place in the task 04 entry.
+
+**One count task 09 does not name:** `SURFACE.md` claims 24 references against 21
+markdown files on disk. It may count something other than files. Its criterion
+that every count is checked against the filesystem covers it, and the brief names
+it so it is not skipped. "Lanes: 10" against 12 skill directories needs the same
+check, since the README calls two of them prototype and research.
+
+`fx-design` missing from `plugin.json` is the finding recorded at the start of
+this build, out of task 09's scope, and goes to the completion report.
+
+## Task 05 fix round 5: landed and verified
+
+Commit `fca4cf9`, three files, no trailer, parent `85901b9`. Verified myself:
+
+```
+fixture vs d496d1e                    unchanged, exit 0
+KEY.md table rows sha256              76ff72b9ba2f6141 at d496d1e and at fca4cf9
+lens frontmatter vs fe48167           identical
+"Ceded:" in the lens                  0
+rescue, re-raise, rethrow             0
+transaction ceding line               present, owner fx-lens-database
+KEY.md status section                 says the keep is provisional and why
+KEY.md negative control               "The pipeline lens reports nothing about this file."
+README                                disclosures 2 and 4, the stand-in, read through a brief
+plugin.json                           untouched; check-manifest OK
+prose gate on the three files         exit 0
+```
+
+The implementer departed from the review's wording three times and said so: the
+scope sentence states what the output holds rather than what it leaves out,
+following `fx-authoring` on negation; the error-handler line avoids "rethrow",
+itself a keyword; and Minors 5 and 6 are four sentences, one per point.
+
+The smoke run: row 6 found as finding 1 at `worker.js:28`; finding 2 at
+`worker.js:24` names a second producer that never reads depth, which is row 6's
+mechanism and not row 1's head-of-line blocking, though it draws on the line 22
+comment; none of rows 1 to 5 as a finding; no `Ceded:` block; paths clean.
+
+## Ruling AB: a line saying a file adds no work to a queue is not a report on it
+
+The smoke run wrote "`schema.sql` adds no work to a queue, so there are no
+findings for it." Read literally, the README's regression signal, "reports
+anything about `schema.sql`", counts that line as a regression.
+
+Ruled not a regression. The lens's Output section already tells it to say in
+one line when nothing adds work to a queue; the run applied that to one file. The
+line makes no claim about the file's contents and repeats no other pass's
+finding, which is what task 05's Risks section wanted the negative control to
+prove: that the lens "stays silent on a schema-only change". A finding, a
+cession, or any claim about what the file contains is still a regression.
+
+Not fixed in this round, because the round is closed and the fix is one clause in
+a test README, not in the lens. If the re-review judges the oracle's two readings
+Important, the task goes to the user as the fix loop requires, with this ruling
+attached.
+
+Cost if wrong: a future run that states one file is out of scope is misread as a
+pass or a failure. Caught by task 05's re-review, which is handed this line.
