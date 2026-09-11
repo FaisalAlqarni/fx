@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+"""ADR 0015's rule, made checkable: nothing fx tells an agent to write goes
+into the OS temp directory. `/tmp`, `$TMPDIR`, `${TMPDIR`, `%TEMP%`,
+`os.tmpdir` and `tmpdir` are all ways an instruction can point there.
+
+Only `skills/`, `agents/` and `commands/` are scanned. `scripts/` and
+`tests/` hold test scaffolding, not artifacts a user returns to, and legitimately
+build fixtures under a temp directory: see plan.md's scoping rule.
+
+A line tagged `artifact-gate: ok` is a deliberate exception, declared at the
+site rather than kept in an allowlist maintained somewhere else. ADR 0011
+records why fx does not maintain allowlists.
+"""
+import pathlib
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+MARKER = 'artifact-gate: ok'
+PATTERNS = ('/tmp', '$TMPDIR', '${TMPDIR', '%TEMP%', 'os.tmpdir', 'tmpdir')
+AREAS = ('skills', 'agents', 'commands')
+
+
+def files():
+    for area in AREAS:
+        base = ROOT / area
+        if not base.exists():
+            continue
+        for p in sorted(base.rglob('*')):
+            if p.is_file():
+                yield p
+
+
+def main():
+    hits = []
+    exempted = 0
+
+    for path in files():
+        rel = str(path.relative_to(ROOT))
+        try:
+            text = path.read_text()
+        except (UnicodeDecodeError, OSError):
+            continue
+        for n, line in enumerate(text.splitlines(), 1):
+            if not any(pat in line for pat in PATTERNS):
+                continue
+            if MARKER in line:
+                exempted += 1
+                continue
+            hits.append((rel, n))
+
+    print(f'{exempted} line(s) exempted by `{MARKER}`')
+
+    if not hits:
+        print('OK: nothing in skills/, agents/ or commands/ names the OS '
+              'temp directory')
+        return 0
+
+    by_file = {}
+    for rel, n in hits:
+        by_file.setdefault(rel, []).append(n)
+
+    print(f'FAIL: {len(hits)} line(s) across {len(by_file)} file(s) name the '
+          f'OS temp directory')
+    for rel, lines in sorted(by_file.items(), key=lambda kv: (-len(kv[1]), kv[0])):
+        for n in lines:
+            print(f'  {rel}:{n}')
+    print()
+    print('Move the write target into docs/plans/<slug>/ if a user returns to '
+          'it, or the ephemeral workspace under .fx/ if it is regenerable. '
+          f'Tag a deliberate exception with `{MARKER}` on that line.')
+    return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())
