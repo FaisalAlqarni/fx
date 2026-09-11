@@ -3195,3 +3195,83 @@ observations are the three already deferred: the "Lines" column, the cut
 
 Task 09 is complete. Eight of nine tasks are complete; task 08 waits on its fix
 round 1 re-review.
+
+Record committed `1e0a5c9`: the ledger and task 09's closing findings.
+
+## Task 08 fix round 1: all fifteen findings addressed, one new Important from Ruling AF
+
+Scoped re-review: **all fifteen original findings ADDRESSED.** Findings at
+`docs/plans/2026-09-11-fx-audit/findings/08-fix-round1-findings.md`. Its named
+risks, all run rather than read:
+
+- M10's way to start over exists, at `skills/fx-audit/SKILL.md:94`.
+- The one remaining "the target" is the fixed phrase "the target architecture".
+- An undeclared skill loads: the loader scans the default directory for installed
+  plugins too, and the installed fx 0.1.6 serves `fx-design` with no manifest
+  entry. Not observed for an installed build of this branch.
+- Across all seven post-move streams, subagents included: zero `find /`, zero
+  reads of settings, `installed_plugins`, `/proc` or `env`. The base-directory line
+  itself appears nowhere in any log, so its delivery is consistent with the
+  evidence, not proven by it.
+- The committed skill, its blob and the round 3 hash all match; the GREEN 3
+  before and after checksums match byte for byte.
+
+**N1, Important, verified at the installer.** `scripts/fx-opencode-install`
+symlinks `skills/` whole (lines 108-111) and generates commands only from
+`commands/*.md` (the loop after it). After Ruling AF, opencode receives the audit
+as a skill and no typed command. The reviewer found no `disable-model-invocation`
+string in the installed opencode binary, so it very likely becomes a skill the
+model can select, which is the per-turn cost `design.md:152-168` cites for not
+making the audit a lane. fx is not installed for opencode on this machine.
+
+**N2 to N5, Minor, each verified at the skill's lines:**
+
+- N2, lines 97-98: a differing `--against` asks which reference to use, but
+  choosing the new one would mean rewriting `01-current.md`, which lines 114-117
+  forbid.
+- N3, lines 83-88: a same-day directory with no `01-current.md`, from an
+  interrupted Phase 1, is not a candidate, so "None" creates a path that already
+  exists; `a/b` and `a-b` map to one name; an omitted scope and `.` differ.
+- N4, lines 109-110: resume state 4 holds when `03-gaps.md` does not exist, and it
+  comes before state 5, so a run stopped after Phase 1 or 2 asks the Phase 3 gate
+  question first.
+- N5, lines 184-185: at root scope the file set includes the audit's own
+  untracked documents under `docs/plans/<slug>/`.
+
+## Ruling AG: opencode's view of the audit is the user's decision
+
+Every fix for N1 changes something this plan cannot verify or did not approve:
+
+1. Generate an opencode command for every skill marked `disable-model-invocation`,
+   with reference and agent paths written as absolute paths at install time, and
+   link skills one by one so that skill is excluded. That changes the installer's
+   documented property that a whole-tree link lets `git pull` update skills, and
+   nothing can observe opencode's handling here.
+2. Revert Ruling AF. Claude Code's audit goes back to searching the filesystem for
+   its templates.
+3. Accept that on opencode the audit is a skill the model may select.
+
+**Holding position:** Ruling AF stands, because Claude Code is where the audit is
+proven to work, and the installer is not changed. N1 goes to the completion
+report under "Needs you" with these three options and the evidence.
+
+Cost if wrong: an opencode install pays a per-turn load for the audit until the
+user picks option 1 or 2. Caught by the user at the completion report.
+
+## Ruling AH: task 08 fix round 2 takes N2 to N5, and restores one dropped rule
+
+Round 1 addressed everything it was given, so this is a new round on what the
+round's own diff introduced. All four Minors change what an agent does, sit in the
+one file, and sit in resume and scope rules no live run has exercised beyond Phase
+1, so they join under Ruling AE's precedent. The re-review's one out-of-scope note
+also joins: round 1 dropped "fetches nothing" from Phase 4's report step, leaving
+Ruling AC stated only in the boundary, away from the step where an agent writes
+the file.
+
+Round 2 resumes the original implementer. One GREEN run and one resume run,
+because the slug and resume rules change.
+
+**Task 08 fix round 2:** dispatched, resume confirmed. The only writer. It carries
+N2 to N5 and the restored Ruling AC sentence, is told N1 and the installer are not
+its to touch, and must prove from the `fr2-` logs that a resume after the Phase 1
+gate does not ask the Phase 3 gate question.
