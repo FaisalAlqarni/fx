@@ -2031,3 +2031,175 @@ a wrong count and a contradictory field. That is the same class of defect this
 task's fix rounds exist to remove.
 
 Packaged at `.fx/2026-09-11-fx-audit/review/fe48167..e103db4.diff`.
+
+Record committed `41c0d7d`: the ledger and the task 04 and task 07 round 3
+findings, staged by name while no writer held the index.
+
+## Dispatched after 41c0d7d, each launch confirmed before this entry
+
+- **Task 07 fix round 4 scoped re-review**, mid tier, read-only, not to run
+  `check-all`. Asked to take the count from a finished two-target field and a
+  finished empty field, and handed the example lines inside the skeleton's fence
+  as a named risk.
+- **Task 04 fix round 1**, resuming the original implementer, which was reachable.
+  Carries the three Importants verbatim, requires refusal whenever git cannot
+  answer while a non-repository still starts, the ignore check after the
+  directories exist on the paths the server writes, documented starts that name
+  the project root, and refusal of the skill directory but not the plugin
+  repository root. Proofs run in scratch repositories under the job's own
+  directory, proven outside every repository. The only writer.
+
+Task 05's review is still running. Queued for the writer slot: task 06.
+
+## Task files 06 and 08 checked before their briefs, three corrections
+
+Checked against the repository while the writer slot is held.
+
+- **Task 06, ADR 0014, quoted recommendation: accurate.** ADR 0008's last
+  paragraph says to fold the app-layer material into `fx-lens-database`'s brief
+  "rather than paying a second dispatch for it". But the task was written before
+  Ruling U, so its brief must add that ADR 0014 records the measurement, the
+  narrowing to one hunt group, and the provisional keep with its reason.
+- **Task 06, ADR 0013, stack profiles: the task's claim is too strong.** It says
+  stack knowledge "loads only when the machine facts name it". That holds for
+  `fx-implement` at line 216 and `fx-tdd` at line 26, which load each entry in
+  `stacks`. It does not hold for `references/stacks/web.md`, which `fx-design`
+  cites at line 147 and `fx-review` adds as a second baseline at line 123 on their
+  own conditions. The brief tells the implementer to state the loading rule as the
+  files show it.
+- **Task 08, the probe project: moves out of `/var/tmp`.** The task builds its
+  scratch project at `/var/tmp/fx-audit-probe`. That is test scaffolding rather
+  than an fx artifact, so no constraint strictly forbids it, but it is a system
+  temp directory and the user's instruction on temp directories was emphatic. It
+  goes under the job's own directory instead, which `git rev-parse` confirms is
+  outside every repository. Cost if wrong: none, the path is scaffolding either
+  way.
+
+Task 08's brief also carries Ruling V's command half and the renaming of its
+codebase argument. Its probe runs through `--plugin-dir` against the working
+tree, so it is the first run that can dispatch `fx-lens-pipeline` by name; the
+brief asks it to record whether that dispatch resolved, if a run reaches Phase 3.
+
+## Task 07 fix round 4: both findings addressed, one new Important in the fix
+
+Scoped re-review: **both of Ruling X's findings ADDRESSED.** A two-target field
+and an empty field each yield their count one way only. Findings at
+`docs/plans/2026-09-11-fx-audit/findings/07-fix-round4-findings.md`. The
+implementer's two own concerns, targets joined with spaces and a 138-character
+placeholder line, were judged not defects, and I agree: the join is stated in the
+field and cannot change the count.
+
+**New Important, confirmed at the file.** The named risk held. The `03-gaps.md`
+skeleton is the fence from line 103 to 151, and lines 120 and 121 put two concrete
+invented targets inside it, with the bare line "None: the brief named no targets."
+at 126. Every other field in every skeleton is a bracketed placeholder or
+description prose. An author filling the skeleton literally produces a field with
+two invented entries and the empty-case line together: a count of 2 for a brief
+that may have named none, and a field that contradicts itself.
+
+The template already has the right form for a fallback. `01-current.md`'s
+**Areas not covered**, lines 60 to 63, quotes its "None" line inline inside the
+description prose, not as a bare line an author would copy.
+
+## Ruling Y: the worked example leaves the fence, and the fallback is quoted like its sibling
+
+1. Inside the `03-gaps.md` fence, the **Stated targets** field keeps its
+   description, the one bracketed placeholder entry line, the joining rule, and
+   the empty case, with "None: the brief named no targets." quoted inline in the
+   prose the way **Areas not covered** quotes its own, never as a bare line.
+2. The two-target example and the empty example move outside the fence, directly
+   after it, under the section's own prose, labelled as a worked example of a
+   finished field with the count each yields.
+3. The count line is unchanged.
+
+Cost if wrong: an example a reader must scroll past the skeleton to find. Caught
+by round 5's scoped re-review, which checks that copying the fence literally
+yields no invented target and no bare fallback line.
+
+**This is round 5, the last the fix loop allows.** A fresh implementer on the top
+tier. If its re-review does not close the task, the task goes to the user rather
+than to a sixth round. Queued for the writer slot behind task 04's fix round 1,
+and ahead of task 06, because task 08 waits on task 07.
+
+## Task 05: review needs fixes, both Importants verified
+
+Task reviewer: **Needs fixes. 0 Critical, 2 Important, 9 Minor, 5 cannot-verify.**
+Findings at `docs/plans/2026-09-11-fx-audit/findings/05-lens-pipeline-findings.md`.
+It confirmed the record is intact: key rows hash identical to `d496d1e`, fixture
+unchanged, subject copy identical, no trailer on any of the six commits.
+
+**Important 1, confirmed at the file.** `tests/lens-pipeline/KEY.md:9-17` cites
+the measurement and never says the keep is provisional. Ruling U requires it of
+every place that cites the evidence. `README.md:35-38` does say it.
+
+**Important 2, confirmed at the lines it rests on.** The `Ceded:` block tells the
+lens to list every other defect it notices, one line each, and the smoke brief
+asked for nothing about cessions, so the 13 ceded lines came from the lens
+wording. `skills/fx-review/SKILL.md:188` presents each pass "verbatim or lightly
+cleaned" and `:199` says "Never merge findings across axes", so every ceded line
+shows a second time under the pipeline heading and may not be merged away. The
+existing lenses allow one unslotted line and no more:
+`agents/fx-lens-database.md:30-31`, `agents/fx-lens-security.md:32-33`. It is the
+double report task 05's own Risks section names, moved into a new slot. My round
+4 brief asked the lens to cede groups 1 to 5 "the same way it already cedes to
+other lenses" without saying where that line goes, which left room for the block,
+and I handed the block to the review as a question instead of judging it in my
+own verification.
+
+## Ruling Z: task 05 fix round 5, its scope and the `schema.sql` criterion
+
+1. **Both Importants are fixed.** `KEY.md`'s status section says the keep is
+   provisional and why. The `Ceded:` block, its instruction, its template lines
+   and its red flag go; defects owned by another pass are left out of the output.
+   The ceding rules stay as the boundary statement they were.
+2. **Four Minors join the round,** because they sit in the lines the fix rewrites
+   or the fix alone would leave them contradicting it, the precedent of Ruling I:
+   Minor 2, the keywords `rescue` and `re-raise` in the lens body, against the
+   user's rule that the plugin is not stack-shaped; Minor 3, work enqueued inside
+   a transaction named as `fx-lens-database`'s, as `design.md` and that lens
+   already say; Minor 4, the README and key disagreeing on `schema.sql`; Minor 7,
+   the schema-shaped red flag, generalised to a file that adds no work to a queue.
+3. **Minors 5 and 6 join too, in the README only.** The README is where the
+   measurement is summarised, and it omits that the correctness pass stood in for
+   `/code-review`, that the lens was read through a brief, and disclosures 2 and 4
+   of the measurement record, which leave group 1's drop the weakest-backed. One
+   sentence each. The same four go into ADR 0014 under task 06.
+4. **The task's `schema.sql` criterion binds again:** the lens reports nothing
+   about `schema.sql`. The reviewer is right that my acceptance of "at most a
+   one-line cession" was never a ruling. With no cession channel it is also the
+   natural result. The key's negative-control paragraph, outside the six rows, is
+   aligned to it.
+5. **One blind smoke run** on the changed lens, same brief and subject copy:
+   row 6 found, none of rows 1 to 5 as a finding, nothing about `schema.sql`. A
+   miss stops the round and is reported, not tuned.
+6. **Deferred to the final review:** Minor 1, the performance paragraph reading
+   as exhaustive; Minor 8, triggers that miss diffs slowing consumers; Minor 9, a
+   Critical tier that most scheduled producers meet by default.
+
+Cost if wrong: a stricter lens than its siblings, which may omit one line a
+reader would have wanted. Caught by round 5's scoped re-review and the smoke run.
+
+This is round 5 on task 05, the last the fix loop allows, after four rounds under
+Rulings O, Q, R and U. A fresh implementer on the top tier. If the re-review does
+not close it, it goes to the user. Queued behind task 07's round 5.
+
+## Ruling AA: in the audit, queue correctness beyond unbounded enqueue has no pass
+
+The lens cedes head-of-line blocking, redelivery, poison messages, lease timing
+and retry jitter to the correctness and adversarial passes branch review runs. The
+audit's Phase 3 dispatches only this lens and `fx-architecture`, so in an audit
+those passes do not exist. That follows from Ruling U; it is not a wording defect
+in task 05.
+
+Not fixed by adding a pass to the audit: that changes the design the user approved
+("and no other lens"), and costs a dispatch the user was never shown. Instead:
+
+- **Task 08's command states it** as part of its boundary: the gap report judges
+  queue behaviour beyond unbounded enqueue only as far as the phase's own reading
+  reaches, with no dedicated pass behind it.
+- **ADR 0014 records it** as a cost of narrowing.
+- **The completion report parks it for the user** as a decision: add an
+  adversarial pass over the file set to Phase 3, or accept the gap.
+
+Cost if wrong: an audit that misses a queue defect a dedicated pass would have
+caught, stated rather than hidden. Caught by the user at the completion report.
