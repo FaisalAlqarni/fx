@@ -108,20 +108,32 @@ one exists.
 **Compared against:** the current system alone, or the current system against
 the named reference.
 **Stated targets:** every target named in the brief the audit was invoked
-with, quoted verbatim, one per line, each line followed by where it came
-from: the invocation text itself, or the path of a file the user pointed to.
-Quoted, never paraphrased or summarized. A brief that named no targets still
-gets this field, written as: "None: the brief named no targets."
+with, one entry line per target. An entry line holds one target and its
+source together on a single line, in this form and no other:
+
+- "<the target, quoted verbatim, never paraphrased or summarized>" from <the invocation text, or the path of the file the user pointed to>
+
+A target that runs across several lines in the brief is joined onto its one
+entry line with spaces. A brief naming two targets gives exactly two entry
+lines:
+
+- "Adding a payment provider touches one module" from the invocation text
+- "Refunds settle within one business day" from docs/payments-brief.md
+
+A brief that named no targets gives no entry lines. The field then holds this
+one line, which is not an entry line and counts as zero targets:
+
+None: the brief named no targets.
 
 ## Verdict table
 
 **Feature count:** <N> features and business rules listed in
 `01-current.md`'s feature and business-rule inventory, plus `02-reference.md`'s
-when a reference run exists. **Target count:** <N>, the number of target
-lines recorded in this report's own **Stated targets** field above, not a
-count composed for this table. **Row count:** <N> rows below. The row count
-must equal feature count plus target count: a shortfall means one was
-silently dropped from the table.
+when a reference run exists. **Target count:** <N>, the number of entry lines
+in this report's own **Stated targets** field above, one per target, so a
+field with no entry lines gives 0. Never a count composed for this table.
+**Row count:** <N> rows below. The row count must equal feature count plus
+target count: a shortfall means one was silently dropped from the table.
 
 One row per feature and per stated target. Every row carries a file and a
 line: a verdict without one is an opinion, not a finding. Rows are ordered
