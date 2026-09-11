@@ -3669,3 +3669,118 @@ never by a second fix wave.
 `85de0ee`, "sound only from checks that ran, finished documents only, and a
 reference confirmed before use". No fallback needed. Its `check-all` and report
 remain.
+
+## Fix wave: finished and verified
+
+The implementer reports all 23 items done, the lens smoke run passed so the lens
+edit stays, the GREEN and resume probes each passed on the first attempt, and
+`check-all` exited 0. Report at `.fx/2026-09-11-fx-audit/reports/final-fix-wave-report.md`.
+
+Verified from git: exactly five commits follow `c48dc50`, each the child of the
+one before, with no trailer: `91084e6` gates, `6d7c7d7` companion, `a13597a`
+review worktrees, `1b447bc` ADRs and names, `85de0ee` the audit skill, template
+and lens. They touch the 14 files the items name and nothing else.
+
+**Departures it reported:** `git worktree remove --force`, since a plain remove
+refuses a worktree holding untracked files, and a stop when a directory that is
+not a registered worktree sits at the reference path; sound needs an `Unread:`
+line naming no file in the file set, not a literal "none", because the smoke run
+listed modules outside the set; `fx-authoring`'s repeated wording tests not run;
+Phases 3 and 4 still never run live.
+
+**The fixture count.** 66 `/tmp/fx-fixture-*` directories exist now, 57 before
+the final review. The rise is consistent with the wave's own failing checks run
+before its fix and with reviewers' scratch runs. The implementer says `check-all`
+now leaves none; the re-review counts before and after one run to prove it.
+
+## Ruling AK: the companion's older exclude-file step is parked, not rewritten
+
+The wave writes `.fx/.gitignore` containing `*` before any session file, but after
+the older step that appends `.fx/` to the repository's local exclude file. With
+the new file in place, that step is redundant, and it can still refuse a start
+the new file alone would make safe, for example when `.git` is read-only.
+
+Parked, because `fx-implement` allows one fix wave and this one is spent, and
+because the defect fails closed: it can refuse a safe start, and it cannot make a
+session file committable. It goes to the completion report beside coverage R2,
+the exclude-file write no story states, since removing the step would settle
+both.
+
+Cost if wrong: a user with an unwritable `.git` is refused a start that was safe.
+Caught by the scoped re-review, which is told to report it only if it is worse
+than that, and by the user.
+
+Record committed `0da96cd`: the ledger, the seven final-review findings files and
+the completion report draft.
+
+**The one scoped re-review:** dispatched, launch confirmed. Top tier, read-only.
+Told to run the checks rather than read them: `check-prose` beside a nested
+worktree, `/tmp` fixtures counted around one `check-all` and around `test_one` and
+`setup`, `check-artifacts` on a binary file, five companion scenarios including a
+project with no `.git` and an unwritable exclude file, the review worktree
+commands, the reference commands with a value holding a command substitution, an
+existing reference worktree both registered and not, the lens diff and the smoke
+run scored against the key, and the probe logs. No second fix wave follows it.
+
+## The re-review: all 23 items addressed, no new Critical or Important breakage
+
+Findings at `docs/plans/2026-09-11-fx-audit/findings/final-fix-wave-rereview.md`.
+Checks it ran, not read:
+
+- `check-prose` with no path passes beside nested worktrees and still fails on a
+  real file.
+- `/tmp/fx-fixture-*` stayed at 66 through `check-all`, `test_one` and `setup`.
+- `check-artifacts` skips a binary file and still fails on a real temp path.
+- The companion: nothing under `.fx` staged after `git init && git add -A` in a
+  project with no `.git`; symbolic links at every level of the state path
+  refused with nothing created outside; git missing refused by name; restart
+  reuses port and key; an unwritable exclude file refused, exactly Ruling AK's
+  case and nothing worse.
+- The review worktree commands, in order, from the root, a subdirectory and a
+  build worktree.
+- A reference holding `$(touch pwned)` neither runs nor resolves; with the double
+  quotes at `c48dc50` the file was created.
+- The lens diff touches only its Input section and the added `Unread:` paragraph;
+  the fixture and key rows are unchanged since `d496d1e`; its own scoring of the
+  smoke run matches.
+
+## Ruling AL: the fix wave's residuals are parked
+
+There is no second fix wave. Parked for the completion report, each Minor:
+
+- `scripts/check-prose` given an explicit relative path containing `.worktrees/`
+  skips the file with an OK; the no-path run item 17 fixed is correct.
+- **R1:** the soundness check at `skills/fx-audit/SKILL.md:275-276` does not say that
+  a lens output with no `Unread:` line fails it.
+- **R2:** a reference worktree deleted by hand still lists its commit, so it matches
+  the reuse rule at `:199` before the missing clause; the Phase 2 gate's plain
+  `git worktree remove` at `:218` fails when a stray file is left inside.
+- **R3:** `skills/fx-review/reviewer-prompt.md:67` uses a plain `remove` with the same
+  failure and no next step.
+- Observations outside the diff: Phase 3's architecture report reaches the slug
+  directory before `03-gaps.md` is finished; with `--separate-git-dir` the
+  repository name is the git directory's parent; `start-server.sh:3`, `:9` and
+  `:156` still say `<plan-slug>`; "draft" names both a directory and a Status;
+  `--end-of-options` on an older git fails safe by not resolving.
+
+Cost if wrong: each is a Minor gap a user may hit before a later change closes it.
+Caught by the user, who sees every one in the completion report.
+
+## Exit gate, run fresh
+
+```
+scripts/check-all          exit 0, ALL GREEN: manifest, 55 citations, reference
+                           leaves, prose, artifacts; suites 80, 27, 13 and 17
+                           passed, 0 failed; /tmp fixtures 66 before and after
+scripts/check-collisions   exit 1, expected under Ruling A: candidates in
+                           ~/.agents/skills, outside this repository, including
+                           postgres, tdd, to-spec, to-tickets, ui-ux-pro-max,
+                           wayfinder and writing-for-agents
+```
+
+No CI exists to run beyond these, by ADR 0012.
+
+The completion report is final at `completion-report.md`, and the decisions are
+laid out with their evidence in `report-20260912-decisions.html`, a local file with
+inline styles and no external request. The integration question goes to the user,
+and the base branch does not move until they answer.

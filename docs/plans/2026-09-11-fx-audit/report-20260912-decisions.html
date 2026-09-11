@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>fx-audit decisions</title>
+<style>
+  :root {
+    --bg: #fbfaf7; --fg: #1d1d1b; --muted: #66655f; --rule: #dedbd2;
+    --panel: #ffffff; --ok: #1f6f43; --warn: #8a5a00; --accent: #2b4c7e;
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151514; --fg: #e9e7e1; --muted: #a09e96; --rule: #34332f;
+      --panel: #1d1d1b; --ok: #6cc394; --warn: #e3b45c; --accent: #8fb0e3;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; padding: 2.5rem 1rem 4rem; }
+  main { max-width: 58rem; margin: 0 auto; }
+  h1 { font-size: 1.6rem; line-height: 1.25; margin: 0 0 .4rem; }
+  h2 { font-size: 1.1rem; margin: 2.4rem 0 .6rem; padding-top: 1rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1rem; margin: 0 0 .4rem; }
+  p { margin: .5rem 0; max-width: 72ch; }
+  .lede { color: var(--muted); margin-bottom: 1.4rem; }
+  code { font-family: var(--mono); font-size: .88em; }
+  .status { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .7rem; margin: 1rem 0; }
+  .card { background: var(--panel); border: 1px solid var(--rule); padding: .8rem 1rem; }
+  .card b { display: block; font-size: 1.05rem; }
+  .card .ok { color: var(--ok); font-weight: 600; }
+  .card .warn { color: var(--warn); font-weight: 600; }
+  .decision { background: var(--panel); border: 1px solid var(--rule); border-left: 4px solid var(--accent); padding: .9rem 1.1rem; margin: .9rem 0; }
+  .decision .evidence { color: var(--muted); font-size: .93rem; }
+  ul { margin: .4rem 0 .4rem 1.2rem; padding: 0; }
+  li { margin: .25rem 0; }
+  ol.options { margin: .5rem 0 .5rem 1.4rem; }
+  .note { border-left: 4px solid var(--warn); background: var(--panel); padding: .7rem 1rem; margin: .8rem 0; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>fx-audit: what shipped, and what needs your decision</h1>
+<p class="lede">Branch <code>fx-audit</code> in <code>/development/fx/.worktrees/fx-audit</code>, 2026-09-12. Base <code>main</code> at <code>8309b63</code>. The full record is <code>completion-report.md</code> and <code>state.md</code> beside this file.</p>
+
+<div class="status">
+  <div class="card"><b>9 of 9 tasks</b><span class="ok">complete</span>, each closed by a review</div>
+  <div class="card"><b>Final review</b><span class="ok">7 passes, 1 fix wave</span>, 23 items addressed on re-review</div>
+  <div class="card"><b>check-all</b><span class="ok">exit 0, ALL GREEN</span>, suites 80, 27, 13, 17 passed</div>
+  <div class="card"><b>check-collisions</b><span class="warn">exit 1, expected</span>, skills outside this repository</div>
+</div>
+
+<h2>Decisions only you can make</h2>
+
+<div class="decision">
+  <h3>1. May HTML reports load scripts from CDNs?</h3>
+  <p>The approved design says two things that cannot both hold. <code>design.md:285-287</code> keeps reports small by loading Tailwind and Mermaid from CDNs. Its global constraint forbids any request to a third-party host from anything fx renders.</p>
+  <p class="evidence">Today: the audit's own report fetches nothing. <code>skills/fx-architecture/HTML-REPORT.md:45-47</code> still loads two CDN scripts, and reports are now committed, so anyone who opens one later makes those requests. Ruling AC.</p>
+</div>
+
+<div class="decision">
+  <h3>2. Rename the command files, or keep the longer names?</h3>
+  <p>Claude Code names a plugin command after its file, so every fx command resolves as <code>/fx:fx-&lt;name&gt;</code>. The README had always promised <code>/fx:&lt;name&gt;</code>, which returns "Unknown command".</p>
+  <p class="evidence">Evidence: the <code>slash_commands</code> list in every probe session's init event; "Unknown command: /fx:audit" in two probe logs. Every document now states the names that resolve. Renaming the files changes what you type for four existing commands. Ruling AD.</p>
+</div>
+
+<div class="decision">
+  <h3>3. Keep the audit as a skill, and what to do on opencode</h3>
+  <p>A plugin command is never told where its plugin lives, so the first audit command searched the whole filesystem for its templates, reading settings and process information on the way. A skill is told its base directory, so the audit became a skill only you can invoke. It still types as <code>/fx:fx-audit</code> and costs nothing per turn.</p>
+  <p class="evidence">On opencode, the installer links skills wholesale and builds commands only from <code>commands/</code>. So there the audit has no typed command, and the model may be able to select it. Options: change the installer, which ends "git pull updates skills"; revert the skill, which brings back the filesystem search; or accept it. Rulings AF and AG. Nothing on opencode could be tested here.</p>
+</div>
+
+<div class="decision">
+  <h3>4. Add a dedicated pass for queue behaviour inside an audit?</h3>
+  <p>The measurement narrowed the pipeline lens to one defect: work added to a queue with nothing checking the backlog. The other queue defects, such as head-of-line blocking, redelivery, poison messages, lease timing and retry jitter, are left to the reviewers branch review runs. An audit runs neither of those.</p>
+  <p class="evidence">The audit now says plainly that it judges those only as far as its own reading reaches. Ruling AA; measurement in <code>measurement-task05.md</code>, provisional because the control omitted the broad reviewer.</p>
+</div>
+
+<div class="decision">
+  <h3>5. Remove the companion's exclude-file step?</h3>
+  <p>The companion now writes <code>.fx/.gitignore</code> containing <code>*</code>, which keeps the session key ignored even before <code>git init</code>. Its older step, which appends <code>.fx/</code> to the repository's local exclude file, is now redundant and can refuse a safe start when <code>.git</code> cannot be written.</p>
+  <p class="evidence">It fails closed and never exposes the key; the re-review ran the unwritable case. Removing it also stops the companion writing to your repository's exclude file, which no design story states. Ruling AK.</p>
+</div>
+
+<div class="decision">
+  <h3>6. When to bump the plugin version</h3>
+  <p>The plugin is still at <code>0.1.6</code>. Installs are cached by version, so existing users get nothing from this branch until it changes. Every earlier release commit bumped it.</p>
+</div>
+
+<div class="decision">
+  <h3>7. Remove the leftover test fixtures?</h3>
+  <p>66 <code>/tmp/fx-fixture-*</code> directories remain from runs before the fix, some possibly from other jobs. Nothing adds to them now; the exit gate's <code>check-all</code> left the count unchanged. They are removed only with your say-so.</p>
+</div>
+
+<div class="note"><b>Not delivered, and not claimed to be:</b> design stories 18 to 22 are superseded by the measurement. The lens has never been dispatched by its name, and Phases 3 and 4 of the audit have never run live.</div>
+
+<h2>What happens to the branch</h2>
+<p>The base branch does not move until you choose one:</p>
+<ol class="options">
+  <li>Merge it into <code>main</code> locally</li>
+  <li>Push the branch and open a pull request</li>
+  <li>Leave it as it is, you will handle it</li>
+  <li>Discard it</li>
+</ol>
+
+</main>
+</body>
+</html>
