@@ -2158,8 +2158,12 @@ own verification.
    or the fix alone would leave them contradicting it, the precedent of Ruling I:
    Minor 2, the keywords `rescue` and `re-raise` in the lens body, against the
    user's rule that the plugin is not stack-shaped; Minor 3, work enqueued inside
-   a transaction named as `fx-lens-database`'s, as `design.md` and that lens
-   already say; Minor 4, the README and key disagreeing on `schema.sql`; Minor 7,
+   a transaction named as `fx-lens-database`'s, ~~as `design.md` and that lens
+   already say~~ *(struck in place: that lens hunts it, at
+   `agents/fx-lens-database.md:78-80`, but `design.md:231-234` says the opposite,
+   "reported here and the brief says the database lens sees it too". So this
+   narrows the design rather than following it, and belongs beside stories 18 to
+   22. Caught by the coverage audit.)*; Minor 4, the README and key disagreeing on `schema.sql`; Minor 7,
    the schema-shaped red flag, generalised to a file that adds no work to a queue.
 3. **Minors 5 and 6 join too, in the README only.** The README is where the
    measurement is summarised, and it omits that the correctness pass stood in for
@@ -2550,3 +2554,178 @@ Findings at `docs/plans/2026-09-11-fx-audit/findings/05-fix-round5-findings.md`.
 
 Task 05 is complete, at the fifth and last round. The lens ships narrowed to one
 hunt group and provisional, as the user decided.
+
+## Task 06: landed and verified
+
+Commit `cbfb8eb`, three files under `docs/adr/`, +128 and no deletions, no
+trailer, parent `eb4bd91`. Verified myself:
+
+```
+ADR 0008 numstat          1 0, one added line, nothing removed
+ADR 0014 numbers          lens 5 of 5 on all six; control 5 of 5 on groups 1 to 4,
+                          3 or 5 of 5 on group 5, 0 of 5 on group 6: as measured
+ADR 0014 records          provisional status and reason, the four qualifications,
+                          the audit gap from Ruling AA, branch mode for the dispatch cost
+ADR 0013 loading rule     both rules stated: stacks entries for fx-implement and
+                          fx-tdd, web.md on the work for fx-design and fx-review
+check-prose docs/adr      exit 0
+```
+
+The implementer substituted its own failing test, because the task's RED was not
+one, and said so.
+
+**Finding outside every task, reproduced by me:** `python3 scripts/check-prose`
+given a path that does not exist prints its OK line and exits 0. A mistyped path
+passes the prose gate silently. It goes to the completion report beside the
+gate's other two blind spots, prose after a `markdown`-tagged fence closer and
+code files on a directory walk.
+
+Packaged at `.fx/2026-09-11-fx-audit/review/eb4bd91..cbfb8eb.diff`.
+
+Record committed `25b24b8`: the ledger and task 05's closing findings.
+
+## Dispatched after 25b24b8, each launch confirmed before this entry
+
+- **Task 06 review**, mid tier, read-only, not to run `check-all`. Handed the
+  ledger requirements its brief carried, and eight named risks: every ADR 0014
+  number, whether "superseded in part" is accurate when the narrowed lens hunts
+  none of ADR 0008's listed items, Phase 3 claims about a command not yet built,
+  the unsourced-looking claim about `/code-review`, the loading rule against the
+  four skill lines, citation and shape, the substituted RED, and the unwrapped
+  line.
+- **Task 08**, top tier, the only writer. Its brief carries every correction the
+  ledger holds for it: Ruling V's command half and the renamed codebase
+  argument, `fx-architecture` as a bounded skill invocation, Ruling AA's
+  boundary, the template's three fences, the exclude-file precedent for
+  `.worktrees/`, the probe under the job's directory with `--plugin-dir` on the
+  worktree, `--max-turns` to be confirmed from a real run, which fx copy served
+  each run, containment checks after every nested session, three GREEN attempts
+  at most, and the citation count moving from 53 to 55.
+
+Queued for the writer slot: task 09.
+
+## Coverage audit dispatched early, and the exit gate defined
+
+**Coverage audit:** dispatched, launch confirmed. Top tier, read-only, one
+question: does the design commit to any behaviour no task criterion or ruling
+carries. It reads design, plan, all nine task files and the ledger's rulings, not
+the implementation, so it does not need tasks 08 and 09 to be finished, and
+running it now means a finding can still amend task 09's brief before dispatch.
+Told what is already recorded, stories 18 to 22 under Ruling U and the audit gap
+under Ruling AA, so neither returns as a discovery. Task 09 waits for its result
+as well as for task 08.
+
+**The exit gate, checked:** there is no CI configuration in this repository, no
+`.github/`, no task runner. That is deliberate and recorded:
+`docs/adr/0012-what-fx-deliberately-does-not-cover.md:23`, "No CI", with the gates
+run by hand. So the exit gate is a fresh `scripts/check-all`, every exit code
+read, plus `scripts/check-collisions` run and reported with its expected red and
+the reason from Ruling A, rather than silently left out.
+
+## Task 06: review needs fixes, one Important verified
+
+Task reviewer: **Needs fixes. 0 Critical, 1 Important, 1 Minor, 3 cannot-verify.**
+Findings at `docs/plans/2026-09-11-fx-audit/findings/06-adrs-findings.md`. Every
+number in ADR 0014 was checked against `measurement-task05.md` line by line and
+matches; ADR 0013's loading rule matches all four skill lines; the substituted
+RED is valid.
+
+**Important, verified against text already in this session.** ADR 0008's added
+line reads "queue backpressure got its own lens, `fx-lens-pipeline`, instead of a
+section in `fx-lens-database`'s brief, and the other items listed here stay
+uncovered." "The other items" makes queue backpressure one of ADR 0008's listed
+gap items. It is not: that list is jobs enqueued per record, N+1 inside view
+partials, missing batched iteration, cache-key churn, `AsNoTracking` and
+client-side evaluation. ADR 0014:43-45 says the narrowed lens hunts none of them.
+The two records disagree about what changed. What 0014 actually overrides is
+0008's principle, fold app-layer material into the database lens rather than pay
+a second dispatch, for one concern that 0008 never listed.
+
+**Minor, joining the round because it is the same line:** the added line is 229
+characters, unwrapped, in a file wrapped near 80. Wrapping it keeps the change
+additions only.
+
+**The three cannot-verify items, resolved:**
+
+- `check-all` exit 0 is taken from the report; the exit gate runs it fresh.
+- ADR 0014:75-82 describes the audit's Phase 3 before task 08 builds it. Every
+  clause traces to `design.md:187-189` and `:216-220` or Ruling AA. **Task 08's
+  review is handed these lines** and checks the command matches them.
+- The claim that a dispatched agent cannot invoke `/code-review` is sourced at
+  `state.md:1219-1220` and the test README. Cleared.
+
+**Fix round 1:** the added line states the part superseded accurately, keeps
+"superseded in part" as the design worded it, removes nothing from ADR 0008, and
+is wrapped. Proven with `git diff --numstat` showing no deletion against the
+parent of `cbfb8eb`. It resumes the original implementer, falling back to a fresh
+one, and is queued for the writer slot behind task 08 and ahead of task 09.
+
+## Coverage audit: 87 commitments checked, 10 uncarried, each verified at its source
+
+Findings at `docs/plans/2026-09-11-fx-audit/findings/coverage-audit.md`. It
+confirmed the ledger already records stories 18 to 22 as superseded and Ruling AA
+as parked. Every item below was checked against the file it cites before any
+ruling.
+
+**Amended into task 08, all verified:**
+
+1. **The command costs nothing per turn** (`design.md:165`). Nothing requires it.
+   `skills/fx-authoring/SKILL.md:292-297` states the mechanism: a user-invoked
+   entry carries `disable-model-invocation: true`, otherwise it is a "permanent
+   context load, every turn". None of the five commands carries it. The four
+   that predate this plan go to the completion report.
+2. **Resume after a sound verdict** writes no `design.md`, so a re-run would redo
+   Phase 4; nothing says how a re-run finds its slug directory.
+3. **Reports are committed** (`design.md:285`), but nothing commits them or tells
+   the user they are untracked. The command must not commit, since it may run on
+   the user's base branch.
+4. **`fx-plan` needs an approved design** (`skills/fx-plan/SKILL.md:15-16`). The
+   template's Status line reads `ready-for-agent`, and approval happens at a gate,
+   so Phase 4's gate is where `design.md` is approved.
+5. **Glossary terms and uncovered areas:** nothing names where terms come from,
+   and an area no explorer was assigned never reaches **Areas not covered**.
+
+## Ruling AC: the design contradicts itself on report assets, and the user decides
+
+`design.md:285-287`: reports "stay small because the styling and diagram
+libraries load from content delivery networks". `design.md:378-379`, a global
+constraint: "no request to a third-party host from anything fx renders". Both
+were approved. `skills/fx-architecture/HTML-REPORT.md:45-47` loads Tailwind and
+Mermaid from CDNs, which predates this branch and which the design's section kept.
+
+**Holding position until the user decides:** new work on this branch follows the
+global constraint, so task 08's own report makes no third-party request, using
+inline styles and diagrams as text or inline SVG. `HTML-REPORT.md` is not
+rewritten in this plan: that is a change to a shipped skill's output the design
+itself chose. The question goes to the user first under "Needs you".
+
+Cost if wrong: either an audit report plainer than the architecture report, if
+the user accepts CDNs, or a shipped skill still loading two CDN scripts until
+rewritten, if not. Caught by the user at the completion report.
+
+**The rest, ruled:**
+
+- **Item 3, "never per task" (story 23):** carried in practice.
+  `skills/fx-implement/SKILL.md:450-451` names the four original lenses for
+  per-task dispatch, so the pipeline lens is not dispatched per task. It still
+  rests on a list rather than on the Mode column. Minor, to the final review.
+- **Item 4, story 26, the category rule "where I will find it":** ADR 0013
+  exists; nothing in `fx-authoring` points at it. Adding a line changes a lane's
+  behaviour, which this plan does not measure. Parked for the completion report.
+- **Item 5, the two ownership rules at `design.md:229-234`:** a job enqueued per
+  record and work enqueued inside a transaction were to be reported by the
+  pipeline lens. The narrowed lens cedes both. They join stories 18 to 22 as
+  superseded by Ruling U. Ruling Z's claim about the design is struck in place.
+- **Item 8, review worktrees from task 03:** `.worktrees/review-<SHA>` is created
+  with no ignore check and no removal, while task 08 carries both for its own
+  worktree. To the final review as an item it must triage before merge.
+- **R1:** `lib/plan-state.js` reads at most 20 plan directories, already deferred.
+- **R2:** the companion now writes the project's local exclude file and refuses to
+  start in some repositories, which no story states. To the completion report.
+
+**Task 08 amended mid-run:** the five task 08 items and Ruling AC's holding
+position were sent to its running implementer, and the send returned queued for
+delivery at its next tool round. Queued, not yet confirmed read. Cheaper than a
+fix round that re-runs its probe sessions. Its report must carry the six as their
+own section, and task 08's review is handed them as requirements whether or not
+the message landed before its commit.
