@@ -20,7 +20,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 EXEMPT = ('skills/fx-humanize/', 'references/testing/', 'upstream/', '.git/',
-          'scripts/check-prose', 'lib/fix-dashes.test.py',
+          '.fx/', 'scripts/check-prose', 'lib/fix-dashes.test.py',
           # Anthropic's own skill-authoring guide, carried verbatim. Editing its
           # prose would make it a local fork of a document whose value is that
           # it is not one.
