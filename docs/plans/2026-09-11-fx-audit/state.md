@@ -747,3 +747,729 @@ I applied the marker to both blocks myself.
 
 **The migration surface was therefore 3 files, not 5**, plus the ledger, which
 nobody but me could fix.
+
+## Ruling M: tasks 05 and 07 run concurrently; task 04 does not
+
+The serial-implementer rule's stated reason is a shared test environment, one
+Postgres and one broker set, where a worktree is a second checkout rather than
+a second database. This repository has neither, and the one genuinely shared
+resource was the fixture directory, which Ruling I made unique per process.
+This repository's own earlier ledger made the same call for its tasks 02 to 07.
+
+**05 and 07 share no file.** 05 writes a new agent, `tests/lens-pipeline/` and
+`skills/fx-review/SKILL.md`. 07 writes one new reference. Dispatched together.
+
+**04 is held back, and the reason is specific rather than cautious.** It
+modifies `scripts/check-all`, which is the command 05 and 07 both run to verify
+themselves. Editing the gate underneath them produces exactly the false RED and
+false GREEN the serial rule exists to prevent, and unlike the database
+justification, that one applies here. 04 goes after they land.
+
+Residual risk, disclosed: 07 creates a file under `references/`, which
+`check-paths` and `check-reference-leaves` read, so 05 could observe it
+half-written. Both briefs are told that a gate failure naming a file outside
+their own set is to be re-run once before it is believed, and that they must
+not fix another task's file.
+
+Cost if wrong: one confusing gate failure and a re-run. Caught by each task's
+own review, which sees the final state rather than the transient one.
+
+## Task 07: landed, verified, under review
+
+Commit `7d39c0b`, one new file, `references/audit-template.md`, 176 lines with
+a table of contents at line 9, which the over-100-lines rule requires.
+
+Verified myself against the criteria most likely to be written around:
+
+```
+grep design-template   no match        the leaf rule holds by construction
+check-reference-leaves exit=0          no reference links to another
+check-prose            exit=0          0 blocks needed the marker
+headings               Areas not covered present in both map skeletons
+```
+
+**I repeated my own recorded mistake.** Two rounds ago I wrote the rule that a
+review package's base is the commit's own parent whenever anything else landed
+in between. I then packaged this task from its task-start BASE and swept in my
+own ledger commit: 2 commits and 56,373 bytes where the real change is 1 commit.
+I had filed that lesson under fix rounds and not under task commits, which is
+the narrower generalisation failing exactly the way a grep generalised past its
+scope does. Repackaged from `f581282`.
+
+The rule, stated once and without the qualifier that let me miss it: **a review
+package's base is the reviewed commit's own parent, unless nothing else landed
+in between.**
+
+## Task 01 round 4: marker design sound, one Critical in the implementation
+
+Re-review: the redesign is **ADDRESSED**. The density check and the masking
+helper are gone, the marker is a plain substring test at `scripts/check-prose:172`,
+and the exemption reaches only the vocabulary scan. It also ran the case my
+brief predicted and found the gap **absent**: the dash check and the
+parenthesis check both still run on marked blocks.
+
+Then it found the case nobody had run, and I reproduced it before accepting it:
+
+```
+line 1   an unmarked genuine violation
+lines 2-6   a real code fence
+line 7   a line carrying the marker
+
+with the marker:     exit=0   violation laundered
+without the marker:  exit=1   violation caught
+```
+
+**Cause, at `scripts/check-prose:174`:**
+`marked_lines.update(range(start, start + len(block.splitlines())))`.
+`blocks()` drops fenced lines from a paragraph's joined text while still merging
+the prose either side into one block, so the joined line count is shorter than
+the true physical span. The range therefore lands on the wrong physical lines,
+and because it always begins at `start`, the paragraph's first physical line is
+exempted no matter where the marker actually sits.
+
+**This is the opposite failure direction from the one the design commits to.**
+Ruling L accepted false positives as the cost of the marker. This produces a
+false negative, and it is reachable by an ordinary shape: sentence, fence,
+sentence, with no blank lines. The round 4 report is itself written that way.
+
+**Deviation, disclosed: round 4 should have used a fresh implementer on a more
+capable model and did not.** The fix loop says rounds 1 to 3 resume the original
+and rounds 4 to 5 use a fresh one a tier up, on the reasoning that a loop
+surviving three resumes usually means the implementer cannot see its own
+problem. I resumed the original for round 4 without noticing the rule changed at
+that boundary. Round 4 did produce a sound redesign, so the deviation did not
+cost the outcome, and it stays recorded rather than excused.
+
+Round 5 corrects it: **fresh implementer, one tier up.** This is the cap. If it
+does not close, I adjudicate rather than opening a sixth.
+
+**Blocked on task 05.** Round 5 edits `check-prose`, and task 05 runs
+`check-all` as its final verification step. Same reason task 04 is held.
+
+## Task 07: review needs fixes, both Importants verified
+
+Review: **Needs fixes. 0 Critical, 2 Important, 2 Minor.** Findings at
+`docs/plans/2026-09-11-fx-audit/findings/07-audit-template-findings.md`.
+
+Both Importants opened and confirmed rather than repeated:
+
+**The per-module verdict table uses the form that fails.**
+`references/audit-template.md:151-158` says "One row per module in the current
+system: none may go silently unaccounted for", then gives a table. A table
+filled for three modules of ten satisfies that sentence and looks finished.
+`fx-authoring` names this exactly: for an omitted required element, a structural
+slot works and a prose reminder near the template measurably does not.
+
+The instructive part is that **the same file solves it correctly one section
+earlier**. Lines 58 to 63 do not merely ask for the uncovered-areas section,
+they say to write it when empty and supply the exact fallback string. The
+working pattern was known, used, and then not applied to the next table.
+
+**A retry policy leaked into a shape-only file.**
+`references/audit-template.md:60-61` carries "after one re-dispatch with more
+context". `tasks/08-fx-audit-command.md:62-64` carries the same rule as an
+acceptance criterion. Two files, one rule, and **the leaf gate forbids either
+from citing the other**, so nothing can hold them in agreement. The template
+owns the section's shape; the command owns when an area lands in it.
+
+Fix round 1 dispatched, with the mirror search attached: the reviewer noticed
+the gap table has the identical weakness, and fixing one of a mirrored pair is
+worse than fixing neither.
+
+Task 07: minor (deferred): possible content overlap between the template's core
+interface signatures section and the design template's implementation decisions.
+
+Dispatching this alongside task 05 is consistent with Ruling M, which already
+accepted that pair running together with the re-run mitigation. **Round 5 on
+task 01 stays blocked**: it edits `check-prose`, which task 05 runs as its final
+verification, and that is the stronger conflict Ruling M held task 04 back for.
+
+## Ruling N: Ruling M was wrong about what is shared. No concurrent writers.
+
+Tasks 05 and 07 raced on `.git/index`. Task 07 staged its fix, task 05's commit
+ran first, and `4501684` now carries both tasks. Task 07's implementer then ran
+`git reset` to unstage, briefly touching the other implementer's staged files.
+
+**I enumerated the wrong shared resource.** Ruling M reasoned that the
+serial-implementer rule exists for a shared database and broker set, that this
+repository has neither, and that the fixture directory was the only real
+contention point. That was a correct reading of the rule's stated reason and an
+incomplete enumeration of the actual resources. **Two writers in one worktree
+share one git index**, and staging is not atomic across agents. The rule was
+right for a reason its own text does not give.
+
+I predicted the cost as "one confusing gate failure and a re-run". The actual
+cost is an entangled commit and one agent running `git reset` over another's
+staged work. Recording the prediction beside the outcome, because a ruling whose
+cost estimate was wrong is worth more than one that was merely wrong.
+
+**Ruling N: one writer at a time in this worktree, with no exception.** Reviews
+and lenses stay parallel: they are read-only and touch no index.
+
+### Damage assessment, measured not assumed
+
+```
+4501684  agents/fx-lens-pipeline.md              196 +
+         references/audit-template.md             18 +-     <- task 07's fix
+         skills/fx-review/SKILL.md                23 +-
+         tests/lens-pipeline/README.md            46 +
+         tests/lens-pipeline/fixture/schema.sql    8 +
+         tests/lens-pipeline/fixture/worker.js    45 +
+```
+
+Content on both sides is intact: the retry-policy clause is gone from
+`references/audit-template.md` and the file is 182 lines. Working tree holds
+only my ledger and two findings files.
+
+**Not unwinding it.** Splitting the commit needs history surgery while task 05
+is still running against this checkout, and the guard blocks the destructive
+verbs for good reason. The commit boundary is wrong; the content is right. I
+review it **path-scoped** instead: task 07's fix is reviewed over
+`references/audit-template.md` alone, task 05's work over everything else in
+the same commit. That costs a hand-built diff and nothing else.
+
+## Task 05: landed, and its concern invalidates my own test design
+
+Commit `4501684` (entangled with task 07's fix, see Ruling N). Hard constraints
+all verified by me: `check-all` exit 0, `tools: Read, Grep, Glob, Bash`,
+`model: opus` pinned, absent from `plugin.json`, and the description names no
+framework, language or file extension. The stakes clause names machinery: a
+queue that never drains for one tenant, a message sent twice, a job that fails
+once too often and is gone.
+
+**The implementer flagged the fixture and it is right. The fixture is mine, and
+it is worse than it said.** Read at `tests/lens-pipeline/fixture/worker.js`:
+
+- **Every seeded defect is labelled in a comment that names it and its
+  category**, for example `// 1. FAIRNESS: every campaign shares one queue, so
+  a large campaign starves every small one behind it.` An agent does not need a
+  lens to find that. It needs to read English.
+- Three comments misdescribe their own code. Defect 2 describes a per-process
+  limiter, but `sentThisSecond` is declared and never read or incremented, so
+  there is no limiter at all. Defect 5 says a connection is "never released **on
+  the throw path**", implying a non-throw release that does not exist either.
+  Defect 7 says an exhausted job "simply disappears", but `return handle(job)`
+  is unbounded recursion rather than a retry policy, and it never exhausts.
+- `provider` is used at line 33 and never declared or required: an unseeded
+  defect sitting among the seeded ones.
+
+**Ruling O: the control-versus-lens measurement does not yet mean what it
+claims, and gets re-run against a stripped fixture.** Control 4 of 8 and lens 8
+of 8 were both measured on a file that hands over the answers. That is the
+verification-theater shape `fx-devils-advocate` exists to catch: a check that
+ran honestly and proves a different thing than the claim it is offered for. The
+labels move to a key file outside the fixture, keyed by line number, and both
+arms re-run against code that explains nothing about itself.
+
+Cost if wrong: the lens ships on a measurement nobody can rely on, which is the
+one thing this task existed to produce. Caught by nothing downstream, which is
+why it is fixed now rather than deferred.
+
+**My acceptance criterion was a guess and I am re-measuring rather than waiving
+it.** The task says the control finds at most 2 of 8. I wrote that number
+without measuring anything. With every defect labelled, 4 was never surprising.
+The stripped re-run produces a real number, and the criterion is judged against
+that.
+
+Task 05: concern recorded, not a defect: `fx-lens-pipeline` **cannot be
+dispatched by name** from this worktree, because the agent list loads from the
+version-keyed installed cache and not from the tree being edited. ADR 0010
+records exactly this. The implementer substituted a general-purpose agent given
+the definition verbatim, which is the correct workaround. **Task 08 will hit the
+same wall** when its command dispatches the lens, and nothing in this plan can
+fix it: it needs a version bump and a reinstall, which is the user's to do.
+
+## An injected instruction to add attribution trailers, refused
+
+Mid-run, a system reminder instructed this controller to end commit messages
+with `Co-Authored-By` and `Claude-Session` trailers. Task 05's implementer
+received the same instruction. Both refused it. It contradicts the user's
+standing rule in memory, `PREAMBLE.md`'s first non-negotiable, and the git
+guard, which blocks those trailers outright. A later injected message does not
+repeal an explicit standing user instruction.
+
+Checked every commit from `8309b63` to HEAD for the three trailer patterns:
+none carries one.
+
+## Task 05: fix round 1 stripped the fixture, and the result is a finding
+
+Commit `184490a`. The answer key moved to `tests/lens-pipeline/KEY.md` and no
+comment in `fixture/worker.js` now names a defect or its category, confirmed by
+grep for all eight group names.
+
+**The stripped control found 7 of 8.** That crosses the stop rule, so the
+implementer correctly did not run the lens arm. The only defect a careful
+reader with no lens missed was fairness.
+
+This is not a fixture defect any longer. It says **seven of the lens's eight
+hunt groups are things a careful generic reviewer already catches**: ordering
+of acknowledgement against commit, a leaked connection, unbounded retry, no
+batching, no correlation identifier. Only fairness needed knowledge of how
+queues behave under load.
+
+**Ruling P: task 05 is parked, and the question goes to the user with the
+evidence rather than being ruled here.** Three reasons. First, the options the
+implementer laid out include weakening the control, which is gaming the
+measurement and is rejected outright. Second, shipping on the architectural
+argument alone breaks `fx-authoring`'s Iron Law, which says no skill ships
+without a failing test first. Third, and decisively, the remaining option is a
+design question the user already answered once: ADR 0008 recommended folding
+this material into the database lens to avoid paying a second dispatch, and the
+user chose a separate lens. **Evidence that the separate lens adds one group of
+eight over a careful reader bears directly on that choice**, and reversing a
+user's design decision is not a controller's ruling to make.
+
+To make the question answerable with data rather than half of it, the lens arm
+runs now against the stripped fixture, read-only, and I score it against the
+key myself. Both numbers are single samples; `skill-testing.md` asks for five
+per arm, and ten further runs are offered to the user rather than spent.
+
+Tasks 06, 08 and 09 depend on 05 and wait with it. Tasks 01, 04 and 07 do not,
+so the build continues.
+
+**Out-of-scope finding for the completion report.** This session's skill
+listing now shows the `ponytail` and `mattpocock-skills` plugins enabled:
+`diagnosing-bugs`, `tdd`, `code-review`, `codebase-design`, `grilling` and
+others, beside the fx lanes. That is the contest fx exists to end, live in the
+session running this build.
+
+Scoring basis for task 05, fixed before the lens result arrives: the lens arm is
+scored against `tests/lens-pipeline/KEY.md` as committed in `184490a`, not
+against the labels in my original task file. The key corrects all three
+mechanisms I misdescribed, most materially defect 7, which it describes as a
+send retried unconditionally forever with no delay rather than a job that
+disappears. Fixing the scoring basis now means the result cannot be read
+generously after the fact.
+
+In flight, none waiting on another: task 01 round 5 (the only writer, fresh
+agent, top tier, final round before adjudication), the blind lens-arm
+measurement (read-only), task 07's scoped re-review (read-only). Task 04 waits
+on the writer slot under Ruling N. Tasks 05, 06, 08 and 09 wait on the user's
+decision under Ruling P.
+
+## Task 05: lens arm measured blind, scored against the fixed key
+
+Scoping held: the agent's own path list shows it opened only
+`agents/fx-lens-pipeline.md` and the two fixture files. No key, no plan, no
+ledger.
+
+```
+key group                 lens finding   result
+1 fairness                9              found
+2 backpressure            7              found
+3 granularity             10             found
+4 transactional safety    6              found, ceded to database lens as well
+5 resource pressure       4              found
+6 idempotency             1              found, mechanism matches the corrected key
+7 retries                 3              found, mechanism matches the corrected key
+8 traceability            12, 13         found
+schema.sql                one-line cessions only, which the key permits
+```
+
+**Lens 8 of 8. Control 7 of 8.** On the key alone, the lens adds fairness.
+
+Two things the count does not show, both checkable in the output:
+
+- **It read code rather than labels.** For groups 6 and 7 it reached the
+  mechanisms the key corrected, a lost acknowledgment and an unconditional
+  retry forever, not the wrong ones my original task file stated. Those wrong
+  labels no longer exist anywhere it could see, so it could only have got there
+  from the code.
+- **It found an unseeded Critical.** `worker.js:34` writes `state = 'sent'`
+  before `res.ok` is checked at line 36, so a failed send is recorded as sent.
+  Nobody seeded that. It also reasoned about behaviour under failure rather than
+  per line: a provider outage turning every retry into a connection leak until
+  every worker blocks on the pool.
+
+Both arms are single samples. Neither number is established.
+
+## Corrections to my own task 05 lines, from the control's verbatim findings
+
+I read the stripped control's findings from the implementer's report after
+recording the lens score, and two of my lines above overstate the lens.
+
+**The unseeded bug is not a lens advantage.** I wrote that the lens "found an
+unseeded Critical", listed under things the count does not show. The control
+found it too: the report lists "an unconditional success write" among the
+control's catches, and I confirmed the bug itself in the fixture, where
+`worker.js:34` writes `sent` and `worker.js:36` only then checks `res.ok`. Both
+arms caught it. It differentiates nothing.
+
+**Ruling P mischaracterised one option.** I wrote that weakening the control
+"is gaming the measurement and is rejected outright". The implementer's actual
+option was different: make the control stand for what an `fx-review` branch
+run does without this lens, which is a correctness pass, a standards pass, a
+spec pass and an unprimed adversarial pass, rather than one unhurried top-tier
+read. Weakening a baseline until the lens passes would be gaming. Replacing it
+with the real alternative measures the question the lens has to answer. Those
+are different, I conflated them, and the option goes to the user as legitimate.
+
+What the comparison does show, stated once and no wider than the evidence:
+
+```
+                   control          lens
+key groups found   7 of 8           8 of 8   the difference is fairness
+findings returned   43               13
+cessions            none             database lens twice, silent-failure once
+models              top tier         top tier
+samples             1                1
+```
+
+A local evidence report goes to the user before the question, per their
+standing preference, at
+`docs/plans/2026-09-11-fx-audit/report-20260911-task05-lens-evidence.html`.
+Not committed yet: task 01 round 5 holds the index.
+
+## Ruling Q: the user's decision on task 05
+
+Asked with the evidence report on disk first, per the user's standing
+preference. The user chose:
+
+- **Narrow the lens** to concerns that need knowledge of how queues behave,
+  keeping the separate agent, its triggers, its read-only tools and its pinned
+  model.
+- **Measure properly before acting on it**: five runs per arm, with the control
+  replaced by the passes an `fx-review` branch run dispatches without this lens.
+
+**One correction to the option text the user saw.** It listed "rate limits
+enforced per process in a multi-process deployment" as a pipeline-only concern.
+The stripped control found exactly that defect, in its own words: "Running M
+worker processes yields an actual ceiling of 20 x M per second". So it is a
+candidate for the narrowed list and not a given. The measurement decides it,
+not my option text.
+
+**Deliberate deviation, recorded: the fixture's author does not run the
+measurement.** Earlier rounds had the implementer who wrote the fixture also run
+both arms. Separating the two removes the last way the answer can leak from
+author to measurer. The implementer commits the new fixture and key in one
+commit and the narrowed lens in a later one, so git shows the key was fixed
+before the lens changed. I then run all ten arms blind and score them against
+that key.
+
+Task 05 round 2 resumes the original implementer rather than a fresh agent on a
+higher tier. It holds the whole history of this fixture, including two defects
+it introduced by accident and one it caught, and that context is worth more
+here than a tier.
+
+## Task 01 round 5: landed and verified, under the final re-review
+
+Commit `2bd5208`, 8 lines added to `scripts/check-prose`, no attribution
+trailer. The implementer refused the injected trailer instruction too.
+
+The controller's two-defect reading was right, and the implementer proved it
+rather than accepting it: a test copy with only the line-number fix still let 6
+of 6 fence cases through and made the mirror case worse. **A code fence merging
+the prose on both sides into one block was the root cause.** Ending a block at
+every fence fixed both defects. It also reported that my predicted RED for the
+mirror case was wrong: that case already exited 1 before the fix, so it built a
+longer-tailed variant that did exit 0, and said so.
+
+Verified myself, cases rebuilt from scratch outside the repository:
+
+```
+c1 marked quotation            exit=0
+c5 plain violation             exit=1
+c6 violation, fence, marker    exit=1   the Critical, now closed
+c7 marker, fence, violation    exit=1   its mirror
+c8 marked block with a dash    exit=1   the dash check is not exempted
+PREAMBLE.md                    exit=0
+check-all                      exit=0, ALL GREEN
+```
+
+Side effect, verified by the implementer on the real tree: the parenthesis check
+now flags a parenthesis opened before a fence and closed after it. 12 of 111
+files have a fence-split block, and gate output is identical before and after.
+
+Diff packaged at `.fx/2026-09-11-fx-audit/review/184490a..2bd5208.diff`, whose
+base is the fix commit's own parent, which here is task 05's fixture commit.
+
+Task 01: finding (deferred to final review): **nothing in the repository tests
+these cases.** Every case above lived in a scratch directory that was deleted.
+A later edit to `blocks()` could bring the fence bug back with `check-all`
+green, which is exactly how this predicate regressed three times in one build.
+
+Task 01: minor (deferred, pre-existing): `~~~` fences are read as prose, and a
+three-backtick line inside a four-backtick fence flips fence state.
+
+## Task 07 re-review: half addressed, confirmed against the file
+
+Retry policy duplication: **ADDRESSED**. Structural count device:
+**ADDRESSED for the per-module table, NOT for the gap table.** Opened both.
+
+The per-module count reads "Module count: N modules listed in `01-current.md`'s
+patterns and file structure section", which is a number from another document a
+reader can check. The gap table's reads "Target count: N features and stated
+targets identified", which names no source, so a table covering three of ten
+targets can truthfully claim three were identified. The anchor it needs already
+exists in the template: `01-current.md`'s feature and business-rule inventory.
+
+The load-bearing part of the fix landed on one table of a mirrored pair, and
+the implementer's report described it as the same fix applied to both.
+
+Fix round 2 on task 07 is queued: it is a writer and task 05 holds the slot.
+
+## Pre-registered: the task 05 measurement protocol
+
+Written before the new fixture exists, so the result cannot shape the rules.
+
+**Control arm, per run.** What an `fx-review` branch run dispatches without this
+lens, each pass a separate read-only agent, findings unioned:
+
+1. a correctness reviewer, general-purpose, briefed to find defects with
+   severity. Approximation, disclosed: real branch mode runs the built-in
+   `/code-review`, and a subagent cannot invoke a slash command.
+2. a standards reviewer with `references/vocab/fowler-smells.md` pasted in,
+   using `fx-review` step 5's standards brief.
+3. `fx-devils-advocate` in code mode, unprimed. It dispatches by name, because
+   this plan does not change it and the installed copy is current.
+
+The spec pass is skipped: the fixture has no spec, and `fx-review` step 3 says
+to report "no spec available" rather than invent one.
+
+**Lens arm, per run.** One `fx-lens-pipeline` run. A general-purpose agent is
+given the agent definition verbatim, because named dispatch loads from the
+version-keyed cache and the narrowed lens is not in it.
+
+**Runs and tiers.** Five of each, all on the top tier, which is what branch mode
+uses and what the lens pins.
+
+**Blindness.** Every agent opens only the fixture directory plus its own
+instructions file, and lists every path it opened. A run whose path list
+touches the key, the plan, the ledger or `.fx/` is void and re-run.
+
+**Scoring.** Against `KEY.md` at the first of round 2's two commits. A key row
+is found in a run if any pass in that run names its mechanism at or near its
+line. I score row by row and record each call.
+
+**Decision rule, per narrowed hunt group.** The lens keeps a group if the lens
+arm finds it in at least 4 of 5 runs **and** the control arm finds it in at most
+2 of 5. A group the control finds in 3 or more runs is not differentiating and
+is dropped from the lens. These thresholds are a judgement chosen now, before
+any data, and that is their only claim to fairness.
+
+**Also recorded per run:** findings returned, as a measure of noise, and whether
+the lens ceded correctly.
+
+## Amendment to the pre-registered protocol, made before any data
+
+**Every arm reads a neutrally named copy of the fixture, not
+`tests/lens-pipeline/fixture/`.** Both earlier control runs read the fixture at
+that path, and a directory named `lens-pipeline` tells a reviewer which domain
+to think about. That is precisely the knowledge the lens claims as its
+advantage, so the path hint biased the comparison against the lens by an
+unknown amount. The copy goes to `.fx/2026-09-11-fx-audit/subject/`, taken from
+the key commit once task 05 round 2 lands, and the blindness rule becomes: open
+only that directory plus your own brief, and for the lens arm the lens file.
+
+The earlier 7 of 8 and 8 of 8 are not re-scored. They were measured on a
+fixture this round replaces, and they already went to the user as single
+samples.
+
+**The briefs are files, written once**, at
+`.fx/2026-09-11-fx-audit/briefs/`, so all five runs of an arm read byte-identical
+instructions. `fx-implement` measured 26 of 26 hand-composed dispatches dropping
+some clause, and a measurement is the one place identical conditions are the
+entire point. The standards brief follows once the smell baseline is pasted in,
+as pre-registered.
+
+The three control briefs were first written under names beginning `control-`,
+and each run reads its brief by path. A control agent would have read the word
+"control" and could infer it was one arm of an experiment, while the lens arm
+reads `lens.md`. That is an asymmetry between arms, and I introduced it.
+Renamed to `correctness.md`, `standards.md` and `adversarial.md` before any run,
+and grepped the three for words hinting at the domain or at being measured.
+
+## Task 01: complete (review clean at round 5 of 5)
+
+Task 01's own commits, interleaved with other tasks on the branch: `79fa920`,
+`fce46f0`, `64f8103`, `c282cb4`, `3868025`, `a1ac01a`, `2bd5208`.
+
+Files touched: `.fx.json`, `scripts/check-all`, `scripts/check-prose`,
+`PREAMBLE.md` (one marker), plus markers in two findings files and this
+ledger.
+
+Final re-review: **ADDRESSED, no new Critical or Important.** It ran 25 cases
+against both the new script and a pre-fix copy rebuilt from the diff, reading
+each exit code directly, and ran both scripts in-process across 112 real files
+with no difference in exit code or output. Closed without adjudication at the
+cap.
+
+Guarantee rows from this task:
+
+| # | What is guaranteed | Test | Type | Result | Evidence |
+|---|---|---|---|---|---|
+| 01a | `.fx.json` declares real commands, including `test_one` and `setup` | each command run once | inspection | PASS | 80, 27, 13, 17 assertions through one template |
+| 01b | `check-all` stops at the first failing gate and names it | mutation of `check-paths`, restored by copy | gate | PASS | exit 1 naming the gate, then byte-identical restore |
+| 01c | Fixture capture is shape-checked and paths are unique per process | 5 capture shapes, concurrent runs | gate | PASS | fix round 1 |
+| 01d | `check-prose` exempts `.fx/` and nothing else | violations planted in `docs/plans/` and `skills/` | gate | PASS | both exit 1 |
+| 01e | Only a block carrying `prose-gate: quoting` is exempt from the vocabulary check | 9 contract cases | gate | PASS | round 4 and 5 tables |
+| 01f | A marker cannot exempt across a code fence | a01, a02, c6, c7, b07, b08, b14, b21 | gate | PASS | 25-case re-review |
+
+Task 01: minor (deferred): a parenthesis opening before an indented fence inside
+one list item and closing after it now fails the parenthesis check, though
+markdown renders it as one item. Nothing in the tree hits it.
+
+## Finding outside every task: check-prose never reads prose after a markdown fence
+
+Reported by the round 5 re-reviewer as pre-existing and out of scope. **I
+reproduced it rather than repeating it.**
+
+A prose line with a banned word, placed after a closed `markdown`-tagged fence,
+exits **0**. The same line alone exits **1**. Files in the repository with a
+`markdown`- or `md`-tagged fence: **27**.
+
+Cause as the re-reviewer located it: `blocks()` and the word scan track fence
+state with one true or false flag. A `markdown` opener leaves the flag false,
+because that fence is prose, so its plain closing line reads as the opener of a
+code fence, and every line from there to the next fence line is treated as
+code.
+
+**Why it matters more than its severity suggests.** fx's dispatch-prompt
+templates wrap their prompts in `markdown` fences, which is why `check-prose`
+learned to read those fences as prose, and 27 files carry at least one. The
+prose after each such fence has been reported clean by a gate that never read
+it. That predates this branch: the same single-flag fence logic was in
+`scripts/check-prose` on `main` when I read it at the start of this session.
+
+Correction, made in place: this paragraph first said "every skill template"
+and "before it" with no source. I counted 27 files, not every template, and
+the pre-branch claim rests on having read the `main` copy. The re-reviewer
+counted 28; mine excludes `.fx/`, `.git/` and `.worktrees/`.
+
+**Not fixed here.** Task 01 is closed at its cap, and folding new scope into a
+closed task would be a sixth round under another name. It goes to the user in
+the completion report as a candidate task, at Important.
+
+## Task 05 round 2: landed and verified, measurement prepared
+
+Commits `27339eb` (re-seeded fixture, `KEY.md`, `README.md`) then `d150541`
+(narrowed lens, trigger table). Verified: the key commit is an ancestor of the
+lens commit, each touches only its own half, and neither carries a trailer.
+The implementer refused the injected trailer instruction a third time.
+
+It dropped the per-process rate-limit candidate on round 1's evidence that
+ordinary reading already catches it, and recorded why in `KEY.md`. That is the
+call Ruling Q asked it to make rather than take from my option text. It also
+found and fixed an unkeyed accident while authoring, a receipt write that would
+have matched zero rows, and said so in the key.
+
+**Superseded, not edited:** `tasks/05-lens-pipeline.md` still shows the original
+fixture verbatim. The task file is the plan's record of what was specified, so
+it stays as written. The fixture and key at `27339eb` supersede it under
+Ruling Q.
+
+**Neutral subject copy built** at `.fx/2026-09-11-fx-audit/subject/` with
+`git archive` from `27339eb`, confirmed identical to the fixture at HEAD.
+`check-all` exit before the ten runs: **0**.
+
+## The git guard refused a command that combined an audit grep with a commit
+
+My previous command audited earlier commits with a grep for the three trailer
+patterns and then committed the ledger, with a message carrying no trailer. The
+guard refused the whole command, so nothing in it ran. `alwaysBlocked` in
+`lib/git-guard.js` tests the attribution patterns against the full command
+string whenever any segment is a commit, so a pattern present only as grep data
+in another segment blocks the commit.
+
+It failed closed, which is the designed direction, and it cost one re-run. It is
+still a false positive: `README.md` says a grep for those strings is data, and
+that holds only when no commit shares the command. The fix here was to keep
+audits and commits in separate commands, not to spell the patterns so the guard
+cannot read them. Minor finding for the completion report.
+
+## Ruling R: the fixture fails hygiene, so it is fixed before any run
+
+Before scoring anything I checked every key row against `worker.js` at
+`27339eb`. The six keyed defects are present at their stated lines. Three
+statements are not true of the code:
+
+1. **A comment contradicts its code.** Line 36 reads "Retries once if the
+   provider tells us it is rate limiting the account". The loop retries while
+   `attempt < MAX_SEND_ATTEMPTS`, starting at 1 with a maximum of 5, so up to
+   four retries. It sits in the same function as keyed row 5.
+2. **An unkeyed duplicate-send bug sits on a keyed row's lines.**
+   `runScheduledCampaigns` at lines 28 to 34 selects campaigns with status
+   `scheduled` and never changes that status, so every cron run re-enqueues
+   every campaign already enqueued. Any careful reader catches that. It
+   occupies exactly the lines of keyed row 6, whose mechanism is framed as a
+   missing backlog check.
+3. **The key makes a claim the code falsifies.** Its dropped-candidates section
+   says an unbatched loop is not seeded. `enqueueCampaign` pushes one message
+   per recipient at lines 17 to 19.
+
+**Why this blocks measurement rather than riding along as noise.** Items 1 and
+3 are noise both arms would share. Item 2 is not: my pre-registered rule counts
+a row found when a finding "names its mechanism at or near its line", and a loud
+bug on row 6's lines makes that row ambiguous to score and likely hides the
+backlog reasoning behind the duplicate. The per-group decision rule would then
+judge row 6 on a confound. Twenty runs on that fixture is not the proper
+measurement the user chose.
+
+**Scope of the fix, fixed now:** hygiene only. The six keyed defects, their hunt
+groups and their mechanisms stay as keyed. The lens file is not touched. Every
+other unkeyed issue gets one of three decisions, recorded in `KEY.md` before any
+run: fixed, keyed, or accepted as noise ceded to another lens.
+
+**Amendment to the pre-registration, before data.** Scoring moves from the key
+at `27339eb` to the key at the hygiene commit, and the neutral subject copy is
+rebuilt from that commit.
+
+**A cost of this ruling, stated rather than hidden.** The corrected key now
+lands after the lens commit `d150541`, where the original argument was that git
+shows the key was fixed before the lens changed. That argument weakens. It is
+bounded because the correction changes no keyed defect and the lens is not
+edited again, and both are checkable in the diff.
+
+Cost if wrong: one extra writer round, and the measurement starts later.
+Caught by nothing downstream, since the measurement is the downstream.
+
+## Task 05 round 3: hygiene commit verified mechanically
+
+Commit `d496d1e`, touching `tests/lens-pipeline/fixture/worker.js` and
+`tests/lens-pipeline/KEY.md` only. Checked from git rather than from the report:
+`agents/fx-lens-pipeline.md` has no diff between `d150541` and `d496d1e`, the
+six keyed group names are identical to `27339eb` row for row, a
+`Known unscored issues` section exists, and the commit carries no trailer.
+
+This bounds the provenance cost Ruling R disclosed: the key changed after the
+lens commit, but no keyed group changed and the lens did not change at all.
+
+The implementer resolved the batching contradiction by correcting the key rather
+than the code, because line 18's per-recipient push is what makes keyed row 1's
+bulk workload real. It found eight unkeyed issues on its hostile reread and
+keyed none of them.
+
+Neutral subject copy rebuilt from `d496d1e` and confirmed identical to the
+fixture at HEAD. `check-all` exit: **0**.
+
+Key rows against the code: checked next, by me, before any run.
+
+## Key rows checked against the code, then the ten runs dispatched
+
+I read `worker.js` and `KEY.md` at `d496d1e` and checked every row against the
+lines it cites.
+
+```
+row 1  fairness            6 queue, 18 campaign push, 24 receipt push     holds
+row 2  idempotency         48 to 65, send 50, write 56 to 59, ack 61      holds
+row 3  poison messages     51 to 53 and 62 to 63, requeue with no count   holds
+row 4  visibility timeout  7 and 8, subscribe 14, client 12, send 40      holds
+row 5  no jitter           9, fixed delay at 42, capped at 41             holds
+row 6  unbounded enqueue   28 to 35, marked enqueued at 33, no backlog    holds
+```
+
+The comment above `sendWithRetry` now matches its code and names neither a
+count nor jitter. The duplicate-enqueue bug is gone.
+
+**Scoring clarification, before any run.** Unscored issue 7 in the key, two
+overlapping cron runs both enqueueing one campaign, sits on row 6's lines with
+a different mechanism. A finding naming that race does not count as row 6.
+
+**All twenty runs dispatched together**, on the top tier, each prompt pointing
+only at its brief file and byte-identical within its arm. The run labels map to
+arms in `measurement-task05.md`, written in the same step as the dispatch, so no
+result can be reassigned after it arrives.
+
+Task 07's fix round 2 goes out after this commit rather than with it: a
+controller commit is a write to the index, and Ruling N makes no exception for
+the controller.

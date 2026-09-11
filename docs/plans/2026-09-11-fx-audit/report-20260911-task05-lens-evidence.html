@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipeline lens evidence</title>
+<style>
+  :root {
+    --bg: #fbfaf7; --fg: #1d1d1b; --muted: #6b6a64; --rule: #dedbd2;
+    --panel: #ffffff; --yes: #1f6f43; --no: #a33a2a; --accent: #2b4c7e;
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151514; --fg: #e9e7e1; --muted: #9c9a92; --rule: #34332f;
+      --panel: #1d1d1b; --yes: #6cc394; --no: #ef8a78; --accent: #8fb0e3;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 2.5rem 1rem 4rem;
+  }
+  main { max-width: 58rem; margin: 0 auto; }
+  h1 { font-size: 1.6rem; line-height: 1.25; margin: 0 0 .4rem; }
+  h2 { font-size: 1.05rem; margin: 2.4rem 0 .6rem; padding-top: 1rem; border-top: 1px solid var(--rule); }
+  p { margin: .5rem 0; max-width: 70ch; }
+  .lede { color: var(--muted); margin-bottom: 1.6rem; }
+  code { font-family: var(--mono); font-size: .88em; }
+  .scores { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: .75rem; margin: 1.2rem 0; }
+  .score { background: var(--panel); border: 1px solid var(--rule); padding: .9rem 1rem; }
+  .score .n { font-size: 2rem; font-weight: 650; line-height: 1; }
+  .score .l { color: var(--muted); font-size: .85rem; margin-top: .35rem; }
+  .wrap { overflow-x: auto; margin: .8rem 0; }
+  table { border-collapse: collapse; width: 100%; min-width: 40rem; background: var(--panel); }
+  th, td { text-align: left; vertical-align: top; padding: .55rem .65rem; border-bottom: 1px solid var(--rule); }
+  th { font-size: .8rem; color: var(--muted); font-weight: 600; }
+  td.y { color: var(--yes); font-weight: 600; white-space: nowrap; }
+  td.n { color: var(--no); font-weight: 600; white-space: nowrap; }
+  td q { color: var(--muted); }
+  .opt { background: var(--panel); border: 1px solid var(--rule); padding: .9rem 1.1rem; margin: .7rem 0; }
+  .opt h3 { margin: 0 0 .35rem; font-size: 1rem; }
+  .opt.rec { border-color: var(--accent); border-width: 2px; }
+  .tag { font-size: .75rem; color: var(--accent); font-weight: 600; margin-left: .4rem; }
+  ul { margin: .4rem 0 .4rem 1.2rem; padding: 0; }
+  li { margin: .2rem 0; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Does the pipeline lens find what a careful reader misses?</h1>
+<p class="lede">Task 05 of the fx-audit plan, 2026-09-11. Evidence for one decision, gathered before the decision is asked.</p>
+
+<p>The plan says <code>fx-lens-pipeline</code> ships only if it finds what a control reviewer misses. The lens was written, and a fixture of queue and worker code was seeded with eight defects, one per hunt group. Both arms read the same stripped fixture, where no comment names a defect, and were scored against a separate key that neither could see.</p>
+
+<div class="scores">
+  <div class="score"><div class="n">7 / 8</div><div class="l">control: careful reader, no lens</div></div>
+  <div class="score"><div class="n">8 / 8</div><div class="l">lens: <code>fx-lens-pipeline</code></div></div>
+  <div class="score"><div class="n">43 vs 13</div><div class="l">findings returned, control vs lens</div></div>
+  <div class="score"><div class="n">1 each</div><div class="l">samples per arm, so neither number is settled</div></div>
+</div>
+
+<h2>Group by group</h2>
+<p>Quoted text is each arm's own wording. The lens ran blind: its own path list shows it opened only its instructions and the two fixture files.</p>
+<div class="wrap">
+<table>
+  <thead><tr><th>#</th><th>Hunt group</th><th>Control</th><th>Lens</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Fairness, head-of-line blocking</td><td class="n">missed</td><td class="y">found</td></tr>
+    <tr><td></td><td colspan="3"><q>Every campaign shares one sends queue, with no partitioning by campaign or tenant and no priority lane. One large campaign enqueued first blocks every smaller campaign.</q> Lens. The control did not mention the shared queue in any of its 43 findings.</td></tr>
+    <tr><td>2</td><td>Backpressure, rate limits</td><td class="y">found</td><td class="y">found</td></tr>
+    <tr><td>3</td><td>Job granularity, batching</td><td class="y">found</td><td class="y">found</td></tr>
+    <tr><td>4</td><td>Transactional safety</td><td class="y">found</td><td class="y">found</td></tr>
+    <tr><td>5</td><td>Resource pressure</td><td class="y">found</td><td class="y">found</td></tr>
+    <tr><td>6</td><td>Idempotency, delivery</td><td class="y">found</td><td class="y">found</td></tr>
+    <tr><td>7</td><td>Retries, backoff, dead letters</td><td class="y">found</td><td class="y">found</td></tr>
+    <tr><td>8</td><td>Lifecycle traceability</td><td class="y">found</td><td class="y">found</td></tr>
+    <tr><td></td><td>Unseeded: row written <code>sent</code> at line 34 before <code>res.ok</code> is checked at line 36</td><td class="y">found</td><td class="y">found</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>What the counts do and do not show</h2>
+<ul>
+  <li><strong>On the key, the lens adds one group: fairness.</strong> It is also the only group that needs knowledge of how queues behave under load. The other seven yield to ordinary questions: is this released on every path, what happens if this throws, can this retry forever.</li>
+  <li><strong>The lens is tighter.</strong> 13 findings ranked by severity, each stating its production consequence, against 43 from the control. It ceded two items to the database lens and noted nothing for the silent-failure lens, as its brief requires.</li>
+  <li><strong>It read code, not labels.</strong> For groups 6 and 7 it reached the mechanisms the key corrected, a lost acknowledgment and a retry that runs forever, rather than the wrong ones the original task file stated and which it could no longer see.</li>
+  <li><strong>The unseeded bug is not an advantage.</strong> Both arms caught it. An earlier ledger line implied otherwise and has been corrected.</li>
+</ul>
+
+<h2>Two reasons to distrust these numbers</h2>
+<ul>
+  <li><strong>One sample per arm.</strong> The repository's own skill-testing reference asks for five per variant, because single runs vary.</li>
+  <li><strong>The control may be stronger than reality.</strong> It was one unhurried top-tier read aimed only at this file. Without this lens, a real <code>fx-review</code> branch run gets a correctness pass, a standards pass, a spec pass and an unprimed adversarial pass, each with its own focus. Whether those catch fairness is the question that actually matters, and nobody has measured it.</li>
+</ul>
+
+<h2>The decision, and its options</h2>
+<p>The design chose a separate lens over folding this material into <code>fx-lens-database</code>, which ADR 0008 had recommended to avoid a second dispatch. The reason, recorded for ADR 0014, was structural: the database lens triggers on schema and queries, so it would not fire on a diff that only touches a worker or a queue config. This evidence does not touch that reason. It does say most of the lens's hunt list overlaps what other review passes already catch.</p>
+
+<div class="opt rec">
+  <h3>A. Narrow the lens to what only it finds, then re-measure <span class="tag">recommended</span></h3>
+  <p>Keep the separate lens and its triggers, so the structural reason survives. Cut the hunt list down to concerns that need pipeline knowledge: fairness across tenants, rate limits enforced per process in a multi-process deployment, delivery guarantees reasoned about under crash and redelivery, poison messages, visibility timeouts shorter than processing time, retry storms during an outage. Re-seed the fixture with defects of that shape and run both arms again.</p>
+  <p>Cost: one more implementer round on task 05, and the lens loses breadth it currently duplicates.</p>
+</div>
+
+<div class="opt">
+  <h3>B. Keep the lens as designed</h3>
+  <p>Accept a one-group lead on the key plus a tighter report as enough, and amend the task's criterion so it no longer demands a differential this fixture cannot supply.</p>
+  <p>Cost: a second dispatch on every matching branch whose findings mostly repeat other passes, which is the habit ADR 0008 warned trains readers to skim lens output.</p>
+</div>
+
+<div class="opt">
+  <h3>C. Fold it into the database lens</h3>
+  <p>ADR 0008's original recommendation. One dispatch instead of two.</p>
+  <p>Cost: the pipeline material stops firing on worker and queue diffs, which is the gap this lens was built to close.</p>
+</div>
+
+<div class="opt">
+  <h3>D. Measure properly before choosing</h3>
+  <p>Five runs per arm, with the control replaced by the passes <code>fx-review</code> actually dispatches without this lens. This combines with any of A, B or C.</p>
+  <p>Cost: roughly ten to twenty further agent runs. Offered, not started.</p>
+</div>
+
+<h2>Where the evidence lives</h2>
+<ul>
+  <li>Answer key: <code>tests/lens-pipeline/KEY.md</code></li>
+  <li>Fixture: <code>tests/lens-pipeline/fixture/</code></li>
+  <li>Control findings and the three original options: <code>.fx/2026-09-11-fx-audit/reports/05-lens-pipeline-report.md</code></li>
+  <li>Ledger rulings P and its corrections: <code>docs/plans/2026-09-11-fx-audit/state.md</code></li>
+</ul>
+
+</main>
+</body>
+</html>
