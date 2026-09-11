@@ -103,9 +103,9 @@ one of those strings is data and does.
 ## Layout
 
 ```markdown
-skills/       12: 10 lanes plus prototype and research
+skills/       13: 10 lanes, prototype and research, and fx-audit, which only you invoke
 agents/       6: 5 review lenses plus the devil's advocate, all read-only
-commands/     5: /fx:fx-setup, /fx:fx-critique, /fx:fx-grill, /fx:fx-handoff, /fx:fx-audit
+commands/     4: /fx:fx-setup, /fx:fx-critique, /fx:fx-grill, /fx:fx-handoff
 references/   loaded on demand by a lane, never selectable
 hooks/        Claude Code: preamble injection, git guard, lane check
 plugins/      opencode: preamble and guard, same shared lib
@@ -119,7 +119,9 @@ PREAMBLE.md   injected into every session AND every subagent
 
 Model-selectable. Ten lanes own an intent; two are procedures a lane calls.
 **Ten of the twelve work standalone**, with no plan and no pipeline: only
-`fx-plan` and `fx-implement` need an artifact to start from.
+`fx-plan` and `fx-implement` need an artifact to start from. The thirteenth
+skill, `fx-audit`, is not model-selectable and is not in this table: you type it,
+as the next section shows.
 
 | Skill | Use when |
 |---|---|
@@ -146,7 +148,11 @@ Every command is typed with the plugin prefix and its `fx-` name: `/fx:fx-<name>
 | `/fx:fx-critique` | red-teams a design or plan through `fx-devils-advocate` |
 | `/fx:fx-grill` | the stress-test interview alone, for a decision not heading to code |
 | `/fx:fx-handoff` | prints a block you paste into another session, on this machine or any other |
-| `/fx:fx-audit` | audits an existing system in four gated phases, ending in a `design.md` for `fx-plan` |
+
+`/fx:fx-audit` is typed the same way but is a user-invoked skill, not a command:
+`skills/fx-audit/`, with `disable-model-invocation: true`, so the model never
+selects it. It audits an existing system in four gated phases, ending in a
+`design.md` for `fx-plan`.
 
 ## Install
 

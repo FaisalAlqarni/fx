@@ -56,6 +56,17 @@ interface manifest for a runtime fx does not target, and it restates the
 by hand, and infra-setup wizards are rare here.
 **Removed from inventory:** the 7 Android skills (`docs/adr/0012`).
 
+## User-invoked skills: 1
+
+`disable-model-invocation: true`: the model never selects it, so it contests no
+lane and adds no context load. Only the user types it. It is a skill rather than
+a command because a skill is given its own base directory, which is how it
+finds its templates.
+
+| Skill | Typed as | Does |
+|---|---|---|
+| `fx-audit` | `/fx:fx-audit` | Audits an existing system in four gated phases, ending in a `design.md` for `fx-plan` |
+
 ## Agents: 6 (performance lens cut, `docs/adr/0008`; pipeline lens added, `docs/adr/0014`)
 
 | Agent | Source | Lines | Note |
@@ -160,7 +171,7 @@ Always blocked regardless of location:
 absent. Deterministic, and it survives a repo growing a second language: advantage-backend has a `Gemfile`, a `package.json` and 1,658 vendored `.ts`
 files, which no priority order resolves honestly.
 
-## Commands: 5
+## Commands: 4
 
 | Command | Does |
 |---|---|
@@ -168,7 +179,9 @@ files, which no priority order resolves honestly.
 | `/fx:fx-critique` | Dispatches `fx-devils-advocate` at any design or plan |
 | `/fx:fx-grill` | The interview technique standalone: no classification, no gate. For decisions not heading for code |
 | `/fx:fx-handoff` | Compacts the session into a block printed for copying. Not saved: the reason to hand off by hand is that the next session cannot read this disk |
-| `/fx:fx-audit` | Audits an existing system in four gated phases, ending in a `design.md` for `fx-plan` |
+
+`/fx:fx-audit` is typed like a command but is a user-invoked skill, counted under
+"User-invoked skills" above, not here.
 
 **`/fx:help` cut**: it printed the routing table, which the preamble already
 carries in every session and every subagent. A command that prints what you are
