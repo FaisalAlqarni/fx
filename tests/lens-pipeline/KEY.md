@@ -6,6 +6,16 @@ Ruling B in the plan ledger, the fixture is intentionally defective code and
 is not itself under review: do not fix it, do not make it runnable, and do
 not add the `./queue`, `./db` or `./provider` modules it references.
 
+## Status under Ruling U
+
+The lens is narrowed to one hunt group, and it is expected to find **row 6
+only**. Rows 1 to 5 stay exactly as written: they are the key a committed
+blind measurement was scored against at `d496d1e`, and rewriting them would
+falsify that record. They are the measured record, not what the narrowed lens
+is expected to report; it may name them as ceded to other passes, never as its
+own findings. The measurement, with every scored call and its disclosures, is
+in `docs/plans/2026-09-11-fx-audit/measurement-task05.md`.
+
 Round 2 narrows the seeded defects to the six hunt groups that survive
 narrowing the lens to concerns that need knowledge of how queues behave.
 Each row also states why a careful reader with no queue-specific knowledge
