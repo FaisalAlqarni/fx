@@ -56,10 +56,17 @@ included.
 
 ## Files
 
+The **scope** is normalized first: its path from the repository root, with no
+leading `./` and no trailing `/`. An omitted scope, `.` and the root itself are
+all `.`.
+
 The **slug directory** is `docs/plans/YYYY-MM-DD-audit-<name>/` at the
-repository root. `<name>` is the scope's path from the repository root with
-each `/` replaced by `-`, or the repository directory's name when no scope was
-given. `<slug>` below is the slug directory's name.
+repository root. `<name>` is built so that two scopes never share one: the
+repository directory's name for `.`, and for any other scope that name, a `+`,
+and the scope with each `/` written as `+`. In both parts, first write every
+`%` as `%25` and every `+` as `%2B`. In a repository named `shop`, the root
+gives `shop` and `engines/core` gives `shop+engines+core`. `<slug>` below is
+the slug directory's name.
 
 | File | Written in | What it is |
 |---|---|---|
@@ -80,22 +87,26 @@ say which rule re-includes it.
 
 ## Resume
 
-A run looks for its slug directory by scope, whatever its date: every
-directory matching `docs/plans/*-audit-<name>/` whose `01-current.md` records
-this run's scope. A matching directory that records another scope, or none, is
-not a candidate.
+A run looks for its slug directory by name, whatever its date: every
+`docs/plans/<date>-audit-<name>/` whose `<date>` is a `YYYY-MM-DD` date.
 
 - **None:** create `docs/plans/<today>-audit-<name>/` and start at Phase 1.
-- **One:** continue in it. The message opens with
+- **One:** continue in it. One with no `01-current.md` holds a Phase 1 that was
+  interrupted: start Phase 1 in it. The message opens with
   `Resumed at Phase N in <slug directory>` and goes straight on to that phase's
   own content.
 - **More than one:** list them and ask which to continue. Pick none yourself.
+
+A directory whose `01-current.md` records a scope other than this run's is
+never continued: report it and stop.
 
 **To start over**, the user moves the old slug directory out of `docs/plans/`
 or deletes it, then runs the skill again.
 
 The reference is the one `01-current.md` records, not this run's flags. A run
-whose `--against` differs from the record stops and asks which to use.
+whose `--against` differs from the record keeps the recorded reference, and its
+message says so: comparing against the new one means starting over with that
+`--against`.
 
 Inside the slug directory, the documents are the state. Act on the first of
 these that holds:
@@ -106,8 +117,8 @@ these that holds:
    documents, point to `fx-plan` on `design.md`, and stop.
 3. `design.md` exists as a draft: write the Phase 4 report if it is missing,
    then present the Phase 4 gate again.
-4. `03-gaps.md` has no `## Phase 3 gate choice` section: ask the Phase 3 gate's
-   question again and stop.
+4. `03-gaps.md` exists and has no `## Phase 3 gate choice` section: ask the
+   Phase 3 gate's question again and stop.
 5. Otherwise continue at the first phase whose document is missing.
    `02-reference.md` counts only when a reference is recorded.
 
@@ -138,9 +149,8 @@ user who wants a phase redone deletes its document and runs the skill again.
    and the files that reference it. Nothing again: the area goes under
    **Areas not covered**, with the reason.
 4. Write `01-current.md` from the findings files. Under the skeleton's header
-   fields, add `**Scope:**` with the scope's path from the repository root, or
-   `.` for the root, and `**Against:**` with the reference exactly as given, or
-   `none`. Open each cited line before writing the claim that cites it. Every
+   fields, add `**Scope:**` with the normalized scope, and `**Against:**` with
+   the reference exactly as given, or `none`. Open each cited line before writing the claim that cites it. Every
    top-level entry of the scope that no explorer was assigned also goes under
    **Areas not covered**, with the reason.
 
@@ -181,8 +191,10 @@ and say so in the summary. Stop.
    asks the Phase 1 gate's question now and stops. Quote each target verbatim
    with its source, in the one form the template's **Stated targets** field
    fixes. The user answered `none`: write that field's empty case.
-2. **File set:** `git ls-files --cached --others --exclude-standard <scope>`,
-   so untracked files that are not ignored are read too.
+2. **File set:**
+   `git ls-files --cached --others --exclude-standard <scope> ':(exclude)docs/plans/<slug>'`,
+   so untracked files that are not ignored are read too, and the audit's own
+   documents are not.
 3. Dispatch both, in one message, each read-only toward the code:
    - `fx-lens-pipeline` (`../../agents/fx-lens-pipeline.md`), given the file
      set and no diff.
@@ -235,8 +247,9 @@ each candidate taken up by its title, or `none`, before Phase 4 starts.
    recommendation until it has one.
 4. Write the Phase 4 `report-<timestamp>.html` into the slug directory: one
    file rendering `design.md`, with its styles inline and its diagrams as
-   preformatted text or inline SVG. Open it locally with the platform's open
-   command, print its absolute path, and never publish it.
+   preformatted text or inline SVG, so opening it fetches nothing from any
+   host. Open it locally with the platform's open command, print its absolute
+   path, and never publish it.
 
 **Done when** `design.md` holds every section of both templates, every count
 the audit template states holds, and the report path is printed.
