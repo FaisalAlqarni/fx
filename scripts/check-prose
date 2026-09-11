@@ -62,6 +62,25 @@ def files(paths):
 FENCE_TICKS = re.compile(r'^(\s*)(`{3,})(.*)$')
 OPTION_LABEL = re.compile(r'^\s*[A-Za-z0-9]\)', re.M)
 FENCE_LANG = re.compile(r'^\s*```+\s*`*([A-Za-z0-9_+#.-]*)')
+INLINE_CODE = re.compile(r'`[^`]*`')
+
+
+def mask_inline_code(block):
+    """Blank out inline-code spans in a block, preserving every line break.
+
+    A term inside single backticks is being NAMED, not used: `robust` in a
+    sentence about the word `robust` is not an instance of the word being
+    written. The span has to be found at the BLOCK level, not the line: a
+    quoted phrase word-wraps like anything else in markdown, so its opening
+    backtick can sit on one line and its closing backtick on the next, the
+    same way `blocks()` already tolerates a parenthesis opening on one line
+    and closing on another. What stays a per-OCCURRENCE mask rather than a
+    per-block exemption is what keeps this from bleeding onto a genuine
+    violation sharing the paragraph: only the backtick-quoted bytes are
+    blanked, never anything outside them.
+    """
+    return INLINE_CODE.sub(
+        lambda m: ''.join(c if c == '\n' else ' ' for c in m.group(0)), block)
 
 
 def code_fence(line):
@@ -146,34 +165,38 @@ def main():
             bad_fences += 1
             report.append(f'  {rel}:{n}  closing fence carries a language: {line}')
 
-        # A line that names three or more of these is the rule being stated,
-        # not the rule being broken: PREAMBLE.md quotes the banned list
-        # verbatim, and so does any document explaining the rule. The trigger
-        # stays per LINE (a genuinely dense listing), but the exemption it
-        # grants now covers the whole BLOCK the line sits in, not just that
-        # one line: a quoted list wraps across several lines in ordinary
-        # markdown, and the wrapped tail can carry as little as one phrase,
-        # which never reaches the threshold on its own even though it is
-        # plainly still the same list. A block where no single line is ever
-        # dense enough to trip the trigger is not a quotation, it is three
-        # phrases spread thin through real prose, and that must still fail.
-        exempt_lines = set()
+        # Stock-vocabulary detection runs against a masked copy of each
+        # block, built once per block so an inline-code span that wraps
+        # across a line break still gets found and blanked (see
+        # mask_inline_code). masked_line[n] holds the result for physical
+        # line n; a line outside every block (blank, or inside a fenced
+        # code block, which is skipped below anyway) simply has no entry.
+        masked_line = {}
         for start, block in blocks(text):
             body = OPTION_LABEL.sub('', block)
             if body.count('(') != body.count(')'):
                 unbalanced += 1
                 report.append(f'  {rel}:{start}  unclosed parenthesis in this block')
-            block_lines = block.splitlines()
-            triggered = any(
-                sum(1 for w in STOCK if re.search(rf'\b{re.escape(w)}\b', bl.lower())) >= 3
-                for bl in block_lines
-            )
-            if triggered:
-                exempt_lines.update(range(start, start + len(block_lines)))
+            for i, masked in enumerate(mask_inline_code(block).splitlines()):
+                masked_line[start + i] = masked
 
         # a dash in a sample command, a tree diagram or an output template is
         # part of the example. Counting what the fixer will never touch means a
         # gate that cannot go green, which is a gate people learn to ignore.
+        #
+        # Two exemptions apply to the stock-vocabulary check, and BOTH act on
+        # a single occurrence or a single line, never a whole paragraph: a
+        # paragraph-wide exemption bled onto a genuine violation sharing the
+        # paragraph with a dense quoted line, which is worse than the false
+        # positive it replaced.
+        #
+        #   1. Inline-code masking (above): `robust` in backticks is a
+        #      mention, not a use.
+        #   2. Per-line density: a line that names three or more of these,
+        #      even unquoted, is the rule being stated, not broken.
+        #      PREAMBLE.md's italic quotation of the list relies on this
+        #      one, since it never uses backticks. Scoped to that one line:
+        #      it does not spread to a neighbour with no blank line between.
         infence = False
         for n, line in enumerate(text.splitlines(), 1):
             if line.lstrip().startswith('```'):
@@ -184,9 +207,9 @@ def main():
             if '—' in line or '–' in line:
                 dash_lines += 1
                 report.append(f'  {rel}:{n}  dash')
-            if n in exempt_lines:
+            low = masked_line.get(n, line).lower()
+            if sum(1 for w in STOCK if re.search(rf'\b{re.escape(w)}\b', low)) >= 3:
                 continue
-            low = line.lower()
             for w in STOCK + HEDGE:
                 if re.search(rf'\b{re.escape(w)}\b', low):
                     stock_hits += 1
