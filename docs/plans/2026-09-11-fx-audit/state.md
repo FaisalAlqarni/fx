@@ -1745,3 +1745,289 @@ unreachable after a delay. Carries the third-party image guidance at
 `visual-companion.md:278` with a mirror search across `skills/fx-brainstorm/`,
 and Ruling W with its proof in a scratch repository that has no ignore rule for
 `.fx/`. It is the only writer until it reports.
+
+## Task 04 pre-review fix: landed and verified
+
+Commit `31a9cb6`, two files, no trailer. Verified myself:
+
+```
+remote hosts under skills/fx-brainstorm   none; line 50 only warns against a bare http://host:port
+known asset hosts                         none
+writes to .gitignore in start-server.sh   none; every mention is a comment or an error message
+exclude and refusal logic                 start-server.sh:157-174
+check-artifacts                           exit=0, 6 exempted
+```
+
+It went one step past Ruling W, and I accept it: when `.fx/` is still not ignored
+after the exclude line is written, because a `.gitignore` rule re-includes it or
+git predates path-format support, the script refuses to start rather than leave
+the key committable. That is Ruling T's guarantee failing closed. It also proved
+two cases unasked, a linked worktree and an exclude file with no trailing newline.
+
+The image guidance now points at user-supplied images copied beside the mockup
+and served locally, or labelled placeholders.
+
+Task 04's two commits are adjacent, `0517c81` then `31a9cb6`, so the whole task
+packaged cleanly at `.fx/2026-09-11-fx-audit/review/323f02e..31a9cb6.diff`, two
+commits and five files, all task 04's.
+
+Record committed `9c426e7`: the ledger, the measurement record, the measurement
+report and task 07's second-round findings, staged by name while no writer held
+the index.
+
+## Dispatched after 9c426e7, each launch confirmed before this entry
+
+- **Task 04 review**, top tier, because the diff decides where a session key
+  lives and spans five files of shell, JavaScript and instructions. Handed
+  Rulings T and W as requirements. Told to prove behaviour in a scratch git
+  repository outside this checkout, including the fail-closed path and what
+  `--slug` accepts, never to start the companion here, and not to run
+  `check-all` while a writer edits `references/`.
+- **Security lens on task 04's diff**, because the diff is credential handling:
+  where the key and token land, the exclude-file write, `--slug` becoming part
+  of filesystem paths, and what the server will serve.
+- **Task 07 fix round 3 under Ruling V**, resuming the round 2 implementer, which
+  carries the context. The only writer. It adds the `Stated targets` field to
+  `03-gaps.md` and anchors the target count to it, and was told not to edit
+  anything for task 08.
+
+Queued for the writer slot after task 07: task 05 round 4, narrowing the lens
+under Ruling U.
+
+## Task 07 fix round 3: landed and verified
+
+Commit `4edc104`, `references/audit-template.md` only, no trailer. Read at the
+lines themselves:
+
+- `03-gaps.md`'s header now carries a **Stated targets** field at line 110,
+  beside **Compared against**: every target named in the brief, quoted verbatim,
+  one per line, each followed by where it came from, either the invocation text
+  or the path of a file the user pointed to, never paraphrased, with the fixed
+  fallback "None: the brief named no targets."
+- The target count at lines 120 to 122 is now "the number of target lines
+  recorded in this report's own **Stated targets** field above, not a count
+  composed for this table".
+
+No mention of the design template. Leaf gate and prose gate on the file both
+exit 0. Packaged at `.fx/2026-09-11-fx-audit/review/9c426e7..4edc104.diff`,
+based on the fix commit's own parent.
+
+## Task 05 round 4: dispatched
+
+Launch confirmed. A fresh implementer on the top tier, which is what the fix loop
+calls for from round 4. It carries Ruling U: narrow the hunt list and triggers to
+group 6, add a scope note to `KEY.md` without changing any of its six rows,
+record the measurement and its provisional status in the test README, and run
+exactly one blind smoke check against row 6 using the unchanged brief and subject
+copy. It is told to stop and report rather than adjust the lens if that one run
+misses row 6, and to invoke `fx-authoring` before editing the lens. The only
+writer.
+
+Task 07 fix round 3 scoped re-review: dispatched, launch confirmed. Mid tier,
+read-only, not to run `check-all` while task 05 edits files it reads. Asked
+whether the target count is unambiguous when each target carries its source, and
+whether the "None" fallback reads as zero targets.
+
+## Task 04: security lens returned, both key findings verified
+
+Lens result: 1 Important, 2 Minor. It cleared, by reading the code, the `--slug`
+validation, file serving including symlink and hard link rejection, file
+permissions, and the exclude-file write itself.
+
+**Important, confirmed at the code: the guarantee fails open when git cannot
+answer.** `skills/fx-brainstorm/scripts/start-server.sh:159-176` is one block
+guarded by `git -C "$PROJECT_DIR" rev-parse --is-inside-work-tree && ! git ...
+check-ignore ...`. When `rev-parse` fails because git is missing from `PATH` or
+refuses a repository owned by another user, the whole block is skipped: no
+exclude line, no refusal. The script then creates the directories at line 184
+and the server writes the key. The script cannot tell "not a repository" apart
+from "git would not answer".
+
+**Minor as filed, verified by experiment, upgraded to Important: the fail-closed
+recheck runs before the directory exists.** In a scratch repository whose
+`.gitignore` holds `.fx/*/companion` followed by the directory-only re-include
+`!.fx/*/companion/`:
+
+```
+check-ignore on the path before mkdir     exit=0   reported ignored
+check-ignore on the same path after mkdir exit=1   not ignored
+check-ignore on the token file inside     exit=1   not ignored
+git status                                ?? .fx/s/companion/.last-token
+```
+
+So the refusal at line 172 passes, the `mkdir` at line 184 creates the directory,
+the re-include takes effect, and the session key is committable. **It defeats the
+exact check the pre-review fix added.** It needs an unusual ignore file, but the
+consequence is identical to the Important above, and severity follows
+consequence, so it is upgraded.
+
+**Minor, deferred to the final review: third-party requests are forbidden in the
+documentation, not enforced by the server.** The only content security policy
+sent is `frame-ancestors 'none'`. A remote script placed in a mockup would run
+on the same origin and could read the key from `sessionStorage`. Minor findings
+never enter the fix loop.
+
+**Task 04's fix round waits deliberately.** Its top-tier reviewer is still reading
+the same code, so both Importants go into one round together with whatever the
+review returns, rather than onto code that changes under the reviewer. The writer
+slot is also held by task 05.
+
+## Task 07 fix round 3: addressed, and two warning items resolved by me as real gaps
+
+Scoped re-review: **ADDRESSED, no new breakage.** Both halves of the gap table's
+count now anchor to something recorded inside the audit's own output. Findings at
+`docs/plans/2026-09-11-fx-audit/findings/07-fix-round3-findings.md`.
+
+It left two items it could not verify from the diff. The lane makes those mine to
+resolve before the task completes. Both are resolved against the wording I read
+at `references/audit-template.md:110-124`:
+
+1. **"Each line followed by where it came from" admits two layouts.** The source
+   can share the quote's line or sit on the next one. In the second layout "the
+   number of target lines" can be counted as N or as 2N. **A real gap.**
+2. **The fallback "None: the brief named no targets." is never said to count as
+   zero.** A literal reader can count it as one target line. **A real gap.**
+
+## Ruling X: the template states the field's line layout and its empty count
+
+The re-review suggested leaving both for task 08, the command, to define. Ruled
+otherwise, because the design splits the work deliberately: the template owns the
+shape of every document, the command owns when and how it fills them. How one
+field's lines are laid out and counted is shape. Deferring it to the command makes
+the command a second definition of the template's format, which is the
+duplication task 07's first finding already removed once.
+
+Task 07 goes to **fix round 4**: the template states one layout for a target and
+its source, states that the count is the number of targets in that layout, and
+states that the fallback counts as zero. Per the fix loop, rounds 4 and 5 use a
+fresh implementer one tier up. Queued for the writer slot after task 05 round 4,
+and ahead of task 04's fix round, because task 08 waits on task 07 while only
+task 09 waits on task 04.
+
+Cost if wrong: one more round on a task already at three, for two sentences.
+Caught by round 4's scoped re-review, which checks the count can be taken from a
+finished field in exactly one way.
+
+## Task 04: review approved, and three Importants go to fix round 1
+
+Task reviewer: **Approved. 0 Critical, 0 Important, 4 Minor.** Findings at
+`docs/plans/2026-09-11-fx-audit/findings/04-companion-findings.md`. It ran the
+scripts in scratch repositories rather than reading them: file placement with and
+without a slug, restart reuse of port and key, stop behaviour, Ruling T's
+`git status` proof, Ruling W's idempotency and linked worktree, the refusal path,
+and seven hostile slugs, all correct. It went beyond Ruling W and judged the
+refusal right.
+
+Two of its Minors do not stay Minor once set beside the security lens.
+
+**Reviewer Minor 2 is the lens's Important, confirmed a second time by running
+it.** With git missing from `PATH`, the server started and `git status` listed
+`.last-token`, the PID file and the log as untracked. Severity follows
+consequence, and the consequence is a committable session key.
+
+**Reviewer Minor 1, verified against both versions and upgraded to Important.**
+Before task 04, every documented invocation in `visual-companion.md` passed
+`--project-dir /path/to/project`, at lines 38, 64, 73, 80 and 89. After it, the
+same five pass only `--slug <slug>`, and `start-server.sh` defaults the project
+directory to the current directory at line 76. The examples call the script by
+the relative path `scripts/start-server.sh`, which resolves only from the skill
+directory, and `SKILL.md` offers no other route. So an agent following the
+instructions runs it from `skills/fx-brainstorm/`, and the mockups and `.fx/` land
+inside the plugin instead of the project's plan directory. The task existed so a
+user could return to their mockups; following its own instructions defeats that.
+
+**Fix round 1 findings, all Important:**
+
+1. **Git unable to answer fails open.** `start-server.sh:159-176` skips the whole
+   ignore block when `rev-parse` fails, so a missing git or a repository owned by
+   another user leaves the key committable. The script must tell "not a
+   repository" apart from "git would not answer", and refuse in the second case.
+2. **The ignore recheck runs before the directory exists.** A directory-only
+   re-include rule reports the missing path as ignored and then un-ignores it once
+   `mkdir` runs, leaving `.last-token` committable, as recorded above.
+3. **The documented invocation writes into the plugin.** Every documented start
+   must name the project root, and the script must not accept its own skill
+   directory as a project root.
+
+**Deferred to the final review, Minor:** `--slug` as the final argument hangs on a
+`shift 2` copied from an existing option with the same defect; the refusal message
+names one cause when there are two; the server enforces no content security policy
+against third-party requests; plus the earlier deferrals, which are the footer
+text, the stop script given the old path, the plan-scan cap and the pre-existing
+dashes.
+
+Fix round 1 resumes the original implementer, falling back to a fresh one if it
+cannot be reached. Queued for the writer slot behind task 05 round 4 and task 07
+round 4.
+
+## Task 05 round 4: landed and verified
+
+Commit `fe48167`, four files, no trailer: the lens, `fx-review`'s section 2,
+`KEY.md` and the test README. Verified myself:
+
+```
+six KEY.md table rows vs d496d1e   byte-identical
+lens frontmatter                   tools Read, Grep, Glob, Bash; model opus
+framework names in description     none
+plugin.json mentions of the lens   0; check-manifest OK, agents undeclared
+trigger row                        SKILL.md:95, narrowed, mode branch
+prose gate on the four files       exit 0
+```
+
+The one smoke run, read from the report verbatim: row 6 found as finding 1 at
+`worker.js:28`, naming the keyed mechanism and separating the status flip from
+depth. Rows 1 to 5 appear only as `Ceded:` lines. `schema.sql` gets one ceded
+line, which the key allows. Path list clean.
+
+**Two things the review must judge, not me.** The implementer added a `Ceded:`
+block to the output format, unasked, as a fixed slot. And that run produced 2
+findings against 13 ceded lines, so the block restates most of what the other
+branch passes report, which is the double-report risk task 05's own file names.
+
+Task 05's commits interleave with task 07's on this branch, so the review
+package is path-scoped to task 05's own paths, from `7d39c0b`, the parent of its
+first commit `4501684`, at
+`.fx/2026-09-11-fx-audit/review/task05-scoped-7d39c0b..fe48167.diff`.
+
+Task 07 fix round 4 under Ruling X: dispatched, launch confirmed. A fresh
+implementer on the top tier, told to change only `references/audit-template.md`,
+to state one layout, one count and a zero count for the empty case, and not to
+touch anything for task 08. The only writer.
+
+Task 05 review: dispatched, launch confirmed. Top tier, read-only, told that
+later rulings replace the task file's criteria where they conflict and to say
+which, that Ruling B holds, and that the fixture and key rows are the committed
+measurement record, never something to fix. Told not to run `check-all` or any
+run against the fixture. Handed the `Ceded:` block and the provisional status as
+named risks to judge. No lens dispatched alongside: the only trigger matches,
+`*.sql` for the database lens and `catch` for the silent-failure lens, are in the
+fixture, which Ruling B puts outside review.
+
+## Task 07 fix round 4: landed and verified
+
+Commit `e103db4`, `references/audit-template.md` only, no trailer, parent
+`fe48167`, so nothing interleaves. Read at the lines themselves:
+
+- **One layout.** The field is one entry line per target, in the fixed form
+  `- "<target, verbatim>" from <source>`, with a placeholder line at 114 and a
+  two-target example at 120 and 121. A target spanning lines in the brief is
+  joined with spaces.
+- **One count.** The target count is "the number of entry lines in this report's
+  own **Stated targets** field above, one per target, so a field with no entry
+  lines gives 0".
+- **Zero for the empty case,** stated outright: the "None" line "is not an entry
+  line and counts as zero targets".
+
+No mention of the design template. Leaf gate and prose gate on the file both exit
+0. The implementer ran `check-all` last, exit 0. It refused an injected trailer
+request, and it skipped the authoring lane's repeated micro-tests, using grep
+checks and a count of both examples instead.
+
+**A concern that goes to the re-review as a named risk.** The `03-gaps.md`
+skeleton is a fenced block from line 103 to 151, and the example lines and the
+"None" line sit inside it. An author copying the skeleton literally carries two
+invented targets and the empty-case line into a real audit together, which gives
+a wrong count and a contradictory field. That is the same class of defect this
+task's fix rounds exist to remove.
+
+Packaged at `.fx/2026-09-11-fx-audit/review/fe48167..e103db4.diff`.
