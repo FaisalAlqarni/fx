@@ -102,7 +102,7 @@ guard are registered by `hooks/hooks.json` and need no further setup.
 ## Per repository: either runtime
 
 ```
-/fx:setup
+/fx:fx-setup
 ```
 
 Writes `.fx.json` (test commands, `stacks`) and generates `repo.md` (this

@@ -3,9 +3,11 @@
 Nothing fx tells an agent to write lands in the OS temp directory. A report a
 user returns to lives in `docs/plans/<slug>/`. A throwaway worktree lives in
 `.worktrees/`. A regenerable working file lives in the ephemeral workspace
-under `.fx/`. `scripts/check-artifacts` makes this checkable: it fails when a
-skill, agent or command names `/tmp`, `$TMPDIR`, `${TMPDIR`, `%TEMP%`,
-`os.tmpdir` or `tmpdir` as a write target.
+under `.fx/`. `scripts/check-artifacts` makes this checkable: it fails on any
+line of a file under `skills/`, `agents/` or `commands/` that names `/tmp`,
+`$TMPDIR`, `${TMPDIR`, `%TEMP%`, `os.tmpdir` or `tmpdir`, whatever the line
+does with it, unless that line carries the exception marker
+`artifact-gate: ok`.
 
 This reverses a decision `fx-architecture` inherited and had explicitly kept.
 Its coverage record marks the choice as deliberately restored:

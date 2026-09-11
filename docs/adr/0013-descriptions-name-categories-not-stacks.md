@@ -25,6 +25,10 @@ diffs it catches today. Bundling four such rewrites into an unrelated change
 would make a lens that stopped firing indistinguishable from something else in
 that change breaking.
 
+The four rows for these lenses in the trigger table of
+`skills/fx-review/SKILL.md`, section 2, restate their triggers and are part of
+the same exception.
+
 **What a future author does.** Write a new agent or skill general from its first
 draft. Migrate an old one only as a change of its own, with its firing measured
 before and after as `0010-behaviour-is-measured-against-the-installed-plugin.md`
