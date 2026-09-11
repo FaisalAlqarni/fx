@@ -30,10 +30,12 @@ async function runScheduledCampaigns() {
   for (const campaign of dueCampaigns) {
     const recipients = await db.query('SELECT id FROM recipients WHERE campaign_id = $1', [campaign.id]);
     await enqueueCampaign(campaign.id, recipients.map((r) => r.id));
+    await db.query('UPDATE campaigns SET status = $1 WHERE id = $2', ['enqueued', campaign.id]);
   }
 }
 
-// Retries once if the provider tells us it is rate limiting the account.
+// Retries the send, waiting between attempts, if the provider tells us
+// it is rate limiting the account.
 async function sendWithRetry(recipientId, attempt = 1) {
   const res = await client.send(recipientId);
   if (res.status === 429 && attempt < MAX_SEND_ATTEMPTS) {
