@@ -3153,3 +3153,45 @@ Record committed `0753dd1`: the ledger and task 09's findings.
   commands 5 to 4 and skills 12 to 13 in both documents, `fx-audit` described as
   a user-invoked skill, neither lane nor procedure nor command, and still listed
   where a user looks for what to type. The manifest is not touched.
+
+## Task 09 fix round 1: landed and verified
+
+Commit `8dd05fe`, `README.md` and `SURFACE.md` only, no trailer, parent
+`0753dd1`. Verified myself against disk:
+
+```
+disk                     skills 13, commands 4, agents 6
+README Layout            skills 13: 10 lanes, prototype and research, and fx-audit,
+                         which only you invoke; commands 4, all /fx:fx-<name>
+SURFACE headings         Lanes: 10, Procedures: 2, User-invoked skills: 1, Commands: 4
+fx-audit mentions        described as a user-invoked skill typed as /fx:fx-audit in
+                         both files; out of both commands tables and the lanes table
+commands/fx-audit.md     named nowhere in either file
+prose gate               exit 0
+```
+
+Packaged at `.fx/2026-09-11-fx-audit/review/0753dd1..8dd05fe.diff`.
+
+Record committed `3a00204`: the ledger through task 08's fix round.
+
+**Task 09 fix round 1 scoped re-review:** dispatched, launch confirmed. Mid tier,
+read-only, no writer live. Told to run the filesystem command for every changed
+count, check every `fx-audit` mention for consistency, and search both files for
+the old numbers as digits and as words.
+
+Still running: task 08's fix round 1 re-review. The final review's package waits
+for both, since either could move HEAD.
+
+## Task 09: complete, fix round 1 closed
+
+Scoped re-review: **ADDRESSED, no new breakage.** Findings at
+`docs/plans/2026-09-11-fx-audit/findings/09-fix-round1-findings.md`. It ran the
+filesystem count for every changed number (skills 13, commands 4, agents 6),
+confirmed every `fx-audit` mention in both files describes a user-invoked skill
+kept out of both commands tables and the lanes table, found no old number left
+as digits or words, and found the diff within scope. Its out-of-scope
+observations are the three already deferred: the "Lines" column, the cut
+`performance` lens still named, and an unrelated machine-state table.
+
+Task 09 is complete. Eight of nine tasks are complete; task 08 waits on its fix
+round 1 re-review.
