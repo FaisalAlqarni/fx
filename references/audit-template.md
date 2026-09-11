@@ -110,9 +110,13 @@ the named reference.
 
 ## Verdict table
 
-**Target count:** <N> features and stated targets identified. **Row count:**
-<N> rows below. The two numbers must match: a lower row count means a target
-was silently dropped from the table.
+**Feature count:** <N> features and business rules listed in
+`01-current.md`'s feature and business-rule inventory, plus `02-reference.md`'s
+when a reference run exists. **Target count:** <N> stated targets named in the
+brief the audit was run with; that brief lives outside this document, never
+inside the table. **Row count:** <N> rows below. The row count must equal
+feature count plus target count: a shortfall means one was silently dropped
+from the table.
 
 One row per feature and per stated target. Every row carries a file and a
 line: a verdict without one is an opinion, not a finding. Rows are ordered
