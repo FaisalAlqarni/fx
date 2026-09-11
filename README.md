@@ -71,6 +71,10 @@ because each one costs a full subagent.
 | `fx-lens-security` | auth paths, params, credentials, any new endpoint |
 | `fx-lens-a11y` | `.erb`, `.css`, view partials, user-facing strings |
 | `fx-lens-silent-failure` | `rescue`, `catch`, workers, retry paths |
+| `fx-lens-pipeline` | code that enqueues, publishes, schedules or fans out work; code that governs queue depth, admission or producer flow control |
+
+The first four fire per task and on the branch review. `fx-lens-pipeline` fires
+on branch reviews only, never per task; `/fx:fx-audit` also runs it.
 
 ### Always on, underneath all of it
 
@@ -99,21 +103,22 @@ one of those strings is data and does.
 ## Layout
 
 ```markdown
-skills/       11: 9 lanes plus prototype and research
-agents/       4 review lenses + the devil's advocate: read-only
-commands/     3: /fx:setup, /fx:critique, /fx:grill
+skills/       12: 10 lanes plus prototype and research
+agents/       6: 5 review lenses plus the devil's advocate, all read-only
+commands/     5: /fx:fx-setup, /fx:fx-critique, /fx:fx-grill, /fx:fx-handoff, /fx:fx-audit
 references/   loaded on demand by a lane, never selectable
 hooks/        Claude Code: preamble injection, git guard, lane check
 plugins/      opencode: preamble and guard, same shared lib
 lib/          git-guard.js, lane-check.js, plan-state.js
 tests/        lane-triggering: does a naive prompt reach the lane
+              lens-pipeline: the fixture fx-lens-pipeline is run against
 PREAMBLE.md   injected into every session AND every subagent
 ```
 
 ## The skills
 
-Model-selectable. Nine lanes own an intent; two are procedures a lane calls.
-**Nine of the eleven work standalone**, with no plan and no pipeline: only
+Model-selectable. Ten lanes own an intent; two are procedures a lane calls.
+**Ten of the twelve work standalone**, with no plan and no pipeline: only
 `fx-plan` and `fx-implement` need an artifact to start from.
 
 | Skill | Use when |
@@ -133,12 +138,15 @@ Model-selectable. Nine lanes own an intent; two are procedures a lane calls.
 
 ## The commands
 
+Every command is typed with the plugin prefix and its `fx-` name: `/fx:fx-<name>`.
+
 | Command | Does |
 |---|---|
-| `/fx:setup` | per repository: reads the machine facts, asks what the repo cannot tell it, writes `.fx.json`, `repo.md`, and `CONTEXT.md` if terms resolved |
-| `/fx:critique` | red-teams a design or plan through `fx-devils-advocate` |
-| `/fx:grill` | the stress-test interview alone, for a decision not heading to code |
-| `/fx:handoff` | prints a block you paste into another session, on this machine or any other |
+| `/fx:fx-setup` | per repository: reads the machine facts, asks what the repo cannot tell it, writes `.fx.json`, `repo.md`, and `CONTEXT.md` if terms resolved |
+| `/fx:fx-critique` | red-teams a design or plan through `fx-devils-advocate` |
+| `/fx:fx-grill` | the stress-test interview alone, for a decision not heading to code |
+| `/fx:fx-handoff` | prints a block you paste into another session, on this machine or any other |
+| `/fx:fx-audit` | audits an existing system in four gated phases, ending in a `design.md` for `fx-plan` |
 
 ## Install
 
@@ -154,7 +162,7 @@ Full steps for both: [`INSTALL.md`](INSTALL.md).
 Then, in each repository you work in:
 
 ```
-/fx:setup
+/fx:fx-setup
 ```
 
 which reads the machine facts, then asks two short rounds about what the code
@@ -184,17 +192,25 @@ prompt actually make the model invoke the lane? It runs `claude -p` against
 is the distinction that cost this project two false conclusions.
 
 ```
-tests/lane-triggering/run-all.sh              # 6 lanes, one run each
+tests/lane-triggering/run-all.sh              # 7 lanes, 9 prompts, one run each
 tests/lane-triggering/run-reps.sh fx-tdd prompts/fx-tdd.txt 5
 ```
 
-Gates, all of which exit non-zero on a problem:
+The one behavioural check on `fx-lens-pipeline` is the fixture under
+`tests/lens-pipeline/`. It is not a script: an agent reads the lens through a
+brief and reviews the fixture. What counts as a regression is stated in
+`tests/lens-pipeline/README.md`.
+
+Gates, all of which exit non-zero on a problem. `scripts/check-all` runs the
+first five, then the four suites above; `check-collisions` is run by hand,
+because it reads skill directories on this machine, not this repository:
 
 ```
 scripts/check-manifest           keys the installer accepts, and the two it rejects
 scripts/check-paths              every reference citation resolves
 scripts/check-reference-leaves   no reference links to another reference
 scripts/check-prose              no dashes, no stock vocabulary, parens balanced
+scripts/check-artifacts          nothing in skills/, agents/ or commands/ names the OS temp directory
 scripts/check-collisions         other installed skills contesting an fx lane
 ```
 

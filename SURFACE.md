@@ -56,7 +56,7 @@ interface manifest for a runtime fx does not target, and it restates the
 by hand, and infra-setup wizards are rare here.
 **Removed from inventory:** the 7 Android skills (`docs/adr/0012`).
 
-## Agents: 5 (performance lens cut, `docs/adr/0008`)
+## Agents: 6 (performance lens cut, `docs/adr/0008`; pipeline lens added, `docs/adr/0014`)
 
 | Agent | Source | Lines | Note |
 |---|---|---|---|
@@ -65,13 +65,17 @@ by hand, and infra-setup wizards are rare here.
 | `fx-lens-security` | `ecc:security-reviewer` | 117 | Devise / devise-jwt / Pundit surface |
 | `fx-lens-a11y` | `ecc:a11y-architect` | 149 | axe-core-rspec + Arabic RTL |
 | `fx-lens-silent-failure` | `ecc:silent-failure-hunter` | 59 | Sidekiq workers, broker consumers |
+| `fx-lens-pipeline` | none: written for fx | n/a | Unbounded enqueue outrunning consumers. Branch review and `/fx:fx-audit` only, never per task |
 | ~~`fx-lens-performance`~~ | `ecc:performance-optimizer` | 455 | **Cut: `docs/adr/0008`.** ~370 of 455 lines are React/webpack/bundle advice; the usable residue is `fx-lens-database`'s |
 
 **Models pinned per lens:** `security` and `database` at top tier; `a11y`,
 `silent-failure` and `performance` at mid-tier. Those two don't fire on simple
 diffs: they need `db/migrate/`, a model, `structure.sql`, or a
 Devise/Pundit/JWT path, so **simple tasks see no slowdown; the extra cost lands
-only on migrations and auth changes.** An omitted model silently inherits the
+only on migrations and auth changes.** `pipeline` is top tier on the same
+argument as `security` and `database`: its findings are reasoning problems where
+a cheap miss is an incident. It adds no per-task cost, because it fires only on
+the branch review and in `/fx:fx-audit`. An omitted model silently inherits the
 session's, usually the priciest, so every agent file pins one explicitly.
 
 All read-only: `tools: Read, Grep, Glob, Bash`. Tool restriction is enforced by
@@ -123,7 +127,7 @@ prefix and may change: the stable fallback is `~/.config/opencode/AGENTS.md`,
 which every session including child sessions reads.
 
 `fx` never writes to `~/.claude/CLAUDE.md`. opencode reads it as a global
-fallback, but it's the user's file: `/fx:setup` writes to
+fallback, but it's the user's file: `/fx:fx-setup` writes to
 `~/.config/opencode/AGENTS.md` instead, so upgrades can replace rather than
 merge.
 
@@ -156,34 +160,37 @@ Always blocked regardless of location:
 absent. Deterministic, and it survives a repo growing a second language: advantage-backend has a `Gemfile`, a `package.json` and 1,658 vendored `.ts`
 files, which no priority order resolves honestly.
 
-## Commands: 4
+## Commands: 5
 
 | Command | Does |
 |---|---|
-| `/fx:setup` | Writes `.fx.json` · the `AGENTS.md` fx block (opencode delivery) · `docs/plans/` + `docs/agents/*` · `.gitignore` entries for `.fx/` and `.worktrees/` |
-| `/fx:critique` | Dispatches `fx-devils-advocate` at any design or plan |
-| `/fx:grill` | The interview technique standalone: no classification, no gate. For decisions not heading for code |
-| `/fx:handoff` | Compacts the session into a block printed for copying. Not saved: the reason to hand off by hand is that the next session cannot read this disk |
+| `/fx:fx-setup` | Writes `.fx.json` · the `AGENTS.md` fx block (opencode delivery) · `docs/plans/` + `docs/agents/*` · `.gitignore` entries for `.fx/` and `.worktrees/` |
+| `/fx:fx-critique` | Dispatches `fx-devils-advocate` at any design or plan |
+| `/fx:fx-grill` | The interview technique standalone: no classification, no gate. For decisions not heading for code |
+| `/fx:fx-handoff` | Compacts the session into a block printed for copying. Not saved: the reason to hand off by hand is that the next session cannot read this disk |
+| `/fx:fx-audit` | Audits an existing system in four gated phases, ending in a `design.md` for `fx-plan` |
 
 **`/fx:help` cut**: it printed the routing table, which the preamble already
 carries in every session and every subagent. A command that prints what you are
 already looking at is a no-op paying maintenance.
 
-## References: 24 written
+## References: 22 files, 21 markdown plus one TypeScript example
 
 ```
-design-template.md
-vocab/  codebase-design · defense-in-depth · domain-modeling · fowler-smells
-        receiving-review · root-cause-tracing · skill-testing · verification
-        worktree-setup
+audit-template.md · design-template.md
+stacks/ docker · dotnet · observability · rails · react · web
+vocab/  codebase-design · condition-based-waiting · condition-based-waiting-example.ts
+        defense-in-depth · domain-modeling · fowler-smells · good-tests · grilling
+        model-selection · receiving-review · root-cause-tracing · skill-testing
+        verification · worktree-setup
 ```
 
 **Leaves.** 0 cross-links. `codebase-design` absorbed `deepening` and
 `design-it-twice`: the cycle was the symptom that they were one topic split
 three ways. Enforced by `scripts/check-reference-leaves`. See the design doc §2.
 
-**Missing:** `references/stacks/*.md`: Section 3, and a dead pointer in
-`fx-implement`, `fx-tdd`, `fx-debug` and `implementer-prompt.md` today.
+**Missing:** none of the stack profiles Section 3 marks written. The six are in
+`references/stacks/`; `data.md` is unwritten on purpose, as that table records.
 
 ## The routing table
 
@@ -211,8 +218,8 @@ Angular or Swift work the day you open the repo, because the required layer is
 | Layer | Owns | Lives | Written by |
 |---|---|---|---|
 | **Ecosystem** | Rails / .NET / Docker knowledge, true in *any* repo | `references/stacks/*.md`: ships with fx | authored |
-| **Repo** | *this* project: structure, patterns, techniques, conventions | `repo.md` at project root | `/fx:setup`, draft reviewed first |
-| **Machine** | `stacks: []`, test commands, coverage | `.fx.json` | `/fx:setup` |
+| **Repo** | *this* project: structure, patterns, techniques, conventions | `repo.md` at project root | `/fx:fx-setup`, draft reviewed first |
+| **Machine** | `stacks: []`, test commands, coverage | `.fx.json` | `/fx:fx-setup` |
 
 **Sole ownership per fact.** `repo.md` never restates a command; it points at
 `.fx.json`. Nothing is written twice, so nothing can drift apart.
