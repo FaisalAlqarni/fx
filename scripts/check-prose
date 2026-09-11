@@ -125,6 +125,14 @@ def blocks(text):
     buf, start = [], 1
     for n, line in enumerate(text.splitlines(), 1):
         if line.lstrip().startswith('```'):
+            # A fence ends the paragraph before it, as it does when rendered.
+            # Merged across one, prose on both sides shared a single marker and
+            # a single parenthesis count, and main() maps a block back onto
+            # physical lines by its line count, which holds only for a
+            # contiguous run.
+            if buf:
+                yield start, '\n'.join(buf)
+                buf = []
             infence = code_fence(line) if not infence else False
             continue
         if infence:
