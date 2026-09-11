@@ -107,16 +107,21 @@ one exists.
 **Phase:** 3 of 4
 **Compared against:** the current system alone, or the current system against
 the named reference.
+**Stated targets:** every target named in the brief the audit was invoked
+with, quoted verbatim, one per line, each line followed by where it came
+from: the invocation text itself, or the path of a file the user pointed to.
+Quoted, never paraphrased or summarized. A brief that named no targets still
+gets this field, written as: "None: the brief named no targets."
 
 ## Verdict table
 
 **Feature count:** <N> features and business rules listed in
 `01-current.md`'s feature and business-rule inventory, plus `02-reference.md`'s
-when a reference run exists. **Target count:** <N> stated targets named in the
-brief the audit was run with; that brief lives outside this document, never
-inside the table. **Row count:** <N> rows below. The row count must equal
-feature count plus target count: a shortfall means one was silently dropped
-from the table.
+when a reference run exists. **Target count:** <N>, the number of target
+lines recorded in this report's own **Stated targets** field above, not a
+count composed for this table. **Row count:** <N> rows below. The row count
+must equal feature count plus target count: a shortfall means one was
+silently dropped from the table.
 
 One row per feature and per stated target. Every row carries a file and a
 line: a verdict without one is an opinion, not a finding. Rows are ordered
