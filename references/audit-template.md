@@ -114,16 +114,9 @@ source together on a single line, in this form and no other:
 - "<the target, quoted verbatim, never paraphrased or summarized>" from <the invocation text, or the path of the file the user pointed to>
 
 A target that runs across several lines in the brief is joined onto its one
-entry line with spaces. A brief naming two targets gives exactly two entry
-lines:
-
-- "Adding a payment provider touches one module" from the invocation text
-- "Refunds settle within one business day" from docs/payments-brief.md
-
-A brief that named no targets gives no entry lines. The field then holds this
-one line, which is not an entry line and counts as zero targets:
-
-None: the brief named no targets.
+entry line with spaces. A brief that named no targets gives no entry lines,
+and the field holds one line in their place, which is not an entry line and
+counts as zero targets: "None: the brief named no targets."
 
 ## Verdict table
 
@@ -148,6 +141,25 @@ that matter.
 
 Findings from the lenses dispatched in this phase, each carrying the same
 file, line and verdict standard as the table above.
+```
+
+Worked example of a finished **Stated targets** field. A brief naming two
+targets gives two entry lines, so the target count is 2:
+
+```markdown
+**Stated targets:**
+
+- "Adding a payment provider touches one module" from the invocation text
+- "Refunds settle within one business day" from docs/payments-brief.md
+```
+
+A brief naming no targets gives no entry lines, only the line in their place,
+so the target count is 0:
+
+```markdown
+**Stated targets:**
+
+None: the brief named no targets.
 ```
 
 ## Sections Phase 4 appends to `design.md`
