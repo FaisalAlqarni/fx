@@ -2859,3 +2859,211 @@ removing the fixture on exit.
 Not cleaned up by me now: `/tmp` is shared with other jobs, and a `check-all`
 running elsewhere could be using one of them. Removing this branch's leftovers is
 offered in the completion report.
+
+## Task 06 fix round 1: landed and verified
+
+Commit `190125e`, `docs/adr/0008-no-performance-lens.md` only, no trailer, parent
+`f5163c0`. Verified myself: `git diff --numstat eb4bd91 190125e` on the file gives
+`4 0`, so nothing ADR 0008 held before task 06 is removed. The line now reads that
+0014 "pays the second dispatch this recommendation avoids, in `fx-lens-pipeline`,
+for one concern this record did not list: unbounded enqueue against consumer
+backlog. Every item listed above stays uncovered." Wrapped to four lines. ADR 0014
+needed no change. Prose gate on `docs/adr` exits 0.
+
+The added lines follow the recommendation with no blank line, so Markdown renders
+them inside that paragraph. Handed to the re-review as a named risk.
+
+Packaged at `.fx/2026-09-11-fx-audit/review/f5163c0..190125e.diff`.
+
+Record committed `9cb212e`: the ledger through the fixture leak.
+
+## Dispatched after 9cb212e, each launch confirmed before this entry
+
+- **Task 06 fix round 1 scoped re-review**, mid tier, read-only, not to run
+  `check-all`. Told to run the numstat proof, check agreement with ADR 0014, and
+  judge the paragraph rendering.
+- **Task 09**, top tier, the only writer, the last task. Its brief carries the
+  counts checked on disk, the corrected gates paragraph, the References ruling,
+  and Ruling AD applied to every command name a user types in `README.md` and
+  `SURFACE.md`, not only the table, with the `slash_commands` evidence to cite. No
+  command file is renamed and nothing outside the two files changes.
+
+Still running: task 08's review.
+
+## Task 06: complete, fix round 1 closed
+
+Scoped re-review: **both findings ADDRESSED, no new breakage.** Findings at
+`docs/plans/2026-09-11-fx-audit/findings/06-fix-round1-findings.md`. It ran the
+numstat proof against `eb4bd91`, `4 0`, and quoted both records to show ADR 0008
+and ADR 0014 now agree: one concern ADR 0008 never listed got the lens, and every
+item it listed stays uncovered.
+
+**Deferred to the final review, Minor:** the supersession note at
+`docs/adr/0008-no-performance-lens.md:25-28` has no blank line before it, so
+Markdown renders it inside the recommendation's paragraph. The file's other
+bold-led clause, at line 13, stands as its own paragraph. Accurate, and no gate
+reads rendering.
+
+Task 06 is complete.
+
+## Task 08: review needs fixes, five Importants and ten Minors verified at the lines
+
+Task reviewer: **Needs fixes. 0 Critical, 5 Important, 10 Minor, 7 cannot-verify.**
+Findings at `docs/plans/2026-09-11-fx-audit/findings/08-fx-audit-findings.md`. It
+parsed the probe logs event by event: GREEN 3 wrote only `01-current.md` and ended
+in seven lines; the resume run made two read-only calls and wrote nothing. Rulings
+V, AA and AC, ADR 0014:75-82 and coverage items 1, 2, 6, 9 and 10 are carried in
+the text.
+
+Each Important read against `commands/fx-audit.md` as committed:
+
+1. **I1, the documented name does not resolve,** plan-mandated. Lines 6 and 9 give
+   `/fx:audit`; the logs return "Unknown command". Ruling AD's evidence.
+2. **I2, the agent cannot locate the templates.** Lines 66-67 cite
+   `../references/...`, relative to a file whose location the agent is never
+   given. Observed: `find /`, and in one run reads of `installed_plugins.json`,
+   `settings.json`, `/proc/$PPID/cmdline` and `env`. Eight fx copies already hold
+   `design-template.md` on this machine, so a search is ambiguous. **Waiting on a
+   platform answer before ruling:** whether a plugin command can reach its plugin
+   directory at all. Asked of the Claude Code guide agent.
+3. **I3, explorers that cannot write.** Lines 107-116 name no capability. Two of
+   three `Explore` agents failed to write, printed their findings inline, and
+   used up the retry meant for empty areas.
+4. **I4, the sound verdict rests on an unrecorded reply.** Line 192's third check
+   is the Phase 3 gate choice, which no document holds; lines 91-92 then make a
+   sound verdict permanent. A chosen candidate never reaches `design.md` either
+   (197-200).
+5. **I5, reference lines cannot be opened.** Line 151 removes the worktree; lines
+   176-178 then require opening every row's line, including reference rows.
+
+## Ruling AE: all ten of task 08's Minors join its fix round
+
+Promoted under Ruling I's precedent, and more strongly: every one sits in the one
+file the round rewrites, several change what an agent does, and Phases 3 and 4
+have never run, so no later round will catch them in use.
+
+- **Correctness:** M2, line 38's bold lead says queue behaviour "has one dedicated
+  pass", the reverse of Ruling AA; M3, resume decides from this run's flags, so a
+  first run's `--against` is silently lost and Phase 2 is mentioned; M4,
+  `git ls-files` drops untracked code, so the probe's one file would have reached
+  Phase 3 as an empty set; M7, an approved `design.md` and a missing Phase 4
+  report have no resume rule; M10, the slug from a basename collides across scopes
+  and resumes the wrong audit, sound verdict included, with no way to start over.
+- **Wording and scope:** M1, "the target" at line 60; M5, stated targets never
+  reach the `fx-architecture` subagent; M6, "every file the audit wrote" cannot
+  fit ten lines; M8, the boundary's "nothing else" omits the exclude file; M9,
+  count rules and the report distinction restated from the templates.
+
+Cost if wrong: a larger round on one file. Caught by the scoped re-review, and a
+fresh GREEN probe, since Phase 1's dispatch changes.
+
+**Cannot-verify items, resolved or carried:** named dispatch of `fx-lens-pipeline`
+and `--max-turns` enforcement stay unobserved and go to the completion report;
+whether `disable-model-invocation` keeps the command out of the model's listing
+waits on the same platform answer as I2; the after-checksum exists only in the
+report, and the log's absence of any write is the stronger evidence; `check-all`
+runs fresh at the exit gate.
+
+**Observations outside the task, to the completion report:** `commands/fx-grill.md`
+has I2's defect; the four sibling commands' headings carry Ruling AD's naming
+defect; the global constraint that a description never summarises a workflow and
+`fx-authoring`'s user-invoked one-liner disagree for commands.
+
+## Task 09: landed and verified
+
+Commit `ab52534`, `README.md` and `SURFACE.md` only, no trailer, parent `9cb212e`.
+Verified myself against disk:
+
+```
+disk                      skills 12, agents 6, commands 5, references 22 files
+README Layout             skills 12 (10 lanes plus prototype and research),
+                          agents 6 (5 lenses plus the devil's advocate), commands 5
+README Gates              six listed, check-artifacts added, check-all's five named
+SURFACE headings          Agents: 6, Commands: 5, References: 22 files, 21 markdown
+                          plus one TypeScript example; Lanes: 10 unchanged, correct
+command names             every typed name in both files is /fx:fx-<name>
+lens and command rows     fx-lens-pipeline with its trigger set, branch only;
+                          /fx:fx-audit in both command tables
+prose gate                exit 0 on both files
+```
+
+Ten counts were wrong before, all match after. The implementer cited
+`run-red.json` and `run-green-1.json` for "Unknown command", correcting my brief,
+which named a log holding only the `slash_commands` list.
+
+Left in `SURFACE.md` on purpose: `/fx:help`, `/fx:stack` and `/fx:upgrade` at
+lines 173, 248 and 279 name commands that do not exist; an Agents table "Lines"
+column matches no fx file; and a cut `performance` lens is still listed at mid
+tier. All belong to the wider stale-document sweep the task puts out of scope. To
+the completion report.
+
+**A dependency to watch:** if task 08's I2 ruling moves the command's content, the
+counts task 09 just corrected change with it.
+
+Packaged at `.fx/2026-09-11-fx-audit/review/9cb212e..ab52534.diff`.
+
+**Task 09 review:** dispatched, launch confirmed. Mid tier, read-only, no
+writer live. Told to run the filesystem command for every number the diff
+states, and handed seven named risks: the typed names, the three names of
+commands that do not exist, the References section, the new rows and the "n/a",
+the Tests block, the gates paragraph, and scope.
+
+## The platform answer on task 08's I2
+
+Asked of the Claude Code guide agent, answers marked by source:
+
+- Whether `${CLAUDE_PLUGIN_ROOT}` is substituted inside a command's markdown body:
+  **not documented**; the variable is documented for hooks, MCP configuration and
+  scripts.
+- Whether a command is given its base directory: **not documented**. The probes
+  answer it empirically: no run was told, and every run searched.
+- `@path` and `!` with that variable in commands: **not documented**.
+- A skill with `disable-model-invocation: true`: **documented** as invocable only
+  by the user, by name, and it **still receives the "Base directory for this
+  skill" line** when invoked.
+- Command naming: not documented beyond the filename, which the probes confirm.
+  The documentation treats `commands/` as the legacy flat layout and uses
+  `skills/` for new plugins.
+
+## Ruling AF: the audit becomes a user-invoked skill, because only a skill can find its own templates
+
+`commands/fx-audit.md` moves to `skills/fx-audit/SKILL.md` with
+`disable-model-invocation: true`, and its citations become
+`../../references/audit-template.md` and `../../references/design-template.md`,
+relative to the skill file and reachable from the base directory the skill is
+given.
+
+**Why this is not the lane the design ruled out.** `design.md:152-168` chose a
+command over a lane because a model-selectable skill pays a context load every
+turn and competes for attention with existing triggers. A skill the model cannot
+invoke does neither: `skills/fx-authoring/SKILL.md:292-297` gives exactly this form
+as the user-invoked entry, with zero context load. The user still types
+`/fx:fx-audit`. The measured lane the design defers stays deferred.
+
+**Why not the alternatives.** An environment variable in the body is
+undocumented for commands and forbidden by the citation constraint. A locating
+rule that searches for the plugin is what the probes did, reading the user's
+settings and process list on the way, and on this machine it is ambiguous across
+eight fx copies. Nothing else on the platform gives a command its location.
+
+**What it costs, all disclosed:**
+
+- Task 08's Produces path changes from `commands/fx-audit.md` to
+  `skills/fx-audit/SKILL.md`.
+- Task 09's corrected counts shift: commands 5 to 4, skills 12 to 13, in both
+  inventory documents, including how `SURFACE.md` classifies a skill that is
+  neither lane nor procedure. That goes to task 09's fix round.
+- The manifest may need the skill declared, per `scripts/check-manifest`.
+- The design names it "a command" throughout. Recorded here and in the completion
+  report, not rewritten in `design.md`.
+
+Cost if wrong: the user wanted the entry under `commands/`. Reverting is moving
+one file back, and the templates stay unreachable. Caught by the user at the
+completion report, where this ruling is listed with the naming and asset
+questions.
+
+Fix round 1 for task 08 resumes its original implementer, which holds the probe
+context. It carries I1 to I5, with I2 resolved by this ruling, the ten Minors
+under Ruling AE, and a fresh RED, GREEN and resume probe, because the entry type,
+Phase 1's dispatch and the resume rules all change. Dispatched after the record
+commit, as the only writer.
