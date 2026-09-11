@@ -173,6 +173,7 @@ bodies. Comments are the highest-volume prose you write: they are covered.
 No inflated claims. No "it's not X, it's Y". No stock AI vocabulary
 (*delve, leverage, robust, seamless, comprehensive, crucial*). No vague
 attribution ("experts say", "studies show"). No sales register.
+(prose-gate: quoting)
 
 **No em dashes or en dashes.** Not "sparingly": none. Use a period, a comma,
 a colon, or parentheses, or rewrite the sentence. This one is stated as an

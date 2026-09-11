@@ -39,6 +39,18 @@ STOCK = ['delve', 'leveraging', 'leverages', 'leveraged',
          'it is important to note', 'plays a vital role']
 HEDGE = ["it's not just", 'it is not just', "isn't just", 'not only that']
 
+# A block that quotes this list on purpose (to state the rule, not break it)
+# carries this marker and is exempt. Nothing else is: three earlier attempts
+# tried to INFER "mention versus use" from formatting (a per-line density
+# threshold, then a paragraph-wide version of it, then masking backtick
+# spans), and each was correct for the case that motivated it and wrong just
+# outside it. Formatting does not carry that distinction; only the author
+# does. Same call this codebase already made twice: fenced blocks are tagged
+# ```markdown rather than sniffed, and `scripts/check-artifacts` uses
+# `artifact-gate: ok` rather than an allowlist (ADR 0011). Declared at the
+# site, checked by presence, nothing inferred.
+MARKER = 'prose-gate: quoting'
+
 
 def files(paths):
     for base in (paths or [ROOT]):
@@ -62,25 +74,6 @@ def files(paths):
 FENCE_TICKS = re.compile(r'^(\s*)(`{3,})(.*)$')
 OPTION_LABEL = re.compile(r'^\s*[A-Za-z0-9]\)', re.M)
 FENCE_LANG = re.compile(r'^\s*```+\s*`*([A-Za-z0-9_+#.-]*)')
-INLINE_CODE = re.compile(r'`[^`]*`')
-
-
-def mask_inline_code(block):
-    """Blank out inline-code spans in a block, preserving every line break.
-
-    A term inside single backticks is being NAMED, not used: `robust` in a
-    sentence about the word `robust` is not an instance of the word being
-    written. The span has to be found at the BLOCK level, not the line: a
-    quoted phrase word-wraps like anything else in markdown, so its opening
-    backtick can sit on one line and its closing backtick on the next, the
-    same way `blocks()` already tolerates a parenthesis opening on one line
-    and closing on another. What stays a per-OCCURRENCE mask rather than a
-    per-block exemption is what keeps this from bleeding onto a genuine
-    violation sharing the paragraph: only the backtick-quoted bytes are
-    blanked, never anything outside them.
-    """
-    return INLINE_CODE.sub(
-        lambda m: ''.join(c if c == '\n' else ' ' for c in m.group(0)), block)
 
 
 def code_fence(line):
@@ -149,7 +142,7 @@ def blocks(text):
 
 def main():
     argv = [a for a in sys.argv[1:] if not a.startswith('--')]
-    dash_lines = stock_hits = unbalanced = bad_fences = 0
+    dash_lines = stock_hits = unbalanced = bad_fences = exempted_blocks = 0
     report = []
 
     for p, rel in files(argv):
@@ -165,38 +158,24 @@ def main():
             bad_fences += 1
             report.append(f'  {rel}:{n}  closing fence carries a language: {line}')
 
-        # Stock-vocabulary detection runs against a masked copy of each
-        # block, built once per block so an inline-code span that wraps
-        # across a line break still gets found and blanked (see
-        # mask_inline_code). masked_line[n] holds the result for physical
-        # line n; a line outside every block (blank, or inside a fenced
-        # code block, which is skipped below anyway) simply has no entry.
-        masked_line = {}
+        # Marked lines: every physical line of a block that carries MARKER
+        # anywhere in it. The marker exempts the whole block it sits in,
+        # because a quoted list wraps across several lines like anything
+        # else in markdown, but it exempts nothing else: a genuine violation
+        # sharing a paragraph with an unmarked block is still caught.
+        marked_lines = set()
         for start, block in blocks(text):
             body = OPTION_LABEL.sub('', block)
             if body.count('(') != body.count(')'):
                 unbalanced += 1
                 report.append(f'  {rel}:{start}  unclosed parenthesis in this block')
-            for i, masked in enumerate(mask_inline_code(block).splitlines()):
-                masked_line[start + i] = masked
+            if MARKER in block:
+                exempted_blocks += 1
+                marked_lines.update(range(start, start + len(block.splitlines())))
 
         # a dash in a sample command, a tree diagram or an output template is
         # part of the example. Counting what the fixer will never touch means a
         # gate that cannot go green, which is a gate people learn to ignore.
-        #
-        # Two exemptions apply to the stock-vocabulary check, and BOTH act on
-        # a single occurrence or a single line, never a whole paragraph: a
-        # paragraph-wide exemption bled onto a genuine violation sharing the
-        # paragraph with a dense quoted line, which is worse than the false
-        # positive it replaced.
-        #
-        #   1. Inline-code masking (above): `robust` in backticks is a
-        #      mention, not a use.
-        #   2. Per-line density: a line that names three or more of these,
-        #      even unquoted, is the rule being stated, not broken.
-        #      PREAMBLE.md's italic quotation of the list relies on this
-        #      one, since it never uses backticks. Scoped to that one line:
-        #      it does not spread to a neighbour with no blank line between.
         infence = False
         for n, line in enumerate(text.splitlines(), 1):
             if line.lstrip().startswith('```'):
@@ -207,13 +186,15 @@ def main():
             if '—' in line or '–' in line:
                 dash_lines += 1
                 report.append(f'  {rel}:{n}  dash')
-            low = masked_line.get(n, line).lower()
-            if sum(1 for w in STOCK if re.search(rf'\b{re.escape(w)}\b', low)) >= 3:
+            if n in marked_lines:
                 continue
+            low = line.lower()
             for w in STOCK + HEDGE:
                 if re.search(rf'\b{re.escape(w)}\b', low):
                     stock_hits += 1
                     report.append(f'  {rel}:{n}  "{w}"')
+
+    print(f'{exempted_blocks} block(s) exempted by `{MARKER}`')
 
     if not report:
         print('OK: no dashes, no stock vocabulary, parentheses balanced')
@@ -226,7 +207,8 @@ def main():
         print(r)
     if len(report) > 40:
         print(f'  ... and {len(report) - 40} more')
-    print('Everything else is a judgement call and stays yours.')
+    print(f'Quoting the rule on purpose? Add `{MARKER}` anywhere in that '
+          f'paragraph. Everything else is a judgement call and stays yours.')
     return 1
 
 
