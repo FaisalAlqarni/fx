@@ -67,6 +67,14 @@ renders inside the recommendation's paragraph.
 `references/audit-template.md:146-163` show the field as a bare label, unlike the
 sibling count fields at `:123-129`.
 
+**Task 08, the audit skill** (`state.md`, "Task 08: complete, fix round 2
+closed"):
+
+- At root scope the file set excludes only this audit's slug directory, so another
+  audit's untracked documents under `docs/plans/` are still read.
+- A slug directory created under round 1's naming rule is not found by round 2's.
+- N1 is parked for the user under Ruling AG, below.
+
 **Task 09, the inventory documents:** `SURFACE.md`'s Agents table "Lines" column
 matches no fx file; `SURFACE.md:173`, `:248` and `:279` name `/fx:help`,
 `/fx:stack` and `/fx:upgrade`, which do not exist; the cut `performance` lens is

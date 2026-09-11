@@ -3333,3 +3333,65 @@ disagree.
   as a list marker. **A fourth blind spot in
   `check-prose`**, beside the three already recorded, and added to the file's
   findings outside every task.
+
+Record committed `a19e515`: the ledger and the carried-findings file.
+
+## The final review's package, built ahead of the verdict
+
+`.fx/2026-09-11-fx-audit/review/final-shipped-8309b63..a19e515.diff`: merge-base
+`8309b63` to `a19e515`, scoped to the shipped paths `skills`, `agents`,
+`commands`, `references`, `scripts`, `tests`, `docs/adr`, `README.md`,
+`SURFACE.md`, `PREAMBLE.md` and `.fx.json`. 32 commits, 29 files, +1521 and −128,
+2696 lines. Every path the branch changed is either in that list or under this
+plan's own record; nothing else changed.
+
+Built before task 08's round 2 verdict because ledger commits touch none of those
+paths. **If round 2 leads to another commit on a shipped file, the package is
+rebuilt before any reviewer reads it.**
+
+**Passes planned, per `fx-review` branch mode:** spec against `design.md` and the
+ledger; standards, since the diff far exceeds three files; the broad reviewer on
+the top tier with `final-review-carried.md`; the unprimed adversarial pass; the
+security lens on the companion's session-key and served-file handling; the
+silent-failure lens if its trigger content is in authored changes, confirmed
+before dispatch; and correctness through `/code-review`, run by the coordinator if
+it is available, since a subagent cannot invoke it. The pipeline and database
+lenses would match only the task 05 fixture, which Ruling B puts outside review.
+
+**Lenses, decided on authored content, not file names,** from the shipped diff
+with the fixture excluded:
+
+- **Security: dispatched.** 46 added lines in `skills/fx-brainstorm/scripts/`
+  touch the session token, the exclude file and the slug.
+- **Silent failure: dispatched.** Most keyword hits in added lines are comments,
+  but `start-server.sh` rewrote its error paths, including the git-cannot-answer
+  decision that failed open once in this build, and `check-all`,
+  `check-artifacts` and `check-prose` changed how they fail.
+- **Accessibility: not dispatched.** No HTML or CSS file changed.
+- **Database and pipeline: not dispatched.** Their only matches are the fixture.
+
+## Task 08: complete, fix round 2 closed. All nine tasks complete.
+
+Scoped re-review: **N2 to N5 and Ruling AH's restore ADDRESSED, no new
+breakage.** Findings at `docs/plans/2026-09-11-fx-audit/findings/08-fix-round2-findings.md`.
+It ran the file-set pathspec in a scratch repository for the root and for
+subdirectory scopes, applied the naming rule to eight scopes with no unintended
+collision, walked the five resume states for three directory shapes, and read the
+`fr2-` logs: GREEN stopped at the Phase 1 gate with the explorer files written,
+the resume asked for stated targets and not the Phase 3 gate question, and the
+checksums match.
+
+**Deferred to the final review, Minor:**
+
+- At root scope the file set excludes only this audit's slug directory, so another
+  audit's untracked documents under `docs/plans/` are still read.
+- A slug directory created under round 1's naming rule is not found by round 2's.
+
+N1 stays parked under Ruling AG.
+
+**Task 08 is complete. All nine tasks are complete.** No shipped path changed after
+`a19e515`, so the final review's package stands as built. Correctness runs through
+a top-tier general reviewer standing in for `/code-review`: no skill of that name
+appears in any listing available to this session, and a guessed skill name is not
+invoked. Disclosed in the completion report as a deviation, the same substitution
+the task 05 protocol disclosed.
