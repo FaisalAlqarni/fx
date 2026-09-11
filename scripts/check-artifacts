@@ -36,10 +36,7 @@ def main():
 
     for path in files():
         rel = str(path.relative_to(ROOT))
-        try:
-            text = path.read_text()
-        except (UnicodeDecodeError, OSError):
-            continue
+        text = path.read_text()
         for n, line in enumerate(text.splitlines(), 1):
             if not any(pat in line for pat in PATTERNS):
                 continue
