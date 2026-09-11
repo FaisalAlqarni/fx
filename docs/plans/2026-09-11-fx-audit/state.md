@@ -2385,11 +2385,24 @@ SURFACE headings           Lanes: 10, Agents: 5, Commands: 4, References: 24
 Task 09's stated mismatches all hold. My own earlier line about the README's gate
 count did not, and is corrected in place in the task 04 entry.
 
-**One count task 09 does not name:** `SURFACE.md` claims 24 references against 21
-markdown files on disk. It may count something other than files. Its criterion
-that every count is checked against the filesystem covers it, and the brief names
-it so it is not skipped. "Lanes: 10" against 12 skill directories needs the same
-check, since the README calls two of them prototype and research.
+**Checked further in `SURFACE.md` itself:**
+
+- **"Lanes: 10" is correct.** Its table lists ten lanes, and `prototype` and
+  `research` are the two under "Procedures: 2": twelve directories. The stale
+  number is the README's "skills/ 11: 9 lanes plus prototype and research", from
+  before `fx-design`.
+- **"References: 24" matches nothing on disk,** and the section under it is stale
+  as a whole. Disk holds 22 files under `references/`: 21 markdown files plus
+  `vocab/condition-based-waiting-example.ts`. The section's listing shows one
+  template and nine vocab entries, and its "Missing" line says
+  `references/stacks/*.md` does not exist, when six stack profiles do.
+
+**Ruling for task 09's brief:** the References count, its listing block and the
+"Missing" line are corrected together from `ls`, because the listing is the
+inventory the count summarises and the "Missing" line would contradict both. The
+count states what it counts. Everything else in that section, and the wider
+stale-document sweep, stays out of scope as the task says. Cost if wrong: one
+sentence of prose touched beyond a pure count. Caught by task 09's review.
 
 `fx-design` missing from `plugin.json` is the finding recorded at the start of
 this build, out of task 09's scope, and goes to the completion report.
@@ -2428,10 +2441,13 @@ The smoke run wrote "`schema.sql` adds no work to a queue, so there are no
 findings for it." Read literally, the README's regression signal, "reports
 anything about `schema.sql`", counts that line as a regression.
 
-Ruled not a regression. The lens's Output section already tells it to say in
-one line when nothing adds work to a queue; the run applied that to one file. The
-line makes no claim about the file's contents and repeats no other pass's
-finding, which is what task 05's Risks section wanted the negative control to
+Ruled not a regression. ~~The lens's Output section already tells it to say in
+one line when nothing adds work to a queue; the run applied that to one file.~~
+*(Struck in place: the Output section asks for that line only when nothing in
+the whole file set adds work, and `worker.js` does, so it does not license a
+per-file line. Caught by task 05's round 5 re-review. The ruling rests on the
+reason that follows.)* The line names no defect in the file's contents and
+repeats no other pass's finding, which is what task 05's Risks section wanted the negative control to
 prove: that the lens "stays silent on a schema-only change". A finding, a
 cession, or any claim about what the file contains is still a regression.
 
@@ -2442,3 +2458,95 @@ attached.
 
 Cost if wrong: a future run that states one file is out of scope is misread as a
 pass or a failure. Caught by task 05's re-review, which is handed this line.
+
+Record committed `eb4bd91`: the ledger and the task 04 and task 07 closing
+findings, staged by name while no writer held the index.
+
+## Dispatched around eb4bd91, each launch confirmed before this entry
+
+- **Task 05 fix round 5 scoped re-review**, top tier because it is the last round
+  and judges lens wording. Launched just before the record commit; read-only, so
+  the index was never shared. Handed Ruling AB's line, finding 2 at
+  `worker.js:24`, the implementer's three wording departures, the new red flag,
+  "cron" in the body, and the record-integrity proofs to run. Not to run
+  `check-all`, and no run against the fixture.
+- **Task 06**, top tier, launched after the commit. The only writer. Its brief
+  says the ledger wins where the task file predates the measurement: ADR 0014
+  records Ruling U's measurement, the narrowing, the provisional status with its
+  reason, Ruling Z's four qualifications and Ruling AA's audit gap; ADR 0013
+  states the stack-profile loading rule as the four skill lines show it; ADR 0008
+  gets one added line, proven by `git diff --numstat`.
+
+Queued for the writer slot: task 08, then task 09.
+
+## Design read against task 08, three more things for its brief and the report
+
+Read `design.md` lines 67 to 221 against task 08's acceptance criteria. The
+criteria match the design's four phases, the documents-as-state resume, Phase 2's
+path-or-worktree resolution, Phase 4 writing `design.md`, the two composed
+templates, and the sound-architecture outcome. Three things do not follow from
+the task file alone.
+
+1. **User stories 18 to 22 describe a lens that no longer ships.** They ask for a
+   lens that checks head-of-line blocking, double sends, exhausted jobs with no
+   dead letter, work enqueued inside a transaction, and correlation identifiers.
+   Under Ruling U the lens asks only whether a producer reads the backlog. Those
+   stories are superseded by the measurement, not met, and the completion report
+   says so rather than counting them delivered. Stories 23 to 27 still hold.
+2. **`fx-architecture` is a skill, not an agent.** Design and task both say Phase 3
+   "dispatches" it. A skill is invoked, not dispatched, so task 08's command has to
+   dispatch a read-only subagent that invokes `fx:fx-architecture` by its
+   addressable name on the file set, and the brief says so. Any HTML report that
+   skill writes lands in the audit's slug directory under task 03's
+   `report-<timestamp>.html` convention, beside the report Phase 4 writes. The two
+   are different documents, a review of what exists and a rendering of the
+   target, so the command says which file is which rather than leaving two
+   same-shaped names for a reader to tell apart.
+3. **`fx-architecture` is interactive, and a subagent cannot reach the user.**
+   Checked at the skill: it writes a fresh report every run
+   (`skills/fx-architecture/HTML-REPORT.md:24`), opens it and prints the path
+   (`:28-34`), and presents candidates for the user to pick before any grilling
+   (`SKILL.md:75` onward). Inside an audit that loop has nobody to answer it. The
+   brief requires the command to bound the invocation: the subagent stops once
+   the candidates are written, returns the report path and a short summary, and
+   the choice among candidates waits for the Phase 3 gate, where the user is.
+
+**Baseline for task 08's step 6:** `python3 scripts/check-paths` reports 53
+reference citations at `eb4bd91` plus task 06's work in progress, which touches
+no citation. The command's two template citations should make it 55.
+
+## Task 05: complete, fix round 5 closed
+
+Scoped re-review: **all findings ADDRESSED, 0 Critical, 0 Important, 1 Minor.**
+Findings at `docs/plans/2026-09-11-fx-audit/findings/05-fix-round5-findings.md`.
+
+- Both Importants and all six promoted Minors addressed at the lines it cites; no
+  `Ceded` or cession anywhere in the plugin; the smoke run went from 13 ceded
+  lines to none.
+- Record integrity run, not read: fixture unchanged since `d496d1e`, and the
+  `KEY.md` table rows hash identically at `d496d1e`, `85901b9`, `fca4cf9` and in
+  the working tree.
+- Finding 2 at `worker.js:24` names depth and never a shared lane or ordering, so
+  it is row 6's mechanism, scored correctly.
+- The three wording departures each do what their finding needed. "cron" is a
+  generic scheduling term, beside "scheduled" each time.
+- **Ruling AB's outcome held and its first reason did not.** Struck in place
+  above.
+
+**Deferred to the final review, Minor:**
+
+- `tests/lens-pipeline/README.md:50-52` and `KEY.md:40-41` state the regression
+  signal in words that read two ways: "reports anything about `schema.sql`" for a
+  line saying it adds no work, and "reports any of rows 1 to 5" for a finding
+  cited on a row 1 line with row 6's mechanism. Ruling AB and the measurement
+  record's scoring rule settle both, but the README points at neither.
+- Out of the fix diff: the lens cedes per-record queries and enqueue inside a
+  transaction to `fx-lens-database`, whose triggers do not fire on a worker-only
+  diff, so on such a diff neither is reported. With Ruling AA and deferred Minor
+  8.
+- Out of the fix diff: smoke finding 2 was marked Important though no producer in
+  the fixture checks depth, which the Important tier requires. With deferred
+  Minor 9.
+
+Task 05 is complete, at the fifth and last round. The lens ships narrowed to one
+hunt group and provisional, as the user decided.
