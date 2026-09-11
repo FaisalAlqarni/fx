@@ -50,7 +50,7 @@ EXIT:0
   note`, `plays a vital role`): no matches. Necessary to check by hand because
   `check-prose` only walks `*.md` files (`scripts/check-prose:46`), so a
   `.sh`/`.json` file is invisible to the gate; the global constraint still
-  binds it.
+  binds it. (prose-gate: quoting)
 
 - Read `README.md:164-199` (the `## Tests` section) to confirm every gate and
   suite name the script runs is one the README actually documents, and that

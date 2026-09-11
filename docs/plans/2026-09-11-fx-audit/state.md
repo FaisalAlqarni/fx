@@ -427,7 +427,8 @@ ALL GREEN
 
 `scripts/check-prose:23` now carries `.fx/` in its exempt tuple beside `.git/`.
 
-**My first probe of the exemption was wrong, and the code was right.** I planted
+**My first probe of the exemption was wrong, and the code was right.**
+(prose-gate: quoting) I planted
 `"This robust and seamless approach is crucial."` in `docs/plans/` and it was not
 flagged, which looked like an over-broad exemption. It was not: three stock
 words on one line trips `check-prose`'s own pre-existing quotation heuristic,
@@ -451,3 +452,298 @@ Exemption is narrow. Working tree restored with no tracked modifications.
 worktree untracked, and every implementer is told to stage by explicit path and
 never to stage the ledger, so nothing would ever have committed it. The lane
 requires the ledger to travel with the work.
+
+## Task 02: fix round 1 landed and verified
+
+Commit `9eea5c1`. The implementer chose propagation over a skip counter,
+matching `scripts/check-paths`, on the reasoning that propagation guarantees a
+non-zero exit with no extra logic anyone can later forget to maintain. I agree
+with the choice and record the tradeoff it carries: an unreadable file now
+crashes the gate mid-scan, so the run is loud but its report is incomplete.
+Loud and incomplete beats silent and complete for a gate.
+
+Verified myself:
+
+```
+check-artifacts   exit=1, 16 line(s) across 9 file(s), 0 exempted   count unchanged
+check-all         TRUE exit=0, ALL GREEN
+```
+
+Opened `scripts/check-artifacts:36-46`: the `try`/`except` is gone and
+`text = path.read_text()` stands bare, which is the prior art's shape.
+
+**My packaging was wrong first and I caught it before dispatching.** I ran
+`review-package` with the task's original BASE, `a7e7335..9eea5c1`, which swept
+in task 01's two fix commits and the ledger commit: 4 commits, 141,792 bytes,
+almost none of it task 02's. Handing that to a scoped re-reviewer is the
+context poisoning the lane warns about, and it invites exactly the wandering a
+scoped re-review exists to prevent. The fix commit's parent is `c2186cc`, so
+the correct range is `c2186cc..9eea5c1`: **1 commit, 1,096 bytes, one file.**
+
+The general rule this cost me, worth carrying to every later fix round: a fix
+round's base is the head the previous review saw **only when nothing else
+landed in between.** On a branch where tasks interleave, it is the fix commit's
+own parent.
+
+## Task 02: complete (commits a7e7335..9eea5c1, review clean)
+
+Files touched: `scripts/check-artifacts`, `docs/adr/0015-artifacts-live-in-the-repository.md`.
+
+Scoped re-review: **finding ADDRESSED, no new breakage.** It reproduced the
+unreadable-file case on a scratch tree it built itself rather than changing a
+repository file, and read the exit code directly.
+
+It also settled the tradeoff I had accepted without checking. I recorded that
+propagation makes the run "loud but its report incomplete". That was
+pessimistic: both `print` calls sit after the scan loop, so a mid-scan crash
+produces **no stdout at all**, only the traceback and exit 1. There is no
+partial listing that could be mistaken for a clean run. Better than the
+tradeoff I signed off on.
+
+Guarantee rows from this task:
+
+| # | What is guaranteed | Test | Type | Result | Evidence |
+|---|---|---|---|---|---|
+| 02a | A temp path in a skill, agent or command fails the gate | `scripts/check-artifacts` | gate | FAIL as designed | 16 line(s) across 9 file(s), 0 exempted |
+| 02b | A line marked `artifact-gate: ok` is exempted and counted | marker mutation | gate | PASS | 16 to 15, 1 exemption, restored byte-identical |
+| 02c | `scripts/` and `tests/` are out of scope | structural check | gate | PASS | neither appears in the report |
+| 02d | An unreadable file fails loudly, not silently | scratch reproduction | gate | PASS | `PermissionError` naming the file, exit 1, no stdout |
+
+## Correction: task 03 was NOT dispatched
+
+I wrote a "Task 03: dispatched" line here and then did not dispatch it. The
+ledger is the most durable artifact in this run and every later reviewer is
+told to check provenance against it, so a false line in it is worse than a
+missing one. Struck, and the real dispatch is recorded below when it happens.
+
+## Task 01: re-review reopened the round, correctly
+
+Findings 1, 2 and 4 **ADDRESSED**, verified at `scripts/check-all:47-52`,
+`scripts/check-all:36` with `.fx.json:3,6`, and `scripts/check-prose:23`.
+
+**Finding 3's fix introduced an Important regression, and it is the exact risk
+the brief told the re-reviewer to hunt.** The block-wide exemption at
+`scripts/check-prose:160-172` exempts an entire paragraph once any one line
+trips the density trigger. A genuine violation sharing a paragraph with a dense
+quoted line, before or after it with no blank line between, is waved through at
+exit 0 where the per-line version would have caught it. The re-reviewer
+confirmed this by running it both ways rather than reasoning about it.
+
+This is why a fix that loosens a gate gets its own proof obligation. The
+implementer's own mutation case passed because it spread the violation across
+lines in a **separate** paragraph, so it never exercised the bleed.
+
+Fix round 3 opened. Cap is 5, so there is room, and this is the last item.
+
+Task 01: minor (deferred): `EXEMPT` membership uses a bare substring test at
+`scripts/check-prose:47-48`, so `notes.fx/file.md` matches `.fx/`. Pre-existing
+predicate looseness shared by all seven entries, not a class this diff created.
+Task 01: minor (deferred): PID-keyed fixture directories are never removed, so
+one directory accumulates per invocation where a single self-overwriting one
+stood before. Introduced by Ruling I's uniqueness requirement.
+
+## Task 01: fix round 3 landed, verified independently
+
+Commit `3868025`. The implementer did not follow my suggested approach and said
+so, which is the behaviour the template asks for. My idea was line-scoped
+backtick masking; a phrase's backtick pair can straddle a line wrap, so masking
+has to read at block granularity while blanking only the exact quoted bytes and
+never a whole paragraph. That is a better solution than the one I offered.
+
+I built the cases myself rather than reading its report, in a scratch directory
+outside the repository:
+
+```
+a-wrapped-quote      exit=0   the four-line wrapped quotation passes
+b-violation-after    exit=1   genuine violation after a dense line, same paragraph
+c-violation-before   exit=1   genuine violation before a dense line, same paragraph
+PREAMBLE.md          exit=0   the single-line six-term quotation still passes
+check-all            exit=0   read directly, no pipe
+```
+
+The paragraph bleed is closed and both legitimate quotation shapes survive.
+(prose-gate: quoting)
+Note that `robust` appears in backticks and again in prose in cases b and c, so
+these test the masking boundary rather than mere presence.
+
+Round 3 diff packaged at `.fx/2026-09-11-fx-audit/review/9eea5c1..3868025.diff`,
+1 commit, using the fix commit's own parent as the base per the rule this build
+learned two rounds ago.
+
+## Task 03: dispatched, for real this time
+
+BASE `3868025`. Unblocked: 02 complete, no writer in flight.
+
+## Task 01 round 3: named defect fixed, new Important in the same function
+
+Re-review: **paragraph bleed ADDRESSED**, verified at `scripts/check-prose:68-83`
+and `211-212`, all three cases and both orderings.
+
+New Important: masking every backtick-delimited span makes **any single
+backticked stock word invisible**, with no density requirement and no need for
+the line to look like a quotation. I reproduced it rather than taking the
+claim:
+
+```
+This design is meant to be `robust` under load.   exit=0   bypassed
+This design is robust under load.                 exit=1   caught
+```
+
+Before this diff a stock word's visibility never depended on backticks at all.
+
+**Ruling L: stop patching the predicate and replace the inference with an
+explicit marker.** Three attempts, each correct for its author's case and wrong
+just outside it: per-line density missed wrapped quotations, block-wide
+exemption bled across paragraphs, backtick masking swallows a single quoted
+word. `fx-debug`'s circuit breaker names this exact pattern at three: each fix
+reveals a problem in a different place, which is a wrong architecture rather
+than a failed hypothesis.
+
+The architecture is wrong because the predicate is inferring **mention versus
+use** from formatting, which formatting does not determine.
+
+fx has already made this exact call twice, and both are in scope here:
+
+- `scripts/check-prose` itself, on fences: *"Prose fences are tagged
+  ```markdown rather than inferred. A bare fence stays code, because it
+  routinely is. Tagging says which fences are text at the site, where the
+  person adding one can see the rule."*
+- Task 02's `artifact-gate: ok`, chosen over an allowlist under ADR 0011.
+
+So: a block that quotes the banned list carries a marker and is exempt. Nothing
+else is exempt. Both the density heuristic and the backtick masking go.
+
+Cost if wrong: five files must carry the marker, and an author who forgets it
+gets a false positive instead of a silent pass. A false positive is the failure
+direction a gate should fail in. Caught by the round 4 re-review, which is told
+to prove that a marked block passes, an unmarked quotation fails, and a genuine
+violation inside a marked block is a deliberate, accepted cost.
+
+Migration surface, enumerated from the source of truth rather than from memory:
+
+```
+PREAMBLE.md
+docs/plans/2026-09-11-fx-audit/findings/01-machine-facts-findings.md
+docs/plans/2026-09-11-fx-audit/findings/01-fix-rounds-findings.md
+docs/plans/2026-09-11-fx-audit/findings/01-round3-findings.md
+docs/plans/2026-09-11-fx-audit/findings/02-artifact-gate-findings.md
+```
+
+**Round 4 is blocked on task 03, deliberately.** Task 03's implementer is
+writing now and runs `check-prose` as part of its verification. Editing that
+gate underneath it produces exactly the false RED and false GREEN the
+serial-implementer rule exists to prevent, even though the two touch no common
+file. Waiting.
+
+## Task 03: landed, verified, under review
+
+Commit `660bef0`, five files. Verified myself:
+
+```
+check-artifacts   exit=1   8 line(s) across 4 file(s), 3 exempted
+remaining         skills/fx-brainstorm/{server.cjs,start-server.sh,stop-server.sh,visual-companion.md}
+check-all         TRUE exit=0
+```
+
+Hits the task's stated 8 and 3 exactly, and every remaining violation is in
+task 04's set, which is the property that proves the split was clean rather
+than that the count happened to land.
+
+**Its declared deviation is legitimate and I checked it rather than accepting
+it.** It cited ADR 0015 as plain text rather than an anchored path, saying that
+matches repo convention. `skills/fx-architecture/SKILL.md:124` reads
+*"contradicts ADR-0007, but worth reopening"*, so the convention is real.
+Accepted. `check-paths` does not validate `docs/adr/` citations either way.
+
+Diff packaged at `.fx/2026-09-11-fx-audit/review/3868025..660bef0.diff`.
+
+## Task 01 round 4: dispatched under Ruling L
+
+Unblocked now that task 03's implementer has finished. Task 03's reviewer runs
+concurrently and is told not to run `check-prose` or `check-all`, since round 4
+is editing that gate underneath it.
+
+## Task 03: complete (commits 3868025..660bef0, review clean)
+
+Files touched: `skills/fx-architecture/{SKILL,HTML-REPORT,COVERAGE}.md`,
+`skills/fx-review/{reviewer-prompt,COVERAGE}.md`.
+
+Review: **Approved. 0 Critical, 0 Important, 1 Minor.** It ran the artifact
+gate and the citation gate itself, confirmed the diff touches only the five
+named files and nothing in `skills/fx-brainstorm/` or in the gate script, and
+**opened all three marked lines** to confirm each is a real quotation with its
+quoted bytes unchanged and the marker placed alongside rather than inside the
+quote. Those are Ruling C's two concerns and both were checked rather than
+assumed.
+
+Task 03: minor (deferred): `skills/fx-architecture/COVERAGE.md:124` appends its
+marker to a prose line where the other two sit in table cells. Cosmetic.
+
+One warning item, correctly not treated as a defect: the reviewer could not run
+`check-all` because `check-prose` is being rewritten by round 4. My own
+pre-rewrite run at this exact commit recorded `TRUE exit=0`, and the artifact
+gate is not wired into `check-all` yet, so this task's red gate cannot cause a
+future red run.
+
+Guarantee rows from this task:
+
+| # | What is guaranteed | Test | Type | Result | Evidence |
+|---|---|---|---|---|---|
+| 03a | The architecture report is written into the plan directory | `check-artifacts` | gate | PASS | 16 to 8 lines, no `fx-architecture` hit remains |
+| 03b | A review worktree goes to `.worktrees/`, not a temp path | `check-artifacts` | gate | PASS | no `fx-review/reviewer-prompt` hit remains |
+| 03c | Upstream quotations keep their text and take the marker | manual read of all 3 | inspection | PASS | quoted bytes unchanged, marker alongside |
+| 03d | Every citation still resolves | `check-paths` | gate | PASS | 53 citations |
+
+## Frontier, and a ruling I will need when round 4 closes
+
+Blocked entirely on task 01 round 4, which is a writer. Nothing else can run.
+
+When it closes, three tasks unblock at once: 04, 05 and 07. They share no file:
+04 is `skills/fx-brainstorm/` plus `scripts/check-all`, 05 is a new agent plus
+`tests/lens-pipeline/` plus `skills/fx-review/SKILL.md`, 07 is one new
+reference.
+
+**The serial-implementer rule's stated reason does not hold here.** It is a
+shared test environment: one Postgres, one Redis, one broker set, where a
+worktree is a second checkout rather than a second database. This repository
+has no database and no service. The one real shared resource was the fixture
+directory, and Ruling I made those paths unique per process.
+
+This repository's own earlier ledger made exactly this call for its tasks 02 to
+07. I will make it again when the frontier opens, and record it then rather
+than banking it now, because it depends on round 4 not changing what the gates
+touch.
+
+## Task 01 round 4: the marker holds
+
+Commit `a1ac01a`. `check-prose` now has one rule: a block carrying
+`prose-gate: quoting` is exempt, and nothing else is. Both heuristics are gone.
+
+Verified myself, five cases in a scratch directory:
+
+```
+1-marked-quote          exit=0   a marked quotation of the list passes
+2-unmarked-quote        exit=1   an unmarked one fails, the intended cost
+3-backticked-word       exit=1   round 3's bypass sentence is caught again
+4-violation-in-marked   exit=0   accepted cost, documented rather than discovered
+5-plain-violation       exit=1   ordinary prose still caught
+check-all               exit=0   ALL GREEN, 7 blocks exempted
+```
+
+**Two corrections the implementer made to my instructions, both right.**
+
+It declined to mark two of the five files I enumerated, because both already
+pass unmarked: their quotations sit inside untagged code fences, which neither
+removed heuristic ever touched. My enumeration was a grep for the words, not a
+check of which files actually depended on the heuristics, so it over-matched.
+A grep generalised past its scope, which is one of the three controller error
+shapes this lane names.
+
+It also declined to touch `state.md`, correctly: the ledger is mine and every
+prior round told it so. That left `check-all` red on **my** file, at lines 431
+and 564, where I had quoted my own failed probe and named a test word. It
+reported this precisely rather than either editing my file or staying quiet.
+I applied the marker to both blocks myself.
+
+**The migration surface was therefore 3 files, not 5**, plus the ledger, which
+nobody but me could fix.
