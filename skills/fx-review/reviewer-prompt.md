@@ -54,8 +54,8 @@ Subagent (general-purpose):
     Your review is read-only on this checkout. Do not mutate the working tree,
     the index, HEAD, or branch state in any way. Use `git show`, `git diff`,
     `git log` to inspect history. If you need a working copy of another
-    revision, check it out into a separate temporary directory
-    (`git worktree add /tmp/review-[SHA] [SHA]`): never move HEAD here.
+    revision, check it out into the ignored worktrees directory
+    (`git worktree add .worktrees/review-[SHA] [SHA]`): never move HEAD here.
 
     ## You do not dispatch subagents
 

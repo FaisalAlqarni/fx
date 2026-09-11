@@ -74,10 +74,11 @@ the signal you want.
 
 ## 2. Present candidates as an HTML report
 
-Write a **self-contained HTML file to the OS temp directory, so nothing lands
-in the repo.** Resolve the temp dir: `$TMPDIR` → `%TEMP%` (Windows) → `/tmp`.
-Write to `<tmpdir>/architecture-review-<timestamp>.html`, so each run gets a
-fresh file.
+Write a **self-contained HTML file into the plan directory, so a user can open
+it again later.** If a plan directory already exists for this work, write to
+`docs/plans/<slug>/report-<timestamp>.html`. Invoked standalone, with no plan
+directory yet, create one: `docs/plans/YYYY-MM-DD-architecture-review/`, and
+write the report there under the same name, so each run gets a fresh file.
 
 Open it, and **print the absolute path regardless**: if the open call fails
 silently, the path is the fallback:

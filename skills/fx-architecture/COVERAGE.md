@@ -29,8 +29,9 @@ Verdicts: **K** kept inline · **R** kept in a reference · **H** kept in
 | All 5 friction questions | K | |
 | The deletion test; "concentrates" is the signal | K | |
 | **"Write to the OS temp directory so nothing lands in the repo"** | K/H | **Restored**: the reason, not just the rule. Two prior runs left files in `/development` |
-| **`$TMPDIR` → `%TEMP%` (Windows) → `/tmp`** | K/H | **Restored**: cross-platform |
+| **`$TMPDIR` → `%TEMP%` (Windows) → `/tmp`** | K/H | **Restored**: cross-platform (artifact-gate: ok) |
 | **`architecture-review-<timestamp>.html`, fresh per run** | K/H | **Restored** |
+| The restored temp-directory write target (the three rows above) | S | **Superseded** locally by ADR-0015: the report now writes to `docs/plans/<slug>/report-<timestamp>.html`, never the OS temp directory |
 | Open it (`xdg-open` / `open` / `start`) and tell them the absolute path | K/H | + **WSL** (`explorer.exe "$(wslpath -w …)"`), and "print the path regardless" for silent open failures |
 | Tailwind + Mermaid via CDN | H | Kept. Noted: needs a connection to render; nothing about the repo leaves the machine |
 | Mix Mermaid with hand-crafted CSS/SVG; when to use which; **collapse animations** | H | |
@@ -120,7 +121,7 @@ Verdicts: **K** kept inline · **R** kept in a reference · **H** kept in
 1. ADRs record decisions **not to re-litigate**
 2. `CONTEXT.md`'s domain language **names good seams**
 3. Temp dir **"so nothing lands in the repo"**: the reason, not just the rule
-4. `%TEMP%` on Windows · `start` · the timestamped filename: cross-platform
+4. `%TEMP%` on Windows · `start` · the timestamped filename: cross-platform (artifact-gate: ok)
 5. Benefits **in terms of locality and leverage, and how tests improve**
 6. Diagrams **custom-drawn, illustrating the shallowness and the deepening** ·
    collapse animations

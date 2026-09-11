@@ -72,7 +72,7 @@ A claim with no verdict is a build error.
 |---|---|
 | Senior-reviewer framing; review before it cascades | P |
 | What Was Implemented · Requirements/Plan · Git Range | P |
-| **Read-Only Review**: no mutation of tree/index/HEAD/branch; `git worktree add /tmp/review-<SHA>` for another revision | P |
+| **Read-Only Review**: no mutation of tree/index/HEAD/branch; `git worktree add /tmp/review-<SHA>` for another revision | P (artifact-gate: ok) |
 | **You Do Not Dispatch Subagents**: full paragraph incl. "review it in passes yourself and say so" | P |
 | What to Check: Plan alignment (3) · Code quality (5) · Architecture (4) · Testing (4) · Production readiness (4) | P |
 | Calibration: severity, praise-before-issues, flag deviations specifically, **say so if the plan itself is the problem** | P |

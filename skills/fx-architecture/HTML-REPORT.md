@@ -1,8 +1,8 @@
 # HTML Report Format
 
-The architectural review renders as a **single self-contained HTML file in the
-OS temp directory**, so nothing lands in the repo: opened in a local browser.
-Tailwind and Mermaid load from CDNs. Mermaid handles graph-shaped diagrams
+The architectural review renders as a **single self-contained HTML file inside
+the plan directory**, not loose at the repository root: opened in a local
+browser. Tailwind and Mermaid load from CDNs. Mermaid handles graph-shaped diagrams
 reliably; hand-built divs and inline SVG handle the more editorial visuals.
 **Mix the two: don't lean on Mermaid for everything, it starts to look
 generic.**
@@ -21,8 +21,8 @@ compiles on the fly and has no stable hash.
 ## Path and opening
 
 ```
-tmpdir  = $TMPDIR → %TEMP% (Windows) → /tmp
-file    = <tmpdir>/architecture-review-<timestamp>.html
+file = docs/plans/<slug>/report-<timestamp>.html
+       (no plan directory yet: docs/plans/YYYY-MM-DD-architecture-review/report-<timestamp>.html)
 ```
 
 A fresh file per run. Then open it, and **print the absolute path regardless**: a silent failure to open leaves the path as the fallback:
