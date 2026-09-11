@@ -2729,3 +2729,133 @@ delivery at its next tool round. Queued, not yet confirmed read. Cheaper than a
 fix round that re-runs its probe sessions. Its report must carry the six as their
 own section, and task 08's review is handed them as requirements whether or not
 the message landed before its commit.
+
+## Task 08: landed and verified
+
+Commit `46f0ab9`, `commands/fx-audit.md` only, 229 lines, no trailer, parent
+`25b24b8`. Verified myself:
+
+```
+frontmatter                    disable-model-invocation: true; a one-line description
+the five amendments and AC     each found in the text by search
+Phase 3                        names fx-lens-pipeline and fx:fx-architecture, and no other lens
+.worktrees/ ignore             through info/exclude
+check-paths                    55 reference citations, from 53
+check-artifacts                exit 0
+```
+
+The implementer reports the mid-run message landed, and all six are in the
+commit. Probe evidence, read from its files: GREEN stopped at the Phase 1 gate
+with `01-current.md` only and a seven-line final message; resume said so and left
+`01-current.md` byte-identical by checksum. One fx copy served every run, the
+worktree's, with the cached copy disabled per session through `--settings`; no
+settings file changed. Nested sessions wrote only inside the scratch project,
+which is removed. `--max-turns` raised no error, but no run reached the limit, so
+enforcement is unproven. No run reached Phase 3, so `fx-lens-pipeline` resolving
+by name is still unobserved.
+
+Two searches of mine found nothing: no "guess" phrasing for Phase 2, and no
+statement that the skeleton is the first fence. The review is asked to check the
+actual wording.
+
+**Finding, checked in the probe logs myself: every fx command resolves as
+`fx:fx-<name>`.** The init event's `slash_commands` in all five runs lists
+`fx:fx-audit`, `fx:fx-critique`, `fx:fx-grill`, `fx:fx-handoff` and
+`fx:fx-setup`. Typing `/fx:audit` returned "Unknown command". So the README's
+`/fx:critique`, `/fx:setup`, `/fx:grill` and `/fx:handoff` have never resolved,
+which predates this branch, and this command's own heading `# /fx:audit`, the name
+the design gave it, does not resolve either.
+
+## Ruling AD: documents state the command names that resolve; renaming is the user's call
+
+Kept: the file stays `commands/fx-audit.md`, the path the plan's Produces line
+names and the same shape as its four siblings. The name a user types today is
+`/fx:fx-audit`.
+
+- The command's heading and self-references are judged by task 08's review, which
+  is handed the evidence, and fixed in its fix round if it agrees.
+- Task 09's README commands table states the names that resolve for all five
+  commands. It is a table correction with ground truth in the init event, so it is
+  in task 09's scope.
+- **Renaming all five files so `/fx:<name>` resolves**, the names the README always
+  promised and the design used, changes what the user types for four existing
+  commands. That goes to the user under "Needs you".
+
+Cost if wrong: either the user types the longer names until the files are
+renamed, or the README is corrected twice. Caught by the user at the completion
+report.
+
+**Observation, not chased:** the implementer reports the empty blob `e69de29b`
+being rewritten in `/development/fx/.git`, outside the probes. Git writes that
+object whenever an empty file is hashed, which several concurrent sessions and
+checks can do. It changes no ref and no tracked content. To the completion report
+as an observation only.
+
+## Dispatched after f5163c0, each launch confirmed before this entry
+
+Record committed `f5163c0`: the ledger, task 06's findings and the coverage audit.
+
+- **Task 08 review**, top tier, read-only, no nested sessions, not to run
+  `check-all`. Handed every ledger requirement for the command, the six
+  amendments, ADR 0014 lines 75 to 82, the naming evidence, and ten named risks:
+  the resolved name, how an agent finds the templates without a base directory,
+  explorers that cannot write, Phases 3 and 4 read as an agent would, the two
+  senses of "target", Phase 2's guards, restatement, the frontmatter, Ruling AC,
+  and the probe evidence from the logs.
+- **Task 06 fix round 1**, resuming the original implementer, which was reachable.
+  The only writer. The added ADR 0008 line states the principle 0014 overrides
+  for one concern 0008 never listed, keeps "superseded in part", wraps, and is
+  proven additions-only against `eb4bd91`.
+
+Queued for the writer slot: task 09, with Ruling AD's table correction added to
+its brief.
+
+## The final review's fixed point, pinned early
+
+Base branch `main`, at `8309b63`, which is also `git merge-base main HEAD`. The
+ref resolves and the diff is not empty: 36 commits, 62 files, +9920 and −99 at
+`f5163c0` plus task 08.
+
+Much of that is this plan's own record under `docs/plans/2026-09-11-fx-audit/`:
+the ledger, findings, the measurement record and two HTML reports. The final
+review's package will be limited to what ships, which is `skills/`, `agents/`,
+`commands/`, `references/`, `scripts/`, `tests/`, `lib/`, `docs/adr/`, `README.md`
+and `SURFACE.md`, with the design and the ledger passed as the spec and as the
+source of deferred and parked lines. That keeps the reviewers reading the plugin,
+not ten thousand lines of record. The exact path list is confirmed against
+`git diff --stat` when the package is built.
+
+**Checked against `git diff --name-only 8309b63...HEAD`: the list above missed two
+shipped files,** and both join the package:
+
+- `PREAMBLE.md`, one added line, `(prose-gate: quoting)`, from task 01's `a1ac01a`,
+  directly after the preamble's list of banned words so the prose gate does not
+  flag the list itself. The preamble is injected into every session and every
+  subagent, so every agent now reads that marker. Reviewed through task 01's
+  rounds; the final review sees it because of where it lands.
+- `.fx.json`, task 01's machine facts. `test_one` and `setup` build git fixtures
+  under `/tmp/fx-fixture-...-$$`. That sits inside the design's scoping rule, which
+  exempts test scaffolding from the temp-directory constraint, but it is a temp
+  path fx writes, in a session where the user was emphatic about temp
+  directories, and nothing seen so far removes those fixtures. **Handed to the
+  final review to judge** rather than waved through here.
+
+`lib/` has no change on this branch and drops out of the list.
+
+**The fixture question answered by reading, not left as a question.** The
+fixtures are never removed. `scripts/make-git-fixture` runs `rm -rf` only on the
+path it is about to rebuild. `scripts/check-all:37` builds
+`/tmp/fx-fixture-check-all-$$` with no `trap` and no removal, and `.fx.json`'s
+`test_one` and `setup` do the same. **57 `/tmp/fx-fixture-*` directories exist
+right now.**
+
+This branch made it accumulate: task 01 made the fixture paths unique per process
+so concurrent runs stop colliding. Before that, one fixed path was overwritten on
+every run; now every run leaves one behind. A regression of this branch's own
+making, inside the design's scaffolding exemption. **To the final review as an
+item to triage before merge**, with the fact attached: the likely shape is
+removing the fixture on exit.
+
+Not cleaned up by me now: `/tmp` is shared with other jobs, and a `check-all`
+running elsewhere could be using one of them. Removing this branch's leftovers is
+offered in the completion report.
