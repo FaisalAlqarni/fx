@@ -1,9 +1,9 @@
 {
   "stacks": [],
-  "test_one": "bash -c 'F=$(scripts/make-git-fixture /tmp/fx-fixture-test-one) && node {file} $F'",
+  "test_one": "bash -c 'F=$(scripts/make-git-fixture /tmp/fx-fixture-test-one-$$) && node {file} $F'",
   "test_scope": null,
   "test_all": "scripts/check-all",
-  "setup": "scripts/make-git-fixture /tmp/fx-fixture-setup",
+  "setup": "bash -c 'scripts/make-git-fixture /tmp/fx-fixture-setup-$$'",
   "lint": null,
   "coverage": null,
   "coverage_floor": null

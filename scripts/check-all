@@ -29,11 +29,27 @@ run check-reference-leaves scripts/check-reference-leaves
 run check-prose            scripts/check-prose
 
 echo "== make-git-fixture =="
-if ! FIX=$(scripts/make-git-fixture /tmp/fx-fixture); then
+# Path is unique per process ($$ is this script's own PID): a fixed path
+# races when two runs of check-all are in flight at once, since
+# make-git-fixture starts with `rm -rf` on the path it is given, and one run
+# deletes the directory the other is mid-suite against.
+FIXTURE_DIR="/tmp/fx-fixture-check-all-$$"
+if ! FIX=$(scripts/make-git-fixture "$FIXTURE_DIR"); then
   echo "FAIL: make-git-fixture"
   exit 1
 fi
-read -r MAIN WT <<<"$FIX"
+
+# make-git-fixture verifies MAIN and WT are a real main checkout and a real
+# linked worktree before it echoes them, but nothing between that echo and
+# here has checked what actually arrived. A here-string always terminates
+# with a newline, so `read` exits 0 whether $FIX held zero, one, or three or
+# more tokens: `set -e` cannot catch a wrong shape, only a nonzero exit.
+read -r MAIN WT EXTRA <<<"$FIX"
+if [ -z "$MAIN" ] || [ -z "$WT" ] || [ -n "${EXTRA:-}" ] \
+   || [ ! -d "$MAIN" ] || [ ! -d "$WT" ]; then
+  echo "FAIL: make-git-fixture returned an unexpected shape: '$FIX'"
+  exit 1
+fi
 
 run git-guard.test.js   node lib/git-guard.test.js   "$MAIN" "$WT"
 run base-branch.test.js node lib/base-branch.test.js "$MAIN" "$WT"

@@ -146,11 +146,30 @@ def main():
             bad_fences += 1
             report.append(f'  {rel}:{n}  closing fence carries a language: {line}')
 
+        # A line that names three or more of these is the rule being stated,
+        # not the rule being broken: PREAMBLE.md quotes the banned list
+        # verbatim, and so does any document explaining the rule. The trigger
+        # stays per LINE (a genuinely dense listing), but the exemption it
+        # grants now covers the whole BLOCK the line sits in, not just that
+        # one line: a quoted list wraps across several lines in ordinary
+        # markdown, and the wrapped tail can carry as little as one phrase,
+        # which never reaches the threshold on its own even though it is
+        # plainly still the same list. A block where no single line is ever
+        # dense enough to trip the trigger is not a quotation, it is three
+        # phrases spread thin through real prose, and that must still fail.
+        exempt_lines = set()
         for start, block in blocks(text):
             body = OPTION_LABEL.sub('', block)
             if body.count('(') != body.count(')'):
                 unbalanced += 1
                 report.append(f'  {rel}:{start}  unclosed parenthesis in this block')
+            block_lines = block.splitlines()
+            triggered = any(
+                sum(1 for w in STOCK if re.search(rf'\b{re.escape(w)}\b', bl.lower())) >= 3
+                for bl in block_lines
+            )
+            if triggered:
+                exempt_lines.update(range(start, start + len(block_lines)))
 
         # a dash in a sample command, a tree diagram or an output template is
         # part of the example. Counting what the fixer will never touch means a
@@ -165,12 +184,9 @@ def main():
             if '—' in line or '–' in line:
                 dash_lines += 1
                 report.append(f'  {rel}:{n}  dash')
-            low = line.lower()
-            # A line that names three or more of these is the rule being stated,
-            # not the rule being broken. PREAMBLE.md quotes the banned list
-            # verbatim, and so does any document explaining the rule.
-            if sum(1 for w in STOCK if re.search(rf'\b{re.escape(w)}\b', low)) >= 3:
+            if n in exempt_lines:
                 continue
+            low = line.lower()
             for w in STOCK + HEDGE:
                 if re.search(rf'\b{re.escape(w)}\b', low):
                     stock_hits += 1
