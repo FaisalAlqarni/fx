@@ -35,6 +35,9 @@ echo "== make-git-fixture =="
 # make-git-fixture starts with `rm -rf` on the path it is given, and one run
 # deletes the directory the other is mid-suite against.
 FIXTURE_DIR="/tmp/fx-fixture-check-all-$$"
+# Removed on every exit, pass or fail, so runs do not pile up in the temp
+# directory. make-git-fixture writes only inside the path it is given.
+trap 'rm -rf "$FIXTURE_DIR"' EXIT
 if ! FIX=$(scripts/make-git-fixture "$FIXTURE_DIR"); then
   echo "FAIL: make-git-fixture"
   exit 1

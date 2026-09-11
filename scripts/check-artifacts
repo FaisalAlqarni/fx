@@ -36,7 +36,13 @@ def main():
 
     for path in files():
         rel = str(path.relative_to(ROOT))
-        text = path.read_text()
+        try:
+            text = path.read_text()
+        except UnicodeDecodeError:
+            # An image or a font carries no instruction to an agent. Any other
+            # read error still fails loudly.
+            print(f'skipped, not text: {rel}')
+            continue
         for n, line in enumerate(text.splitlines(), 1):
             if not any(pat in line for pat in PATTERNS):
                 continue

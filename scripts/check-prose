@@ -21,6 +21,9 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 EXEMPT = ('skills/fx-humanize/', 'references/testing/', 'upstream/', '.git/',
           '.fx/', 'scripts/check-prose', 'lib/fix-dashes.test.py',
+          # Nested worktrees hold other branches' files, which this checkout's
+          # gate does not own.
+          '.worktrees/', '.claude/worktrees/',
           # Anthropic's own skill-authoring guide, carried verbatim. Editing its
           # prose would make it a local fork of a document whose value is that
           # it is not one.
