@@ -57,10 +57,10 @@ Same standard as above: a file and a line per claim.
 
 ## Areas not covered
 
-Every area an explorer returned nothing on, after one re-dispatch with more
-context. Name the area and why it stayed uncovered. Write this section even
-when it is empty, because an absent section reads as a complete map rather
-than an honestly bounded one: "None: every dispatched area returned findings."
+Every area this phase found nothing on. Name the area and why it stayed
+uncovered. Write this section even when it is empty, because an absent
+section reads as a complete map rather than an honestly bounded one: "None:
+every area returned findings."
 ```
 
 ## `02-reference.md`
@@ -110,6 +110,10 @@ the named reference.
 
 ## Verdict table
 
+**Target count:** <N> features and stated targets identified. **Row count:**
+<N> rows below. The two numbers must match: a lower row count means a target
+was silently dropped from the table.
+
 One row per feature and per stated target. Every row carries a file and a
 line: a verdict without one is an opinion, not a finding. Rows are ordered
 highest impact first, so a reader who stops partway down still has the rows
@@ -150,8 +154,10 @@ completion through the target shape.
 
 ## Per-module verdict
 
-One row per module in the current system: none may go silently unaccounted
-for. Four verdicts only.
+**Module count:** <N> modules listed in `01-current.md`'s patterns and file
+structure section. **Row count:** <N> rows below. The two numbers must
+match: a lower row count means a module went silently unaccounted for. Four
+verdicts only.
 
 | Module | Verdict | Reason |
 |---|---|---|

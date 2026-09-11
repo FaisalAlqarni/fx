@@ -86,16 +86,19 @@ multi-commit task.
   where an unprimed pass earns its cost: it's the one place structural blind
   spots have had room to accumulate.
 
-| Lens | Fires when the diff touches |
-|---|---|
-| `fx-lens-database` | `db/migrate/`, `*.sql`, `structure.sql`, any model, ClickHouse queries, EF migrations |
-| `fx-lens-security` | Devise / Pundit / JWT / session / auth paths, params handling, credentials, any new endpoint or route, `[Authorize]` |
-| `fx-lens-a11y` | `.erb`, `.css`, view partials, Compose `.kt`, SwiftUI `.swift`, anything with user-facing strings |
-| `fx-lens-silent-failure` | `rescue`, `catch`, `except`, Sidekiq workers, broker consumers, attribution code |
+| Lens | Fires when the diff touches | Mode |
+|---|---|---|
+| `fx-lens-database` | `db/migrate/`, `*.sql`, `structure.sql`, any model, ClickHouse queries, EF migrations | task, branch |
+| `fx-lens-security` | Devise / Pundit / JWT / session / auth paths, params handling, credentials, any new endpoint or route, `[Authorize]` | task, branch |
+| `fx-lens-a11y` | `.erb`, `.css`, view partials, Compose `.kt`, SwiftUI `.swift`, anything with user-facing strings | task, branch |
+| `fx-lens-silent-failure` | `rescue`, `catch`, `except`, Sidekiq workers, broker consumers, attribution code | task, branch |
+| `fx-lens-pipeline` | a queue or job definition, a worker or consumer, a scheduler, retry and backoff policy, dead letters, batch dispatch, rate limiters, connection pools, outbox tables | branch |
 
-There is deliberately **no performance lens**: query-shape performance (N+1,
-missing indexes, `SELECT *`, unbounded result sets) is `fx-lens-database`'s
-job, and it fires on the same diffs.
+There is deliberately **no performance lens** as a standalone axis: query
+shape (N+1, missing indexes, `SELECT *`, unbounded result sets) is
+`fx-lens-database`'s job; app-layer throughput (fairness, backpressure,
+retries, resource pressure across a queue or worker) is `fx-lens-pipeline`'s
+job; bundle size and rendering performance remain deliberately uncovered.
 
 ## 3. Find the spec
 
