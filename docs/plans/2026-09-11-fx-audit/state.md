@@ -3067,3 +3067,38 @@ context. It carries I1 to I5, with I2 resolved by this ruling, the ten Minors
 under Ruling AE, and a fresh RED, GREEN and resume probe, because the entry type,
 Phase 1's dispatch and the resume rules all change. Dispatched after the record
 commit, as the only writer.
+
+Record committed `89f3e9d`: the ledger, task 08's findings and task 06's closing
+findings.
+
+**Task 08 fix round 1:** dispatched, resume confirmed, the original implementer.
+The only writer. Its brief carries Ruling AF's move to `skills/fx-audit/SKILL.md`
+with `disable-model-invocation: true`, citations relative to the skill file, the
+manifest declaration only if `check-manifest` requires it, no edit to `README.md`
+or `SURFACE.md`, I1 and I3 to I5, the ten Minors, and five probe proofs taken from
+the logs: the skill resolves and is given its base directory, explorers all
+write, no filesystem search for a template and no read of settings, `/proc` or
+`env`, resume byte-identical with both checksum files kept, and what the init
+event lists. Logs are kept this time.
+
+Queued behind it: task 09's fix round, for the counts Ruling AF shifts and
+whatever task 09's review returns.
+
+## Task 09: review approved, and one recount still owed under Ruling AF
+
+Task reviewer: **Approved. 0 Critical, 0 Important, 1 Minor.** Findings at
+`docs/plans/2026-09-11-fx-audit/findings/09-inventory-docs-findings.md`. It ran
+the filesystem command for every number the diff states and all matched: skills
+12, agents 6, commands 5, references 22 files, six `check-*` gates besides
+`check-all`, which runs five, and the lane suite's 7 lanes and 9 prompts. All
+three rulings for the task held, with the naming evidence read in the logs.
+
+**Deferred to the final review, Minor:** the `SURFACE.md` Agents table's "Lines"
+column matches no fx file and predates this plan; the new row's "n/a" says so.
+
+**Not complete yet.** Ruling AF moves the audit from `commands/` to `skills/`
+after this review, so the counts it just confirmed become wrong: commands 5 to 4,
+skills 12 to 13, and both command tables and the Layout lines that name
+`/fx:fx-audit`. That recount is owed by a ruling, not a finding, and runs as task
+09's fix round once task 08's fix round lands, checked by a scoped re-review
+against the filesystem.
