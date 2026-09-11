@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Stop the brainstorm server and clean up
+# Stop the brainstorm server
 # Usage: stop-server.sh <session_dir>
 #
-# Kills the server process. Only deletes session directory if it's
-# under /tmp (ephemeral). Persistent directories (.superpowers/) are
-# kept so mockups can be reviewed later.
+# Kills the server process. <session_dir> is the directory holding state/,
+# .fx/<slug>/companion/<session-id>. It is deleted only if it is under
+# /tmp, which start-server.sh no longer uses (artifact-gate: ok), so mockups
+# in docs/plans/<slug>/companion/ are always kept for review.
 
 SESSION_DIR="$1"
 
@@ -12,6 +13,10 @@ if [[ -z "$SESSION_DIR" ]]; then
   echo '{"error": "Usage: stop-server.sh <session_dir>"}'
   exit 1
 fi
+
+# The state directory sits beside the session key; keep what this script writes
+# owner-only, as start-server.sh does.
+umask 077
 
 STATE_DIR="${SESSION_DIR}/state"
 PID_FILE="${STATE_DIR}/server.pid"
@@ -109,8 +114,8 @@ if [[ -f "$PID_FILE" ]]; then
   rm -f "$PID_FILE" "$SERVER_ID_FILE" "${STATE_DIR}/server.log"
   mark_stopped "stop-server.sh"
 
-  # Only delete ephemeral /tmp directories
-  if [[ "$SESSION_DIR" == /tmp/* ]]; then
+  # Only delete ephemeral /tmp directories (artifact-gate: ok)
+  if [[ "$SESSION_DIR" == /tmp/* ]]; then  # artifact-gate: ok
     rm -rf "$SESSION_DIR"
   fi
 

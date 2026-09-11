@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 # Start the brainstorm server and output connection info
-# Usage: start-server.sh [--project-dir <path>] [--host <bind-host>] [--url-host <display-host>] [--foreground] [--background]
+# Usage: start-server.sh [--slug <plan-slug>] [--project-dir <path>] [--host <bind-host>] [--url-host <display-host>] [--foreground] [--background]
 #
 # Starts server on a random high port, outputs JSON with URL.
 # Each session gets its own directory to avoid conflicts.
 #
 # Options:
-#   --project-dir <path>  Store session files under <path>/.superpowers/brainstorm/
-#                         instead of /tmp. Files persist after server stops.
+#   --slug <plan-slug>    The slug this brainstorm writes its design under. Mockups
+#                         go to <project>/docs/plans/<slug>/companion/<session-id>/content
+#                         and persist after the server stops. The session key, PID
+#                         and log go to the git-ignored <project>/.fx/<slug>/companion/.
+#                         Without it, <slug> is _companion-unfiled, which is not a plan.
+#   --project-dir <path>  Project root (default: the current directory).
 #   --host <bind-host>    Host/interface to bind (default: 127.0.0.1).
 #                         Use 0.0.0.0 in remote/containerized environments.
 #   --url-host <host>     Hostname shown in returned URL JSON.
@@ -21,6 +25,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Parse arguments
 PROJECT_DIR=""
+SLUG=""
 FOREGROUND="false"
 FORCE_BACKGROUND="false"
 BIND_HOST="127.0.0.1"
@@ -30,6 +35,10 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --project-dir)
       PROJECT_DIR="$2"
+      shift 2
+      ;;
+    --slug)
+      SLUG="$2"
       shift 2
       ;;
     --host)
@@ -62,6 +71,18 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# Absolute, because the server is launched after `cd "$SCRIPT_DIR"` below.
+PROJECT_DIR="$(cd "${PROJECT_DIR:-.}" 2>/dev/null && pwd)" || {
+  echo '{"error": "--project-dir is not a directory"}'
+  exit 1
+}
+
+# One path segment: the slug names a directory under docs/plans/ and .fx/.
+if [[ -n "$SLUG" ]] && ! [[ "$SLUG" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
+  echo '{"error": "--slug must be one path segment of letters, digits, dots, dashes or underscores, starting with a letter or digit"}'
+  exit 1
+fi
 
 if [[ -z "$URL_HOST" ]]; then
   if [[ "$BIND_HOST" == "127.0.0.1" || "$BIND_HOST" == "localhost" ]]; then
@@ -113,22 +134,35 @@ umask 077
 # Generate unique session directory
 SESSION_ID="$$-$(date +%s)"
 
-if [[ -n "$PROJECT_DIR" ]]; then
-  SESSION_DIR="${PROJECT_DIR}/.superpowers/brainstorm/${SESSION_ID}"
-  # Persist the bound port and key per project so a restart reuses them and an
-  # already-open browser tab reconnects to the same URL with a valid cookie.
-  export BRAINSTORM_PORT_FILE="${PROJECT_DIR}/.superpowers/brainstorm/.last-port"
-  export BRAINSTORM_TOKEN_FILE="${PROJECT_DIR}/.superpowers/brainstorm/.last-token"
-else
-  SESSION_DIR="/tmp/brainstorm-${SESSION_ID}"
+# Mockups a user returns to live with the plan. The session key, PID and log are
+# regenerable and live in the git-ignored ephemeral workspace (ADR 0015).
+#
+# No slug: never guess one from docs/plans/, where every other directory is
+# someone's plan. Use a name no --slug can take (a slug starts with a letter or
+# digit) and say so, so the mockups get moved under the design's slug later.
+PLAN_SLUG="${SLUG:-_companion-unfiled}"
+if [[ -z "$SLUG" ]]; then
+  echo "fx companion: no --slug given, so mockups go to docs/plans/${PLAN_SLUG}/companion/, which is not a plan. Pass --slug <plan-slug> to keep them with the design." >&2
 fi
 
-STATE_DIR="${SESSION_DIR}/state"
+SESSION_DIR="${PROJECT_DIR}/docs/plans/${PLAN_SLUG}/companion/${SESSION_ID}"
+WORK_DIR="${PROJECT_DIR}/.fx/${PLAN_SLUG}/companion"
+# Persist the bound port and key per project and slug so a restart reuses them
+# and an already-open browser tab reconnects to the same URL with a valid cookie.
+export BRAINSTORM_PORT_FILE="${WORK_DIR}/.last-port"
+export BRAINSTORM_TOKEN_FILE="${WORK_DIR}/.last-token"
+
+if git -C "$PROJECT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+   && ! git -C "$PROJECT_DIR" check-ignore -q ".fx/${PLAN_SLUG}/companion"; then
+  echo "fx companion: warning: ${WORK_DIR} is not git-ignored and will hold the session key. Add .fx/ to .gitignore (/fx:setup does this)." >&2
+fi
+
+STATE_DIR="${WORK_DIR}/${SESSION_ID}/state"
 PID_FILE="${STATE_DIR}/server.pid"
 LOG_FILE="${STATE_DIR}/server.log"
 SERVER_ID_FILE="${STATE_DIR}/server-instance-id"
 
-# Create fresh session directory with content and state peers
+# Create the session's content and state directories
 mkdir -p "${SESSION_DIR}/content" "$STATE_DIR"
 
 SERVER_ID=""
@@ -168,7 +202,7 @@ fi
 
 # Foreground mode for environments that reap detached/background processes.
 if [[ "$FOREGROUND" == "true" ]]; then
-  env BRAINSTORM_DIR="$SESSION_DIR" BRAINSTORM_HOST="$BIND_HOST" BRAINSTORM_URL_HOST="$URL_HOST" BRAINSTORM_OWNER_PID="$OWNER_PID" node server.cjs "--brainstorm-server-id=$SERVER_ID" &
+  env BRAINSTORM_DIR="$SESSION_DIR" BRAINSTORM_STATE_DIR="$STATE_DIR" BRAINSTORM_HOST="$BIND_HOST" BRAINSTORM_URL_HOST="$URL_HOST" BRAINSTORM_OWNER_PID="$OWNER_PID" node server.cjs "--brainstorm-server-id=$SERVER_ID" &
   SERVER_PID=$!
   echo "$SERVER_PID" > "$PID_FILE"
   wait "$SERVER_PID"
@@ -177,7 +211,7 @@ fi
 
 # Start server, capturing output to log file
 # Use nohup to survive shell exit; disown to remove from job table
-nohup env BRAINSTORM_DIR="$SESSION_DIR" BRAINSTORM_HOST="$BIND_HOST" BRAINSTORM_URL_HOST="$URL_HOST" BRAINSTORM_OWNER_PID="$OWNER_PID" node server.cjs "--brainstorm-server-id=$SERVER_ID" > "$LOG_FILE" 2>&1 &
+nohup env BRAINSTORM_DIR="$SESSION_DIR" BRAINSTORM_STATE_DIR="$STATE_DIR" BRAINSTORM_HOST="$BIND_HOST" BRAINSTORM_URL_HOST="$URL_HOST" BRAINSTORM_OWNER_PID="$OWNER_PID" node server.cjs "--brainstorm-server-id=$SERVER_ID" > "$LOG_FILE" 2>&1 &
 SERVER_PID=$!
 disown "$SERVER_PID" 2>/dev/null
 echo "$SERVER_PID" > "$PID_FILE"
@@ -195,7 +229,7 @@ for _ in {1..50}; do
       sleep 0.1
     done
     if [[ "$alive" != "true" ]]; then
-      echo "{\"error\": \"Server started but was killed. Retry in a persistent terminal with: $SCRIPT_DIR/start-server.sh${PROJECT_DIR:+ --project-dir $PROJECT_DIR} --host $BIND_HOST --url-host $URL_HOST --foreground\"}"
+      echo "{\"error\": \"Server started but was killed. Retry in a persistent terminal with: $SCRIPT_DIR/start-server.sh --project-dir $PROJECT_DIR${SLUG:+ --slug $SLUG} --host $BIND_HOST --url-host $URL_HOST --foreground\"}"
       exit 1
     fi
     grep "server-started" "$LOG_FILE" | head -1

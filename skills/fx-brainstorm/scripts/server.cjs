@@ -99,17 +99,14 @@ function preferredPort() {
 let PORT = preferredPort();
 const HOST = process.env.BRAINSTORM_HOST || '127.0.0.1';
 const URL_HOST = process.env.BRAINSTORM_URL_HOST || (HOST === '127.0.0.1' ? 'localhost' : HOST);
-const SESSION_DIR = process.env.BRAINSTORM_DIR || '/tmp/brainstorm';
+// start-server.sh sets both. Mockups live with the plan in
+// docs/plans/<slug>/companion/<session-id>/content; the key, PID and log live in
+// the git-ignored .fx/<slug>/companion/. There is no default location: the
+// server refuses to start without them rather than guess one.
+const SESSION_DIR = process.env.BRAINSTORM_DIR || '';
 const CONTENT_DIR = path.join(SESSION_DIR, 'content');
-const STATE_DIR = path.join(SESSION_DIR, 'state');
+const STATE_DIR = process.env.BRAINSTORM_STATE_DIR || '';
 const SUPERPOWERS_VERSION = readSuperpowersVersion();
-const SUPERPOWERS_BRAND_IMAGE_URL = 'https://primeradiant.com/brand/superpowers-visual-brainstorming-logo.png';
-const TELEMETRY_DISABLE_ENV_VARS = [
-  'SUPERPOWERS_DISABLE_TELEMETRY',
-  'DISABLE_TELEMETRY',
-  'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'
-];
-const SUPERPOWERS_TELEMETRY_DISABLED = TELEMETRY_DISABLE_ENV_VARS.some(name => isTruthyEnv(process.env[name]));
 let ownerPid = process.env.BRAINSTORM_OWNER_PID ? Number(process.env.BRAINSTORM_OWNER_PID) : null;
 
 // Per-session secret key. The companion is reachable by any local browser tab
@@ -166,9 +163,7 @@ function waitingPage() {
 body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; }
 h1 { color: #333; } p { color: #666; }
 .brand { display: flex; align-items: center; min-width: 0; overflow: hidden; margin-bottom: 1.5rem; color: #666; font-size: 0.9rem; line-height: 1; }
-.brand a { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; min-width: 0; max-width: 100%; line-height: 1; }
 .brand-copy { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1; transform: translateY(-1px); }
-.brand-logo { display: block; height: 1em; width: auto; max-width: 180px; filter: invert(1); }
 </style>
 </head>
 <body><!-- BRANDING --><h1>Brainstorm Companion</h1>
@@ -224,13 +219,6 @@ function readSuperpowersVersion() {
   return 'unknown';
 }
 
-function isTruthyEnv(value) {
-  if (!value) return false;
-  const normalized = String(value).trim().toLowerCase();
-  if (!normalized) return false;
-  return !['0', 'false', 'no', 'off'].includes(normalized);
-}
-
 function escapeHtmlText(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -239,16 +227,9 @@ function escapeHtmlText(value) {
     .replace(/"/g, '&quot;');
 }
 
+// Text only: the page renders nothing that makes the browser contact another host.
 function brandMarkup() {
-  const version = escapeHtmlText(SUPERPOWERS_VERSION);
-  const text = SUPERPOWERS_TELEMETRY_DISABLED
-    ? 'Prime Radiant Superpowers v' + version
-    : 'Superpowers v' + version;
-  const logo = SUPERPOWERS_TELEMETRY_DISABLED
-    ? ''
-    : '<img class="brand-logo" src="' + SUPERPOWERS_BRAND_IMAGE_URL + '?v=' + encodeURIComponent(SUPERPOWERS_VERSION) + '" alt="Prime Radiant" referrerpolicy="no-referrer" decoding="async">';
-
-  return '<div class="brand"><a href="https://github.com/obra/superpowers">' + logo + '<span class="brand-copy">' + text + '</span></a></div>';
+  return '<div class="brand"><span class="brand-copy">Superpowers v' + escapeHtmlText(SUPERPOWERS_VERSION) + '</span></div>';
 }
 
 function renderBranding(html) {
@@ -710,6 +691,10 @@ function startServer() {
 }
 
 if (require.main === module) {
+  if (!process.env.BRAINSTORM_DIR || !process.env.BRAINSTORM_STATE_DIR) {
+    console.error('BRAINSTORM_DIR and BRAINSTORM_STATE_DIR must both be set: start the server with start-server.sh');
+    process.exit(1);
+  }
   startServer();
 }
 

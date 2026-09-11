@@ -27,6 +27,7 @@ run check-manifest         scripts/check-manifest
 run check-paths            scripts/check-paths
 run check-reference-leaves scripts/check-reference-leaves
 run check-prose            scripts/check-prose
+run check-artifacts        scripts/check-artifacts
 
 echo "== make-git-fixture =="
 # Path is unique per process ($$ is this script's own PID): a fixed path
