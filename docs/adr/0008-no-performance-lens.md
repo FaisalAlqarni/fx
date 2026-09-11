@@ -22,4 +22,7 @@ EF Core `AsNoTracking` and client-side evaluation. **None of it comes from the
 original source**, so it would be authored from scratch. Fold it into
 `fx-lens-database`'s brief as an app-layer section rather than paying a second
 dispatch for it.
-**Superseded in part by `0014-the-app-layer-gap-gets-its-own-lens.md`:** queue backpressure got its own lens, `fx-lens-pipeline`, instead of a section in `fx-lens-database`'s brief, and the other items listed here stay uncovered.
+**Superseded in part by `0014-the-app-layer-gap-gets-its-own-lens.md`:** it
+pays the second dispatch this recommendation avoids, in `fx-lens-pipeline`, for
+one concern this record did not list: unbounded enqueue against consumer
+backlog. Every item listed above stays uncovered.
