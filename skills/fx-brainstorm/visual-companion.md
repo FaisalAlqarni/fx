@@ -55,7 +55,7 @@ without repeating it.
 
 **Finding connection info:** The server writes its startup JSON to `$STATE_DIR/server-info`. If you launched the server in the background and didn't capture stdout, read that file to get the URL and port. Session state directories are under `<project>/.fx/<slug>/companion/`.
 
-**Where files go:** pass `--slug` with the slug this brainstorm will write its design under, even before `docs/plans/<slug>/` exists: the script creates it. Never borrow an existing directory under `docs/plans/` because its name looks close, since another plan's directory is not yours to write. Mockups land in `docs/plans/<slug>/companion/<session-id>/content/`, are kept when the server stops, and are committed with the plan. The session key, PID file, log and events live apart from them in `.fx/<slug>/companion/`, which `/fx:setup` git-ignores; the script warns if `.fx/` is not ignored. Without `--slug`, mockups go to `docs/plans/_companion-unfiled/`, which is not a plan, and the script says so: move them under the design's slug once it exists. Run from the project root, or pass `--project-dir <path>`.
+**Where files go:** pass `--slug` with the slug this brainstorm will write its design under, even before `docs/plans/<slug>/` exists: the script creates it. Never borrow an existing directory under `docs/plans/` because its name looks close, since another plan's directory is not yours to write. Mockups land in `docs/plans/<slug>/companion/<session-id>/content/`, are kept when the server stops, and are committed with the plan. The session key, PID file, log and events live apart from them in `.fx/<slug>/companion/`, which `/fx:setup` git-ignores. In a git repository that does not ignore `.fx/` yet, the script adds it to the local exclude file (`git rev-parse --git-path info/exclude`), never to `.gitignore`, and says so. Without `--slug`, mockups go to `docs/plans/_companion-unfiled/`, which is not a plan, and the script says so: move them under the design's slug once it exists. Run from the project root, or pass `--project-dir <path>`.
 
 **Launching the server by platform:**
 
@@ -275,7 +275,7 @@ If `$STATE_DIR/events` doesn't exist, the user didn't interact with the browser:
 - **Explain the question on each page**: "Which layout feels more professional?" not just "Pick one"
 - **Iterate before advancing**: if feedback changes current screen, write a new version
 - **2-4 options max** per screen
-- **Use real content when it matters**: for a photography portfolio, use actual images (Unsplash). Placeholder content obscures design issues.
+- **Use real content when it matters**: placeholder content hides design problems that real content exposes. Keep it local: copy images the user supplies into `screen_dir` next to the mockup and reference them as `/files/<name>`, or use plainly labelled placeholders with honest dimensions and real text, such as `<div class="placeholder">Product photo, 1200 x 800</div>`. Never point a mockup at a remote image, font, script or stylesheet: the page makes no request to another host.
 - **Keep mockups simple**: focus on layout and structure, not pixel-perfect design
 
 ## File Naming

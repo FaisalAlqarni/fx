@@ -152,9 +152,27 @@ WORK_DIR="${PROJECT_DIR}/.fx/${PLAN_SLUG}/companion"
 export BRAINSTORM_PORT_FILE="${WORK_DIR}/.last-port"
 export BRAINSTORM_TOKEN_FILE="${WORK_DIR}/.last-token"
 
+# The state directory holds the session key. In a git repository that does not
+# ignore it yet, add .fx/ to the local exclude file, never the project's
+# .gitignore, as fx-implement does. --git-path resolves the shared exclude file
+# from inside a linked worktree.
 if git -C "$PROJECT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
    && ! git -C "$PROJECT_DIR" check-ignore -q ".fx/${PLAN_SLUG}/companion"; then
-  echo "fx companion: warning: ${WORK_DIR} is not git-ignored and will hold the session key. Add .fx/ to .gitignore (/fx:setup does this)." >&2
+  EXCLUDE_FILE="$(git -C "$PROJECT_DIR" rev-parse --path-format=absolute --git-path info/exclude 2>/dev/null)"
+  if [[ -n "$EXCLUDE_FILE" ]] && ! grep -qxF '.fx/' "$EXCLUDE_FILE" 2>/dev/null; then
+    mkdir -p "$(dirname "$EXCLUDE_FILE")"
+    # Keep an unterminated last line whole.
+    if [[ -s "$EXCLUDE_FILE" && -n "$(tail -c1 "$EXCLUDE_FILE")" ]]; then
+      printf '\n' >> "$EXCLUDE_FILE"
+    fi
+    printf '.fx/\n' >> "$EXCLUDE_FILE"
+    echo "fx companion: added .fx/ to ${EXCLUDE_FILE} so the session key is never committed." >&2
+  fi
+  # A .gitignore rule can re-include .fx/ over the exclude file. Fail closed.
+  if ! git -C "$PROJECT_DIR" check-ignore -q ".fx/${PLAN_SLUG}/companion"; then
+    echo '{"error": ".fx/ is still not git-ignored (a .gitignore rule re-includes it), so the session key would be committable. Remove that rule and start again."}'
+    exit 1
+  fi
 fi
 
 STATE_DIR="${WORK_DIR}/${SESSION_ID}/state"
