@@ -53,9 +53,18 @@ Subagent (general-purpose):
 
     Your review is read-only on this checkout. Do not mutate the working tree,
     the index, HEAD, or branch state in any way. Use `git show`, `git diff`,
-    `git log` to inspect history. If you need a working copy of another
-    revision, check it out into the ignored worktrees directory
-    (`git worktree add .worktrees/review-[SHA] [SHA]`): never move HEAD here.
+    `git log` to inspect history. Never move HEAD here. If you need a working
+    copy of another revision, it goes at `<root>/.worktrees/review-[SHA]`,
+    where `<root>` is `git rev-parse --show-toplevel`:
+
+    1. Confirm that path is git-ignored: `git check-ignore -q <path>`, which
+       works before the path exists. Not ignored: append `.worktrees/` to the
+       local exclude file, located with
+       `git rev-parse --path-format=absolute --git-path info/exclude`, never to
+       `.gitignore`, say that you did, and check again. Still not ignored: add
+       no worktree, and say which rule re-includes it.
+    2. `git worktree add <path> [SHA]`.
+    3. When the review is done, `git worktree remove <path>`.
 
     ## You do not dispatch subagents
 
