@@ -1728,9 +1728,15 @@ adds the entry to the repository's local exclude file, located with
 then proceeds. It never edits the project's `.gitignore`. When the project is not
 a git repository, nothing can be committed and it proceeds unchanged.
 
-This is `fx-implement`'s existing precedent, which puts `.fx/` and `.worktrees/`
+~~This is `fx-implement`'s existing precedent, which puts `.fx/` and `.worktrees/`
 in `info/exclude` for exactly this reason: local, uncommitted, invisible to
-generators, and leaving the project's own ignore file for the project.
+generators, and leaving the project's own ignore file for the project.~~
+*(Struck in place: `skills/fx-implement/SKILL.md:241-252` adds `.fx/` and
+`.worktrees/` to the project's ignore file by default, and uses
+`.git/info/exclude` only on a repository with no application yet. The companion
+always uses the exclude file and never the project's `.gitignore`: a choice that
+stands on its own reason, leaving the project's ignore file to the project, but
+not the precedent claimed here. Caught by the final review's standards pass.)*
 
 Cost if wrong: one line appended to a local file the user did not ask to have
 changed. Caught by task 04's review, which checks the append is announced,
@@ -3395,3 +3401,271 @@ a top-tier general reviewer standing in for `/code-review`: no skill of that nam
 appears in any listing available to this session, and a guessed skill name is not
 invoked. Disclosed in the completion report as a deviation, the same substitution
 the task 05 protocol disclosed.
+
+Record committed `c48dc50`: the ledger, the carried-findings file and round 2's
+findings.
+
+## Final review: seven passes dispatched in parallel, each launch confirmed
+
+All read the package `final-shipped-8309b63..a19e515.diff`, all read-only, none
+to run `check-all`, start the companion, run the audit skill, start a nested
+session or dispatch subagents, and all told what the carried-findings file
+already records so it does not return as a discovery.
+
+- **Broad reviewer**, top tier, on `skills/fx-review/reviewer-prompt.md`'s
+  template with the design, plan, ledger rulings, verbatim global constraints and
+  `final-review-carried.md` to triage. Writes `findings/final-broad-review.md`.
+- **Correctness**, top tier, standing in for `/code-review`, told to run shell,
+  Python and git logic in a scratch directory rather than read it. Writes
+  `findings/final-correctness.md`.
+- **Spec**, top tier, against the design as the rulings amend it, with the
+  coverage audit to avoid repeating. Writes `findings/final-spec.md`.
+- **Standards**, top tier, against `PREAMBLE.md`, `fx-authoring`, the ADRs, the
+  global constraints and the full smell baseline, skipping what the gates enforce.
+  Writes `findings/final-standards.md`.
+- **Unprimed adversarial pass**, `fx-devils-advocate` in code mode, one
+  open-ended prompt, the carried file only to recognize settled decisions.
+- **`fx-lens-security`**, on the companion scripts, the audit skill's git
+  commands from user input, and the gates.
+- **`fx-lens-silent-failure`**, on the companion's error paths and the three gates.
+
+The last three are read-only agents whose definitions forbid writing files, so
+they report inline and I save each report as `findings/final-<pass>.md` on
+arrival.
+
+Per `fx-implement`'s final review: if findings return, **one** fix subagent with
+the complete list, then **one** scoped re-review, residuals parked with rulings,
+and no second fix wave.
+
+## Final review: the two lenses returned, each finding verified at the code
+
+Saved inline reports: `findings/final-silent-failure.md` (2 Important, 1 Minor as
+filed) and `findings/final-security.md` (1 Important, 4 Minor as filed). Both pass
+the prose gate. Verdicts after reading the cited lines:
+
+- **Security 1, Important, confirmed, must fix before merge.**
+  `skills/fx-audit/SKILL.md:152-153` records the reference "exactly as given" in
+  `01-current.md`; `:167` runs Phase 2 from that record; `:172` puts it inside a
+  double-quoted shell string, so `$(...)` or backticks in it would run; `:171`
+  reads any existing path in place. Resume continues a directory found by name,
+  whatever its date (`:90-91`), when its recorded scope matches (`:100-101`), so a
+  document committed by someone else is trusted. Nothing in the text requires the
+  agent to neutralise the value or to confirm a reference it did not receive in
+  this run. Not reproduced, since Phase 2 has never run.
+- **Silent failure 1, confirmed, Minor as I rate it.** The writes at
+  `start-server.sh:215`, `:218` and `:220` go unchecked, and an empty
+  `EXCLUDE_FILE` at `:213` skips the repair; every such case ends at `:226`'s one
+  cause, "a .gitignore rule re-includes it". It fails closed, so the harm is a
+  wrong diagnosis. The same class as task 04's carried "names one cause when there
+  are two", and rated consistently with it.
+- **Silent failure 2, confirmed, Minor.** `:181` keeps only the first line of an
+  answer `:172` already merged with stderr. One fix covers both.
+- **Silent failure 3, confirmed as latent, Minor.** `server.cjs:693-695` guards
+  only direct execution; nothing requires the module today.
+- **Security 2, confirmed, Minor by the lens, and the consequence is a committable
+  session key.** With no `.git`, `:171-190` never enters the ignore block, and a
+  later `git init && git add -A` stages the key, which restarts reuse.
+- **Security 3, confirmed, predates the branch.** Joins the carried content
+  security policy item as worse than recorded: a mockup's script can read the key
+  from `sessionStorage`.
+- **Security 4, confirmed, Minor.** `:199` runs `mkdir -p` before any check, so a
+  committed `.fx` symlink points it outside the repository.
+- **Security 5, speculative, Minor.** An untracked, unignored credentials file in
+  the scope could be quoted into the gap report.
+
+Five passes still running. The fix wave's list is assembled when all seven are in.
+
+## Final review: adversarial, spec, standards and broad passes returned, verified
+
+Findings files: `findings/final-adversarial.md` (saved by me, 3 High, 4 Medium,
+1 Low), `findings/final-spec.md` (5 Minor, 1 question), `findings/final-standards.md`
+(4 hard, 18 judgement calls), `findings/final-broad-review.md` (with fixes: 5
+Important, 9 Minor; both carried must-fix items judged must fix). Verdicts after
+reading the cited lines:
+
+**Confirmed, into the fix wave:**
+
+- **Sound from checks that never ran** (adversarial 2, broad 1).
+  `skills/fx-audit/SKILL.md:233` passes when the lens reported nothing, which a
+  failed dispatch also does, and `:114` repeats the verdict forever.
+- **The lens told to read a whole scope in full** (adversarial 3, broad 2).
+  `agents/fx-lens-pipeline.md:36-38` against `skills/fx-audit/SKILL.md:195`, with no
+  place in the output to say what went unread.
+- **Half-finished phase documents treated as finished** (adversarial 4).
+  `03-gaps.md` is written at `:207` before steps 5 and 6 check and order it;
+  `design.md` before its defeater is settled.
+- **A rejected design promised a refusal nobody makes** (adversarial 1).
+  `:264` says "`fx-plan` refuses a draft"; `skills/fx-plan/SKILL.md:15-16` requires
+  an approved design and reads no Status line.
+- **An interrupted Phase 2 leaves a worktree that blocks the next**
+  (adversarial 5), `:174` and `:183`.
+- **Document shape defined in the skill, not the template** (spec C1, Ruling X):
+  the `Scope` and `Against` header fields at `:152-153` and the `Phase 3 gate
+  choice` and `Phase 4 verdict: sound` sections at `:226` and `:235`, all read by
+  resume, none in `references/audit-template.md`.
+- **Names that do not resolve, on lines this branch wrote** (spec A1, standards
+  1 and 2, broad): `references/audit-template.md:3` `/fx:audit`,
+  `skills/fx-brainstorm/visual-companion.md:60` `/fx:setup`, and `INSTALL.md:105`
+  `/fx:setup`, which is the first command a new user types.
+- **"Same six headings"** at `references/audit-template.md:94`: there are seven.
+- **The start script's comment claims `fx-implement`'s precedent** (standards 3),
+  `start-server.sh:209-210`; Ruling W is struck in place for the same claim.
+- **ADR 0015 says the gate fails on a temp path "as a write target"**
+  (standards 4, adversarial 8); `scripts/check-artifacts:41` fails on any line
+  containing a pattern.
+- **ADR 0013's exception omits `fx-review`'s lens trigger rows** (spec C2), which
+  name stacks in a skill body this branch rewrote.
+- **The two carried must-fix items** (broad 3 and 4): the `/tmp` fixture leak, where
+  `.fx.json`'s `setup` now builds a fixture nothing reads; and review worktrees at
+  `reviewer-prompt.md:58`, which a later `git add -A` records as an embedded
+  repository.
+
+**Not into the fix wave, with the reason:**
+
+- **Agents named by their bare name** (broad 1's mechanism): `fx-review`,
+  `fx-implement` and `/fx:critique` all name dispatched agents bare. A convention
+  across fx, predating the branch, to the completion report. The audit's own share
+  is covered by the soundness fix, which no longer trusts a dispatch that did not
+  run.
+- **Adversarial 7, a subagent unable to start its own:** the premise does not hold
+  here; implementers in this build dispatched their own agents.
+- **Adversarial 6, one audit per scope, and spec A2, the architecture report not
+  called untracked:** a design limitation and a change to a lane's text this plan
+  does not measure. To the completion report.
+- **Spec B1, `umask 077` in the stop script:** harmless, accepted.
+- **Standards judgement calls:** recorded in their file; the ones not already
+  carried go to the completion report.
+- **Broad 5, the plugin version still 0.1.6:** installs are cached by version, so
+  existing users get nothing from this branch until it is bumped, and every past
+  release commit bumped it. When to bump is part of integration, which is the
+  user's decision. To "Needs you".
+
+## Ruling AI: Phase 1's explorers write a file, a change the design did not make
+
+`design.md:177` promised "parallel read-only explorers". Task 08's review finding
+I3 showed read-only agents cannot write the findings file the same sentence
+requires, and fix round 1 made the capability explicit. "It edits no code" now
+rests on the explorer brief's instruction that its findings file is its only
+write, not on a tool restriction. Recorded as a design change beside Ruling AF,
+as the spec pass asked, and disclosed in the completion report.
+
+Cost if wrong: an explorer with write tools edits code it was told only to read.
+Caught by any diff after an audit run, since the audit never commits.
+
+## Final review: correctness returned, all seven passes in
+
+`findings/final-correctness.md`: 0 Critical, 4 Important, 13 Minor, most run in a
+scratch directory. Verified at the source:
+
+- **Important 1, reproduced by the pass and confirmed by reading:**
+  `scripts/check-prose:22`'s `EXEMPT` lists `.fx/` and `.git/` but not
+  `.worktrees/` or `.claude/worktrees/`, and `:58` walks every `*.md` from the
+  root. The main checkout holds `.worktrees/fx-audit` now, so after merge
+  `check-all` there reads another branch's files and fails on the first
+  violation in any worktree.
+- **Important 2:** the lens and a whole scope, the third report of it.
+- **Important 3, confirmed:** `references/audit-template.md:190` counts "modules
+  listed" in the patterns section, whose skeleton at `:45-48` asks for
+  conventions and never for a module list.
+- **Important 4, confirmed:** `skills/fx-brainstorm/SKILL.md:183` says `--slug`
+  is "the design's slug", which reads as undated while plan directories are
+  dated; `visual-companion.md:60` repeats the ambiguity and still says
+  `/fx:setup`.
+
+## Ruling AJ: the one fix wave takes 23 items, and everything else is parked with its reason
+
+`fx-implement`'s final review allows one fix subagent with the complete list, one
+scoped re-review, and no second wave. The list:
+
+1. Soundness requires both Phase 3 dispatches to have run and returned, with the
+   lens reporting full coverage; the lens is named `fx:fx-lens-pipeline`.
+2. `agents/fx-lens-pipeline.md` reads a file set search-first and adds one coverage
+   line for file sets only; diff mode, hunt list, severity and ceding unchanged;
+   one blind smoke run on the unchanged fixture, reverted if it misses row 6.
+3. No phase document appears in the slug directory until its phase is done.
+4. The approval gate states that `fx-plan` requires an approved design, instead of
+   claiming a refusal.
+5. An existing reference worktree is reused or removed and re-added.
+6. A reference read from a record, or a path outside the repository, is confirmed
+   with the user, and passed to git where the shell cannot expand it.
+7. The template holds the `Scope` and `Against` fields and the two appended
+   sections; the skill cites them.
+8. The patterns section asks for a module list for the module count to anchor to.
+9. Seven headings, not six; a feature in both systems counted once.
+10. `references/audit-template.md:3` names `/fx:fx-audit`.
+11. The Phase 3 file set is run from the repository root; the slug name is stable
+    across linked worktrees; a re-run carrying the Phase 3 answer counts as the
+    reply.
+12. `.fx/.gitignore` containing `*` is written before any session file.
+13. A symbolic link in the state path is refused before any `mkdir`.
+14. Git's two streams captured apart, exclude-file writes checked, and every
+    refusal naming its real cause.
+15. The false `fx-implement` precedent removed from `start-server.sh:209-210`.
+16. `--slug` named as the plan directory's full dated name; `/fx:fx-setup` in
+    `visual-companion.md:60`.
+17. `check-prose` exempts `.worktrees/` and `.claude/worktrees/`.
+18. No fixture left under `/tmp` by `check-all`, `test_one` or `setup`.
+19. Review worktrees confirmed ignored before `add` and removed after the review.
+20. `check-artifacts` skips a file that is not text instead of crashing.
+21. ADR 0015 states what the gate actually matches.
+22. ADR 0013's exception includes `fx-review`'s four lens trigger rows.
+23. `INSTALL.md:105` names `/fx:fx-setup`.
+
+**Parked or deferred, each with its reason:**
+
+- **The user's decisions:** Rulings AA, AC, AD, AF with AG, the plugin version,
+  and whether to add a pass for other queue behaviour in the audit.
+- **Predates the branch:** the companion's `sessionStorage` key and missing
+  content security policy (security 3); agents named by their bare name across
+  `fx-review`, `fx-implement` and `/fx:critique`; the restart changing
+  `screen_dir` and `state_dir`.
+- **A lane's text this plan does not measure:** the architecture report not called
+  untracked (spec A2); a pointer from `fx-authoring` to ADR 0013.
+- **A design limitation:** one audit per scope (adversarial 6); the artifact gate's
+  deliberately narrow scope and patterns (correctness Minor, adversarial 8, beyond
+  the ADR's wording).
+- **Speculative or latent:** an unignored credentials file quoted into a report
+  (security 5); `server.cjs` required as a module (silent failure 3); the premise
+  of adversarial 7, which does not hold here.
+- **Gate blind spots already recorded:** the rest of `check-prose`'s, including a
+  paragraph naming the quoting marker exempting stock words.
+- **Carried Minors the broad reviewer confirmed deferred,** one by one, in its
+  findings file; companion directories created mode 700; the scanner's 20
+  directories.
+
+Cost if wrong: an item left for the user that a fix would have closed, each one
+named in the completion report. Caught by the scoped re-review and by the user.
+
+**Fix wave:** dispatched, launch confirmed. A fresh implementer on the top tier,
+the only writer, with the 23 items, their sources in the seven findings files,
+failing checks first for every script change, one lens smoke run, one GREEN and one
+resume probe prefixed `fw-`, and `check-all` last.
+
+## Fix wave: stalled on its own background probe, state checked, told to continue
+
+The fix wave returned before finishing, saying it was waiting for its GREEN probe
+to notify it. A background run's completion does not reach a subagent, so it would
+have waited indefinitely. Checked at 00:29:
+
+- **Committed, no trailer on any:** `91084e6` gates, nested worktrees, binary
+  files and temp fixture removal; `6d7c7d7` the companion's ignore, symlink and
+  refusal fixes; `a13597a` review worktrees confirmed ignored and removed;
+  `1b447bc` ADR 0015, ADR 0013's exception, `/fx:fx-setup`.
+- **Uncommitted:** `agents/fx-lens-pipeline.md`, `references/audit-template.md`,
+  `skills/fx-audit/SKILL.md`, which wait on the resume probe.
+- **The GREEN probe had finished:** no nested session running, its summary and
+  check files written at 00:28:46, and `01-current.md` in the probe's slug
+  directory.
+
+Sent a message to continue, with the resume probe run in the foreground and a
+bounded poll in place of any notification. **The send returned queued for delivery
+at its next tool round, not a confirmed resume.** If it does not pick the message
+up, the remaining steps are finished by a fresh implementer under the same brief,
+never by a second fix wave.
+
+**It picked the message up.** By 00:30 the resume probe had written
+`fw-resume1-summary.txt`, `fw-resume1-check.txt` and
+`fw-01-current.sha256.after`, and the audit skill's fix was committed as
+`85de0ee`, "sound only from checks that ran, finished documents only, and a
+reference confirmed before use". No fallback needed. Its `check-all` and report
+remain.
