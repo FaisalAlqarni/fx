@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipeline lens measured</title>
+<style>
+  :root {
+    --bg: #fbfaf7; --fg: #1d1d1b; --muted: #66655f; --rule: #dedbd2;
+    --panel: #ffffff; --keep: #1f6f43; --drop: #a33a2a; --warn: #8a5a00; --accent: #2b4c7e;
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151514; --fg: #e9e7e1; --muted: #a09e96; --rule: #34332f;
+      --panel: #1d1d1b; --keep: #6cc394; --drop: #ef8a78; --warn: #e3b45c; --accent: #8fb0e3;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; padding: 2.5rem 1rem 4rem; }
+  main { max-width: 58rem; margin: 0 auto; }
+  h1 { font-size: 1.6rem; line-height: 1.25; margin: 0 0 .4rem; }
+  h2 { font-size: 1.05rem; margin: 2.4rem 0 .6rem; padding-top: 1rem; border-top: 1px solid var(--rule); }
+  p { margin: .5rem 0; max-width: 72ch; }
+  .lede { color: var(--muted); margin-bottom: 1.4rem; }
+  code { font-family: var(--mono); font-size: .88em; }
+  .headline { background: var(--panel); border: 2px solid var(--accent); padding: 1rem 1.2rem; margin: 1.2rem 0; }
+  .headline p { margin: .3rem 0; }
+  .wrap { overflow-x: auto; margin: .8rem 0; }
+  table { border-collapse: collapse; width: 100%; min-width: 36rem; background: var(--panel); }
+  th, td { text-align: left; vertical-align: top; padding: .55rem .7rem; border-bottom: 1px solid var(--rule); }
+  th { font-size: .8rem; color: var(--muted); font-weight: 600; }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .drop { color: var(--drop); font-weight: 600; }
+  .keep { color: var(--keep); font-weight: 600; }
+  .warn { border-left: 4px solid var(--warn); background: var(--panel); padding: .7rem 1rem; margin: .7rem 0; }
+  .warn strong { color: var(--warn); }
+  .opt { background: var(--panel); border: 1px solid var(--rule); padding: .9rem 1.1rem; margin: .7rem 0; }
+  .opt h3 { margin: 0 0 .35rem; font-size: 1rem; }
+  .opt.rec { border: 2px solid var(--accent); }
+  .tag { font-size: .75rem; color: var(--accent); font-weight: 600; margin-left: .4rem; }
+  ul { margin: .4rem 0 .4rem 1.2rem; padding: 0; }
+  li { margin: .25rem 0; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>The pipeline lens, measured properly</h1>
+<p class="lede">Task 05 of the fx-audit plan, 2026-09-11. The twenty-run measurement you asked for, and the decision it leaves.</p>
+
+<div class="headline">
+  <p><strong>Under the rule recorded before any run, the lens keeps one of its six hunt groups: unbounded enqueue, where a scheduler keeps adding work without checking how far behind consumers are.</strong></p>
+  <p>The passes <code>fx-review</code> already dispatches found the other five in at least three of five runs. And that one surviving group rests on a control that left out a pass real branch review runs.</p>
+</div>
+
+<h2>How it was measured</h2>
+<ul>
+  <li>Five lens runs and five control runs. Each control run was three separate passes, correctness, standards and an unprimed adversarial pass, with their findings combined.</li>
+  <li>All on the top tier, which is what branch review uses and what the lens pins.</li>
+  <li>Every run read a neutrally named copy of the fixture, so no directory name hinted at queues, and opened nothing else. All twenty path lists were checked and all were clean.</li>
+  <li>Scored against an answer key fixed before any run, whose lines the controller checked against the code first.</li>
+  <li>The decision rule, recorded before the data: the lens keeps a group only if the lens finds it in at least 4 of 5 runs <strong>and</strong> the control finds it in at most 2 of 5.</li>
+</ul>
+
+<h2>Result</h2>
+<div class="wrap">
+<table>
+  <thead><tr><th>#</th><th>Hunt group</th><th>Control found it</th><th>Lens found it</th><th>Rule says</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Fairness: receipts wait behind a bulk campaign on one queue</td><td class="num">5 of 5</td><td class="num">5 of 5</td><td class="drop">drop</td></tr>
+    <tr><td>2</td><td>Idempotency: a redelivered message is sent again</td><td class="num">5 of 5</td><td class="num">5 of 5</td><td class="drop">drop</td></tr>
+    <tr><td>3</td><td>Poison messages: a message that can never succeed loops forever</td><td class="num">5 of 5</td><td class="num">5 of 5</td><td class="drop">drop</td></tr>
+    <tr><td>4</td><td>Visibility timeout shorter than a send, so two workers send one message</td><td class="num">5 of 5</td><td class="num">5 of 5</td><td class="drop">drop</td></tr>
+    <tr><td>5</td><td>Retries with no jitter, so every worker retries at the same instant</td><td class="num">3 or 5 of 5</td><td class="num">5 of 5</td><td class="drop">drop, either reading</td></tr>
+    <tr><td>6</td><td>Unbounded enqueue: nothing checks the backlog before adding more</td><td class="num">0 of 5</td><td class="num">5 of 5</td><td class="keep">keep, provisionally</td></tr>
+  </tbody>
+</table>
+</div>
+<p>The lens returned 7 or 8 findings per run. The control returned roughly 35 to 40 per run across its three passes. The rule does not award a group for a tighter report, and it was never meant to.</p>
+
+<h2>Three things that qualify the result</h2>
+
+<div class="warn"><strong>The control left out a pass real branch review runs.</strong> Branch mode in <code>fx-review</code> also dispatches the broad branch reviewer from <code>reviewer-prompt.md</code>, and the protocol omitted it. Groups 1 to 5 survive that, because the control found them without it. <strong>Group 6, the only group the lens kept, does not survive it</strong>: that reviewer explicitly checks scalability and was never run.</div>
+
+<div class="warn"><strong>The fixture handed the control group 1.</strong> Every control pass that found fairness quoted the comment on line 22, "A single transactional email, sent right after checkout." In round 1, a single control missed fairness on a fixture without that comment. Deleting the comment now to make the lens win would be tuning the test to its result, so that is not an option below.</div>
+
+<div class="warn"><strong>Neither scoring call decided a verdict.</strong> For group 5, a strict reading counts only findings naming jitter or retries in lockstep, and a lenient one also counts findings that only criticise the fixed delay; it drops under both. The earlier ruling about mechanisms named without a line did not change group 4, which correctness and adversarial passes found in every run.</div>
+
+<h2>What is being decided</h2>
+<p>You approved a separate pipeline lens over ADR 0008's advice to fold this material into the database lens, on the grounds that the database lens would not fire on a worker or queue diff. The measurement says that on this fixture, the passes branch review already runs cover five of the lens's six groups. A lens with one group, possibly none, is a different thing from the one you approved. Tasks 06, 08 and 09 all depend on the answer.</p>
+
+<div class="opt rec">
+  <h3>A. Settle group 6 first, with the rule fixed now <span class="tag">recommended</span></h3>
+  <p>Run the omitted broad reviewer five times on the same neutral copy, blind. The rule, set before those runs: if it finds group 6 in 3 or more runs, <strong>no lens ships</strong>, and unbounded enqueue becomes one hunt line in the branch reviewer's brief. If it finds group 6 in 2 or fewer, the <strong>lens ships narrowed to group 6</strong>.</p>
+  <p>Cost: five more top-tier runs, past the ten to twenty you were quoted. It completes the protocol rather than adding a new test.</p>
+</div>
+
+<div class="opt">
+  <h3>B. Ship the lens narrowed to group 6 now</h3>
+  <p>Accept the provisional keep. The lens hunts only for producers and schedulers that add work without regard to consumer backlog.</p>
+  <p>Cost: a whole agent and a dispatch per matching branch for one concern, resting on a control that is known to be incomplete.</p>
+</div>
+
+<div class="opt">
+  <h3>C. Ship no lens</h3>
+  <p>Put unbounded enqueue into the branch reviewer's brief as one line, delete the lens, and record the measurement in ADR 0014 as the reason. The fixture, key and this record stay as the evidence.</p>
+  <p>Cost: the one measured gap becomes an instruction nobody has measured, and task 08's audit command loses the lens from its gap phase.</p>
+</div>
+
+<h2>Where the evidence lives</h2>
+<ul>
+  <li>Every scored call with the finding it rests on: <code>docs/plans/2026-09-11-fx-audit/measurement-task05.md</code></li>
+  <li>Answer key: <code>tests/lens-pipeline/KEY.md</code> at <code>d496d1e</code></li>
+  <li>The briefs every run read: <code>.fx/2026-09-11-fx-audit/briefs/</code></li>
+  <li>Protocol, its amendments and the rulings: <code>docs/plans/2026-09-11-fx-audit/state.md</code></li>
+</ul>
+
+</main>
+</body>
+</html>

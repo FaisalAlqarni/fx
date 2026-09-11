@@ -1473,3 +1473,275 @@ result can be reassigned after it arrives.
 Task 07's fix round 2 goes out after this commit rather than with it: a
 controller commit is a write to the index, and Ruling N makes no exception for
 the controller.
+
+Committed `ecf1312`: the ledger, four findings files, the lens evidence report
+and the measurement record, seven paths, each staged by name.
+
+## In flight after ecf1312
+
+Twenty blind measurement runs, all read-only, reading only `briefs/`, `subject/`
+and, for the lens arm, `agents/fx-lens-pipeline.md`.
+
+Task 07 fix round 2, the one writer. **Correction, made in place:** this line
+first said the original implementer was resumed. The resume failed: the harness
+had no transcript for that agent and delivered nothing, so for a stretch this
+ledger named a writer that did not exist. `fix-loop.md` gives the fallback for
+exactly this case, a fresh implementer handed the task path, the report path and
+the open findings, and that is what was then dispatched. Its file,
+`references/audit-template.md`, is outside everything the runs read.
+
+Task 04 waits for the writer slot under Ruling N.
+
+## Ruling S: a keyed mechanism named with no line counts for the control
+
+Scoring the first eleven runs surfaced a case the pre-registration did not
+anticipate. Three standards passes named the visibility timeout mechanism, in
+words like "the visibility timeout is shorter than the provider timeout", while
+setting it aside as a correctness issue for another reviewer, and gave no line.
+The rule says a group is found when a finding names its mechanism at or near its
+keyed line.
+
+**These count as found for the control arm.** The choice can only shrink the
+lens arm's measured advantage and can never enlarge it, which is the direction a
+ruling made mid-scoring has to lean. If this ruling decides any group's verdict,
+both counts are reported. Made after eleven of twenty runs arrived and before the
+other nine.
+
+## Task 05 measurement: complete, and the rule keeps one group of six
+
+All twenty runs arrived with clean path lists and none was void. Scored against
+the key at `d496d1e`, call by call, in `measurement-task05.md`.
+
+```
+group                  control   lens   pre-registered rule
+1 fairness             5 of 5    5 of 5   dropped
+2 idempotency          5 of 5    5 of 5   dropped
+3 poison messages      5 of 5    5 of 5   dropped
+4 visibility timeout   5 of 5    5 of 5   dropped
+5 no jitter            3 or 5    5 of 5   dropped under both readings
+6 unbounded enqueue    0 of 5    5 of 5   kept, provisionally
+```
+
+**What the result says, no wider than the evidence.** On this fixture, the
+review passes `fx-review` already dispatches find five of the lens's six groups
+consistently. The lens finds all six and returns a far tighter report, 7 or 8
+findings against roughly 35 to 40, but the rule the user approved does not
+award a group for tightness.
+
+**A protocol omission of mine, disclosed.** The control left out the broad
+branch reviewer that `fx-review` also dispatches in branch mode. Groups 1 to 5
+survive that, since the control found them without it. **Group 6, the only group
+kept, does not**: that reviewer checks scalability and was never run. So the
+lens's single surviving group rests on an incomplete control.
+
+**The fixture's own context handed the control group 1.** Every control pass
+finding fairness cited the comment at line 22 about a receipt sent right after
+checkout. Removing that comment now to make the lens win would be tuning the
+test to its result, and is not proposed.
+
+Neither scoring judgement decided a verdict: group 5 drops under both readings,
+and Ruling S changed no group.
+
+**This goes to the user.** A lens with at most one group, possibly none, bears
+on the design they approved and on ADR 0014, and tasks 06, 08 and 09 all depend
+on the answer. An evidence report comes first, per their standing preference.
+
+## Task 07 fix round 2: landed
+
+Commit `323f02e`, written by a fresh implementer. The gap table's count now
+draws its feature half from `01-current.md`'s feature and business-rule
+inventory, and its target half from the brief the audit was run with, stated as
+living outside the document. It did not invent a new section for targets, which
+would have let the same author fill and count it. It flagged the sources line,
+"one line per explorer dispatched", as similar in shape and explained why it
+left it: that line rests on the dispatching agent's knowledge of its own run.
+That call is for the scoped re-review to judge, not for me to accept.
+
+## Ruling T: task 04 as written would commit a session token, and the design forbids it
+
+Re-reading task 04 before dispatch: it moves the visual companion's whole session
+directory, `content/` and `state/` together, into `docs/plans/<slug>/companion/`.
+`state/` holds the server log, the PID file and `.last-token`, which carries the
+session key that `start-server.sh` deliberately writes under `umask 077`. The
+port and token files move with it by the task's own criterion. `docs/plans/` is
+committed. **As written, task 04 would put a session key into git.**
+
+The design already decides this. Its Global Constraints say artifacts a user
+returns to live in `docs/plans/<slug>/` and regenerable working files live in the
+ephemeral workspace, which is git-ignored. Mockups in `content/` are artifacts.
+The log, the PID, the port and the token are working state. The task contradicts
+its design, and the design is the binding authority.
+
+**Ruling:** `content/` goes to `docs/plans/<slug>/companion/<session-id>/`.
+`state/`, `.last-port` and `.last-token` go under `.fx/<slug>/companion/`, which is
+ignored. The stop script's deletion guard stays byte-identical and still correct,
+because neither location is under the temp prefix it tests.
+
+**A second defect in the same task: it never says where `<slug>` comes from.** The
+companion starts mid-interview, often before the design's slug directory exists.
+The script must never guess by choosing an existing plan directory, since another
+plan's directory is never ours to write. The slug comes from the caller, and the
+brainstorm instructions pass it. With no slug supplied, the script uses a location
+clearly named as a companion session rather than a plan, and says so.
+
+Cost if wrong: one extra flag and a second directory to reason about. Caught by
+task 04's review, which is told to prove from a scratch git repository that no
+token, PID or log file appears as untracked or staged.
+
+## Ruling U: the user's decision on the measurement
+
+Asked with the measurement report on disk first. The user chose to **ship the lens
+narrowed to group 6 now**, rather than first settling the pass the control
+omitted, or shipping no lens.
+
+What that commits the build to, recorded so it is not rediscovered later:
+
+- The lens narrows to one hunt group: producers and schedulers that add work
+  without regard to how far behind consumers are. Groups 1 to 5 leave its hunt
+  list; those defects belong to the correctness and adversarial passes branch
+  review already runs, which found them in every run.
+- **The keep is provisional**, and every place that cites the evidence says so:
+  the control omitted the broad branch reviewer, which checks scalability.
+- ADR 0014, written in task 06, records the measurement, including that the
+  separate lens now carries a single group.
+- The narrowed lens is a changed document, so it gets one blind smoke run
+  confirming it still finds group 6. Not a second full measurement, which the
+  user declined.
+- Narrowing is a write, so it waits for task 04 under Ruling N. It is round 4 on
+  task 05, so the fix loop calls for a fresh implementer one tier up.
+
+## Task 04: dispatched under Ruling T
+
+Launch confirmed. Top tier, because the task is security-relevant and needs
+design judgment about where the slug comes from. Its brief carries Ruling T's
+split and five proofs, the one that outranks the rest being that no token, PID,
+port or log file appears in `git status` of a scratch repository.
+
+## Task 07 fix round 2: verified, packaged
+
+Checked from git: `323f02e` touches `references/audit-template.md` only and
+carries no trailer. The target count at line 115 reads
+`**Target count:** <N> stated targets named in the` and continues onto the next
+line; the module count stands at line 161. No mention of the design template.
+Leaf gate and prose gate on the file both exit 0. Packaged at
+`.fx/2026-09-11-fx-audit/review/ecf1312..323f02e.diff`, based on the fix commit's
+own parent.
+
+Task 07 fix round 2 scoped re-review: dispatched, launch confirmed. Mid tier,
+read-only, told not to run `check-all` because task 04 is editing that script.
+Asked specifically whether "the brief the audit was run with" is an anchor a
+reader of a finished audit can actually find, and to judge the implementer's
+argument about the sources line rather than accept it.
+
+## Task 07 fix round 2: half closed, and the half left open exposes a plan gap
+
+Scoped re-review: **NOT ADDRESSED overall.** The feature half of the gap table's
+count is closed: it anchors to `01-current.md`'s feature and business-rule
+inventory, and `02-reference.md`'s when one exists. The target half is not.
+Checked against the file rather than taken from the review:
+`references/audit-template.md:115-117` says the targets are "named in the brief
+the audit was run with; that brief lives outside this document". No skeleton
+records that brief. `02-reference.md` records `Resolved from` and `Read at`, and
+`03-gaps.md` records `Compared against`, which names the reference and not the
+targets. A reader of a finished audit has nothing to open, so only the author can
+check that half, which is the original finding exactly.
+
+The re-review accepted the implementer's argument about the sources line: an
+explorer count is the dispatching agent's record of its own run, with no separate
+fact it could understate against. Not a finding.
+
+**The gap behind it.** Nothing in the plan says how stated targets reach an audit.
+Task 08's command is `/fx:audit [target] [--against <path|ref|branch>]`, and its
+`[target]` is the codebase to audit, not the goals the gap table judges against.
+The template counts stated targets; no task defines an input carrying them. The
+two tasks also use one word for two things.
+
+## Ruling V: stated targets are quoted into the audit, and task 08 must capture them
+
+1. `03-gaps.md` gains a `Stated targets` field in its header, beside
+   `Compared against`: every target quoted verbatim, one per line, plus where the
+   brief came from, such as the invocation text or a file path the user gave.
+2. The gap table's target count anchors to that field.
+3. Task 08's command obtains the stated targets and fills that field. If the
+   invocation carries none, it asks at the phase one gate rather than inventing
+   them.
+4. Task 08's codebase argument stops being called a target anywhere, so the word
+   means one thing across both tasks.
+
+This is not the free list the implementer rightly declined to add. A verbatim
+quotation with a recorded source is what `02-reference.md` already does for its
+reference, and a reader can check the quote against what they actually asked for.
+
+Cost if wrong: one field in the template and one input the command must handle.
+Caught by task 07's round 3 re-review, which checks the field and the anchor, and
+by task 08's review, which is handed this ruling as a requirement.
+
+Round 3 is a write and waits for task 04 under Ruling N.
+
+## Task 04: landed and verified, two concerns go back before review
+
+Commit `0517c81`, five files, no trailer. Verified myself:
+
+```
+check-artifacts   exit=0, 6 exempted, nothing names the temp directory
+check-all         exit=0, five check gates, ALL GREEN
+guard line        stop-server.sh:118 unchanged apart from its marker
+server.cjs        only localhost URLs are built; no third-party host
+.superpowers      no occurrence left under skills/fx-brainstorm/
+```
+
+Ruling T's split held and all five of its proofs are in the report. The slug
+arrives as `--slug`; without one, mockups go to `docs/plans/_companion-unfiled/`
+and the script says so, and neither plan scanner treats that as a plan.
+
+**A correction to my own task file.** Task 04 said `check-all` would show six
+gates. Under Ruling A it runs five: manifest, paths, reference leaves, prose and
+now artifacts. The implementer did not pad the count, which was right. For task
+09: `README.md` documents six gates, because it still lists `check-collisions`
+as a manually run gate, while `check-all` runs five. Both numbers are correct and
+describe different things.
+
+The implementer removed the footer's GitHub link along with the logo, following
+my criterion of no `https://` at all. My own step 7 said a link is not a fetch, so
+the task contradicted itself. Accepted as done.
+
+**Concerns measured, not repeated:**
+
+- **Em dashes: pre-existing, deferred.** Counts before and after `0517c81` are
+  identical in every touched file. They belong to the recorded finding that
+  `check-prose` never reads shell or JavaScript.
+- **Third-party images: a real violation, kept in this task.**
+  `skills/fx-brainstorm/visual-companion.md:278` tells agents to use "actual
+  images (Unsplash)" in mockups, which makes the browser fetch from a third
+  party. Same defect class as the logo this task removed, in a file it touched.
+- **Unignored `.fx/`: a real gap in Ruling T's guarantee.** `start-server.sh`
+  lines 155 to 158 only warn when `.fx/` is not ignored, then write the session
+  key there anyway.
+
+## Ruling W: the companion makes its own state directory ignored before writing the key
+
+When the project is a git repository and `.fx/` is not ignored, the start script
+adds the entry to the repository's local exclude file, located with
+`git rev-parse --git-path info/exclude` so it works inside a worktree, says it did,
+then proceeds. It never edits the project's `.gitignore`. When the project is not
+a git repository, nothing can be committed and it proceeds unchanged.
+
+This is `fx-implement`'s existing precedent, which puts `.fx/` and `.worktrees/`
+in `info/exclude` for exactly this reason: local, uncommitted, invisible to
+generators, and leaving the project's own ignore file for the project.
+
+Cost if wrong: one line appended to a local file the user did not ask to have
+changed. Caught by task 04's review, which checks the append is announced,
+idempotent and never touches `.gitignore`.
+
+**Deferred for the final review:** passing the old single-directory path to the
+stop script leaves a server running; the page footer still reads "Superpowers
+vunknown"; `lib/plan-state.js` scans at most 20 plan directories, which predates
+this branch.
+
+Task 04 pre-review fix: dispatched, resume confirmed. The original implementer,
+while its context is still loaded, since task 07's original implementer became
+unreachable after a delay. Carries the third-party image guidance at
+`visual-companion.md:278` with a mirror search across `skills/fx-brainstorm/`,
+and Ruling W with its proof in a scratch repository that has no ignore rule for
+`.fx/`. It is the only writer until it reports.
