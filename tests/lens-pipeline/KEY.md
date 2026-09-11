@@ -12,9 +12,12 @@ The lens is narrowed to one hunt group, and it is expected to find **row 6
 only**. Rows 1 to 5 stay exactly as written: they are the key a committed
 blind measurement was scored against at `d496d1e`, and rewriting them would
 falsify that record. They are the measured record, not what the narrowed lens
-is expected to report; it may name them as ceded to other passes, never as its
-own findings. The measurement, with every scored call and its disclosures, is
-in `docs/plans/2026-09-11-fx-audit/measurement-task05.md`.
+is expected to report; it should not report them. The measurement, with every
+scored call and its disclosures, is in
+`docs/plans/2026-09-11-fx-audit/measurement-task05.md`. The keep is
+provisional: the control omitted the broad reviewer branch review also
+dispatches, which checks scalability, so row 6's result rests on an
+incomplete control.
 
 Round 2 narrows the seeded defects to the six hunt groups that survive
 narrowing the lens to concerns that need knowledge of how queues behave.
@@ -34,8 +37,8 @@ no keyed defect, hunt group or mechanism changed.
 
 `schema.sql` is the negative control: `sends` has no index and no
 `REFERENCES` constraint on `campaign_id` or `recipient_id`, which is
-`fx-lens-database`'s finding. The pipeline lens should say nothing about
-this file beyond, at most, a one-line cession.
+`fx-lens-database`'s finding. The pipeline lens reports nothing about this
+file.
 
 ## Dropped rather than seeded
 

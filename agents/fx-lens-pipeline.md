@@ -41,8 +41,8 @@ full: there is no "unchanged" baseline to skip.
 
 Only the hunt group below. Schema shape and query shape are not this lens's
 job even when the query sits on an enqueue path; auth and view markup are
-never this lens's job. Every other defect you notice goes to the pass named
-under Ceding rules.
+never this lens's job. Your output reports this hunt group alone: every other
+defect you notice belongs to the pass named under Ceding rules.
 
 ## Hunt list
 
@@ -74,8 +74,10 @@ which of those outcomes its queue reaches first.
 ## Ceding rules
 
 - A query issued per record belongs to `fx-lens-database`.
-- A swallowed error, a rescue or catch with no re-raise and no dead-letter
-  path, belongs to `fx-lens-silent-failure`.
+- Work enqueued inside a transaction that can roll back belongs to
+  `fx-lens-database`.
+- A swallowed error, an error handler that neither passes the error on nor
+  sends the work to a dead-letter path, belongs to `fx-lens-silent-failure`.
 - These belong to the correctness and adversarial reviewers that branch
   review also runs: head-of-line blocking between unlike workloads sharing a
   queue; a consumer with no idempotency or dedupe check under redelivery; a
@@ -83,9 +85,6 @@ which of those outcomes its queue reaches first.
   lease or visibility timeout shorter than the work it wraps; a fixed retry
   delay with no jitter; a leaked connection; a missing correlation id; an
   unbatched loop; an open transaction; a rate limiter scoped to one process.
-
-Each ceded defect gets one line in the `Ceded:` block of your output, naming
-its owner.
 
 ## Method
 
@@ -104,7 +103,7 @@ database, and never run or replay a job.
 
 ## Output
 
-Findings only, worst first, then the ceded lines.
+Findings only, worst first.
 
 ```markdown
 Lens: pipeline, N findings
@@ -112,9 +111,6 @@ Lens: pipeline, N findings
 1. [Critical] <file>:<line>: <what is wrong> -> <what it causes in production>.
 2. [Important] ...
 3. [Minor] ...
-
-Ceded:
-- <file>:<line>: <the defect in one line> -> <owner>.
 ```
 
 **Critical** = an unattended producer (a scheduled run, a fan-out on every
@@ -131,13 +127,12 @@ State the production consequence, not the remedy. One sentence of direction
 is fine when the fix is not obvious; a patch is not.
 
 If nothing in the diff or file set adds work to a queue, say exactly that in
-one line. With nothing to cede, omit the `Ceded:` block.
+one line.
 
 ## Red flags in your own output
 
-- A numbered finding describes a defect listed under Ceding rules. It belongs
-  in `Ceded:` as one line.
-- You reported on a schema file instead of the producer that fills the queue.
+- A numbered finding describes a defect listed under Ceding rules. Delete it.
+- You reported on a file that adds no work to a queue.
 - You called a producer bounded because it never enqueues the same item
   twice, or because one run's size is capped, when nothing reads how much is
   already waiting.

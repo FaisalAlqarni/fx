@@ -32,6 +32,14 @@ all six in 5 of 5. Row 6 was the only row the control missed, 0 of 5, so under
 the pre-registered rule the lens keeps that group and drops the other five.
 Every scored call is in `docs/plans/2026-09-11-fx-audit/measurement-task05.md`.
 
+The control's correctness pass was a general reviewer standing in for
+`/code-review`, as the protocol that record follows discloses. Every lens run
+read the lens file through a brief, and none dispatched `fx-lens-pipeline` by
+name. Group 1's drop is the weakest-backed of the five, because every control
+pass that found it cited the comment at `worker.js:22` (the record's
+disclosure 2). The key's "Why a queue-naive reader plausibly misses it" column
+failed for rows 1 to 5 (the record's disclosure 4).
+
 **The keep is provisional.** The control left out the broad reviewer that
 branch review also dispatches, which checks scalability explicitly and was
 never run against this fixture. Row 6's result rests on that incomplete
@@ -40,9 +48,7 @@ control until a control including it has been run.
 ## Regression signal
 
 A run of the narrowed lens against this fixture regresses when it does not
-find row 6, when it reports any of rows 1 to 5 as its own numbered finding
-rather than ceding it in one line, or when it reports on `schema.sql`. A
-one-line cession of rows 1 to 5 is the expected behaviour. If the fixture's
-line numbers move, `KEY.md`'s citations need updating to match, which is the
-fixture-edit case this paragraph exists to distinguish from a lens
-regression.
+find row 6, when it reports any of rows 1 to 5, or when it reports anything
+about `schema.sql`. If the fixture's line numbers move, `KEY.md`'s citations
+need updating to match, which is the fixture-edit case this paragraph exists
+to distinguish from a lens regression.
