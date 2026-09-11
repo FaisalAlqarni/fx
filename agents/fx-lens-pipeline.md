@@ -34,8 +34,10 @@ waiting. Every line of an offending producer can be correct on its own.
 This lens accepts either **a diff or a file set**. Given a diff, review the
 changed hunks and read enough of the surrounding file to know what calls
 them. Given a file set with no diff, for example inside a whole-system audit,
-treat every file in the set as the change under review and read each one in
-full: there is no "unchanged" baseline to skip.
+the set is the change under review, with no "unchanged" baseline to skip.
+Search it first: find every place work enters a queue, as Method starts, then
+read in full the files on those paths and the callers and schedulers behind
+them.
 
 ## Scope
 
@@ -128,6 +130,9 @@ is fine when the fix is not obvious; a patch is not.
 
 If nothing in the diff or file set adds work to a queue, say exactly that in
 one line.
+
+**Given a file set**, end with one more line: `Unread:` followed by every file
+on those paths you could not read, or `Unread: none`.
 
 ## Red flags in your own output
 
