@@ -19,9 +19,15 @@ the right thing.**
 
 **Violating the letter of these rules is violating their spirit.**
 
-Take `test_one` and `test_all` from **`.fx.json`**. **Never assume the runner.**
-Most ecosystems have several plausible answers and the conventional one is often
-wrong for a given repo, so read the command rather than guessing at it.
+Take `test_one`, `test_scope` and `test_all` from **`.fx.json`**. **Never
+assume the runner.** Most ecosystems have several plausible answers and the
+conventional one is often wrong for a given repo, so read the command rather
+than guessing at it.
+
+**The cycle runs on `test_one`.** RED and GREEN are about one behaviour, and a
+full suite between every red and green buys nothing the focused run did not
+already tell you. Widen to `test_scope` once, when the change is done, to catch
+what you broke nearby. `test_all` belongs to a gate, not to a cycle.
 
 Then load `../../references/stacks/<name>.md` for each entry in `stacks`:
 ecosystem traps and test-seam guidance. **A name with no file is not an error**,

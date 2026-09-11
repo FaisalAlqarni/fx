@@ -20,7 +20,8 @@ has no profile, so **it is not optional**.
 ```json
 {
   "stacks": ["rails", "docker", "postgres"],
-  "test_one":  "docker compose exec shared bundle exec rspec {file}:{line}",
+  "test_one":   "docker compose exec shared bundle exec rspec {file}:{line}",
+  "test_scope": "docker compose exec shared bundle exec rspec {paths}",
   "test_all":  "make test",
   "setup":     "make setup",
   "lint":      "bundle exec rubocop",
@@ -33,10 +34,22 @@ has no profile, so **it is not optional**.
 |---|---|
 | `stacks` | **List**, composed. `../references/stacks/<name>.md` is loaded for each name that exists; a name with no file is not an error |
 | `test_one` | Single-test command. `{file}` and `{line}` are substituted |
+| `test_scope` | Subset command. `{paths}` is substituted with the directories a change actually needs. Omit it when the suite is fast or cannot be partitioned, and every gate falls back to `test_all` |
 | `test_all` | The full suite, as CI runs it |
 | `setup` | From a clean checkout to a runnable state |
 | `lint` | Empty if the repo has no linter: **do not invent one** |
 | `coverage` / `coverage_floor` | `null` when the repo has no coverage tooling. `fx-tdd` enforces a floor only when both are set |
+
+**`test_scope` needs a fact only the user has: what a change can safely not
+run.** Suites partition along a seam the repo knows and you do not: an engine, a
+package, a service, a bounded context. Ask which parts are isolated from each
+other **and which part is shared by all of them**, because the shared one has no
+scoped run: touching it needs everything. Record the answer in `repo.md` as a
+table, not in `.fx.json`, which holds only the command.
+
+Cannot get an answer? **Leave `test_scope` out.** Every gate then uses
+`test_all`, which is correct and slow, and a wrong partition is incorrect and
+fast.
 
 **Derive every command; never invent one.** Read, in this order: a `Makefile`
 or `Taskfile`, `bin/` scripts, CI workflow files, then the package manifest

@@ -157,6 +157,34 @@ naming what you are blocked on, so that a later reader can tell a deliberate
 wait from a stall. **The ledger line is the whole difference between the two**,
 because from the outside they look identical.
 
+### A long command is not a child, and this is where builds actually stall
+
+A suite that runs for tens of minutes outlasts any foreground call, so it gets
+launched in the background. **A background command wakes you only if the
+harness is tracking it.** A process you started some other way, a container
+left running, a shell that detached, is invisible: it finishes and nothing
+happens, and the turn already ended.
+
+Measured on one build: an implementer launched its suite this way and stopped
+seven times in a row, each time reporting that it was waiting. Nothing was ever
+going to wake it. The controller spent the afternoon force-resuming it.
+
+**So make the thing you wait on the thing the harness tracks.** Launch the run
+as a tracked background command and end the turn on it. When you can only reach
+the work indirectly, as with a container started elsewhere, launch a tracked
+command whose own exit is the signal you need:
+
+```
+docker logs -f <container> > <logfile> 2>&1; echo SUITE_EXITED
+```
+
+That follower exits when the container does, it is tracked, and it preserves
+the output you were going to need anyway.
+
+**The tell that you are in this failure:** you are about to end a turn saying
+you are waiting, and you cannot name the tracked thing that will wake you. Then
+you are not waiting, you have stopped.
+
 The stall this section guards against is the other one: ending a turn with
 **nothing outstanding at all**. Nothing will wake you then, because nothing is
 running. That is what "Rulings, not stalls" above is about, and it is the case
@@ -206,6 +234,13 @@ HEAD moves. Create a branch first.
 
 Run the `setup` and `test_all` commands from **`.fx.json`**: never guess them.
 Rails is not `npm install`; .NET is not `pytest`.
+
+**`test_all` runs exactly twice in a run: once here for the baseline, once at
+the exit gate.** Per-task gates use `test_scope` with the paths that task
+touched, named by `repo.md`. A full suite per task multiplies one slow command
+by the task count, and on a suite measured in tens of minutes that is the
+entire wall clock of the build. No `test_scope` in `.fx.json` means the repo
+has no safe partition, and every gate uses `test_all`.
 
 No `.fx.json`, or the command is `null`? **Ask**: with one greenfield
 exception: no `.fx.json` **and** no test suite means the baseline is 0 tests

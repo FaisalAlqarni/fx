@@ -67,8 +67,21 @@ Subagent (general-purpose):
     **While you work:** if something is unexpected or unclear, **ask**. It is
     always OK to pause and clarify. Do not guess.
 
-    While iterating, run the focused test for what you are changing. Run the
-    full suite once before committing, not after every edit.
+    While iterating, run `test_one` for what you are changing.
+
+    **Before committing, run `test_scope` for the paths your change touches**,
+    once, not after every edit. `repo.md` says which paths a change in your
+    area needs. **You do not run `test_all`**: the exit gate runs it once for
+    the whole branch, and running it per task multiplies one slow suite by the
+    number of tasks. Where `.fx.json` has no `test_scope`, `test_all` is the
+    only option and you run that instead.
+
+    **A command that may outlast a foreground call is launched in the
+    background, and then your turn ends.** Do not sit in a wait loop: a
+    process you launched and did not track cannot wake you, so the turn ends
+    with nothing queued and the work stalls until a human notices. Launch it
+    as a tracked background command, end the turn, and report when it wakes
+    you.
 
     ## TDD
 
