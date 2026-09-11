@@ -92,13 +92,15 @@ multi-commit task.
 | `fx-lens-security` | Devise / Pundit / JWT / session / auth paths, params handling, credentials, any new endpoint or route, `[Authorize]` | task, branch |
 | `fx-lens-a11y` | `.erb`, `.css`, view partials, Compose `.kt`, SwiftUI `.swift`, anything with user-facing strings | task, branch |
 | `fx-lens-silent-failure` | `rescue`, `catch`, `except`, Sidekiq workers, broker consumers, attribution code | task, branch |
-| `fx-lens-pipeline` | a queue or job definition, a worker or consumer, a scheduler, retry and backoff policy, dead letters, batch dispatch, rate limiters, connection pools, outbox tables | branch |
+| `fx-lens-pipeline` | a queue or job definition, a worker or consumer, a scheduler, a message subscription or visibility timeout, retry and backoff policy, dead letters | branch |
 
 There is deliberately **no performance lens** as a standalone axis: query
 shape (N+1, missing indexes, `SELECT *`, unbounded result sets) is
-`fx-lens-database`'s job; app-layer throughput (fairness, backpressure,
-retries, resource pressure across a queue or worker) is `fx-lens-pipeline`'s
-job; bundle size and rendering performance remain deliberately uncovered.
+`fx-lens-database`'s job; queue and delivery correctness that needs
+queue-semantics knowledge to see (fairness across tenants, delivery
+guarantees under redelivery, poison messages, lease timing, retry storms,
+unbounded enqueue) is `fx-lens-pipeline`'s job; bundle size and rendering
+performance remain deliberately uncovered.
 
 ## 3. Find the spec
 
