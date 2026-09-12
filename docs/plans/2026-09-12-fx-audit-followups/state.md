@@ -766,3 +766,24 @@ a fenced markdown sample does, which fits the rule.
 Final fix wave: minor (deferred): `tests/opencode-install/run.sh:65` matches the literal opening words of the sentence at `skills/fx-audit/SKILL.md:25`, so rewording that sentence turns the test red; it fails loudly rather than silently.
 
 No residuals to adjudicate. Exit gate next.
+
+## Exit gate
+
+Run fresh by the controller at `b409fdb`:
+- `.fx.json` `setup`: exit 0.
+- `scripts/check-all`: exit 0, `ALL GREEN`. Gates `check-manifest`, `check-paths`,
+  `check-reference-leaves`, `check-prose`, `check-artifacts` passed; the gate tests
+  `check-prose-explicit-path.sh` and `check-artifacts-remote.sh` passed; Node suites
+  80, 27, 13 and 17 passed, 0 failed; `opencode-install` passed.
+- The repository has no CI configuration, so nothing else defines passing.
+- Vendored checksums match `references/report-assets.md`: Tailwind `176e8946...`, Mermaid
+  `581ed7d7...`.
+- `scripts/check-collisions`, excluded from `check-all` by design: exit 1 on the branch
+  and exit 1 on `main` at `be4cf7f`, with byte-identical output. It lists candidates from
+  the skills installed on this machine, including 213 in `~/.config/opencode/skills`.
+  Attributed to the baseline.
+
+Plan complete: tasks 01 to 08 complete, task 09 dropped by the user, final review fixed
+and re-reviewed clean, exit gate green. Per the owner's standing instruction for a clean
+completion, the branch is merged into `main` locally, never pushed, and the worktree and
+the merged branch are removed.
