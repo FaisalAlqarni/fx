@@ -184,8 +184,9 @@ exclude file. The parked defects are fixed, and the version becomes 0.1.7.
 
 ### Parked fixes taken in
 
-- The audit's reference worktree: an entry git reports as prunable is pruned before
-  the worktree is added again.
+- The audit's reference worktree: when git reports this audit's own entry as
+  prunable, that entry alone is removed before the worktree is added again. Other
+  worktrees' entries in the repository are left as they are.
 - Worktree removal in the audit and in the branch review prompt uses a forced removal,
   since both are throwaway checkouts, and says what to do if it still fails.
 - The prose gate reads a file named explicitly on its command line even when its path

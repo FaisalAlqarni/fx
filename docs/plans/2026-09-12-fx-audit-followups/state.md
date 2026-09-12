@@ -787,3 +787,52 @@ Plan complete: tasks 01 to 08 complete, task 09 dropped by the user, final revie
 and re-reviewed clean, exit gate green. Per the owner's standing instruction for a clean
 completion, the branch is merged into `main` locally, never pushed, and the worktree and
 the merged branch are removed.
+
+## After completion: M6, the audit prunes only its own worktree entry
+
+The user decided the deferred M6 (2026-09-12): "yes, prune only its own worktree entry".
+Built on branch `audit-prune-own-entry` in `.worktrees/audit-prune-own-entry`, from `main`
+at `6aad237`.
+
+Change: `skills/fx-audit/SKILL.md` Phase 2 no longer runs `git worktree prune`. It reads
+`git worktree list --porcelain` for its own path: listed at that commit with no
+`prunable` line, reuse; listed with a `prunable` line, or at another commit,
+`git worktree remove --force` that path, then add it. `design.md`'s parked-fix line now
+says the same. The probe that settled the mechanism, on git 2.43.0: with this audit's
+worktree and an unrelated one both deleted by hand, `git worktree remove --force` on this
+audit's path exited 0 and dropped only that entry; the unrelated entry stayed `prunable`.
+
+RED, before the edit, pasted from the run:
+
+```
+RED 1, text: git worktree prune in skill = 1
+RED 2, the skill's current sequence:
+0
+recreated
+FAIL: unrelated prunable entry was removed
+```
+
+GREEN, after the edit, pasted from the run:
+
+```
+GREEN 1, text: git worktree prune in skill = 0
+GREEN 2, the skill's new sequence:
+worktree /home/faisal/.claude/jobs/6d844eaa/tmp/prune-green/repo/.worktrees/audit-probe-reference
+HEAD e4306fc76cdd602082f834beeef5bbb9365de23a
+detached
+prunable gitdir file points to non-existent location
+removed own prunable entry
+recreated
+ok: unrelated prunable entry survives
+ok: healthy entry at that commit, no prunable line: reuse
+```
+
+| # | What is guaranteed | Test | Type | Result | Evidence |
+|---|---|---|---|---|---|
+| M6 | The audit's Phase 2 recreates its own stale reference worktree and leaves every other worktree's entry in the repository as it is | the skill's printed commands in a scratch repository with an unrelated prunable worktree | scratch repository | PASS | the GREEN run above |
+
+Deviation: `fx-authoring` asks for agent micro-tests against a control on any skill edit.
+Not run: this edit swaps one exact git command for another inside a fixed sequence, and
+running the printed commands in a scratch repository proves the behaviour; the user has
+asked this build to save quota. Cost if wrong: an agent misreads the reworded bullets.
+Caught by nothing in this change; the next live audit run exercises it.

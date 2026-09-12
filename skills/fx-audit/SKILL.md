@@ -196,10 +196,12 @@ from Phase 1 straight to Phase 3.
      `git rev-parse --verify --quiet --end-of-options '<reference>^{commit}'`,
      the reference single-quoted so the shell expands nothing in it. It
      resolves: run the ignore check on `.worktrees/audit-<name>-reference`,
-     then run `git worktree prune`, then place the worktree there by what
-     `git worktree list --porcelain` says of that path:
-     - Listed at that commit: reuse it.
-     - Listed at another commit: `git worktree remove --force` it, then add it.
+     then place the worktree there by what `git worktree list --porcelain`
+     says of that path:
+     - Listed at that commit, with no `prunable` line: reuse it.
+     - Listed with a `prunable` line, or at another commit:
+       `git worktree remove --force` it, then add it. That removes this
+       audit's entry alone and leaves every other worktree's entry as it is.
        If that still fails, say what is left at the path and stop.
      - Not listed and nothing on disk: add it.
      - Not listed, yet a directory is there: it is not this audit's worktree.
