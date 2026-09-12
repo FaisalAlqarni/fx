@@ -441,3 +441,20 @@ BASE `7706e90`. Implementer on the standard tier. The brief carries:
 
 Report due at `.fx/2026-09-12-fx-audit-followups/reports/07-parked-fixes-report.md`. The
 only writer.
+
+## Coverage audit: dispatched
+
+One read-only agent on the standard tier, against `design.md`, `plan.md`, every task file
+and this ledger. It asks whether any behaviour the design commits to has no task's
+criteria behind it, and lists separately what only the dropped task 09 carried. Findings
+due at `.fx/2026-09-12-fx-audit-followups/findings/coverage-audit.md`.
+
+Ruling: the coverage audit runs now, while tasks 07 and 08 are still open, rather than
+after the last task. Why: it reads the design and the task files, not the code, so
+nothing it checks is still changing; a gap it finds becomes a criterion for task 07 or
+08 while they are still open. Cost if wrong: a gap created by a later ruling goes
+unaudited. Caught by the broad final review, which reads the ledger.
+
+Exit gate: the repository has no CI configuration (no `.github/workflows`, no other CI
+file). What passing means here is `.fx.json`'s `setup` and `test_all`, which is
+`scripts/check-all`.
