@@ -69,3 +69,47 @@ Ruling: task 09's scratch directory is this job's own directory,
 every git repository and is not the OS temp directory. Why: task 09 asks the
 controller to name one. Cost if wrong: a probe inside a repository, which step 1's
 check refuses before anything is built. Caught by task 09's own step 1.
+
+Ledger committed `41259d3`.
+
+## Task 01: dispatched
+
+BASE `41259d3`. Implementer on the standard tier: multi-file integration from a
+complete spec with written tests, per the model table. Launch confirmed; fix rounds
+1 to 3 resume this same implementer. Its brief carries the rulings above plus four
+things the task file cannot know: the two downloads are the one network use the user
+approved; `<slug>` is `2026-09-12-fx-audit-followups`; `.fx.json` has no
+`test_scope`, so `scripts/check-all` is the only pre-commit run; step 10's offline
+render uses the local Chrome DevTools tools, and is left undone and reported if they
+are unavailable. Report due at
+`.fx/2026-09-12-fx-audit-followups/reports/01-offline-report-libraries-report.md`.
+The only writer.
+
+## Ruling: review cost scaled down, at the user's request
+
+The user asked, mid-build, to skip the lenses these simple tasks do not need, to
+finish faster and save quota.
+
+Ruling: no lens is dispatched for any task in this plan. Each task keeps its one task
+review, on the mid tier, because `fx-implement` never skips it. Scoped re-reviews of
+fix rounds run on the cheapest tier. The final review is one broad whole-branch
+reviewer on the top tier, not the full `fx-review` branch-mode fan-out of separate
+passes and lenses. Task 09's live audit run stays, since the user approved it as a
+seam. Why: the user's instruction; the tasks are documentation, script and
+installer changes with written tests and explicit acceptance criteria. Cost if wrong:
+a defect a lens would have caught, most plausibly in task 05's installer, which
+deletes links in a user's configuration directory, or task 04's companion guarantees.
+Caught by each task's reviewer, whose brief names those risks, and by the broad final
+reviewer.
+
+## Ruling: task 09 is dropped, at the user's request
+
+The user said, mid-build: "drop task 09 too, we don't need it".
+
+Ruling: task 09, the live four-phase audit run, is not dispatched. The plan's task
+table still lists it, as the record of what was planned. Task 02's report step and
+task 03's soundness check are verified by their own reviews only. Why: the user's
+instruction. Cost if wrong: the audit's Phases 3 and 4, the lens and
+`fx-architecture` dispatched by name, and the offline Phase 4 report stay unexercised
+live, as they were after the fx-audit build. Caught by nothing in this build; the
+completion report states it as not verified.
