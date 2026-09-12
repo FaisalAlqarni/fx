@@ -9,6 +9,19 @@ trap 'rm -rf "$SCRATCH"' EXIT
 fails=0
 check() { if eval "$2"; then echo "ok: $1"; else echo "FAIL: $1"; fails=$((fails + 1)); fi; }
 install_into() { python3 "$FX/scripts/fx-opencode-install" --dest "$1" > "$SCRATCH/$(basename "$1").out" 2>&1; }
+# attempt <dest> [--dry-run]: runs the installer and keeps its exit code in rc
+attempt() { set +e; python3 "$FX/scripts/fx-opencode-install" --dest "$@" > "$SCRATCH/$(basename "$1").out" 2>&1; rc=$?; set -e; }
+# Every path under a tree, with a link's recorded target or a file's checksum.
+snapshot() { find "$1" | sort | while read -r f; do printf '%s %s\n' "$f" "$( [ -L "$f" ] && readlink "$f" || { [ -f "$f" ] && sha256sum "$f" | cut -d' ' -f1; } || true)"; done; }
+# A generated command carries its source body: the source's first heading and
+# its last line of prose, with Claude Code's `fx:` prefix dropped, since
+# opencode registers commands and agents without it.
+body_carried() {
+  local first last
+  first="$(grep -m1 '^# ' "$1" | sed 's/fx:fx-/fx-/g')"
+  last="$(awk 'NF && !/^```/{l=$0} END{print l}' "$1" | sed 's/fx:fx-/fx-/g')"
+  grep -qxF -- "$first" "$2" && grep -qxF -- "$last" "$2"
+}
 # Computed once into a variable and matched with a here-string, never piped
 # into `grep -q`: under `pipefail`, `grep -q` can exit as soon as it finds a
 # match while the upstream command is still writing, which reports the whole
@@ -37,23 +50,30 @@ for s in $(ls "$FX/skills"); do
   fi
 done
 check "references resolve through a linked skill" '[ -f "$D1/skills/fx-tdd/../../references/vocab/good-tests.md" ]'
+FX_SKILLS="$(( $(ls -d "$FX"/skills/*/SKILL.md | wc -l) - $(grep -c . <<<"$USER_INVOKED") ))"
+check "printed skill count is fx's $FX_SKILLS links, not the foreign skill" 'grep -q "^skills: $FX_SKILLS " "$SCRATCH/d1.out"'
 for f in "$D1"/commands/*.md; do
   n="$(basename "$f")"
+  src="$FX/commands/$n"; [ -f "$src" ] || src="$FX/skills/${n%.md}/SKILL.md"
   check "$n has no template field" '! grep -q "^template:" "$f"'
-  check "$n carries its prompt in the body" 'grep -qF "Arguments, if any: \$ARGUMENTS" "$f"'
+  check "$n carries its source body" 'body_carried "$src" "$f"'
+  check "$n names commands and agents as opencode registers them" '! grep -q "fx:fx-" "$f"'
 done
 A="$D1/commands/fx-audit.md"
 check "fx-audit command generated" '[ -f "$A" ]'
 check "fx-audit command has no relative paths" '! grep -qF "../../" "$A"'
+check "fx-audit command claims no base directory" '! grep -q "base directory" "$A"'
 check "fx-audit command names the audit template" 'grep -qF "$D1/references/audit-template.md" "$A"'
 while IFS= read -r p; do
   check "fx-audit path exists: ${p#$D1/}" '[ -e "$p" ]'
 done < <(grep -oE "$D1/(references|agents)/[A-Za-z0-9/._-]+" "$A" | sort -u)
 
-# 2. a second install into the same destination changes nothing
-find "$D1" -type f -o -type l | sort | while read -r f; do printf '%s %s\n' "$f" "$( [ -L "$f" ] && readlink "$f" || sha256sum "$f" | cut -d' ' -f1)"; done > "$SCRATCH/first.txt"
-install_into "$D1" || true
-find "$D1" -type f -o -type l | sort | while read -r f; do printf '%s %s\n' "$f" "$( [ -L "$f" ] && readlink "$f" || sha256sum "$f" | cut -d' ' -f1)"; done > "$SCRATCH/second.txt"
+# 2. a second install into the same destination succeeds and changes nothing:
+# fx's own skills, references and plugin links are accepted as fx's
+snapshot "$D1" > "$SCRATCH/first.txt"
+attempt "$D1"
+check "second install succeeds" '[ "$rc" -eq 0 ]'
+snapshot "$D1" > "$SCRATCH/second.txt"
 check "second install identical" 'diff -q "$SCRATCH/first.txt" "$SCRATCH/second.txt" >/dev/null'
 
 # 3. an earlier install's whole-folder link becomes a folder of links
@@ -104,6 +124,51 @@ check "stale link survives a refusal before any write" '[ -L "$D6/skills/fx-gone
 D8="$SCRATCH/d8"; mkdir -p "$D8/commands"; printf 'not generated\n' > "$D8/commands/fx-critique.md"
 set +e; install_into "$D8"; rc=$?; set -e
 check "foreign command file refusal precedes any write" '[ "$rc" -ne 0 ] && [ ! -e "$D8/skills" ]'
+
+# 10. a link fx did not create at skills, references or plugins/fx.js, and a
+# real file where references or plugins/fx.js belongs, is refused and named
+# before any write, in a real install and in a dry run alike
+mkdir -p "$SCRATCH/other-tool"
+for mode in install dry-run; do
+  for setup in link:skills link:references link:plugins/fx.js real:references real:plugins/fx.js real:plugins; do
+    kind="${setup%%:*}"; entry="${setup#*:}"
+    D="$SCRATCH/c1-$mode-$kind-${entry//\//-}"; mkdir -p "$(dirname "$D/$entry")"
+    if [ "$kind" = link ]; then ln -s "$SCRATCH/other-tool" "$D/$entry"; else echo mine > "$D/$entry"; fi
+    snapshot "$D" > "$SCRATCH/before.txt"
+    if [ "$mode" = dry-run ]; then attempt "$D" --dry-run; else attempt "$D"; fi
+    check "$mode: $kind at $entry refused, named" '[ "$rc" -ne 0 ] && grep -qF "$D/$entry" "$SCRATCH/$(basename "$D").out"'
+    check "$mode: $kind at $entry, nothing written or removed" 'snapshot "$D" | diff -q "$SCRATCH/before.txt" - >/dev/null'
+  done
+done
+
+# 11. any link at a command or agent path is refused, a dangling one included:
+# fx never creates one there, and writing through it lands outside the
+# destination
+for p in commands/fx-critique.md agents/fx-lens-pipeline.md; do
+  D="$SCRATCH/m1-${p%%/*}"; mkdir -p "$D/${p%%/*}"
+  ln -s "$SCRATCH/m1-target-${p%%/*}.md" "$D/$p"
+  attempt "$D"
+  check "dangling link at $p refused, named" '[ "$rc" -ne 0 ] && grep -qF "$D/$p" "$SCRATCH/$(basename "$D").out"'
+  check "dangling link at $p not written through" '[ ! -e "$SCRATCH/m1-target-${p%%/*}.md" ] && [ ! -e "$D/skills" ]'
+done
+
+# 12. an agent file the installer did not generate is refused before any
+# write, the way a command file is
+D="$SCRATCH/foreign-agent"; mkdir -p "$D/agents"; printf 'not generated\n' > "$D/agents/fx-devils-advocate.md"
+attempt "$D"
+check "foreign agent file refused, named" '[ "$rc" -ne 0 ] && grep -qF "$D/agents/fx-devils-advocate.md" "$SCRATCH/foreign-agent.out"'
+check "foreign agent file unchanged, nothing written" '[ "$(cat "$D/agents/fx-devils-advocate.md")" = "not generated" ] && [ ! -e "$D/skills" ]'
+
+# 13. the final probe reads <dest>/references itself: an installer that never
+# links references fails loudly rather than printing OK. The installer is
+# copied beside links to fx's own tree with that one link step removed.
+M="$SCRATCH/fx-without-references-step"; mkdir -p "$M/scripts" "$M/plugins"
+for d in skills agents commands references; do ln -s "$FX/$d" "$M/$d"; done
+ln -s "$FX/plugins/fx.js" "$M/plugins/fx.js"
+grep -vF '(FX / "references", dest / "references"),' "$FX/scripts/fx-opencode-install" > "$M/scripts/fx-opencode-install"
+check "the copy really lacks the references link step" '! cmp -s "$FX/scripts/fx-opencode-install" "$M/scripts/fx-opencode-install"'
+set +e; python3 "$M/scripts/fx-opencode-install" --dest "$SCRATCH/no-references" > "$SCRATCH/no-references.out" 2>&1; rc=$?; set -e
+check "a missing references entry fails the install, named" '[ "$rc" -ne 0 ] && [ ! -e "$SCRATCH/no-references/references" ] && grep -q "references did not resolve" "$SCRATCH/no-references.out"'
 
 if [ "$fails" -ne 0 ]; then echo "opencode install: $fails failed"; exit 1; fi
 echo "opencode install: all passed"
