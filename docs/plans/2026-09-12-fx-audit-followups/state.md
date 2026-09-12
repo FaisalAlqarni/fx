@@ -580,3 +580,43 @@ suite, so it is either repeated from the report or a run during task 05's fix ro
 exit gate's fresh run covers it.
 
 Task 08: complete (commit `0dbb083`)
+
+## Coverage audit: returned
+
+Findings: `.fx/2026-09-12-fx-audit-followups/findings/coverage-audit.md`. 5 gaps, 9 items
+uncovered live because task 09 was dropped, 1 assumption, and the rest cleared: 29 stories
+and 21 decisions, each named with its carrying task.
+
+Checked by the controller:
+- Gap 1 is true. No document outside `docs/plans/` shows a bare `/fx-<name>`, and
+  `INSTALL.md:120`, "Per repository: either runtime", shows only `/fx:fx-setup`.
+- Gap 4's residual is true. `lib/plan-state.js:35` slices `readdir(base)` to `MAX_PLANS`
+  (20) before it filters for task directories.
+- The assumption is not stated nowhere: `docs/adr/0015-artifacts-live-in-the-repository.md:59`
+  records the `references/vendor/` exception to the remote rule.
+
+Ruling: Gap 1 (stories 12 and 14, opencode documents show `/fx-<name>`) is added to the
+final review's single fix wave: `INSTALL.md` shows both forms where it tells a user what
+to type, `/fx:fx-setup` or `/fx-setup`, and `/fx:fx-audit` or `/fx-audit`. Why: a real
+design commitment with no owner; a small edit is cheaper in the one fix wave than as a
+ninth task. Cost if wrong: none beyond the edit. Caught by the final review's scoped
+re-review.
+
+Ruling: Gaps 2 and 3 (a missing vendored file stops the report; a mismatched copy is left
+alone and reported) are rules an agent follows, which only a live run exercises. They are
+reported as not verified, alongside the nine items the dropped task 09 carried, and no
+work is added. Why: the user dropped the live run to save time and quota. Cost if wrong:
+a report step that falls back to a CDN or overwrites an edited copy goes unnoticed until
+first use. Caught by nothing in this build; the completion report states it.
+
+Ruling: Gap 4 needs no change. `docs/plans/_assets/` already fails the task-directory
+check, and the 20-entry slice before filtering is out of scope in the design. Reported
+as a residual risk: the new `_assets/` entry takes one of the 20 slots. Cost if wrong: a
+plan past the twentieth unsorted entry is missed at session start. Caught by nothing
+here; the completion report states it.
+
+Ruling: Gap 5 (the companion starts when `.git` cannot be written) is accepted as holding
+by construction. The start no longer writes inside `.git`, and the test proves the
+exclude file is byte-identical. No `chmod` case is added to a probe that is run by hand.
+Cost if wrong: a start that still touches `.git` somewhere else. Caught by the final
+review, whose brief names it.
