@@ -161,11 +161,29 @@ def convert_skill_command(skill_dir, fm, body, dest_abs):
     return render_command(desc, new_body)
 
 
+FX_SKILLS_DIR = str(FX / "skills")
+
+
+def points_into_fx_skills(entry):
+    """True when `entry` is a symlink whose recorded target (never resolved,
+    so a dangling target still counts) lands inside fx's own skills/. Shared
+    by the stale-link cleanup and the per-skill link step: both replace only
+    a link fx itself could have created, and refuse anything else."""
+    if not entry.is_symlink():
+        return False
+    target = os.readlink(entry)
+    if not os.path.isabs(target):
+        target = str(entry.parent / target)
+    target = os.path.normpath(target)
+    return target == FX_SKILLS_DIR or target.startswith(FX_SKILLS_DIR + os.sep)
+
+
 def link_skills(dest, linked, args):
     """dest/skills is a real directory the installer owns. Each linked skill
     gets its own symlink beside it. A whole-folder link from an older install
     is unlinked, never recursed into. Only symlinks pointing into fx's own
-    skills/ are cleaned up; anything else there is another tool's, untouched."""
+    skills/ are touched, cleaned up or replaced; anything else there,
+    another tool's skill or another tool's same-named link, is untouched."""
     skills_dest = dest / "skills"
     act = "would " if args.dry_run else ""
     print(f"{act}ensure {skills_dest} is a real directory")
@@ -176,15 +194,8 @@ def link_skills(dest, linked, args):
             sys.exit(f"refusing to replace real file: {skills_dest}")
         skills_dest.mkdir(parents=True, exist_ok=True)
 
-        fx_skills_dir = str(FX / "skills")
         for entry in skills_dest.iterdir():
-            if not entry.is_symlink():
-                continue
-            target = os.readlink(entry)
-            if not os.path.isabs(target):
-                target = str(entry.parent / target)
-            target = os.path.normpath(target)
-            if target == fx_skills_dir or target.startswith(fx_skills_dir + os.sep):
+            if points_into_fx_skills(entry):
                 entry.unlink()
 
     for skill_dir in linked:
@@ -192,10 +203,12 @@ def link_skills(dest, linked, args):
         print(f"{act}link {dst} -> {skill_dir}")
         if args.dry_run:
             continue
-        if dst.exists() and not dst.is_symlink():
-            sys.exit(f"refusing to replace real entry with fx skill's name: {dst}")
         if dst.is_symlink():
+            if not points_into_fx_skills(dst):
+                sys.exit(f"refusing to replace a link fx did not create: {dst}")
             dst.unlink()
+        elif dst.exists():
+            sys.exit(f"refusing to replace real entry with fx skill's name: {dst}")
         dst.symlink_to(skill_dir, target_is_directory=True)
 
 

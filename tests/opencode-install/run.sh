@@ -9,7 +9,11 @@ trap 'rm -rf "$SCRATCH"' EXIT
 fails=0
 check() { if eval "$2"; then echo "ok: $1"; else echo "FAIL: $1"; fails=$((fails + 1)); fi; }
 install_into() { python3 "$FX/scripts/fx-opencode-install" --dest "$1" > "$SCRATCH/$(basename "$1").out" 2>&1; }
-user_invoked() { grep -l '^disable-model-invocation: true' "$FX"/skills/*/SKILL.md | xargs -n1 dirname | xargs -n1 basename; }
+# Computed once into a variable and matched with a here-string, never piped
+# into `grep -q`: under `pipefail`, `grep -q` can exit as soon as it finds a
+# match while the upstream command is still writing, which reports the whole
+# pipeline as failed even though there was a match.
+USER_INVOKED="$(grep -l '^disable-model-invocation: true' "$FX"/skills/*/SKILL.md | xargs -n1 dirname | xargs -n1 basename)"
 
 # 1. another tool's skill already there, and a stale fx link
 D1="$SCRATCH/d1"
@@ -26,7 +30,7 @@ check "foreign skill untouched" '[ ! -L "$D1/skills/foreign-skill" ] && [ "$(sha
 check "stale fx link removed" '[ ! -L "$D1/skills/fx-gone" ]'
 check "opencode.json untouched" '[ "$(sha256sum "$D1/opencode.json" | cut -d" " -f1)" = "$CONFIG_SUM" ]'
 for s in $(ls "$FX/skills"); do
-  if user_invoked | grep -qx "$s"; then
+  if grep -qx "$s" <<<"$USER_INVOKED"; then
     check "user-invoked $s not linked" '[ ! -e "$D1/skills/$s" ] && [ ! -L "$D1/skills/$s" ]'
   else
     check "skill $s linked" '[ -L "$D1/skills/$s" ] && [ "$(readlink "$D1/skills/$s")" = "$FX/skills/$s" ]'
@@ -70,6 +74,13 @@ D4="$SCRATCH/d4"; mkdir -p "$D4/commands"; printf 'not generated\n' > "$D4/comma
 set +e; install_into "$D4"; rc=$?; set -e
 check "foreign command file refused" '[ "$rc" -ne 0 ] && grep -q "fx-critique" "$SCRATCH/d4.out"'
 check "foreign command file unchanged" '[ "$(cat "$D4/commands/fx-critique.md")" = "not generated" ]'
+
+# 6. a same-named skill link pointing outside fx is refused, not replaced
+D5="$SCRATCH/d5"; mkdir -p "$D5/skills" "$SCRATCH/outside-fx"
+ln -s "$SCRATCH/outside-fx" "$D5/skills/fx-tdd"
+set +e; install_into "$D5"; rc=$?; set -e
+check "foreign skill link refused" '[ "$rc" -ne 0 ] && grep -q "fx-tdd" "$SCRATCH/d5.out"'
+check "foreign skill link unchanged" '[ "$(readlink "$D5/skills/fx-tdd")" = "$SCRATCH/outside-fx" ]'
 
 if [ "$fails" -ne 0 ]; then echo "opencode install: $fails failed"; exit 1; fi
 echo "opencode install: all passed"

@@ -50,10 +50,16 @@ re-run; do not edit the generated copy.
 `skills/` and `references/` **must be siblings** under the destination.
 
 Every lane cites its references as `../../references/vocab/x.md`, relative to
-the skill file. Each skill is linked individually, `skills/<name>`, but the
-relative path still resolves: `skills/` and `references/` sit directly under
-the destination either way, symlinked skill or not, so `skills/<name>/../../`
-always lands back at the destination root. The installer links both and then
+the skill file. Each skill is linked individually, `skills/<name>`, and the
+`references` link sits at the destination root beside it. Both routes land in
+the same place because both links point into one fx checkout, where `skills/`
+and `references/` are siblings there too: the operating system follows the
+skill's link first, so `..` climbs from fx's own `skills/<name>`, straight
+into fx's own `references/`. A tool that instead joins the path as text,
+without following the link, computes `skills/<name>/../..` as the destination
+root, where the destination's own `references` link points into that same fx
+checkout. Either way, `skills/` and `references/` still have to be siblings in
+the destination, or the second route breaks. The installer links both and then
 probes the path, failing loudly if it does not resolve:
 
 ```
