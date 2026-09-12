@@ -113,3 +113,128 @@ instruction. Cost if wrong: the audit's Phases 3 and 4, the lens and
 `fx-architecture` dispatched by name, and the offline Phase 4 report stay unexercised
 live, as they were after the fx-audit build. Caught by nothing in this build; the
 completion report states it as not verified.
+
+## Task 01: implementer reported DONE_WITH_CONCERNS, commit `8b0fef4`
+
+Verified by the controller: the two library checksums match the table in
+`references/report-assets.md`; no remote `<script src>` outside `references/vendor/`;
+check-paths passes; no trailers in the commit. Concerns carried into the review: a
+possibly stale "local temp file" line in `skills/fx-architecture/COVERAGE.md`, and the
+Tailwind Play script's console warning.
+
+Review package `.fx/2026-09-12-fx-audit-followups/review/41259d3..8b0fef4-scoped.diff`.
+
+Ruling: the review package excludes the two vendored JavaScript files, which are
+verified by checksum instead of read. Why: the full package is about 4MB, almost all
+upstream minified code, which a reviewer cannot judge and which would crowd out the
+30KB that matters. Cost if wrong: a vendored file altered after download. Caught by the
+reviewer's own `sha256sum` against the reference table, which its brief requires.
+
+Task 01 review dispatched: mid tier, no lens, per the scaling ruling. Findings due at
+`docs/plans/2026-09-12-fx-audit-followups/findings/01-offline-report-libraries-findings.md`.
+
+## Task 03: dispatched
+
+BASE `3609a9b`. Implementer on the standard tier: the task gives the lens edits, the
+check commands and the smoke-run scoring in full. Its two blind smoke runs are part of
+the task's seam and run on the top tier as the task says; the brief allows exactly
+those two read-only dispatches. Report due at
+`.fx/2026-09-12-fx-audit-followups/reports/03-lens-file-set-mode-report.md`. The only
+writer.
+
+Ruling: task 03 runs before task 02. Why: task 02 cites `references/report-assets.md`,
+which task 01's review may still change, while task 03 shares no file with task 01, and
+its section of `skills/fx-audit/SKILL.md` is separate from task 02's (pre-flight table).
+Implementers stay serial. Cost if wrong: none beyond order, since neither blocks the
+other. Caught by task 02's review if an edit to the audit skill collides.
+
+Ruling: the test scripts of tasks 01, 04 and 05 keep their `mktemp -d` scratch
+directories in the OS temp directory. Why: the constraint covers what fx creates when it
+runs; `scripts/check-artifacts` enforces it only over `skills`, `agents` and `commands`,
+and the existing `tests/lane-triggering` scripts already use the temp directory. Task
+04's no-`.git` case also needs a directory outside every repository, which a scratch
+directory inside the worktree is not. Each test removes its directory on exit and writes
+no HTML. Cost if wrong: test fixtures briefly in the temp directory, against the user's
+wish. Caught by the final review, whose brief will name it.
+
+Waiting on: task 03's implementer and task 01's review. Task 02 waits on that review
+(ruling above). Tasks 04 to 08 wait on task 03, since implementers are serial.
+
+## Task 01: review returned Needs fixes (0 Critical, 2 Important, 3 Minor)
+
+Findings: `docs/plans/2026-09-12-fx-audit-followups/findings/01-offline-report-libraries-findings.md`.
+
+Both Important findings reproduced by the controller in a scratch tree under the job
+directory. The review's line numbers point into the diff file, not the script. In the
+script, the remote rule scans `text.splitlines()` one line at a time
+(`scripts/check-artifacts:97-98`), and `main` resolves `sys.argv[1]` without checking it
+exists (`scripts/check-artifacts:125`).
+- A `<script` tag whose `src="https://..."` sits on the next line: gate printed OK, exit 0.
+- `scripts/check-artifacts <missing directory>`: gate printed both OK lines, exit 0.
+
+Ruling: fix round 1 resumes task 01's implementer with both Important findings, each
+proven RED by a new case in `tests/gates/check-artifacts-remote.sh` first, plus the Minor
+stale "local temp file" line at `skills/fx-architecture/COVERAGE.md:133`, since that file
+is in task 01's Files section and no other task owns it. The other two Minors (the
+table's row wording, a redundant `as_posix()`) are not taken. Why: the gate is the one
+guard that keeps remote scripts out, and a missing root reporting success is a false
+pass. Cost if wrong: one extra round. Caught by the scoped re-review on the cheapest tier.
+
+Ruling: the fix round is dispatched only after task 03's implementer reports. Why:
+`scripts/check-all` runs `scripts/check-artifacts`, and editing the gate while task 03
+runs the suite could turn its verification red for no reason of its own. Cost if
+wrong: minutes of wait. Caught by nothing; order only.
+
+Waiting on: task 03's implementer.
+
+## Task 03: implementer reported BLOCKED, nothing committed
+
+Its five files are ready in the working tree and both blind smoke runs passed, per its
+report. `scripts/check-all` was red for one reason only: the prose gate failed three
+dash lines in task 01's findings file, which the controller had placed in
+`docs/plans/<slug>/findings/`, a directory the gate scans. The controller's placement,
+not task 03's defect; confirmed with `scripts/check-prose` on that file.
+
+Ruling: the controller replaced the three dash separators in that findings file with
+`: `, changing no finding, and every later review and fix brief says its findings file
+must pass `scripts/check-prose`. Why: the findings are a committed record, and a record
+the gate rejects blocks every writer in the shared worktree. Cost if wrong: none to the
+findings' content. Caught by `scripts/check-all`, which task 03's implementer re-runs
+before committing.
+
+Task 01: minor (deferred): `references/report-assets.md` table reads one row per library, with the licence file as a column, rather than one row per file on disk.
+Task 01: minor (deferred): redundant `PurePosixPath(rel).as_posix()` in `remote_hits` in `scripts/check-artifacts`.
+
+Task 03 was blocked a second time by the controller: the ruling above first quoted the
+separator character itself, and the prose gate failed the ledger. Reworded; the
+whole-repository prose gate then passed.
+
+Ruling: the controller runs `python3 scripts/check-prose` on the ledger and every
+findings file after each write, and writes nothing into the worktree while a writer is
+running `scripts/check-all`. Why: two writer round trips were spent on controller
+prose. Cost if wrong: another blocked round. Caught by `scripts/check-all`.
+
+## Task 03: implementer reported DONE, commit `7f965bf`
+
+Five files, as the task names: `agents/fx-lens-pipeline.md`, `tests/lens-pipeline/KEY.md`,
+`tests/lens-pipeline/README.md`, `docs/adr/0014-the-app-layer-gap-gets-its-own-lens.md`,
+`skills/fx-audit/SKILL.md`. Both blind smoke runs passed, per its report. Review package
+`.fx/2026-09-12-fx-audit-followups/review/3609a9b..7f965bf.diff`.
+
+Task 03 review dispatched: mid tier, no lens. Findings due at
+`.fx/2026-09-12-fx-audit-followups/findings/03-lens-file-set-mode-findings.md`.
+
+Ruling: findings from here on are written under `.fx/<slug>/findings/`, not
+`docs/plans/<slug>/findings/`. Why: a reviewer writing into the tracked tree while a
+writer runs `scripts/check-all` can turn that run red, which is what blocked task 03
+twice. Task 01's findings file stays where it is, committed. Cost if wrong: later
+findings are not committed with the branch; the ledger records each verdict and the
+findings it acted on. Caught by nothing; a record-keeping choice.
+
+## Task 01: fix round 1 dispatched
+
+Resumes task 01's implementer with the two Important findings verbatim and the
+`COVERAGE.md:133` Minor. Covering test: `tests/gates/check-artifacts-remote.sh`. Fix base
+`8b0fef4`, the head task 01's review saw; task 03's commit `7f965bf` sits between them
+and is excluded from the re-review package by building it from the fix commits only.
+The only writer.

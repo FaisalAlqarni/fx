@@ -1,0 +1,52 @@
+# Task 01 review: offline report libraries and the remote-script gate
+
+### Spec Compliance
+
+✅ Spec compliant, with two Important code-quality gaps below that should be fixed before this task is trusted as a durable gate.
+
+All Files-section entries have their hunk in the diff: `references/vendor/tailwindcss-play-3.4.17.js`, `references/vendor/mermaid-11.17.2.min.js`, `references/vendor/LICENSE-tailwindcss`, `references/vendor/LICENSE-mermaid` (excluded from the diff per the review package's own ruling, verified by checksum instead), `references/report-assets.md`, `skills/fx-architecture/HTML-REPORT.md`, `skills/fx-architecture/COVERAGE.md`, `scripts/check-artifacts`, `scripts/check-all`, `docs/adr/0015-artifacts-live-in-the-repository.md`, `tests/gates/check-artifacts-remote.sh`.
+
+Every acceptance criterion checked:
+- `tests/gates/check-artifacts-remote.sh` passes and is registered in `scripts/check-all` (`scripts/check-all:191`). Confirmed by reading, not re-running the suite.
+- `python3 scripts/check-artifacts` exits 0 on the repository (ran it: exit 0, `skipped for the remote rule (upstream code): references/vendor/`).
+- Grep across `skills/`, `agents/`, `commands/`, `references/` (outside `references/vendor/`) for `<script`/`https://`/`cdn.` found no live remote script or stylesheet load; the only `cdn.`/`https://` hits are documentation image URLs in `skills/fx-authoring/anthropic-best-practices.md` (not `<script`) and the two source-URL cells in `references/report-assets.md`'s table (data, not a loaded tag).
+- The four vendored files exist; both `.js` checksums recomputed with `sha256sum` match `references/report-assets.md`'s table exactly (`176e894661aa9cdc9a5cba6c720044cbbf7b8bd80d1c9a142a7c24b1b6c50d15` for Tailwind, `581ed7d74bd9048d0e3a91363927d72ef22942d7722546b27f7cc29e35390eb8` for Mermaid). Both licence files are present and contain "MIT".
+- `references/report-assets.md` states the copy rule, missing-file rule and mismatch rule (lines 76-97 of the file) and names no other reference file (`check-reference-leaves` passes).
+- `skills/fx-architecture/HTML-REPORT.md` cites `../../references/report-assets.md` exactly once (`HTML-REPORT.md:15`), the scaffold holds the three local tags (`HTML-REPORT.md:24-26` in the new file), and no remaining sentence claims the report needs a connection (the two remaining "connection"/"CDN" mentions both state the *opposite*, that it now works offline).
+- Ran the copy rule exactly as printed in a scratch directory under `/home/faisal/.claude/jobs/6d844eaa/tmp/review-01/` (removed afterward): created `docs/plans/_assets/`, copied both vendored files there under their table names, then confirmed the scaffold's `../_assets/tailwindcss-play-3.4.17.js` and `../_assets/mermaid-11.17.2.min.js` resolve to real files from a report placed at `docs/plans/<slug>/report-<timestamp>.html`, exactly as the reference says. This is the offline-render acceptance criterion's asset-resolution half; the implementer's own report additionally ran the full browser render (Tailwind styles applied, Mermaid SVG rendered, no failed request, no error console message), which I did not need to repeat.
+- `python3 scripts/check-paths` passes: 56 citations. Verified the +1 is real, not an artifact of a wrong baseline: exactly one anchored `../../references/report-assets.md` citation exists in the new text (`HTML-REPORT.md:15`), and the other two mentions the implementer describes rewording away from a backtick-wrapped path are indeed plain prose with no backticks.
+- `bash scripts/check-reference-leaves` and `python3 scripts/check-prose <the four files>` both pass (ran both).
+
+⚠️ Cannot fully verify from this diff alone: the `COVERAGE.md` summary table's global counts (28 / 23 / 31 / 5 / 0 / 0) rely on rows elsewhere in a large file not fully shown in diff context. The one row whose verdict changed (Tailwind+Mermaid CDN, H to S) accounts exactly for the 24 to 23 and 4 to 5 deltas shown, so the *local* arithmetic is sound; a controller with the full file open could re-total the whole table to be certain nothing else drifted.
+
+### Strengths
+
+- The remote-script rule correctly fires on all four `expect 1` shapes the test specifies, correctly exempts vendored code, correctly honours `artifact-gate: ok`, and correctly handles two edge cases I probed myself beyond the written tests: protocol-relative `//cdn...` URLs and uppercase `SRC=` attributes (both caught, confirmed by direct testing against scratch trees).
+- The download evidence is real and reproducible: recomputed both SHA-256 hashes independently and they match the table in `references/report-assets.md` and the actual files on disk.
+- `references/report-assets.md` is well-scoped: it holds exactly the interface asked for, cites no other reference (keeping the one-level and no-reference-to-reference rules intact), and states the "only correct for a report directly under `docs/plans/`" caveat the task's Risks section asked for.
+- Careful attention to the prose/path gates: the implementer's self-review correctly caught and fixed two near-misses (extra backtick-wrapped citations that would have over-counted `check-paths`, and a backtick-wrapped `references/vendor/` mention that would have tripped the bare-path rule) before committing. Verified both gates pass cleanly now.
+- No em/en dashes and no stock vocabulary in any of the touched prose files (`check-prose` passes; also grepped directly for dash characters with none found).
+- No attribution trailer in the commit message; commit message matches the task's specified text exactly.
+- The two report concerns are correctly judged: the "local temp file" line lives in `skills/fx-architecture/COVERAGE.md:133`, in a section unrelated to CDN/vendoring (a leftover from the ADR-0015 Artifact-publishing correction, predating this task and outside its Files section), so leaving it and flagging it forward was the right call, not a task 01 defect. The Tailwind Play console warning is confirmed to be a `warn`-level message baked into the vendored file's own code (not an `error`, not a failed request), which satisfies the offline-render acceptance criterion's literal wording ("no error") and cannot be fixed without patching pinned upstream code, which would break the "vendor a pinned, verifiable copy" guarantee.
+
+### Issues
+
+#### Critical (Must Fix)
+
+None.
+
+#### Important (Should Fix)
+
+- **`scripts/check-artifacts:257-261` (`REMOTE_PATTERNS`): a `<script>`/`<link>` tag split across a newline evades the remote-script gate.** The three regexes match per-line (`text.splitlines()` in `remote_hits`, `scripts/check-artifacts:326`), so `<script\n  src="https://cdn.tailwindcss.com">` is invisible to the rule. I confirmed this directly: writing that exact two-line tag into a scratch tree and running `python3 scripts/check-artifacts <root>` against it exits 0 with "OK: nothing outside references/vendor/ loads a script or stylesheet from a URL": a false clean bill of health. This is exactly the shape of gap the review brief asked to check ("a `<script src>` split across lines"), and it undermines the one property this task exists to guarantee: that nothing in the plugin can quietly start loading a remote script again. Fix: scan the joined text (or a sliding two-line window) for the `<script`/`<link` cases, not `splitlines()` in isolation, or normalize whitespace across a tag before matching.
+- **`scripts/check-artifacts:367` (`main`): a nonexistent `root` argument produces a silent, misleading "clean" result instead of an error.** `pathlib.Path(sys.argv[1]).resolve()` never checks the path exists; `files()` (`scripts/check-artifacts:267-274`) simply skips any `area` directory that doesn't exist. I confirmed: `python3 scripts/check-artifacts /tmp/nonexistent-root-xyz` exits 0 and prints `OK: nothing in skills/, agents/ or commands/ names the OS temp directory` / `OK: nothing outside references/vendor/ loads a script or stylesheet from a URL` for a root that was never scanned because it does not exist. This is the exact edge case the review brief named ("a root argument that does not exist"), and this codebase's own stated ethos (`scripts/check-prose`'s docstring: "An unmeasurable rule is one nobody checks") is precisely why a gate that can silently report success against a typo'd or missing path is a real defect, not a nitpick. No caller in this task's own scope hits it (both `scripts/check-all` and the new test always pass a real, just-created directory), so nothing currently observed is broken by it, but it is a footgun for the next caller. Fix: `sys.exit(f"no such directory: {root}")` (or similar) when the resolved root does not exist.
+
+#### Minor (Nice to Have)
+
+- `references/report-assets.md`'s "one row per vendored file" table (`references/report-assets.md:69-72`) reads as one row per *library* (2 rows) rather than one row per file on disk (4, including the two licence files), since the licence file is folded in as a column. This matches the acceptance criterion's actual requirement (checksums are asked for the two `.js` files only) and the implementer flagged the ambiguity themselves; not a defect, just worth a controller's eyes if a stricter reading was intended.
+- The stale "the report is a local temp file opened in a local browser" line (`skills/fx-architecture/COVERAGE.md:133`) is real and will mislead a future reader, but it is outside task 01's Files section (only "the two lines that mention the CDN" were in scope) and predates this task. Worth a one-line fix whenever a task next owns `COVERAGE.md` accuracy, per the implementer's own forward flag.
+- The `pathlib.PurePosixPath(rel).as_posix()` call in `remote_hits` (`scripts/check-artifacts:320`) is redundant on the POSIX-derived `rel` string `files()` already produces via `path.relative_to(root)`; harmless, just an unnecessary conversion.
+
+### Assessment
+
+**Task quality:** Needs fixes
+**Reasoning:** The vendoring, the shared reference, the report rewrite and every acceptance criterion are solid and independently verified (checksums, gate runs, and a from-scratch reproduction of the copy-and-resolve step). The remote-script rule itself, however, has two concrete correctness gaps in exactly the edge cases the review brief asked to check: a multi-line tag bypasses the gate entirely, and a bad root argument reports false success: either of which undercuts trust in the one behavior this task was built to guarantee.
