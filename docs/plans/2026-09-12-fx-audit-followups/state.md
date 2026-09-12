@@ -374,3 +374,13 @@ Its one ⚠️ item, the implementer's green `scripts/check-all`, is covered by 
 `scripts/check-all` run, which includes task 04's commit, and by the exit gate.
 
 Task 04: complete (commit `47ae49e`)
+
+Pre-dispatch check for task 06: its step 1 search, run by the controller at `d8ee6c8`,
+matches exactly the eleven files the task lists, plus `tasks/todo.md` (3 lines). This
+`grep` prints paths without a leading `./`, so the task's filter
+`grep -v '^\./tasks/todo\.md:'` does not remove them.
+
+Ruling: task 06 uses the filter `grep -vE '^(\./)?tasks/todo\.md:'` in steps 1 and 4.
+Why: as written, step 4's expected empty output can never occur, and an implementer
+chasing it would edit `tasks/todo.md`, which the task excludes. Cost if wrong: none; the
+pattern still matches the `./` form. Caught by task 06's review, whose brief will name it.
