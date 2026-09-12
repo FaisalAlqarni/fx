@@ -258,3 +258,47 @@ Phase 4 soundness check, and that task 09 is dropped, so its seam is its checks 
 review. Report due at
 `.fx/2026-09-12-fx-audit-followups/reports/02-audit-report-libraries-report.md`. The only
 writer.
+
+## Task 03: review returned Needs fixes (0 Critical, 1 Important, 1 Minor)
+
+Findings: `.fx/2026-09-12-fx-audit-followups/findings/03-lens-file-set-mode-findings.md`.
+The review confirmed diff-mode text unchanged apart from `Given a diff,` qualifiers, the
+six KEY rows hash-matching `d496d1e`, the Phase 4 soundness check failing a return with
+no `Unread:` line, and both smoke runs given only the one-line prompt.
+
+Important, checked by the controller against the files: task 03 restated the lens's
+ceding rule (per-record query and enqueue inside a transaction to `fx-lens-database`,
+swallowed error to `fx-lens-silent-failure`) in `skills/fx-audit/SKILL.md:54-56` and
+`docs/adr/0014-the-app-layer-gap-gets-its-own-lens.md:83-86`; the lens holds it at
+`agents/fx-lens-pipeline.md:133-137`. The task's criteria 45 and 46 ask neither file for
+it, so it is not plan-mandated.
+
+Task 03: minor (deferred): the report's diff-run scoring collapses rows 1 to 5 into one line rather than one line per row.
+
+Ruling: task 03 enters fix round 1, resuming its implementer after task 02's writer
+commits. The fix removes the restated ceding sentence from both files, leaving each
+pointing at the lens for what it cedes, and changes nothing else. Why: three copies of
+one rule drift, and the fix loop does not adjudicate before the cap. Queued behind task
+02 because both edit neighbouring Boundary bullets of the audit skill. Cost if wrong: one
+small round. Caught by the scoped re-review.
+
+Task 01: fix round 1/5 (3 addressed, 0 open; commits 491ab68..381cf68). Re-review:
+`.fx/2026-09-12-fx-audit-followups/findings/01-offline-report-libraries-rereview-1.md`,
+no new breakage; it probed a `<script` with no `src` followed by an `https://` link in text
+and found no false hit.
+
+Task 01: complete (commits `8b0fef4`, `381cf68`)
+
+## Task 02: implementer reported DONE, commit `c8b47d8`
+
+One file, `skills/fx-audit/SKILL.md`. Verified by the controller: the skill now names
+`report-assets.md`, no longer says "preformatted text or inline SVG" or "differ in what
+they fetch", and its commit message is clean. Review package
+`.fx/2026-09-12-fx-audit-followups/review/9c8451a..c8b47d8.diff`, built from the ledger
+commit just before it so the package holds only task 02's change. Review dispatched on
+the mid tier, findings due at
+`.fx/2026-09-12-fx-audit-followups/findings/02-audit-report-libraries-findings.md`.
+
+Task 03: fix round 1 dispatched, resuming its implementer with the Important finding
+verbatim. Fix base `c8b47d8`. Covering checks: the task's own searches on the lens, and
+`python3 scripts/check-prose` on the two files. The only writer.
