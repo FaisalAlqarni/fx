@@ -473,3 +473,35 @@ review runs with no writer active, which removes the reason task findings moved,
 is the record the merge decision rests on. Its brief also points its scratch worktrees
 at the job directory rather than the template's `/tmp`. Cost if wrong: none. Caught by
 `scripts/check-all` at the exit gate, which scans that file.
+
+## Task 07: implementer reported DONE, commit `a0c3b77`
+
+Parent `81d5c20`, the six files the task lists. Verified by the controller:
+- `skills/fx-audit/SKILL.md` has `git worktree prune` once and
+  `git worktree remove --force` twice, and is 327 lines;
+- `skills/fx-review/reviewer-prompt.md` has `git worktree remove --force` once;
+- `start-server.sh` no longer says `plan-slug`;
+- `scripts/check-all:30` runs the new test right after `check-prose`;
+- no `check-prose-test` directory is left under `.worktrees/`;
+- the commit message is clean.
+
+Review package `.fx/2026-09-12-fx-audit-followups/review/task-07.diff`; review dispatched
+on the mid tier, findings due at
+`.fx/2026-09-12-fx-audit-followups/findings/07-parked-fixes-findings.md`.
+
+## Task 08: dispatched
+
+BASE `a0c3b77`. Implementer on the standard tier. The brief tells it to take every count
+from the filesystem and none from the brief, to search for other `0.1.6` mentions and
+change only one that states the current version, and to confirm from `scripts/check-all`
+which new tests it runs. Report due at
+`.fx/2026-09-12-fx-audit-followups/reports/08-version-and-counts-report.md`. The only
+writer.
+
+Ruling: task 08 is dispatched while task 05's review is still open, although the plan
+lists 05 as a blocker. Why: task 08 consumes only the existence and name of
+`tests/opencode-install/run.sh`, which is committed, and every other blocker is complete
+or committed. If task 05 needs a fix round, it waits for task 08's commit, since writers
+stay serial. Cost if wrong: a fix round that renames or drops the test script leaves
+`README.md` naming the old one. Caught by task 05's re-review, whose brief will name
+`README.md`, and by the final review.
