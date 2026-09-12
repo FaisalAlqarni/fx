@@ -187,11 +187,13 @@ files, which no priority order resolves honestly.
 carries in every session and every subagent. A command that prints what you are
 already looking at is a no-op paying maintenance.
 
-## References: 22 files, 21 markdown plus one TypeScript example
+## References: 27 files, 22 markdown, one TypeScript example, two vendored libraries and their two licence files
 
 ```
-audit-template.md · design-template.md
+audit-template.md · design-template.md · report-assets.md
 stacks/ docker · dotnet · observability · rails · react · web
+vendor/ mermaid-11.17.2.min.js · tailwindcss-play-3.4.17.js
+        LICENSE-mermaid · LICENSE-tailwindcss
 vocab/  codebase-design · condition-based-waiting · condition-based-waiting-example.ts
         defense-in-depth · domain-modeling · fowler-smells · good-tests · grilling
         model-selection · receiving-review · root-cause-tracing · skill-testing

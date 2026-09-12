@@ -207,18 +207,25 @@ The one behavioural check on `fx-lens-pipeline` is the fixture under
 brief and reviews the fixture. What counts as a regression is stated in
 `tests/lens-pipeline/README.md`.
 
-Gates, all of which exit non-zero on a problem. `scripts/check-all` runs the
-first five, then the four suites above; `check-collisions` is run by hand,
-because it reads skill directories on this machine, not this repository:
+Gates, all of which exit non-zero on a problem. `scripts/check-all` runs all
+of these except `check-collisions`, which is run by hand because it reads
+skill directories on this machine, not this repository:
 
 ```
-scripts/check-manifest           keys the installer accepts, and the two it rejects
-scripts/check-paths              every reference citation resolves
-scripts/check-reference-leaves   no reference links to another reference
-scripts/check-prose              no dashes, no stock vocabulary, parens balanced
-scripts/check-artifacts          nothing in skills/, agents/ or commands/ names the OS temp directory
-scripts/check-collisions         other installed skills contesting an fx lane
+scripts/check-manifest                     keys the installer accepts, and the two it rejects
+scripts/check-paths                        every reference citation resolves
+scripts/check-reference-leaves             no reference links to another reference
+scripts/check-prose                        no dashes, no stock vocabulary, parens balanced
+tests/gates/check-prose-explicit-path.sh   check-prose reads a path named explicitly even under .worktrees/
+scripts/check-artifacts                    nothing in skills/, agents/ or commands/ names the OS temp directory
+tests/gates/check-artifacts-remote.sh      the remote-asset rule in check-artifacts, proven against scratch trees
+scripts/check-collisions                   other installed skills contesting an fx lane
 ```
+
+`scripts/check-all` also runs the installer test, `tests/opencode-install/run.sh`,
+straight after the four node suites above. `tests/companion/ignore-guarantees.sh`,
+the visual companion's ignore guarantees, is run by hand instead: it starts
+real servers.
 
 `fx-plan` and `fx-implement` are absent from the lane suite on purpose: their
 triggers need repository state a scratch directory cannot supply.
