@@ -550,3 +550,24 @@ the start script.
 Task 07: minor (deferred): `scripts/check-prose` lists itself in `EXEMPT`, which now applies only to the walk; `python3 scripts/check-prose scripts/check-prose` would fail on its own word list. No caller in `scripts/` or `skills/` names it.
 
 Task 07: complete (commit `a0c3b77`)
+
+## Task 08: implementer reported DONE, commit `0dbb083`
+
+Three files as the task names. Verified by the controller:
+- `.claude-plugin/plugin.json:3` reads `"version": "0.1.7"`, and no `0.1.6` remains
+  outside `docs/plans/`;
+- `SURFACE.md:190` states 27 files, which matches `find references -type f`, and
+  `SURFACE.md:195` lists both vendored libraries;
+- `README.md:219-226` names the four new test scripts, and says `scripts/check-all` runs
+  the installer test and both gate tests, which `scripts/check-all:30`, `:32` and `:65`
+  confirm, while the companion probe is run by hand;
+- the commit message is clean.
+
+Review package `.fx/2026-09-12-fx-audit-followups/review/task-08.diff`; review dispatched
+on the cheapest tier, as for task 06: every number is re-counted from the filesystem in
+its brief, and the controller has checked the version and the test names. Findings due at
+`.fx/2026-09-12-fx-audit-followups/findings/08-version-and-counts-findings.md`.
+
+Task 05: fix round 1 dispatched, resuming its implementer with both Important findings
+and the `pipefail` Minor. Fix base `0dbb083`. Covering tests:
+`tests/opencode-install/run.sh` and `scripts/check-all`. The only writer.
