@@ -689,3 +689,43 @@ files several tasks edited, `skills/fx-audit/SKILL.md`, `start-server.sh` and
 `scripts/check-all`, to be read whole. The reviewer may run `scripts/check-all` once and
 the installer only into scratch. Findings due at
 `docs/plans/2026-09-12-fx-audit-followups/findings/final-review.md`, passing the prose gate.
+
+## Final review: returned, With fixes (1 Critical, 5 Important, 11 Minor)
+
+Findings: `docs/plans/2026-09-12-fx-audit-followups/findings/final-review.md`, committed as
+`8ee3e87`. The reviewer ran `scripts/check-all` (passed), matched both vendored checksums,
+installed into scratch (the generated audit command's four absolute paths exist; an old
+whole-folder install upgrades), and started the companion with `.git` read-only (`.git`
+byte-identical after), which confirms the Gap 5 ruling.
+
+Checked by the controller in a scratch directory under the job directory:
+- C1 is true. A destination whose `skills` link points at another tool's folder and
+  whose `references` link points elsewhere: the dry run exits 0, the real install exits
+  0, `skills` becomes a real folder without the other tool's skill, and `references` is
+  repointed at fx. The other tool's files on disk are intact.
+- I4 is true. `scripts/check-artifacts` exits 0 on an unquoted `src=https://...`,
+  `import "https://..."`, `import("https://...")` and `@import url("https://...")`.
+- I3 is true by reading: `references/report-assets.md` names `references/vendor/` as a
+  bare path at lines 5, 19, 26 and 33.
+- I2 is true by reading: the audit writes its report under `.fx/<slug>/draft/`
+  (`skills/fx-audit/SKILL.md:296`), and `references/report-assets.md` says a report
+  written anywhere else needs its own relative path worked out.
+
+Ruling: one fix wave, one fixer on the top tier, carrying C1, I1 to I5 and Minors M1, M2,
+M3, M4, M5, M7, M9 and M10, plus three carried minors: the `agents/` same-named file
+overwrite (the same rule as C1 and M1), ADR 0014's awkward phrase, and the redundant
+`as_posix()` (M9 replaces it). Why: one wave with no second chance, and every taken Minor
+is small and either the same class as a taken finding or a design commitment (M5).
+Top tier for the fixer because no second wave follows. Cost if wrong: residuals reach
+the completion report. Caught by the one scoped re-review.
+
+Ruling: deferred, reported in the completion report: M6 (prune across the whole
+repository; narrowing it changes a design decision), M8 (matches story 27), M11 (two
+companion probe cases the plan did not carry), and the carried minors on the report
+table wording, task 03's report scoring and `check-prose` naming itself. Why: none
+deletes, overwrites or loads anything, and M6 needs the user's call on the design. Cost
+if wrong: M6 prunes an unrelated stale worktree entry in a user's repository. Caught by
+nothing in this build; the completion report states it.
+
+Final fix wave dispatched. Report due at
+`.fx/2026-09-12-fx-audit-followups/reports/final-fix-wave-report.md`. The only writer.
