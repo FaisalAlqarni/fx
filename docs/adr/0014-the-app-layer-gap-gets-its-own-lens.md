@@ -81,15 +81,12 @@ on. The five dropped groups would go unjudged entirely, which is the gap this
 ADR's first version left open.
 
 **Given a file set, the lens hunts all six groups** the fixture keys, not
-group 6 alone. It cedes only a query issued per record and work enqueued
-inside a transaction to `fx-lens-database`, and a swallowed error to
-`fx-lens-silent-failure`, as it already did. The five groups it stops ceding
-to branch review's other passes are exactly the ones this ADR's measurement
-scored: head-of-line blocking, redelivery with no idempotency check, poison
-messages, a lease shorter than the work it covers, and retries with no
-jitter. Given a diff, none of this changes: branch review still runs the
-passes the drop rule was measured against, so the lens stays narrowed to
-group 6 there.
+group 6 alone. The five groups it stops ceding to branch review's other
+passes are exactly the ones this ADR's measurement scored: head-of-line
+blocking, redelivery with no idempotency check, poison messages, a lease
+shorter than the work it covers, and retries with no jitter. Given a diff,
+none of this changes: branch review still runs the passes the drop rule was
+measured against, so the lens stays narrowed to group 6 there.
 
 ## What it costs
 

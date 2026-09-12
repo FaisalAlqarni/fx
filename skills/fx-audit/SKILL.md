@@ -51,9 +51,7 @@ appended section this skill names.
   set**: unbounded enqueue outrunning consumers, head-of-line blocking
   between unlike workloads, redelivery with no idempotency check, poison
   messages that requeue forever, a lease shorter than the work it covers, and
-  retries with no jitter. It cedes only a query issued per record and work
-  enqueued inside a transaction to `fx-lens-database`, and a swallowed error
-  to `fx-lens-silent-failure`.
+  retries with no jitter.
 - **Both HTML reports load the offline libraries the same way.** Phase 3's
   report is left as `fx-architecture` makes it, and Phase 4's report, which
   this skill writes, follows the same copy and load steps. Both load Tailwind
