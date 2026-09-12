@@ -2,10 +2,11 @@
 
 `fixture/worker.js` seeds six queue defects, keyed in `KEY.md`. All six were
 the lens's hunt groups when the lens was measured; under Ruling U the lens
-hunts only the sixth, unbounded enqueue outrunning consumers. The code
-carries no comment that names or categorises a defect: an ordinary code
-comment is fine, a comment that states what is wrong is not, because that
-would let any reader pass by transcription rather than by finding it.
+hunts only the sixth, unbounded enqueue outrunning consumers, given a diff,
+and all six given a file set. The code carries no comment that names or
+categorises a defect: an ordinary code comment is fine, a comment that states
+what is wrong is not, because that would let any reader pass by transcription
+rather than by finding it.
 `fixture/schema.sql` is the negative control: a real data-layer defect that
 belongs to `fx-lens-database`, included to prove the pipeline lens stays
 silent on a schema-only file. Per Ruling B in the plan ledger, this fixture
@@ -47,8 +48,10 @@ control until a control including it has been run.
 
 ## Regression signal
 
-A run of the narrowed lens against this fixture regresses when it does not
-find row 6, when it reports any of rows 1 to 5, or when it reports anything
-about `schema.sql`. If the fixture's line numbers move, `KEY.md`'s citations
-need updating to match, which is the fixture-edit case this paragraph exists
-to distinguish from a lens regression.
+Given a diff, a run of the lens against this fixture regresses when it does
+not find row 6, when it reports any of rows 1 to 5, or when it reports
+anything about `schema.sql`. Given a file set, a run regresses when it does
+not find all of rows 1 to 6, when it reports anything about `schema.sql`, or
+when its output has no `Unread:` line. If the fixture's line numbers move,
+`KEY.md`'s citations need updating to match, which is the fixture-edit case
+this paragraph exists to distinguish from a lens regression.

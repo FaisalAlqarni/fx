@@ -1,8 +1,10 @@
 # The app-layer gap gets its own lens, narrowed to unbounded enqueue
 
 `fx-review` has a fifth lens, `fx-lens-pipeline`, against a recommendation this
-repository had recorded. It ships with one hunt group, unbounded enqueue
-outrunning consumers, and **the keep is provisional**.
+repository had recorded. Given a diff, it hunts one group, unbounded enqueue
+outrunning consumers, and **that keep is provisional**. Given a file set, it
+hunts all six groups the fixture keys: see "Given a file set, the drop does
+not hold" below.
 
 ## The recommendation it overrides
 
@@ -67,16 +69,35 @@ incomplete control until a control including that reviewer has been run.
 - **The key's claim failed for rows 1 to 5.** For each row it said a
   queue-naive reader would plausibly miss the defect. That held for row 6 alone.
 
+## Given a file set, the drop does not hold
+
+The drop rule kept a group only when the control, the correctness, standards
+and adversarial passes branch review dispatches alongside this lens, found it
+without help. That rule presupposes those passes actually run. An audit's
+Phase 3 dispatches this lens and `fx-architecture`, and neither of the other
+two, so on a file set nothing stands in for the control at all: not the
+narrow reading, and not the broad reviewer the keep was already provisional
+on. The five dropped groups would go unjudged entirely, which is the gap this
+ADR's first version left open.
+
+**Given a file set, the lens hunts all six groups** the fixture keys, not
+group 6 alone. It cedes only a query issued per record and work enqueued
+inside a transaction to `fx-lens-database`, and a swallowed error to
+`fx-lens-silent-failure`, as it already did. The five groups it stops ceding
+to branch review's other passes are exactly the ones this ADR's measurement
+scored: head-of-line blocking, redelivery with no idempotency check, poison
+messages, a lease shorter than the work it covers, and retries with no
+jitter. Given a diff, none of this changes: branch review still runs the
+passes the drop rule was measured against, so the lens stays narrowed to
+group 6 there.
+
 ## What it costs
 
 - **A second dispatch** on a diff that touches both this lens's triggers and
   `fx-lens-database`'s. That is why `fx-review` runs this lens in branch mode
   only, once per branch, never per task.
-- **In an audit, queue behaviour beyond unbounded enqueue has no dedicated
-  pass.** The lens cedes head-of-line blocking, redelivery, poison messages,
-  lease timing and retry jitter to the correctness and adversarial passes of
-  branch review. The audit's Phase 3 dispatches this lens and `fx-architecture`,
-  and neither of those passes, so an audit judges those defects only as far as
-  the phase's own reading reaches. Adding a pass there would change the design
-  the user approved and cost a dispatch the user was never shown, so whether to
-  add one is left to the user.
+- **On a diff, queue behaviour beyond unbounded enqueue still has no
+  dedicated pass.** The lens cedes head-of-line blocking, redelivery, poison
+  messages, lease timing and retry jitter to the correctness and adversarial
+  passes of branch review there. A per-task diff judges those defects only as
+  far as those passes' own reading reaches.

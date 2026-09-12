@@ -8,12 +8,13 @@ not add the `./queue`, `./db` or `./provider` modules it references.
 
 ## Status under Ruling U
 
-The lens is narrowed to one hunt group, and it is expected to find **row 6
-only**. Rows 1 to 5 stay exactly as written: they are the key a committed
-blind measurement was scored against at `d496d1e`, and rewriting them would
-falsify that record. They are the measured record, not what the narrowed lens
-is expected to report; it should not report them. The measurement, with every
-scored call and its disclosures, is in
+The lens now reads either a diff or a file set. Given a diff, it stays
+narrowed to one hunt group and is expected to find **row 6 only**. Given a
+file set, it hunts all six groups and is expected to find **rows 1 to 6**.
+Neither mode should say anything about `schema.sql`. Rows 1 to 5 stay exactly
+as written: they are the key a committed blind measurement was scored against
+at `d496d1e`, and rewriting them would falsify that record. The measurement,
+with every scored call and its disclosures, is in
 `docs/plans/2026-09-11-fx-audit/measurement-task05.md`. The keep is
 provisional: the control omitted the broad reviewer branch review also
 dispatches, which checks scalability, so row 6's result rests on an

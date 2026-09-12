@@ -47,10 +47,13 @@ appended section this skill names.
 - **Phase 3 runs `fx:fx-lens-pipeline` and `fx-architecture`, and no other
   lens.** The database, security, accessibility and silent-failure lenses read
   a diff, and an audit has none.
-- **Queue behaviour beyond unbounded enqueue has no dedicated pass.**
-  `fx:fx-lens-pipeline` hunts unbounded enqueue only. The gap report judges
-  head-of-line blocking, redelivery, poison messages, lease timing and retry
-  jitter only as far as Phase 3's own reading reaches.
+- **`fx:fx-lens-pipeline` hunts all six queue groups on the audited file
+  set**: unbounded enqueue outrunning consumers, head-of-line blocking
+  between unlike workloads, redelivery with no idempotency check, poison
+  messages that requeue forever, a lease shorter than the work it covers, and
+  retries with no jitter. It cedes only a query issued per record and work
+  enqueued inside a transaction to `fx-lens-database`, and a swallowed error
+  to `fx-lens-silent-failure`.
 - **The two HTML reports differ in what they fetch.** Phase 3's report is left
   as `fx-architecture` makes it, and it loads CDN scripts when opened. Phase
   4's report, which this skill writes, makes no request to any host.
@@ -243,9 +246,9 @@ say so in the summary. Stop.
 4. Write `.fx/<slug>/draft/03-gaps.md`. Its skeleton is the **first**
    `markdown` fence of the template's `03-gaps.md` section; the two after it
    are worked examples. Under Lens findings, record both dispatches as that
-   section asks. A dispatch that could not run, returned nothing usable, or
-   whose `Unread:` line names a file in the file set is recorded as exactly
-   that.
+   section asks. A dispatch that could not run, returned nothing usable, has
+   no `Unread:` line, or whose `Unread:` line names a file in the file set is
+   recorded as exactly that.
 5. **Open every row's file at its line before writing the verdict.** A citation
    is a claim, not a check. A row in the reference tree is opened in place for
    a filesystem-path reference, and with `git show <the commit read>:<path>`
@@ -272,9 +275,11 @@ starts.
    four checks hold:
    - the verdict table has no high-impact row marked wrong, missing or
      over-engineered;
-   - both Phase 3 dispatches ran and returned, and the lens's `Unread:` line
-     names no file in the file set;
-   - `fx:fx-lens-pipeline` reported nothing Critical or Important;
+   - both Phase 3 dispatches ran and returned, the lens's output ends with an
+     `Unread:` line, and that line names no file in the file set: a lens
+     output with no `Unread:` line fails this check;
+   - `fx:fx-lens-pipeline` reported nothing Critical or Important in any of
+     the six groups;
    - `03-gaps.md`'s Phase 3 gate choice reads `none`.
 
    Sound is an outcome, not a failure to find work: append the
