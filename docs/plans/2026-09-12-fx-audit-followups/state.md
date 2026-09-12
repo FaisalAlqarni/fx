@@ -302,3 +302,20 @@ the mid tier, findings due at
 Task 03: fix round 1 dispatched, resuming its implementer with the Important finding
 verbatim. Fix base `c8b47d8`. Covering checks: the task's own searches on the lens, and
 `python3 scripts/check-prose` on the two files. The only writer.
+
+Task 03: fix round 1 committed as `e64c903`, parent `904bb68`, two files. Verified by
+the controller: `cedes only` now appears 0 times in `skills/fx-audit/SKILL.md` and in ADR
+0014; the ADR's three remaining `fx-lens-database` mentions (lines 14, 17, 94) are about
+the lens's own brief and branch mode, not the ceding list; the commit message is clean.
+Re-review package `.fx/2026-09-12-fx-audit-followups/review/904bb68..e64c903.diff`,
+re-review dispatched on the cheapest tier.
+
+## Task 04: dispatched
+
+BASE `e64c903`. Implementer on the standard tier. The brief carries the ruling that the
+test's `mktemp -d` scratch directory is allowed, tells it to leave the usage, `--slug`
+and no-slug lines of `start-server.sh` for task 07, to record `pgrep -af server.cjs`
+before and after so it stops only servers it started, and to report NEEDS_CONTEXT if RED
+shows any failure other than the exclude-file check. Report due at
+`.fx/2026-09-12-fx-audit-followups/reports/04-companion-exclude-file-report.md`. The only
+writer.
