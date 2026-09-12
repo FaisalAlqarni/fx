@@ -9,9 +9,10 @@
    fixtures under a temp directory: see plan.md's scoping rule.
 
 2. The remote-script rule: nothing fx ships loads a script or stylesheet
-   from the internet. Fails on a `<script src=...>`, an `import ... from
-   "..."`, or a `<link href=...>` pointing at an `http:`, `https:` or
-   protocol-relative `//` URL. Scanned over `skills/`, `agents/`,
+   from the internet. Fails on a `<script src=...>` or `<link href=...>`,
+   quoted or not, a named, side-effect or dynamic `import`, or a stylesheet
+   `@import`, pointing at an `http:`, `https:` or protocol-relative `//`
+   URL. A URL named in prose is not a load. Scanned over `skills/`, `agents/`,
    `commands/` and `references/`, except `references/vendor/`: that
    directory holds upstream library code, not an instruction to an agent,
    and its own minified text routinely contains strings that look like a
@@ -37,10 +38,18 @@ TMPDIR_AREAS = ('skills', 'agents', 'commands')
 REMOTE_AREAS = ('skills', 'agents', 'commands', 'references')
 VENDOR_DIR = 'references/vendor'
 REMOTE_URL = r'(?:https?:)?//[^\s"\'()<>]+'
+# Every form anchors on the syntax that loads, never on a bare URL, so prose
+# naming a URL in a sentence is not a hit.
 REMOTE_PATTERNS = (
-    re.compile(r'<script\b[^>]*\bsrc\s*=\s*["\']' + REMOTE_URL, re.IGNORECASE),
+    # a tag's source, quoted or not
+    re.compile(r'<script\b[^>]*\bsrc\s*=\s*["\']?' + REMOTE_URL, re.IGNORECASE),
+    re.compile(r'<link\b[^>]*\bhref\s*=\s*["\']?' + REMOTE_URL, re.IGNORECASE),
+    # a module import: named, side-effect, dynamic
     re.compile(r'\bimport\b[^\n]*\bfrom\s+["\']' + REMOTE_URL, re.IGNORECASE),
-    re.compile(r'<link\b[^>]*\bhref\s*=\s*["\']' + REMOTE_URL, re.IGNORECASE),
+    re.compile(r'(?<!@)\bimport\s+["\']' + REMOTE_URL, re.IGNORECASE),
+    re.compile(r'\bimport\s*\(\s*["\'`]' + REMOTE_URL, re.IGNORECASE),
+    # a stylesheet importing another, through url() or a bare string
+    re.compile(r'@import\s+(?:url\(\s*)?["\']?' + REMOTE_URL, re.IGNORECASE),
 )
 
 
@@ -87,8 +96,8 @@ def remote_hits(root):
     exempted = 0
     skipped_vendor = False
     for path in files(root, REMOTE_AREAS):
-        rel = str(path.relative_to(root))
-        if pathlib.PurePosixPath(rel).as_posix().startswith(VENDOR_DIR + '/'):
+        rel = path.relative_to(root).as_posix()
+        if rel.startswith(VENDOR_DIR + '/'):
             skipped_vendor = True
             continue
         text = read_text(path, rel)
@@ -130,8 +139,9 @@ def report(hits, label, hint):
 
 def main():
     root = pathlib.Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT
-    if not root.exists():
-        print(f'FAIL: no such directory: {root}')
+    if not root.is_dir() or not any((root / a).is_dir() for a in REMOTE_AREAS):
+        print(f'FAIL: not a directory holding any of skills/, agents/, '
+              f'commands/ or references/: {root}')
         return 1
 
     tmp_hits, tmp_exempted = tmpdir_hits(root)
