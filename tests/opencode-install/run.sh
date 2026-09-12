@@ -82,5 +82,28 @@ set +e; install_into "$D5"; rc=$?; set -e
 check "foreign skill link refused" '[ "$rc" -ne 0 ] && grep -q "fx-tdd" "$SCRATCH/d5.out"'
 check "foreign skill link unchanged" '[ "$(readlink "$D5/skills/fx-tdd")" = "$SCRATCH/outside-fx" ]'
 
+# 7. a dry run refuses a foreign skill link too, and reports it, exactly as
+# a real install would: the refusal must not be gated behind --dry-run
+D7="$SCRATCH/d7"; mkdir -p "$D7/skills" "$SCRATCH/outside-fx3"
+ln -s "$SCRATCH/outside-fx3" "$D7/skills/fx-tdd"
+set +e; python3 "$FX/scripts/fx-opencode-install" --dest "$D7" --dry-run > "$SCRATCH/d7.out" 2>&1; rc=$?; set -e
+check "dry run refuses a foreign skill link" '[ "$rc" -ne 0 ] && grep -q "fx-tdd" "$SCRATCH/d7.out"'
+check "dry run wrote nothing new" '[ ! -e "$D7/references" ] && [ ! -e "$D7/commands" ] && [ ! -e "$D7/agents" ]'
+
+# 8. a refusal fires before any write: a stale fx link sits next to a
+# foreign link, and the whole install must fail before the stale link is
+# ever touched, proving checks all run before writes start
+D6="$SCRATCH/d6"; mkdir -p "$D6/skills" "$SCRATCH/outside-fx4"
+ln -s "$FX/skills/fx-gone" "$D6/skills/fx-gone"
+ln -s "$SCRATCH/outside-fx4" "$D6/skills/fx-tdd"
+set +e; install_into "$D6"; rc=$?; set -e
+check "refusal alongside a stale link still fails" '[ "$rc" -ne 0 ] && grep -q "fx-tdd" "$SCRATCH/d6.out"'
+check "stale link survives a refusal before any write" '[ -L "$D6/skills/fx-gone" ] && [ "$(readlink "$D6/skills/fx-gone")" = "$FX/skills/fx-gone" ]'
+
+# 9. a foreign command file's refusal fires before skills are ever linked
+D8="$SCRATCH/d8"; mkdir -p "$D8/commands"; printf 'not generated\n' > "$D8/commands/fx-critique.md"
+set +e; install_into "$D8"; rc=$?; set -e
+check "foreign command file refusal precedes any write" '[ "$rc" -ne 0 ] && [ ! -e "$D8/skills" ]'
+
 if [ "$fails" -ne 0 ]; then echo "opencode install: $fails failed"; exit 1; fi
 echo "opencode install: all passed"

@@ -178,20 +178,41 @@ def points_into_fx_skills(entry):
     return target == FX_SKILLS_DIR or target.startswith(FX_SKILLS_DIR + os.sep)
 
 
+def check_skills_conflicts(skills_dest, linked):
+    """Read-only: exits naming the first entry that would stop the install,
+    before anything is written. A symlink at skills_dest itself (a
+    whole-folder link from an older install, or anything else) is left for
+    the write phase to replace wholesale; nothing inside it needs protecting
+    since detaching from it touches none of its contents. Only once
+    skills_dest is an existing real directory do its entries matter."""
+    if skills_dest.is_symlink():
+        return
+    if skills_dest.exists() and not skills_dest.is_dir():
+        sys.exit(f"refusing to replace real file: {skills_dest}")
+    if not skills_dest.is_dir():
+        return
+    for skill_dir in linked:
+        dst = skills_dest / skill_dir.name
+        if dst.is_symlink():
+            if not points_into_fx_skills(dst):
+                sys.exit(f"refusing to replace a link fx did not create: {dst}")
+        elif dst.exists():
+            sys.exit(f"refusing to replace real entry with fx skill's name: {dst}")
+
+
 def link_skills(dest, linked, args):
     """dest/skills is a real directory the installer owns. Each linked skill
     gets its own symlink beside it. A whole-folder link from an older install
     is unlinked, never recursed into. Only symlinks pointing into fx's own
-    skills/ are touched, cleaned up or replaced; anything else there,
-    another tool's skill or another tool's same-named link, is untouched."""
+    skills/ are cleaned up; anything else there, another tool's skill, is
+    untouched. Every refusal already fired in check_skills_conflicts, before
+    this runs, so nothing here needs to re-check or exit."""
     skills_dest = dest / "skills"
     act = "would " if args.dry_run else ""
     print(f"{act}ensure {skills_dest} is a real directory")
     if not args.dry_run:
         if skills_dest.is_symlink():
             skills_dest.unlink()
-        if skills_dest.exists() and not skills_dest.is_dir():
-            sys.exit(f"refusing to replace real file: {skills_dest}")
         skills_dest.mkdir(parents=True, exist_ok=True)
 
         for entry in skills_dest.iterdir():
@@ -203,12 +224,6 @@ def link_skills(dest, linked, args):
         print(f"{act}link {dst} -> {skill_dir}")
         if args.dry_run:
             continue
-        if dst.is_symlink():
-            if not points_into_fx_skills(dst):
-                sys.exit(f"refusing to replace a link fx did not create: {dst}")
-            dst.unlink()
-        elif dst.exists():
-            sys.exit(f"refusing to replace real entry with fx skill's name: {dst}")
         dst.symlink_to(skill_dir, target_is_directory=True)
 
 
@@ -224,6 +239,35 @@ def main():
     act = "would " if args.dry_run else ""
 
     linked, user_invoked = load_skills()
+    skills_dest = dest / "skills"
+    commands_out = dest / "commands"
+    dest_abs = pathlib.Path(os.path.abspath(str(dest)))
+
+    # ---- checks: every refusal fires here, before anything is written, in
+    # both a real install and a --dry-run. Generating each command's text is
+    # read-only (it only reads fx's own source tree), so it runs here too:
+    # convert_skill_command is where the "rewritten path does not exist"
+    # check lives, and doing it now means a missing path is caught before
+    # any write, not partway through one. ----
+    check_skills_conflicts(skills_dest, linked)
+
+    commands = []
+    for src in sorted((FX / "commands").glob("*.md")):
+        text = convert_command(src)
+        if text is None:
+            print(f"  skip {src.name} (no frontmatter)")
+            continue
+        out_path = commands_out / src.name
+        refuse_if_foreign_command(out_path)
+        commands.append((out_path, text))
+    for skill_dir, fm, body in user_invoked:
+        text = convert_skill_command(skill_dir, fm, body, dest_abs)
+        out_path = commands_out / f"{skill_dir.name}.md"
+        refuse_if_foreign_command(out_path)
+        commands.append((out_path, text))
+
+    # ---- writes (or, under --dry-run, only the printed report): every
+    # check above has already passed, so nothing from here on refuses. ----
 
     # 1. skills, linked one at a time
     link_skills(dest, linked, args)
@@ -259,25 +303,7 @@ def main():
         (agents_out / src.name).write_text(text)
 
     # 4. generated commands: one per commands/*.md, one per user-invoked skill
-    dest_abs = pathlib.Path(os.path.abspath(str(dest)))
-    commands_out = dest / "commands"
-    for src in sorted((FX / "commands").glob("*.md")):
-        text = convert_command(src)
-        if text is None:
-            print(f"  skip {src.name} (no frontmatter)")
-            continue
-        out_path = commands_out / src.name
-        refuse_if_foreign_command(out_path)
-        print(f"{act}write {out_path}")
-        if args.dry_run:
-            continue
-        commands_out.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(text)
-
-    for skill_dir, fm, body in user_invoked:
-        text = convert_skill_command(skill_dir, fm, body, dest_abs)
-        out_path = commands_out / f"{skill_dir.name}.md"
-        refuse_if_foreign_command(out_path)
+    for out_path, text in commands:
         print(f"{act}write {out_path}")
         if args.dry_run:
             continue
