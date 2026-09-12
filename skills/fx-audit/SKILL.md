@@ -200,6 +200,7 @@ from Phase 1 straight to Phase 3.
      `git worktree list --porcelain` says of that path:
      - Listed at that commit: reuse it.
      - Listed at another commit: `git worktree remove --force` it, then add it.
+       If that still fails, say what is left at the path and stop.
      - Not listed and nothing on disk: add it.
      - Not listed, yet a directory is there: it is not this audit's worktree.
        Stop and name it.
@@ -217,7 +218,8 @@ actually read, and every heading of the skeleton is written. **Then** move it
 into the slug directory.
 
 **Gate.** Remove the worktree with `git worktree remove --force` when one was
-used, and say so in the summary. Stop.
+used, and say so in the summary. If that still fails, say what is left at the
+path and stop.
 
 ## Phase 3: report the gaps
 
@@ -293,16 +295,17 @@ starts.
    recommendation to win**, as a condition someone can check. A recommendation
    whose defeater cannot be written is a preference; rewrite the
    recommendation until it has one.
-4. Write the Phase 4 `report-<timestamp>.html` under `.fx/<slug>/draft/`: one
-   file rendering `design.md`, following `../../references/report-assets.md`
-   for the copy rule, the missing-file rule, the mismatch rule and the three
-   `<script>` tags, so opening it fetches nothing from any host.
+4. Write the Phase 4 `report-<timestamp>.html` under `.fx/<slug>/draft/`, for
+   its final place in the slug directory: one file rendering `design.md`,
+   following `../../references/report-assets.md` for the copy rule, the
+   missing-file rule, the mismatch rule and the three `<script>` tags, so
+   opening it fetches nothing from any host.
 
 **Done when** `design.md` holds every section of both templates, every count
-the audit template states holds, and the report renders it. **Then** move
-`design.md` and the report into the slug directory, open the report locally
-with the platform's open command, print its absolute path, and never publish
-it.
+the audit template states holds, and the report carries every section of
+`design.md`. **Then** move `design.md` and the report into the slug directory.
+Only after the move, open the report locally with the platform's open command,
+print its absolute path, and never publish it.
 
 **Gate.** Name every document in the slug directory, and say they are untracked
 until the user commits them.

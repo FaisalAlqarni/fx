@@ -20,7 +20,9 @@ ANCHORED = re.compile(r'`((?:\.\./)+references/[A-Za-z0-9/._-]+)`')
 failures = []
 checked = 0
 
-for area in ("skills", "agents", "commands"):
+# references/ included: a reference names plugin paths too, anchored relative
+# to itself, and an agent follows them from the same user's repo.
+for area in ("skills", "agents", "commands", "references"):
     for path in sorted((ROOT / area).rglob("*.md")):
         text = path.read_text()
         rel = path.relative_to(ROOT)
