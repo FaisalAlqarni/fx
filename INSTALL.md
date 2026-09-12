@@ -15,22 +15,32 @@ That is the whole install. Add `--dry-run` first to see what it would do, or
 
 ### What it does, and why copying the files is not enough
 
-**Symlinked**: `skills/`, `references/`, `plugins/fx.js`. The repo stays the
-single source, so `git pull` updates the install with nothing to re-run.
+**Symlinked**: `references/` and `plugins/fx.js`. Skills are linked one at a
+time, `skills/<name>`, sitting beside `references/`: `skills/` itself is a
+real directory the installer owns, never a whole-folder symlink. The repo
+stays the single source, so `git pull` updates the install with nothing to
+re-run.
 
 **Generated**: `agents/` and `commands/`, because the two runtimes disagree on
-frontmatter and a straight copy would be silently wrong:
+frontmatter and a straight copy would be silently wrong for agents:
 
 | | Claude Code | opencode |
 |---|---|---|
 | tool restriction | `tools: Read, Grep, Glob, Bash` | `permission: {edit: deny, write: deny, bash: allow}` |
 | model id | `model: opus` | `model: anthropic/claude-opus-5` |
 | subagent marker | implied by directory | `mode: subagent` |
-| command prompt | the file body | `template:` field, **required** |
+| command prompt | the file body | the file body |
 
-Copying the Claude Code files across would produce agents opencode does not
-treat as subagents, unpinned models that silently inherit the session's most
-expensive one, and **review lenses whose read-only restriction is not enforced**: it lives in `tools:`, which opencode does not read.
+Copying the Claude Code agent files across would produce agents opencode does
+not treat as subagents, unpinned models that silently inherit the session's
+most expensive one, and **review lenses whose read-only restriction is not enforced**: it lives in `tools:`, which opencode does not read.
+
+Commands are generated too, but not because the prompt format differs: both
+runtimes read the file body as the prompt. Generation exists to normalize the
+description field and stamp the generated-file header. It also covers a case
+Claude Code doesn't have: a skill marked `disable-model-invocation: true`
+(`fx-audit`, so the model never picks the audit on its own) is generated as a
+command as well, since opencode has no way to hide a skill from the model.
 
 Generated files carry a header saying so. Edit the source in the repo and
 re-run; do not edit the generated copy.
@@ -40,19 +50,21 @@ re-run; do not edit the generated copy.
 `skills/` and `references/` **must be siblings** under the destination.
 
 Every lane cites its references as `../../references/vocab/x.md`, relative to
-the skill file. If you symlink skills individually, the skill still loads and
-every reference silently resolves to nothing. The installer links both and then
+the skill file. Each skill is linked individually, `skills/<name>`, but the
+relative path still resolves: `skills/` and `references/` sit directly under
+the destination either way, symlinked skill or not, so `skills/<name>/../../`
+always lands back at the destination root. The installer links both and then
 probes the path, failing loudly if it does not resolve:
 
 ```
 reference resolution through the symlinked tree: OK
-skills: 11  agents: 5  commands: 3
+skills: 12  agents: 6  commands: 5
 ```
 
 ### Verify
 
 ```bash
-ls ~/.config/opencode/skills          # 11 entries
+ls ~/.config/opencode/skills          # 12 entries
 ```
 
 Then in a session, confirm the guard is live: `git branch -D fx-guard-probe`
