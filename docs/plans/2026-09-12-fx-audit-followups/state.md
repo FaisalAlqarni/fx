@@ -505,3 +505,39 @@ or committed. If task 05 needs a fix round, it waits for task 08's commit, since
 stay serial. Cost if wrong: a fix round that renames or drops the test script leaves
 `README.md` naming the old one. Caught by task 05's re-review, whose brief will name
 `README.md`, and by the final review.
+
+## Task 05: review returned Needs fixes (0 Critical, 2 Important, 3 Minor)
+
+Findings: `.fx/2026-09-12-fx-audit-followups/findings/05-opencode-install-findings.md`.
+The review confirmed per-skill linking, the command format, path rewriting, idempotency,
+dry-run gating and the command-file refusal with real scratch installs.
+
+Both Important findings checked by the controller:
+- Same-named foreign link replaced. `scripts/fx-opencode-install:199-200` unlinks any
+  existing symbolic link named after an fx skill without reading its target, while the
+  stale-link loop at `:180-189` does check it. Reproduced in a scratch destination under
+  the job directory: `skills/fx-tdd` pointing at a folder outside fx was replaced by fx's
+  link, exit 0, no warning.
+- `INSTALL.md:52-57` says `skills/<name>/../../` "always lands back at the destination
+  root". The operating system resolves `..` after following the link, so the path lands
+  in fx's own tree, where `references/` also sits; the probe passes for that reason.
+
+Task 05: minor (deferred): the installer overwrites a same-named file in `<dest>/agents/` without checking it is fx's; present before this task, and fx agents are all named `fx-`.
+Task 05: minor (deferred): the bare backticked `../../` rewrite pattern could match a relative path that is not fx's layout; no such text exists today.
+
+Ruling: task 05 enters fix round 1, resuming its implementer, with both Important
+findings plus the Minor `pipefail` trap in `tests/opencode-install/run.sh`, where
+`user_invoked | grep -qx` can report no match when `grep` exits first. Taken because that
+test runs in `scripts/check-all`, so a flake there turns every later gate red for no
+reason. The same-named foreign link is refused, naming it, the way a same-named real
+entry is. Why: the global constraint says the installer never touches an entry it did
+not create. Cost if wrong: one more round. Caught by the scoped re-review, whose brief
+also names `README.md` for the task 08 ruling.
+
+Ruling: the fix round is dispatched after task 08's implementer commits. Why: writers
+stay serial. Cost if wrong: minutes. Caught by nothing; order only.
+
+The review's ⚠️ on `OPENCODE_CONFIG_DIR` is already answered in the task 05 entry above:
+the local binary contains the name 12 times.
+
+Waiting on: task 08's implementer, task 07's review, the coverage audit.
