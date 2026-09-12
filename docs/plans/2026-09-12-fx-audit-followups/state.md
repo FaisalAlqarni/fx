@@ -571,3 +571,12 @@ its brief, and the controller has checked the version and the test names. Findin
 Task 05: fix round 1 dispatched, resuming its implementer with both Important findings
 and the `pipefail` Minor. Fix base `0dbb083`. Covering tests:
 `tests/opencode-install/run.sh` and `scripts/check-all`. The only writer.
+
+Task 08: review Approved, 0 Critical, 0 Important, 0 Minor
+(`.fx/2026-09-12-fx-audit-followups/findings/08-version-and-counts-findings.md`). It
+re-counted 27 references (22 markdown), 13 skills, 6 agents and 4 commands. Its line that
+`scripts/check-all` is ALL GREEN is not taken as evidence: its brief forbade running the
+suite, so it is either repeated from the report or a run during task 05's fix round. The
+exit gate's fresh run covers it.
+
+Task 08: complete (commit `0dbb083`)
