@@ -58,7 +58,7 @@ A claim with no verdict is a build error.
 | 128 to 129 | S | Frontmatter merged into `fx-plan`'s |
 | 130 | S | `disable-model-invocation: true` → `fx-plan` is a lane and must be model-selectable |
 | 131 | K | Tracer-bullet vertical slices with blocking edges |
-| 132 to 133 | S | "tracker should have been provided / run `/setup-matt-pocock-skills`" → `/fx:setup`; tracker is `docs/plans/` |
+| 132 to 133 | S | "tracker should have been provided / run `/setup-matt-pocock-skills`" → `/fx:fx-setup`; tracker is `docs/plans/` |
 | 134 to 135 | S | Gather from conversation / fetch a passed reference → input is always `design.md` |
 | 136 to 141 | K | Explore the codebase; domain glossary; respect ADRs; prefactor; *"make the change easy, then make the easy change"* |
 | 142 to 148 | K | All four vertical-slice rules; blocking edges; no-blocker tasks start immediately |
@@ -82,7 +82,7 @@ A claim with no verdict is a build error.
 | 195 to 202 | A | Frontmatter → the agent's own, incl. both modes and the trigger phrases |
 | 203 to 206 | A | Single source of truth; deliberately adversarial; not here to agree; find it while it is cheap to fix |
 | 207 | A | Announce line |
-| 208 to 211 | S | Invocation paths (`/soe:critique`, the soe agent, the orchestrator's `EVALUATE_PLAN`) → `fx-plan` step 7 and `/fx:critique` |
+| 208 to 211 | S | Invocation paths (`/soe:critique`, the soe agent, the orchestrator's `EVALUATE_PLAN`) → `fx-plan` step 7 and `/fx:fx-critique` |
 | 212 to 221 | A | **All ten posture rules**: assume flawed, "looks good" is a failure, attack the artifact not the author, don't soften, don't pad, don't invent filler, findings must be real and specific, prefer fewer sharper, **if it wouldn't change the artifact it isn't a finding** |
 | 222 to 231 | A | All seven lenses with their definitions, correct-pattern-usage, cargo-cult rule, **earlier lenses dominate** |
 | 232 to 237 | A | **Design mode entire**: target, gaps (incl. error/concurrency/partial-failure/resume), inconsistencies, missing pieces, pattern misuse, quality-lens catch-all |

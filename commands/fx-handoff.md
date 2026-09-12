@@ -2,7 +2,7 @@
 description: Compact this session into a handoff block you can paste into another session, on this machine or any other
 ---
 
-# /fx:handoff
+# /fx:fx-handoff
 
 **Argument:** what the next session is for. No argument? Ask, in one line, then
 write it. What the next session is *for* decides what to keep, and without it

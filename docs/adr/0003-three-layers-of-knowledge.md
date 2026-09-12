@@ -6,7 +6,7 @@ is true of rather than by what it is about.
 | Layer | Content | Home |
 |---|---|---|
 | Ecosystem | true in any repo using that stack | `references/stacks/<name>.md` |
-| Project | true of this repo only | `repo.md`, written by `/fx:setup` |
+| Project | true of this repo only | `repo.md`, written by `/fx:fx-setup` |
 | Machine | commands, paths, coverage | `.fx.json` |
 
 A stack file never names a command, a port, a directory layout or a package

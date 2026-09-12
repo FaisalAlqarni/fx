@@ -188,7 +188,7 @@ already does: never a bare "tell me when to start."
 - **Start implementing** → hand off to `fx-implement`. Never begin
   implementing from here.
 - **Red-team it** → dispatch `fx-devils-advocate` in **plan mode** against
-  `plan.md` (also reachable any time via `/fx:critique plan <file>`). Present
+  `plan.md` (also reachable any time via `/fx:fx-critique plan <file>`). Present
   its numbered findings, then ask: discuss all / discuss some / continue. Do
   not start resolving until the user picks. Once resolved, ask this same
   four-way question again: the plan changed.

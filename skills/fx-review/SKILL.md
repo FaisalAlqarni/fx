@@ -109,7 +109,7 @@ the branch → a path the user passed → **ask.**
 Nothing exists and the user says there is no spec → **skip the Spec axis and
 report "no spec available".** Never invent one.
 
-If the repo has no `docs/plans/` layout at all, say so and point at `/fx:setup`
+If the repo has no `docs/plans/` layout at all, say so and point at `/fx:fx-setup`
 rather than guessing where specs live.
 
 ## 4. Find the standards

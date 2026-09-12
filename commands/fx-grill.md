@@ -2,7 +2,7 @@
 description: Stress-test a decision that is not heading for code: the grilling interview standalone, no classification, no design doc, no gate
 ---
 
-# /fx:grill
+# /fx:fx-grill
 
 **Argument:** the topic: a plan, a decision, an idea, a position to be talked
 out of. No argument given? Ask what to grill.
@@ -17,7 +17,7 @@ Run the interview technique in `../references/vocab/grilling.md` and **stop.**
 its way to a classification, a design and an approval gate. **This command is
 not a second door into that pipeline.**
 
-`/fx:grill` is for the decisions that are **not heading for code**: which vendor,
+`/fx:fx-grill` is for the decisions that are **not heading for code**: which vendor,
 whether to take the contract, how to structure the team, is this idea worth
 doing at all. It is also the tool for the one that is heading for code but is
 not ready to be: where the question is *should we*, not *how*.
@@ -25,7 +25,7 @@ not ready to be: where the question is *should we*, not *how*.
 **The moment the topic turns out to be work that will touch this repo's code,
 say so and hand over to `fx-brainstorm`. Do not carry on and produce the design
 yourself.** One claimant per intent is the entire point of this plugin; a
-`/fx:grill` that quietly grows a classification step and a design document
+`/fx:fx-grill` that quietly grows a classification step and a design document
 becomes the second claimant, and the problem fx exists to end is back.
 
 So, explicitly, this command **never**:

@@ -21,7 +21,7 @@ A claim with no verdict is a build error.
 | 1 to 2 | S | Frontmatter rewritten; adds the fx-architecture boundary ("for EXISTING code with no diff, use fx-architecture") |
 | 3 to 5 | K | Two-axis definition: Standards and Spec |
 | 6 to 8 | K | Parallel subagents; the don't-pollute-each-other's-context reason; the skill aggregates |
-| 9 to 10 | S | "tracker should have been provided / run `/setup-matt-pocock-skills`" → `/fx:setup`; the tracker is `docs/plans/` |
+| 9 to 10 | S | "tracker should have been provided / run `/setup-matt-pocock-skills`" → `/fx:fx-setup`; the tracker is `docs/plans/` |
 | 11 to 13 | K | Pin the fixed point; ask if not specified |
 | 14 to 15 | K | `git diff <fp>...HEAD` **three-dot**, and the merge-base reason |
 | 16 | K | `git log <fp>..HEAD --oneline` |

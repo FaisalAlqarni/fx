@@ -2,7 +2,7 @@
 description: Red-team a design or plan: dispatches fx-devils-advocate at the file and reports its findings
 ---
 
-# /fx:critique
+# /fx:fx-critique
 
 **Argument:** a path to a design or plan document: typically
 `docs/plans/<slug>/design.md` or `docs/plans/<slug>/plan.md`.
@@ -32,7 +32,7 @@ the review.
 
 ## What this does not do
 
-- **No classification, no design work, no planning.** `/fx:critique` reviews an
+- **No classification, no design work, no planning.** `/fx:fx-critique` reviews an
   artifact that already exists.
 - **No edits.** The agent is read-only and so is this command. Findings are
   reported; fixing them is a separate, explicit decision by the human.

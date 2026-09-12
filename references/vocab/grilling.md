@@ -2,7 +2,7 @@
 
 A relentless interview until you reach a **shared understanding**. Used by
 `fx-brainstorm` (designing) and `fx-architecture` (working a candidate), and
-available on its own via `/fx:grill` to stress-test a plan, a decision, or an
+available on its own via `/fx:fx-grill` to stress-test a plan, a decision, or an
 idea.
 
 ## The design tree

@@ -2,7 +2,7 @@
 description: Set up fx in this repository: reads the machine facts, asks what the repo cannot tell it, then writes .fx.json, repo.md, an optional CONTEXT.md and the directories the lanes expect
 ---
 
-# /fx:setup
+# /fx:fx-setup
 
 Run once per repository. Re-run when the project moves enough that `repo.md` is
 out of date.

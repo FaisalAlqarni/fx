@@ -61,7 +61,7 @@ A claim with no verdict is a build error.
 
 | Claims | Verdict | Note |
 |---|---|---|
-| 123 to 124 | S | Frontmatter; becomes a reference plus the `/fx:grill` command, not a competing skill |
+| 123 to 124 | S | Frontmatter; becomes a reference plus the `/fx:fx-grill` command, not a competing skill |
 | 125 to 128 | K/G | Interview until shared understanding; the design tree; work it in rounds; the frontier definition |
 | 129 | S | **"Ask the whole frontier in one round"** → 2 to 4 related questions, one topic per round |
 | 130 | K/G | Wait for answers before the next round |
@@ -79,7 +79,7 @@ A claim with no verdict is a build error.
 | 142 to 144 | S | Frontmatter; `disable-model-invocation: true`: absorbed into an invocable lane |
 | 145 | K | Produce a spec from the conversation and codebase understanding |
 | 146 | S | **"Do NOT interview the user"**: that was its premise as a *separate* skill; here the interview precedes it |
-| 147 to 148 | S | Tracker provided / run `/setup-matt-pocock-skills` → `/fx:setup`; the tracker is `docs/plans/` |
+| 147 to 148 | S | Tracker provided / run `/setup-matt-pocock-skills` → `/fx:fx-setup`; the tracker is `docs/plans/` |
 | 149 to 150 | K | Explore the repo first; use the domain glossary throughout; respect ADRs |
 | 151 to 156 | K | **Seams: sketch them, prefer existing, use the highest possible, propose new ones high, fewer is better, ideal is one, and check them with the user.** All six |
 | 157 | K/T | Write the spec from the template and publish it |
