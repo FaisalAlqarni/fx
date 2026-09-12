@@ -319,3 +319,11 @@ before and after so it stops only servers it started, and to report NEEDS_CONTEX
 shows any failure other than the exclude-file check. Report due at
 `.fx/2026-09-12-fx-audit-followups/reports/04-companion-exclude-file-report.md`. The only
 writer.
+
+Task 02: review Approved, 0 Critical, 0 Important, 0 Minor
+(`.fx/2026-09-12-fx-audit-followups/findings/02-audit-report-libraries-findings.md`).
+It confirmed the two edited sections are the only hunks, RED 0, 1, 1 and GREEN 1, 0, 0
+against both commits, the Phase 4 step citing the reference rather than restating its
+rules, and task 03's text outside both hunks.
+
+Task 02: complete (commit `c8b47d8`)
