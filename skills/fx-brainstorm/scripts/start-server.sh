@@ -261,26 +261,6 @@ session_files_not_ignored() {
   done
 }
 
-# In a git repository that does not ignore the session files yet, add .fx/ to
-# the local exclude file. The project's own .gitignore is never edited: it stays
-# the project's to change. --git-path resolves the shared exclude file from
-# inside a linked worktree.
-if [[ "$IN_GIT_REPO" == "true" ]]; then
-  WHY="$(session_files_not_ignored)"
-  if [[ -n "$WHY" ]]; then
-    EXCLUDE_FILE="$(git -C "$PROJECT_DIR" rev-parse --path-format=absolute --git-path info/exclude 2>/dev/null)"
-    if [[ -z "$EXCLUDE_FILE" ]]; then
-      err="$(git -C "$PROJECT_DIR" rev-parse --path-format=absolute --git-path info/exclude 2>&1 >/dev/null)"
-      refuse "git could not locate the local exclude file ($(git_error "${err:-it printed nothing}")), and ${WHY}. Fix that and start again."
-    fi
-    if ! grep -qxF '.fx/' "$EXCLUDE_FILE" 2>/dev/null; then
-      err="$( { mkdir -p "$(dirname "$EXCLUDE_FILE")" && append_line '.fx/' "$EXCLUDE_FILE"; } 2>&1 )" \
-        || refuse "could not write the local exclude file ${EXCLUDE_FILE} (${err}), and ${WHY}. Fix that and start again."
-      echo "fx companion: added .fx/ to ${EXCLUDE_FILE} so the session key is never committed." >&2
-    fi
-  fi
-fi
-
 # fx's own ignore file, written before any session file. `*` ignores everything
 # under .fx/, this file included, whether or not the project is a git repository
 # yet, so a later `git init && git add -A` stages none of it. A rule in a
