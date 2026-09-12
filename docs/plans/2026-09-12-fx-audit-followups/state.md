@@ -729,3 +729,28 @@ nothing in this build; the completion report states it.
 
 Final fix wave dispatched. Report due at
 `.fx/2026-09-12-fx-audit-followups/reports/final-fix-wave-report.md`. The only writer.
+
+## Final fix wave: fixer reported DONE_WITH_CONCERNS
+
+Four commits on `b64ab39`: `84caae1` installer, `2fa3255` gates, `b682b5c` audit and report
+assets, `78c7174` documents; 11 files. Verified by the controller:
+- all four commit messages are clean, and none touches `docs/plans/`;
+- C1 in scratch: a destination whose `skills` and `references` links point at another
+  tool's folders now exits 1 in the dry run and the real install alike, naming `skills`,
+  and afterwards both links still point at the other tool;
+- I4 in scratch: the four remote-load forms exit 1 with 4 hits;
+- I1: `INSTALL.md` shows `/fx-setup`, and `README.md` shows the opencode forms 3 times;
+- I3: `references/report-assets.md:5`, `:21`, `:28` and `:35` now read
+  `../references/vendor/`, and the fixer reports `scripts/check-paths` now scans
+  `references/`.
+
+The fixer's concerns: Phase 4 and the report steps are still unexercised live; its skill
+edits were not tested with sample agents; `INSTALL.md` sits in the documents commit.
+
+Ruling: the one scoped re-review runs on the mid tier, not the cheapest. Why: it is the
+only check on a 61KB, four-commit diff with no second wave behind it, and it carries five
+named risks, including real-upgrade installs and false hits from the widened gates. Cost
+if wrong: some extra quota. Caught by nothing; a spending choice.
+
+Re-review package `.fx/2026-09-12-fx-audit-followups/review/final-fix-wave.diff`, findings
+due at `docs/plans/2026-09-12-fx-audit-followups/findings/final-review-rereview.md`.
