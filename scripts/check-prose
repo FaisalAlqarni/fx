@@ -58,7 +58,15 @@ MARKER = 'prose-gate: quoting'
 def files(paths):
     for base in (paths or [ROOT]):
         base = pathlib.Path(base)
-        for p in ([base] if base.is_file() else sorted(base.rglob('*.md'))):
+        if base.is_file():
+            # Named explicitly on the command line: always read. The exemption
+            # list exists to keep a whole-repository walk out of upstream and
+            # nested-worktree files, not to let a caller who names a file
+            # under one of those paths on purpose be ignored.
+            rel = str(base.relative_to(ROOT)) if base.is_relative_to(ROOT) else str(base)
+            yield base, rel
+            continue
+        for p in sorted(base.rglob('*.md')):
             rel = str(p.relative_to(ROOT)) if p.is_relative_to(ROOT) else str(p)
             if any(e in rel for e in EXEMPT):
                 continue

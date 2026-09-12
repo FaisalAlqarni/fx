@@ -27,6 +27,7 @@ run check-manifest         scripts/check-manifest
 run check-paths            scripts/check-paths
 run check-reference-leaves scripts/check-reference-leaves
 run check-prose            scripts/check-prose
+run check-prose-explicit-path.sh bash tests/gates/check-prose-explicit-path.sh
 run check-artifacts        scripts/check-artifacts
 run check-artifacts-remote.sh bash tests/gates/check-artifacts-remote.sh
 

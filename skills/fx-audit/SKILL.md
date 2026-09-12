@@ -196,11 +196,10 @@ from Phase 1 straight to Phase 3.
      `git rev-parse --verify --quiet --end-of-options '<reference>^{commit}'`,
      the reference single-quoted so the shell expands nothing in it. It
      resolves: run the ignore check on `.worktrees/audit-<name>-reference`,
-     then place the worktree there by what `git worktree list --porcelain`
-     says of that path:
+     then run `git worktree prune`, then place the worktree there by what
+     `git worktree list --porcelain` says of that path:
      - Listed at that commit: reuse it.
-     - Listed at another commit, or as missing: `git worktree remove --force`
-       it (for a missing one, `git worktree prune`), then add it.
+     - Listed at another commit: `git worktree remove --force` it, then add it.
      - Not listed and nothing on disk: add it.
      - Not listed, yet a directory is there: it is not this audit's worktree.
        Stop and name it.
@@ -217,8 +216,8 @@ from Phase 1 straight to Phase 3.
 actually read, and every heading of the skeleton is written. **Then** move it
 into the slug directory.
 
-**Gate.** Remove the worktree with `git worktree remove` when one was used, and
-say so in the summary. Stop.
+**Gate.** Remove the worktree with `git worktree remove --force` when one was
+used, and say so in the summary. Stop.
 
 ## Phase 3: report the gaps
 

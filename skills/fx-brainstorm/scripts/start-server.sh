@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Start the brainstorm server and output connection info
-# Usage: start-server.sh [--slug <plan-slug>] [--project-dir <path>] [--host <bind-host>] [--url-host <display-host>] [--foreground] [--background]
+# Usage: start-server.sh [--slug 2026-09-12-my-feature] [--project-dir <path>] [--host <bind-host>] [--url-host <display-host>] [--foreground] [--background]
 #
 # Starts server on a random high port, outputs JSON with URL.
 # Each session gets its own directory to avoid conflicts.
 #
 # Options:
-#   --slug <plan-slug>    The slug this brainstorm writes its design under. Mockups
+#   --slug 2026-09-12-my-feature  The slug this brainstorm writes its design under. Mockups
 #                         go to <project>/docs/plans/<slug>/companion/<session-id>/content
 #                         and persist after the server stops. The session key, PID
 #                         and log go to the git-ignored <project>/.fx/<slug>/companion/.
@@ -153,7 +153,7 @@ SESSION_ID="$$-$(date +%s)"
 # digit) and say so, so the mockups get moved under the design's slug later.
 PLAN_SLUG="${SLUG:-_companion-unfiled}"
 if [[ -z "$SLUG" ]]; then
-  echo "fx companion: no --slug given, so mockups go to docs/plans/${PLAN_SLUG}/companion/, which is not a plan. Pass --slug <plan-slug> to keep them with the design." >&2
+  echo "fx companion: no --slug given, so mockups go to docs/plans/${PLAN_SLUG}/companion/, which is not a plan. Pass --slug 2026-09-12-my-feature to keep them with the design." >&2
 fi
 
 SESSION_DIR="${PROJECT_DIR}/docs/plans/${PLAN_SLUG}/companion/${SESSION_ID}"

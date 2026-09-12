@@ -64,7 +64,8 @@ Subagent (general-purpose):
        `.gitignore`, say that you did, and check again. Still not ignored: add
        no worktree, and say which rule re-includes it.
     2. `git worktree add <path> [SHA]`.
-    3. When the review is done, `git worktree remove <path>`.
+    3. When the review is done, `git worktree remove --force <path>`. If that
+       still fails, say what is left at the path and stop.
 
     ## You do not dispatch subagents
 
