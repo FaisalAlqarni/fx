@@ -384,3 +384,29 @@ Ruling: task 06 uses the filter `grep -vE '^(\./)?tasks/todo\.md:'` in steps 1 a
 Why: as written, step 4's expected empty output can never occur, and an implementer
 chasing it would edit `tasks/todo.md`, which the task excludes. Cost if wrong: none; the
 pattern still matches the `./` form. Caught by task 06's review, whose brief will name it.
+
+## Task 05: implementer reported DONE_WITH_CONCERNS, commit `c6eb44f`
+
+Parent `8e237d1`, four files as the task names. Verified by the controller:
+- the user's real `~/.config/opencode` still holds 213 `skills` entries and 100
+  `commands` files, no `references` or `plugins/fx.js`, and no entry in either folder is
+  newer than the task file;
+- no `opencode` process is left running;
+- the commit message is clean.
+
+Its claim that opencode does not honour `OPENCODE_CONFIG_DIR` is not supported: the local
+binary (184MB, dated Aug 28) contains the string `OPENCODE_CONFIG_DIR` 12 times, and the
+installer's use of it at `scripts/fx-opencode-install:34` and `:205-206` predates this task
+(lines 21 and 100-101 at `c6eb44f^`). No action.
+
+Review package `.fx/2026-09-12-fx-audit-followups/review/task-05.diff`; review dispatched
+on the mid tier with eight named risks: every delete and overwrite path and its guard,
+the command-file ruling, `agents/` overwrites, the `../../` rewrite extension, YAML
+quoting in descriptions, idempotency, dry run, and the `OPENCODE_CONFIG_DIR` claim.
+
+## Task 06: dispatched
+
+BASE `c6eb44f`. Implementer on the cheapest tier: a mechanical replacement in eleven named
+files, with the corrected search filter from the ruling above and a guard against
+producing `/fx:fx-fx-`. Report due at
+`.fx/2026-09-12-fx-audit-followups/reports/06-command-names-report.md`. The only writer.
