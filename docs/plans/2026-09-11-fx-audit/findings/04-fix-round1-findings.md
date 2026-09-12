@@ -5,7 +5,7 @@ Fix base `41c0d7d`, head `77f8b3e`, one commit, three files. The working tree's
 exit 0). I read `start-server.sh` in full.
 
 All runs used a copy of `skills/fx-brainstorm/` under
-`/home/faisal/.claude/jobs/6d844eaa/tmp/rr1/plugin/skills/fx-brainstorm`, which
+`<job-scratch>/rr1/plugin/skills/fx-brainstorm`, which
 `cmp` showed identical to the worktree for `start-server.sh`, `stop-server.sh`,
 `server.cjs` and `visual-companion.md`. The scratch root was outside every
 repository: `git rev-parse` exit 128, and no `.git` entry at or above it. The

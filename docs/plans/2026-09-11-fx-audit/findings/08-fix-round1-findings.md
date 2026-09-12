@@ -76,7 +76,7 @@ entry and becomes model-invocable.** Before the move, `scripts/fx-opencode-insta
 ran `convert_command` (`:83`) over `commands/`, so opencode got a generated
 `fx-audit` command. After it, the file is only in `skills/`, which the installer
 symlinks whole (`:108-111`) and opencode loads (`INSTALL.md:40-44`). The opencode
-binary on disk, `/home/faisal/.opencode/bin/opencode`, contains `SKILL.md` 11 times and
+binary on disk, `~/.opencode/bin/opencode`, contains `SKILL.md` 11 times and
 `Base directory for this skill` 3 times, but `disable-model-invocation` and
 `disableModelInvocation` 0 times (ran `grep -ac`). So on that runtime the skill
 likely receives its base directory (I2 holds there too), but nothing on disk

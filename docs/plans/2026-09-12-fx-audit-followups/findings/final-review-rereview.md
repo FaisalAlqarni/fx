@@ -10,7 +10,7 @@ Tests run once each, all green: `bash tests/opencode-install/run.sh`,
 `bash tests/gates/check-artifacts-remote.sh`, `python3 scripts/check-paths`,
 `bash scripts/check-reference-leaves`, `bash scripts/check-all`. All work
 happened in this worktree (read only) plus scratch under
-`/home/faisal/.claude/jobs/6d844eaa/tmp/rereview-final/`, removed afterward.
+`<job-scratch>/rereview-final/`, removed afterward.
 The opencode binary was never run, and the installer was never pointed at
 `~/.config/opencode`.
 

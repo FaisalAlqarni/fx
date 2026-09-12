@@ -2,10 +2,10 @@
 
 Wide events (canonical log lines), plus this project's tracing topology.
 
-Absorbed from `advantage-backend/.claude/logging-best-practices/`: a skill
+Absorbed from a Rails project's logging skill
 that sat in the wrong directory and **never loaded once** between Feb and Sep
 2026. Its examples used checkout/cart domains with a note apologising for them;
-they are rewritten here in the real domain.
+they are rewritten here.
 
 Sources: [Stripe: Canonical Log Lines](https://stripe.com/blog/canonical-log-lines) ·
 [Observability Wide Events 101](https://boristane.com/blog/observability-wide-events-101/) ·
@@ -140,9 +140,9 @@ request ID they cannot be joined.**
 
 ```ruby
 # Calling another engine — pass it along
-Faraday.post("#{engagement_url}/api/campaigns/trigger") do |req|
+Faraday.post("#{other_engine_url}/api/work/trigger") do |req|
   req.headers['X-Request-Id'] = request.request_id
-  req.body = { campaign_id: campaign.id }.to_json
+  req.body = { record_id: record.id }.to_json
 end
 
 # Receiving engine — adopt it rather than generating a new one

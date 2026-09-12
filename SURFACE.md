@@ -168,7 +168,7 @@ Always blocked regardless of location:
 ### Stack detection
 
 `.fx.json` in the repo names the stack explicitly; detection only runs when it's
-absent. Deterministic, and it survives a repo growing a second language: advantage-backend has a `Gemfile`, a `package.json` and 1,658 vendored `.ts`
+absent. Deterministic, and it survives a repo growing a second language: a Rails repo can carry a `Gemfile`, a `package.json` and over a thousand vendored `.ts`
 files, which no priority order resolves honestly.
 
 ## Commands: 4
@@ -305,7 +305,7 @@ having; just no longer load-bearing for anything automated.
 
 ## Absorbed this round
 
-`advantage-backend/.claude/logging-best-practices/` → `references/stacks/observability.md`.
+A Rails project's logging skill → `references/stacks/observability.md`.
 
 932 lines across 5 files, deduplicated to one reference. Its own examples
 carried a note apologising for using checkout/cart domains; they are rewritten

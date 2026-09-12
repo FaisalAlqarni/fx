@@ -9,7 +9,7 @@ commands/fx-audit.md` OK, exit 0. `scripts/check-all` was not run, per instructi
 
 **Probe evidence read:** `run-red.json`, `run-green-1.json`, `run-green-2.json`,
 `run-green-3.json`, `run-resume.json` and `01-current.sha256.before` in
-`/home/faisal/.claude/jobs/6d844eaa/tmp/`, parsed event by event rather than
+`<job-scratch>/`, parsed event by event rather than
 taken from the report.
 
 ## Spec Compliance
@@ -43,7 +43,7 @@ taken from the report.
 - ✅ **Ruling V, command half.** Targets come from the brief, a pointed-to file, or the reply to the Phase 1 gate, and are asked for when absent: 16-18, 129-131, 156-159. Quoted verbatim with source in the template's one form, with the empty case on `none`: 159-161. The codebase argument is `<scope>`, and 20-21 says it is called nothing else. The resume run asked again in a new session, as 158-159 directs. The second sense of "target", Minor M1.
 - ✅ **Ruling AA.** 38-42 states that other queue behaviour is judged "only as far as Phase 3's own reading reaches, with no dedicated pass behind it", which is the ruling's clause. The bold lead reads the other way, Minor M2.
 - ✅ **ADR 0014 lines 75 to 82.** The ADR says Phase 3 dispatches the lens and `fx-architecture` and neither of branch review's passes, so those defects are judged only as far as the phase's reading reaches. 35-42 matches.
-- ✅ **Task 06 and 08 brief checks.** The probe project sat under the job directory, not `/var/tmp`: every tool path in the logs is `/home/faisal/.claude/jobs/6d844eaa/tmp/fx-audit-probe`.
+- ✅ **Task 06 and 08 brief checks.** The probe project sat under the job directory, not `/var/tmp`: every tool path in the logs is `<job-scratch>/fx-audit-probe`.
 - ⚠️ **Whether `fx-lens-pipeline` resolves by name.** No run reached Phase 3.
 - ✅ **Probe run checked against the machine.** Every log's init event lists one fx plugin, path `/development/fx/.worktrees/fx-audit`, source `fx@inline`. ⚠️ `--max-turns` enforcement stays unconfirmed; no run hit its limit.
 - ✅ **Design read against task 08.** `fx-architecture` is invoked through a subagent by `fx:fx-architecture`, bounded to stop before choosing, with the choice at the Phase 3 gate: 166-170, 184-186. The report locations and which is which: 58-64. The skeleton is the first of three `markdown` fences: 171-172, matching `references/audit-template.md` fences at 103, 149 and 159. The exclude-file precedent for `.worktrees/`: 71-77, 141.

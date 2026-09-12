@@ -65,7 +65,7 @@ wrong: no parallel speed-up for independent tasks, which serial implementers for
 anyway. Caught by nothing; it only affects wall-clock time.
 
 Ruling: task 09's scratch directory is this job's own directory,
-`/home/faisal/.claude/jobs/6d844eaa/tmp`, which the fx-audit build proved is outside
+`<job-scratch>`, which the fx-audit build proved is outside
 every git repository and is not the OS temp directory. Why: task 09 asks the
 controller to name one. Cost if wrong: a probe inside a repository, which step 1's
 check refuses before anything is built. Caught by task 09's own step 1.
@@ -817,7 +817,7 @@ GREEN, after the edit, pasted from the run:
 ```
 GREEN 1, text: git worktree prune in skill = 0
 GREEN 2, the skill's new sequence:
-worktree /home/faisal/.claude/jobs/6d844eaa/tmp/prune-green/repo/.worktrees/audit-probe-reference
+worktree <job-scratch>/prune-green/repo/.worktrees/audit-probe-reference
 HEAD e4306fc76cdd602082f834beeef5bbb9365de23a
 detached
 prunable gitdir file points to non-existent location

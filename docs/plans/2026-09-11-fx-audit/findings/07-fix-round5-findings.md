@@ -22,14 +22,14 @@
   fence under `## \`03-gaps.md\`` (the actual skeleton, not the examples):
 
   ```
-  $ awk '/^## `03-gaps.md`/{f=1} f && /^```markdown$/{c++; if(c==1){s=1; next}} s==1 && /^```$/{exit} s==1{print}' references/audit-template.md > /home/faisal/.claude/jobs/6d844eaa/tmp/r5-copy-fence.md
-  $ wc -l /home/faisal/.claude/jobs/6d844eaa/tmp/r5-copy-fence.md
+  $ awk '/^## `03-gaps.md`/{f=1} f && /^```markdown$/{c++; if(c==1){s=1; next}} s==1 && /^```$/{exit} s==1{print}' references/audit-template.md > <job-scratch>/r5-copy-fence.md
+  $ wc -l <job-scratch>/r5-copy-fence.md
   40 .../r5-copy-fence.md
-  $ grep -c '^- "' /home/faisal/.claude/jobs/6d844eaa/tmp/r5-copy-fence.md
+  $ grep -c '^- "' <job-scratch>/r5-copy-fence.md
   1
-  $ grep -c '^None:' /home/faisal/.claude/jobs/6d844eaa/tmp/r5-copy-fence.md
+  $ grep -c '^None:' <job-scratch>/r5-copy-fence.md
   0
-  $ grep -c -E 'payment provider|Refunds settle' /home/faisal/.claude/jobs/6d844eaa/tmp/r5-copy-fence.md
+  $ grep -c -E 'payment provider|Refunds settle' <job-scratch>/r5-copy-fence.md
   0
   ```
 

@@ -98,7 +98,7 @@ Verdicts: **K** kept inline · **R** kept in `../../references/vocab/good-tests.
 | 152 | K | Run the new test and confirm a valid RED |
 | 153 to 156 | K | **Runtime RED vs compile-time RED, the not-caused-by-unrelated-errors constraint, and "a test never compiled and executed does not count as RED".** The single most important restoration in this skill: without it the loop rejects correct RED on C#, Kotlin and Swift |
 | 157 to 165 | K | Duplicates of the RED/GREEN/REFACTOR rules |
-| 166 to 167 | S | **80% / 100% coverage thresholds** → no fixed gate. advantage-backend has no SimpleCov, so it is unenforceable; replaced by "every new public method has a test at a confirmed seam", plus a stack-profile `coverage_command`/`coverage_floor` when one exists |
+| 166 to 167 | S | **80% / 100% coverage thresholds** → no fixed gate. the repo it was first measured on has no SimpleCov, so it is unenforceable; replaced by "every new public method has a test at a confirmed seam", plus a stack-profile `coverage_command`/`coverage_floor` when one exists |
 | 168 | K | **"Coverage is a guide, not a goal: high coverage + poor tests = false confidence"** |
 | 169 | S | `reference.md` → split between `good-tests.md` and the stack profiles |
 | 170 to 172 | K | Debugging integration; the test proves the fix and prevents regression; never fix a bug without a test |

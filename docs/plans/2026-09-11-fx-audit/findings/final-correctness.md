@@ -2,7 +2,7 @@
 
 **Range:** `8309b63` to `a19e515`, shipped paths. HEAD `c48dc50` has no diff against `a19e515` on those paths (checked with `git diff --stat a19e515 HEAD`).
 **Question:** what is broken.
-**Method:** the diff read once; gate, shell and git logic reproduced in scratch directories under `/home/faisal/.claude/jobs/6d844eaa/tmp/`, all removed afterwards. The companion was run from a scratch copy of `skills/fx-brainstorm/` against a scratch repository, never inside this worktree, and both servers it started were stopped. Each finding says **ran** or **read**.
+**Method:** the diff read once; gate, shell and git logic reproduced in scratch directories under `<job-scratch>/`, all removed afterwards. The companion was run from a scratch copy of `skills/fx-brainstorm/` against a scratch repository, never inside this worktree, and both servers it started were stopped. Each finding says **ran** or **read**.
 
 Known items from the brief and `final-review-carried.md` are not repeated. Where a finding overlaps one, it says so.
 

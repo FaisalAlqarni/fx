@@ -9,7 +9,7 @@ plan documents on top (`git diff --stat 85de0ee 0da96cd`: nine files under
 `state.md`, the seven final findings files, the fix wave report, and
 `skills/fx-audit/SKILL.md` whole.
 **Ran:** every check below in scratch directories under
-`/home/faisal/.claude/jobs/6d844eaa/tmp/rr/`, removed afterwards. Every companion
+`<job-scratch>/rr/`, removed afterwards. Every companion
 server started was stopped; `pgrep` afterwards matched no process from the scratch
 directory. The companion never ran inside this worktree. At the end, worktree
 status, index and HEAD were identical to their state before the checks, and the

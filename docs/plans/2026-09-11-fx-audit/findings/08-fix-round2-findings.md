@@ -7,10 +7,10 @@ full, the fix report's `## Fix round 2` section in full, and the diff
 `skills/fx-audit/SKILL.md:55-125` and `:185-200` at `c9f69f4` for context.
 
 **Ran:** a scratch git repository under
-`/home/faisal/.claude/jobs/6d844eaa/tmp/review-check1/` for check 1, then
+`<job-scratch>/review-check1/` for check 1, then
 removed it; hand-walked the naming rule for check 2; hand-walked the resume
 states for check 3; searched the `fr2-` probe logs in
-`/home/faisal/.claude/jobs/6d844eaa/tmp/` for check 4;
+`<job-scratch>/` for check 4;
 `python3 scripts/check-paths` (OK, 55 citations) and
 `python3 scripts/check-prose skills/fx-audit/SKILL.md` (OK, no dashes, no
 stock vocabulary) independently on the checkout at `c9f69f4`, where
@@ -73,7 +73,7 @@ under Ruling AG) and is not re-reported below.
 
 ### Check 1: the pathspec
 
-Ran in `/home/faisal/.claude/jobs/6d844eaa/tmp/review-check1/`, a fresh
+Ran in `<job-scratch>/review-check1/`, a fresh
 scratch git repository (not inside the worktree), then removed it.
 
 Built: a committed `tracked.md`, `.gitignore` (`*.ignoreme`), and
@@ -195,7 +195,7 @@ Walked the five states at `:114-123`.
 
 ### Check 4: the probe evidence
 
-Searched `/home/faisal/.claude/jobs/6d844eaa/tmp/fr2-*`, not read whole.
+Searched `<job-scratch>/fr2-*`, not read whole.
 
 - **GREEN stopped at the Phase 1 gate, each explorer's file written.**
   `fr2-run-green1.json` has 4 `result` events, the last `is_error: false`,
