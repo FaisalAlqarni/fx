@@ -336,3 +336,32 @@ already shown `cedes only` absent from both files.
 Task 03: minor (deferred): ADR 0014 "hunts all six groups the fixture keys" reads awkwardly; out of scope for the fix round, raised by the re-review.
 
 Task 03: complete (commits `7f965bf`, `e64c903`)
+
+## Task 04: implementer reported DONE, commit `47ae49e`
+
+Parent `80d2c78`, three files as the task names. Verified by the controller: no
+`info/exclude` or `EXCLUDE_FILE` left in `start-server.sh`, no "exclude file" in
+`visual-companion.md`, no `exclude` anywhere under `skills/fx-brainstorm`, no
+`server.cjs` process running, and a clean commit message. Review package
+`.fx/2026-09-12-fx-audit-followups/review/task-04.diff`; review dispatched on the mid tier,
+findings due at `.fx/2026-09-12-fx-audit-followups/findings/04-companion-exclude-file-findings.md`.
+
+## Task 05: dispatched
+
+BASE `47ae49e`. Implementer on the standard tier. The brief carries:
+- the user's real `~/.config/opencode` layout (a real `skills/` of 213 entries, a real
+  `commands/` of 100 files), and that it is touched only with `--dry-run`;
+- the `pipefail` trap where `grep -q` ends a pipeline early;
+- the global constraint applied to command files: a same-named command without the
+  generated-file header is refused, never overwritten;
+- step 8 limited to `--help`, and any listing that needs no provider and no network.
+
+Report due at `.fx/2026-09-12-fx-audit-followups/reports/05-opencode-install-report.md`.
+The only writer.
+
+Ruling: task 05 refuses a same-named command file it did not generate, although the
+task text names only same-named skill directories. Why: the global constraint says the
+installer never touches an entry it did not create, and the real destination holds 100
+command files from other tools. Cost if wrong: an install that stops where it used to
+overwrite, fixed by removing the named file. Caught by task 05's review, whose brief
+will name it.
