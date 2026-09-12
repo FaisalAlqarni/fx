@@ -541,3 +541,12 @@ The review's ⚠️ on `OPENCODE_CONFIG_DIR` is already answered in the task 05 
 the local binary contains the name 12 times.
 
 Waiting on: task 08's implementer, task 07's review, the coverage audit.
+
+Task 07: review Approved, 0 Critical, 0 Important, 1 Minor
+(`.fx/2026-09-12-fx-audit-followups/findings/07-parked-fixes-findings.md`). The reviewer
+ran the scratch worktree sequence, the gate test, both named-file cases and `bash -n` on
+the start script.
+
+Task 07: minor (deferred): `scripts/check-prose` lists itself in `EXEMPT`, which now applies only to the walk; `python3 scripts/check-prose scripts/check-prose` would fail on its own word list. No caller in `scripts/` or `skills/` names it.
+
+Task 07: complete (commit `a0c3b77`)
