@@ -754,3 +754,15 @@ if wrong: some extra quota. Caught by nothing; a spending choice.
 
 Re-review package `.fx/2026-09-12-fx-audit-followups/review/final-fix-wave.diff`, findings
 due at `docs/plans/2026-09-12-fx-audit-followups/findings/final-review-rereview.md`.
+
+Final fix wave: re-review returned all 20 taken items addressed, no new Critical or
+Important breakage (`docs/plans/2026-09-12-fx-audit-followups/findings/final-review-rereview.md`).
+It ran the installer suite, the gate suite, `check-paths` (61 citations),
+`check-reference-leaves` and `scripts/check-all` (ALL GREEN on `78c7174`), upgraded an
+old whole-folder install in scratch, and confirmed a second install is byte-identical. It
+confirmed a sentence naming a URL does not hit the widened gate, while an `import` inside
+a fenced markdown sample does, which fits the rule.
+
+Final fix wave: minor (deferred): `tests/opencode-install/run.sh:65` matches the literal opening words of the sentence at `skills/fx-audit/SKILL.md:25`, so rewording that sentence turns the test red; it fails loudly rather than silently.
+
+No residuals to adjudicate. Exit gate next.
