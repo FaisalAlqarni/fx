@@ -65,7 +65,7 @@ finds its templates.
 
 | Skill | Typed as | Does |
 |---|---|---|
-| `fx-audit` | `/fx:fx-audit` | Audits an existing system in four gated phases, ending in a `design.md` for `fx-plan` |
+| `fx-audit` | `/fx:fx-audit`, or `/fx-audit` on opencode | Audits an existing system in four gated phases, ending in a `design.md` for `fx-plan` |
 
 ## Agents: 6 (performance lens cut, `docs/adr/0008`; pipeline lens added, `docs/adr/0014`)
 
@@ -180,7 +180,9 @@ files, which no priority order resolves honestly.
 | `/fx:fx-grill` | The interview technique standalone: no classification, no gate. For decisions not heading for code |
 | `/fx:fx-handoff` | Compacts the session into a block printed for copying. Not saved: the reason to hand off by hand is that the next session cannot read this disk |
 
-`/fx:fx-audit` is typed like a command but is a user-invoked skill, counted under
+Typed as shown on Claude Code. On opencode, drop the plugin prefix: `/fx-setup`.
+
+`/fx:fx-audit`, or `/fx-audit` on opencode, is typed like a command but is a user-invoked skill, counted under
 "User-invoked skills" above, not here.
 
 **`/fx:help` cut**: it printed the routing table, which the preamble already

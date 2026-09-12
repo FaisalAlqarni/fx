@@ -37,7 +37,8 @@ most expensive one, and **review lenses whose read-only restriction is not enfor
 
 Commands are generated too, but not because the prompt format differs: both
 runtimes read the file body as the prompt. Generation exists to normalize the
-description field and stamp the generated-file header. It also covers a case
+description field, stamp the generated-file header, and name commands and
+agents as opencode registers them, `fx-<name>` with no `fx:` prefix. It also covers a case
 Claude Code doesn't have: a skill marked `disable-model-invocation: true`
 (`fx-audit`, so the model never picks the audit on its own) is generated as a
 command as well, since opencode has no way to hide a skill from the model.
@@ -70,7 +71,7 @@ skills: 12  agents: 6  commands: 5
 ### Verify
 
 ```bash
-ls ~/.config/opencode/skills          # 12 entries
+ls ~/.config/opencode/skills          # 12 links into fx, beside any other tool's skills
 ```
 
 Then in a session, confirm the guard is live: `git branch -D fx-guard-probe`
@@ -120,7 +121,8 @@ guard are registered by `hooks/hooks.json` and need no further setup.
 ## Per repository: either runtime
 
 ```
-/fx:fx-setup
+/fx:fx-setup     # Claude Code
+/fx-setup        # opencode
 ```
 
 Writes `.fx.json` (test commands, `stacks`) and generates `repo.md` (this
@@ -140,7 +142,7 @@ selection contest fx exists to end survives until it is cleared deliberately.
 # Claude Code
 /plugin uninstall superpowers mattpocock-skills ecc humanizer
 
-# opencode's pools — inspect before deleting anything
+# opencode's pools: inspect before deleting anything
 ls ~/.agents/skills ~/.claude/skills
 ```
 

@@ -140,7 +140,9 @@ as the next section shows.
 
 ## The commands
 
-Every command is typed with the plugin prefix and its `fx-` name: `/fx:fx-<name>`.
+Every command is typed with its `fx-` name: `/fx:fx-<name>` on Claude Code,
+which adds the plugin prefix, and `/fx-<name>` on opencode. The table shows the
+Claude Code form.
 
 | Command | Does |
 |---|---|
@@ -149,9 +151,10 @@ Every command is typed with the plugin prefix and its `fx-` name: `/fx:fx-<name>
 | `/fx:fx-grill` | the stress-test interview alone, for a decision not heading to code |
 | `/fx:fx-handoff` | prints a block you paste into another session, on this machine or any other |
 
-`/fx:fx-audit` is typed the same way but is a user-invoked skill, not a command:
-`skills/fx-audit/`, with `disable-model-invocation: true`, so the model never
-selects it. It audits an existing system in four gated phases, ending in a
+`/fx:fx-audit`, or `/fx-audit` on opencode, is typed the same way but is a
+user-invoked skill, not a command: `skills/fx-audit/`, with
+`disable-model-invocation: true`, so the model never selects it. opencode cannot
+hide a skill from the model, so there the installer generates it as a command. It audits an existing system in four gated phases, ending in a
 `design.md` for `fx-plan`.
 
 ## Install
@@ -168,7 +171,8 @@ Full steps for both: [`INSTALL.md`](INSTALL.md).
 Then, in each repository you work in:
 
 ```
-/fx:fx-setup
+/fx:fx-setup     # Claude Code
+/fx-setup        # opencode
 ```
 
 which reads the machine facts, then asks two short rounds about what the code

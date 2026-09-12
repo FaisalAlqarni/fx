@@ -3,7 +3,7 @@
 `fx-review` has a fifth lens, `fx-lens-pipeline`, against a recommendation this
 repository had recorded. Given a diff, it hunts one group, unbounded enqueue
 outrunning consumers, and **that keep is provisional**. Given a file set, it
-hunts all six groups the fixture keys: see "Given a file set, the drop does
+hunts all six groups listed in the fixture's key: see "Given a file set, the drop does
 not hold" below.
 
 ## The recommendation it overrides
