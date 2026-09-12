@@ -676,3 +676,16 @@ Task 05: complete (commits `c6eb44f`, `9b5f4a1`, `35666a8`)
 
 All eight dispatched tasks are complete; task 09 was dropped by the user. Final review
 next: one reviewer on the top tier, per the review-scaling ruling.
+
+## Final review: dispatched
+
+One general-purpose reviewer on the top tier, filled from `fx-review`'s branch reviewer
+template, per the review-scaling ruling (no multi-pass fan-out, no lenses). Range
+`be4cf7f..b0ad55b`, package `.fx/2026-09-12-fx-audit-followups/review/final-branch.diff`
+with the vendored JavaScript excluded and checked by checksum instead. The brief carries
+the eight deferred minors, the coverage audit's Gap 1 as an Important finding for the one
+fix wave, and every ruling that names the final review as its catcher. It names three
+files several tasks edited, `skills/fx-audit/SKILL.md`, `start-server.sh` and
+`scripts/check-all`, to be read whole. The reviewer may run `scripts/check-all` once and
+the installer only into scratch. Findings due at
+`docs/plans/2026-09-12-fx-audit-followups/findings/final-review.md`, passing the prose gate.
