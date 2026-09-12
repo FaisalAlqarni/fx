@@ -238,3 +238,23 @@ Resumes task 01's implementer with the two Important findings verbatim and the
 `8b0fef4`, the head task 01's review saw; task 03's commit `7f965bf` sits between them
 and is excluded from the re-review package by building it from the fix commits only.
 The only writer.
+
+Task 01: fix round 1/5 (implementer reports all three fixed, re-review pending; commits 491ab68..381cf68)
+
+Verified by the controller: `381cf68` changes only `scripts/check-artifacts`,
+`tests/gates/check-artifacts-remote.sh` and `skills/fx-architecture/COVERAGE.md`, has no
+trailers, and in a scratch tree a split `<script` tag now exits 1 naming the tag's line,
+and a missing root exits 1 with `FAIL: no such directory`. The fix report names the
+covering test, the command, and RED and GREEN output for each finding. Re-review package
+`.fx/2026-09-12-fx-audit-followups/review/491ab68..381cf68.diff`, the fix commit alone.
+Re-review dispatched on the cheapest tier.
+
+## Task 02: dispatched
+
+BASE `381cf68`. Implementer on the standard tier. The fix round left
+`references/report-assets.md` unchanged, which lifts the reason task 02 waited. The brief
+tells it that task 03 has already edited the audit skill's queue Boundary bullet and
+Phase 4 soundness check, and that task 09 is dropped, so its seam is its checks and its
+review. Report due at
+`.fx/2026-09-12-fx-audit-followups/reports/02-audit-report-libraries-report.md`. The only
+writer.
