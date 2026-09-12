@@ -54,9 +54,10 @@ appended section this skill names.
   retries with no jitter. It cedes only a query issued per record and work
   enqueued inside a transaction to `fx-lens-database`, and a swallowed error
   to `fx-lens-silent-failure`.
-- **The two HTML reports differ in what they fetch.** Phase 3's report is left
-  as `fx-architecture` makes it, and it loads CDN scripts when opened. Phase
-  4's report, which this skill writes, makes no request to any host.
+- **Both HTML reports load the offline libraries the same way.** Phase 3's
+  report is left as `fx-architecture` makes it, and Phase 4's report, which
+  this skill writes, follows the same copy and load steps. Both load Tailwind
+  and Mermaid from `docs/plans/_assets/` and make no request to any host.
 
 ## Files
 
@@ -296,9 +297,9 @@ starts.
    whose defeater cannot be written is a preference; rewrite the
    recommendation until it has one.
 4. Write the Phase 4 `report-<timestamp>.html` under `.fx/<slug>/draft/`: one
-   file rendering `design.md`, with its styles inline and its diagrams as
-   preformatted text or inline SVG, so opening it fetches nothing from any
-   host.
+   file rendering `design.md`, following `../../references/report-assets.md`
+   for the copy rule, the missing-file rule, the mismatch rule and the three
+   `<script>` tags, so opening it fetches nothing from any host.
 
 **Done when** `design.md` holds every section of both templates, every count
 the audit template states holds, and the report renders it. **Then** move
