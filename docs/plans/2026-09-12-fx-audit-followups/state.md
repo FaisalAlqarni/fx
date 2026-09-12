@@ -663,3 +663,16 @@ dispatched on the cheapest tier, verdicting each of the five refusal conditions 
 the first write.
 
 Task 05: minor (deferred): the refusal to replace a real `references` or `plugins/fx.js` entry still fires inside the write loop (reported by the implementer, outside the five conditions round 2 named); a refused install there leaves skills already linked.
+
+Task 05: fix round 2/5 (1 addressed, 0 open; commits faf654d^..35666a8, the fix commit
+alone). Re-review:
+`.fx/2026-09-12-fx-audit-followups/findings/05-opencode-install-rereview-2.md`, no new
+breakage. It places the conflict check call at `scripts/fx-opencode-install:252` and the
+first write, `link_skills`, at `:273`, and confirmed the second install over its own
+output is unchanged. Its one out-of-scope observation is the deferred minor on the
+`references` and `plugins/fx.js` refusal above.
+
+Task 05: complete (commits `c6eb44f`, `9b5f4a1`, `35666a8`)
+
+All eight dispatched tasks are complete; task 09 was dropped by the user. Final review
+next: one reviewer on the top tier, per the review-scaling ruling.
