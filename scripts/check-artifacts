@@ -94,13 +94,20 @@ def remote_hits(root):
         text = read_text(path, rel)
         if text is None:
             continue
-        for n, line in enumerate(text.splitlines(), 1):
-            if not any(pat.search(line) for pat in REMOTE_PATTERNS):
-                continue
-            if MARKER in line:
-                exempted += 1
-                continue
-            hits.append((rel, n))
+        # Scanned over the whole file, not line by line: a `<script>` or
+        # `<link>` tag with its src/href attribute on the next line still
+        # matches, since `[^>]*` in REMOTE_PATTERNS already spans a
+        # newline. The line reported is where the tag or import starts.
+        lines = text.splitlines()
+        for pat in REMOTE_PATTERNS:
+            for m in pat.finditer(text):
+                start = text.count('\n', 0, m.start()) + 1
+                end = text.count('\n', 0, m.end()) + 1
+                span = '\n'.join(lines[start - 1:end])
+                if MARKER in span:
+                    exempted += 1
+                    continue
+                hits.append((rel, start))
     if skipped_vendor:
         print(f'skipped for the remote rule (upstream code): {VENDOR_DIR}/')
     return hits, exempted
@@ -123,6 +130,9 @@ def report(hits, label, hint):
 
 def main():
     root = pathlib.Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT
+    if not root.exists():
+        print(f'FAIL: no such directory: {root}')
+        return 1
 
     tmp_hits, tmp_exempted = tmpdir_hits(root)
     remote_bad, remote_exempted = remote_hits(root)

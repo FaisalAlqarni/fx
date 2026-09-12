@@ -34,6 +34,47 @@ expect 0 marked-exception            skills/x/SKILL.md '<script src="https://cdn
 expect 0 remote-image-is-not-a-script skills/x/SKILL.md '<img src="https://example.com/a.png">'
 expect 0 vendored-upstream-code      references/vendor/lib.min.js 'x="<script src=\"https://example.com/a.js\">"'
 
+# split-script-tag: a <script> tag whose src attribute sits on the next
+# line still gets caught, and the reported line is where the tag starts
+# (line 2, after the "before" padding line), not where src= appears.
+ROOT="$SCRATCH/split-script-tag"
+mkdir -p "$ROOT/skills/x"
+printf 'before\n<script\n  src="https://cdn.tailwindcss.com"></script>\n' > "$ROOT/skills/x/SKILL.md"
+set +e
+python3 scripts/check-artifacts "$ROOT" > "$SCRATCH/split-script-tag.out" 2>&1
+got=$?
+set -e
+if [ "$got" -ne 1 ]; then
+  echo "FAIL: split-script-tag: exit $got, want 1"
+  cat "$SCRATCH/split-script-tag.out"
+  fails=$((fails + 1))
+elif ! grep -q 'skills/x/SKILL.md:2' "$SCRATCH/split-script-tag.out"; then
+  echo "FAIL: split-script-tag: hit not reported at line 2"
+  cat "$SCRATCH/split-script-tag.out"
+  fails=$((fails + 1))
+else
+  echo "ok: split-script-tag"
+fi
+
+# missing-root: a nonexistent root refuses instead of silently reporting
+# a clean result, and names the directory it could not find.
+NOROOT="$SCRATCH/does-not-exist"
+set +e
+python3 scripts/check-artifacts "$NOROOT" > "$SCRATCH/missing-root.out" 2>&1
+got=$?
+set -e
+if [ "$got" -eq 0 ]; then
+  echo "FAIL: missing-root: exit 0, want nonzero"
+  cat "$SCRATCH/missing-root.out"
+  fails=$((fails + 1))
+elif ! grep -q "$NOROOT" "$SCRATCH/missing-root.out"; then
+  echo "FAIL: missing-root: output does not name the directory"
+  cat "$SCRATCH/missing-root.out"
+  fails=$((fails + 1))
+else
+  echo "ok: missing-root (exit $got)"
+fi
+
 if [ "$fails" -ne 0 ]; then
   echo "check-artifacts remote rule: $fails failed"
   exit 1

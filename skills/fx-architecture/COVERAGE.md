@@ -130,4 +130,6 @@ Verdicts: **K** kept inline · **R** kept in a reference · **H** kept in
 
 The draft proposed publishing the report as an **Artifact**. That sends your
 architecture (module names, file paths, domain vocabulary) to claude.ai.
-Removed entirely; the report is a local temp file opened in a local browser.
+Removed entirely; the report is a committed file under `docs/plans/<slug>/`,
+per ADR-0015, opened in a local browser and rendered offline from the
+vendored Tailwind and Mermaid files the report-assets reference describes.
