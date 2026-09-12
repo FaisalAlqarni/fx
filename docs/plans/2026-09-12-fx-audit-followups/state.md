@@ -410,3 +410,34 @@ BASE `c6eb44f`. Implementer on the cheapest tier: a mechanical replacement in el
 files, with the corrected search filter from the ruling above and a guard against
 producing `/fx:fx-fx-`. Report due at
 `.fx/2026-09-12-fx-audit-followups/reports/06-command-names-report.md`. The only writer.
+
+## Task 06: implementer reported DONE, commit `7706e90`
+
+Parent `88f8080`, the eleven files the task lists, 16 names replaced. Verified by the
+controller:
+- the task's search with the corrected filter prints nothing;
+- the four commands' headings read `/fx:fx-critique`, `/fx:fx-grill`, `/fx:fx-handoff`
+  and `/fx:fx-setup`;
+- `tasks/todo.md`, `SURFACE.md` and `docs/plans/` are untouched by the commit;
+- the one doubled prefix in the repository is this ledger's own description of the guard,
+  not a replacement;
+- the commit message is clean.
+
+Review package `.fx/2026-09-12-fx-audit-followups/review/task-06.diff`.
+
+Ruling: task 06's review runs on the cheapest tier, not the mid tier. Why: the change is
+16 identical name replacements, and the controller's search already proves the task's
+acceptance criteria, so the review's work is reading each hunk's line. Cost if wrong: a
+replacement that is wrong in context. Caught by the broad final review.
+
+## Task 07: dispatched
+
+BASE `7706e90`. Implementer on the standard tier. The brief carries:
+- `scripts/check-prose:62` measuring exemptions from the repository root, so the nested
+  worktree's absolute path does not exempt everything;
+- the sections of the audit skill and the start script that tasks 02, 03 and 04 already
+  edited, left alone;
+- a request for an agent's-eye reading of Phase 2 across three worktree states.
+
+Report due at `.fx/2026-09-12-fx-audit-followups/reports/07-parked-fixes-report.md`. The
+only writer.
