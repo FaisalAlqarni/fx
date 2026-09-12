@@ -458,3 +458,18 @@ unaudited. Caught by the broad final review, which reads the ledger.
 Exit gate: the repository has no CI configuration (no `.github/workflows`, no other CI
 file). What passing means here is `.fx.json`'s `setup` and `test_all`, which is
 `scripts/check-all`.
+
+Task 06: review Approved, 0 Critical, 0 Important, 0 Minor
+(`.fx/2026-09-12-fx-audit-followups/findings/06-command-names-findings.md`). Its one
+unverified check, the empty search with the corrected filter, is the controller's own
+search recorded in the task 06 entry above.
+
+Task 06: complete (commit `7706e90`)
+
+Ruling: the final review's findings are written to
+`docs/plans/2026-09-12-fx-audit-followups/findings/final-review.md` and committed, as the
+branch reviewer template requires, while task findings stay under `.fx/`. Why: the final
+review runs with no writer active, which removes the reason task findings moved, and it
+is the record the merge decision rests on. Its brief also points its scratch worktrees
+at the job directory rather than the template's `/tmp`. Cost if wrong: none. Caught by
+`scripts/check-all` at the exit gate, which scans that file.
