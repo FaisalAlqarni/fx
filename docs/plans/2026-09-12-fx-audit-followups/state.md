@@ -365,3 +365,12 @@ installer never touches an entry it did not create, and the real destination hol
 command files from other tools. Cost if wrong: an install that stops where it used to
 overwrite, fixed by removing the named file. Caught by task 05's review, whose brief
 will name it.
+
+Task 04: review Approved, 0 Critical, 0 Important, 0 Minor
+(`.fx/2026-09-12-fx-audit-followups/findings/04-companion-exclude-file-findings.md`). It
+read the start order end to end, confirmed task 07's lines untouched, the test identical
+to the task's text, and that the `trap` stops a server even if cases 4 or 5 start one.
+Its one ⚠️ item, the implementer's green `scripts/check-all`, is covered by task 05's own
+`scripts/check-all` run, which includes task 04's commit, and by the exit gate.
+
+Task 04: complete (commit `47ae49e`)
