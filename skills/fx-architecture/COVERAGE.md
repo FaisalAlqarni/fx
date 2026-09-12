@@ -33,7 +33,7 @@ Verdicts: **K** kept inline · **R** kept in a reference · **H** kept in
 | **`architecture-review-<timestamp>.html`, fresh per run** | K/H | **Restored** |
 | The restored temp-directory write target (the three rows above) | S | **Superseded** locally by ADR-0015: the report now writes to `docs/plans/<slug>/report-<timestamp>.html`, never the OS temp directory |
 | Open it (`xdg-open` / `open` / `start`) and tell them the absolute path | K/H | + **WSL** (`explorer.exe "$(wslpath -w …)"`), and "print the path regardless" for silent open failures |
-| Tailwind + Mermaid via CDN | H | Kept. Noted: needs a connection to render; nothing about the repo leaves the machine |
+| Tailwind + Mermaid via CDN | S | **Superseded** by task 01 of the 2026-09-12 audit follow-ups: both libraries are now vendored in the plugin and served from the project, so the report renders with no connection |
 | Mix Mermaid with hand-crafted CSS/SVG; when to use which; **collapse animations** | H | |
 | Each candidate gets a before/after visualisation | H | |
 | Card fields: Files · Problem · Solution · Benefits · Before/After · strength badge | K/H | |
@@ -52,7 +52,7 @@ Verdicts: **K** kept inline · **R** kept in a reference · **H** kept in
 
 | Content | Verdict |
 |---|---|
-| Scaffold (Tailwind CDN, Mermaid ESM, the `.seam`/`.leak`/`.deep` custom layer) | H |
+| Scaffold (vendored Tailwind and Mermaid files, the `.seam`/`.leak`/`.deep` custom layer) | H |
 | Header: repo, date, compact legend, **no intro paragraph** | H |
 | Candidate card: all 8 fields, badge palette, `font-mono text-sm` | H |
 | **"If the diagram needs a paragraph to be understood, redraw the diagram"** | H |
@@ -110,9 +110,9 @@ Verdicts: **K** kept inline · **R** kept in a reference · **H** kept in
 | | Count |
 |---|---:|
 | Kept inline in `fx-architecture` | 28 |
-| Kept in `HTML-REPORT.md` | 24 |
+| Kept in `HTML-REPORT.md` | 23 |
 | Kept in `../../references/vocab/codebase-design.md` | 31 |
-| Superseded by an explicit decision | 4 |
+| Superseded by an explicit decision | 5 |
 | Dropped | 0 |
 | **Unaccounted** | **0** |
 

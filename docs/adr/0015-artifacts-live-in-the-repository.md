@@ -50,3 +50,13 @@ The ephemeral workspace under `.fx/` is still git ignored and still deleted on
 a clean run. Nothing here asks a regenerable working file to be committed:
 only the artifacts a user is meant to come back to move out of temp and into
 the repository.
+
+## The remote rule this settles alongside
+
+An artifact that lives in the repository still has to render without a
+network. `scripts/check-artifacts` also fails on any `skills/`, `agents/`,
+`commands/` or `references/` file that loads a script or stylesheet from an
+`http:`, `https:` or protocol-relative URL, except `references/vendor/`,
+which holds pinned upstream library code rather than an instruction to an
+agent. A report vendors what it needs instead of reaching for a CDN at
+render time: `references/report-assets.md` is where that copy lives.

@@ -28,6 +28,7 @@ run check-paths            scripts/check-paths
 run check-reference-leaves scripts/check-reference-leaves
 run check-prose            scripts/check-prose
 run check-artifacts        scripts/check-artifacts
+run check-artifacts-remote.sh bash tests/gates/check-artifacts-remote.sh
 
 echo "== make-git-fixture =="
 # Path is unique per process ($$ is this script's own PID): a fixed path

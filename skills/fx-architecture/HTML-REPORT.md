@@ -2,21 +2,18 @@
 
 The architectural review renders as a **single self-contained HTML file inside
 the plan directory**, not loose at the repository root: opened in a local
-browser. Tailwind and Mermaid load from CDNs. Mermaid handles graph-shaped diagrams
-reliably; hand-built divs and inline SVG handle the more editorial visuals.
-**Mix the two: don't lean on Mermaid for everything, it starts to look
-generic.**
+browser. Tailwind and Mermaid load from files copied into the project.
+Mermaid handles graph-shaped diagrams reliably; hand-built divs and inline SVG
+handle the more editorial visuals. **Mix the two: don't lean on Mermaid for
+everything, it starts to look generic.**
 
-The file is local and stays local. **Never publish it.**
-*(The CDN scripts mean the report needs a connection to render. Nothing about
-the repo leaves the machine: the CDNs serve JS, they receive no content.)*
+The file is local and stays local. **Never publish it.** It opens and renders
+with no internet connection: nothing about the repo leaves the machine.
 
-**Supply chain.** These two `<script>` tags run third-party JS in the user's
-browser with no Subresource Integrity, so a compromised CDN would execute in
-that tab. It is a throwaway local report, not an app, so the exposure is small, but if it ever matters, the fix is to **vendor both libraries** into the
-plugin and reference them by file path. That removes the CDN entirely and makes
-the report render offline. SRI is not a workable middle: `cdn.tailwindcss.com`
-compiles on the fly and has no stable hash.
+**Supply chain.** Both libraries are vendored, pinned, and served from the
+project: no CDN, no Subresource Integrity question, no third-party host in
+the loop. `../../references/report-assets.md` holds the exact versions, the
+checksums, the copy rule, and the three script tags below.
 
 ## Path and opening
 
@@ -34,6 +31,14 @@ A fresh file per run. Then open it, and **print the absolute path regardless**: 
 | Linux | `xdg-open "<path>"` |
 | WSL | `explorer.exe "$(wslpath -w <path>)"` |
 
+## Copy the assets first
+
+Before writing the report file, follow the shared reference cited above for
+the copy rule: create `docs/plans/_assets/` if it is missing, and copy each
+vendored file there when no file of that name already exists. That reference
+also holds the missing-file rule and the mismatch rule for the two cases
+where a plain copy is not the right move.
+
 ## Scaffold
 
 ```html
@@ -42,11 +47,9 @@ A fresh file per run. Then open it, and **print the absolute path regardless**: 
   <head>
     <meta charset="utf-8" />
     <title>Architecture review for {{repo name}}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script type="module">
-      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
-      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
-    </script>
+    <script src="../_assets/tailwindcss-play-3.4.17.js"></script>
+    <script src="../_assets/mermaid-11.17.2.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });</script>
     <style>
       /* small custom layer for what Tailwind doesn't cover cleanly:
          dashed seam lines, hand-drawn-feeling arrow heads, etc. */
@@ -155,9 +158,9 @@ collapsed into one box, the now-internal calls shown faded inside it.
   without scrolling.
 - `text-xs uppercase tracking-wider` for module labels inside diagrams, so they
   read as schematic rather than as UI.
-- **The only scripts are the Tailwind CDN and the Mermaid ESM import.** The
-  report is otherwise static: no app code, no interactivity beyond Mermaid's
-  own rendering.
+- **The only scripts are the vendored Tailwind file and the vendored Mermaid
+  file**, per the shared reference cited above. The report is otherwise
+  static: no app code, no interactivity beyond Mermaid's own rendering.
 
 ## Top recommendation section
 

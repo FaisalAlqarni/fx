@@ -1,28 +1,52 @@
 #!/usr/bin/env python3
-"""ADR 0015's rule, made checkable: nothing fx tells an agent to write goes
-into the OS temp directory. `/tmp`, `$TMPDIR`, `${TMPDIR`, `%TEMP%`,
-`os.tmpdir` and `tmpdir` are all ways an instruction can point there.
+"""Two rules, both checkable against a repository root:
 
-Only `skills/`, `agents/` and `commands/` are scanned. `scripts/` and
-`tests/` hold test scaffolding, not artifacts a user returns to, and legitimately
-build fixtures under a temp directory: see plan.md's scoping rule.
+1. ADR 0015's rule: nothing fx tells an agent to write goes into the OS temp
+   directory. `/tmp`, `$TMPDIR`, `${TMPDIR`, `%TEMP%`, `os.tmpdir` and
+   `tmpdir` are all ways an instruction can point there. Scanned over
+   `skills/`, `agents/` and `commands/` only: `scripts/` and `tests/` hold
+   test scaffolding, not artifacts a user returns to, and legitimately build
+   fixtures under a temp directory: see plan.md's scoping rule.
 
-A line tagged `artifact-gate: ok` is a deliberate exception, declared at the
-site rather than kept in an allowlist maintained somewhere else. ADR 0011
-records why fx does not maintain allowlists.
+2. The remote-script rule: nothing fx ships loads a script or stylesheet
+   from the internet. Fails on a `<script src=...>`, an `import ... from
+   "..."`, or a `<link href=...>` pointing at an `http:`, `https:` or
+   protocol-relative `//` URL. Scanned over `skills/`, `agents/`,
+   `commands/` and `references/`, except `references/vendor/`: that
+   directory holds upstream library code, not an instruction to an agent,
+   and its own minified text routinely contains strings that look like a
+   remote load. Skipped files are named in the output.
+
+Both rules honour a line tagged `artifact-gate: ok` as a deliberate
+exception, declared at the site rather than kept in an allowlist maintained
+somewhere else. ADR 0011 records why fx does not maintain allowlists.
+
+    check-artifacts [root]
+
+With no argument, checks this repository. Given a directory, checks that
+tree instead, so a test can run the rules against scratch fixtures.
 """
 import pathlib
+import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 MARKER = 'artifact-gate: ok'
-PATTERNS = ('/tmp', '$TMPDIR', '${TMPDIR', '%TEMP%', 'os.tmpdir', 'tmpdir')
-AREAS = ('skills', 'agents', 'commands')
+TMPDIR_PATTERNS = ('/tmp', '$TMPDIR', '${TMPDIR', '%TEMP%', 'os.tmpdir', 'tmpdir')
+TMPDIR_AREAS = ('skills', 'agents', 'commands')
+REMOTE_AREAS = ('skills', 'agents', 'commands', 'references')
+VENDOR_DIR = 'references/vendor'
+REMOTE_URL = r'(?:https?:)?//[^\s"\'()<>]+'
+REMOTE_PATTERNS = (
+    re.compile(r'<script\b[^>]*\bsrc\s*=\s*["\']' + REMOTE_URL, re.IGNORECASE),
+    re.compile(r'\bimport\b[^\n]*\bfrom\s+["\']' + REMOTE_URL, re.IGNORECASE),
+    re.compile(r'<link\b[^>]*\bhref\s*=\s*["\']' + REMOTE_URL, re.IGNORECASE),
+)
 
 
-def files():
-    for area in AREAS:
-        base = ROOT / area
+def files(root, areas):
+    for area in areas:
+        base = root / area
         if not base.exists():
             continue
         for p in sorted(base.rglob('*')):
@@ -30,48 +54,106 @@ def files():
                 yield p
 
 
-def main():
+def read_text(path, rel):
+    try:
+        return path.read_text()
+    except UnicodeDecodeError:
+        # An image or a font carries no instruction to an agent. Any other
+        # read error still fails loudly.
+        print(f'skipped, not text: {rel}')
+        return None
+
+
+def tmpdir_hits(root):
     hits = []
     exempted = 0
-
-    for path in files():
-        rel = str(path.relative_to(ROOT))
-        try:
-            text = path.read_text()
-        except UnicodeDecodeError:
-            # An image or a font carries no instruction to an agent. Any other
-            # read error still fails loudly.
-            print(f'skipped, not text: {rel}')
+    for path in files(root, TMPDIR_AREAS):
+        rel = str(path.relative_to(root))
+        text = read_text(path, rel)
+        if text is None:
             continue
         for n, line in enumerate(text.splitlines(), 1):
-            if not any(pat in line for pat in PATTERNS):
+            if not any(pat in line for pat in TMPDIR_PATTERNS):
                 continue
             if MARKER in line:
                 exempted += 1
                 continue
             hits.append((rel, n))
+    return hits, exempted
 
-    print(f'{exempted} line(s) exempted by `{MARKER}`')
 
+def remote_hits(root):
+    hits = []
+    exempted = 0
+    skipped_vendor = False
+    for path in files(root, REMOTE_AREAS):
+        rel = str(path.relative_to(root))
+        if pathlib.PurePosixPath(rel).as_posix().startswith(VENDOR_DIR + '/'):
+            skipped_vendor = True
+            continue
+        text = read_text(path, rel)
+        if text is None:
+            continue
+        for n, line in enumerate(text.splitlines(), 1):
+            if not any(pat.search(line) for pat in REMOTE_PATTERNS):
+                continue
+            if MARKER in line:
+                exempted += 1
+                continue
+            hits.append((rel, n))
+    if skipped_vendor:
+        print(f'skipped for the remote rule (upstream code): {VENDOR_DIR}/')
+    return hits, exempted
+
+
+def report(hits, label, hint):
     if not hits:
-        print('OK: nothing in skills/, agents/ or commands/ names the OS '
-              'temp directory')
-        return 0
-
+        return True
     by_file = {}
     for rel, n in hits:
         by_file.setdefault(rel, []).append(n)
-
-    print(f'FAIL: {len(hits)} line(s) across {len(by_file)} file(s) name the '
-          f'OS temp directory')
+    print(f'FAIL: {len(hits)} line(s) across {len(by_file)} file(s) {label}')
     for rel, lines in sorted(by_file.items(), key=lambda kv: (-len(kv[1]), kv[0])):
         for n in lines:
             print(f'  {rel}:{n}')
     print()
-    print('Move the write target into docs/plans/<slug>/ if a user returns to '
-          'it, or the ephemeral workspace under .fx/ if it is regenerable. '
-          f'Tag a deliberate exception with `{MARKER}` on that line.')
-    return 1
+    print(hint)
+    return False
+
+
+def main():
+    root = pathlib.Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT
+
+    tmp_hits, tmp_exempted = tmpdir_hits(root)
+    remote_bad, remote_exempted = remote_hits(root)
+
+    print(f'{tmp_exempted + remote_exempted} line(s) exempted by `{MARKER}`')
+
+    ok = True
+    if not tmp_hits:
+        print('OK: nothing in skills/, agents/ or commands/ names the OS '
+              'temp directory')
+    else:
+        ok = report(
+            tmp_hits, 'name the OS temp directory',
+            'Move the write target into docs/plans/<slug>/ if a user returns '
+            'to it, or the ephemeral workspace under .fx/ if it is '
+            f'regenerable. Tag a deliberate exception with `{MARKER}` on '
+            'that line.',
+        ) and ok
+
+    if not remote_bad:
+        print('OK: nothing outside references/vendor/ loads a script or '
+              'stylesheet from a URL')
+    else:
+        ok = report(
+            remote_bad, 'load a script or stylesheet from the internet',
+            'Vendor the file into references/vendor/ and load it by a '
+            f'relative path instead. Tag a deliberate exception with '
+            f'`{MARKER}` on that line.',
+        ) and ok
+
+    return 0 if ok else 1
 
 
 if __name__ == '__main__':
