@@ -327,3 +327,12 @@ against both commits, the Phase 4 step citing the reference rather than restatin
 rules, and task 03's text outside both hunks.
 
 Task 02: complete (commit `c8b47d8`)
+
+Task 03: fix round 1/5 (1 addressed, 0 open; commits 904bb68..e64c903). Re-review:
+`.fx/2026-09-12-fx-audit-followups/findings/03-lens-file-set-mode-rereview-1.md`, no new
+breakage. Its line numbers point into the diff file; the controller's own search had
+already shown `cedes only` absent from both files.
+
+Task 03: minor (deferred): ADR 0014 "hunts all six groups the fixture keys" reads awkwardly; out of scope for the fix round, raised by the re-review.
+
+Task 03: complete (commits `7f965bf`, `e64c903`)
