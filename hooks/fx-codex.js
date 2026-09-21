@@ -114,11 +114,23 @@ function handlePreToolUse(input) {
     let known = null;
     try { known = lookupAgentIdentity(agentId); } catch { known = null; }
     const mustRefuseWrites = known === null ? true : isReadOnlyAgent(known);
-    // Amendment A5: a spawned child and an MCP server can both write, and
-    // this hook cannot see what either does, so both count as writes here.
-    let writes = tool === 'spawn_agent' || String(tool).startsWith('mcp__');
-    try { writes = writes || isWritingToolCall(tool, ti); } catch { /* keep the tool-name verdict */ }
-    if (mustRefuseWrites && writes) {
+    // Amendment A5, fail closed: an allowlist, not a denylist. A read-only
+    // agent may call exactly one tool, Bash, and only when the read-only
+    // classifier clears the command. Everything else is refused, including
+    // tools this hook has never heard of. research/codex.md section 2
+    // ("PreToolUse stdin") lists the tool names a hook sees: Bash,
+    // apply_patch, spawn_agent, mcp__<server>__<tool>, and any other function
+    // tool by its flat name. Of those, only Bash is gated by a classifier that
+    // can prove a call read-only; apply_patch writes, spawn_agent hands work to
+    // a child, an MCP server's effects are invisible here, and "Making a
+    // subagent read-only" in section 3 names memory_tool, apps and
+    // request_permissions_tool as further tools a role can carry. A lens reads
+    // through the shell (references/harnesses/codex.md), so it needs no other.
+    let cleared = false;
+    if (tool === 'Bash') {
+      try { cleared = !isWritingToolCall(tool, ti); } catch { cleared = false; } // a crash is a refusal
+    }
+    if (mustRefuseWrites && !cleared) {
       deny(known
         ? `${known} is read-only and must not write (blocked: ${tool}).`
         : `subagent ${agentId} was never recorded at SubagentStart, so its role cannot be verified; refusing the write rather than assuming it is safe.`);

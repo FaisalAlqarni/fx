@@ -16,6 +16,8 @@ const home = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-codex-output-home-'));
 // TMPDIR too: identity records go under os.tmpdir() (lib/plant-roles.js
 // identityDir), and they must stay inside this scratch directory.
 const env = { ...process.env, CODEX_HOME: home, HOME: home, TMPDIR: home };
+// On exit, not at the end: a failed assertion must not leave the scratch dir behind.
+process.on('exit', () => fs.rmSync(home, { recursive: true, force: true }));
 
 // ponytail's Codex shape: systemMessage beside hookSpecificOutput, on SessionStart.
 const TOP_SESSION = new Set(['hookSpecificOutput', 'systemMessage']);
@@ -84,5 +86,52 @@ assert.strictEqual(r.out, '', 'an allowed spawn prints nothing');
 r = run({ ...base, hook_event_name: 'PreToolUse', tool_name: 'Bash', tool_input: { command: 'ls' } });
 assert.strictEqual(r.code, 0); assert.strictEqual(r.out, '', 'an allow prints nothing');
 
-fs.rmSync(home, { recursive: true, force: true });
+// Control: the controller (no agent_id) is not a subagent, so the read-only
+// rule is not its business. It may spawn and call MCP tools.
+r = run({ ...base, cwd: home, hook_event_name: 'PreToolUse', tool_name: 'spawn_agent', tool_input: { message: 'reply ok' } });
+assert.strictEqual(r.code, 0, `the controller can spawn: ${r.err}`);
+assert.strictEqual(r.out, '', 'an allowed controller spawn prints nothing');
+
+r = run({ ...base, cwd: home, hook_event_name: 'PreToolUse', tool_name: 'mcp__x__y', tool_input: {} });
+assert.strictEqual(r.code, 0, `the controller can call an MCP tool: ${r.err}`);
+assert.strictEqual(r.out, '', 'an allowed controller MCP call prints nothing');
+
+// Fail-closed allowlist for read-only agents: a tool the hook does not know
+// is refused, not waved through. memory_tool and request_permissions_tool
+// are Codex tools a role can carry (research/codex.md, "Making a subagent
+// read-only").
+for (const tool of ['memory_tool', 'request_permissions_tool']) {
+  r = run({ ...base, cwd: home, hook_event_name: 'PreToolUse', agent_id: 'lens1', tool_name: tool, tool_input: {} });
+  keysOk(r.out, `refused ${tool}`);
+  assert.ok(denied(r), `read-only agent cannot call ${tool}`);
+}
+
+r = run({ ...base, cwd: home, hook_event_name: 'PreToolUse', agent_id: 'lens1', tool_name: 'Bash', tool_input: { command: 'cat file' } });
+assert.strictEqual(r.code, 0, `a read-only agent can run a cleared read: ${r.err}`);
+assert.strictEqual(r.out, '', 'an allowed read prints nothing');
+
+for (const tool of ['memory_tool', 'request_permissions_tool']) {
+  r = run({ ...base, cwd: home, hook_event_name: 'PreToolUse', agent_id: 'a1', tool_name: tool, tool_input: {} });
+  assert.strictEqual(r.code, 0, `a default agent can call ${tool}: ${r.err}`);
+  assert.strictEqual(r.out, '', `an allowed ${tool} prints nothing`);
+}
+
+// A classifier that throws must count as a write. No input makes the real
+// classifier throw (it guards non-strings and caps recursion), so this
+// preloads a stub that replaces isWritingToolCall on the cached module before
+// fx-codex.js destructures it.
+{
+  const stub = path.join(home, 'throwing-classifier.js');
+  fs.writeFileSync(stub, `require(${JSON.stringify(path.join(root, 'lib', 'plant-roles'))})`
+    + '.isWritingToolCall = () => { throw new Error("classifier crashed"); };\n');
+  const t = spawnSync('node', ['--require', stub, hook], {
+    input: JSON.stringify({ ...base, cwd: home, hook_event_name: 'PreToolUse', agent_id: 'lens1',
+      tool_name: 'Bash', tool_input: { command: 'cat file' } }),
+    env, encoding: 'utf8',
+  });
+  const tr = { code: t.status, out: t.stdout.trim(), err: t.stderr };
+  keysOk(tr.out, 'classifier crash');
+  assert.ok(denied(tr), 'a classifier crash is refused, not treated as a read');
+}
+
 console.log('codex-hook-output: all passed');
