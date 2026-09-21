@@ -1653,3 +1653,23 @@ Ruling (at the cap): task 17 carries the two must-refuse test lines,
         in a file the next task edits anyway.
         Cost if wrong: until task 17 lands, a regression of the value skip would
         pass the gate. Caught by task 17's review, which gets this line.
+Task 14: final security re-check: all three prior findings are fixed, with
+        live probes through the real hook. Process substitution, `git -C` and
+        globs are all refused, and git is gone for read-only agents. Hunted and
+        clean: `$'..'`, quote concatenation, `find -fprint`, `rg --pre*`,
+        `-z`, `tail --pid`, and every sed `e`/`w` form. One new Minor: zsh `=name`
+        expansion. It is carried to task 17 as a refusal plus a test.
+Task 14: complete (commits 5d6bca1..cc42e97, 5 fix rounds, review approved,
+        security clean).
+        - The Codex manifest names `./hooks.json`, so `fx-codex.js` loads.
+        - Output is limited to Codex's key set.
+        - `additionalContextLimit` is 0, and the matcher includes `fork`.
+        - Read-only and unrecorded subagents may run only Bash cleared by a
+          token character allowlist and per-binary flag allowlists. There is
+          no git for them, and every other tool is refused.
+        - Named limits go to ADR 0019 through task 17: the hook cannot see the
+          shell tool's `shell`, `tty` and `workdir` arguments; a relative PATH
+          entry is a risk; write_stdin coverage is unverified.
+        - Live proof is task 22.
+Task 16: dispatched (opus, fresh implementer). It is next on the frontier,
+        because 14 and 15 are complete.
