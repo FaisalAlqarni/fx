@@ -1833,3 +1833,23 @@ Task 19: DONE, 7057e6e.
         Reviewer dispatched. No security lens: the guard is not an attack
         boundary.
 Task 17: fix round 1 dispatched to its implementer.
+**Incident:** the task 19 reviewer ran `git checkout --detach 7057e6e` in the
+        shared worktree while the task 17 round 1 implementer was live, then
+        switched back. The controller verified afterwards: the branch is
+        multi-harness, HEAD is a0841a9, and task 17's six uncommitted edits
+        are intact. No loss. The reviewer broke the read-only rule on the
+        checkout.
+Ruling: every review and lens dispatch from here on states that `git
+        checkout`, `switch`, `stash`, `reset` and `restore` are forbidden in
+        the worktree, and that other commits are read through `git archive` or
+        `git show` into a mktemp dir.
+        Cost if wrong: none. Caught by the next reviewer that breaks it,
+        through `git status` and the branch check after each review.
+Task 19: review Approved. No Critical or Important. It reproduced the RED for
+        both fixes, and the 9 new heredoc cases fail on the old guard. It also
+        checked the opencode and codex install branches, and neither writes to
+        HOME. The remaining heredoc gaps are rated acceptable for a
+        mistake-guard. Minors (deferred): no test for the `<<<` fix;
+        `bash script.sh <<EOF` is now falsely refused; home-untouched covers
+        only claude-code.
+Task 19: complete (commits 08d66fb..7057e6e, review approved).
