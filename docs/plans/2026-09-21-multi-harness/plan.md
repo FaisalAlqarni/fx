@@ -95,6 +95,8 @@ behavioural rows spend quota and never do.
 | 20 | Nightly conformance against the real CLIs | none | Floor and latest CLIs, free rows, no secrets | Amendment |
 | 21 | Live matrix on Claude Code and opencode | 14, 15, 16, 17, 18, 19 | Amended guarantees proven live on two runtimes; preamble part order measured | Amendment |
 | 22 | Live matrix on Codex, the merge gate | 13, 14, 16, 17, 19 | Codex proven live after the 2026-10-21 quota reset, trust path included; docs carry the result | Amendment |
+| 23 | opencode's plugin-only route works | none | Commands registered; config reaches sessions (PD1, PD2) | Amendment |
+| 24 | The preamble fits one hook | 15 | One part under 9KB, per-harness filtering, detail on demand (PD3) | Amendment |
 | 13 | Install and surface documentation | 12, 14, 15, 16, 17, 18, 19, 20, 21 | Three install paths documented and accurate | Polish |
 
 **Amendment edges.** Tasks 14 to 22 come from the design amendment of
