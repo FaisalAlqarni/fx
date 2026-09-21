@@ -327,3 +327,21 @@ Ruling: task 07 is amended with two facts measured after it was written.
         that duplicates Codex's own migration. Caught by the task 07 review,
         which now has the facts to check against.
 
+Task 04: review package scoped e3f1bfa..8aed061, not ce60ef2..8aed061. My own
+        ledger commit e3f1bfa sat between again. The rule from last turn caught
+        it this time: re-read the log before packaging, never reuse the BASE
+        recorded at dispatch once the controller has committed.
+
+Task 04: complete (commits e3f1bfa..8aed061, review clean).
+        Spec 11/11 PASS, quality PASS, zero findings. Files:
+        .codex-plugin/plugin.json, .agents/plugins/marketplace.json, hooks.json,
+        hooks/fx-codex.js, tests/gates/codex-manifest.test.js, scripts/check-all.
+        Guarantee: fx installs on Codex from its own marketplace, and the
+        preamble reaches both a session and a subagent with Codex addressing.
+        Verified twice independently, by the controller and by the reviewer, each
+        with its own live install into a throwaway CODEX_HOME.
+
+Waiting on the task 05 implementer. Task 07's blockers (02 and 04) are both
+        satisfied, so it is ready, but implementers run serially and 05 and 07
+        both append to `scripts/check-all`. 06 blocks on 05. Deliberate wait.
+
