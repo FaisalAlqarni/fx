@@ -151,7 +151,7 @@ The usable signals:
 - `tool_name == "apply_patch"`, or a `spawn_agent` tool name, only ever comes from Codex.
 - `CLAUDE_PROJECT_DIR` never appears anywhere in the Codex source tree, so its absence also points to Codex.
 
-The most robust option needs no detection. Point the Codex manifest at its own hooks file, as in `"hooks": "./hooks/codex.json"`, and pass an explicit flag in each command, such as `--harness codex`. Claude Code keeps reading `hooks/hooks.json`.
+The most reliable option needs no detection. Point the Codex manifest at its own hooks file, as in `"hooks": "./hooks/codex.json"`, and pass an explicit flag in each command, such as `--harness codex`. Claude Code keeps reading `hooks/hooks.json`.
 
 ## 3. Subagents
 
