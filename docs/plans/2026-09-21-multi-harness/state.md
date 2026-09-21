@@ -692,3 +692,29 @@ Task 06: fix round 2 QUEUED, not dispatched. Task 08's implementer is live and a
         fix round is a writer. The evidence is durable and the round goes out the
         moment 08 reports.
 
+Task 08: implementer reported DONE, commit 29b7cab. Verified fresh by the
+        controller: `scripts/check-all` -> `ALL GREEN`; the plugin registers
+        exactly `config`, `experimental.chat.system.transform` and
+        `tool.execute.before`, and **does not register `permission.ask`**, the
+        hook that is declared, documented and never triggered in 1.18.25; agent
+        registration is driven by `READ_ONLY_AGENTS` and not a prefix; all six
+        read-only agents register including `fx-devils-advocate`;
+        `subagent_depth` is raised to 2 so an implementer can dispatch a
+        reviewer; and the broad `*` rule is first in `permission.skill`, which is
+        what makes last-match-wins behave.
+        Measured and recorded by the implementer:
+        `experimental.chat.system.transform(input, output)`, two arguments, with
+        `system` on the output object, confirmed at both `trigger()` call sites
+        in the shipped binary, one of which never sets `sessionID`. The shipped
+        `plugins/fx.js` had destructured a single argument.
+        Lane check now covers all three opencode write paths: `edit` and `write`
+        via `filePath`, and `apply_patch` via `patchText`.
+
+Task 08: minor (deferred): two more defects in task-supplied test code, an empty
+        `tasks/` directory that made the plan-state assertion unwinnable, and a
+        lane-check call against `README.md` that never touched a refusing path.
+        That is five plan-authored test defects across the build, every one
+        caught by an implementer running the code rather than reading it.
+
+Task 06: fix round 2 dispatched now that task 08's implementer has reported.
+
