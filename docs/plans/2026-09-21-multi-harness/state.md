@@ -1638,3 +1638,18 @@ Ruling: round 5 removes `git` from what a read-only agent may run on Codex.
           name to a file in the reviewed tree;
         - write_stdin's hook coverage is unverified until task 22.
 Task 14: round 5 landed in cc42e97. Read-only agents on Codex can no longer run git. The controller and default agents still can, behind the guard; that was proven through the real hook. Both marker probes are refused under a recorded lens identity. The round-4 probes had run unrecorded, which is the same rule, now corrected. codex/agents/fx-lens-database.toml:85 still tells lenses to run git diff; task 17 owns that body. This is the fix-loop cap. A scoped re-review and a lens re-check of rounds 4 and 5 were dispatched, and any residuals get adjudicated.
+Task 14: final re-review of rounds 4 and 5: Approved. No new Critical or
+        Important. The Codex lens can still review from the diff file, since
+        grep -E 'a|b' and rg "a|b" are now cleared. Test gap: round 5 turned the
+        git case that killed the value-skip mutant into a "no git" refusal. Now
+        `i += 2` at `lib/plant-roles.js:501` and `:510` survives and clears
+        `rg --glob x --pre=touch a .`. The code is correct; the pin is lost.
+Ruling (at the cap): task 17 carries the two must-refuse test lines,
+        `rg --glob x --pre=touch a .` and `rg -g x --pre=touch a .`, because it
+        already edits `lib/plant-roles.test.js`. It also carries the stale
+        lens prompts (`fx-lens-database` git diff, the reviewer-prompt fallback)
+        it already owned, plus the stale classifier comments.
+        Why: the fix loop is capped at five rounds, and this is two test lines
+        in a file the next task edits anyway.
+        Cost if wrong: until task 17 lands, a regression of the value skip would
+        pass the gate. Caught by task 17's review, which gets this line.
