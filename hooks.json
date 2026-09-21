@@ -1,0 +1,30 @@
+{
+  "description": "fx context injection: SessionStart and SubagentStart",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-codex.js\"",
+            "timeout": 5,
+            "statusMessage": "Loading fx..."
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-codex.js\"",
+            "timeout": 5,
+            "statusMessage": "Loading fx..."
+          }
+        ]
+      }
+    ]
+  }
+}

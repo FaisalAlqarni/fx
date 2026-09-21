@@ -1,0 +1,35 @@
+{
+  "name": "fx",
+  "version": "0.1.7",
+  "description": "One opinionated engineering plugin: brainstorm, plan, implement, TDD, review, debug, architecture, prose and skill authoring. Exactly one claimant per intent.",
+  "author": {
+    "name": "Faisal Alqarni"
+  },
+  "license": "MIT",
+  "keywords": [
+    "tdd",
+    "code-review",
+    "debugging",
+    "planning",
+    "rails",
+    "dotnet"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "fx",
+    "shortDescription": "One opinionated engineering plugin: brainstorm, plan, implement, TDD, review.",
+    "longDescription": "One opinionated engineering plugin: brainstorm, plan, implement, TDD, review, debug, architecture, prose and skill authoring. Exactly one claimant per intent.",
+    "developerName": "Faisal Alqarni",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Brainstorm a new feature with fx",
+      "Implement this task with TDD",
+      "Review my changes for correctness"
+    ]
+  }
+}
