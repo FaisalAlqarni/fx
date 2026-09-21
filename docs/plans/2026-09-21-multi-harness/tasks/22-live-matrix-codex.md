@@ -68,19 +68,24 @@ speaks only the Responses API. The user's local llama-server serves
 `/v1/responses`: a probe returned 200 from Qwen 3.8 27B at
 `http://127.0.0.1:8899/v1`. So Codex can run against it as a custom model
 provider, with no OpenAI quota, the same way opencode uses it.
-- **Part A (now).** Add a `live.sh` knob that writes a
-  `[model_providers.llamacpp]` entry (`wire_api = "responses"`,
-  `base_url = "http://127.0.0.1:8899/v1"`) and `model_provider`/`model` into
-  the **scratch** `CODEX_HOME/config.toml`. Copy the key in from the real
-  opencode provider entry, and never write anything back. First probe that
-  Qwen's tool calls work through Codex on the Responses API. Then run every
-  step and criterion of this task on the local model, and record which
-  multi-agent version and depth Codex picks for an unknown model.
-- **Part B (on or after 2026-10-21).** On the real OpenAI model, run a short
-  confirmation of rows 01, 04, 12 and 15. **Part B is the merge gate**,
-  because real Codex users run OpenAI models, and routing quality depends on
-  the model.
-
+- **Part A (now), reduced after research.**
+  `research/codex-local-model.md` found five blockers. As a result, a
+  local-model Codex run can prove only three things: hooks load, the
+  SessionStart preamble reaches the model's input (checked in the request, not
+  the reply), and a PreToolUse guard refuses a Bash command. It cannot prove
+  role dispatch or MCP, because llama-server drops Codex's namespace tools. It
+  cannot prove edit guards, because no `apply_patch` is offered for an unknown
+  model. It cannot prove routing quality.
+  Part A is therefore one probe session. If the model's chat template rejects
+  Codex's multiple system messages, which is likely on Qwen3.5 or newer, part A
+  stops there and says so. If the probe works, run rows 01 and 06 only, with
+  the config the research specifies: thinking off, reasoning effort none, an
+  explicit context window, and `model_providers` in the scratch home's
+  `config.toml`. Nothing from part A counts as proof beyond those three
+  mechanics.
+- **Part B (on or after 2026-10-21): the full matrix on the real OpenAI
+  model.** Every step and criterion below applies. **Part B is the merge
+  gate.**
 **Files:**
 - Modify: `tests/conformance/lib/live.sh`  (the Codex trust knob, the pre-plant knob and the MCP knob only)
 - Modify: `tests/conformance/rows/13-audit-lane-not-model-facing.sh`  (the Codex branch only)

@@ -2233,3 +2233,25 @@ Codex (user question): its quota is exhausted until 2026-10-21. Codex 0.155.1
         stays the merge gate. Task 22 is amended. Part A is dispatched after
         the spike, because the local model has one slot.
 User caution (2026-09-22): Codex may misbehave with a local model, tool calling especially, so part A cannot be relied on blindly. A research agent was dispatched on known Codex, llama-server /v1/responses and Qwen issues, from primary sources and GitHub issues. Output: research/codex-local-model.md. Part A does not start until the research is read and its blockers are ruled on.
+Research (research/codex-local-model.md): Codex on a local model through
+        llama-server has five blockers.
+        1. Namespace tools (spawn_agent, wait_agent, MCP) are dropped, with no
+           config fix (codex#23186, #42488; llama.cpp#24295, #23235).
+        2. Reasoning items return 400 while thinking is on (llama.cpp#29159;
+           fix PR #27751 is open).
+        3. Qwen3.5 and newer templates reject Codex's multiple system messages.
+           The user's server is Qwen 3.8.
+        4. An unknown model gets no apply_patch.
+        5. Qwen tool-call parse failures skip PreToolUse.
+Ruling: part A is reduced to one probe session. It stops there if the template
+        rejects the request. Otherwise it runs rows 01 and 06, which prove only
+        that hooks load, that the preamble reaches the input and that the Bash
+        guard refuses. Part B (from 2026-10-21) returns to the full real-model
+        matrix and remains the merge gate. Nothing from part A counts beyond
+        those three mechanics.
+        Why: the user warned that local-model tool calling cannot be relied on,
+        and the research confirms it for dispatch, MCP and patches.
+        Cost if wrong: nothing, because part B still covers all of it.
+        Process note: the research subagent wrote a clone and search output to
+        the session scratchpad instead of a mktemp dir. The scratchpad is
+        session-scoped and harmless.
