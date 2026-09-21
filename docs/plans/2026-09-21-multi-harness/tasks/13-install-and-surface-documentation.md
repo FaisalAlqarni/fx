@@ -13,6 +13,7 @@ matrix proved.
 - Modify: `README.md`
 - Modify: `SURFACE.md`
 - Modify: `docs/adr/0019-read-only-is-three-mechanisms-and-one-guarantee.md`
+- Modify: `lib/plan-state.js`  (comment only, no code)
 
 **Interfaces:**
 - Consumes: the conformance result recorded in `state.md` (task 12)
@@ -73,6 +74,12 @@ no claim without a row.
 - [ ] Every capability claim in the three documents maps to a row in `state.md` that passed
 - [ ] No document says fx has six lenses: there are five, plus a read-only devil's advocate
 - [ ] Every `GAP` in `state.md` appears in `INSTALL.md` as a stated limitation
+- [ ] `lib/plan-state.js` no longer claims `PreToolUse` does not fire for
+      `Write` or `Edit`: that belief was measured false and the lane check was
+      measured firing. Comment only; change no code in that file
+- [ ] `SURFACE.md` no longer cites DEBT #30 as a live justification
+- [ ] A repository-wide search for the two retired beliefs returns nothing
+      outside `docs/adr/`, where recording them is the point
 - [ ] `scripts/check-prose`, `check-paths` and `check-reference-leaves` pass
 
 ## Steps

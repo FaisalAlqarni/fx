@@ -237,3 +237,52 @@ Waiting on the task 03 implementer. The frontier holds 04, whose only blocker
         and 03 is still writing to `scripts/check-all`, which 04 also appends to.
         Nothing else is runnable, so ending the turn here is a deliberate wait.
 
+Task 03: implementer reported DONE, commit ad6ed6c.
+        **Lane check on Claude Code: FIRES.** Verified evidence in the report,
+        not just the one-line claim: a live session with `--plugin-dir` pointed
+        at this worktree, told to call the Write tool on a plain `.js` file;
+        `probe.js` was never created, the lane marker was, and the stream's
+        tool_result carried `is_error: true` with the exact `laneCheck` reason
+        text. Per ADR 0010 the run used `--plugin-dir`, so it measured this tree
+        and not a cached copy keyed by version.
+        Consequence: the check has been working the whole time. Only the comment
+        denying it was wrong, and DEBT #30 is confirmed stale. Task 08 can port
+        it to opencode on a measured basis rather than a hopeful one.
+
+Ruling: the two stale-belief sites the task 03 implementer found outside its own
+        files are assigned to task 13, and its acceptance criteria now carry
+        them. Verified both first-hand: `lib/plan-state.js:15` reads "PreToolUse
+        does not fire for Write or Edit at all, DEBT #30", and `SURFACE.md:114`
+        cites "DEBT #30/#48" as a live justification.
+        Why: no task's Files block owned either, so both would have survived the
+        whole plan. A false belief left in a comment is what ADR 0018 exists to
+        stop, and it reads as fresh evidence every time someone opens the file.
+        Cost if wrong: task 13 is documentation-only and late, so a code change
+        hidden in it would be reviewed thinly. Mitigated by restricting
+        `lib/plan-state.js` to a comment change with no code touched, which is
+        now written into the task. Caught by the task 13 review.
+
+Ruling: task 03's review package is scoped b856d06..ad6ed6c, not 5e005d4..ad6ed6c.
+        My own plan-docs commit b856d06 landed between task 02's last commit and
+        task 03's, so the recorded BASE was stale and the first package was
+        185KB carrying 3527 lines of plan documents into a gate review.
+        Why: a review scoped to the wrong range is the failure the skill warns
+        about with `HEAD~1`, reached by a different route: the controller
+        committing between tasks. Recording BASE before dispatch is not enough
+        if the controller then commits.
+        Cost if wrong: the reviewer reads the wrong diff and its verdict is about
+        a different change. Caught by nothing downstream, which is why it is
+        fixed here.
+        **From here: re-read HEAD immediately before packaging, never reuse the
+        BASE recorded at dispatch if the controller has committed since.**
+
+Task 03: complete (commits b856d06..ad6ed6c, review clean).
+        Spec 10/10 PASS, quality PASS, zero findings. Files:
+        scripts/check-manifest, hooks/fx-pretooluse.js, scripts/check-interpreters,
+        scripts/check-all.
+        Guarantees: a manifest declaring a component key passes and an orphaned
+        default scan fails, both exercised with fixtures; a script invocation
+        without an interpreter fails and a mention does not; the false
+        one-group-per-plugin claim is gone with no code changed alongside it.
+        The reviewer independently confirmed no third stale-belief site exists.
+
