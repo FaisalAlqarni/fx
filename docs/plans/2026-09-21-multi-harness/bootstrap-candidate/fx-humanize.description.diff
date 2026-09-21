@@ -1,0 +1,11 @@
+--- skills/fx-humanize/SKILL.md	2026-09-21 20:58:49.260703126 +0300
++++ /tmp/tmp.WMnXnQirkn/S3/skills/fx-humanize/SKILL.md	2026-09-22 01:31:56.843751982 +0300
+@@ -5,6 +5,8 @@
+   Use when editing or reviewing prose for inflated claims,
+   sales language, vague sources, repetitive structure, stock AI words, passive
+   voice, filler, or chatbot artifacts. Based on Wikipedia's "Signs of AI writing."
++  For a document an agent consumes (SKILL.md, CLAUDE.md, AGENTS.md), use
++  fx-authoring.
+ license: MIT
+ metadata:
+   version: "2.11.2"

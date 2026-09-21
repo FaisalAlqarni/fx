@@ -1,7 +1,7 @@
 # 13: Install and surface documentation
 
 **Status:** ready-for-agent
-**Blocked by:** 12, 14, 15, 16, 17, 18, 19, 20, 21
+**Blocked by:** 12, 14, 15, 16, 17, 18, 19, 20, 21, 25, 26
 **Phase:** Polish
 
 **What to build:** A reader can install fx on any of the three runtimes by

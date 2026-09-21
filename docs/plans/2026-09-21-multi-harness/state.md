@@ -2255,3 +2255,25 @@ Ruling: part A is reduced to one probe session. It stops there if the template
         Process note: the research subagent wrote a clone and search output to
         the session scratchpad instead of a mktemp dir. The scratchpad is
         session-scoped and harmless.
+Spike, measured so far (logs in /tmp/tmp.WMnXnQirkn/logs). **S3 wins on both
+        runtimes.** S3 is a 2,503-char bootstrap plus sharpened fx-tdd,
+        fx-brainstorm and fx-humanize descriptions:
+        - Claude Code: rows 01, 02 and 16 3/3, lanes 9/9, row 04 5/5;
+        - opencode: rows 01, 02 and 16 3/3, lanes 9/9, row 04 7/7 with runs
+          still to go.
+        S2, the bootstrap with the old descriptions, scored 2/5 on opencode
+        row 04, so the descriptions do the routing work.
+User approval (2026-09-22, "yes for all"):
+        - design amendment 2 (B1 to B5: a tiny bootstrap, routing in the
+          descriptions, every rule moved into lanes with a no-loss audit, ADR
+          0002 partly superseded, the constraint reworded);
+        - task 25 builds it;
+        - task 26 applies the validator fixes;
+        - the task 21 Claude Code remainder;
+        - task 13 docs, now blocked by 25 and 26;
+        - the Codex part A probe;
+        - the final review;
+        - Codex part B on 2026-10-21, the merge gate.
+        The S3 artifacts are preserved in bootstrap-candidate/, because /tmp
+        is ephemeral. Task 24's commit b09f5ac stays: it removed the split
+        machinery. Its trimmed router text is replaced by task 25.

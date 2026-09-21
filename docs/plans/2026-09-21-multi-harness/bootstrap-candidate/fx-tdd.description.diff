@@ -1,0 +1,13 @@
+--- skills/fx-tdd/SKILL.md	2026-09-21 20:58:49.259994111 +0300
++++ /tmp/tmp.WMnXnQirkn/S3/skills/fx-tdd/SKILL.md	2026-09-22 01:31:56.842821689 +0300
+@@ -4,7 +4,9 @@
+   Use when writing or changing any code with logic: a feature, a bug fix, a
+   behavior change, a new method, an endpoint, a job, a query. Also on "write a
+   test", "TDD this", "red-green-refactor", "test first", "add coverage for",
+-  "this has no tests". Any language, any test runner. Skip it and the tests get
++  "this has no tests". Any language, any test runner. For a helper or
++  function whose behavior the request already states, use this lane, not
++  fx-brainstorm. For a bug not yet diagnosed, use fx-debug first. Skip it and the tests get
+   written afterwards, where they pass on the first run and prove nothing.
+ ---
+ 

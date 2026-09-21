@@ -102,6 +102,8 @@ behavioural rows spend quota and never do.
 | 22 | Live matrix on Codex, the merge gate | 13, 14, 16, 17, 19 | Codex proven live after the 2026-10-21 quota reset, trust path included; docs carry the result | Amendment |
 | 23 | opencode's plugin-only route works | none | Commands registered; config reaches sessions (PD1, PD2) | Amendment |
 | 24 | The preamble fits one hook | 15 | One part under 9KB, per-harness filtering, detail on demand (PD3) | Amendment |
+| 25 | A tiny bootstrap, with routing in the descriptions | 24 | Superpowers-style bootstrap; rules moved to lanes, audited; description overlap gate | Amendment 2 |
+| 26 | Fixes from the plugin-dev validator | 25 | model: on every agent; no stale skills list; argument-hint; LICENSE | Amendment 2 |
 | 13 | Install and surface documentation | 12, 14, 15, 16, 17, 18, 19, 20, 21 | Three install paths documented and accurate | Polish |
 
 **Amendment edges.** Tasks 14 to 22 come from the design amendment of

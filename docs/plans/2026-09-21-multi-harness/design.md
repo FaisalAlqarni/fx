@@ -569,6 +569,85 @@ on 2026-10-21. Everything else is built and proven before then.
   with no trust and no bypass flag, and once with trust granted. ponytail's
   README documents the same `/hooks` step.
 
+## Amendment 2 (2026-09-22): a tiny bootstrap, routing in the descriptions
+
+Task 21 found that Claude Code delivers split preamble parts in an unstable
+order. Task 24 trimmed the router preamble to one part, and opencode's
+naive-prompt routing dropped. The user asked why fx carries a large always-on
+router when other plugins do not, and ruled: do not reinvent the wheel.
+
+**What the others do** (`research/prior-art-multi-harness.md`):
+- superpowers injects a 3.1KB bootstrap (`using-superpowers`) and leaves
+  routing to each skill's own `description`, which every runtime shows the
+  model natively;
+- caveman keeps a 7.1KB core, and its `AGENTS.md` holds only pointers;
+- ponytail filters per mode at emission time.
+
+**Measured** (`research/bootstrap-spike.md`). Variant S3 is a 2,503-character
+bootstrap plus sharpened `fx-tdd`, `fx-brainstorm` and `fx-humanize`
+descriptions. It routed:
+- Claude Code: 9 of 9 lane prompts, and row 04 5 of 5;
+- opencode on the local 27B model: 9 of 9 lane prompts, and row 04 7 of 7
+  at the time of writing (the final count is in the spike file).
+
+It passed rows 01, 02 and 16 on both runtimes. For comparison:
+- the best cut of the router preamble (Y) scored row 04 8 of 10 on opencode;
+- the same bootstrap without the description changes (S2) scored 2 of 5.
+
+**B1. The always-on text is a bootstrap, not a router.** `PREAMBLE.md`
+becomes the S3 bootstrap (`bootstrap-candidate/PREAMBLE.S3.md`):
+- the fixed intro;
+- the opening imperative;
+- the pointer that each lane's description says when it applies;
+- invoke, do not read;
+- the subagent clause;
+- announce;
+- the markers the conformance rows probe.
+
+It is well under every runtime's limit, so there is no split, no ordering
+problem and no size budget to defend.
+
+**B2. Routing lives in the skill descriptions.** The native mechanism on all
+three runtimes. Where two lanes overlap, each description carries a
+disambiguating clause, in the pattern `fx-review` and `fx-architecture`
+already use ("For a DIFF, use fx-review"). The S3 diffs in
+`bootstrap-candidate/` are the first three. A lane-overlap audit covers the
+rest, including `fx-tdd` against `fx-debug` on a bug fix.
+
+**B3. Nothing is lost; everything moves.** Every rule the router preamble held
+moves to the lane that applies it, or to a reference the lane cites:
+- the routing table;
+- the non-negotiables;
+- the ladder;
+- the prose rules;
+- the rationalization rows;
+- the Order text.
+
+A rule that must hold when no lane is loaded stays in the bootstrap, and each
+one is named with its reason. A no-loss audit table maps every sentence of the
+pre-trim preamble to its new home.
+
+**B4. ADR 0002 is partly superseded.** Position and the imperative stay first
+and self-contained. "Self-sufficient", meaning the always-on text carries the
+rules themselves, is replaced by "the always-on text makes the model invoke the
+lane that carries them". The replacing ADR cites the spike.
+
+**B5. The global constraint** becomes: "Only the fixed intro sits above the
+opening imperative; nothing else is added there. The always-on text stays a
+bootstrap: rules live in lanes, and routing lives in descriptions."
+
+**Testing.** The unit tests pin:
+- the bootstrap's size;
+- that the intro is the only text above the imperative;
+- that each probe marker is present.
+
+A description lint fails when two lane descriptions both claim a trigger phrase
+and neither names the other. Live:
+- rows 01, 02, 04 and 16 on Claude Code and opencode, with row 04 ten times
+  on opencode;
+- the lane-triggering prompts on both runtimes;
+- Codex in task 22 part B.
+
 ## Open Questions
 
 None. Every question raised was closed by decision or by measurement, and the
