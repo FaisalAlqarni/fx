@@ -1966,3 +1966,4 @@ Ruling: the hook adds `task: allow` only when the user's
         default config and is unaffected. Caught by the task 18 review.
         Review dispatched, with this ruling as a named risk. The fix goes
         through the fix loop only if the reviewer confirms it.
+Task 18: review needs fixes. Important: plugins/fx.js:144 ignores the user wildcard, which violates the ruling. A probe shows {"*":"deny"} becomes {"*":"deny","task":"allow"}. Fix round 1 dispatched, with Minor 1 (row 15 asserts sub_type general on opencode) folded in because it is the same proof. Other minors deferred: row 12 fail text, and the codex toml loop.
