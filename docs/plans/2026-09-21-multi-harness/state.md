@@ -1425,3 +1425,9 @@ Ruling (user-approved): design A5 changes for Codex only. Read-only agents
         Caught by row 12's shell-write probe and the spawn variant in task 22.
         A writer subagent is folding the 21 resolutions into the design and
         tasks 13 to 22. The controller verifies and commits the result.
+Plan: the 21 red-team resolutions are committed. The controller verified the
+        edges, the prior-art citations and the prose gate. Final edges: 14 and
+        15 none; 16 after 14 and 15; 17 none; 18 after 17; 19 and 20 none; 21
+        after 14 to 19; 22 after 14, 16, 17 and 19, and not before 2026-10-21;
+        13 after 12 and 14 to 21. Coverage walk over the changed requirements:
+        every finding has an owning task.
