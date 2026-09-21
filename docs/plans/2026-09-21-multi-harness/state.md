@@ -2076,3 +2076,13 @@ Task 23: DONE, edd224f. PD1's root cause is the **test harness, not fx**:
         Minor: about 16 empty /tmp dirs from debugging are left behind, listed
         in the report.
         Review dispatched. Task 24 dispatched.
+Task 23: review approved. The reviewer confirmed the live.sh root cause from
+        source, measured byte-identical installer output old against new, and
+        found one generator with no copies. The 16 leftover /tmp dirs are empty,
+        mode 700 and hold no credentials.
+        - Minor 1 (a free regression test for the config merge) is carried into
+          task 21, which owns live.sh test infra.
+        - Minors deferred: a command file with no frontmatter is skipped
+          silently; the config hook can now throw on a broken tree.
+        - Design wording: PD2's fix gives the text parity, not reachability.
+Task 23: complete (commits 3d73cbd..edd224f, review approved).
