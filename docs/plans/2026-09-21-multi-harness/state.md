@@ -2010,3 +2010,14 @@ Task 18: complete (commits 8c75623..8877038, 1 fix round, review approved).
         `general` gets `task: allow` unless the user set `task` or `*`.
         Read-only agents stay denied. Row 12 needs two lens dispatches. Row 15
         names and asserts `general`. The live proof is row 15 in task 21.
+Coverage audit folded into tasks 13, 18, 21 and 22 (previous commit). The
+        controller verified: only those files changed, 22 is blocked by 13,
+        and the prose gate is OK. Three facts are unmeasured, and each owning
+        step says to confirm them first:
+        - the opencode plugin entry form;
+        - the `codex debug prompt-input` args;
+        - the headless Codex fork path.
+Task 21: dispatched (opus, fresh implementer). It spends Claude quota and the
+        user's local Qwen. Quota exhaustion is reported as `GAP: not run`, and
+        the controller re-dispatches after the reset. The merge gate needs rows
+        01, 02, 12, 15, 16 and 18 to PASS on both runtimes.
