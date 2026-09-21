@@ -2232,3 +2232,4 @@ Codex (user question): its quota is exhausted until 2026-10-21. Codex 0.155.1
         real-model confirmation of rows 01, 04, 12 and 15 (part B), which
         stays the merge gate. Task 22 is amended. Part A is dispatched after
         the spike, because the local model has one slot.
+User caution (2026-09-22): Codex may misbehave with a local model, tool calling especially, so part A cannot be relied on blindly. A research agent was dispatched on known Codex, llama-server /v1/responses and Qwen issues, from primary sources and GitHub issues. Output: research/codex-local-model.md. Part A does not start until the research is read and its blockers are ruled on.
