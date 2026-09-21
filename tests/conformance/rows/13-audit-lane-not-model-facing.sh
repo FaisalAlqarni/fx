@@ -4,12 +4,12 @@
 # opencode: the plugin's config hook, run on a synthetic config, must deny each
 # hidden lane in permission.skill and deny nothing else.
 #
-# Claude Code and Codex have no free check here that reads what the runtime
-# receives: their mechanism is frontmatter (`disable-model-invocation`,
-# `allow_implicit_invocation`), which tests/gates/user-invoked.test.js already
-# pins in check-all. Repeating that here would claim a runtime check that never
-# ran, so they report a GAP. The live half, absence from the model-facing
-# listing, is task 12's.
+# Claude Code and Codex: GAP. No row checks this guarantee at runtime on those
+# harnesses. At file level, tests/gates/user-invoked.test.js pins only the flag
+# that hides the lane from the model: `disable-model-invocation: true` in
+# SKILL.md (Claude Code) and `allow_implicit_invocation: false` in
+# agents/openai.yaml (Codex). Repeating that here would claim a runtime check
+# that never ran.
 set -uo pipefail
 [ "${1:-}" = "--describe" ] && { echo "13|audit lane not model-facing|free"; exit 0; }
 : "${FX_REAL_HOME:?run rows through tests/conformance/run.sh, which isolates HOME}"
@@ -28,7 +28,10 @@ case "$HARNESS" in
       for (const d of fs.readdirSync("skills")) if (!HIDDEN.includes(d) && rules[d] === "deny") {
         console.error("opencode: " + d + " is denied but is not a user-invoked lane"); process.exit(1); }
     ' ;;
-  *)
-    echo "$HARNESS: no free runtime check; frontmatter is pinned by tests/gates/user-invoked.test.js, live half is task 12" >&2
+  claude-code)
+    echo "claude-code: no row checks this at runtime on this harness; only the file-level flag disable-model-invocation: true in SKILL.md is pinned, by tests/gates/user-invoked.test.js" >&2
+    exit 77 ;;
+  codex)
+    echo "codex: no row checks this at runtime on this harness; only the file-level flag allow_implicit_invocation: false in agents/openai.yaml is pinned, by tests/gates/user-invoked.test.js" >&2
     exit 77 ;;
 esac

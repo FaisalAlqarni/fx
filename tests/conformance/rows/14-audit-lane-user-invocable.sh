@@ -4,10 +4,11 @@
 # The counterpart to row 13. A lane hidden from both is not hidden, it is gone.
 #   opencode:    the installer, run into a scratch config dir, generates a
 #                command for each hidden lane, which is how a user types it.
-#   claude-code: GAP. `claude plugin details` lists a lane even when it carries
+#   claude-code: GAP. No row checks this at runtime, and no test pins it.
+#                `claude plugin details` lists a lane even when it carries
 #                `user-invocable: false` (measured), so it proves the lane
 #                loads, not that a user can invoke it.
-#   codex:       GAP. No free check reads what Codex receives.
+#   codex:       GAP. No row checks this at runtime, and no test pins it.
 set -uo pipefail
 [ "${1:-}" = "--describe" ] && { echo "14|audit lane user-invocable|free"; exit 0; }
 : "${FX_REAL_HOME:?run rows through tests/conformance/run.sh, which isolates HOME}"
@@ -23,9 +24,9 @@ case "$HARNESS" in
       [ -f "$dest/commands/$n.md" ] || { echo "opencode: no command for $n, user route gone" >&2; exit 1; }
     done ;;
   claude-code)
-    echo "claude-code: no free check; plugin details lists a lane even with user-invocable: false. Live half is task 12" >&2
+    echo "claude-code: no row checks user-invocability at runtime on this harness, and no test pins it (plugin details lists a lane even with user-invocable: false)" >&2
     exit 77 ;;
-  *)
-    echo "$HARNESS: no free runtime check; the sidecar is pinned by tests/gates/user-invoked.test.js, live half is task 12" >&2
+  codex)
+    echo "codex: no row checks user-invocability at runtime on this harness, and no test pins it" >&2
     exit 77 ;;
 esac
