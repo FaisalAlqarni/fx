@@ -70,6 +70,8 @@ run user-invoked.test.js    node tests/gates/user-invoked.test.js
 run plant-roles.test.js     node lib/plant-roles.test.js
 run opencode-plugin.test.js  node tests/gates/opencode-plugin.test.js
 
-run opencode-install        bash tests/opencode-install/run.sh
+run install-opencode        bash tests/install/run.sh opencode
+run install-codex           bash tests/install/run.sh codex
+run install-claude-code     bash tests/install/run.sh claude-code
 
 echo "ALL GREEN"
