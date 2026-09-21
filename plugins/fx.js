@@ -74,6 +74,12 @@ function extractPatchPaths(text) {
   if (typeof text !== 'string') return [];
   const paths = [];
   for (const line of text.split('\n')) {
+    // `Move to:` cannot see live traffic today: the shipped binary refuses
+    // any apply_patch containing a move outright ("apply_patch moves are
+    // not supported yet"). Parsed anyway, for parity with Codex's identical
+    // header vocabulary and in case that restriction lifts; harmless to
+    // keep, and not something a test here can ever exercise against a real
+    // opencode call.
     const m = line.match(/^\*\*\* (?:Update|Add|Delete) File: (.+)$/)
       || line.match(/^\*\*\* Move to: (.+)$/);
     if (m) paths.push(m[1].trim());

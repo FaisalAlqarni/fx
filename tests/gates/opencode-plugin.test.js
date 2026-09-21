@@ -22,7 +22,27 @@
 //      `design.md` anywhere under it triggers a real refusal, and a
 //      non-string `filePath` makes `path.relative` inside `laneCheck` throw
 //      a TypeError, exercising the fail-open catch around it.
+//
+// Fix round 1 (reviewer finding): the suite above only ever called
+// `tool.execute.before` with `tool: 'edit'`. `write` and `apply_patch` are
+// the other two write-capable opencode tools `plugins/fx.js` wires through
+// the same lane check, and neither had a single assertion — "a lane check
+// wired to one of three is not wired" was the task's own line, and it was
+// exactly right: a typo in a tool-name match or a broken
+// `extractPatchPaths` regex would ship silently. Added below: a refused and
+// an allowed case for `write`, a refused and an allowed case for
+// `apply_patch`, and a multi-file `apply_patch` case where only the SECOND
+// path is refused (pins the specific bug of checking only the first path —
+// the same class already hit once on the Codex side).
+//
+// Every new case below runs in its OWN fresh scratch directory. Reusing one
+// directory across cases was tried first and produced a false failure:
+// `lib/lane-check.js` fires its "no design.md" refusal only ONCE per
+// directory (a marker file under `<dir>/.fx/`), so a second call in the same
+// directory tests the marker, not the wiring.
 const assert = require('assert');
+const os = require('os');
+const fs = require('fs');
 const path = require('path');
 
 const root = path.join(__dirname, '..', '..');
@@ -78,9 +98,17 @@ const root = path.join(__dirname, '..', '..');
   assert.ok(!out.system[0].includes('{{'));
   // The plan-state block has never reached opencode. Assert against a scratch
   // directory holding a plan, so this cannot pass by accident on the checkout.
-  const os = require('os');
-  const fs = require('fs');
-  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-oc-'));
+  const scratchDirs = [];
+  function freshScratch({ withDesign = false } = {}) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-oc-'));
+    scratchDirs.push(dir);
+    if (withDesign) {
+      fs.mkdirSync(path.join(dir, 'docs', 'plans', 'probe'), { recursive: true });
+      fs.writeFileSync(path.join(dir, 'docs', 'plans', 'probe', 'design.md'), '# design\n');
+    }
+    return dir;
+  }
+  const scratch = freshScratch();
   fs.mkdirSync(path.join(scratch, 'docs/plans/2026-01-01-probe/tasks'), { recursive: true });
   fs.writeFileSync(path.join(scratch, 'docs/plans/2026-01-01-probe/plan.md'), '# probe\n');
   fs.writeFileSync(path.join(scratch, 'docs/plans/2026-01-01-probe/tasks/01-probe.md'), '# task\n');
@@ -133,6 +161,61 @@ const root = path.join(__dirname, '..', '..');
 
   await scopedBefore({ tool: 'edit' }, { args: { filePath: path.join(scratch, 'README.md') } });
 
-  fs.rmSync(scratch, { recursive: true, force: true });
+  // --- write: the second of three write-capable tools -----------------------
+  {
+    const dir = freshScratch();
+    const scopedHooks = await fx({ directory: dir });
+    await assert.rejects(
+      () => scopedHooks['tool.execute.before']({ tool: 'write' }, { args: { filePath: path.join(dir, 'app.js') } }),
+      /\[fx\]/,
+      'write must be refused the same way edit is'
+    );
+  }
+  {
+    const dir = freshScratch({ withDesign: true });
+    const scopedHooks = await fx({ directory: dir });
+    await scopedHooks['tool.execute.before']({ tool: 'write' }, { args: { filePath: path.join(dir, 'app.js') } });
+  }
+
+  // --- apply_patch: the third write-capable tool -----------------------------
+  // `patchText` carries the V4A envelope; only the header lines matter to
+  // `extractPatchPaths`, so a minimal patch is enough.
+  {
+    const dir = freshScratch();
+    const scopedHooks = await fx({ directory: dir });
+    const patchText = '*** Begin Patch\n*** Update File: app.js\n*** End Patch\n';
+    await assert.rejects(
+      () => scopedHooks['tool.execute.before']({ tool: 'apply_patch' }, { args: { patchText } }),
+      /\[fx\]/,
+      'apply_patch must be refused the same way edit is'
+    );
+  }
+  {
+    const dir = freshScratch({ withDesign: true });
+    const scopedHooks = await fx({ directory: dir });
+    const patchText = '*** Begin Patch\n*** Update File: app.js\n*** End Patch\n';
+    await scopedHooks['tool.execute.before']({ tool: 'apply_patch' }, { args: { patchText } });
+  }
+
+  // A multi-file patch where only the SECOND path is refused. `notes.md` is
+  // never flagged (`.md` is not code), so if the wiring only ever inspected
+  // the first path in the patch, this would pass silently instead of
+  // throwing for `app.js`. Asserting the message names `app.js` pins which
+  // path tripped it, not just that something did.
+  {
+    const dir = freshScratch();
+    const scopedHooks = await fx({ directory: dir });
+    const patchText = '*** Begin Patch\n'
+      + '*** Add File: notes.md\n'
+      + '*** Update File: app.js\n'
+      + '*** End Patch\n';
+    await assert.rejects(
+      () => scopedHooks['tool.execute.before']({ tool: 'apply_patch' }, { args: { patchText } }),
+      /app\.js/,
+      'a later path in the same patch must still be checked, not just the first'
+    );
+  }
+
+  for (const dir of scratchDirs) fs.rmSync(dir, { recursive: true, force: true });
   console.log('opencode-plugin.test.js: OK');
 })().catch((e) => { console.error(e); process.exit(1); });
