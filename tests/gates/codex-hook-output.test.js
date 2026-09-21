@@ -106,6 +106,23 @@ for (const tool of ['memory_tool', 'request_permissions_tool']) {
   assert.ok(denied(r), `read-only agent cannot call ${tool}`);
 }
 
+// Task 14 round 5: a read-only agent runs no git. The controller and a
+// recorded default agent still can: their git goes through the git guard,
+// never the read-only classifier. The controller's refused `git branch -D`
+// above is the guard's refusal; these are its allows.
+for (const command of ['git diff', 'git log --oneline', 'git status', '/usr/bin/git show x']) {
+  r = run({ ...base, cwd: home, hook_event_name: 'PreToolUse', agent_id: 'lens1', tool_name: 'Bash', tool_input: { command } });
+  keysOk(r.out, `lens ${command}`);
+  assert.ok(denied(r), `a read-only agent cannot run ${command}`);
+}
+for (const [who, extra] of [['controller', {}], ['default agent', { agent_id: 'a1' }]]) {
+  for (const command of ['git status', 'git log --oneline', 'git diff HEAD~1']) {
+    r = run({ ...base, ...extra, cwd: root, hook_event_name: 'PreToolUse', tool_name: 'Bash', tool_input: { command } });
+    assert.strictEqual(r.code, 0, `the ${who} can run ${command}: ${r.err}`);
+    assert.strictEqual(r.out, '', `an allowed ${who} git read prints nothing`);
+  }
+}
+
 r = run({ ...base, cwd: home, hook_event_name: 'PreToolUse', agent_id: 'lens1', tool_name: 'Bash', tool_input: { command: 'cat file' } });
 assert.strictEqual(r.code, 0, `a read-only agent can run a cleared read: ${r.err}`);
 assert.strictEqual(r.out, '', 'an allowed read prints nothing');

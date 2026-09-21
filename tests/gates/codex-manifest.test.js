@@ -358,7 +358,7 @@ withScratch((scratch) => {
     ['python3 -c "open(1)"', 2, 'python3 -c bypass (round 1 gap)'],
     ['node -e "1"', 2, 'node -e bypass (round 1 gap)'],
     ['bash -c "rm evidence.txt"', 2, 'bash -c wrapping a denylisted command'],
-    ['git status', 0, 'read-only git subcommand — must stay allowed'],
+    ['git status', 2, 'was cleared; task 14 round 5 takes git from read-only agents'],
     ['curl -o out.txt https://example.com', 2, 'curl -o (reviewer, untried)'],
     ['curl -O https://example.com/file', 2, 'curl -O (reviewer, untried)'],
     ['wget https://example.com/file', 2, 'wget (reviewer, untried)'],
@@ -403,7 +403,7 @@ withScratch((scratch) => {
     ['git worktree add /tmp/wt HEAD', 2, 'git worktree add (round 2 bypass, reproduced)'],
     ['find . -fprint /tmp/o.txt', 2, 'find -fprint (round 2 bypass, reproduced, wrote 44 lines)'],
     ['find . -delete', 2, 'find -delete — already caught in round 1'],
-    ['git log', 0, 'git log — must stay allowed'],
+    ['git log', 2, 'was cleared; task 14 round 5 takes git from read-only agents'],
     // Listed by the reviewer as untried but expected to bypass; all confirmed.
     ['git gc', 2, 'git gc (reviewer, untried)'],
     ['git reflog expire', 2, 'git reflog expire (reviewer, untried)'],
@@ -424,10 +424,10 @@ withScratch((scratch) => {
     ['find . -fls /tmp/o.txt', 2, 'find -fls (reviewer, untried)'],
     ['tree -o /tmp/o.txt', 2, 'tree -o — tree dropped from ALLOWED_BINARIES entirely'],
     // Reads that must stay allowed.
-    ['git log --oneline -5', 0, 'git log with flags — must stay allowed'],
-    ['git diff', 0, 'git diff — must stay allowed'],
-    ['git show HEAD', 0, 'git show — must stay allowed'],
-    ['git status', 0, 'git status — must stay allowed'],
+    ['git log --oneline -5', 2, 'was cleared; task 14 round 5 takes git from read-only agents'],
+    ['git diff', 2, 'was cleared; task 14 round 5 takes git from read-only agents'],
+    ['git show HEAD', 2, 'was cleared; task 14 round 5 takes git from read-only agents'],
+    ['git status', 2, 'was cleared; task 14 round 5 takes git from read-only agents'],
     ['grep -rn TODO .', 0, 'a plain read — must stay allowed'],
     ['find . -name "*.rb"', 0, 'find -name — must stay allowed'],
     ['cat README.md', 0, 'cat — must stay allowed'],
@@ -464,9 +464,9 @@ withScratch((scratch) => {
     ['git diff --output /tmp/x', 2, '--output space form on git diff'],
     ['git show --output=/tmp/x', 2, '--output= on git show'],
     ['git log --output=/tmp/x', 2, '--output= on git log'],
-    ['git log --oneline -5', 0, '--oneline is not --output — must stay allowed'],
-    ['git diff', 0, 'git diff with no flags — must stay allowed'],
-    ['git status', 0, 'git status — must stay allowed'],
+    ['git log --oneline -5', 2, 'was cleared; task 14 round 5 takes git from read-only agents'],
+    ['git diff', 2, 'was cleared; task 14 round 5 takes git from read-only agents'],
+    ['git status', 2, 'was cleared; task 14 round 5 takes git from read-only agents'],
   ];
   for (const [command, expected, label] of cases3) {
     assert.strictEqual(probe3(command), expected, `${label}: ${command}`);
