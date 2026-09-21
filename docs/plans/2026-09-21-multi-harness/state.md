@@ -1769,3 +1769,19 @@ Ruling: task 18 carries three of the task 17 Minors, because task 18 edits the
         Cost if wrong: until task 18 lands, devils-advocate on opencode cannot
         read its references. Caught by task 18's review.
         The security lens on task 17 is pending.
+Task 16: security re-check of round 1 is clean. Both findings are fixed. It
+        ran probes for relative paths, `..` traversal, symlink chains, and the
+        `/repo` vs `/repo-evil` prefix case (path.relative, not prefix). A
+        marker proves nothing loads from a refused root.
+Task 16: complete (commits c1ef82c..fa252f1, 1 fix round, review approved,
+        security clean).
+        - The restart notice goes in systemMessage and additionalContext.
+        - `{{DISPATCH}}` carries the agent_type wording.
+        - The Codex render duplication is fixed.
+        - live.sh plants roles before the first Codex session.
+        - Row 18 is added.
+        - fx-setup plants, audits and checks trust behind an inline FX check.
+        - Depth ruling: row 15 stands on Codex.
+        Parked: a full fake fx tree outside the repo passes the FX check.
+Task 18: dispatched next (opus, fresh implementer). Task 17 is waiting only
+        on its security lens, and 18's blocker (17) is otherwise done.
