@@ -884,3 +884,33 @@ Task 08: complete (commits 17cfdc6..5df5e61, 1 fix round, re-review clean).
         `subagent_depth` is raised so an implementer can dispatch a reviewer, and
         the five user-invoked lanes are denied from the model-facing listing.
 
+Task 09: implementer reported DONE_WITH_CONCERNS, commit 24af428. Verified fresh:
+        `scripts/check-all` -> `ALL GREEN`; **no second converter exists** (the
+        Python `convert_agent` is gone entirely, only a comment references it);
+        the installer requires `lib/plant-roles.js` and `lib/agent-dialects.js`
+        through one `node -e` call, exactly as `plugins/fx.js` does; the rename
+        to `tests/install/` is complete with the old path gone.
+
+        The language boundary was the interesting problem in this task and it was
+        solved the right way: Python serialises, JavaScript decides. No
+        permission logic left on the Python side, so there is one implementation
+        of the opencode dialect rather than two that drift.
+
+Ruling: the three-caller constraint moves to task 10, which owns
+        `commands/fx-setup.md`. Verified: `plantRoles` has two callers today,
+        `hooks/fx-codex.js` and `scripts/fx-opencode-install`. Task 09 correctly
+        declined to assert a third against a file it does not own, citing the
+        pre-flight scan's own ownership row.
+        Why: an acceptance criterion that cannot be satisfied by the task holding
+        it either gets faked or gets dropped. This one was honestly dropped and
+        reported, which is the better failure. Task 10 makes fx-setup the third
+        caller, so the assertion belongs with it.
+        Cost if wrong: nothing asserts one-implementation-three-callers until
+        task 10. Caught by task 10's review, which now carries the criterion.
+
+Task 09: minor (deferred): `README.md:229` names the old `tests/opencode-install/`
+        path, now stale. Task 13 owns the README and the implementer correctly
+        left it alone.
+Task 09: minor (deferred): `merge_opencode_json` treats a JSON boolean
+        `subagent_depth` as an int. Degenerate input, unguarded, untested.
+

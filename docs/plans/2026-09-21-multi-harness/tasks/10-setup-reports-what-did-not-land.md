@@ -58,6 +58,11 @@ answer about whether the guard is running is worse than no answer.
 - [ ] On Codex it reports hook trust, and names the command that fixes it
 - [ ] `skills/fx-setup/SKILL.md` is regenerated, so task 07's equivalence test still passes
 - [ ] A user with everything correct sees a short confirmation, not a wall of output
+- [ ] **The three-caller constraint is now assertable and asserted here.**
+      `hooks/fx-codex.js`, `scripts/fx-opencode-install` and
+      `commands/fx-setup.md` all route role provisioning through
+      `lib/plant-roles.js`, and no second implementation of it exists.
+      Task 09 could only assert two of three, because this file is yours
 
 ## Steps
 
