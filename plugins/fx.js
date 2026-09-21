@@ -136,12 +136,16 @@ export const fx = async ({ directory } = {}) => {
       // canTask). `general` is the built-in subagent's key: opencode 1.18.31
       // packages/opencode/src/agent/agent.ts:182-195, and `opencode agent
       // list` on 1.18.25 prints `general (subagent)`. opencode merges this
-      // block over the native agent. Merge only when `task` is absent, so a
-      // user's own value and a repeat config() call are both left alone. A
-      // bare action string is a whole permission block, and the user's too.
+      // block over the native agent. Merge only when `task` and `*` are both
+      // absent, so a user's own value and a repeat config() call are both
+      // left alone. A user's `*` key is their answer for task too: 1.18.25
+      // rewrites `permission: "ask"` to `{"*": "ask"}` before this hook, and
+      // a task rule added after it would win. A bare action string is the
+      // user's too.
       const general = (config.agent.general = config.agent.general || {});
       general.permission = general.permission || {};
-      if (typeof general.permission === 'object' && !('task' in general.permission)) {
+      if (typeof general.permission === 'object' && !('task' in general.permission)
+          && !('*' in general.permission)) {
         general.permission.task = 'allow';
       }
 

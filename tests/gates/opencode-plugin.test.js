@@ -134,6 +134,15 @@ const root = path.join(__dirname, '..', '..');
     const bare = { agent: { general: { permission: 'ask' } } };
     await hooks.config(bare);
     assert.strictEqual(bare.agent.general.permission, 'ask', 'a string permission is left as it was');
+    // A user's wildcard is their answer for task too: opencode 1.18.25 rewrites
+    // `permission: "ask"` to `{"*": "ask"}` before this hook, and a task rule
+    // added after it would win, handing nested dispatch back.
+    for (const action of ['ask', 'deny']) {
+      const wild = { agent: { general: { permission: { '*': action } } } };
+      await hooks.config(wild);
+      assert.deepStrictEqual(wild.agent.general, { permission: { '*': action } },
+        `a users "*": "${action}" is left as it was`);
+    }
     // Idempotent.
     const again = JSON.parse(JSON.stringify(config));
     await hooks.config(again);
