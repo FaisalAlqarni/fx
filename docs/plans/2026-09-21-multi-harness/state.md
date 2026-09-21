@@ -2057,3 +2057,4 @@ Plan: task 24 (preamble to one part) and task 23 (opencode plugin-only route)
         the user's approval. The Claude Code remainder of task 21 is re-run
         after task 24, because rows 01, 02 and 16 depend on the preamble.
 Task 23: dispatched (opus, fresh implementer). Task 24 is reserved until the user approves the trim proposal.
+User approved the preamble trim proposal as written. Task 24 was written with the proposal as its requirements. It is blocked by task 23 because both drive the single-slot local model live. The Claude Code remainder of task 21 runs after task 24.
