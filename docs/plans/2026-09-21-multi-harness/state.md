@@ -1102,3 +1102,22 @@ Correction to the line above: the fix round does not carry Minors, because the
         lane forbids it. Minor 1 and Minor 3 go to the task 12 dispatch
         instead, as context. Task 12 adds the live rows, which are the rows
         both Minors affect.
+
+Task 11: fix round 1 landed, 1073613 and 1165622, DONE_WITH_CONCERNS. The
+        implementer's one blocker was check-all failing check-prose on
+        findings-11.md. That file is mine: the gate read "3)" as a list label.
+        I reworded it in the commit after 1165622. Ran `scripts/check-all`
+        myself: ALL GREEN.
+Ruling: rows 13 and 14 report GAP on claude-code and codex, and that is
+        accepted. The task's criterion allows a GAP that carries a reason. The
+        file-level flags these rows used to copy stay covered by
+        `tests/gates/user-invoked.test.js`, which is in check-all. Row 14's GAP
+        on claude-code is measured: `claude plugin details` lists a lane marked
+        `user-invocable: false`.
+        Why: a row that passes on a copy of the gate test asserts nothing about
+        the runtime, and a visible GAP is what the design asks for.
+        Cost if wrong: nothing checks at runtime that the audit lane is hidden
+        on Claude Code and Codex, and task 12 has no live rows 13 or 14. Caught
+        by the final review, which gets this line, and by task 13's docs, which
+        must list these GAPs.
+Task 11: fix round 1 scoped re-review dispatched on f5ec022..1165622.
