@@ -1401,3 +1401,27 @@ Task 12: complete (commits 31d19e7..d56317b, 2 fix rounds, review approved,
 Design amendment written (dc5c306). It is waiting for user review before
         fx-plan adds tasks. Task 13 (docs) now waits on the amendment, because
         it documents what the amendment changes.
+
+Plan: tasks 14 to 22 were added in 4ce9145 and red-teamed in plan mode. The
+        review found 4 Critical, 10 Important and 7 Minor. The controller
+        verified the three Critical findings it could check itself:
+        - `references/harnesses/codex.md:10` says Codex has no Read, Grep or
+          Glob tool, so turning the shell off blinds a lens.
+        - `live.sh:170` passes `--dangerously-bypass-hook-trust`.
+        - `reviewer-prompt.md:41-42` falls back to `git diff`.
+        The user approved applying all 21, with this instruction: "reference
+        the other plugins to see how they solved such issues as they work. we
+        don't need to reinvent the wheel".
+Ruling (user-approved): design A5 changes for Codex only. Read-only agents
+        keep the shell there, and the PreToolUse hook refuses any Bash call
+        the fail-closed read-only classifier does not clear, along with
+        `apply_patch`, `spawn_agent` and `mcp__*`. Claude Code and opencode
+        still drop the shell.
+        Why: Codex has no read tools, so a shell-less lens cannot read the diff
+        it reviews. Neither ponytail nor caveman ships read-only agents, so
+        there is no prior art to copy for this.
+        Cost if wrong: Codex read-only rests on a classifier, not on a missing
+        tool. It fails closed, and the ceiling is the one named in task 06.
+        Caught by row 12's shell-write probe and the spawn variant in task 22.
+        A writer subagent is folding the 21 resolutions into the design and
+        tasks 13 to 22. The controller verifies and commits the result.
