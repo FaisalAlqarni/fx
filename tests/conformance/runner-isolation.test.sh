@@ -93,9 +93,20 @@ check "sigint: runner did not exit 0 (rc=$rc)" '[ "$rc" -ne 0 ]'
 check "sigint: runner did not finish the run" '! grep -q "pass, .* fail, .* gap" "$OUT/sigint.log"'
 assert_isolated sigint "$OUT/sigint"
 
+# 3. A row with no --describe guard runs its body on the describe call and
+# prints nothing parseable. It must FAIL, never be skipped as "not free".
+NG="$T/rows-noguard"; mkdir -p "$NG"
+printf '%s\n' '#!/usr/bin/env bash' 'exit 0' > "$NG/91-noguard.sh"
+env HOME="$FAKE" FX_CONFORMANCE_ROWS="$NG" \
+    bash "$RUNNER" codex --free > "$OUT/noguard.log" 2>&1
+rc=$?
+check "noguard: runner exits non-zero (rc=$rc)" '[ "$rc" -ne 0 ]'
+check "noguard: row reported as FAIL" 'grep -q "^FAIL.*91-noguard.sh" "$OUT/noguard.log"'
+
 if [ "$failures" -ne 0 ]; then
   echo "--- normal.log" >&2; cat "$OUT/normal.log" >&2
   echo "--- sigint.log" >&2; cat "$OUT/sigint.log" >&2
+  echo "--- noguard.log" >&2; cat "$OUT/noguard.log" >&2
   echo "runner-isolation: $failures failed" >&2
   exit 1
 fi
