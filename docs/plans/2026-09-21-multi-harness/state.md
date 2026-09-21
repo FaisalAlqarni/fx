@@ -1853,3 +1853,18 @@ Task 19: review Approved. No Critical or Important. It reproduced the RED for
         `bash script.sh <<EOF` is now falsely refused; home-untouched covers
         only claude-code.
 Task 19: complete (commits 08d66fb..7057e6e, review approved).
+Task 17: fix round 1 landed in 65240cf.
+        - opencode read-only agents now use a permission allowlist: `"*": deny`
+          first, then read, grep, glob and list; `external_directory` is
+          allowed only under fx's references path, as a pattern.
+        - Tests cover webfetch, websearch, task, todowrite, edit, bash, skill,
+          an MCP id and /etc reads as denied, and are checked the way opencode
+          evaluates rules.
+        - Mutations that drop the deny-all, move it last, or remove the
+          references allow each fail the suite.
+        - Concern: read:allow drops opencode's default ask on .env files. This
+          matches Claude Code's Read, and the ADR records it.
+        Scoped re-review and lens re-check dispatched, both told not to
+        checkout.
+Task 20: dispatched (opus, fresh implementer). It has no blockers and its
+        files do not overlap.
