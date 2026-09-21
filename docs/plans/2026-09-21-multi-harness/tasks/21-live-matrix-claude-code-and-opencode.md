@@ -11,7 +11,21 @@ finding for the controller. Part of design amendment A9.
 
 Every FAIL in task 12's matrix belongs to a fix in this amendment:
 - Claude Code rows 01, 02 and 16: preamble split, task 15.
-- opencode row 15: task 18.
+- opencode row 15: task 18. Its opencode prompt now names `general`, so a
+  PASS proves the plugin's `permission.task` override reached the built-in
+  agent. The config-object test in task 18 cannot prove that.
+
+The amendment also added live coverage this task runs for the first time:
+- row 12's shell-write probe, from task 17;
+- row 18, from task 16: a lens asked to dispatch a default child that writes;
+- the sentinel probe from task 22 step 2: a lens returns a sentinel it read
+  from the diff file it was given.
+
+It also measures one thing the design relies on without having measured it:
+the order in which the preamble parts land in a Claude Code transcript. The
+global constraint says nothing goes above the opening imperative. If part 2
+can land before part 1, the model reads something above it, and that
+constraint needs amending.
 
 This task shows whether those fixes hold in real sessions. It also runs the
 one check task 12 still owes: Claude Code row 06 under the round 2 jail. That
@@ -31,6 +45,8 @@ run hit Claude's session limit.
 **Seam:** the conformance runner, live.
 
 **Risks:**
+- MEDIUM: if the part order is not stable, do not change anything. Flag it
+  for the controller, with the orders seen.
 - MEDIUM: quota. Claude Code has a session limit, and it was hit twice in
   this build. `live.sh` reports quota exhaustion as `GAP: not run`, never a
   pass. If quota runs out mid-matrix, report which rows did not run. The
@@ -53,7 +69,10 @@ exit.
 ## Acceptance criteria
 - [ ] Rows 01, 02 and 16 PASS on Claude Code, or each FAIL is reported with the log evidence showing why
 - [ ] Row 15 PASSes on opencode, or its FAIL is reported with evidence
-- [ ] Row 12 on both runtimes is reported with its evidence. It now covers shell writes, because read-only agents have no shell after task 17
+- [ ] Row 12 on both runtimes is reported with its evidence, including its shell-write probe: `lens-shell.txt` absent and `control-shell.txt` present. It covers shell writes because task 17 added that probe, not because the shell was removed
+- [ ] Row 18 on both runtimes is reported with its evidence
+- [ ] The sentinel probe from task 22 step 2 is reported on both runtimes: the lens returned the sentinel from the diff file, and the sentinel was not in its dispatch prompt
+- [ ] The order in which the Claude Code preamble parts landed is recorded for every session and subagent in rows 01, 02 and 16, and the report says whether it was the same every time. If it was not, the report flags it for the controller
 - [ ] Claude Code row 06 has run under the round 2 jail
 - [ ] Every row on both runtimes has exactly one result, PASS, FAIL or GAP, with a reason for each GAP
 - [ ] No product file changed in this task
@@ -67,25 +86,41 @@ not green, stop and report BLOCKED: the amendment tasks left the tree red.
 
 - [ ] **2. Run the Claude Code matrix**
 
-Run: `HOME="$(mktemp -d)" FX_REAL_HOME="$HOME_REAL" bash tests/conformance/run.sh claude-code`,
-where `HOME_REAL` is the user's real home, set explicitly by you. Launch it as
-a tracked background command and end your turn. It wakes you when it exits.
+Run: `HOME="$(mktemp -d)" FX_REAL_HOME="$HOME_REAL" FX_CONFORMANCE_LOGS="$LOGS" bash tests/conformance/run.sh claude-code`,
+where `HOME_REAL` is the user's real home, set explicitly by you, and `LOGS` is
+a private `mktemp -d` directory under `/tmp` that step 5 reads. Launch it as a
+tracked background command and end your turn. It wakes you when it exits.
 
 - [ ] **3. Run the opencode matrix**
 
 Run the same command for `opencode`, only after the Claude Code run has
 exited. The llama-server has one slot.
 
-- [ ] **4. Re-run suspected flakes once**
+- [ ] **4. Run the sentinel probe**
+
+Create the probe row from task 22 step 2 in a `mktemp -d` directory under
+`/tmp`, and run it on each runtime through the runner's probe hook:
+`HOME="$(mktemp -d)" FX_REAL_HOME="$HOME_REAL" FX_CONFORMANCE_ROWS="$P" bash tests/conformance/run.sh <harness>`,
+Claude Code first, opencode after it exits. Remove `$P` by exact path.
+
+- [ ] **5. Measure the preamble part order on Claude Code**
+
+In the logs step 2 kept under `$LOGS`, for rows 01, 02 and 16, list, per session and per
+subagent, the order of the `[fx preamble: part <i> of <n>]` labels as they
+appear in the transcript lines. Record every order seen. Delete the log
+directory by exact path when done: the logs may hold credential copies.
+
+- [ ] **6. Re-run suspected flakes once**
 
 For any FAIL that looks like model capability rather than fx, re-run that row
 alone once, and record both results.
 
-- [ ] **5. Report**
+- [ ] **7. Report**
 
-Write the matrix block and the evidence for every FAIL into the report file.
+Write the matrix block, the evidence for every FAIL, the sentinel result and
+the part orders into the report file.
 
-- [ ] **6. Commit**
+- [ ] **8. Commit**
 
 Only if `tests/conformance/README.md` changed:
 ```

@@ -1,7 +1,7 @@
 # 13: Install and surface documentation
 
 **Status:** ready-for-agent
-**Blocked by:** 12, 14, 15, 16, 17, 18, 19, 20
+**Blocked by:** 12, 14, 15, 16, 17, 18, 19, 20, 21
 **Phase:** Polish
 
 **What to build:** A reader can install fx on any of the three runtimes by
@@ -11,12 +11,20 @@ matrix proved.
 **Amended 2026-09-21.** The design amendment (decisions A1 to A9) changes what
 this documentation must say. It must also cover:
 - **Codex:** after installing, the user trusts fx's hooks in `/hooks`, and
-  trusts them again whenever fx changes a handler setting. The first session
-  plants the review roles, and the user restarts Codex once.
-- **Read-only agents** have no shell on any runtime. ADR 0019 is corrected by
-  task 17, and this task links to it rather than restating it.
+  trusts them again whenever fx changes a handler setting. ponytail's README
+  states the same step (ponytail section 4 of
+  `research/prior-art-multi-harness.md`); copy its plainness. The first session plants the review roles,
+  and the user sees a notice to restart Codex once.
+- **Read-only agents** cannot write on any runtime, by a different mechanism
+  on each: no shell on Claude Code and opencode, and on Codex a kept shell
+  whose writes the hook refuses. ADR 0019 is corrected by task 17, and this
+  task links to it rather than restating it.
+- **Named limits** from the amendment, each in `INSTALL.md`: opencode MCP
+  tools for read-only agents, if task 17 found no rule to deny them, and Codex
+  row 15, if task 16 ruled it a GAP, with the user-level config key.
 - **The preamble** reaches Claude Code in parts, and why.
-- **The nightly workflow** (task 20): what it checks and what it does not.
+- **The nightly workflow** (task 20): what it checks, at the floor and at
+  `@latest`, and what it does not.
 - **Rows 13 and 14** report GAP on Claude Code and Codex, and these docs list
   them with their reasons. Codex is proven live only after task 22. Until
   then, the docs state Codex live verification as pending, never as done.
@@ -27,9 +35,10 @@ this documentation must say. It must also cover:
 - Modify: `SURFACE.md`
 - Modify: `docs/adr/0019-read-only-is-three-mechanisms-and-one-guarantee.md`
 - Modify: `lib/plan-state.js`  (comment only, no code)
+- Modify: `lib/plant-roles.js`  (comment only, near the git gate, no code)
 
 **Interfaces:**
-- Consumes: the conformance result recorded in `state.md` (task 12)
+- Consumes: the conformance results recorded in `state.md` by task 12, and task 21's matrix block
 - Produces: no code
 
 **Seam:** `scripts/check-prose`, `scripts/check-paths` and
@@ -40,7 +49,7 @@ this documentation must say. It must also cover:
 `INSTALL.md` documents one opencode path built on a symlink farm and a
 standalone Claude Code path. It must document three runtimes, each with its
 marketplace or plugin route first and its script route second, and it must
-state the Codex hook-trust step for as long as task 12's result says it is
+state the Codex hook-trust step for as long as the measured result says it is
 needed.
 
 `README.md` describes `hooks/` as Claude Code and `plugins/` as opencode. There
@@ -55,8 +64,12 @@ is now a third injector and a shared renderer.
 - that opencode is "a genuine port, not a downgrade", with the subagent claim
   marked unverified. Task 10 verified it. Replace the hedge with the result.
 
-**ADR 0019 gains the measurement** from task 12's row 12, the first end-to-end
-confirmation of the Codex guarantee rather than a probe.
+**ADR 0019 gains the measurements** from task 21's rows 12 and 18 on Claude
+Code and opencode. Codex row 12 has never been measured passing: task 12
+recorded it as a GAP (quota) in the matrix and as a FAIL in its development
+run, before roles could be dispatched. Do not claim a Codex measurement here.
+State Codex as pending; task 22 writes the Codex result into ADR 0019 before
+merge.
 
 **Refreshing an install is documented per runtime.** A user story asks that
 `git pull` or a plugin update refresh the install, and Codex copies the plugin
@@ -71,8 +84,8 @@ exists to prevent.
 
 **Idempotency:** Documentation only.
 
-**Testing:** The prose and path gates. Plus a read-through against `state.md`:
-no claim without a row.
+**Testing:** The prose and path gates. Plus a read-through against `state.md`
+and task 21's matrix: no claim without a row.
 
 ## Acceptance criteria
 - [ ] `INSTALL.md` documents all three runtimes
@@ -105,7 +118,7 @@ no claim without a row.
 
 - [ ] **1. Walk `state.md` and list every claim**
 
-Read task 12's recorded result. Write the list of guarantees that passed, and
+Read task 12's recorded result and task 21's matrix. Write the list of guarantees that passed, and
 the list that are `GAP`. This list is the only source for what the
 documentation is allowed to promise.
 
@@ -126,9 +139,10 @@ Update the delivery diagram and the directory table for the third injector and
 The three statements listed above. Do not restate the lens mechanism in prose:
 point at ADR 0019, which carries it with its measurement.
 
-- [ ] **5. Add the end-to-end measurement to ADR 0019**
+- [ ] **5. Add the end-to-end measurements to ADR 0019**
 
-Row 12's result, with the date and the Codex version.
+Rows 12 and 18 from task 21, on Claude Code and opencode, with the date and
+the CLI versions. Codex stays pending: task 22 fills it in.
 
 - [ ] **6. Verify no claim outruns the matrix**
 
@@ -144,7 +158,7 @@ Expected: `ALL GREEN`.
 - [ ] **8. Commit**
 
 ```
-git add INSTALL.md README.md SURFACE.md docs/adr/0019-read-only-is-three-mechanisms-and-one-guarantee.md
+git add INSTALL.md README.md SURFACE.md docs/adr/0019-read-only-is-three-mechanisms-and-one-guarantee.md lib/plan-state.js lib/plant-roles.js
 git commit -m "docs: document three install paths and correct the falsified claims"
 ```
 

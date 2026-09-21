@@ -452,7 +452,12 @@ Two further facts shape the fixes:
 **A2. Codex hook output carries only keys Codex accepts.** `fx-codex.js`
 output is checked against the key set in `research/codex.md`. A free test
 feeds the script each event and fails on any other key, so a guard can never
-fail open this way.
+fail open this way. The accepted shape is copied from ponytail's
+`hooks/ponytail-runtime.js` `writeHookOutput()`, which gives Codex a top-level
+`systemMessage` plus `hookSpecificOutput` (ponytail sections 2 and 4 of
+`research/prior-art-multi-harness.md`). `systemMessage` is one of Codex's
+universal output keys (section 2 of `research/codex.md`), so it is allowed at the top level on
+SessionStart and on no other event fx uses.
 
 **A3. The preamble reaches the model whole on every runtime.**
 - **Claude Code:** the rendered preamble is split into parts, each under 9,000
@@ -460,7 +465,9 @@ fail open this way.
   handler on SessionStart and on SubagentStart. Part 1 opens with the opening
   imperative, and nothing goes above it. Each part ends with a line naming
   itself and the part count, so the model can tell when a part is missing.
-  Handler order is not relied on.
+  Handler order is not relied on. Three handlers ship per event. If the
+  render ever needs more than three parts, handler 3 emits every remaining
+  part, so the tail degrades to a file preview instead of vanishing.
 - **Codex:** its SessionStart and SubagentStart handlers set
   `additionalContextLimit: 0`, so nothing needs splitting there.
 - **opencode:** the system transform has no limit.
@@ -469,40 +476,73 @@ fail open this way.
 
 **A4. Codex roles are dispatchable.**
 - SessionStart plants the roles as before, and `fx-setup` plants them too.
-- When a session writes a role that was not there, its injected context tells
-  the user to restart Codex once before dispatching a review agent.
+- When a session writes a role that was not there, it tells the user to
+  restart Codex once before dispatching a review agent. The notice goes in
+  the top-level `systemMessage`, which Codex shows the user, and a copy stays
+  in `additionalContext` for the model. This is ponytail's Codex output shape.
 - Dispatch wording rendered for Codex passes `agent_type` explicitly. By
   default a spawn copies the parent's history, and in that mode a role applies
-  only when it is named.
+  only when it is named. The wording reaches the model through a placeholder
+  in `lib/preamble.js`'s `ADDRESSING`, rendered into `PREAMBLE.md`, and each
+  runtime gets its own wording. Skill bodies still never name a tool.
 - Read-only enforcement stays in the `PreToolUse` hook keyed on `agent_type`.
+- Codex's nesting depth under MultiAgentV2 is unresearched: `[agents]
+  max_depth` is documented as V1 only (section 3 of `research/codex.md`). Task
+  16 reads the default and the V2 behaviour at `rust-v0.155.1` and rules on
+  row 15 for Codex. If depth 2 is not available and no plugin can enable it,
+  Codex row 15 is a documented GAP.
 
-**A5. Read-only agents have no shell, on every runtime.**
+**A5. Read-only agents cannot write, by the strongest mechanism each runtime
+offers.**
 - On Claude Code, their tool lists drop Bash.
-- On opencode, their agents get `bash: deny` alongside `edit: deny`.
-- On Codex, their role turns the shell off, and the hook still refuses the
-  patch tool.
-- They read the packaged diff file instead of running git.
-- This is the strongest guarantee each runtime offers. Neither project
-  surveyed ships read-only agents at all.
+- On opencode, their agents get `bash: deny` and `task: deny` alongside
+  `edit: deny`.
+- On Codex, a read-only agent KEEPS the shell. Codex has no Read, Grep or Glob
+  tool (`references/harnesses/codex.md`), so a role with the shell turned off
+  could not read the diff it was given. The `PreToolUse` hook refuses, for a
+  read-only or unrecorded agent id:
+  - any shell call the existing fail-closed read-only classifier
+    (`isWritingToolCall` and `scopeMustBeRefused` in `lib/plant-roles.js`) does
+    not clear;
+  - `apply_patch`;
+  - `spawn_agent`, so a lens cannot hand a write to a default child;
+  - any `mcp__*` tool, since an MCP server can write and the hook cannot see
+    what it does.
+- They read the packaged diff file instead of running git. Every dispatch of
+  a read-only agent hands a diff file path, never a command.
+- Named limit: opencode MCP tools. Whether an opencode permission rule can
+  deny every MCP tool for one agent is not in `research/opencode-subagents.md`.
+  Task 17 checks the opencode source. If a rule can, task 17 adds it; if not,
+  a read-only agent on opencode keeps any MCP tool the user configured, and
+  task 13 lists that as a limitation.
+- No prior art. Neither project surveyed ships read-only agents, a
+  `spawn_agent` refusal, or an opencode `permission.task` rule.
 
 **A6. opencode two-level dispatch.** The plugin's config hook grants
-`permission.task = "allow"` to the agents that dispatch: the general agent and
-fx's non-read-only agents. Read-only agents keep `task` denied.
+`permission.task = "allow"` to the general agent. Read-only agents keep
+`task` denied.
 
 **A7. Small defects fixed here.**
-- The four dead assertions in `lib/git-guard.test.js` run again.
+- The five dead `DEBT #46` assertions in `lib/git-guard.test.js` run again.
 - `tests/install/run.sh` runs its Claude Code CLI checks under a scratch HOME.
-- The guard refuses a git command fed to a shell as a heredoc body. The global
-  constraint freezing `lib/git-guard.js` is lifted for that fix alone.
+- The guard refuses a git command fed to a shell as a heredoc body, whenever
+  any consumer in the heredoc's pipeline is a shell. The global constraint
+  freezing `lib/git-guard.js` is lifted for that fix alone.
 
-**A8. Nightly conformance in CI.** A workflow installs the pinned `claude`,
-`codex` and `opencode` and runs the free rows against the real binaries every
-night. It needs no model calls and no secrets. This is caveman's
-`agent-conformance.yml` pattern. The live rows stay local.
+**A8. Nightly conformance in CI.** A workflow installs `claude`, `codex` and
+`opencode` twice each, at the pinned floor and at `@latest`, and runs the free
+rows against the real binaries every night. The floor proves fx still works on
+the oldest version it claims. `@latest` catches drift the day a release lands,
+which is what caveman's open issue 1097 ("agent-drift: codex, installed 0.155.1
+exceeds pinned 0.155.0") shows a floor alone misses. It needs no model calls
+and no secrets. This copies caveman's `.github/workflows/agent-conformance.yml`
+(caveman section 7 of `research/prior-art-multi-harness.md`). The live rows stay
+local.
 
 **A9. Merge gate.** The branch does not merge until the Codex live matrix
-passes. Codex quota resets on 2026-10-21. Everything else is built and proven
-before then.
+passes, including one run proving the hooks do not run untrusted and one
+proving they run once trusted the way `/hooks` trusts them. Codex quota resets
+on 2026-10-21. Everything else is built and proven before then.
 
 ### Testing for the amendment
 
@@ -511,10 +551,18 @@ before then.
   the opencode config hook's permissions, and the read-only tool lists.
 - The live rows already exist, and each finding above has a row that fails
   today. Rows 01, 02 and 16 fail on Claude Code. Rows 12 and 15 cover roles and
-  nesting. The amendment is done when those rows pass on Claude Code and
-  opencode now, and on Codex after the quota reset.
-- Hook tests spawn the real scripts with each runtime's real payloads, which is
-  ponytail's `tests/hooks.test.js` pattern, rather than calling functions.
+  nesting. The amendment adds a shell-write probe to row 12 and a new row 18,
+  a lens asked to dispatch a default child that writes. The amendment is done
+  when those rows pass on Claude Code and opencode now, and on Codex after the
+  quota reset.
+- Hook tests spawn the real scripts with each runtime's real payloads and a
+  real environment, copying ponytail's `tests/hooks.test.js`
+  (ponytail section 7 of `research/prior-art-multi-harness.md`). Each spawned
+  environment sets `HOME`, `CODEX_HOME` and `TMPDIR` to the test's scratch
+  directory, so no identity record or role lands in a shared directory.
+- The Codex trust step is proven live, not assumed: task 22 runs a row once
+  with no trust and no bypass flag, and once with trust granted. ponytail's
+  README documents the same `/hooks` step.
 
 ## Open Questions
 
