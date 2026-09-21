@@ -32,6 +32,16 @@ named, in a clean session. The lane must fire. It is the only row that proves
 fx changes behaviour rather than merely loading, and it is the acceptance test
 the most widely-ported comparable project settled on.
 
+**Row 13 is load-bearing for a reason no unit test can cover.** On Codex the
+audit and command lanes stay hidden because Codex's command-to-skill migrator
+parses each command's frontmatter as strict YAML and skips whatever fails to
+parse. All four fx commands have a description containing an unquoted colon, so
+none migrate. That is **undocumented behaviour, not a contract.** A unit test
+pins that the descriptions still contain the colon, which catches a careless
+prose edit, but it would keep passing if a future Codex release fixed its
+parser, and every hidden lane would silently reappear. **This row is the only
+thing that would notice.**
+
 **Row 12 is the one most likely to rot.** It rests on agent identity reaching
 the tool hook, which is undocumented for that event. Task 06 makes enforcement
 fail closed, so a runtime change breaks loudly. This row is what says so.
@@ -65,6 +75,11 @@ them against a deliberately broken tree.
 - [ ] Row 12 FAILs, rather than passing, when agent identity stops arriving
 - [ ] Row 15 completes two levels of dispatch
 - [ ] Row 17 reports PASS or GAP on every runtime, never absent
+- [ ] Row 13 asserts **all five** user-invoked lanes are absent from the
+      model-facing listing, **and** that at least two lanes which should be
+      visible still are. A probe showing everything hidden may just be broken
+- [ ] Row 13 on Codex also asserts no `migrated-command-skills` directory was
+      created: that is the mechanism that re-exposed a hidden lane once already
 - [ ] Emptying `PREAMBLE.md` makes rows 1, 2 and 16 FAIL
 - [ ] Disabling the guard makes rows 6, 7 and 8 FAIL
 - [ ] Every row cleans up its scratch directory

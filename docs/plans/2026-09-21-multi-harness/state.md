@@ -525,3 +525,35 @@ Correction: earlier in this session I recorded that `~/.config/opencode` had no
         correct-looking report and an unexplained mutation of the user's home
         directory. The template asks for exactly this and it paid.
 
+Task 07: fix round 1 landed, commit 660b10a. Verified fresh by the controller
+        with its own throwaway install: all five lanes hidden, three controls
+        (`fx-tdd`, `fx-brainstorm`, `fx-review`) still visible, and no
+        `migrated-command-skills` directory created at all.
+
+        **The trigger, isolated by a dozen live installs varying one factor at a
+        time:** Codex's command-to-skill migrator parses each command's
+        frontmatter as strict YAML and silently skips any command whose
+        frontmatter fails to parse. Three of fx's four commands were already
+        failing that parse **by accident**, an unquoted colon in the description.
+        `fx-handoff`'s parsed cleanly, so only it migrated.
+
+Ruling: the fix stands, and its fragility is recorded rather than smoothed over.
+        The fix gives `fx-handoff` a description that also contains an unquoted
+        colon. It reads as natural prose, so nothing gratuitous was introduced,
+        but **the defence is a YAML parse failure in undocumented behaviour, not
+        a contract.**
+        The accompanying unit test pins that all four descriptions still contain
+        the colon. That is worth having: it catches a careless prose edit
+        reopening the hole. **It is not a guarantee.** If a future Codex release
+        fixes its parser, the unit test keeps passing and every hidden lane
+        silently reappears. The test pins our behaviour, not Codex's.
+        Why accept it: the alternative is not shipping `commands/` to Codex at
+        all, and Codex copies the plugin tree wholesale with no ignore mechanism
+        I could find. No better lever exists today.
+        Cost if wrong: five user-invoked lanes become model-selectable on Codex,
+        silently. Caught by task 12's conformance row 13, which I have now
+        strengthened to assert all five are hidden, to require visible controls
+        so a broken probe cannot read as a pass, and to assert the
+        `migrated-command-skills` directory is absent. Task 13 documents it as a
+        known fragility.
+
