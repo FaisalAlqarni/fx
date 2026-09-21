@@ -286,3 +286,7 @@ Task 03: complete (commits b856d06..ad6ed6c, review clean).
         one-group-per-plugin claim is gone with no code changed alongside it.
         The reviewer independently confirmed no third stale-belief site exists.
 
+Waiting on the task 04 implementer. Nothing is dispatchable: 05 blocks on 04,
+        06 on 04 and 05, 07 on 04, 08 on 06. 03 is complete and reviewed, so the
+        frontier is genuinely empty until 04 reports. Deliberate wait.
+
