@@ -1879,3 +1879,26 @@ Task 20: DONE, d9a0874. The nightly workflow runs a floor and an @latest
         @latest job currently fails the whole run (the implementer recommends
         keeping it). Reviewer dispatched.
 Task 17: re-review of round 1 approved. The reviewer confirmed rule order against opencode source at 70a24697 (propertyOrder original, and the explore agent uses the same shape). Devils-advocate can read references again. The installer and the plugin produce the same block. Minors, deferred: ADR evidence omits the propertyOrder dependency; the plugin throws on a missing references dir; the test models evaluate but not disabled. The security lens re-check is pending.
+Task 20: review approved with one Important. The codex and opencode nightly
+        jobs never run the binary: the six free rows do not invoke them, so A8
+        is met only for Claude Code. Minors: a stray extra pin passes the pins
+        test; the secret check misses `secrets["X"]`; the action SHAs are
+        unverified; check-all alignment.
+Ruling: task 20 fix round 1 widens task 20 to row 09's codex and opencode
+        branches, rather than adding a task, because row 09 is the discovery
+        row A8 relies on.
+        - codex: a scratch-CODEX_HOME marketplace add plus plugin add, then
+          assert the installed cache holds the hooks file and 17 skills.
+        - opencode: fx-opencode-install into the scratch config, then
+          `opencode debug skill` and `debug agent` assert 17 skills and a
+          read-only agent's denies.
+        - Each branch GAPs when its binary is missing. Neither makes a model
+          call.
+        - Minors 2 and 3 go in the same pass, because they touch the same test
+          file.
+        Why: A8's whole purpose is catching plugin-load drift, and without
+        this four of six nightly jobs prove only that the npm install worked.
+        Cost if wrong: a CLI probe needs network access, for example to the
+        opencode model catalog, and makes the free gate flaky offline. Caught
+        by the round's own measurement. If network is needed, the branch
+        reports GAP offline, never FAIL.
