@@ -2215,3 +2215,5 @@ Ruling: finding 2 feeds the spike as its sharpened-descriptions variant.
         Finding 4 is already task 13's. fx keeps SubagentStart, because its
         rules must reach subagents (ADR 0002). superpowers explicitly opts
         subagents out, and fx cannot.
+Task 24: Y passed the gate: opencode row 04 8/10, Claude Code 5/5, rows 01, 02 and 16 pass on both. Worst case is 8,940, a 60-char margin. Not committed. Y is the fallback if the spike loses.
+Spike dispatched: S2 (tiny bootstrap), S3 (S2 plus sharpened descriptions), S4 (Y plus sharpened descriptions). Each is measured on row 04 (x10 opencode, x5 Claude Code), rows 01, 02 and 16, and the lane-triggering prompts. The output goes to research/bootstrap-spike.md.
