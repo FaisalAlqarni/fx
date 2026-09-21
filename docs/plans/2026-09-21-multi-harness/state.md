@@ -1368,3 +1368,18 @@ User decisions, round 1 of the amendment:
           no shell for read-only agents on all three runtimes, plus the Codex
           `apply_patch` hook. Taken as the decision, stated back to the user for
           override.
+
+Task 12: fix round 2 landed in d56317b. The jail now has its own pid namespace,
+        and 4 pids are visible. /proc/<pid>/root reads fail, and the node
+        rebind is narrowed. The live check passes on opencode row 06. Claude
+        Code row 06 hit Claude's own session limit, so the quota pattern now
+        matches Claude's wording, and that row needs one live re-run after
+        17:30. A scoped security re-check has been dispatched.
+User decisions, round 2 of the amendment:
+        - Codex roles: plant at SessionStart. When a session writes new roles,
+          its injected context tells the user to restart Codex once. fx-setup
+          plants them too.
+        - Hook files: one per runtime. The Codex manifest names `./hooks.json`
+          and Claude Code keeps `hooks/hooks.json`. No runtime detection.
+        - Nightly CI: the user asked what it is for. Explained, and waiting on
+          their answer.
