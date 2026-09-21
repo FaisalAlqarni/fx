@@ -1433,3 +1433,14 @@ Plan: the 21 red-team resolutions are committed. The controller verified the
         every finding has an owning task.
 
 Task 14: dispatched (opus, fresh implementer), BASE 5d6bca1.
+Task 14: DONE_WITH_CONCERNS, af56f8c. The scratch marketplace install
+        **accepts the manifest `hooks` key**: both commands exited 0, and the
+        installed copy keeps the key and the root `hooks.json`. The step 1
+        snippet needed `mkdir -p "$S/home/.codex"` first, and tasks 16 and 22
+        copy that snippet. `fx-codex.js` output already matched Codex's key set,
+        and the new test pins it. I checked by reading `hooks/fx-codex.js:106-125`:
+        the controller sends no agent_id, so its `spawn_agent` is untouched,
+        and a recorded `default` subagent can still spawn. Review and security
+        lens dispatched.
+Task 14: minor (deferred): `codex-manifest.test.js` does not set TMPDIR, so
+        identity records leak into the shared /tmp. This is older code.
