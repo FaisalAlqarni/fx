@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Skills name actions, never tools. ADR 0016.
+#
+# A tool name in a skill body is correct on one runtime and wrong on the other
+# two. The harness layer exists so those names have somewhere else to live.
+#
+# Usage: scripts/check-tool-names [path ...]   (default: skills/)
+set -uo pipefail
+cd "$(dirname "$0")/.."
+
+TARGETS=("${@:-skills}")
+
+# Runtime tool names. Deliberately not every word: only names that are
+# unambiguous as tools when they appear in prose.
+# Tool-SHAPED forms only. A bare capitalised word is English: "Read the plan,
+# once" is correct prose and appears 19 times across the lanes. Matching it
+# would force rewriting lane wording, which the design puts out of scope.
+TOOLS='Read|Grep|Glob|MultiEdit|NotebookEdit|apply_patch|spawn_agent|wait_agent|send_input|todowrite|webfetch|websearch'
+NAMES="(\`($TOOLS)\`|\\b($TOOLS)\\(|\\bthe ($TOOLS) tool\\b)"
+
+fails=0
+while IFS= read -r file; do
+  # Strip fenced code blocks: a fence is documentation of the runtime, not an
+  # instruction to use it.
+  stripped="$(awk '/^```/{f=!f;next} !f' "$file")"
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    echo "  $file: $line"
+    fails=$((fails+1))
+  done < <(printf '%s\n' "$stripped" | grep -nE "$NAMES" || true)
+done < <(find "${TARGETS[@]}" -name 'SKILL.md' -o -name '*-prompt.md' 2>/dev/null)
+
+if [ "$fails" -gt 0 ]; then
+  echo "FAIL: $fails line(s) name a runtime tool in a skill body."
+  echo "Move the fact to references/harnesses/<harness>.md and name the action instead."
+  exit 1
+fi
+echo "check-tool-names: OK"
