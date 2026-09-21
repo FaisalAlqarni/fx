@@ -1967,3 +1967,35 @@ Ruling: the hook adds `task: allow` only when the user's
         Review dispatched, with this ruling as a named risk. The fix goes
         through the fix loop only if the reviewer confirms it.
 Task 18: review needs fixes. Important: plugins/fx.js:144 ignores the user wildcard, which violates the ruling. A probe shows {"*":"deny"} becomes {"*":"deny","task":"allow"}. Fix round 1 dispatched, with Minor 1 (row 15 asserts sub_type general on opencode) folded in because it is the same proof. Other minors deferred: row 12 fail text, and the codex toml loop.
+
+Coverage audit (before the final review): 24 gaps, and about 25 areas
+        checked and cleared. The full list is in the audit reply, summarised
+        here by owner:
+        - task 13 (docs): restart notice order, re-trust after updates, the
+          stale SURFACE and INSTALL Bash lines, per-runtime read-only in
+          INSTALL, overtaken git-gate criteria, the eight carried ledger items
+          missing from criteria, the wildcard doc, the wrong task-10 citation,
+          and setup checking Codex only;
+        - task 18: the wildcard ruling as a criterion;
+        - task 21: a pass gate for rows 01, 02, 12, 15, 16 and 18; marketplace
+          and config-entry installs run live; hidden-lane user route on
+          opencode's default install; row 18 must be conclusive; a live read
+          of devils-advocate references; an MCP server set up in scratch; the
+          claude-code row 08 guard-off re-run; skills registered once with two
+          runtimes installed; an end-to-end fx-review with a lens finding;
+        - task 22: every Codex row passes (row 04 FAIL blocks the merge and
+          opens a fix task); the natural restart-notice flow across two
+          sessions; re-trust after a handler change, with hooksTrusted fed
+          from the trust store; fx working before trust; write_stdin; the Codex
+          MCP refusal and fork; row 13 on Codex through `codex debug
+          prompt-input`; an end-to-end review; blocked by 13.
+Ruling: all 24 are folded into tasks 13, 18, 21 and 22 as acceptance criteria.
+        Task 22 is also blocked by task 13, so 22's measured result is the
+        last word in the docs. A measurement in 21 or 22 that shows a product
+        defect opens a new numbered task. It is never a note.
+        Why: the audit exists so these become criteria before the final
+        review, not after. Every gap maps to a design story or a ruling.
+        Cost if wrong: tasks 21 and 22 grow in quota spend and run time.
+        Caught by the user's quota and the task reviews.
+        A writer subagent is folding them in. The controller verifies and
+        commits.
