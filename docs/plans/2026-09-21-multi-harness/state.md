@@ -932,3 +932,41 @@ Task 09: complete (commits 0ae32c5..24af428, review clean).
 Waiting on the task 10 implementer. Task 11 blocks on 10, and 12 on 11, so the
         frontier is genuinely empty until it reports. Deliberate wait.
 
+Task 10: implementer reported DONE, commit 574510d. Verified fresh:
+        `scripts/check-all` -> `ALL GREEN`; **all three callers now route through
+        `lib/plant-roles.js`** (`hooks/fx-codex.js`,
+        `scripts/fx-opencode-install`, `commands/fx-setup.md`), which is the
+        one-implementation-three-callers constraint finally assertable and
+        asserted; `auditRoles` writes nothing, with the no-write property stated
+        in its own doc comment.
+
+Ruling: `hooksTrusted` always returning `null` is accepted, and the criterion is
+        met by an honest "unknown" rather than a working detector.
+        Why: there is no measured signal for Codex's hook-trust storage anywhere
+        in this repository. The research that suggested `[hooks.state.<key>]`
+        with a `trusted_hash` was source-derived and never verified, and this
+        plan's own rule is that a confident wrong answer about whether the guard
+        is running is worse than no answer. Returning a guess was explicitly
+        forbidden in the dispatch.
+        What makes it acceptable is that the **advice is correct regardless**:
+        `commands/fx-setup.md` tells the user, on `null`, to say plainly that fx
+        cannot tell and to run `/hooks` inside Codex anyway, because a
+        planted-but-untrusted role is indistinguishable from a working one until
+        that step runs.
+        Cost if wrong: a user believes trust is unknown when it is knowable, and
+        runs `/hooks` unnecessarily. Harmless. Caught by task 12, which measures
+        the trust signal live, and task 13, which documents whatever it finds.
+
+Task 10: minor: `hooksTrusted` reads `config.toml` and discards the result
+        unconditionally before returning `null`. It reads as a bug rather than a
+        deliberate gap. Flagged to the reviewer to judge rather than ruled by me:
+        it is one line either way, and a reviewer with the file open is better
+        placed to say whether the comment beside it already makes the intent
+        clear.
+
+Task 10: minor (deferred): the implementer identified equivalent unreported
+        state on the other two runtimes but did not build detection, correctly
+        per scope. opencode: dual-pool and `subagent_depth`, warned only at
+        install time. Claude Code: plugin trust and enable drift, and CLAUDE.md
+        pointer drift. **Worth a follow-up plan, not this one.**
+
