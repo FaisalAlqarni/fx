@@ -1474,3 +1474,27 @@ Ruling: task 16 owns the fix, because it already edits `lib/preamble.js`. It
         Cost if wrong: Codex keeps a garbled preamble until task 16. Nothing
         live runs on Codex before task 22, so no user-visible run is affected.
         Caught by the task 16 review, which gets this line.
+Task 14: security lens: 3 Important, 1 Minor.
+        #1: read-only enforcement only recognises apply_patch, Bash,
+            spawn_agent and mcp__*. Other Codex tools (`memory_tool`, `apps`,
+            `request_permissions_tool`) fall through as not-writes.
+        #2: an fx update changes the hook definitions, so Codex silently needs
+            re-trust, and fx cannot detect that.
+        #3: the Bash classifier's catch keeps a false verdict, so it fails open.
+Ruling: fix round 1 on task 14 covers reviewer Important 1 (controller spawn
+        test), lens #1 and lens #3.
+        - Lens #1 becomes a fail-closed allowlist in the hook. A read-only or
+          unrecorded subagent may call only Bash that the classifier clears,
+          plus an explicit read-only tool list. Anything else is refused.
+        - Lens #3: a classifier throw counts as a write.
+        Why: an allowlist cannot be outrun by a tool Codex adds later. A denylist
+        can.
+        Cost if wrong: a legitimate read-only Codex tool gets refused, and a lens
+        loses a capability it needed. Caught by task 22's sentinel probe and
+        row 12.
+Ruling: lens #2 is parked into task 22. Its step 1 already researches where
+        Codex stores hook trust. Once that is known, `fx-setup` can report an
+        untrusted install, and task 13 documents re-trust after updates.
+        Cost if wrong: a user who updates fx silently runs without the guard
+        until they re-trust. Caught by task 22's untrusted-run criterion and
+        task 13's docs.
