@@ -873,3 +873,14 @@ Task 06: complete (commits 084bfc6..c0024ec, 3 fix rounds, re-review clean).
         and is strictly weaker than Claude Code's and opencode's harness-enforced
         allowlists. That asymmetry is now in ADR 0019 rather than implied away.
 
+Task 08: complete (commits 17cfdc6..5df5e61, 1 fix round, re-review clean).
+        Spec 21/21 PASS, quality PASS. Files: plugins/fx.js,
+        lib/agent-dialects.js, tests/gates/opencode-plugin.test.js,
+        scripts/check-all.
+        Guarantee: on opencode the preamble reaches sessions and child sessions
+        with correct addressing, the guard refuses by throwing, the lane check
+        covers all three write paths with regression coverage proven to fail
+        under mutation, all six read-only agents register with `edit` denied,
+        `subagent_depth` is raised so an implementer can dispatch a reviewer, and
+        the five user-invoked lanes are denied from the model-facing listing.
+
