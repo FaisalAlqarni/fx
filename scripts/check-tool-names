@@ -15,7 +15,7 @@ TARGETS=("${@:-skills}")
 # Tool-SHAPED forms only. A bare capitalised word is English: "Read the plan,
 # once" is correct prose and appears 19 times across the lanes. Matching it
 # would force rewriting lane wording, which the design puts out of scope.
-TOOLS='Read|Grep|Glob|MultiEdit|NotebookEdit|apply_patch|spawn_agent|wait_agent|send_input|todowrite|webfetch|websearch'
+TOOLS='Read|Grep|Glob|Bash|Write|Edit|MultiEdit|NotebookEdit|apply_patch|spawn_agent|wait_agent|send_input|todowrite|webfetch|websearch'
 NAMES="(\`($TOOLS)\`|\\b($TOOLS)\\(|\\bthe ($TOOLS) tool\\b)"
 
 fails=0
