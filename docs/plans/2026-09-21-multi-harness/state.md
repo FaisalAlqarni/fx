@@ -1269,3 +1269,35 @@ Task 12: product defects found by the live rows, outside task 12. They are
         D1 and D2 break the design's core guarantee that the preamble reaches
         the session, on two of three runtimes. D2 and D3 need decisions that
         belong to the user, so they have been raised with the user.
+
+Task 12: review needs fixes. The task reviewer found 1 Important: row 15 on
+        Claude Code counts an attempted nested dispatch as a completed one. The
+        security lens found 1 Critical: the jail leaves the real home readable
+        and the network open to a skip-permissions session. See findings-12.md.
+Ruling: the lens's Critical enters the fix loop at Important. The fix hides
+        FX_REAL_HOME inside the jail with a tmpfs and re-binds only the CLI
+        install dirs read-only. The network stays open, because the providers
+        need it and the opencode rows need the host's 127.0.0.1:8899, which a
+        network namespace would cut off. Lens Important 2 enters too: kept logs
+        are opt-in and documented as possibly holding what a session read. Lens
+        Important 3, the SIGKILL leak, stays parked under the earlier
+        credential ruling.
+        Why: the copy-in ruling narrowed what a session is given, and an
+        unhidden real home undoes that for reads.
+        Cost if wrong: a CLI binary that lives under the real home disappears
+        inside the jail and every live row goes GAP. Caught by the re-run of
+        the live rows in the fix round.
+        Exposure note: the matrix already ran once with the real home readable.
+        The prompts are fixed and none asks for a file outside scratch, so a
+        read is unlikely but not ruled out.
+User decisions, 2026-09-21:
+        D2 (2KB preview): measure a split first. If two SessionStart outputs,
+            each under 10KB, both land inline, split mechanically. Otherwise
+            trim, and show the cuts to the user before committing.
+        D1 (Codex hooks): fix now, prove it with free tests, and re-run the
+            live Codex rows after the quota resets on 2026-10-21.
+        D3 and D4: the user rules these a **blocker**. "The main point of this
+            whole session is to make fx work in codex also." Recording them as
+            GAPs is rejected. Next step: research the Codex docs, and how
+            dietrichgebert/ponytail and JuliusBrussee/caveman support several
+            harnesses, then amend the design and plan with new tasks.
