@@ -179,6 +179,54 @@ working tree.
 - For opencode, the fx block goes in `AGENTS.md`. **Never write to
   `~/.claude/CLAUDE.md`**: that is the user's file.
 
+## 6. What did not land (Codex)
+
+**Not run end-to-end against a live Codex session while this section was
+written.** No live `codex` process was exercised to produce the text below;
+`auditRoles` and `hooksTrusted` are proven only against temporary fixtures in
+`lib/plant-roles.test.js`. What a real user sees on a real machine is
+unverified until task 12's conformance run measures it against a live
+session.
+
+A `SessionStart` hook plants fx's read-only review roles into this machine's
+Codex home, but a hook fails open and silently by necessity: it can never
+tell you something is wrong, and on a fresh install it cannot run at all
+until Codex trusts it. This step is the only place that gets reported.
+
+On Codex only, after the steps above, run:
+
+```
+node -e "const {auditRoles} = require('./lib/plant-roles'); console.log(JSON.stringify(auditRoles({})))"
+```
+
+Report the three states it returns **separately, never merged into one
+count**:
+
+- **present**: planted, and matches what fx currently generates.
+- **missing**: never planted on this machine.
+- **stale**: planted, but the content differs from what fx currently
+  generates. Expected right after an fx update, before the hook has had a
+  chance to replant; `plantRoles` (not this report) is what repairs it, at
+  the next `SessionStart`.
+
+**If every role is present and none are stale, print exactly one line**
+(for example: `fx roles: 6/6 planted, none stale.`) and move on, no wall of
+output for the common case. Otherwise, list `missing` and `stale` by name,
+each under its own heading.
+
+Then check hook trust:
+
+```
+node -e "const {hooksTrusted} = require('./lib/plant-roles'); console.log(hooksTrusted({}))"
+```
+
+- `true` / `false`: report it directly.
+- `null`: fx cannot tell from what it can read on this machine. Say that
+  plainly, never report a guessed state, and name the fix regardless: **run
+  `/hooks` inside Codex to review and trust fx's hooks.** A planted-but-
+  untrusted role is indistinguishable from a working one until that step
+  runs, which is exactly why this section exists.
+
 ## What setup deliberately does not create
 
 - **`CONTEXT.md` from inference.** Step 2 writes it from the user's answers, or
@@ -195,6 +243,7 @@ working tree.
 What was written, every command with its source (`Makefile:12`, `ci.yml:31`),
 whether `CONTEXT.md` exists (and if not, that it is written when the first
 term resolves), every command that came out `null`, and every `repo.md` section flagged during
-review.
+review. On Codex, the role-provisioning report (section 6): present/missing/
+stale counts and hook-trust state.
 
 Print it. Do not commit.

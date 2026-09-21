@@ -57,16 +57,15 @@ body_carried() {
 # for the function definition itself is what "one implementation" actually
 # means, and only lib/plant-roles.js defines it.
 #
-# commands/fx-setup.md is deliberately NOT checked here. Task 09's own plan
-# ledger (docs/plans/2026-09-21-multi-harness/state.md, the "07 | 09" row)
-# rules it out of this task's files: "07 creates, 09 no longer touches it".
-# fx-setup's own plant-roles wiring is task 10's job ("Setup reports what did
-# not land"). Checking it here would fail on every run until task 10 lands,
-# for a file this task must not touch.
+# commands/fx-setup.md joined the callers in task 10 ("Setup reports what
+# did not land"): it now runs auditRoles/hooksTrusted from lib/plant-roles.js
+# to report role state on Codex, which is what makes the third leg of "one
+# implementation, three callers" checkable here at all -- task 09 could only
+# assert two of three because this file was not yet task 10's.
 check "role planting has exactly one implementation" \
   'test "$(grep -rl "^function plantRoles" "$FX/lib" "$FX/hooks" "$FX/scripts" 2>/dev/null | wc -l)" -eq 1'
 check "every caller routes through the planter" \
-  'grep -q "plant-roles" "$FX/hooks/fx-codex.js" && grep -q "plant-roles" "$FX/scripts/fx-opencode-install"'
+  'grep -q "plant-roles" "$FX/hooks/fx-codex.js" && grep -q "plant-roles" "$FX/scripts/fx-opencode-install" && grep -q "plant-roles" "$FX/commands/fx-setup.md"'
 
 if [ "$HARNESS" = opencode ]; then
   # Computed once into a variable and matched with a here-string, never piped
