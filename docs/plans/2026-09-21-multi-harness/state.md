@@ -830,3 +830,46 @@ Task 06: fix round 3 landed, commit c0024ec, and it is the last round by ruling.
 
 Task 08: fix round 1 dispatched now that task 06's round 3 has reported.
 
+Task 06: final re-review returned **fix verified, no blocking findings.**
+        Two mutations both went genuinely red, including one proving the
+        space-form assertion is not redundant with the `=` form.
+        The ceiling comment was judged "a rule, not an apology", and the ADR
+        table row was judged self-contained: a reader who only reads the table
+        comes away knowing Codex is not a peer.
+
+**The bounded fourth-level probe found one, and that is the point.**
+        `git -c diff.external=<program> diff` is allowed and **invokes an
+        arbitrary program**. The reviewer demonstrated it for real in a scratch
+        repo: the external program ran and wrote a file. `parseGit` in
+        `lib/git-guard.js` consumes `-c key=value` as an opaque global option and
+        never inspects the value, so `gitMustBeRefused`, which checks only
+        post-subcommand tokens, cannot see it.
+
+Ruling: log it, do not fix it. This is the ceiling working exactly as written.
+        Three rounds closed binaries, subcommands and flags, and the fourth level
+        was reachable in one bounded probe. Patching it would close one instance
+        of a class and leave `-c core.pager=`, `-c` anything-else, and whatever
+        comes after.
+        The module's own policy already says this: "the next gap found here gets
+        logged and weighed against dropping the affected binary/subcommand, not
+        automatically patched".
+        **What makes this acceptable is that it is written down.** An unrecorded
+        bypass is a false guarantee; a recorded one is a known limit. Task 13 now
+        carries two criteria: record the instance in ADR 0019, and comment it
+        beside the git gate so nobody rediscovers it and assumes it is news.
+        Cost if wrong: someone treats the Codex lens gate as a security boundary.
+        Caught by ADR 0019's "Codex is not equivalent" section, the ceiling
+        comment, and now this specific instance being named.
+
+Task 06: complete (commits 084bfc6..c0024ec, 3 fix rounds, re-review clean).
+        Spec PASS, quality PASS, no blocking findings. Files:
+        scripts/gen-codex-agents, codex/agents/*.toml, lib/plant-roles.js,
+        lib/plant-roles.test.js, scripts/check-generated, hooks/fx-codex.js,
+        tests/gates/codex-manifest.test.js, scripts/check-all,
+        docs/adr/0019-read-only-is-three-mechanisms-and-one-guarantee.md.
+        Guarantee, stated at its real strength: on Codex a read-only agent is
+        prevented from writing **by accident**, by a heuristic gate in fx's own
+        hook that fails closed on unclassifiable identity. It is not a sandbox
+        and is strictly weaker than Claude Code's and opencode's harness-enforced
+        allowlists. That asymmetry is now in ADR 0019 rather than implied away.
+

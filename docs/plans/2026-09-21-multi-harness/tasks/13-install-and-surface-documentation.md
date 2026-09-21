@@ -73,6 +73,12 @@ no claim without a row.
 - [ ] `SURFACE.md`'s opencode subagent claim carries the measured result, not a hedge
 - [ ] Every capability claim in the three documents maps to a row in `state.md` that passed
 - [ ] No document says fx has six lenses: there are five, plus a read-only devil's advocate
+- [ ] `docs/adr/0019` records the known fourth-level bypass
+      `git -c diff.external=<program> diff`, demonstrated invoking an
+      arbitrary program that wrote a file. It is accepted, not fixed, per the
+      ceiling ruling. Recording it is what keeps the ceiling honest
+- [ ] A comment near the git gate in `lib/plant-roles.js` names that instance,
+      so the next reader does not rediscover it and assume it is unknown
 - [ ] Every `GAP` in `state.md` appears in `INSTALL.md` as a stated limitation
 - [ ] `lib/plan-state.js` no longer claims `PreToolUse` does not fire for
       `Write` or `Edit`: that belief was measured false and the lane check was
