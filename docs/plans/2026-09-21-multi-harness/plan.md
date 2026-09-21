@@ -86,7 +86,25 @@ behavioural rows spend quota and never do.
 | 10 | Setup reports what did not land | 06, 09 | fx-setup verifies roles, staleness and hook trust | Hardening |
 | 11 | Conformance runner and the free rows | 03, 05, 06, 07, 08, 09, 10 | A runner that dispatches, and every free row green | Hardening |
 | 12 | The behavioural conformance rows | 11 | 17 guarantees proven live on 3 runtimes | Hardening |
-| 13 | Install and surface documentation | 12 | Three install paths documented and accurate | Polish |
+| 14 | Codex loads its own hooks, with output Codex accepts | none | Manifest hooks key; no fail-open output; no truncation | Amendment |
+| 15 | The preamble reaches Claude Code whole | none | Preamble split under the 10,000-char per-hook limit | Amendment |
+| 16 | Codex roles are dispatchable | 14 | Restart notice, fx-setup plants, agent_type dispatch | Amendment |
+| 17 | Read-only agents have no shell, on every runtime | none | No write tool of any kind on three runtimes | Amendment |
+| 18 | opencode subagents can dispatch a subagent | 17 | permission.task for general, denied to read-only | Amendment |
+| 19 | Three small defects the live rows found | none | Dead tests run; install test out of HOME; heredoc guard | Amendment |
+| 20 | Nightly conformance against the real CLIs | none | Pinned CLIs, free rows, no secrets | Amendment |
+| 21 | Live matrix on Claude Code and opencode | 14, 15, 16, 17, 18, 19 | Amended guarantees proven live on two runtimes | Amendment |
+| 22 | Live matrix on Codex, the merge gate | 21 | Codex proven live after the 2026-10-21 quota reset | Amendment |
+| 13 | Install and surface documentation | 12, 14, 15, 16, 17, 18, 19, 20 | Three install paths documented and accurate | Polish |
+
+**Amendment edges.** Tasks 14 to 22 come from the design amendment of
+2026-09-21. 16 needs 14, because the notice travels through `fx-codex.js`,
+which only runs on Codex once 14 lands. 18 needs 17, because both edit the
+opencode read-only agent permissions. 17 was listed as blocked by 14 when the
+list was approved, but it has no real dependency on 14, so it starts
+immediately. 21 needs every product fix. 22 is blocked by date as well as by
+21. Task 13 documents all of it, so it comes last, and the branch merges only
+after 22.
 
 **Edges are dependencies, not preferences.** 04 consumes the renderer from 01 and
 nothing from 02. 08 consumes the renderer from 01 and the read-only agent set

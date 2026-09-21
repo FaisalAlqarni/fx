@@ -1,12 +1,25 @@
 # 13: Install and surface documentation
 
 **Status:** ready-for-agent
-**Blocked by:** 12
+**Blocked by:** 12, 14, 15, 16, 17, 18, 19, 20
 **Phase:** Polish
 
 **What to build:** A reader can install fx on any of the three runtimes by
 following the documentation, and every claim in it is one the conformance
 matrix proved.
+
+**Amended 2026-09-21.** The design amendment (decisions A1 to A9) changes what
+this documentation must say. It must also cover:
+- **Codex:** after installing, the user trusts fx's hooks in `/hooks`, and
+  trusts them again whenever fx changes a handler setting. The first session
+  plants the review roles, and the user restarts Codex once.
+- **Read-only agents** have no shell on any runtime. ADR 0019 is corrected by
+  task 17, and this task links to it rather than restating it.
+- **The preamble** reaches Claude Code in parts, and why.
+- **The nightly workflow** (task 20): what it checks and what it does not.
+- **Rows 13 and 14** report GAP on Claude Code and Codex, and these docs list
+  them with their reasons. Codex is proven live only after task 22. Until
+  then, the docs state Codex live verification as pending, never as done.
 
 **Files:**
 - Modify: `INSTALL.md`
