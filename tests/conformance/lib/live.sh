@@ -133,8 +133,33 @@ if [ ! -e "$LIVE_INSTALLED" ]; then
       out="$("${JAIL[@]}" bash "$FX/tests/conformance/lib/plant-codex-roles.sh" 2>&1)" \
         || fail "fx roles were not planted into the scratch CODEX_HOME: $out" ;;
     opencode)
-      out="$("${JAIL[@]}" python3 "$FX/scripts/fx-opencode-install" --dest "$XDG_CONFIG_HOME/opencode" 2>&1)" \
-        || fail "fx did not install into the scratch opencode config: $out" ;;
+      OC_CFG="$XDG_CONFIG_HOME/opencode/opencode.json"
+      case "${FX_OPENCODE_ROUTE:-installer}" in
+        installer)
+          out="$("${JAIL[@]}" python3 "$FX/scripts/fx-opencode-install" --dest "$XDG_CONFIG_HOME/opencode" 2>&1)" \
+            || fail "fx did not install into the scratch opencode config: $out" ;;
+        plugin)
+          # Design story 4: one config entry, no installer, no symlink. The
+          # entry form is the one step 1 of task 21 read from the opencode
+          # source (1.18.31): config/plugin.ts:50-51 keeps a file:// spec as
+          # is, and plugin/shared.ts:171-172 treats it as a local path.
+          CFG="$OC_CFG" ENTRY="${FX_OPENCODE_PLUGIN_ENTRY:-file://$FX/plugins/fx.js}" node -e '
+            const fs = require("fs");
+            const c = JSON.parse(fs.readFileSync(process.env.CFG, "utf8"));
+            c.plugin = [...(c.plugin || []), process.env.ENTRY];
+            fs.writeFileSync(process.env.CFG, JSON.stringify(c, null, 2) + "\n", { mode: 0o600 });
+          ' || fail "could not add the plugin entry to the scratch opencode.json" ;;
+        *) fail "unknown FX_OPENCODE_ROUTE: $FX_OPENCODE_ROUTE" ;;
+      esac
+      if [ "${FX_OPENCODE_MCP:-}" = 1 ]; then
+        # One probe MCP server, written only into the scratch config.
+        CFG="$OC_CFG" SERVER="$FX/tests/conformance/lib/mcp-probe-server.js" node -e '
+          const fs = require("fs");
+          const c = JSON.parse(fs.readFileSync(process.env.CFG, "utf8"));
+          c.mcp = { ...(c.mcp || {}), fxprobe: { type: "local", command: ["node", process.env.SERVER], enabled: true } };
+          fs.writeFileSync(process.env.CFG, JSON.stringify(c, null, 2) + "\n", { mode: 0o600 });
+        ' || fail "could not add the probe MCP server to the scratch opencode.json"
+      fi ;;
   esac
   : > "$LIVE_INSTALLED"
 fi

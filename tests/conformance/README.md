@@ -31,6 +31,15 @@ there, for reading a FAIL afterwards. It is opt-in, and nothing redacts it: a
 kept transcript may contain anything the session read, including the scratch
 credential copy. Keep that directory private and delete it when done.
 
+Two knobs change only how opencode is set up, before its first session:
+
+- `FX_OPENCODE_ROUTE=plugin` runs no installer and adds one `plugin` entry,
+  `file://$FX/plugins/fx.js`, to the scratch `opencode.json`. Unset or
+  `installer` runs `scripts/fx-opencode-install` as before.
+- `FX_OPENCODE_MCP=1` adds one local MCP server, `fxprobe`, to the scratch
+  `opencode.json`. It runs `lib/mcp-probe-server.js`, whose one tool,
+  `write_marker`, writes a file.
+
 ## Three states, and GAP is not a pass
 
 - **PASS**: the guarantee holds on this runtime.
