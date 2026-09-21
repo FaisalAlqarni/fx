@@ -1,5 +1,5 @@
 ---
-description: Compact this session into a handoff block you can paste into another session, on this machine or any other
+description: Compact this session into a handoff block: paste it into another session, on this machine or any other
 ---
 
 # /fx:fx-handoff

@@ -53,4 +53,38 @@ for (const dir of fs.readdirSync(path.join(root, 'skills'))) {
     `${dir}: only user-invoked lanes are hidden`);
 }
 
+// Fix round 1: `skills/<name>/agents/openai.yaml` only hides fx's OWN copy
+// of a lane. Codex separately auto-migrates `commands/<name>.md` into its
+// own generated skill under `.codex-plugin/migrated-command-skills/
+// source-command-<name>/`, with no sidecar and no hiding of any kind, and a
+// live probe (throwaway CODEX_HOME, `codex debug prompt-input`) showed
+// `fx-handoff` exposed there while the other three were not.
+//
+// Isolated with a dozen live installs, holding one variable at a time: the
+// migrator silently SKIPS a command whose frontmatter fails strict YAML
+// parsing (confirmed: a raw, unquoted `: ` inside `description` is
+// sufficient to fail the parse and block migration; the identical text
+// wrapped in quotes — valid YAML — migrates). Three of the four
+// command-derived skills' source commands already had this property by
+// accident, from an unescaped colon in their description prose;
+// `fx-handoff`'s did not, and its migrated copy was the exposed lane.
+//
+// This pins the property deliberately for all four, so a future edit that
+// "cleans up" one of these descriptions (quoting it, or removing the colon)
+// cannot silently reopen the hole. It is a real but undocumented Codex
+// behaviour, not a documented switch: if a future Codex release tolerates
+// this YAML, the hole reopens with no local warning — see the fix-round-1
+// report for the residual risk.
+for (const name of ['fx-critique', 'fx-grill', 'fx-handoff', 'fx-setup']) {
+  const cmd = frontmatter(path.join(root, 'commands', `${name}.md`));
+  const m = cmd.head.match(/^description:[ \t]*(.+)$/m);
+  assert.ok(m, `${name}: commands/${name}.md has no single-line description field`);
+  const value = m[1].trim();
+  const quoted = /^"([^"\\]|\\.)*"$/.test(value) || /^'([^']|'')*'$/.test(value);
+  assert.ok(!quoted && /: /.test(value),
+    `${name}: description has no unquoted colon-space, so Codex's own ` +
+    `command-to-skill auto-migration will not skip it, and the lane ships ` +
+    `unhidden as source-command-${name}`);
+}
+
 console.log('user-invoked.test.js: OK');
