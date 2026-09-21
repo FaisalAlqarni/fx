@@ -83,6 +83,15 @@ because it doesn't care about internal structure.
 **Before writing a test, name the production change that would make it fail.**
 Can't name one? It isn't a test.
 
+**The test's name must not claim more than the test checks.** A description
+that overstates is worse than a narrow one, because the next reader believes
+it and stops looking. Four measured instances in one build: a test named for
+two UI controls that compared two strings; a report saying "covers both pairs"
+of a test that renders no view; a comment claiming a case discriminated when
+the fixture made it identical either way; and `ProtectSystem=full` under a
+comment saying "everything else stays read-only" when the directive leaves the
+application's own checkout writable.
+
 Full rules, mocking guidance and worked examples:
 `../../references/vocab/good-tests.md`.
 
@@ -203,6 +212,16 @@ skill had stopped it.
 The simplest thing that passes. No options objects, no extension points, no
 features the test doesn't demand (YAGNI). **Don't add features, don't refactor
 other code, don't "improve" beyond the test.**
+
+No interface with one implementation, no factory for one product, no config
+for a value that never changes. No scaffolding "for later". Deletion over
+addition. Boring over clever: clever is what someone decodes at 3am. Fewest
+files, shortest working diff. If the user insists on the full version, build it
+without re-arguing.
+
+A comment says why, not what. The code already says what. A comment restating
+it is noise that rots the moment the code moves. Write the reason, the
+constraint, or the thing that bit someone, or write nothing.
 
 ## Verify GREEN: MANDATORY
 

@@ -22,8 +22,10 @@ When given text to humanize:
 
 1. **Find AI patterns.** Check the text against the patterns below.
 2. **Keep every claim.** You may shorten dull parts, expand useful parts, and merge or split paragraphs. Keep the information even when you change the structure.
+   **Precision is not accuracy.** Replacing a vague truth with a precise falsehood is a regression. A runbook said "Rails creates the database world readable", which was true and unspecific. The repair replaced it with a mechanism, that the file lands `0640` because an earlier step's umask is still in effect. The umask was in a subshell, the step opened a new shell anyway, and the file is measured at `0644`. The sentence became more confident, more detailed, and wrong. When you sharpen a claim, measure the sharpened version: the vaguer sentence was carrying its uncertainty honestly.
 3. **Do not invent facts.** Do not add a fact, name, number, date, quote, or citation unless it comes from the source or the user. If a sentence needs a missing detail, ask for it or use a simpler sentence. You may add an opinion or reaction when the writer's voice calls for one, but you may not add a factual claim. Fiction is exempt because invented details are part of the task.
 4. **Match the voice.** Use the right tone for the text, such as formal, casual, or technical. Add personality only when the text and the writer call for it.
+5. **Never rewrite an identifier, a command, a path, a schema field or a quotation.** Plain language governs the prose around them, never them. A bulk rewriter once turned `let x = a - b` into something else inside a code fence, and the gate stayed green because it was looking at prose.
 
 The input type controls what you return. See [How to return the result](#how-to-return-the-result). Use the same rewrite process in every mode.
 

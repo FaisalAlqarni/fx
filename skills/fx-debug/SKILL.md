@@ -330,6 +330,12 @@ With a correct seam:
 **Implement a single fix.** Address the root cause identified. ONE change at a
 time. **No "while I'm here" improvements. No bundled refactoring.**
 
+**A bug report names a symptom.** Before editing, find every caller of the
+function you are about to touch. One guard in the shared function is a smaller
+diff than a guard in every caller, and patching only the path the task names
+leaves every sibling caller broken. The smallest change in the wrong place is
+not lazy, it is a second bug.
+
 Verify: the test passes · no other tests broken · the issue is actually
 resolved. Apply `fx-implement`'s Iron Law before claiming success: **evidence
 before claims.**

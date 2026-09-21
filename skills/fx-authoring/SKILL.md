@@ -325,6 +325,22 @@ Constraints last, for recency.
 
 Keep each facet minimal. Add only what the agent lacks.
 
+## PREAMBLE.md
+
+fx injects `PREAMBLE.md` into every session and every dispatched subagent,
+on every runtime, from that one file. Subagents read neither `CLAUDE.md` nor
+memory, so anything that must hold for a subagent has to be there, and that is
+the reason it stays short: on Claude Code the render, with its repo.md note and
+plan-state block, must stay one part under 9,000 characters.
+
+Nothing goes above its opening imperative. The imperative section stays whole
+and concrete. Detail outside it moves to a lane file only when that lane is
+loaded at the moment the detail applies.
+
+It states the dash rule as an absolute, "none", because the softer version
+("avoid em-dash-heavy rhythm") is unmeasurable, and an unmeasurable rule is
+one nobody checks. `scripts/check-prose` greps for it.
+
 ## Cross-references
 
 ```

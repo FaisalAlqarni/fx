@@ -6,15 +6,13 @@
 // subagent reads neither CLAUDE.md nor memory, so without this hook the
 // non-negotiables reach it through nothing at all.
 //
-// `--part <i>`: hooks.json runs three handlers per event, each printing one
-// part of the render, because Claude Code previews any single hook's context
-// over 10,000 characters instead of showing it (design amendment A3). With no
-// `--part` the whole render is printed.
+// Claude Code previews any single hook's context over 10,000 characters
+// instead of showing it, so the render stays one piece under 9,000
+// (lib/preamble.test.js pins it). One handler per event: with several, Claude
+// Code runs them in unstable order and a later part can land above the
+// opening imperative.
 
-const { render, renderParts, partForHandler } = require('../lib/preamble');
-
-const at = process.argv.indexOf('--part');
-const part = at === -1 ? 0 : Number(process.argv[at + 1]);
+const { render } = require('../lib/preamble');
 
 let raw = '';
 process.stdin.on('data', (c) => { raw += c; });
@@ -26,13 +24,10 @@ process.stdin.on('end', () => {
 
   let text;
   try {
-    text = part
-      ? partForHandler(renderParts({ harness: 'claude-code', cwd }), part)
-      : render({ harness: 'claude-code', cwd });
+    text = render({ harness: 'claude-code', cwd });
   } catch {
     // Say so rather than starting a session that silently has no rules.
-    // Once only: part 1 says it, the other handlers stay quiet.
-    text = part > 1 ? '' : '[fx] PREAMBLE.md could not be read. The fx routing table and '
+    text = '[fx] PREAMBLE.md could not be read. The fx routing table and '
          + 'non-negotiables are NOT loaded in this session. Do not commit, '
          + 'and tell the user the plugin is misinstalled.';
   }

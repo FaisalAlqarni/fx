@@ -6,19 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-context.js\" --part 1",
-            "timeout": 5,
-            "statusMessage": "Loading fx..."
-          },
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-context.js\" --part 2",
-            "timeout": 5,
-            "statusMessage": "Loading fx..."
-          },
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-context.js\" --part 3",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-context.js\"",
             "timeout": 5,
             "statusMessage": "Loading fx..."
           }
@@ -30,19 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-context.js\" --part 1",
-            "timeout": 5,
-            "statusMessage": "Loading fx..."
-          },
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-context.js\" --part 2",
-            "timeout": 5,
-            "statusMessage": "Loading fx..."
-          },
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-context.js\" --part 3",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-context.js\"",
             "timeout": 5,
             "statusMessage": "Loading fx..."
           }

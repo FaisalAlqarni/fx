@@ -3,6 +3,9 @@
 One-time procedure at the start of an `fx-implement` run. Ensures work happens
 in an isolated workspace.
 
+This is a workflow, not a wall: commits belong wherever the work is, and the
+work belongs in a worktree.
+
 ## 1. Detect first: you may already be in one
 
 ```bash
