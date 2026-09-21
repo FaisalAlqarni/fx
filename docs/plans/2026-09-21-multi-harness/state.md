@@ -914,3 +914,21 @@ Task 09: minor (deferred): `README.md:229` names the old `tests/opencode-install
 Task 09: minor (deferred): `merge_opencode_json` treats a JSON boolean
         `subagent_depth` as an int. Degenerate input, unguarded, untested.
 
+Task 09: complete (commits 0ae32c5..24af428, review clean).
+        Spec 19/19 PASS, quality PASS, no Critical or Important findings. Files:
+        scripts/fx-opencode-install, scripts/check-all, and
+        tests/opencode-install/run.sh renamed to tests/install/run.sh.
+        Guarantee: fx still installs where opencode's plugin loader is
+        unavailable; the install test covers all three runtimes for free; and
+        there is exactly one implementation of the opencode dialect across a
+        Python/JavaScript boundary, established by the only Python file in the
+        repository holding no converter of its own.
+
+        Eleven plan-authored test defects now, six from this task alone. Every
+        one was caught by an implementer executing code I wrote and never ran.
+        The pattern is consistent enough to be worth stating plainly in the
+        completion report.
+
+Waiting on the task 10 implementer. Task 11 blocks on 10, and 12 on 11, so the
+        frontier is genuinely empty until it reports. Deliberate wait.
+
