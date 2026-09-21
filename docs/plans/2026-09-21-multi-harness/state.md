@@ -806,3 +806,27 @@ Task 08: minor (deferred): `extractPatchPaths` parses `*** Move to:`, but the
 Task 08: fix round 1 QUEUED, not dispatched. Task 06's round 3 implementer is
         live and a fix round is a writer.
 
+Task 06: fix round 3 landed, commit c0024ec, and it is the last round by ruling.
+        Verified fresh: `git diff --output=<path>` and its space form both exit 2,
+        `git show --output=` exits 2, while `git log --oneline -5`,
+        `git diff HEAD~1` and `grep -rn TODO .` all stay exit 0.
+        `scripts/check-all` -> `ALL GREEN`.
+
+        **ADR 0019 corrected.** It now carries a section headed "Codex is not
+        equivalent", opening: "The table above used to read as though the three
+        mechanisms were peers." The table row for Codex now says **strictly
+        weaker: a heuristic gate in fx's own hook, not a harness-enforced
+        boundary**, and the three-round leak history is recorded as the evidence.
+
+        That correction matters more than the flag fix. An ADR recording a
+        guarantee as uniform when it is not is the same failure ADR 0018 exists
+        to correct, and committing the inverse two ADRs later would have been
+        poor form.
+
+        The ceiling is now written at the top of the detector: accidents not an
+        adversary, not a sandbox, why fx cannot do better on Codex today, and the
+        rule for extending it, which is that every gate is an allowlist and a
+        surface too large to enumerate gets dropped rather than gated.
+
+Task 08: fix round 1 dispatched now that task 06's round 3 has reported.
+
