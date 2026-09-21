@@ -1815,3 +1815,21 @@ Ruling: task 17 fix round 1 switches opencode read-only agents to a
         Task 21 also gains a live check: an opencode lens trying a webfetch or
         MCP call is refused, which closes Important 2 live.
         The round waits for the task 19 implementer.
+Task 19: DONE, 7057e6e.
+        - DEBT #46 has five assertions, and all pass once they run (80 to 85).
+        - Nine heredoc-to-shell cases are refused, 25 of 25 pass.
+        - home-untouched RED was .claude.json appearing in the fake HOME;
+          it now passes.
+        - Bonus fix: `<<<` was read as a heredoc start and skipped the lines
+          after it.
+        Remaining heredoc gaps, from pattern matching (named by the
+        implementer):
+        - a quoted `;`, `&` or `|` in the pipeline;
+        - wrappers such as command, xargs, nice, doas and eval;
+        - subshell or group syntax;
+        - `sudo -s` or `sudo -i`.
+        The git guard protects against an agent's own mistakes, not an
+        attacker, so these are named in the code rather than chased.
+        Reviewer dispatched. No security lens: the guard is not an attack
+        boundary.
+Task 17: fix round 1 dispatched to its implementer.
