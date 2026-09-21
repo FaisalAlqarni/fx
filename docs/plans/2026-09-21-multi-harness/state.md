@@ -221,3 +221,19 @@ Ruling: the controller commits `docs/plans/<slug>/` and the five new ADRs itself
         cannot sweep an in-flight task's edits. Caught by nothing, and needs
         nothing: the failure mode is losing the record, not corrupting the code.
 
+Task 02: complete (commits 64bc6b2..5e005d4, 1 fix round, re-review clean).
+        Spec 9/9 PASS, quality PASS. Files: references/harnesses/claude-code.md,
+        references/harnesses/opencode.md, references/harnesses/codex.md,
+        scripts/check-tool-names, scripts/check-all.
+        Guarantee: a skill body naming a runtime tool fails a gate. Verified by
+        RED on a fixture (one hit, "the Grep tool") then GREEN against the
+        repository (0 hits), and after the fix round by three hits on the
+        widened fixture with the English verb and fenced code still passing.
+        Re-review confirmed scope: one file, one line, no bleed from the
+        concurrent task 03 edits.
+
+Waiting on the task 03 implementer. The frontier holds 04, whose only blocker
+        is task 01 and which is therefore ready, but implementers run serially
+        and 03 is still writing to `scripts/check-all`, which 04 also appends to.
+        Nothing else is runnable, so ending the turn here is a deliberate wait.
+
