@@ -356,6 +356,71 @@ withScratch((scratch) => {
   }
 });
 
+// Fix round 2: the outer allowlist (which binary may run at all) held. The
+// gates INSIDE two allowlisted binaries — git, find — were still denylists
+// over their own subcommand/action space, and a review reproduced real
+// disk writes through both (run for real in a scratch repo, not just
+// through the hook). The identical argument that inverted round 1 applies
+// one level down: `git` has well over a hundred subcommands, so an
+// enumeration of the writing ones is incomplete the day it's written.
+// GIT_ALLOWED_SUBCOMMANDS and FIND_ALLOWED_FLAGS in lib/plant-roles.js
+// invert both. `tree` is dropped from ALLOWED_BINARIES entirely rather
+// than given a third gate.
+withScratch((scratch) => {
+  const startedProbe2 = fire({
+    hook_event_name: 'SubagentStart', cwd: scratch,
+    agent_id: 'probe-2', agent_type: 'fx-lens-security',
+  });
+  assert.strictEqual(startedProbe2.status, 0);
+
+  const probe2 = (command) => fire({
+    hook_event_name: 'PreToolUse', cwd: scratch,
+    agent_id: 'probe-2',
+    tool_name: 'Bash', tool_input: { command },
+  }).status;
+
+  const cases2 = [
+    // [command, expected exit, label]
+    ['git config user.name pwned', 2, 'git config (round 2 bypass, reproduced)'],
+    ['git clone /tmp/x /tmp/pwned', 2, 'git clone (round 2 bypass, reproduced)'],
+    ['git archive --output=/tmp/o.tar HEAD', 2, 'git archive --output= (round 2 bypass, reproduced, wrote 10240 bytes)'],
+    ['git worktree add /tmp/wt HEAD', 2, 'git worktree add (round 2 bypass, reproduced)'],
+    ['find . -fprint /tmp/o.txt', 2, 'find -fprint (round 2 bypass, reproduced, wrote 44 lines)'],
+    ['find . -delete', 2, 'find -delete — already caught in round 1'],
+    ['git log', 0, 'git log — must stay allowed'],
+    // Listed by the reviewer as untried but expected to bypass; all confirmed.
+    ['git gc', 2, 'git gc (reviewer, untried)'],
+    ['git reflog expire', 2, 'git reflog expire (reviewer, untried)'],
+    ['git update-ref refs/heads/x HEAD', 2, 'git update-ref (reviewer, untried)'],
+    ['git symbolic-ref HEAD', 2, 'git symbolic-ref (reviewer, untried)'],
+    ['git notes add', 2, 'git notes (reviewer, untried)'],
+    ['git replace', 2, 'git replace (reviewer, untried)'],
+    ['git commit-tree', 2, 'git commit-tree (reviewer, untried)'],
+    ['git hash-object -w file.txt', 2, 'git hash-object -w (reviewer, untried)'],
+    ['git submodule add /tmp/x sub', 2, 'git submodule add (reviewer, untried)'],
+    ['git credential approve', 2, 'git credential approve (reviewer, untried)'],
+    ['git filter-branch', 2, 'git filter-branch (reviewer, untried)'],
+    ['git sparse-checkout set x', 2, 'git sparse-checkout (reviewer, untried)'],
+    ['git maintenance run', 2, 'git maintenance (reviewer, untried)'],
+    ['git am /tmp/patch', 2, 'git am (reviewer, untried)'],
+    ['git bundle create /tmp/b.bundle HEAD', 2, 'git bundle create (reviewer, untried)'],
+    ['git format-patch -1', 2, 'git format-patch (reviewer, untried)'],
+    ['find . -fls /tmp/o.txt', 2, 'find -fls (reviewer, untried)'],
+    ['tree -o /tmp/o.txt', 2, 'tree -o — tree dropped from ALLOWED_BINARIES entirely'],
+    // Reads that must stay allowed.
+    ['git log --oneline -5', 0, 'git log with flags — must stay allowed'],
+    ['git diff', 0, 'git diff — must stay allowed'],
+    ['git show HEAD', 0, 'git show — must stay allowed'],
+    ['git status', 0, 'git status — must stay allowed'],
+    ['grep -rn TODO .', 0, 'a plain read — must stay allowed'],
+    ['find . -name "*.rb"', 0, 'find -name — must stay allowed'],
+    ['cat README.md', 0, 'cat — must stay allowed'],
+  ];
+  for (const [command, expected, label] of cases2) {
+    assert.strictEqual(probe2(command), expected, `${label}: ${command}`);
+  }
+});
+
 fs.rmSync(testCodexHome, { recursive: true, force: true });
 
 console.log('codex lens enforcement: OK');
