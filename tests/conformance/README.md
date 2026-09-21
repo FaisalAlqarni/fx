@@ -27,7 +27,9 @@ HOME="$(mktemp -d)" FX_REAL_HOME="$HOME_WITH_CREDENTIALS" \
 ```
 
 `FX_CONFORMANCE_LOGS=<dir>` keeps a copy of each live session's transcript
-there, for reading a FAIL afterwards.
+there, for reading a FAIL afterwards. It is opt-in, and nothing redacts it: a
+kept transcript may contain anything the session read, including the scratch
+credential copy. Keep that directory private and delete it when done.
 
 ## Three states, and GAP is not a pass
 
@@ -84,9 +86,14 @@ spends anything. That file does four things, in one place:
    through its own marketplace commands, opencode through
    `scripts/fx-opencode-install --dest`. Claude Code needs no install, because
    every session gets `--plugin-dir`.
-3. **Runs the session inside `bwrap`**, with the whole filesystem read-only and
-   only the runner's scratch dir writable, `/tmp` a private tmpfs. That is what
-   makes it safe to hand each CLI its own skip-permissions flag. The runtimes'
+3. **Runs every CLI call inside `bwrap`**, the installs included. The whole
+   filesystem is read-only and only the runner's scratch dir is writable;
+   `/tmp` is a private tmpfs. The real home is hidden under an empty tmpfs, so a
+   session cannot read the real credential files, and only the directories the
+   CLIs run from (each binary's directory, node's install root) are bound back,
+   read-only. The network stays open for the providers and the local
+   llama-server. That is what makes it safe to hand each CLI its own
+   skip-permissions flag. The runtimes'
    own sandboxes are off on purpose: Claude Code's needs `socat`, and Codex's
    `workspace-write` keeps `.git` read-only, so an unguarded `git branch -D`
    fails anyway and a guard row would pass with the guard deleted. Without

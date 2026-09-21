@@ -33,6 +33,48 @@ umask 077
 chmod 700 "$LIVE_SCRATCH" "$HOME" "$CODEX_HOME" "$XDG_CONFIG_HOME" \
   "$XDG_CONFIG_HOME/opencode" "$CLAUDE_CONFIG_DIR" || fail "cannot restrict the scratch home"
 
+# --- the jail -------------------------------------------------------------------
+# Every CLI call, installs included, runs inside bwrap:
+#   - the whole filesystem read-only;
+#   - the real home hidden under an empty tmpfs, so a session cannot read the
+#     real credential files, only the scratch copy made below;
+#   - back into that empty home, read-only, only the directories the CLIs run
+#     from, when they live there: each binary's own directory, and node's
+#     install root. Nothing holding credentials or config is rebound;
+#   - /tmp a private tmpfs, and the runner's scratch dir and the tree under
+#     test ($FX, read-only) bound back on top of it;
+#   - the network left open: the providers need it, and opencode needs the
+#     host's 127.0.0.1:8899.
+# That is what lets a row hand the CLI its own skip-permissions flag: whatever
+# the model runs, nothing outside the scratch dir can change.
+#
+# The runtimes' own sandboxes are off, and must be. Claude Code's needs socat,
+# which fx cannot assume. Codex's workspace-write keeps .git read-only, so an
+# unguarded `git branch -D` fails there anyway, and a guard row would pass with
+# the guard deleted. The jail is the boundary; the guard under test is the only
+# thing between the model and the command.
+command -v bwrap >/dev/null || gap "not run: bwrap is not installed, and live rows never run a CLI unconfined"
+case "$FX_REAL_HOME" in /|"") fail "FX_REAL_HOME is not a home: '$FX_REAL_HOME'" ;; esac
+[ -d "$FX_REAL_HOME" ] || fail "FX_REAL_HOME is not a directory: $FX_REAL_HOME"
+JAIL=(bwrap --ro-bind / / --tmpfs /tmp --tmpfs "$FX_REAL_HOME")
+under_real_home() { case "$1" in "$FX_REAL_HOME"/*) return 0 ;; *) return 1 ;; esac; }
+BOUND=()
+bound() { local d; for d in "${BOUND[@]}"; do case "$1" in "$d"/*) return 0 ;; esac; done; return 1; }
+for c in node claude codex opencode; do
+  p="$(command -v "$c")" || continue
+  r="$(readlink -f "$p")"
+  case "$c" in
+    node) d="$(dirname "$(dirname "$r")")" ;;   # node's install root; codex lives in it
+    *)    d="$(dirname "$r")" ;;
+  esac
+  if under_real_home "$d" && ! bound "$r"; then JAIL+=(--ro-bind "$d" "$d"); BOUND+=("$d"); fi
+  # A PATH entry under the real home that no rebound directory covers, such
+  # as a symlink in ~/.local/bin, gets its target bound in its place.
+  if under_real_home "$p" && ! bound "$p"; then JAIL+=(--ro-bind "$r" "$p"); fi
+done
+JAIL+=(--ro-bind "$FX" "$FX" --bind "$LIVE_SCRATCH" "$LIVE_SCRATCH" --dev /dev
+       --tmpfs /dev/shm --proc /proc --die-with-parent --)
+
 OPENCODE_MODEL="llamacpp/qwen3.8-27b"
 
 # How each runtime dispatches a subagent, named in prompts so a row measures fx
@@ -81,10 +123,10 @@ LIVE_INSTALLED="$LIVE_SCRATCH/installed-$HARNESS"
 if [ ! -e "$LIVE_INSTALLED" ]; then
   case "$HARNESS" in
     codex)
-      out="$(codex plugin marketplace add "$FX" 2>&1 && codex plugin add fx@fx 2>&1)" \
+      out="$("${JAIL[@]}" codex plugin marketplace add "$FX" 2>&1 && "${JAIL[@]}" codex plugin add fx@fx 2>&1)" \
         || fail "fx did not install into the scratch CODEX_HOME: $out" ;;
     opencode)
-      out="$(python3 "$FX/scripts/fx-opencode-install" --dest "$XDG_CONFIG_HOME/opencode" 2>&1)" \
+      out="$("${JAIL[@]}" python3 "$FX/scripts/fx-opencode-install" --dest "$XDG_CONFIG_HOME/opencode" 2>&1)" \
         || fail "fx did not install into the scratch opencode config: $out" ;;
   esac
   : > "$LIVE_INSTALLED"
@@ -107,21 +149,6 @@ live_workdir() {
 }
 
 # --- one headless session ------------------------------------------------------
-# Every session runs inside bwrap: the whole filesystem read-only, the runner's
-# scratch dir the only writable path. That is what lets a row hand the CLI its
-# own skip-permissions flag: whatever the model runs, nothing outside the
-# scratch dir can change, the real home included. /tmp is a private tmpfs that
-# dies with the jail.
-#
-# The runtimes' own sandboxes are off, and must be. Claude Code's needs socat,
-# which fx cannot assume. Codex's workspace-write keeps .git read-only, so an
-# unguarded `git branch -D` fails there anyway, and a guard row would pass with
-# the guard deleted. The jail is the boundary; the guard under test is the only
-# thing between the model and the command.
-command -v bwrap >/dev/null || gap "not run: bwrap is not installed, and live rows never run a CLI unconfined"
-JAIL=(bwrap --ro-bind / / --tmpfs /tmp --bind "$LIVE_SCRATCH" "$LIVE_SCRATCH" --dev /dev
-      --tmpfs /dev/shm --proc /proc --die-with-parent --)
-
 # Every runtime writes a machine-readable event stream to $LOG. Not everything
 # is in that stream, so after the session the transcripts of every session it
 # started are appended too: Claude Code's session files, Codex's rollout files,

@@ -67,7 +67,7 @@ assert_isolated() {
 }
 
 # 1. A normal run.
-env HOME="$FAKE" CODEX_HOME="$FAKE/.codex" XDG_CONFIG_HOME="$FAKE/.config" \
+env -u FX_REAL_HOME HOME="$FAKE" CODEX_HOME="$FAKE/.codex" XDG_CONFIG_HOME="$FAKE/.config" \
     CLAUDE_CONFIG_DIR="$FAKE/.claude" FX_CONFORMANCE_ROWS="$ROWS" \
     PROBE_OUT="$OUT/normal" \
     bash "$RUNNER" codex --free > "$OUT/normal.log" 2>&1
@@ -80,7 +80,7 @@ assert_isolated normal "$OUT/normal"
 # signal reaches it the way a terminal ^C would, and a background job does not
 # ignore SIGINT.
 set -m
-env HOME="$FAKE" CODEX_HOME="$FAKE/.codex" XDG_CONFIG_HOME="$FAKE/.config" \
+env -u FX_REAL_HOME HOME="$FAKE" CODEX_HOME="$FAKE/.codex" XDG_CONFIG_HOME="$FAKE/.config" \
     CLAUDE_CONFIG_DIR="$FAKE/.claude" FX_CONFORMANCE_ROWS="$ROWS" \
     PROBE_OUT="$OUT/sigint" PROBE_SLEEP=30 \
     bash "$RUNNER" codex --free > "$OUT/sigint.log" 2>&1 &

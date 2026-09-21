@@ -48,6 +48,7 @@ const text = (c) => {
 function claude() {
   const dispatch = new Set();
   const skillCalls = {};             // Skill tool_use id -> skill name
+  const nested = new Set();          // Agent/Task tool_use ids made inside a subagent
   for (const r of records) {
     const top = r.parent_tool_use_id == null;
     const content = (r.message && Array.isArray(r.message.content)) ? r.message.content : [];
@@ -61,7 +62,9 @@ function claude() {
             out.sub_input.push(text(b.input && b.input.prompt));
             out.sub_type.push((b.input && b.input.subagent_type) || 'general-purpose');
           }
-          else out.max_depth = Math.max(out.max_depth, 2);
+          // A nested dispatch counts only once its result comes back
+          // without an error; the attempt alone is not depth 2.
+          else nested.add(b.id);
         }
         // Counted only once its result comes back without an error.
         if (b.name === 'Skill' && b.input) skillCalls[b.id] = b.input.skill || b.input.command || '';
@@ -73,14 +76,13 @@ function claude() {
         const t = text(b.content);
         out.tool_output.push(t);
         if (b.tool_use_id in skillCalls && !b.is_error) out.skills.push(skillCalls[b.tool_use_id]);
+        if (nested.has(b.tool_use_id) && !b.is_error) out.max_depth = Math.max(out.max_depth, 2);
         if (!top) out.sub_tool_output.push(t);
         if (top && dispatch.has(b.tool_use_id)) out.sub_output.push(t);
       }
     }
     if (r.type === 'result') {
       if (typeof r.result === 'string') out.answer.push(r.result);
-      const st = r.subagent_stats;
-      if (st && typeof st.max_depth === 'number') out.max_depth = Math.max(out.max_depth, st.max_depth);
     }
   }
   if (dispatch.size) out.max_depth = Math.max(out.max_depth, 1);
