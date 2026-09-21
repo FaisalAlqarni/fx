@@ -648,3 +648,47 @@ Task 06: fix round 1 landed, commit 3e8c46c. The detector is now an allowlist.
         and left `process.ppid` scoping as ruled, with a comment saying plainly
         that it fails closed if `ppid` proves unstable. Task 12 measures it live.
 
+Task 06: fix round 1 re-review returned **Fix verified: NO. Critical bypasses
+        remain**, one level down from the ones it closed.
+
+        The outer gate was inverted to an allowlist and holds: every interpreter,
+        chaining, process-substitution, obfuscation and indirection case the
+        reviewer tried is refused. But two allowlisted binaries carry a
+        *denylist* inside them, and both are provably incomplete.
+
+        Reproduced by the controller:
+
+        | probe | exit | writes? |
+        |---|---|---|
+        | `git config user.name pwned` | 0 | yes |
+        | `git clone /tmp/x /tmp/pwned` | 0 | yes |
+        | `git archive --output=/tmp/o.tar HEAD` | 0 | **wrote 10240 bytes** |
+        | `git worktree add /tmp/wt HEAD` | 0 | yes |
+        | `find . -fprint /tmp/o.txt` | 0 | **wrote 44 lines** |
+        | `find . -delete` | 2 | caught |
+        | `git log` | 0 | correct |
+
+        The reviewer ran the git and find writes for real in a scratch repo to
+        confirm they touch disk rather than reasoning about them. It also listed
+        the ones it did not need to try: `git gc`, `reflog expire`,
+        `update-ref`, `symbolic-ref`, `notes`, `replace`, `commit-tree`,
+        `hash-object -w`, `submodule add`, `credential store`, `filter-branch`,
+        `sparse-checkout`, `maintenance`, plus `find -fls` and `tree -o`.
+
+        **This is round 1's flaw at the next level.** I ruled that a denylist
+        over shell commands is unwinnable and had the outer gate inverted. The
+        same argument applies to a denylist over `git` subcommands, and I did not
+        follow it down. `git` alone has well over a hundred subcommands and any
+        enumeration of the writing ones will be incomplete the day it is written.
+
+        Good news the review also established: **the allowlist is not too tight.**
+        It read all six agent definitions and found no command a lens is
+        instructed to use that is now refused. Refusal messages name the agent,
+        the tool and the reason, so a missing entry is distinguishable from a
+        real attempt. Identity permissions are 0700/0600 as claimed. Fail-closed,
+        controller-path, devils-advocate and anti-prefix checks all hold.
+
+Task 06: fix round 2 QUEUED, not dispatched. Task 08's implementer is live and a
+        fix round is a writer. The evidence is durable and the round goes out the
+        moment 08 reports.
+
