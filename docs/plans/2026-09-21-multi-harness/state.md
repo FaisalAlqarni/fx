@@ -1098,3 +1098,7 @@ Task 11: minor (deferred): findings-11 Minor 1-8. Minor 1 (`--fre` runs live
         rows) and Minor 3 (GAP without a reason) matter before task 12. The fix
         round carries them as optional, and the final review triages whatever
         is left.
+Correction to the line above: the fix round does not carry Minors, because the
+        lane forbids it. Minor 1 and Minor 3 go to the task 12 dispatch
+        instead, as context. Task 12 adds the live rows, which are the rows
+        both Minors affect.
