@@ -1121,3 +1121,15 @@ Ruling: rows 13 and 14 report GAP on claude-code and codex, and that is
         by the final review, which gets this line, and by task 13's docs, which
         must list these GAPs.
 Task 11: fix round 1 scoped re-review dispatched on f5ec022..1165622.
+
+Task 11: re-review of round 1: Important 1-4 fixed. The reviewer re-ran all
+        four mutations and each one now FAILs. It also corrected its own first
+        pass: its original fx.js mutation threw inside an ES module. One new
+        Important: the GAP reasons in rows 13 and 14 say "live half is task 12",
+        which is false. I opened `rows/13:32`, `rows/14:25,28` and task 12's
+        lines 24-28, and they confirm it. Fix round 2 dispatched on that one
+        item.
+Task 11: minor (deferred): Claude Code's `plugin details` lists commands as
+        well as skills, so a command with the same name can hide a skill that
+        is missing from row 9's listing. Row 9 also uses GNU `timeout`, which
+        exits 127 and reports FAIL instead of GAP on stock macOS.
