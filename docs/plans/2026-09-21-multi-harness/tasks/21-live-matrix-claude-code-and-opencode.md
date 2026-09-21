@@ -73,6 +73,7 @@ exit.
 - [ ] Row 18 on both runtimes is reported with its evidence
 - [ ] The sentinel probe from task 22 step 2 is reported on both runtimes: the lens returned the sentinel from the diff file, and the sentinel was not in its dispatch prompt
 - [ ] The order in which the Claude Code preamble parts landed is recorded for every session and subagent in rows 01, 02 and 16, and the report says whether it was the same every time. If it was not, the report flags it for the controller
+- [ ] On opencode, a read-only lens told to fetch a URL, and told to call a configured MCP tool, is refused by permission for both. The report cites the refusal from the transcript. This is carried from the task 17 security lens, and it proves the permission allowlist live
 - [ ] Claude Code row 06 has run under the round 2 jail
 - [ ] Every row on both runtimes has exactly one result, PASS, FAIL or GAP, with a reason for each GAP
 - [ ] No product file changed in this task

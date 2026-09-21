@@ -1786,3 +1786,32 @@ Task 16: complete (commits c1ef82c..fa252f1, 1 fix round, review approved,
 Task 18: dispatched next (opus, fresh implementer). Task 17 is waiting only
         on its security lens, and 18's blocker (17) is otherwise done.
 Correction: task 18 waits for the task 17 security lens, because a fix round there would touch the same opencode permission file. Task 19 is dispatched instead: it has no blockers and a disjoint file set, BASE 5f23119.
+Task 17: security lens.
+        - Important 1: on opencode, the read-only agents' permission block
+          (`lib/agent-dialects.js` toOpencodeAgent) never denies `webfetch`,
+          so a lens has outbound HTTP and could exfiltrate what it read.
+          Claude Code has no WebFetch in the tools list, and Codex refuses
+          every non-Bash tool.
+        - Important 2: the `*_*` MCP deny rests on key-glob matching. The lens
+          saw no corroboration in the research file. The task 17 reviewer did
+          verify it against a fresh opencode source clone at catalog.ts:119
+          and permission/index.ts:204-214, so it is source-verified but not
+          live-verified.
+        - Minor: row 12's Codex shell probe cannot tell refusal from
+          compliance. This is already carried into task 22.
+Ruling: task 17 fix round 1 switches opencode read-only agents to a
+        **permission allowlist**, `"*": "deny"`, with the read tools allowed
+        back explicitly. That is read, grep, glob and list, plus whatever the
+        opencode source names as read-only. It also allows `external_directory`
+        reads for fx's own references, so devils-advocate can read them.
+        Task 17's Minor 1, which was carried into task 18, moves here, because
+        this is the same block. Tests pin webfetch, websearch, task, todowrite,
+        edit, bash and an MCP-shaped id as denied, and read, grep and glob as
+        allowed.
+        Why: this is the same fail-closed shape as the Codex hook. A denylist
+        missed webfetch, and it will miss whatever opencode adds next.
+        Cost if wrong: an allowlist missing a read tool leaves a lens unable
+        to read. Caught by task 21's sentinel probe on opencode.
+        Task 21 also gains a live check: an opencode lens trying a webfetch or
+        MCP call is refused, which closes Important 2 live.
+        The round waits for the task 19 implementer.
