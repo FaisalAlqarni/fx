@@ -68,6 +68,7 @@ run preamble.test.js    node lib/preamble.test.js
 run codex-manifest.test.js  node tests/gates/codex-manifest.test.js
 run user-invoked.test.js    node tests/gates/user-invoked.test.js
 run plant-roles.test.js     node lib/plant-roles.test.js
+run opencode-plugin.test.js  node tests/gates/opencode-plugin.test.js
 
 run opencode-install        bash tests/opencode-install/run.sh
 
