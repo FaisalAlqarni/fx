@@ -1317,3 +1317,28 @@ Task 12: scoped re-review of round 1: Approved. Row 15 is fixed. New Minors:
         --unshare-pid, and the claude-code row 08 guard-off mutation was never
         re-run under the fixed jail. The security lens re-check is still
         pending, and task 12 does not complete until it reports.
+
+Research landed in `research/`: codex.md (Rust source at rust-v0.155.1),
+        claude-code-context-limit.md (CLI bundle constants plus a live two-hook
+        measurement), opencode-subagents.md (source at 1.18.31, plus the v2
+        docs), and prior-art-multi-harness.md (ponytail and caveman). What it
+        establishes:
+        - D1 cause: Codex uses the manifest `hooks` key when present and falls
+          back to `hooks/hooks.json` otherwise. The global constraint "The Codex
+          manifest declares no `hooks` key" is **false**. ponytail declares one.
+        - Codex rejects hook output containing an unknown key, and the rejection
+          fails open. A hook shared between the runtimes must shape its output
+          per runtime.
+        - D2: Claude Code allows 10,000 chars per hook, not per event, and
+          splitting was measured to work. Codex caps injected context near
+          2,500 tokens. Both need the preamble split.
+        - D3: Codex hides `spawn_agent.agent_type` until user roles exist. fx's
+          role planting never ran because of D1, so D3 is mostly downstream of
+          D1. Open question: are roles planted at SessionStart visible in the
+          same session? Codex ignores `sandbox_mode` in a role file, so the
+          PreToolUse hook on `agent_type` remains the enforcement.
+        - D4: opencode needs an exact `permission.task` on the agent. The
+          plugin's config hook can grant it.
+        - D5: opencode's `edit: deny` leaves bash open, and
+          `tool.execute.before` carries no agent identity, so opencode can
+          enforce read-only only through per-agent permissions.
