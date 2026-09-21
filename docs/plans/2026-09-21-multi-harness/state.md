@@ -2142,3 +2142,22 @@ User decision (2026-09-22): "I want the plugin to work as it intended on all
 Task 24: fix round 3 dispatched: continue the bisect with the intro kept, find
         the minimal restoration that reaches 8/10 or better, confirm it,
         commit. This is the last round for this implementer.
+Task 24 round 3, first pass: b09f5ac plus the intro plus the full old ladder
+        section recovers opencode row 04 to 5/5, but at 9,838 chars it is
+        over the limit. Every other single restoration scored 0 to 3 of 5. The
+        ladder is being split into three pieces that each fit (W1, W2, W3).
+User question: why didn't superpowers, ponytail or caveman hit this? Answer:
+        their always-on payloads are small single-job files. superpowers is
+        the 3.1KB using-superpowers bootstrap, with routing left to the
+        runtime's native skill descriptions. ponytail is 6.6KB and caveman
+        7.1KB. fx put a 17-lane router, the non-negotiables, the ladder and
+        prose rules always-on, 12.4KB. None of the three measures naive-prompt
+        routing, so a shift there would go unseen.
+User decision (2026-09-22): **race** a caveman-compressed version of the full
+        pre-trim preamble against round 3's best cut, through the same gate
+        (opencode row 04 at least 8/10, Claude Code row 04 5/5, rows 01, 02
+        and 16). Whichever passes with nothing lost wins, and compression wins
+        ties, because nothing moves out. Compress only the preamble; skills
+        load on demand, so compressing them gains nothing.
+        Round 3 told to hold its commit. The compressed competitor runs after
+        round 3 because the llama-server has one slot.
