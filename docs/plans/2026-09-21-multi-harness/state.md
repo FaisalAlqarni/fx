@@ -1536,3 +1536,30 @@ Ruling: task 14 fix round 2 owns this, though `lib/plant-roles.js` came from
         the same abbreviation hole.
         Cost if wrong: another writing flag's abbreviation stays open. Caught
         by the security lens re-check and by row 12's shell probe in task 22.
+Task 14: fix round 2 landed in 4ed9223. The `--output` abbreviations are
+        refused, following git's prefix rule; `--oneline` stays cleared. The
+        mirror search measured **three command-execution paths** that the
+        classifier clears. Each one wrote a marker in a scratch repo:
+        `git -c diff.external=<cmd> diff`, `git grep -O<cmd>` or
+        `--open-files-in-pager=`, and `rg --pre <cmd>`. It also found these
+        cleared, but did not run them: `file -C`, `git diff --ext-diff`, and
+        `git log --textconv`.
+Ruling: reopen the task 06 ceiling ruling. Round 3 replaces the flag denylist
+        with a **per-binary flag allowlist**, the same shape as
+        `FIND_ALLOWED_FLAGS`: every binary the classifier clears gets an exact
+        list of permitted flags, and any other flag is refused. `git -c` and
+        `git --config-env` are refused outright, as are `--ext-diff`,
+        `--textconv`, `-O` and `--open-files-in-pager` for git, `--pre` for rg,
+        and `-C` for file.
+        Why: these paths run arbitrary commands from a read-only agent. The
+        user has ruled against settling for a named ceiling where a stronger
+        mechanism exists, and an allowlist cannot be outrun by a flag nobody
+        listed.
+        Named limit that remains: a reviewed repository's **own** git config
+        (diff.external or textconv set in `.git/config`) runs on a plain
+        `git diff`. The lens cannot set it, because it cannot write. ADR 0019
+        records it, and task 17 carries that edit.
+        Cost if wrong: an allowlist too narrow refuses a flag a lens needed, and
+        the lens reads less. Caught by task 22's sentinel probe and the lens's
+        own report.
+Task 14: fix round 3 dispatched to the same implementer.
