@@ -290,3 +290,40 @@ Waiting on the task 04 implementer. Nothing is dispatchable: 05 blocks on 04,
         06 on 04 and 05, 07 on 04, 08 on 06. 03 is complete and reviewed, so the
         frontier is genuinely empty until 04 reports. Deliberate wait.
 
+Task 04: implementer reported DONE_WITH_CONCERNS, commit 8aed061.
+
+Ruling: Codex's bundled validator is a lint, not the ingestion path, and task
+        04's criterion 1 is amended to say so. Verified first-hand, not taken
+        from the report: `validate_plugin.py` fails with `skill \`fx-audit\`
+        frontmatter field \`disable-model-invocation\` must be false`, while a
+        live `codex plugin marketplace add` plus `codex plugin add` into a
+        throwaway CODEX_HOME installed successfully and shipped all 13 skills
+        including `fx-audit`, both hook files, and **zero symlinks** in the cache.
+        Why: the criterion as written could never be met by task 04, because the
+        offending line is in `skills/fx-audit/SKILL.md`, which pre-dates this
+        plan and belongs to task 07. Holding task 04 against it would park a
+        finished task on someone else's file.
+        Cost if wrong: fx ships a plugin that fails the official lint, which
+        looks bad in a marketplace even though it installs. Caught by task 07,
+        which now carries the decision explicitly, and by task 13, which must
+        document whatever task 07 decides.
+
+Ruling: task 07 is amended with two facts measured after it was written.
+        First, the `disable-model-invocation` conflict above: Codex demands the
+        field be false or absent, Claude Code demands true, and one file cannot
+        satisfy both. Task 07 must decide deliberately and is explicitly
+        forbidden from setting it false, which would make Claude Code auto-select
+        the audit lane, the exact behaviour the task exists to prevent.
+        Second, **Codex already migrates commands into skills by itself**: the
+        live install produced
+        `.codex-plugin/migrated-command-skills/source-command-fx-handoff/SKILL.md`
+        unprompted. Only one of four commands migrated and the reason is unknown.
+        Task 07 must investigate before building its generator, because if Codex
+        covers all four the command-to-skill half of that task is redundant.
+        Why: both were unknowable when the plan was written and both change what
+        task 07 should build. A task that builds a generator Codex makes
+        unnecessary is waste nobody would notice.
+        Cost if wrong: task 07 builds more than it needs, or ships a skill set
+        that duplicates Codex's own migration. Caught by the task 07 review,
+        which now has the facts to check against.
+

@@ -68,6 +68,25 @@ the selection contest it exists to end measurably worse.
 **Testing:** Assert the flag is present on every user-invoked skill, on both
 mechanisms, and that no command body and skill body have drifted apart.
 
+**Two facts measured after this task was written, both of which change it.**
+
+**1. Codex's validator rejects `disable-model-invocation: true`.** It permits the
+field only when `false`, and Claude Code requires `true`. One `SKILL.md` cannot
+satisfy both. Verified: the validator emits `skill \`fx-audit\` frontmatter field
+\`disable-model-invocation\` must be false`, while a live `codex plugin add`
+installs the plugin and ships `fx-audit` anyway. **The validator is a lint, not
+the ingestion path.** Decide deliberately and record the decision: either accept
+the lint failure and document it, or find a form that satisfies both. Do not
+silently set the field to `false`: that would make Claude Code auto-select the
+audit lane, which is the exact behaviour this task exists to prevent.
+
+**2. Codex already migrates commands into skills by itself.** A live install
+produced `.codex-plugin/migrated-command-skills/source-command-fx-handoff/SKILL.md`
+without fx asking for it. Only one of the four commands migrated, and why is
+unknown. **Investigate before building the generator**: if Codex migrates all
+four on its own, this task's command-to-skill half is redundant and should
+shrink to whatever Codex does not cover. Report what you find either way.
+
 ## Acceptance criteria
 - [ ] `skills/fx-audit/agents/openai.yaml` sets `policy.allow_implicit_invocation: false`
 - [ ] Each of the four command-derived skills exists with a `SKILL.md`
