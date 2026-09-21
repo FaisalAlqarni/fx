@@ -1105,7 +1105,7 @@ Correction to the line above: the fix round does not carry Minors, because the
 
 Task 11: fix round 1 landed, 1073613 and 1165622, DONE_WITH_CONCERNS. The
         implementer's one blocker was check-all failing check-prose on
-        findings-11.md. That file is mine: the gate read "3)" as a list label.
+        findings-11.md. That file is mine: the gate read a digit followed by a closing paren as a list label.
         I reworded it in the commit after 1165622. Ran `scripts/check-all`
         myself: ALL GREEN.
 Ruling: rows 13 and 14 report GAP on claude-code and codex, and that is
@@ -1133,3 +1133,8 @@ Task 11: minor (deferred): Claude Code's `plugin details` lists commands as
         well as skills, so a command with the same name can hide a skill that
         is missing from row 9's listing. Row 9 also uses GNU `timeout`, which
         exits 127 and reports FAIL instead of GAP on stock macOS.
+
+Task 11: fix round 2 landed in 612e5ea. The implementer blocked on my ledger
+        line tripping check-prose the same way as before, so I reworded that
+        line. `scripts/check-all` is ALL GREEN, run by me. Dispatched a scoped
+        re-review of round 2.
