@@ -32,20 +32,22 @@ fi
 # Rows may write into a runtime home. Snapshot all three and restore on ANY
 # exit, including failure and interrupt. Earlier in this build a test without
 # CODEX_HOME set wrote six role files into a real ~/.codex/agents.
-SNAP="$(mktemp -d)"
-HOMES=("$HOME/.codex" "$HOME/.config/opencode" "$HOME/.claude")
-for h in "${HOMES[@]}"; do
-  [ -e "$h" ] && cp -a "$h" "$SNAP/$(echo "$h" | tr / _)" 2>/dev/null
-done
-restore() {
-  for h in "${HOMES[@]}"; do
-    src="$SNAP/$(echo "$h" | tr / _)"
-    [ -e "$src" ] || continue
-    rm -rf "$h" && cp -a "$src" "$h"
-  done
-  rm -rf "$SNAP"
-}
-trap restore EXIT INT TERM
+# DISABLED. This block used to snapshot and restore three runtime homes,
+# including "$HOME/.claude", with `rm -rf "$h" && cp -a "$src" "$h"`.
+#
+# It destroyed a real ~/.claude: the snapshot `cp -a` silenced its errors with
+# 2>/dev/null, so a partial or failed copy still armed a restore that deleted
+# the live directory and put the partial copy back. The plugin cache went from
+# twelve entries to two.
+#
+# A test harness must never `rm -rf` a user's home configuration. The rows that
+# need isolation set CODEX_HOME to a temp dir themselves, which is how every
+# other test in this repository does it.
+#
+# Do not reinstate this without a mechanism that cannot lose data: no rm -rf of
+# a live path, no silenced copy errors, and a verified snapshot before anything
+# destructive runs.
+echo "note: rows isolate themselves with CODEX_HOME; the runner restores nothing" >&2
 
 pass=0; fail=0; gap=0; ran=0
 for f in "${ROWS[@]}"; do
