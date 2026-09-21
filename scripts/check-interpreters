@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Every script INVOCATION in a skill names its interpreter.
+#
+# At least one target runtime is reported to deliver plugin files without the
+# execute bit. `bash scripts/x.sh` works either way; `scripts/x.sh` does not.
+#
+# A MENTION of a path is not an invocation. Only a script path sitting in
+# command position counts, which means inside a fenced block or after "Run:".
+# Flagging mentions sends someone to rewrite eight correct sentences.
+set -uo pipefail
+cd "$(dirname "$0")/.."
+
+TARGETS=("${@:-skills references commands}")
+
+fails=0
+while IFS= read -r file; do
+  while IFS= read -r hit; do
+    [ -z "$hit" ] && continue
+    echo "  $file: $hit"
+    fails=$((fails+1))
+  done < <(awk '
+      /^[[:space:]]*```/ { fence = !fence; next }
+      {
+        line = $0
+        inv = fence
+        if (sub(/^[[:space:]]*Run:[[:space:]]*/, "", line)) inv = 1
+        if (!inv) next
+        sub(/^[[:space:]]*[$][[:space:]]*/, "", line)
+        sub(/^[[:space:]]+/, "", line)
+        split(line, tok, /[[:space:]]+/)
+        if (tok[1] ~ /scripts\/[A-Za-z0-9_.-]+$/) print NR": "line
+      }' "$file")
+done < <(find "${TARGETS[@]}" -name '*.md' 2>/dev/null)
+
+if [ "$fails" -gt 0 ]; then
+  echo "FAIL: $fails invocation(s) do not name an interpreter."
+  exit 1
+fi
+echo "check-interpreters: OK"

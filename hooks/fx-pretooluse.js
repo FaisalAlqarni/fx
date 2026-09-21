@@ -2,18 +2,15 @@
 'use strict';
 // Claude Code: the ONE PreToolUse hook fx registers.
 //
-// WHY ONE
+// ONE ENTRY POINT, ROUTED ON tool_name
 //
-// fx originally registered two PreToolUse groups: `Bash` for the git guard and
-// `Write|Edit` for the lane check. Measured, twice: the Bash group fires and
-// the second group never does, including with the widest matcher the harness
-// accepts (`*`). A 333-tool-call build wrote an entire Rails app and the lane
-// check observed nothing; a probe forced to use the Write tool was not stopped
-// and left no marker.
-//
-// So the harness honours one PreToolUse group per plugin. Matcher `*`, and this
-// file routes on tool_name itself. Adding a check means adding a branch here,
-// never a second group.
+// Matcher `*`, and this file routes on tool_name itself rather than
+// registering a group per tool. Adding a check means adding a branch here,
+// never a second group. Kept for portability, not for a harness limit: this
+// is what lets the same script serve both Claude Code and Codex, which do
+// not share a matcher-group syntax. Per ADR 0018, matcher groups are not
+// capped per plugin on either runtime, so the branch here is a design choice,
+// not a workaround.
 //
 // FAIL CLOSED on the guard, FAIL OPEN on the lane check. They are different
 // kinds of rule: the guard prevents irreversible damage, so a broken guard must
