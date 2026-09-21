@@ -996,3 +996,18 @@ Ruling: discard the partial work and re-dispatch clean rather than hand it to a
         Cost if wrong: a few minutes of rework. Caught by nothing and needing
         nothing: the work was never committed.
 
+Task 11: second dispatch also died on an authentication error, at the same
+        point, with only an unverified `run.sh` written. Discarded again.
+Ruling: split task 11 into two dispatches rather than retry it whole.
+        Why: two long dispatches have now died mid-run on infrastructure, not on
+        the work. The task decomposes cleanly along a seam it already has: the
+        runner plus one row proves the contract, and the remaining five rows are
+        repetitions of a pattern. A shorter dispatch finishes before the failure
+        window.
+        This is not a plan change. The task file, its acceptance criteria and its
+        review are unchanged; only the dispatch is cut in two, and the task
+        completes when both halves are in and reviewed together.
+        Cost if wrong: two review packages instead of one for the same task.
+        Caught by the task 11 review, which reads the task file's criteria
+        against the combined diff.
+
