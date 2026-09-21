@@ -1060,3 +1060,8 @@ Ruling: amend tasks 11 and 12. Isolation replaces restoration: the runner points
         Also: the previous ruling's "controller implements directly" is
         withdrawn for the rest of the build. It is how the trap shipped with no
         second reader. Dispatch is retried; if it fails again that is a stop.
+
+Task 11: delta dispatched (opus, fresh implementer), BASE 3ba3d96. Review will
+        cover the whole task, 4b219ce..HEAD. Waiting on that implementer: task
+        12 consumes `FX_REAL_HOME` from it and task 13 documents both, so the
+        frontier is empty until it reports.
