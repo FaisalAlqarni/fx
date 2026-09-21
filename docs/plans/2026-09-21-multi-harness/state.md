@@ -1148,3 +1148,27 @@ Task 11: complete (commits 4b219ce..612e5ea, 2 fix rounds, re-review approved).
         rows 03 09 10 11 13 14, scripts/check-all. Free rows: claude-code 4 pass
         2 gap, opencode 6 pass, codex 4 pass 2 gap. The runner never writes to
         a real home. Its test proves that against a fake home under SIGINT.
+
+Task 12: stop condition raised to the user, because the live rows need
+        credentials and spend quota. The user chose two things. First, copy the
+        credentials into scratch. Second, run all three runtimes, with opencode
+        on their local llama-server: Qwen 3.8 27B at http://127.0.0.1:8899/v1,
+        reached from WSL, which answers 401 without a key.
+Ruling: a live row copies in only what authenticates, into the runner's scratch
+        home, set to mode 0700 with files at 0600. Nothing is ever written back.
+        - claude-code: `.credentials.json` from FX_REAL_HOME/.claude.
+        - codex: `auth.json` from FX_REAL_HOME/.codex.
+        - opencode: only the `provider.llamacpp` entry from the real
+          `opencode.json`, written into scratch `opencode.json`, with the model
+          set to `llamacpp/qwen3.8-27b`.
+        The server has one slot (n_slots = 1), so opencode rows run serially.
+        Why: this is the user's choice, and it matches the isolation rule. The
+        scratch home also leaves out the ecc plugins installed in the real
+        opencode home, so a row measures fx alone.
+        Cost if wrong: a SIGKILL skips the EXIT trap and leaves a credential copy
+        in /tmp until reboot. The README must say so. A 27B local model may fail
+        rows 4 and 12 on capability rather than on fx. The plan's rule applies:
+        re-run once and record both results. Caught by the task 12 review and by
+        the README's documented limits.
+Task 12: carries findings-11 Minor 1 (`--fre` runs live rows) and Minor 3
+        (GAP without a reason) as context. Both bite when live rows arrive.
