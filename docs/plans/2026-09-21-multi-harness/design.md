@@ -137,7 +137,8 @@ inventory. Nothing about Claude Code needs a manual step.
 **Codex** ships skills, hooks and MCP configuration through its marketplace. Two
 constraints are non-obvious and both were measured. Its own bundled validator
 rejects a `hooks` key in the manifest, so hooks ship by convention as a file at
-the plugin root and are never declared; the one curated plugin that passes
+the plugin root and are never declared (**superseded by the amendment, A1**: the
+runtime honours the key and ignores an undeclared root file); the one curated plugin that passes
 validation does exactly this, and the two well-known plugins that declare the
 key both fail. And its installer drops symlinks while preserving execute bits,
 so nothing symlinked may be shipped.
@@ -348,7 +349,7 @@ a cache keyed by version.
 - Claude Code 2.1.278 or later; opencode 1.18.25 or later; Codex CLI 0.155.1 or
   later. Every claim here was measured against these.
 - No new runtime dependencies. fx ships node and shell only.
-- The git guard module is not modified by this work.
+- The git guard module is not modified by this work, except the heredoc fix in amendment A7.
 - Nothing is added above the opening imperative of `PREAMBLE.md`, and nothing
   inside it is made indirect.
 - Skills name actions, never tools. A skill body naming a runtime's tool is a
@@ -356,8 +357,8 @@ a cache keyed by version.
 - No symlinks inside anything shipped to a runtime that copies plugin trees.
 - Every script invocation in a skill names its interpreter, because at least one
   runtime is reported to strip execute bits on delivery.
-- The Codex manifest declares no hooks key, and hooks ship as a file at the
-  plugin root.
+- **Superseded by amendment A1.** The Codex manifest declares
+  `"hooks": "./hooks.json"`. Formerly: the Codex manifest declares no hooks key.
 - Manifest versions and marketplace entry versions stay identical, and a gate
   checks it.
 - Refreshing an install is per runtime and documented, not assumed. Codex
@@ -391,6 +392,129 @@ a cache keyed by version.
 - Reworking which lanes exist, what they say, or how they are worded.
 - Migrating existing installs. Every current path keeps working.
 - Windows.
+
+## Amendment 2026-09-21: what the live matrix falsified
+
+The behavioural rows in task 12 were the first thing in this build to run fx
+inside real sessions. They falsified four assumptions this design rested on.
+Primary-source research, kept in `research/`, explains each one. The user ruled
+that Codex parity is the point of the work, so these are fixed here rather
+than recorded as gaps.
+
+### What was false
+
+1. **Codex never ran `hooks/fx-codex.js`.** Codex uses the manifest `hooks` key
+   when present and falls back to `hooks/hooks.json` otherwise, which is Claude
+   Code's wiring (`research/codex.md`, source at `rust-v0.155.1`). The root
+   `hooks.json` was never loaded. As a result Codex had no role planting, no
+   read-only enforcement, no patch-tool lane check, and Claude Code's
+   addressing. The live checks in tasks 04 to 06 passed anyway, because both
+   hooks deliver a preamble.
+2. **The preamble is cut short on Claude Code, and would be on Codex.**
+   - Claude Code keeps hook context over 10,000 characters per hook as a file,
+     and shows the model a 2,000 character preview
+     (`research/claude-code-context-limit.md`). The rendered preamble is 12.3KB.
+   - Codex spills context over 2,500 tokens per handler unless the handler sets
+     `additionalContextLimit`.
+3. **Codex roles were never dispatchable.** Codex hides `spawn_agent`'s
+   `agent_type` until user roles exist, and roles were never planted because of
+   the first finding. Codex also reads roles once per session, before any hook
+   runs, so roles planted by a SessionStart hook are visible only from the next
+   session. Codex ignores `sandbox_mode` in a role file.
+4. **opencode subagents cannot dispatch.** The `task` tool needs an exact
+   `permission.task` entry on the agent. A wildcard does not grant it, and
+   `subagent_depth` only limits nesting once the tool exists
+   (`research/opencode-subagents.md`).
+
+Two further facts shape the fixes:
+- Codex rejects hook output that carries a key it does not know. The run is
+  marked failed and nothing is blocked, so a guard that prints a Claude-only
+  key fails open.
+- On Claude Code and opencode, a read-only agent kept a shell, so "cannot
+  write" held only for the editing tools.
+
+### Decisions
+
+**A1. One hooks file per runtime.**
+- The Codex manifest declares `"hooks": "./hooks.json"`, which is the file
+  wiring `hooks/fx-codex.js`.
+- Claude Code keeps `hooks/hooks.json`.
+- Neither script detects its runtime: the file that invoked it already says
+  which runtime it is.
+- This reverses the global constraint that the Codex manifest declares no
+  `hooks` key. That constraint cited a bundled validator that rejects the key.
+  The runtime honours the key, and the installed CLI has no validate command.
+  The task measures a marketplace install with the key present, which makes no
+  model call. If the install refuses the key, the fallback is ponytail's shape:
+  one shared file whose script detects Codex by `PLUGIN_ROOT` and shapes its
+  output per host.
+
+**A2. Codex hook output carries only keys Codex accepts.** `fx-codex.js`
+output is checked against the key set in `research/codex.md`. A free test
+feeds the script each event and fails on any other key, so a guard can never
+fail open this way.
+
+**A3. The preamble reaches the model whole on every runtime.**
+- **Claude Code:** the rendered preamble is split into parts, each under 9,000
+  characters, cut at section boundaries. Each part is emitted by its own
+  handler on SessionStart and on SubagentStart. Part 1 opens with the opening
+  imperative, and nothing goes above it. Each part ends with a line naming
+  itself and the part count, so the model can tell when a part is missing.
+  Handler order is not relied on.
+- **Codex:** its SessionStart and SubagentStart handlers set
+  `additionalContextLimit: 0`, so nothing needs splitting there.
+- **opencode:** the system transform has no limit.
+- A gate fails if any Claude Code part reaches 9,000 characters, or if the
+  parts put back together differ from the full render.
+
+**A4. Codex roles are dispatchable.**
+- SessionStart plants the roles as before, and `fx-setup` plants them too.
+- When a session writes a role that was not there, its injected context tells
+  the user to restart Codex once before dispatching a review agent.
+- Dispatch wording rendered for Codex passes `agent_type` explicitly. By
+  default a spawn copies the parent's history, and in that mode a role applies
+  only when it is named.
+- Read-only enforcement stays in the `PreToolUse` hook keyed on `agent_type`.
+
+**A5. Read-only agents have no shell, on every runtime.**
+- On Claude Code, their tool lists drop Bash.
+- On opencode, their agents get `bash: deny` alongside `edit: deny`.
+- On Codex, their role turns the shell off, and the hook still refuses the
+  patch tool.
+- They read the packaged diff file instead of running git.
+- This is the strongest guarantee each runtime offers. Neither project
+  surveyed ships read-only agents at all.
+
+**A6. opencode two-level dispatch.** The plugin's config hook grants
+`permission.task = "allow"` to the agents that dispatch: the general agent and
+fx's non-read-only agents. Read-only agents keep `task` denied.
+
+**A7. Small defects fixed here.**
+- The four dead assertions in `lib/git-guard.test.js` run again.
+- `tests/install/run.sh` runs its Claude Code CLI checks under a scratch HOME.
+- The guard refuses a git command fed to a shell as a heredoc body. The global
+  constraint freezing `lib/git-guard.js` is lifted for that fix alone.
+
+**A8. Nightly conformance in CI.** A workflow installs the pinned `claude`,
+`codex` and `opencode` and runs the free rows against the real binaries every
+night. It needs no model calls and no secrets. This is caveman's
+`agent-conformance.yml` pattern. The live rows stay local.
+
+**A9. Merge gate.** The branch does not merge until the Codex live matrix
+passes. Codex quota resets on 2026-10-21. Everything else is built and proven
+before then.
+
+### Testing for the amendment
+
+- Every fix gets a free test at the seam it changes: the manifest key, the
+  Codex output key set, the part sizes and their reassembly, the role notice,
+  the opencode config hook's permissions, and the read-only tool lists.
+- The live rows already exist, and each finding above has a row that fails
+  today. Rows 01, 02 and 16 fail on Claude Code. Rows 12 and 15 cover roles and
+  nesting. The amendment is done when those rows pass on Claude Code and
+  opencode now, and on Codex after the quota reset.
+- Hook tests spawn the real scripts with each runtime's real payloads, which is
+  ponytail's `tests/hooks.test.js` pattern, rather than calling functions.
 
 ## Open Questions
 

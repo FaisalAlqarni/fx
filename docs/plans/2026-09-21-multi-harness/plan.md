@@ -47,14 +47,14 @@ behavioural rows spend quota and never do.
 - Claude Code 2.1.278 or later; opencode 1.18.25 or later; Codex CLI 0.155.1 or
   later. Every claim was measured against these.
 - No new runtime dependencies. fx ships node and shell only.
-- `lib/git-guard.js` is not modified by this work.
+- `lib/git-guard.js` is not modified by this work, except the heredoc fix in amendment A7.
 - Nothing is added above the opening imperative of `PREAMBLE.md`, and nothing
   inside it is made indirect.
 - Skills name actions, never tools. A skill body naming a runtime's tool is a
   defect.
 - No symlinks inside anything shipped to a runtime that copies plugin trees.
 - Every script invocation in a skill names its interpreter.
-- The Codex manifest declares no `hooks` key; hooks ship as a file at the
+- **Superseded by amendment A1.** The Codex manifest declares `"hooks": "./hooks.json"`. Formerly: the Codex manifest declares no `hooks` key; hooks ship as a file at the
   plugin root.
 - Manifest versions and marketplace entry versions stay identical.
 - Derived artifacts carry a generated-file header naming their source, and a
