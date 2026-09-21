@@ -2194,3 +2194,24 @@ Also dispatched: plugin-dev:plugin-validator on fx's Claude Code plugin,
         read-only, including description overlap and a superpowers comparison.
         The user asked to use plugin-dev to be sure. `create-plugin` scaffolds
         new plugins, and the validator is the tool for an existing one.
+plugin-dev:plugin-validator on fx's Claude Code plugin (read-only):
+        1. HIGH: agents/fx-devils-advocate.md has no `model:`, which breaks
+           SURFACE's own rule.
+        2. MED: the fx-tdd and fx-brainstorm descriptions overlap on "add a
+           helper" with no disambiguating clause. fx-review and
+           fx-architecture already use the "For a DIFF, use fx-review"
+           pattern. This is the row 04 split.
+        3. MED: plugin.json lists 11 of 17 skills. Auto-discovery still finds
+           them all, but the list is stale.
+        4. LOW: SURFACE.md:92 is stale about Bash. Task 13 owns it.
+        5. LOW: no argument-hint on commands that take arguments; no LICENSE
+           file.
+        Confirmed correct: the manifests, the CC/Codex hook split, matchers,
+        the output shape, and deny exit 2.
+        superpowers' pattern: SessionStart only, injecting the whole 3.1KB
+        using-superpowers skill with a `<SUBAGENT-STOP>` early exit.
+Ruling: finding 2 feeds the spike as its sharpened-descriptions variant.
+        Findings 1, 3 and 5 go to a small fix task after the redesign.
+        Finding 4 is already task 13's. fx keeps SubagentStart, because its
+        rules must reach subagents (ADR 0002). superpowers explicitly opts
+        subagents out, and fx cannot.
