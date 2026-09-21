@@ -982,3 +982,17 @@ Task 10: minor (deferred): `hooksTrusted` reads `config.toml` and discards the
         agree: the comment explains the `null` and not the read. One line to fix.
         **For the final review to triage.**
 
+Task 11: first dispatch died mid-run on an authentication error, not a task
+        failure. It had written `tests/conformance/run.sh` (52 lines) and an
+        empty `rows/` before stopping, with nothing verified and nothing
+        committed.
+Ruling: discard the partial work and re-dispatch clean rather than hand it to a
+        fresh implementer. Verified first: the tree was untouched apart from that
+        untracked directory, and `scripts/check-all` was still `ALL GREEN`.
+        Why: 52 unverified lines save little, and a fresh implementer inheriting
+        someone else's half-written RED step is likely to treat it as already
+        proven. This lane's whole discipline is that the implementer writes the
+        failing test and watches it fail.
+        Cost if wrong: a few minutes of rework. Caught by nothing and needing
+        nothing: the work was never committed.
+
