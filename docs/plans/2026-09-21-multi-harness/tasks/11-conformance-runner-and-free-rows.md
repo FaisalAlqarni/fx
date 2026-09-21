@@ -77,9 +77,20 @@ model good enough to behave. Run the free rows first; if quota or credit runs
 out mid-matrix, record the rows that did not run as `GAP: not run` rather than
 as passes.
 
-**Idempotency:** Every row runs in a scratch directory and cleans up after
-itself, including any hook or config it installed. A run must leave the user's
-`~/.codex`, `~/.config/opencode` and `~/.claude` exactly as it found them.
+**Idempotency:** A run never writes to the user's `~/.codex`,
+`~/.config/opencode` or `~/.claude`. The runner points every row at a scratch
+home (`HOME`, `CODEX_HOME`, `XDG_CONFIG_HOME` and `CLAUDE_CONFIG_DIR` all under
+one `mktemp -d`) and removes only that directory on exit. The real home is
+exported read-only as `FX_REAL_HOME`, for a live row that must seed credentials
+into its scratch home by copying **in**. Nothing is ever copied back out.
+
+**Amended 2026-09-21.** This task originally required snapshotting the three
+homes and restoring them with `rm -rf <home> && cp -a <snapshot> <home>` from a
+trap. That mechanism destroyed a real `~/.claude` during this build: the
+snapshot copy silenced its errors, and the restore deleted the live directory.
+**A test harness must never delete or overwrite a user's home.** Isolation
+replaces restoration: a row that cannot reach the real home has nothing to put
+back. See the ledger ruling of the same date.
 
 **Testing:** The matrix is the test. Its own correctness is checked by running
 it against a deliberately broken tree and confirming rows fail.
@@ -88,8 +99,11 @@ it against a deliberately broken tree and confirming rows fail.
 - [ ] The runner dispatches every row: a run with rows present never reports `0 pass, 0 fail, 0 gap`
 - [ ] `--free` selects on each row's declared kind, not on a list inside the runner
 - [ ] `HARNESS` and `FX` reach every row in its environment
-- [ ] The three runtime homes are snapshotted and restored by a trap on exit, interrupt and failure
-- [ ] Killing the runner mid-run leaves the three homes as they were
+- [ ] Every row runs with `HOME`, `CODEX_HOME`, `XDG_CONFIG_HOME` and `CLAUDE_CONFIG_DIR` pointing inside one scratch directory, and `FX_REAL_HOME` set to the real home
+- [ ] The runner contains no `rm`, `mv`, `cp` or redirect whose target is outside its own scratch directory
+- [ ] A test runs the runner under a fake `HOME` holding sentinel files, including one run killed with `SIGINT` mid-row, and asserts the fake home is byte-identical afterwards
+- [ ] That test also asserts a row writing to `$HOME/.claude/` lands in the scratch home, not the fake one
+- [ ] The runner removes its scratch directory on exit and on interrupt
 - [ ] A row that cannot answer `--describe` is a `FAIL`, never skipped
 - [ ] Each row prints exactly one of `PASS`, `FAIL` or `GAP` with a reason
 - [ ] A `GAP` never counts as a pass, and the summary line reports the three counts separately
@@ -120,22 +134,15 @@ HARNESS="${1:?usage: run.sh <claude-code|opencode|codex> [--free]}"
 FREE=""
 [ "${2:-}" = "--free" ] && FREE=1
 
-# Rows may install a hook or a config into a runtime home. Snapshot the three
-# homes and restore them on ANY exit, including failure and interrupt. Without
-# this, "every row restores configuration" is a sentence with no mechanism.
-SNAP="$(mktemp -d)"
-for h in "$HOME/.codex" "$HOME/.config/opencode" "$HOME/.claude"; do
-  [ -d "$h" ] && cp -a "$h" "$SNAP/$(echo "$h" | tr / _)" 2>/dev/null
-done
-restore() {
-  for h in "$HOME/.codex" "$HOME/.config/opencode" "$HOME/.claude"; do
-    src="$SNAP/$(echo "$h" | tr / _)"
-    [ -d "$src" ] || continue
-    rm -rf "$h" && cp -a "$src" "$h"
-  done
-  rm -rf "$SNAP"
-}
-trap restore EXIT INT TERM
+# Rows run against a scratch home. The real homes are never written: a row
+# that cannot reach them has nothing to restore. FX_REAL_HOME lets a live row
+# copy credentials IN; nothing is ever copied back out.
+SCRATCH="$(mktemp -d)"
+trap 'rm -rf -- "$SCRATCH"' EXIT INT TERM
+export FX_REAL_HOME="$HOME"
+export HOME="$SCRATCH/home" CODEX_HOME="$SCRATCH/home/.codex" \
+       XDG_CONFIG_HOME="$SCRATCH/home/.config" CLAUDE_CONFIG_DIR="$SCRATCH/home/.claude"
+mkdir -p "$CODEX_HOME" "$XDG_CONFIG_HOME/opencode" "$CLAUDE_CONFIG_DIR"
 
 pass=0; fail=0; gap=0
 run_row() {
@@ -196,11 +203,20 @@ cp /tmp/fx-preamble.bak PREAMBLE.md && rm -f /tmp/fx-preamble.bak
 Expected: row 3 FAILs and the runner exits non-zero. A matrix that stays green
 here proves nothing.
 
-- [ ] **6. Verify the restore trap**
+- [ ] **6. Verify the isolation, against a fake home only**
 
-Run the runner and interrupt it mid-run. Then check that `~/.codex`,
-`~/.config/opencode` and `~/.claude` are unchanged. The trap must fire on
-`INT`, not only on a clean exit.
+Write `tests/conformance/runner-isolation.test.sh`. It builds a fake `HOME` in
+a temp dir with sentinel files under `.codex`, `.config/opencode` and
+`.claude`, records a checksum of the tree, then:
+
+1. runs the runner with `HOME` set to the fake home and a probe row that writes
+   `$HOME/.claude/probe`;
+2. runs it again and sends `SIGINT` while the probe row is sleeping;
+3. asserts the fake home's checksum is unchanged after both, that `probe`
+   never appeared in it, and that no scratch directory survived.
+
+**Never point this test, or any runner invocation during development, at the
+real `$HOME`.** Add it to `scripts/check-all`.
 
 - [ ] **7. Run the free rows on all three**
 

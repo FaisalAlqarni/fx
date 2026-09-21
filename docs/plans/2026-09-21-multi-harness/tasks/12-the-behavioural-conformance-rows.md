@@ -60,8 +60,10 @@ good enough to behave; a flaky model failure looks like a product failure.
 Re-run a suspected flake once and record both results rather than the better
 one.
 
-**Idempotency:** Every row runs in a scratch directory. The runner's trap
-restores the three runtime homes even on interrupt, which task 11 verified.
+**Idempotency:** Every row runs against the runner's scratch home, which task
+11 verified never reaches the real one. A live row that needs credentials
+copies them **in** from `$FX_REAL_HOME` and never writes back. Amended
+2026-09-21: task 11's restore trap is gone, see the ledger.
 
 **Testing:** The rows are the test. Their own correctness is checked by running
 them against a deliberately broken tree.

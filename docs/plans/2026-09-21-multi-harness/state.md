@@ -1034,3 +1034,29 @@ Ruling: the controller implements task 11 directly. **This is a deviation from
         If reviewer dispatch also fails, that is stated in the completion report
         rather than papered over.
 
+
+Task 11: **incident.** The runner's restore trap, required by the task's own
+        acceptance criteria, ran `rm -rf "$HOME/.claude" && cp -a <snapshot>`
+        repeatedly between 12:52 and 13:18. The snapshot `cp -a` silenced its
+        errors, so a partial copy armed a restore that deleted the live
+        directory. The user's plugin cache, settings and statusline were lost.
+        The trap was removed in d23f3d4. Recovery was done by the user through
+        `/plugin`, and from `~/.claude.bak`, which held the statusline and the
+        old settings. `~/.claude.json` was never touched.
+Ruling: amend tasks 11 and 12. Isolation replaces restoration: the runner points
+        every row at a scratch home (`HOME`, `CODEX_HOME`, `XDG_CONFIG_HOME`,
+        `CLAUDE_CONFIG_DIR`), removes only that scratch directory, and exports
+        the real home read-only as `FX_REAL_HOME` for copy-in. Its test runs
+        against a fake `HOME` with sentinels, including under `SIGINT`.
+        Why: the design never asked for a restore. Its only constraint is that
+        writes into a runtime home are confined to names fx generates. The
+        snapshot/restore was a plan invention, and a mechanism whose failure
+        mode is deleting the user's home is not a test harness. A row that
+        cannot reach the real home has nothing to put back.
+        Cost if wrong: a live row in task 12 that needs more than credentials
+        from the real home (a trusted-project entry, an installed plugin) has to
+        seed it into scratch explicitly. That is more work per row, never data
+        loss. Caught by task 12's own rows going GAP or FAIL, visibly.
+        Also: the previous ruling's "controller implements directly" is
+        withdrawn for the rest of the build. It is how the trap shipped with no
+        second reader. Dispatch is retried; if it fails again that is a stop.
