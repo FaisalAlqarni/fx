@@ -468,3 +468,32 @@ Task 07: minor (deferred): the implementer fixed a broken regex in the
         correctly-deepened two-level citations. Another defect in test code I
         wrote and never executed.
 
+Task 07: review returned spec 9/10 PASS (criterion 10 deliberately unmet per
+        adjudication), quality PASS, no Critical or Important findings.
+
+**Controller found an Important defect the review declined to check.**
+        The reviewer marked the live model-visible check CANNOT-VERIFY rather
+        than running it. It is free and local. I ran it: install into a throwaway
+        CODEX_HOME, then `codex debug prompt-input`.
+
+        Four of the five hidden lanes are genuinely absent. **`fx-handoff` is
+        visible**, as `fx:source-command-fx-handoff`. Codex auto-migrated
+        `commands/fx-handoff.md` into its own generated skill, which carries no
+        `agents/openai.yaml` and therefore no hiding. `fx-tdd`, which should be
+        visible, is visible, so the probe discriminates.
+
+        So the lane is hidden under its own name and exposed under Codex's
+        generated one. This is the exact failure shape task 07 exists to prevent,
+        and it arrives through the very mechanism the implementer investigated
+        and correctly described as producing "unhidden results outside skills/".
+        The investigation found the hazard; nothing closed it.
+
+        Also recorded: the Codex validator now reports **five** failures rather
+        than one, one per hidden lane. Task 13 must document that count, not the
+        old one.
+
+Task 07: fix round 1 QUEUED, not dispatched. Task 06's implementer is live, and
+        a fix round is a writer. This is the rule I broke once already and it
+        costs nothing to honour here: the defect is recorded, the evidence is
+        durable, and the round goes out the moment 06 reports.
+
