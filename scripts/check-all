@@ -32,6 +32,7 @@ run check-interpreters     scripts/check-interpreters
 run check-prose-explicit-path.sh bash tests/gates/check-prose-explicit-path.sh
 run check-artifacts        scripts/check-artifacts
 run check-artifacts-remote.sh bash tests/gates/check-artifacts-remote.sh
+run check-generated        scripts/check-generated
 
 echo "== make-git-fixture =="
 # Path is unique per process ($$ is this script's own PID): a fixed path
@@ -66,6 +67,7 @@ run plan-state.test.js  node lib/plan-state.test.js
 run preamble.test.js    node lib/preamble.test.js
 run codex-manifest.test.js  node tests/gates/codex-manifest.test.js
 run user-invoked.test.js    node tests/gates/user-invoked.test.js
+run plant-roles.test.js     node lib/plant-roles.test.js
 
 run opencode-install        bash tests/opencode-install/run.sh
 

@@ -26,6 +26,21 @@
 const path = require('path');
 const { render } = require('../lib/preamble');
 
+// Read-only agents (task 06): identity from SubagentStart, enforcement here.
+// See lib/plant-roles.js's header for the full reasoning; this file only
+// routes to it.
+let plantRoles, recordAgentIdentity, lookupAgentIdentity, isReadOnlyAgent, isWritingToolCall;
+try {
+  ({ plantRoles, recordAgentIdentity, lookupAgentIdentity, isReadOnlyAgent, isWritingToolCall } =
+    require('../lib/plant-roles'));
+} catch {
+  // Loaded lazily below with guards at each call site: a broken require here
+  // must not stop SessionStart from rendering the preamble, and must not
+  // stop the guard/lane checks PreToolUse already performs (ADR 0019: the
+  // read-only guarantee is belt-and-braces, not the only thing this hook
+  // does).
+}
+
 // Codex's apply_patch carries its whole payload as raw text under `command`
 // — the SAME key Bash uses. Measured live against Codex CLI 0.155.1 (fix
 // round 1):
@@ -87,6 +102,26 @@ function handlePreToolUse(input) {
   const tool = input.tool_name;
   const ti = input.tool_input || {};
   const cwd = input.cwd || process.cwd();
+  const agentId = input.agent_id;
+
+  // Read-only agents. A subagent's own tool calls carry agent_id; the
+  // controller's do not (ADR 0019), so no agent_id means this check is not
+  // this call's business at all. `agent_type` on THIS payload is never
+  // consulted: it is undocumented here, so the only identity trusted is
+  // whatever SubagentStart recorded for this agent_id. Unrecorded ==
+  // unclassifiable == refused on a write, same as a classified lens.
+  if (agentId && lookupAgentIdentity && isWritingToolCall) {
+    let known = null;
+    try { known = lookupAgentIdentity(agentId); } catch { known = null; }
+    const mustRefuseWrites = known === null ? true : isReadOnlyAgent(known);
+    let writes = false;
+    try { writes = isWritingToolCall(tool, ti); } catch { writes = false; }
+    if (mustRefuseWrites && writes) {
+      deny(known
+        ? `${known} is read-only and must not write (blocked: ${tool}).`
+        : `subagent ${agentId} was never recorded at SubagentStart, so its role cannot be verified; refusing the write rather than assuming it is safe.`);
+    }
+  }
 
   if (tool === 'Bash') {
     const command = ti.command;
@@ -138,6 +173,22 @@ process.stdin.on('end', () => {
   }
 
   const cwd = input.cwd || process.cwd();
+
+  // Plant the read-only roles on every session. Never lets a planting
+  // failure stop the session: Codex also skips a plugin's hooks until the
+  // user trusts them, so the setup lane and the installer are the other two
+  // callers of the same plantRoles (design.md: "one function does the
+  // planting and three callers invoke it").
+  if (input.hook_event_name === 'SessionStart' && plantRoles) {
+    try { plantRoles(); } catch { /* the session must start regardless */ }
+  }
+
+  // Record which role this subagent is, at the event where agent_type is
+  // documented, so PreToolUse never has to trust it on its own undocumented
+  // appearance there.
+  if (input.hook_event_name === 'SubagentStart' && recordAgentIdentity) {
+    try { recordAgentIdentity({ agentId: input.agent_id, agentType: input.agent_type }); } catch { /* best effort */ }
+  }
 
   let text;
   try {

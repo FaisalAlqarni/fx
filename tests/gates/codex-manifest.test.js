@@ -1,10 +1,18 @@
 'use strict';
 const assert = require('assert');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
 const root = path.join(__dirname, '..', '..');
+
+// hooks/fx-codex.js plants read-only roles into CODEX_HOME on SessionStart
+// (task 06). Every hook invocation this file makes is pinned to a throwaway
+// CODEX_HOME so running this suite can never write into the real
+// ~/.codex on the machine running it.
+const testCodexHome = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-codex-manifest-home-'));
+const testEnv = { ...process.env, CODEX_HOME: testCodexHome };
 const codex = JSON.parse(fs.readFileSync(path.join(root, '.codex-plugin/plugin.json'), 'utf8'));
 const claude = JSON.parse(fs.readFileSync(path.join(root, '.claude-plugin/plugin.json'), 'utf8'));
 
@@ -45,6 +53,7 @@ assert.strictEqual(links, '', `symlinks are dropped by the Codex installer: ${li
 const out = execFileSync('node', [path.join(root, 'hooks/fx-codex.js')], {
   input: JSON.stringify({ hook_event_name: 'SessionStart', cwd: root }),
   encoding: 'utf8',
+  env: testEnv,
 });
 const parsed = JSON.parse(out);
 const ctx = parsed.hookSpecificOutput.additionalContext;
@@ -56,7 +65,7 @@ const { spawnSync } = require('child_process');
 
 const hook = path.join(root, 'hooks/fx-codex.js');
 const fire = (payload) => spawnSync('node', [hook], {
-  input: JSON.stringify(payload), encoding: 'utf8',
+  input: JSON.stringify(payload), encoding: 'utf8', env: testEnv,
 });
 
 const refused = fire({
@@ -107,7 +116,6 @@ assert.ok(patch.status === 0 || patch.status === 2,
 //
 // The lane check must parse the affected path(s) out of that text. These
 // cases prove the parser, not just the routing.
-const os = require('os');
 
 function withScratch(fn) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-codex-lane-'));
@@ -175,4 +183,137 @@ withScratch((scratch) => {
   assert.strictEqual(result.stderr.trim(), '', 'a pass must be silent');
 });
 
+// Read-only agents (task 06). `agent_id`/`agent_type` are undocumented on
+// PreToolUse (ADR 0019), so the hook never trusts them there: it looks up
+// what SubagentStart recorded, and refuses a write from any agent_id it
+// cannot classify that way. These four cases carry an agent_id SubagentStart
+// never saw in THIS process, so they exercise the unclassifiable-means-
+// refused path, not a lookup hit.
+const lensWrite = fire({
+  hook_event_name: 'PreToolUse', cwd: root,
+  agent_id: 'a1', agent_type: 'fx-lens-security',
+  tool_name: 'Bash', tool_input: { command: 'echo x > evidence.txt' },
+});
+assert.strictEqual(lensWrite.status, 2, 'a lens must not be able to write');
+
+const lensRead = fire({
+  hook_event_name: 'PreToolUse', cwd: root,
+  agent_id: 'a1', agent_type: 'fx-lens-security',
+  tool_name: 'Bash', tool_input: { command: 'grep -rn TODO .' },
+});
+assert.strictEqual(lensRead.status, 0, 'a lens must still be able to read');
+
+const controllerWrite = fire({
+  hook_event_name: 'PreToolUse', cwd: root,
+  tool_name: 'Bash', tool_input: { command: 'echo x > evidence.txt' },
+});
+assert.strictEqual(controllerWrite.status, 0, 'the controller is not a lens');
+
+const lensPatch = fire({
+  hook_event_name: 'PreToolUse', cwd: root,
+  agent_id: 'a1', agent_type: 'fx-lens-security',
+  tool_name: 'apply_patch', tool_input: {},
+});
+assert.strictEqual(lensPatch.status, 2, 'apply_patch from a lens must be refused');
+
+// An agent_id with NO agent_type at all on the PreToolUse payload is still
+// refused on a write, unclassified: the hook does not need agent_type
+// present to decide "unclassifiable", only agent_id.
+const noTypeWrite = fire({
+  hook_event_name: 'PreToolUse', cwd: root,
+  agent_id: 'a-no-type',
+  tool_name: 'Bash', tool_input: { command: 'touch new-file.txt' },
+});
+assert.strictEqual(noTypeWrite.status, 2,
+  'an agent_id with no recorded identity and no agent_type is refused on write');
+
+// The sixth read-only agent by name: fx-devils-advocate is not fx-lens-*, and
+// a prefix match on 'fx-lens-' would leave it writable. Prove it by name,
+// not just by relying on the same unclassified-refusal path every other
+// agent_id above happens to take.
+withScratch((scratch) => {
+  const startedAdvocate = fire({
+    hook_event_name: 'SubagentStart', cwd: scratch,
+    agent_id: 'advocate-1', agent_type: 'fx-devils-advocate',
+  });
+  assert.strictEqual(startedAdvocate.status, 0);
+  const advocateWrite = fire({
+    hook_event_name: 'PreToolUse', cwd: scratch,
+    agent_id: 'advocate-1',
+    tool_name: 'Bash', tool_input: { command: 'echo x > evidence.txt' },
+  });
+  assert.strictEqual(advocateWrite.status, 2,
+    'fx-devils-advocate is read-only for the same reason the lenses are, and must be refused too');
+});
+
+// Now prove the SubagentStart -> PreToolUse pipeline for real, not just the
+// unclassified fallback: record an identity, then look it up.
+withScratch((scratch) => {
+  const started = fire({
+    hook_event_name: 'SubagentStart', cwd: scratch,
+    agent_id: 'lens-recorded', agent_type: 'fx-lens-security',
+  });
+  assert.strictEqual(started.status, 0, 'SubagentStart must not fail the session');
+
+  // The PreToolUse payload here carries NO agent_type at all — proving the
+  // refusal comes from the identity SubagentStart recorded, not from trusting
+  // the undocumented field a second time.
+  const write = fire({
+    hook_event_name: 'PreToolUse', cwd: scratch,
+    agent_id: 'lens-recorded',
+    tool_name: 'Bash', tool_input: { command: 'echo x > evidence.txt' },
+  });
+  assert.strictEqual(write.status, 2, 'a recorded lens identity is still refused on write');
+
+  const read = fire({
+    hook_event_name: 'PreToolUse', cwd: scratch,
+    agent_id: 'lens-recorded',
+    tool_name: 'Bash', tool_input: { command: 'grep -rn TODO .' },
+  });
+  assert.strictEqual(read.status, 0, 'a recorded lens identity can still read');
+
+  // An ordinary (non-lens) recorded subagent must still be able to write:
+  // this refusal is specific to read-only agents, not to every subagent.
+  const startedDefault = fire({
+    hook_event_name: 'SubagentStart', cwd: scratch,
+    agent_id: 'default-recorded', agent_type: 'default',
+  });
+  assert.strictEqual(startedDefault.status, 0);
+  const defaultWrite = fire({
+    hook_event_name: 'PreToolUse', cwd: scratch,
+    agent_id: 'default-recorded',
+    tool_name: 'Bash', tool_input: { command: 'echo x > evidence.txt' },
+  });
+  assert.strictEqual(defaultWrite.status, 0, 'a non-lens subagent is not refused');
+
+  // The identity record lives under the OS temp area, never inside the
+  // repository/cwd SubagentStart was called with.
+  const leaked = fs.readdirSync(scratch).some((f) => f.includes('lens-recorded'));
+  assert.strictEqual(leaked, false,
+    'the identity record must not be written into the user\'s repository');
+});
+
+// A planting failure must never stop the session. Point CODEX_HOME at a path
+// that cannot become a directory (a plain file sits where `agents/` would
+// need to be created), so plantRoles's mkdirSync throws, and prove
+// SessionStart still renders the preamble normally.
+{
+  const badHomeParent = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-codex-badhome-'));
+  const badHome = path.join(badHomeParent, 'not-a-dir');
+  fs.writeFileSync(badHome, 'not a directory');
+  const result = spawnSync('node', [hook], {
+    input: JSON.stringify({ hook_event_name: 'SessionStart', cwd: root }),
+    encoding: 'utf8',
+    env: { ...process.env, CODEX_HOME: badHome },
+  });
+  assert.strictEqual(result.status, 0, 'a planting failure must not stop the session');
+  const parsedBad = JSON.parse(result.stdout);
+  assert.ok(parsedBad.hookSpecificOutput.additionalContext.includes('$fx-tdd'),
+    'the preamble still renders even when planting threw');
+  fs.rmSync(badHomeParent, { recursive: true, force: true });
+}
+
+fs.rmSync(testCodexHome, { recursive: true, force: true });
+
+console.log('codex lens enforcement: OK');
 console.log('codex guard: OK');

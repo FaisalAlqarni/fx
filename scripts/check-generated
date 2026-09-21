@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# codex/agents/*.toml is generated from agents/*.md by scripts/gen-codex-agents
+# and committed. This regenerates into a scratch directory and diffs it
+# against what is committed, so a hand-edited or stale TOML is caught before
+# it ships planted into someone's Codex home with content the source no
+# longer says.
+#
+#     scripts/check-generated
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+
+scripts/gen-codex-agents "$TMP" > /dev/null
+
+DIFF="$(diff -rq codex/agents "$TMP" || true)"
+if [ -n "$DIFF" ]; then
+  echo "FAIL: codex/agents has drifted from a fresh generation of agents/*.md"
+  echo "$DIFF"
+  echo "Run scripts/gen-codex-agents and commit the result."
+  exit 1
+fi
+
+echo "check-generated: OK"
