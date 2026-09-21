@@ -1383,3 +1383,21 @@ User decisions, round 2 of the amendment:
           and Claude Code keeps `hooks/hooks.json`. No runtime detection.
         - Nightly CI: the user asked what it is for. Explained, and waiting on
           their answer.
+
+Task 12: security re-check of round 2 is clean. The pid namespace is private
+        (4 pids), /proc/1/root stays inside the jail, and the node rebind is
+        narrowed. The recreated symlinks resolve inside dirs that are already
+        bound.
+Task 12: minor (deferred): findings-12 reviewer Minors 1, 2, 5 and 7, the
+        re-review's claude-code row 08 guard-off RED, lens Minors 4 and 5, and
+        the `@openai/codex` rebind, which is a whole package dir.
+Task 12: complete (commits 31d19e7..d56317b, 2 fix rounds, review approved,
+        security clean). Matrix: claude-code 12 pass 3 fail 2 gap, opencode 16
+        pass 1 fail, codex 6 pass 11 gap because quota ran out. Each FAIL is a
+        product defect the amendment owns: rows 01, 02 and 16 are A3, and row
+        15 on opencode is A6. Still owed: one live run of claude-code row 06
+        under the round-2 jail. It hit Claude's session limit at 17:30, so it
+        is carried into the amendment tasks' live verification.
+Design amendment written (dc5c306). It is waiting for user review before
+        fx-plan adds tasks. Task 13 (docs) now waits on the amendment, because
+        it documents what the amendment changes.
