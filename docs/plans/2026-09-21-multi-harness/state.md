@@ -1920,3 +1920,17 @@ Task 17: complete (commits 6715194..65240cf, 1 fix round, review approved,
         Live proof is in tasks 21 and 22.
 Task 18: unblocked. It is dispatched when the task 20 fix round finishes,
         because implementers run one at a time.
+Task 20: fix round 1 landed in f0767d2.
+        - Row 09 runs the real CLIs. On codex: marketplace add, plugin add,
+          then list, the hooks file and 17 skills. On opencode: the installer,
+          then debug skill (17) and debug agent (denies).
+        - A missing binary is a GAP.
+        - Both required mutations now FAIL the row.
+        - ci-pins rejects a stray pin, the bracketed secrets form and
+          github.token.
+        - Measured offline: the opencode commands still succeed, about 68s
+          slower, so no network GAP path is needed.
+        - Concern: opencode writes to its hardcoded /tmp/opencode path during
+          the probe.
+        Scoped re-review dispatched.
+Task 18: dispatched (opus, fresh implementer), BASE after this commit.
