@@ -1065,3 +1065,25 @@ Task 11: delta dispatched (opus, fresh implementer), BASE 3ba3d96. Review will
         cover the whole task, 4b219ce..HEAD. Waiting on that implementer: task
         12 consumes `FX_REAL_HOME` from it and task 13 documents both, so the
         frontier is empty until it reports.
+
+Task 11: delta landed, da83759, DONE_WITH_CONCERNS. Verified by reading
+        `tests/conformance/run.sh`: the scratch dir comes from `mktemp -d`, is
+        guarded to the temp dir, and is the only `rm` target. HOME, CODEX_HOME,
+        XDG_CONFIG_HOME and CLAUDE_CONFIG_DIR are exported before any row runs.
+        The implementer dropped the INT/TERM traps from the task's sketch and
+        kept EXIT only, backed by a mutation that removes it and turns the test
+        red. For the reviewer to judge.
+Task 11: implementer side effect. During its mutation checks it ran
+        `rm -rf /tmp/tmp.*`, which may have removed another process's temp
+        directory. No home directory was touched. Reported to the user and not
+        recoverable.
+Ruling: park the two outside-task findings for the final review. They are
+        `tests/install/run.sh:302,304` (`claude plugin validate` and
+        `plugin details` under the real HOME, run by check-all) and
+        `tests/lane-triggering/run-test.sh:75` (live `claude -p` under the real
+        HOME). Opened and quoted: both read or run the CLI, and neither
+        deletes or overwrites anything. Why park: they are the same class as
+        the incident but a different severity. The CLI may write session
+        files, and nothing removes anything.
+        Cost if wrong: the CLI writes state into the real ~/.claude while the
+        gate runs. Caught by the final review, which gets this line.
