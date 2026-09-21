@@ -146,7 +146,17 @@ def refuse_if_foreign_generated(path):
 
 def load_skills():
     """Split fx's skills into the ones opencode links (skills/<name>) and the
-    ones it generates as a command instead (disable-model-invocation: true)."""
+    ones it generates as a command instead (disable-model-invocation: true).
+
+    A user-invoked skill whose `SKILL.md` is itself generated FROM
+    `commands/<name>.md` (task 07's `scripts/gen-command-skills`) is excluded
+    here, never linked and never converted a second time: the `commands/*.md`
+    loop below already converts its source, at the depth that needs no
+    absolute-path rewrite. Converting it again here would both duplicate that
+    command and crash `convert_skill_command`'s path resolution on a
+    template citation such as `../../references/stacks/<name>.md`, which
+    names no real file. Only a hand-written user-invoked skill with no
+    source command (`fx-audit`) is converted here."""
     linked, user_invoked = [], []
     for skill_dir in sorted(p for p in (FX / "skills").iterdir() if p.is_dir()):
         skill_md = skill_dir / "SKILL.md"
@@ -156,6 +166,8 @@ def load_skills():
         if fm is None:
             continue
         if (field(fm, "disable-model-invocation") or "").strip() == "true":
+            if (FX / "commands" / f"{skill_dir.name}.md").is_file():
+                continue
             user_invoked.append((skill_dir, fm, body))
         else:
             linked.append(skill_dir)

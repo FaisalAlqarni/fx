@@ -65,6 +65,7 @@ run heredoc.test.js     node lib/heredoc.test.js     "$MAIN" "$WT"
 run plan-state.test.js  node lib/plan-state.test.js
 run preamble.test.js    node lib/preamble.test.js
 run codex-manifest.test.js  node tests/gates/codex-manifest.test.js
+run user-invoked.test.js    node tests/gates/user-invoked.test.js
 
 run opencode-install        bash tests/opencode-install/run.sh
 
