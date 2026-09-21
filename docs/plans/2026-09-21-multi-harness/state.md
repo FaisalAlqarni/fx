@@ -1228,3 +1228,44 @@ Task 12: finding, for the controller. Codex 0.155.1 runs the plugin's
         fx-pretooluse.js shares the Bash shape. A copy with `hooks/hooks.json`
         replaced by the root one rendered `$fx-tdd` and refused an unrecorded
         subagent's write, which is how row 12's identity mutation was shown.
+
+Task 12: implementer DONE_WITH_CONCERNS, 2627abe and 93c0df2. Matrix above.
+        Codex quota is exhausted until 2026-10-21, so nine Codex rows are GAP:
+        not run. Review and security lens dispatched on 31d19e7..93c0df2.
+Task 12: the implementer wrote the matrix block into this ledger itself.
+        Accepted, because it is a measurement, not a ruling. The reviewer
+        checks it against the rows.
+Task 12: product defects found by the live rows, outside task 12. They are
+        recorded here because they outlive the report file. The claims are the
+        implementer's except where marked verified.
+        D1. Codex loads `hooks/hooks.json`, which is the Claude Code wiring, not
+            the root `hooks.json` that wires `hooks/fx-codex.js`. So on Codex
+            there is no role planting, no read-only enforcement, no
+            `apply_patch` lane check, and the addressing is Claude Code's. The
+            implementer measured this three ways. The live checks in tasks 04,
+            05 and 06 could not tell, because both hooks deliver a preamble.
+            Verified: both files exist, and the root `hooks.json:10,22,35` is
+            the only wiring of `fx-codex.js`.
+        D2. Claude Code holds any SessionStart or SubagentStart context over
+            about 10KB back as a file, and shows the model a 2KB preview.
+            PREAMBLE.md renders to 12.3KB. **Verified by the controller
+            first-hand**: this session's own fx context arrived as "Output too
+            large (13KB) ... Preview (first 2KB)". fx 0.1.7 as installed today
+            delivers two thirds less of its preamble than intended.
+        D3. Codex `spawn_agent` takes no agent-type parameter, so a planted role
+            cannot be dispatched. That voids part of task 06 and ADR 0019 on
+            Codex.
+        D4. The opencode general subagent has no task tool, so
+            `subagent_depth: 2` (`plugins/fx.js:132`) does not give two-level
+            dispatch. Row 15 FAILs.
+        D5. ADR 0019 says a Claude Code lens "cannot even express a write", but
+            lenses keep Bash.
+        D6. In `lib/git-guard.test.js`, the `process.exit` at line 112 comes
+            before four DEBT #46 assertions, so they never run.
+        D7. Confirms the parked finding: `scripts/check-all` writes `.claude/`
+            and `.claude.json` into whatever HOME it runs under.
+        D8. A command fed to a shell as a heredoc body (`bash <<EOF`) gets past
+            the guard. Nothing claims to catch it.
+        D1 and D2 break the design's core guarantee that the preamble reaches
+        the session, on two of three runtimes. D2 and D3 need decisions that
+        belong to the user, so they have been raised with the user.
