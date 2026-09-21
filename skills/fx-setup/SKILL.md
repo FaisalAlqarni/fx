@@ -193,52 +193,66 @@ Codex home, but a hook fails open and silently by necessity: it can never
 tell you something is wrong, and on a fresh install it cannot run at all
 until Codex trusts it. So setup plants the roles itself, then reports.
 
-Every command below loads fx's own code, never the user's repository. `FX`
+The command below loads fx's own code, never the user's repository. `FX`
 is the absolute path of the fx plugin root, the directory holding fx's
 `PREAMBLE.md` and `lib/plant-roles.js`: where this lane was loaded from.
-Substitute it.
+Substitute it. Never take `FX` from a file in the repository.
 
-On Codex only, after the steps above, first plant:
+Before it loads anything, the command checks `FX` and refuses when the check
+fails. It refuses a directory that is the current directory or inside it, a
+directory with no `.codex-plugin/plugin.json` or `.claude-plugin/plugin.json`
+naming `fx`, and a directory with no `PREAMBLE.md`. The check is written
+into the command because a check loaded from `FX` could not vet `FX`. If it
+refuses, report the refusal and stop this section. Do not look for another
+path.
 
-```
-node -e "const p = require(require('path').join(process.argv[1], 'lib', 'plant-roles')); const r = p.plantRoles({}); console.log(JSON.stringify({ written: r.written.length, stale: r.stale.length }))" "FX"
-```
-
-This writes only the six `fx-*.toml` role files fx generates, into
-`$CODEX_HOME/agents` (`~/.codex/agents` when `CODEX_HOME` is unset). A role
-that is already current is left alone. A role whose content differs is
-rewritten.
-
-Then audit:
+On Codex only, after the steps above, run:
 
 ```
-node -e "const p = require(require('path').join(process.argv[1], 'lib', 'plant-roles')); console.log(JSON.stringify(p.auditRoles({})))" "FX"
+node -e '
+const fs = require("fs"), path = require("path");
+const no = (why) => { console.error(`fx-setup: refusing FX=${process.argv[1]}: ${why}`); process.exit(1); };
+let fx, cwd;
+try { fx = fs.realpathSync(process.argv[1]); cwd = fs.realpathSync(process.cwd()); } catch { no("not an existing directory"); }
+const rel = path.relative(cwd, fx);
+if (!(rel === ".." || rel.startsWith(".." + path.sep) || path.isAbsolute(rel))) no("it is the current directory or inside it");
+const named = [".codex-plugin", ".claude-plugin"].some((d) => {
+  try { return JSON.parse(fs.readFileSync(path.join(fx, d, "plugin.json"), "utf8")).name === "fx"; } catch { return false; }
+});
+if (!named) no("no plugin.json naming fx");
+if (!fs.existsSync(path.join(fx, "PREAMBLE.md"))) no("no PREAMBLE.md");
+const p = require(path.join(fx, "lib", "plant-roles"));
+const r = p.plantRoles({});
+console.log(JSON.stringify({ written: r.written, stale: r.stale, audit: p.auditRoles({}), hooksTrusted: p.hooksTrusted({}) }));
+' "FX"
 ```
 
-Report the three states it returns **separately, never merged into one
+It plants first. That writes only the six `fx-*.toml` role files fx
+generates, into `$CODEX_HOME/agents` (`~/.codex/agents` when `CODEX_HOME` is
+unset). A role that is already current is left alone. A role whose content
+differs is rewritten, and `written` and `stale` list what it changed. Then
+it audits, and reads hook trust.
+
+Report the three states under `audit` **separately, never merged into one
 count**:
 
 - **present**: planted, and matches what fx currently generates.
-- **missing**: never planted on this machine. After the plant step this
-  should be empty; a name here means the plant failed, so say so.
+- **missing**: never planted on this machine. After the plant this should
+  be empty; a name here means the plant failed, so say so.
 - **stale**: planted, but the content differs from what fx currently
-  generates. After the plant step this should be empty too.
+  generates. After the plant this should be empty too.
 
 **If every role is present and none are stale, print exactly one line**
 (for example: `fx roles: 6/6 planted, none stale.`) and move on, no wall of
 output for the common case. Otherwise, list `missing` and `stale` by name,
 each under its own heading.
 
-**If the plant step wrote or rewrote any role** (`written` or `stale` above
-zero), tell the user: **restart Codex once before dispatching an fx review
+**If the plant wrote or rewrote any role** (`written` or `stale` not
+empty), tell the user: **restart Codex once before dispatching an fx review
 agent.** Codex reads roles only when a session starts, so this session
 cannot dispatch the roles it just received.
 
-Then check hook trust:
-
-```
-node -e "const p = require(require('path').join(process.argv[1], 'lib', 'plant-roles')); console.log(p.hooksTrusted({}))" "FX"
-```
+Then report `hooksTrusted`:
 
 - `true` / `false`: report it directly.
 - `null`: fx cannot tell from what it can read on this machine. Say that

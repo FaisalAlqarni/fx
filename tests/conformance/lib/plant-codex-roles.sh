@@ -13,5 +13,6 @@ set -euo pipefail
 # plantRoles falls back to ~/.codex when CODEX_HOME is unset. Refuse instead.
 [ -n "${CODEX_HOME:-}" ] || { echo "plant-codex-roles: CODEX_HOME is not set; refusing" >&2; exit 1; }
 [ -n "${FX:-}" ] || { echo "plant-codex-roles: FX is not set" >&2; exit 1; }
-node "$FX/hooks/fx-codex.js" <<<"{\"hook_event_name\":\"SessionStart\",\"cwd\":\"$FX\"}" > /dev/null
+FX="$FX" node -e 'process.stdout.write(JSON.stringify({ hook_event_name: "SessionStart", cwd: process.env.FX }))' \
+  | node "$FX/hooks/fx-codex.js" > /dev/null
 [ -d "$CODEX_HOME/agents" ] || { echo "plant-codex-roles: no roles under $CODEX_HOME/agents" >&2; exit 1; }

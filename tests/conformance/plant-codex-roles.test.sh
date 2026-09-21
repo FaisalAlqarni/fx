@@ -16,6 +16,13 @@ want="$(cd codex/agents && ls -- *.toml | sort)"
 got="$(cd "$S/codex/agents" && ls -- *.toml | sort)"
 [ "$want" = "$got" ] || { echo "roles not planted: want [$want] got [$got]"; exit 1; }
 
+# The payload is built as JSON, not by string interpolation: a tree whose
+# path holds a quote still plants.
+ln -s "$FX" "$S/fx\"q"
+CODEX_HOME="$S/codex-q" HOME="$S" TMPDIR="$S" FX="$S/fx\"q" bash tests/conformance/lib/plant-codex-roles.sh
+got="$(cd "$S/codex-q/agents" && ls -- *.toml | sort)"
+[ "$want" = "$got" ] || { echo "roles not planted from a quoted path: want [$want] got [$got]"; exit 1; }
+
 L=tests/conformance/lib/live.sh
 add="$(grep -n 'codex plugin add fx@fx' "$L" | head -1 | cut -d: -f1 || true)"
 plant="$(grep -n 'plant-codex-roles\.sh' "$L" | head -1 | cut -d: -f1 || true)"
