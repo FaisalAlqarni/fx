@@ -1011,3 +1011,26 @@ Ruling: split task 11 into two dispatches rather than retry it whole.
         Caught by the task 11 review, which reads the task file's criteria
         against the combined diff.
 
+Task 11: third dispatch died on the same authentication error, this time on the
+        split half. Three failures, all infrastructure, none on the work.
+
+Ruling: the controller implements task 11 directly. **This is a deviation from
+        the lane and it is announced as one.**
+        Why: dispatch is not viable right now. My own tool calls succeed while
+        every subagent API call fails at authentication, so the failure is in
+        dispatch, not in the task. Splitting further does not help when the
+        window is shorter than a single file.
+        What is lost: the fresh-context implementer and the separation between
+        the agent that writes code and the agent that coordinates. My context is
+        already long, which is exactly what that separation protects against.
+        What is kept: TDD is not negotiable. I write the failing case, watch it
+        fail for the right reason, then implement. Every row gets its mutation
+        proof. And **the review still gets dispatched**: a reviewer is short and
+        may survive the window, and reviewing my own work is the part that must
+        not be skipped.
+        Cost if wrong: my context degrades and later coordination suffers, or I
+        review my own code and miss what a fresh reader would catch. Caught by
+        the task 11 review if it runs, and by the final review regardless.
+        If reviewer dispatch also fails, that is stated in the completion report
+        rather than papered over.
+
