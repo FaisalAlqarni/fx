@@ -1609,3 +1609,31 @@ Ruling: stop the arms race structurally. Round 4 replaces the enumeration of
         quoted `|` is inside a quoted token. Caught by the reviewer's
         over-refusal check and task 22's sentinel probe.
 Task 14: round 4 goes to a fresh opus implementer.
+Task 14: round 4 landed in e1411fc, from a fresh implementer. The token
+        character allowlist and a quote-aware splitter are in, and the
+        classifier no longer imports git-guard. A self-found hole is fixed:
+        `git diff -U --ext-diff`. All 7 mutants fail the suite, and every
+        marker probe is refused through the real hook. **Critical it cannot
+        close:** Codex's shell tool takes a `workdir` argument that the hook
+        payload does not carry, so a lens can run a cleared `git diff` inside
+        a nested bare repo, and that repo's diff.external runs. The known limit
+        also showed up live: the reviewed repo's own `.git/config`
+        diff.external ran on a plain `git diff`. Also invisible to the hook:
+        Codex's `shell` and `tty` arguments. Unverified: write_stdin firing.
+Ruling: round 5 removes `git` from what a read-only agent may run on Codex.
+        Why: every remaining exec path is git reading config it does not
+        control, whether diff.external, textconv, core.fsmonitor on a plain
+        status, or config from a nested repo reached through the invisible
+        workdir. The approved design A5 already says read-only agents "read
+        the packaged diff file instead of running git". The other allowed
+        binaries (cat, rg, grep, sed -n, find, head, tail, nl, wc) read no
+        repository config. The named `.git/config` limit disappears with it.
+        Cost if wrong: a Codex lens cannot run git archaeology such as log,
+        blame or show. It reviews from the diff file it is handed. Caught by
+        task 22's sentinel probe, and by any lens report that says it needed
+        history.
+        Remaining named limits, recorded for ADR 0019 through task 17:
+        - the hook cannot see the shell tool's `shell` and `tty` arguments;
+        - a relative entry in the user's PATH could resolve an allowed binary
+          name to a file in the reviewed tree;
+        - write_stdin's hook coverage is unverified until task 22.
