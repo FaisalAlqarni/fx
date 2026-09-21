@@ -1722,3 +1722,21 @@ Ruling: task 16 fix round 1. Before the `require`, each fx-setup command
         re-review.
         The round waits for the task 17 implementer, because implementers run
         one at a time.
+Task 17: DONE, ad7896f.
+        - The six agents have `tools: Read, Grep, Glob`.
+        - On opencode they get `edit: deny`, `bash: deny` and `"*_*": deny`.
+          MCP tool ids are `<server>_<tool>`, according to the source only.
+          Side effect: the same pattern also matches `external_directory`, so
+          these agents cannot read outside the project.
+        - The Codex roles keep the shell.
+        - Row 12 probes shell writes.
+        - fx-review hands every reviewer a diff file.
+        - ADR 0019 has the per-runtime table and the three limits.
+        - The carried pins are in, and `=name` is refused.
+        - Files edited outside its list, each needed to pass: row 11, the
+          opencode installer, and tests/install/run.sh (task 19 edits that
+          one too).
+        Outside the task: SURFACE.md:92 and INSTALL.md:29 still say the lenses
+        have Bash. Task 13 owns those files.
+        Review and security lens dispatched. The task 16 fix round runs now,
+        because the task 17 implementer has finished.
