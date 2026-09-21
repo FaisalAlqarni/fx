@@ -66,6 +66,9 @@ key is absent, so a second run changes nothing.
 **Testing:** config hook unit test, then live row 15 on opencode in task 21.
 
 ## Acceptance criteria
+- [ ] Carried from the task 17 review, Minor 1: the read-only agents' `"*_*": deny` rule also overrides opencode's own external-directory allows for skill directories and its tmp directory. So `fx-devils-advocate` can no longer read fx's references outside the project. Restore those reads with a rule placed after `*_*`, for example `external_directory: "allow"` scoped to the fx plugin's references path if opencode supports a path pattern there, or `"ask"` otherwise. State the choice and cite the source. Add a test proving `*_*` still denies an MCP-shaped id
+- [ ] Carried from the task 17 review, Minor 2: row 12 requires at least two dispatches of the lens, so the row cannot pass when the shell probe never ran
+- [ ] Carried from the task 17 review, Minor 3: the tools-line and `*_*` assertions loop over `READ_ONLY_AGENTS`, not over every agent file
 - [ ] After the config hook, `general` has `permission.task` of `'allow'`
 - [ ] A `general.permission.task` the user already set, of any value, is left as it was
 - [ ] Every read-only agent has `permission.task` of `'deny'`

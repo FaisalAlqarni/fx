@@ -1753,3 +1753,19 @@ Task 16: fix round 1 landed in fa252f1. The FX check is written into the
         access. Parked for the final review.
         Scoped re-review and lens re-check dispatched.
 Task 16: re-review of round 1 approved. Mutations of the cwd and manifest checks both fail the test. Minors (deferred to the final review): the word "stale" means two different things in the fx-setup output; setup refuses inside the fx checkout without saying why; the caveat text is stale. The security lens re-check is pending.
+Task 17: review Approved. No Critical or Important. The MCP deny holds against
+        the opencode source (`mcp/catalog.ts:119` and
+        `permission/index.ts:204-214`). The reviewer ran four mutations and each
+        fails the suite. The out-of-list edits were needed and are correct.
+Ruling: task 18 carries three of the task 17 Minors, because task 18 edits the
+        same opencode agent permissions and rows:
+        - `*_*` also overrides opencode's external-directory allows, so
+          devils-advocate cannot read fx references;
+        - row 12 can pass without the shell probe having run;
+        - the assertions loop over all agents instead of READ_ONLY_AGENTS.
+        Minor 4, the unwrapped line, goes to the final review. SURFACE.md,
+        INSTALL.md and the note that existing opencode installs keep
+        `bash: allow` until reinstalled go to task 13.
+        Cost if wrong: until task 18 lands, devils-advocate on opencode cannot
+        read its references. Caught by task 18's review.
+        The security lens on task 17 is pending.

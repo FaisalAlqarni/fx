@@ -29,6 +29,12 @@ this documentation must say. It must also cover:
   them with their reasons. Codex is proven live only after task 22. Until
   then, the docs state Codex live verification as pending, never as done.
 
+**Carried from task 17:** `SURFACE.md:92` and `INSTALL.md:29` still show the
+lenses with `Bash` and `bash: allow`. Correct them. Also document that an
+existing opencode install keeps `bash: allow` for the read-only agents until
+the installer is run again, because the plugin skips agents already present.
+It never overwrites them.
+
 **Files:**
 - Modify: `INSTALL.md`
 - Modify: `README.md`
