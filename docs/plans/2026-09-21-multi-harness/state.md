@@ -557,3 +557,8 @@ Ruling: the fix stands, and its fragility is recorded rather than smoothed over.
         `migrated-command-skills` directory is absent. Task 13 documents it as a
         known fragility.
 
+Note: review packages scoped 084bfc6..b914732 (task 06) and 9eaac90..660b10a
+        (task 07 fix). Both first attempts swallowed a controller ledger commit.
+        This is the fourth time; the standing rule is to read `git log` and take
+        the commit immediately before the implementer's, never a recorded BASE.
+
