@@ -1431,3 +1431,5 @@ Plan: the 21 red-team resolutions are committed. The controller verified the
         after 14 to 19; 22 after 14, 16, 17 and 19, and not before 2026-10-21;
         13 after 12 and 14 to 21. Coverage walk over the changed requirements:
         every finding has an owning task.
+
+Task 14: dispatched (opus, fresh implementer), BASE 5d6bca1.
