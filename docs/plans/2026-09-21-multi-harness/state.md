@@ -1514,3 +1514,25 @@ Task 15: minor (deferred):
         - a NaN `--part` prints the full render;
         - part order, which task 21 measures.
 Task 15: fix round 1 landed in 4504b7a. The rich fixture now renders a plan block, with a RED shown first. Scoped re-review dispatched.
+Task 15: re-review of round 1 approved. A mutant proves the fixture assertion
+        is not tautological. Minor: the fixture temp dir is left behind when an
+        assert fails.
+Task 15: complete (commits 03719db..4504b7a, 1 fix round, review approved).
+        The preamble reaches Claude Code in parts under 9,000 chars: 8720 and
+        5231 in this worktree. Live proof is rows 01, 02 and 16 in task 21.
+Task 14: security re-check. Lens findings #1 and #3 are fixed. **New
+        Critical, verified by the controller**: `GIT_OUTPUT_FLAG` in
+        `lib/plant-roles.js` is `/^(?:--output(?:=.*)?|--out|-o)$/`. The
+        classifier clears `git diff --out=/tmp/evil`, `--outp=`, `--outpu=`
+        and `-o/tmp/e`. Measured with isWritingBashCommand: each returns
+        false. Git accepts unambiguous long-option prefixes, so a read-only
+        lens could write a file through its one remaining tool.
+Ruling: task 14 fix round 2 owns this, though `lib/plant-roles.js` came from
+        task 06. Task 14 made the classifier the sole Codex gate, so it owns
+        the guarantee. The fix follows git's own abbreviation rule rather than
+        a list: any long option that is a prefix of `--output`, at least
+        `--out`, with or without `=value`, and `-o` with an attached value.
+        The implementer also searches the classifier's other flag patterns for
+        the same abbreviation hole.
+        Cost if wrong: another writing flag's abbreviation stays open. Caught
+        by the security lens re-check and by row 12's shell probe in task 22.
