@@ -2000,3 +2000,13 @@ Ruling: all 24 are folded into tasks 13, 18, 21 and 22 as acceptance criteria.
         A writer subagent is folding them in. The controller verifies and
         commits.
 Task 18: fix round 1 landed in 8877038. The wildcard is respected, and the {"*":"ask"} and {"*":"deny"} cases are pinned with a RED captured first. Row 15 on opencode requires every top-level dispatch to be general; the nested dispatch type is still not read. Scoped re-review dispatched.
+Task 18: the re-review of round 1 is approved. The reviewer re-probed five
+        user shapes, and all stayed unchanged and idempotent. The row 15
+        top-level `general` check was judged sound, because the first-level
+        agent is the one that must hold `task`. Minors (deferred): row 15's fail
+        text when no dispatch happened; `filter(Boolean)` drops an untyped
+        dispatch.
+Task 18: complete (commits 8c75623..8877038, 1 fix round, review approved).
+        `general` gets `task: allow` unless the user set `task` or `*`.
+        Read-only agents stay denied. Row 12 needs two lens dispatches. Row 15
+        names and asserts `general`. The live proof is row 15 in task 21.
