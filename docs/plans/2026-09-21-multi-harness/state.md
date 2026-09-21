@@ -1342,3 +1342,29 @@ Research landed in `research/`: codex.md (Rust source at rust-v0.155.1),
         - D5: opencode's `edit: deny` leaves bash open, and
           `tool.execute.before` carries no agent identity, so opencode can
           enforce read-only only through per-agent permissions.
+
+Task 12: security re-check of round 1 found one Important: the jail has no
+        --unshare-pid, so /proc/<pid>/root bypasses the home shadow wherever
+        ptrace_scope=0. Fix round 2 dispatched. Minors: the node rebind binds
+        a whole nvm root, and the shadow is path-based.
+Codex research follow-up (research/codex.md, "Follow-up: role visibility
+        timing"): Codex reads roles once per thread at config load, before any
+        hook runs, and nothing reloads them. Roles planted at SessionStart are
+        therefore visible only from the **next** session. A handler-level
+        `additionalContextLimit` (camelCase) is honoured in a plugin hooks file,
+        and `0` disables truncation. `statusMessage` is a valid handler key.
+User decisions, round 1 of the amendment:
+        - Merge gate: **hold the merge until the Codex live matrix passes**,
+          after the quota resets on 2026-10-21.
+        - Fix all three small defects: the dead git-guard tests, check-all
+          writing to the real HOME, and the heredoc-to-shell guard bypass. The
+          last one lifts the global constraint "`lib/git-guard.js` is not
+          modified by this work", for that fix only.
+        - Read-only: the user rejected treating any option as settling for less
+          ("why not learn from other plugins?"). Prior art checked: neither
+          ponytail nor caveman ships read-only agents or roles, and neither
+          touches opencode permissions (prior-art-multi-harness.md:58,68,134).
+          There is nothing to copy there. The strongest mechanism available is
+          no shell for read-only agents on all three runtimes, plus the Codex
+          `apply_patch` hook. Taken as the decision, stated back to the user for
+          override.

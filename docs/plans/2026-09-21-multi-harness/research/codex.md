@@ -242,3 +242,52 @@ So, for a plugin, SessionStart plus SubagentStart hooks are the only always-on c
 9. Do not rely on `sandbox_mode = "read-only"` in a role file. The docs promise it, but the 0.155.1 source ignores it. Enforce read-only roles in a PreToolUse hook keyed on `agent_type`, denying `apply_patch` and mutating `Bash`. Optionally add `[features] shell_tool = false` in the role file to drop shell completely.
 10. Tell users that plugin hooks need a one-time trust in `/hooks`, and a new trust after every hook definition change. Without it, nothing runs, silently.
 11. Skills work unchanged from `skills/<name>/SKILL.md`. Users address them as `$<plugin>:<skill>`. Add `agents/openai.yaml` with `policy.allow_implicit_invocation: false` only for skills that must never trigger implicitly.
+
+## Follow-up: role visibility timing
+
+The same tag and commit as above, `rust-v0.155.1` at `be2951ea`. `SRC` has the same meaning as before.
+
+### When roles are read, and when the spawn tool is built
+
+Roles are read once, when a thread's `Config` is built. `load_config_with_layer_stack` calls `load_agent_roles` and stores the result in `Config.agent_roles` (`SRC/core/src/config/mod.rs`, line `L3736` and line `L4270`). That happens before the session exists, so it always happens before any SessionStart hook runs.
+
+The spawn tool spec itself is rebuilt for every sampling request. `built_tools` calls `build_tool_router` (`SRC/core/src/session/turn.rs`, lines `L1702-L1772`), and `add_collaboration_tools` decides `expose_agent_type: !turn_context.config.agent_roles.is_empty()` (`SRC/core/src/tools/spec_plan.rs`, line `L1306` for V2 and line `L1356` for the V1 tool). In the first turn, SessionStart hooks run at `turn.rs` line `L320`, before the first sampling request, so tool building does come after the hooks.
+
+That ordering does not help, because each turn's config is a clone of the session's stored config. `build_per_turn_config` starts from `session_configuration.original_config_do_not_use.clone()` (`SRC/core/src/session/turn_context.rs`, lines `L723-L736`), and that clone carries the `agent_roles` map read at startup. The spawn handler resolves `agent_type` against the same map, and an unknown name fails with `unknown agent_type '<name>'` (`SRC/core/src/agent/role.rs`, lines `L51-L66` and the `resolve_role_config` function).
+
+The answer, then:
+
+- Roles planted by a SessionStart hook are not visible to `spawn_agent` in that session. This holds for the first turn and for every later turn of the session.
+- Spawned subagents do not help either. `build_agent_shared_config` clones the parent turn's config, so a child inherits the same stale map (`SRC/core/src/tools/handlers/multi_agents_common.rs`, lines `L195-L197`).
+- The roles become visible in the next thread whose config is loaded fresh. The app-server `thread_start_task` calls `config_manager.load_with_overrides` for each new thread (`SRC/app-server/src/request_processors/thread_processor.rs`, line `L1357`), and a resumed thread loads through `load_for_cwd` (same file, line `L3951`). So a new `codex` run, or a new thread started through `thread/start`, sees the planted roles. This research did not trace whether every TUI path for a new chat goes through `thread/start`, so a fresh `codex` process is the safe assumption.
+
+### Does anything reload roles mid-session
+
+No. Every code path that replaces `original_config_do_not_use` during a session builds the new value from a clone of the old config, then patches named fields only.
+
+- `refresh_runtime_config_inner` patches the config layer stack, MCP servers and a few feature flags (`SRC/core/src/session/mod.rs`, lines `L1943-L1996`).
+- `refresh_mcp_config` patches the same MCP fields (same file, lines `L2028-L2063`).
+- The MCP runtime refresh patches `mcp_servers` only (`SRC/core/src/session/mcp.rs`, lines `L666-L669`).
+- Settings updates patch the permission profile (`SRC/core/src/session/session.rs`, line `L455`).
+
+None of them calls `load_agent_roles` or touches `agent_roles`. `load_agent_roles` has exactly one caller in the tree, the config loader above. The practical consequence for a plugin: a SessionStart hook that writes `$CODEX_HOME/agents/*.toml` pays off one session late, and the first session after install runs without the roles.
+
+### additionalContextLimit in a plugin hooks file
+
+Yes. The key is `additionalContextLimit`, written in camelCase, and it belongs on the handler object next to `type` and `command`. It is a field of `HookHandlerConfig::Command`, declared with `rename = "additionalContextLimit"` (`SRC/config/src/hook_config.rs`, lines `L175-L184`). Plugin hook files parse into the same `HooksFile` type as user hook files (`SRC/core-plugins/src/loader.rs`, the `serde_json::from_str::<HooksFile>` call in `append_plugin_hook_file`). An example entry:
+
+```json
+{"hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/start.sh", "additionalContextLimit": 6000}]}]}}
+```
+
+The value is an approximate token count, and `0` disables spilling. Codex honours it only for PreToolUse, PostToolUse, SessionStart, UserPromptSubmit and SubagentStart. On any other event it logs "ignoring additionalContextLimit" (`SRC/hooks/src/engine/discovery.rs`, lines `L523-L540`). The limit value is part of the handler, so it is part of the trust hash, and changing it asks the user to trust the hook again.
+
+The other handler keys in the same struct: `commandWindows`, with `command_windows` accepted as an alias, `timeout` in seconds, `async` and `statusMessage` (`hook_config.rs`, lines `L163-L174`). The timeout key is `timeout`, the same as in Claude Code.
+
+### statusMessage
+
+Codex honours `statusMessage` as a handler config key. It is declared with `rename = "statusMessage"` on both the `command` and `mcp_tool` handlers (`SRC/config/src/hook_config.rs`, lines `L173-L174` and `L194-L195`). Discovery carries it through (`discovery.rs`, the `status_message` field of `NormalizedHandler`), and the dispatcher copies it into the hook run summary that the UI shows (`SRC/hooks/src/engine/dispatcher.rs`, line `L93`).
+
+It does not trip the unknown-key rejection, because that rejection applies to hook stdout, not to the hooks file. On the config side, only the top-level `HooksFile` has `deny_unknown_fields`, and it allows `description` and `hooks` (`hook_config.rs`, lines `L10-L17`). `HookEventsToml`, `MatcherGroup` and `HookHandlerConfig` have no such attribute (`hook_config.rs`, lines `L35-L60` and `L153-L201`). Serde's default applies to them, so an unknown handler key or an unknown event name, such as a Claude-only `Notification` block, is silently ignored.
+
+The strict rejection applies to the JSON a hook prints. `statusMessage` is not a stdout key in either harness. If a hook printed it on stdout, Codex would reject the whole object, since `HookUniversalOutputWire` allows only `continue`, `stopReason`, `suppressOutput` and `systemMessage` (`SRC/hooks/src/schema.rs`, lines `L86-L98`).
