@@ -1,7 +1,7 @@
 # fx
 
 The single canonical preamble. Injected into every session **and every
-dispatched subagent**, on both runtimes, from this one file.
+dispatched subagent**, on every runtime, from this one file.
 
 Subagents read neither `CLAUDE.md` nor memory. Anything that must hold for a
 subagent has to be here: that is the whole reason this file exists, and the
@@ -13,7 +13,7 @@ reason it stays short.
 
 <EXTREMELY-IMPORTANT>
 If there is even a 1% chance a lane applies to what you are about to do, you
-MUST invoke it with the `Skill` tool **before any response**, including before
+MUST invoke it with {{SKILL_TOOL}} **before any response**, including before
 a clarifying question and before reading a single file.
 
 A lane that applies is not a suggestion. You do not get to decide it is
@@ -21,15 +21,14 @@ unnecessary because the work looks small, because you remember roughly what it
 says, or because you are already most of the way through.
 </EXTREMELY-IMPORTANT>
 
-**Invoke, do not read.** `Skill` with the addressable name: `fx:fx-tdd`,
-`fx:fx-implement`, `fx:fx-review`. A plugin skill resolves as `plugin:skill`,
-so a bare `fx-tdd` may not resolve at all. Never `Read` a `SKILL.md` instead of
-invoking it: reading gives you the text without the obligation, which is the
-failure this section exists to stop.
+**Invoke, do not read.** {{SKILL_TOOL}} with the addressable name:
+{{LANE:fx-tdd}}, {{LANE:fx-implement}}, {{LANE:fx-review}}. {{RESOLUTION}}.
+Never `Read` a `SKILL.md` instead of invoking it: reading gives you the text
+without the obligation, which is the failure this section exists to stop.
 
 **This binds subagents exactly as it binds a controller.** You are reading this
 because it was injected into your context, whether you are running a session or
-a single dispatched task. An implementer writing code invokes `fx:fx-tdd`
+a single dispatched task. An implementer writing code invokes {{LANE:fx-tdd}}
 first, every time, whatever the dispatching prompt did or did not say.
 
 ### Announce it

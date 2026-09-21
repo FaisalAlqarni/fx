@@ -61,6 +61,7 @@ run git-guard.test.js   node lib/git-guard.test.js   "$MAIN" "$WT"
 run base-branch.test.js node lib/base-branch.test.js "$MAIN" "$WT"
 run heredoc.test.js     node lib/heredoc.test.js     "$MAIN" "$WT"
 run plan-state.test.js  node lib/plan-state.test.js
+run preamble.test.js    node lib/preamble.test.js
 
 run opencode-install        bash tests/opencode-install/run.sh
 
