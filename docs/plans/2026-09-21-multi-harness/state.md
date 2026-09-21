@@ -1637,3 +1637,4 @@ Ruling: round 5 removes `git` from what a read-only agent may run on Codex.
         - a relative entry in the user's PATH could resolve an allowed binary
           name to a file in the reviewed tree;
         - write_stdin's hook coverage is unverified until task 22.
+Task 14: round 5 landed in cc42e97. Read-only agents on Codex can no longer run git. The controller and default agents still can, behind the guard; that was proven through the real hook. Both marker probes are refused under a recorded lens identity. The round-4 probes had run unrecorded, which is the same rule, now corrected. codex/agents/fx-lens-database.toml:85 still tells lenses to run git diff; task 17 owns that body. This is the fix-loop cap. A scoped re-review and a lens re-check of rounds 4 and 5 were dispatched, and any residuals get adjudicated.
