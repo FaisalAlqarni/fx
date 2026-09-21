@@ -1934,3 +1934,15 @@ Task 20: fix round 1 landed in f0767d2.
           the probe.
         Scoped re-review dispatched.
 Task 18: dispatched (opus, fresh implementer), BASE after this commit.
+Task 20: re-review of round 1 approved. The reviewer re-ran the codex and
+        opencode mutations, and both FAIL row 09 through the real CLI. An
+        strace shows neither probe writes outside scratch, and the
+        /tmp/opencode concern did not occur with TMPDIR set. Minors, deferred
+        to the final review:
+        - add a workflow step that runs `command -v <bin> && <bin> --version`
+          after install, so a renamed bin on @latest turns red instead of
+          GAP-green;
+        - run.sh should export XDG_DATA_HOME, XDG_CACHE_HOME and
+          XDG_STATE_HOME under the scratch HOME. It matters only if a caller
+          has them exported; today opencode uses HOME defaults.
+Task 20: complete (commits c0d268f..f0767d2, 1 fix round, review approved).
