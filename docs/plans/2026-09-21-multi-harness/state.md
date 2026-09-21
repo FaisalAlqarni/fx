@@ -1878,3 +1878,4 @@ Task 20: DONE, d9a0874. The nightly workflow runs a floor and an @latest
         `claude plugin details`. Design A8's purpose is half met. A red
         @latest job currently fails the whole run (the implementer recommends
         keeping it). Reviewer dispatched.
+Task 17: re-review of round 1 approved. The reviewer confirmed rule order against opencode source at 70a24697 (propertyOrder original, and the explore agent uses the same shape). Devils-advocate can read references again. The installer and the plugin produce the same block. Minors, deferred: ADR evidence omits the propertyOrder dependency; the plugin throws on a missing references dir; the test models evaluate but not disabled. The security lens re-check is pending.
