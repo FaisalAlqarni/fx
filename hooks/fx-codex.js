@@ -23,7 +23,43 @@
 // damage, so a broken guard must refuse; the lane check is advice, so a
 // broken one must not wedge the session.
 
+const path = require('path');
 const { render } = require('../lib/preamble');
+
+// Codex's apply_patch carries its whole payload as raw text under `command`
+// — the SAME key Bash uses. Measured live against Codex CLI 0.155.1 (fix
+// round 1):
+//
+//   tool_name='apply_patch'  tool_input keys=['command']
+//     command = '*** Begin Patch\n*** Update File: target.js\n@@\n' +
+//                '-const b = 2;\n+const b = 3;\n*** End Patch'
+//
+// This is why routing on tool_name, not on the presence of tool_input.command,
+// is load-bearing: a hook that dispatched on "does tool_input have a command
+// field" would hand raw patch text to the git guard and have it inspected as
+// a shell command. Nothing here does that — tool_name is checked first, and
+// only 'Bash' ever reaches inspect().
+//
+// The header lines this parses (V4A patch format):
+//   *** Update File: <path>
+//   *** Add File: <path>
+//   *** Delete File: <path>
+//   *** Move to: <path>        (rename; follows an Update File line)
+// A patch can touch several files; every path found is checked. Anything
+// that does not parse — a header this regex does not recognise, a string
+// that is not patch text at all — yields no paths, which means no checks
+// and an allow: never a throw. The lane check is advice, so failing to
+// parse must fail open exactly like a laneCheck throw does.
+function extractPatchPaths(command) {
+  if (typeof command !== 'string') return [];
+  const paths = [];
+  for (const line of command.split('\n')) {
+    const m = line.match(/^\*\*\* (?:Update|Add|Delete) File: (.+)$/)
+      || line.match(/^\*\*\* Move to: (.+)$/);
+    if (m) paths.push(m[1].trim());
+  }
+  return paths;
+}
 
 let inspect, guardLoadError;
 try {
@@ -69,23 +105,21 @@ function handlePreToolUse(input) {
   }
 
   if (tool === 'apply_patch') {
-    // UNVERIFIED FIELD NAME: no live Codex session was run for this task (by
-    // instruction). Binary inspection of the installed Codex CLI 0.155.1
-    // shows apply_patch is a freeform tool whose argument is raw multi-file
-    // patch text ("*** Update File: {path}" markers), not necessarily a
-    // structured object with file_path/path keys. If the real PreToolUse
-    // payload does not carry either key, laneCheck(undefined, cwd) returns
-    // null below and this branch passes every call silently — wired but
-    // inert. Confirm the real key against a live session before trusting
-    // this in production.
-    const file = ti.file_path || ti.path;
-    let reason = null;
+    let paths;
     try {
-      reason = laneCheck(file, cwd);
+      paths = extractPatchPaths(ti.command);
     } catch {
-      reason = null;                 // advice: a bug here must not block an edit
+      paths = [];                    // unparseable: fail open, same as a laneCheck throw
     }
-    if (reason) deny(reason);
+    for (const p of paths) {
+      let reason = null;
+      try {
+        reason = laneCheck(path.resolve(cwd, p), cwd);
+      } catch {
+        reason = null;                 // advice: a bug here must not block an edit
+      }
+      if (reason) deny(reason);        // refuse on the FIRST offending path; its own
+    }                                   // reason already names which one
     process.exit(0);
   }
 

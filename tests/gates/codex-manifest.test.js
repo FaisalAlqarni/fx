@@ -93,34 +93,86 @@ assert.ok(patch.status === 0 || patch.status === 2,
   'apply_patch must reach the lane check, not fall through unexamined');
 
 // The assertion above is satisfied even by a hook that never calls
-// laneCheck (README.md is prose, so laneCheck already permits it). Prove the
-// wiring for real: a scratch dir with a source file and no design doc must
-// be refused, and the SAME dir must then be silently permitted, because the
-// design-lane check fires once per .fx state dir.
+// laneCheck (README.md is prose, so laneCheck already permits it, AND the
+// payload above uses a `file_path` key the real Codex CLI never sends — see
+// below). It cannot prove the wiring.
+//
+// Measured live against Codex CLI 0.155.1 (fix round 1): a real apply_patch
+// PreToolUse payload has no `file_path`/`path` key at all. The whole patch
+// arrives as raw text under `command` — the SAME key Bash uses:
+//
+//   tool_name='apply_patch'  tool_input keys=['command']
+//     command = '*** Begin Patch\n*** Update File: target.js\n@@\n' +
+//                '-const b = 2;\n+const b = 3;\n*** End Patch'
+//
+// The lane check must parse the affected path(s) out of that text. These
+// cases prove the parser, not just the routing.
 const os = require('os');
-const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-codex-lane-'));
-try {
-  const target = path.join(scratch, 'lib', 'widget.js');
-  fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.writeFileSync(target, '// placeholder\n');
 
-  const refusedPatch = fire({
-    hook_event_name: 'PreToolUse', cwd: scratch,
-    tool_name: 'apply_patch', tool_input: { file_path: target },
-  });
-  assert.strictEqual(refusedPatch.status, 2,
-    'apply_patch on source code with no docs/plans/*/design.md must be refused');
-  assert.ok(refusedPatch.stderr.trim().length > 0, 'a refusal must state its reason');
-
-  const secondPatch = fire({
-    hook_event_name: 'PreToolUse', cwd: scratch,
-    tool_name: 'apply_patch', tool_input: { file_path: target },
-  });
-  assert.strictEqual(secondPatch.status, 0,
-    'the lane check fires once; the second call in the same dir must pass');
-  assert.strictEqual(secondPatch.stderr.trim(), '', 'a pass must be silent');
-} finally {
-  fs.rmSync(scratch, { recursive: true, force: true });
+function withScratch(fn) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-codex-lane-'));
+  try { fn(dir); } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 }
+
+// Single-file patch: the one path named is source code with no design doc.
+withScratch((scratch) => {
+  const command = '*** Begin Patch\n*** Update File: lib/widget.js\n@@\n'
+    + '-const b = 2;\n+const b = 3;\n*** End Patch';
+  const result = fire({
+    hook_event_name: 'PreToolUse', cwd: scratch,
+    tool_name: 'apply_patch', tool_input: { command },
+  });
+  assert.strictEqual(result.status, 2,
+    'apply_patch on source code with no docs/plans/*/design.md must be refused');
+  assert.ok(result.stderr.includes('lib/widget.js'),
+    'the reason must name the refused path');
+});
+
+// Multi-file patch: only the SECOND path is refused. Proves every path is
+// checked, not just the first, and that the reason names the specific
+// offender rather than the whole patch.
+withScratch((scratch) => {
+  const command = '*** Begin Patch\n'
+    + '*** Update File: README.md\n@@\n-old\n+new\n'
+    + '*** Update File: lib/widget.js\n@@\n-const b = 2;\n+const b = 3;\n'
+    + '*** End Patch';
+  const result = fire({
+    hook_event_name: 'PreToolUse', cwd: scratch,
+    tool_name: 'apply_patch', tool_input: { command },
+  });
+  assert.strictEqual(result.status, 2,
+    'a multi-file patch is refused when ANY of its paths is refused');
+  assert.ok(result.stderr.includes('lib/widget.js'),
+    'the reason names the specific offending path');
+  assert.ok(!result.stderr.includes('README.md'),
+    'the reason names the offender, not every path in the patch');
+});
+
+// A rename carries two paths: the Update line and the Move-to target. Both
+// must be checked.
+withScratch((scratch) => {
+  const command = '*** Begin Patch\n*** Update File: README.md\n'
+    + '*** Move to: lib/renamed.js\n@@\n-old\n+new\n*** End Patch';
+  const result = fire({
+    hook_event_name: 'PreToolUse', cwd: scratch,
+    tool_name: 'apply_patch', tool_input: { command },
+  });
+  assert.strictEqual(result.status, 2,
+    'the Move-to target is source code with no design doc and must be checked too');
+  assert.ok(result.stderr.includes('lib/renamed.js'),
+    'the reason names the Move-to path');
+});
+
+// Unparseable patch text: fail open, exactly as a laneCheck throw already
+// does. A parsing bug must never wedge a Codex session.
+withScratch((scratch) => {
+  const result = fire({
+    hook_event_name: 'PreToolUse', cwd: scratch,
+    tool_name: 'apply_patch', tool_input: { command: 'this is not a patch at all' },
+  });
+  assert.strictEqual(result.status, 0,
+    'a patch with no recognisable file header must be allowed, not wedge the session');
+  assert.strictEqual(result.stderr.trim(), '', 'a pass must be silent');
+});
 
 console.log('codex guard: OK');
