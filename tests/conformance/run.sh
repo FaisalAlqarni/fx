@@ -17,8 +17,14 @@ FX="$PWD"
 HARNESS="${1:?usage: run.sh <claude-code|opencode|codex> [--free]}"
 case "$HARNESS" in claude-code|opencode|codex) ;; *)
   echo "unknown harness: $HARNESS" >&2; exit 2 ;; esac
+# Only `--free` is accepted. Anything else, `--fre` included, used to fall
+# through to "not free" and run the live rows, spending quota on a typo.
 FREE=""
-[ "${2:-}" = "--free" ] && FREE=1
+case "$#:${2:-}" in
+  1:) ;;
+  2:--free) FREE=1 ;;
+  *) echo "usage: run.sh <claude-code|opencode|codex> [--free]" >&2; exit 2 ;;
+esac
 
 # FX_CONFORMANCE_ROWS points the runner at another rows directory; the
 # isolation test uses it to run a probe row. Unset, the real rows run.
@@ -61,8 +67,15 @@ for f in "${ROWS[@]}"; do
   IFS='|' read -r n name kind <<<"$desc"
   if [ -n "$FREE" ] && [ "$kind" != free ]; then continue; fi
 
-  FX="$FX" HARNESS="$HARNESS" bash "$f"; rc=$?
+  # The row's stderr is its reason. It is captured so a GAP can be held to
+  # having one, and passed through so the reader still sees it.
+  FX="$FX" HARNESS="$HARNESS" bash "$f" 2>"$SCRATCH/row.err"; rc=$?
+  cat "$SCRATCH/row.err" >&2
   ran=$((ran+1))
+  # A GAP with no reason is indistinguishable from a row that gave up. FAIL it.
+  if [ "$rc" -eq 77 ] && ! [ -s "$SCRATCH/row.err" ]; then
+    echo "row exited 77 with no reason on stderr; a GAP must say why" >&2; rc=1
+  fi
   case "$rc" in
     0)  printf 'PASS  %2s  %s\n' "$n" "$name"; pass=$((pass+1)) ;;
     77) printf 'GAP   %2s  %s\n' "$n" "$name"; gap=$((gap+1)) ;;

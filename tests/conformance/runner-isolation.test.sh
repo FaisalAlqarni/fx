@@ -103,10 +103,43 @@ rc=$?
 check "noguard: runner exits non-zero (rc=$rc)" '[ "$rc" -ne 0 ]'
 check "noguard: row reported as FAIL" 'grep -q "^FAIL.*91-noguard.sh" "$OUT/noguard.log"'
 
+# 4. A mistyped mode flag must be refused before any row runs. Accepting
+# `--fre` as "not --free" would run the live rows and spend quota. The probe
+# row is free, so if the runner dispatched anything the probe record appears.
+env HOME="$FAKE" FX_CONFORMANCE_ROWS="$ROWS" PROBE_OUT="$OUT/typo" \
+    bash "$RUNNER" codex --fre > "$OUT/typo.log" 2>&1
+rc=$?
+check "typo: runner exits 2 on an unknown flag (rc=$rc)" '[ "$rc" -eq 2 ]'
+check "typo: no row was dispatched" '[ ! -e "$OUT/typo" ]'
+env HOME="$FAKE" FX_CONFORMANCE_ROWS="$ROWS" PROBE_OUT="$OUT/extra" \
+    bash "$RUNNER" codex --free extra > "$OUT/extra.log" 2>&1
+rc=$?
+check "extra: runner exits 2 on a third argument (rc=$rc)" '[ "$rc" -eq 2 ]'
+
+# 5. A GAP is a visible state only if it says why. A row exiting 77 with
+# nothing on stderr is a FAIL; one that gives a reason stays a GAP, and the
+# reason reaches the reader.
+GR="$T/rows-gap"; mkdir -p "$GR"
+printf '%s\n' '#!/usr/bin/env bash' \
+  '[ "${1:-}" = --describe ] && { echo "92|silent gap|free"; exit 0; }' \
+  'exit 77' > "$GR/92-silent-gap.sh"
+printf '%s\n' '#!/usr/bin/env bash' \
+  '[ "${1:-}" = --describe ] && { echo "93|reasoned gap|free"; exit 0; }' \
+  'echo "codex: cannot support this, measured" >&2; exit 77' > "$GR/93-reasoned-gap.sh"
+env HOME="$FAKE" FX_CONFORMANCE_ROWS="$GR" \
+    bash "$RUNNER" codex --free > "$OUT/gap.log" 2>&1
+rc=$?
+check "gap: runner exits non-zero on a silent gap (rc=$rc)" '[ "$rc" -ne 0 ]'
+check "gap: silent gap reported as FAIL" 'grep -q "^FAIL  92  silent gap" "$OUT/gap.log"'
+check "gap: reasoned gap stays a GAP" 'grep -q "^GAP   93  reasoned gap" "$OUT/gap.log"'
+check "gap: the reason reaches the reader" 'grep -q "cannot support this, measured" "$OUT/gap.log"'
+check "gap: summary counts one fail and one gap" 'grep -q "0 pass, 1 fail, 1 gap" "$OUT/gap.log"'
+
 if [ "$failures" -ne 0 ]; then
   echo "--- normal.log" >&2; cat "$OUT/normal.log" >&2
   echo "--- sigint.log" >&2; cat "$OUT/sigint.log" >&2
   echo "--- noguard.log" >&2; cat "$OUT/noguard.log" >&2
+  for f in typo extra gap; do echo "--- $f.log" >&2; cat "$OUT/$f.log" >&2; done
   echo "runner-isolation: $failures failed" >&2
   exit 1
 fi
