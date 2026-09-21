@@ -1312,3 +1312,8 @@ Task 12: fix round 1 landed in e98c27e. The implementer corrected its own first
         probe cannot read any of the three credential files, and the CLIs and
         the llama-server still work. The matrix is unchanged.
         Scoped re-review and security lens dispatched.
+Task 12: scoped re-review of round 1: Approved. Row 15 is fixed. New Minors:
+        /proc/<pid>/root still reaches the real home, because the jail has no
+        --unshare-pid, and the claude-code row 08 guard-off mutation was never
+        re-run under the fixed jail. The security lens re-check is still
+        pending, and task 12 does not complete until it reports.
