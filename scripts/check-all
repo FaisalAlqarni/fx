@@ -81,5 +81,6 @@ run conformance-plant-codex-roles bash tests/conformance/plant-codex-roles.test.
 run conformance-free-claude-code bash tests/conformance/run.sh claude-code --free
 run conformance-free-opencode    bash tests/conformance/run.sh opencode --free
 run conformance-free-codex       bash tests/conformance/run.sh codex --free
+run ci-pins.test.js node tests/gates/ci-pins.test.js
 
 echo "ALL GREEN"

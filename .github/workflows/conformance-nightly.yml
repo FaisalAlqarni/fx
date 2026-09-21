@@ -1,0 +1,62 @@
+# Nightly conformance against the real CLIs (design amendment A8).
+#
+# Copied from caveman's .github/workflows/agent-conformance.yml: a nightly
+# cron plus workflow_dispatch, a matrix that installs each real CLI at a pinned
+# version, and a companion check (here tests/gates/ci-pins.test.js, run by
+# scripts/check-all) that fails when a harness has no pinned probe.
+#
+# caveman pins only, and its open issue 1097 ("agent-drift: codex, installed
+# 0.155.1 exceeds pinned 0.155.0") is what a floor alone misses: the world
+# moved and the pinned job stayed green. So every harness runs twice: at the
+# version floor fx claims, and at @latest. A red floor means fx no longer works
+# on the oldest version it claims; a red @latest means a CLI release changed
+# how plugins load.
+#
+# The free rows make no model calls, so this workflow uses no secrets. The live
+# rows stay local.
+
+name: conformance-nightly
+
+on:
+  schedule:
+    - cron: "23 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  free-rows:
+    name: free rows / ${{ matrix.harness }} / ${{ matrix.install }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - harness: claude-code
+            install: npm install -g @anthropic-ai/claude-code@2.1.278
+          - harness: claude-code
+            install: npm install -g @anthropic-ai/claude-code@latest
+          - harness: codex
+            install: npm install -g @openai/codex@0.155.1
+          - harness: codex
+            install: npm install -g @openai/codex@latest
+          - harness: opencode
+            install: npm install -g opencode-ai@1.18.25
+          - harness: opencode
+            install: npm install -g opencode-ai@latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "24.16.0"
+      # The free rows also call python3 (scripts/check-paths,
+      # scripts/fx-opencode-install), which ubuntu-latest ships. bubblewrap
+      # is needed by the live rows only, so it is not installed here.
+      - name: Install the CLI
+        run: ${{ matrix.install }}
+      - name: Run the free conformance rows
+        run: bash tests/conformance/run.sh ${{ matrix.harness }} --free
