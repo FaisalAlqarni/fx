@@ -2110,3 +2110,17 @@ Ruling: fix round 1 is a **measurement only**. Bisect the opencode row 04 drop
         user's call. Measuring first keeps the fix from being a guess.
         Cost if wrong: the Qwen time for about 20 runs. Caught by nothing,
         because this is measurement.
+Task 24: bisect result. Across two rounds (variants a to f), **only restoring
+        the pre-trim intro paragraph above the imperative recovers** opencode
+        row 04, to 4/5 against 0 to 2/5 for every other variant. Worst case
+        8,503 chars.
+User decision (2026-09-22): restore the intro, confirm, then commit. Before
+        committing:
+        - run row 04 five more times on opencode and five times on Claude Code;
+        - commit only if both hold at the old rate, 9/10 on opencode and 5/5
+          on Claude Code, within noise.
+        Constraint wording: "Only the fixed intro sits above the opening
+        imperative; nothing else is added there." The implementer drops its
+        two new assertions (render starts with the imperative, intro absent)
+        and adds one pinning the intro as the only text above it.
+Task 24: fix round 2 dispatched with that scope.
