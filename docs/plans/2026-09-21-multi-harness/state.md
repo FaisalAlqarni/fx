@@ -1444,3 +1444,4 @@ Task 14: DONE_WITH_CONCERNS, af56f8c. The scratch marketplace install
         lens dispatched.
 Task 14: minor (deferred): `codex-manifest.test.js` does not set TMPDIR, so
         identity records leak into the shared /tmp. This is older code.
+Task 15: dispatched (opus, fresh implementer), BASE 03719db. It runs alongside the task 14 review.
