@@ -48,11 +48,23 @@ build, and an early version of this runner itself defined a dispatcher and
 never called it: it printed `0 pass, 0 fail, 0 gap` and exited 0, which looks
 exactly like success.
 
-## Restoring state
+## Isolation, not restoration
 
-Rows may write into a runtime home. The runner snapshots `~/.codex`,
-`~/.config/opencode` and `~/.claude` before any row runs and restores them on
-any exit, including failure and interrupt.
+Every row runs against a scratch home. The runner creates one `mktemp -d`,
+points `HOME`, `CODEX_HOME`, `XDG_CONFIG_HOME` and `CLAUDE_CONFIG_DIR` inside
+it, and removes only that directory on exit, including on failure and
+interrupt. The home you started it from is exported as `FX_REAL_HOME`, for a
+live row that has to copy credentials **in**. Nothing is ever copied back out.
 
-This is not theoretical. Earlier in this build a test ran without `CODEX_HOME`
-set and wrote six role files into a real `~/.codex/agents/`.
+An earlier runner snapshotted `~/.codex`, `~/.config/opencode` and `~/.claude`
+and restored them from a trap with `rm -rf <home> && cp -a <snapshot> <home>`.
+The snapshot copy silenced its errors, so a failed copy still armed the
+restore, and it deleted a real `~/.claude`. A row that cannot reach the real
+home has nothing to put back.
+
+`runner-isolation.test.sh` proves this against a fake home holding sentinel
+files: a probe row writes `$HOME/.claude/probe`, once normally and once under
+`SIGINT`, and the fake home must come out byte-identical with the scratch
+directory gone. It points the runner at its own probe row through
+`FX_CONFORMANCE_ROWS`. **Never develop against the runner with your real
+`HOME`**; set `HOME` to a `mktemp -d` on the command line.

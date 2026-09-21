@@ -20,7 +20,9 @@ case "$HARNESS" in claude-code|opencode|codex) ;; *)
 FREE=""
 [ "${2:-}" = "--free" ] && FREE=1
 
-ROWS_DIR="$FX/tests/conformance/rows"
+# FX_CONFORMANCE_ROWS points the runner at another rows directory; the
+# isolation test uses it to run a probe row. Unset, the real rows run.
+ROWS_DIR="${FX_CONFORMANCE_ROWS:-$FX/tests/conformance/rows}"
 shopt -s nullglob
 ROWS=("$ROWS_DIR"/*.sh)
 if [ "${#ROWS[@]}" -eq 0 ]; then
@@ -29,25 +31,24 @@ if [ "${#ROWS[@]}" -eq 0 ]; then
   exit 2
 fi
 
-# Rows may write into a runtime home. Snapshot all three and restore on ANY
-# exit, including failure and interrupt. Earlier in this build a test without
-# CODEX_HOME set wrote six role files into a real ~/.codex/agents.
-# DISABLED. This block used to snapshot and restore three runtime homes,
-# including "$HOME/.claude", with `rm -rf "$h" && cp -a "$src" "$h"`.
+# Rows run against a scratch home: HOME, CODEX_HOME, XDG_CONFIG_HOME and
+# CLAUDE_CONFIG_DIR all point inside one mktemp -d, and only that directory is
+# removed on exit. FX_REAL_HOME lets a live row copy credentials IN; nothing is
+# ever copied back out.
 #
-# It destroyed a real ~/.claude: the snapshot `cp -a` silenced its errors with
-# 2>/dev/null, so a partial or failed copy still armed a restore that deleted
-# the live directory and put the partial copy back. The plugin cache went from
-# twelve entries to two.
-#
-# A test harness must never `rm -rf` a user's home configuration. The rows that
-# need isolation set CODEX_HOME to a temp dir themselves, which is how every
-# other test in this repository does it.
-#
-# Do not reinstate this without a mechanism that cannot lose data: no rm -rf of
-# a live path, no silenced copy errors, and a verified snapshot before anything
-# destructive runs.
-echo "note: rows isolate themselves with CODEX_HOME; the runner restores nothing" >&2
+# Isolation replaced restoration. An earlier runner snapshotted the three homes
+# and restored them with `rm -rf <home> && cp -a <snapshot> <home>`; a silenced
+# failed copy armed that restore and it deleted a real ~/.claude. A row that
+# cannot reach the real home has nothing to put back.
+SCRATCH="$(mktemp -d)" || { echo "mktemp -d failed" >&2; exit 2; }
+case "$SCRATCH" in /tmp/?*|"${TMPDIR:-/tmp}"/?*) ;; *)
+  echo "refusing scratch dir outside the temp dir: '$SCRATCH'" >&2; exit 2 ;; esac
+trap 'rm -rf -- "$SCRATCH"' EXIT
+export FX_REAL_HOME="$HOME"
+export HOME="$SCRATCH/home"
+export CODEX_HOME="$HOME/.codex" XDG_CONFIG_HOME="$HOME/.config" \
+       CLAUDE_CONFIG_DIR="$HOME/.claude"
+mkdir -p "$CODEX_HOME" "$XDG_CONFIG_HOME/opencode" "$CLAUDE_CONFIG_DIR" || exit 2
 
 pass=0; fail=0; gap=0; ran=0
 for f in "${ROWS[@]}"; do
