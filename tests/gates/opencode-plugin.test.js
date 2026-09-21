@@ -114,6 +114,32 @@ const root = path.join(__dirname, '..', '..');
       `${name} must not read outside the project and fx's references`);
   }
 
+  // Task 18 (amendment A6): opencode hands a subagent the task tool only when
+  // the agent's own permission block has a rule keyed exactly `task`
+  // (agent/subagent-permissions.ts, canTask); `"*": "allow"` does not count.
+  // The read-only agents' `task` denial is asserted above, through effective():
+  // their deny-all first rule covers it, with no separate key.
+  assert.strictEqual(config.agent.general?.permission?.task, 'allow', 'general can dispatch');
+  {
+    // A user's own choice survives, whatever it is.
+    const user = { agent: { general: { model: 'x/y', permission: { task: 'ask' } } } };
+    await hooks.config(user);
+    assert.deepStrictEqual(user.agent.general, { model: 'x/y', permission: { task: 'ask' } }, 'user setting kept');
+    // Other general settings stay, and task is merged in beside them.
+    const partial = { agent: { general: { model: 'x/y', permission: { bash: 'ask' } } } };
+    await hooks.config(partial);
+    assert.deepStrictEqual(partial.agent.general, { model: 'x/y', permission: { bash: 'ask', task: 'allow' } },
+      'task merged into the users general block, nothing else touched');
+    // A bare action string is a valid permission block too, and the user's.
+    const bare = { agent: { general: { permission: 'ask' } } };
+    await hooks.config(bare);
+    assert.strictEqual(bare.agent.general.permission, 'ask', 'a string permission is left as it was');
+    // Idempotent.
+    const again = JSON.parse(JSON.stringify(config));
+    await hooks.config(again);
+    assert.deepStrictEqual(again, config, 'a second config() run changes nothing');
+  }
+
   assert.ok(config.subagent_depth >= 2, 'an implementer must be able to dispatch a reviewer');
   const high = { subagent_depth: 5 };
   await hooks.config(high);

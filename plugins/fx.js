@@ -130,6 +130,21 @@ export const fx = async ({ directory } = {}) => {
         config.agent[name] = toOpencodeAgent(mdText, { referencesDirs: REFERENCES_DIRS });
       }
 
+      // Nested dispatch (amendment A6): opencode gives a subagent the task
+      // tool only when its own permission block has a rule keyed exactly
+      // `task`; `"*": "allow"` does not count (subagent-permissions.ts,
+      // canTask). `general` is the built-in subagent's key: opencode 1.18.31
+      // packages/opencode/src/agent/agent.ts:182-195, and `opencode agent
+      // list` on 1.18.25 prints `general (subagent)`. opencode merges this
+      // block over the native agent. Merge only when `task` is absent, so a
+      // user's own value and a repeat config() call are both left alone. A
+      // bare action string is a whole permission block, and the user's too.
+      const general = (config.agent.general = config.agent.general || {});
+      general.permission = general.permission || {};
+      if (typeof general.permission === 'object' && !('task' in general.permission)) {
+        general.permission.task = 'allow';
+      }
+
       // Depth: `subagent_depth` defaults to 1, which stops an implementer
       // dispatching a reviewer. Raise it, but never lower a value already
       // set higher than what fx needs.

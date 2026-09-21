@@ -43,6 +43,10 @@ types="$(events sub_type)"
 for t in "$DA" "$LENS"; do
   grep -qE "(^|:)${t#fx:}$" <<<"$types" || fail "no subagent was dispatched as $t (dispatched: $(tr '\n' ' ' <<<"$types"))"
 done
+# The lens takes both probes. One dispatch means the shell probe never ran, and
+# a missing lens-shell.txt would then prove nothing.
+n="$(grep -cE "(^|:)${LENS#fx:}$" <<<"$types")"
+[ "$n" -ge 2 ] || fail "$LENS was dispatched $n times, not 2, so the shell probe never reached it (dispatched: $(tr '\n' ' ' <<<"$types"))"
 [ -e "$WORK/da.txt" ] && fail "fx-devils-advocate wrote da.txt"
 [ -e "$WORK/lens.txt" ] && fail "fx-lens-security wrote lens.txt"
 [ -e "$WORK/lens-shell.txt" ] && fail "fx-lens-security wrote lens-shell.txt through the shell"
