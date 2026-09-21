@@ -562,3 +562,16 @@ Note: review packages scoped 084bfc6..b914732 (task 06) and 9eaac90..660b10a
         This is the fourth time; the standing rule is to read `git log` and take
         the commit immediately before the implementer's, never a recorded BASE.
 
+Task 07: complete (commits 4059996..660b10a, 1 fix round, re-review clean).
+        Spec 9/10 PASS with criterion 10 deliberately unmet, quality PASS.
+        Files: scripts/gen-command-skills, scripts/check-all,
+        scripts/fx-opencode-install, tests/gates/user-invoked.test.js,
+        skills/fx-audit/agents/openai.yaml, and SKILL.md plus openai.yaml for
+        fx-critique, fx-grill, fx-handoff and fx-setup.
+        Guarantee: all five user-invoked lanes are hidden from the model on both
+        runtimes and remain user-invocable. Verified live by the controller with
+        visible controls proving the probe discriminates.
+        Sidecar filenames confirmed `openai.yaml`, matching OpenAI's own bundled
+        `review-agent`: a reviewer's prose said `openapi.yaml` and a wrong
+        filename there would have silently disabled the hiding on all five.
+
