@@ -8,7 +8,7 @@ description: >
   scheduled run that keeps adding work while consumers fall behind, with no
   depth check, high-water mark or admission control between it and the
   queue, so the backlog grows without bound.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob
 model: opus
 ---
 
@@ -156,8 +156,8 @@ other caller of the same enqueue helper and every other producer onto the
 same queue: a bound on one producer does not bound a queue that another
 producer fills unchecked.
 
-Read-only shell commands only. Never connect to a broker, a queue or a
-database, and never run or replay a job.
+Read and search only. Never connect to a broker, a queue or a database,
+and never run or replay a job.
 
 ## Output
 

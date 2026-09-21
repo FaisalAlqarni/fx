@@ -121,6 +121,10 @@ never start two opencode runs together. A 27B model may fail row 04 or row 12
 for want of capability rather than because fx is broken, so a suspected flake
 is re-run once and both results are recorded, never the better one alone.
 
+**Row 12 covers both ways a read-only agent could write:** its editing tool
+and the shell. Each probe has a general agent as its control, so a refusal
+that also stops the control is a failure, not a pass.
+
 ## Isolation, not restoration
 
 Every row runs against a scratch home. The runner creates one `mktemp -d`,

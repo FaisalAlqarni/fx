@@ -246,6 +246,8 @@ if [ "$HARNESS" = opencode ]; then
   # gives the loop its own shell, so only the subshell's exit status escapes.
   check "generated read-only agents deny edit" \
     '( for f in "$DEST"/agents/fx-lens-*.md "$DEST"/agents/fx-devils-advocate.md; do grep -q "edit: deny" "$f" || exit 1; done )'
+  check "generated read-only agents deny the shell and every MCP tool" \
+    '( for f in "$DEST"/agents/fx-lens-*.md "$DEST"/agents/fx-devils-advocate.md; do grep -q "bash: deny" "$f" && grep -qF "\"*_*\": deny" "$f" || exit 1; done )'
   check "no generated artifact carries the plugin prefix" \
     '! grep -rq "fx:fx-" "$DEST"'
   check "apply_patch is never used as a permission key" \

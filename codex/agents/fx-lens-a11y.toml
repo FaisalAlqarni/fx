@@ -95,7 +95,7 @@ Read the changed templates and the CSS they use. Grep the design system's token
 file before judging a colour. Grep both locale files when a string appears.
 Check the Stimulus controller behind any `data-controller` the markup adds: the barrier is often in the JS, not the ERB.
 
-Read-only shell commands only. Do not run a browser, do not edit markup.
+Read and search only. Do not run a browser, do not edit markup.
 
 ## Output
 

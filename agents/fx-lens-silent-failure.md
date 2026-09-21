@@ -11,7 +11,7 @@ description: >
   receivers, attribution and tracking pipelines, external HTTP clients, or any
   transaction, `ensure`/`finally`, or bulk import loop that continues past a
   failed record. Read-only: reports swallowed failures, never fixes them.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob
 model: sonnet
 ---
 
@@ -87,7 +87,7 @@ the caller now believe happened? Grep for the swallowing helper's other call
 sites: one guard usually feeds many paths. Check whether anything downstream
 could distinguish this failure from an empty success.
 
-Read-only shell commands only.
+Read and search only.
 
 ## Output
 

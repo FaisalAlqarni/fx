@@ -152,8 +152,8 @@ other caller of the same enqueue helper and every other producer onto the
 same queue: a bound on one producer does not bound a queue that another
 producer fills unchecked.
 
-Read-only shell commands only. Never connect to a broker, a queue or a
-database, and never run or replay a job.
+Read and search only. Never connect to a broker, a queue or a database,
+and never run or replay a job.
 
 ## Output
 

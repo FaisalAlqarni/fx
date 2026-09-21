@@ -76,8 +76,18 @@ const root = path.join(__dirname, '..', '..');
     const a = config.agent[name];
     assert.strictEqual(a.mode, 'subagent');
     assert.strictEqual(a.permission.edit, 'deny', `${name} must not be able to edit`);
-    assert.strictEqual(a.permission.bash, 'allow', `${name} must still be able to look`);
     assert.ok(a.description && a.prompt, `${name} needs a description and a prompt`);
+  }
+
+  // Task 17 (amendment A5): a read-only agent has no shell on opencode.
+  for (const name of ['fx-devils-advocate', 'fx-lens-a11y', 'fx-lens-database', 'fx-lens-pipeline', 'fx-lens-security', 'fx-lens-silent-failure']) {
+    assert.strictEqual(config.agent[name].permission.edit, 'deny', `${name} edit`);
+    assert.strictEqual(config.agent[name].permission.bash, 'deny', `${name} bash`);
+    // An MCP tool's id is `<server>_<tool>` (opencode 1.18.31
+    // packages/opencode/src/mcp/catalog.ts:117-119), and Permission.disabled()
+    // wildcard-matches a tool id against each rule's key (permission/index.ts:
+    // 204-214), so `*_*` hides every MCP tool from the agent.
+    assert.strictEqual(config.agent[name].permission['*_*'], 'deny', `${name} MCP tools`);
   }
 
   assert.ok(config.subagent_depth >= 2, 'an implementer must be able to dispatch a reviewer');

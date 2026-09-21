@@ -9,7 +9,7 @@ directory the installer owns, never a whole-folder symlink.
 Agents are GENERATED, because the two runtimes disagree on frontmatter:
 
     Claude Code            opencode
-    tools: Read, Grep      permission: { edit: deny, bash: allow }
+    tools: Read, Grep      permission: { edit: deny, bash: deny, "*_*": deny }
     (subagent by dir)      mode: subagent
 
 The conversion itself -- which `tools:` become which `permission:` -- has
@@ -138,8 +138,8 @@ def render_opencode_agent(name, agent):
     out = ["---", f"description: {yaml_quote(agent['description'])}",
            f"mode: {agent['mode']}",
            "permission:",
-           f"  edit: {perm['edit']}",
-           f"  bash: {perm['bash']}",
+           *(f"  {k if re.fullmatch(r'[a-z_]+', k) else yaml_quote(k)}: {v}"
+             for k, v in perm.items()),
            "---", "", GENERATED]
     return "\n".join(out) + agent["prompt"] + "\n"
 

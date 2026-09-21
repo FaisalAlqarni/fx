@@ -28,6 +28,8 @@ if (harness === "codex") {
     const a = toOpencodeAgent(md);
     if (!a || a.permission.edit !== "deny") {
       console.error(n + ": opencode dialect does not deny edit"); process.exit(1); }
+    if (a.permission.bash !== "deny") {
+      console.error(n + ": opencode dialect does not deny the shell"); process.exit(1); }
     if (a.mode !== "subagent") {
       console.error(n + ": not registered as a subagent"); process.exit(1); }
   }
@@ -35,7 +37,7 @@ if (harness === "codex") {
   for (const n of READ_ONLY_AGENTS) {
     const p = "agents/" + n + ".md";
     const t = fs.readFileSync(p, "utf8");
-    if (!/^tools:\s*Read, Grep, Glob, Bash\s*$/m.test(t)) {
+    if (!/^tools:\s*Read, Grep, Glob\s*$/m.test(t)) {
       console.error(p + ": tools allowlist missing or changed"); process.exit(1); }
   }
 }

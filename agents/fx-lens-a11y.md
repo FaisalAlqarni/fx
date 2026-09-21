@@ -9,7 +9,7 @@ description: >
   any locale file / user-facing string (`config/locales/*.yml`), and on
   Compose `.kt` or SwiftUI `.swift` UI code. Read-only: reports barriers,
   never edits markup.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob
 model: sonnet
 ---
 
@@ -100,7 +100,7 @@ Read the changed templates and the CSS they use. Grep the design system's token
 file before judging a colour. Grep both locale files when a string appears.
 Check the Stimulus controller behind any `data-controller` the markup adds: the barrier is often in the JS, not the ERB.
 
-Read-only shell commands only. Do not run a browser, do not edit markup.
+Read and search only. Do not run a browser, do not edit markup.
 
 ## Output
 

@@ -51,6 +51,15 @@ git log <fixed-point>..HEAD --oneline
 
 **A bad ref or an empty diff fails HERE**, not inside five parallel subagents.
 
+**Then package the range into one diff file.** Run
+`../fx-implement/scripts/review-package <slug> <fixed-point> HEAD`: it writes
+the commit list, stat summary and full diff to one file and prints the path.
+Outside a plan, the slug is `review`. In task mode, reuse the file
+`fx-implement` already packaged. Every pass below is handed that path, never a
+command: the lenses and `fx-devils-advocate` have no shell on Claude Code or
+opencode, and no git on Codex, so a diff command is an instruction they cannot
+follow.
+
 In **task mode** the fixed point is the BASE `fx-implement` recorded before
 dispatching that task's implementer. In **branch mode** it is the merge-base.
 **Never `HEAD~1`**: it silently drops all but the last commit of a
@@ -149,7 +158,7 @@ findings come back.
 **Hand each one precisely crafted context: never your session's history.**
 That keeps the reviewer on the work product, not on your thought process.
 
-**Standards brief**: the diff command and commit list · the standards files
+**Standards brief**: the diff file path · the standards files
 you found · **the full smell baseline pasted in** (the subagent has no other
 access to it) · the brief:
 
@@ -160,7 +169,7 @@ access to it) · the brief:
 > are always judgement calls, and a documented repo standard overrides the
 > baseline. Skip anything tooling enforces. Under 400 words."
 
-**Spec brief**: the diff command and commit list · the spec path or contents ·
+**Spec brief**: the diff file path · the spec path or contents ·
 the brief:
 
 > "Report: (a) requirements the spec asked for that are missing or partial;
@@ -168,15 +177,15 @@ the brief:
 > (c) requirements that look implemented but where the implementation looks
 > wrong. Quote the spec line for each finding. Under 400 words."
 
-**Lens briefs**: the `fx-lens-*` agents, each given the diff command and the
-paths that triggered it. Read-only by construction.
+**Lens briefs**: the `fx-lens-*` agents, each given the diff file path and
+the paths that triggered it. Read-only by construction.
 
 **Branch mode also dispatches the broad reviewer**: [reviewer-prompt.md](./reviewer-prompt.md),
 on the most capable available model, pointed at the ledger's deferred-minor and
 parked lines so it can triage what must be fixed before merge.
 
 **Branch mode also dispatches the unprimed adversarial pass**: `fx-devils-
-advocate`, code mode, given the diff command and the task file, **with no
+advocate`, code mode, given the diff file path and the task file, **with no
 constraints block and no question list.** Its brief is one open-ended prompt,
 not a checklist: "read this diff like you were told nothing about it: anything else that would bite us?" If you have other passes' findings or the
 plan's accepted-risks notes on hand, pass those along only so it can recognize

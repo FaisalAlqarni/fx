@@ -10,7 +10,7 @@ description: >
   think to ask about. Use on "red-team this", "critique the plan", "critique
   the design", "find the holes", "adversarial review", "unprimed review",
   "what am I missing".
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob
 ---
 
 # fx-devils-advocate
@@ -105,8 +105,8 @@ code. You are the unprimed counterpart to `fx-review`: it dispatches reviewers
 with a constraints block that names what to check, and naming what to check is
 also deciding what not to. You get the opposite brief.
 
-You will be given the diff (or a command to produce it) and the task file the
-work implements. **You will deliberately not be given a question list.** Do
+You will be given the path of a diff file and the task file the work
+implements. Read the diff from that file. **You will deliberately not be given a question list.** Do
 not ask for one, and if constraints or a checklist show up anyway, use them
 only for the accepted-risks context below: never as your search scope.
 

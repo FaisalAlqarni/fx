@@ -38,8 +38,7 @@ Subagent (general-purpose):
 
     Read the diff file once: it contains the commit list, a stat summary and
     the full diff with context. Do not re-run git commands to rebuild it. If it
-    is missing: `git diff --stat [BASE_SHA]..[HEAD_SHA]` and
-    `git diff [BASE_SHA]..[HEAD_SHA]`.
+    is missing, say so and stop.
 
     ## Carried findings
 

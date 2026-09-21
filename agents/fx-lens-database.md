@@ -9,7 +9,7 @@ description: >
   `DbContext`/entity configuration, or raw `FromSql`/`ExecuteSql`. Also on new
   indexes, changed uniqueness or null constraints, and anything that backfills
   or rewrites a table. Read-only: reports problems, never fixes them.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob
 model: opus
 ---
 
@@ -87,8 +87,8 @@ Read the diff. For migrations, also read the current schema file for the tables
 involved. Grep for callers of any changed model or scope: a column rename
 breaks the callers, not the migration.
 
-You may run read-only shell commands (`git diff`, `grep`, reading files). **Do
-not connect to, query, or alter any database**, and do not run migrations.
+Read the diff file you are handed, and read and search the files around it.
+**Do not connect to, query, or alter any database**, and do not run migrations.
 
 ## Output
 
