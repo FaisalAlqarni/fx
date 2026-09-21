@@ -73,5 +73,8 @@ run opencode-plugin.test.js  node tests/gates/opencode-plugin.test.js
 run install-opencode        bash tests/install/run.sh opencode
 run install-codex           bash tests/install/run.sh codex
 run install-claude-code     bash tests/install/run.sh claude-code
+run conformance-free-claude-code bash tests/conformance/run.sh claude-code --free
+run conformance-free-opencode    bash tests/conformance/run.sh opencode --free
+run conformance-free-codex       bash tests/conformance/run.sh codex --free
 
 echo "ALL GREEN"
