@@ -1868,3 +1868,13 @@ Task 17: fix round 1 landed in 65240cf.
         checkout.
 Task 20: dispatched (opus, fresh implementer). It has no blockers and its
         files do not overlap.
+Task 20: DONE, d9a0874. The nightly workflow runs a floor and an @latest
+        job for each harness. It copies from caveman: the cron and dispatch
+        triggers, contents:read, fail-fast false, matrix.include, SHA-pinned
+        actions, and a probe-per-harness gate. Four mutations fail the pins
+        test. **Implementer concern, spec-relevant:** no free row runs `codex`
+        or `opencode`, so those two jobs only prove the npm package installs.
+        Only Claude Code gets real plugin-load drift detection, via row 09's
+        `claude plugin details`. Design A8's purpose is half met. A red
+        @latest job currently fails the whole run (the implementer recommends
+        keeping it). Reviewer dispatched.
