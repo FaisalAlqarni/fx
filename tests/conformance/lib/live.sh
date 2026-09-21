@@ -38,9 +38,13 @@ chmod 700 "$LIVE_SCRATCH" "$HOME" "$CODEX_HOME" "$XDG_CONFIG_HOME" \
 #   - the whole filesystem read-only;
 #   - the real home hidden under an empty tmpfs, so a session cannot read the
 #     real credential files, only the scratch copy made below;
-#   - back into that empty home, read-only, only the directories the CLIs run
-#     from, when they live there: each binary's own directory, and node's
-#     install root. Nothing holding credentials or config is rebound;
+#   - back into that empty home, read-only, only what the CLIs run from, when
+#     it lives there: the node binary, the codex package, and the directory
+#     each other binary sits in. Nothing holding credentials or config is
+#     rebound;
+#   - a private pid namespace with its own /proc. With the host's /proc, a
+#     session could reach /proc/<pid>/root of a host process and read the real
+#     home through it; only an ambient ptrace_scope setting stood in the way;
 #   - /tmp a private tmpfs, and the runner's scratch dir and the tree under
 #     test ($FX, read-only) bound back on top of it;
 #   - the network left open: the providers need it, and opencode needs the
@@ -58,22 +62,21 @@ case "$FX_REAL_HOME" in /|"") fail "FX_REAL_HOME is not a home: '$FX_REAL_HOME'"
 [ -d "$FX_REAL_HOME" ] || fail "FX_REAL_HOME is not a directory: $FX_REAL_HOME"
 JAIL=(bwrap --ro-bind / / --tmpfs /tmp --tmpfs "$FX_REAL_HOME")
 under_real_home() { case "$1" in "$FX_REAL_HOME"/*) return 0 ;; *) return 1 ;; esac; }
-BOUND=()
-bound() { local d; for d in "${BOUND[@]}"; do case "$1" in "$d"/*) return 0 ;; esac; done; return 1; }
 for c in node claude codex opencode; do
   p="$(command -v "$c")" || continue
   r="$(readlink -f "$p")"
   case "$c" in
-    node) d="$(dirname "$(dirname "$r")")" ;;   # node's install root; codex lives in it
-    *)    d="$(dirname "$r")" ;;
+    node)  d="$r" ;;                                 # the node binary alone
+    codex) d="$(dirname "$(dirname "$r")")" ;;       # the @openai/codex package: bin/codex.js
+    *)     d="$(dirname "$r")" ;;                    # the directory the binary lives in
   esac
-  if under_real_home "$d" && ! bound "$r"; then JAIL+=(--ro-bind "$d" "$d"); BOUND+=("$d"); fi
-  # A PATH entry under the real home that no rebound directory covers, such
-  # as a symlink in ~/.local/bin, gets its target bound in its place.
-  if under_real_home "$p" && ! bound "$p"; then JAIL+=(--ro-bind "$r" "$p"); fi
+  under_real_home "$d" && JAIL+=(--ro-bind "$d" "$d")
+  # A PATH entry that is a symlink comes back as the same symlink, so the
+  # command resolves by name and its target keeps its own path.
+  if [ "$p" != "$r" ] && under_real_home "$p"; then JAIL+=(--symlink "$r" "$p"); fi
 done
 JAIL+=(--ro-bind "$FX" "$FX" --bind "$LIVE_SCRATCH" "$LIVE_SCRATCH" --dev /dev
-       --tmpfs /dev/shm --proc /proc --die-with-parent --)
+       --tmpfs /dev/shm --unshare-pid --proc /proc --die-with-parent --)
 
 OPENCODE_MODEL="llamacpp/qwen3.8-27b"
 
@@ -176,7 +179,9 @@ live_run() {
   # Quota or credit exhausted: the row did not run, and a row that did not run
   # is never a pass. Checked on the CLI's own output, before any transcript is
   # appended, so instructions quoted in a transcript cannot trip it.
-  local q='usage limit|hit your limit|credit balance is too low|insufficient_quota|quota exceeded'
+  # Claude Code says "hit your session limit" or "hit your limit"; Codex says
+  # "hit your usage limit".
+  local q='usage limit|hit your ([a-z]+ )?limit|credit balance is too low|insufficient_quota|quota exceeded'
   if grep -qiE "$q" "$LOG"; then
     gap "not run: quota or credit exhausted ($(grep -oiE "$q" "$LOG" | head -1))"
   fi
