@@ -1673,3 +1673,18 @@ Task 14: complete (commits 5d6bca1..cc42e97, 5 fix rounds, review approved,
         - Live proof is task 22.
 Task 16: dispatched (opus, fresh implementer). It is next on the frontier,
         because 14 and 15 are complete.
+Task 16: DONE, fcebc79. Verified by the controller: the codex render is now
+        12573 chars against 12486 and 12472 for the other two runtimes, so the
+        duplication is gone, and it carries the agent_type wording.
+        Depth ruling (implementer, source-cited in report): a Codex child can
+        spawn by default. V2 caps concurrency at 3 open subagents. The V1
+        `[agents] max_depth` defaults to 1 and is ignored under V2. Row 15
+        stands, and task 22 must show it PASS.
+        Outside the task: `commands/fx-setup.md` was edited, because the skill
+        is generated from it. fx-setup's audit and trust commands now load from
+        the plugin root, which fixes a latent `require('./lib')` bug. Row 18
+        was added.
+        Review dispatched, plus a security lens on the live.sh and fx-codex.js
+        changes.
+Task 17: dispatched (opus, fresh implementer). It runs alongside the task 16
+        review.
