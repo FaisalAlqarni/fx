@@ -1902,3 +1902,21 @@ Ruling: task 20 fix round 1 widens task 20 to row 09's codex and opencode
         opencode model catalog, and makes the free gate flaky offline. Caught
         by the round's own measurement. If network is needed, the branch
         reports GAP offline, never FAIL.
+Task 17: security re-check of round 1 is clean. The webfetch and MCP denies
+        rest on the verified `"*"` mechanism, and the tests evaluate the rules
+        last-match-wins. `..` and symlink escapes under the references pattern
+        were checked against the installed binary: opencode canonicalises the
+        path before the permission check. Informational: `list` is an inert
+        key, and dropping the `.env` ask matches Claude Code's Read.
+Task 17: complete (commits 6715194..65240cf, 1 fix round, review approved,
+        security clean).
+        - The six read-only agents have no shell on Claude Code.
+        - On opencode they use a permission allowlist: deny-all first, then
+          read, grep, glob and list, plus the fx references path.
+        - Codex keeps its shell behind the round-5 classifier.
+        - Row 12 probes shell writes.
+        - fx-review hands every reviewer a diff file.
+        - ADR 0019 has the per-runtime table and the limits.
+        Live proof is in tasks 21 and 22.
+Task 18: unblocked. It is dispatched when the task 20 fix round finishes,
+        because implementers run one at a time.
