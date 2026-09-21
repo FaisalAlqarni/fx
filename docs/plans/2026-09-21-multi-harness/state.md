@@ -1701,3 +1701,24 @@ Task 16: review Approved. No Critical or Important. The reviewer
         Minors 2 and 3 are carried into task 22's criteria, because task 22 is
         where they matter. Minors 1 and 4 are deferred to the final review.
         The security lens is pending.
+Task 16: security lens. Important: fx-setup's plant, audit and trust
+        commands `require()` from `FX`, a path the agent infers ("where this
+        lane was loaded from"). A prompt injection in a repo file could steer
+        FX to an attacker's `lib/plant-roles.js`, which then runs with local
+        privileges. This replaces a worse CWD-relative require. Minor: the
+        planting helper hand-builds JSON with $FX. The lens confirmed no write
+        under FX_REAL_HOME, no jail weakening, and that the notice strips
+        absolute paths.
+Ruling: task 16 fix round 1. Before the `require`, each fx-setup command
+        verifies FX: its manifest names `fx`, it contains `PREAMBLE.md`, and
+        it resolves outside the current repo (not under cwd). Anything else
+        refuses and says why. Also build the helper's JSON payload with
+        `node -e JSON.stringify` instead of string concatenation.
+        Why: a privileged require driven by text an agent read must not trust
+        that text.
+        Cost if wrong: a legitimate dev checkout of fx, inside the repo it is
+        being set up for, is refused. That only happens when fx sets itself up
+        in its own repo, and the message says so. Caught by the task 16
+        re-review.
+        The round waits for the task 17 implementer, because implementers run
+        one at a time.
