@@ -1445,3 +1445,13 @@ Task 14: DONE_WITH_CONCERNS, af56f8c. The scratch marketplace install
 Task 14: minor (deferred): `codex-manifest.test.js` does not set TMPDIR, so
         identity records leak into the shared /tmp. This is older code.
 Task 15: dispatched (opus, fresh implementer), BASE 03719db. It runs alongside the task 14 review.
+Task 14: review needs fixes: 0 Critical, 1 Important, 6 Minor. The Important:
+        no test proves the controller, which sends no agent_id, can still call
+        `spawn_agent` and `mcp__*`. The reviewer injected a mutant refusing
+        exactly that, and the suite still passed. The fix round waits until
+        the task 15 implementer finishes, because implementers run one at a
+        time. The security lens is still pending.
+Task 14: minor (deferred): no test refuses spawn from an unrecorded id; a
+        `denied()` exit 2 accepts empty stderr; `hookEventName` is not checked
+        against the event; scratch dirs are left behind on failure; and the
+        `hooks.json` description is stale.
