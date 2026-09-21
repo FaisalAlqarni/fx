@@ -2058,3 +2058,21 @@ Plan: task 24 (preamble to one part) and task 23 (opencode plugin-only route)
         after task 24, because rows 01, 02 and 16 depend on the preamble.
 Task 23: dispatched (opus, fresh implementer). Task 24 is reserved until the user approves the trim proposal.
 User approved the preamble trim proposal as written. Task 24 was written with the proposal as its requirements. It is blocked by task 23 because both drive the single-slot local model live. The Claude Code remainder of task 21 runs after task 24.
+Task 23: DONE, edd224f. PD1's root cause is the **test harness, not fx**:
+        live.sh rewrote the scratch opencode.json for every row but added the
+        plugin entry only before the first row, so later rows ran with no fx
+        at all. Fixed in live.sh.
+        PD2 was partly misdiagnosed: opencode 1.18.25 already turns each skill
+        into a user command, and the probe had sent plain text instead of
+        `--command`. The plugin now registers the installer's exact command
+        text through one shared generator (lib/opencode-commands.js), so the
+        plugin route and the installer route are byte-identical.
+        Live: the plugin route passed rows 01, 12 and 15 in runs 2 and 3. Run
+        1's row 12 was a model miss. `/fx-audit` loads, row 13 passes, and the
+        installer route is 18/18.
+        Consequence: task 21's plugin-route verdicts are invalid (rows 12 and
+        15, probe 94), and probe 91 (MCP) may be too. They are re-run in the
+        task 21 remainder.
+        Minor: about 16 empty /tmp dirs from debugging are left behind, listed
+        in the report.
+        Review dispatched. Task 24 dispatched.
