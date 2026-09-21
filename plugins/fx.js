@@ -51,6 +51,7 @@ const { laneCheck } = require('../lib/lane-check.js');
 const { render } = require('../lib/preamble.js');
 const { READ_ONLY_AGENTS } = require('../lib/plant-roles.js');
 const { toOpencodeAgent } = require('../lib/agent-dialects.js');
+const { opencodeCommands } = require('../lib/opencode-commands.js');
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));   // .../plugins
 const ROOT = path.join(HERE, '..');
@@ -162,6 +163,17 @@ export const fx = async ({ directory } = {}) => {
       config.permission.skill = config.permission.skill || {};
       if (!('*' in config.permission.skill)) config.permission.skill['*'] = 'allow';
       for (const name of HIDDEN_SKILLS) config.permission.skill[name] = 'deny';
+
+      // Commands: a hidden lane is typeable only as a command, and with no
+      // installer run nothing else registers one (task 23, PD2). The text is
+      // the installer's, from the one generator both call, with fx's
+      // references cited under the checkout this plugin was loaded from.
+      // A command already present (an installer's file, or the user's own)
+      // is left alone, so neither route registers it twice.
+      config.command = config.command || {};
+      for (const [name, cmd] of Object.entries(opencodeCommands(ROOT, ROOT))) {
+        if (!config.command[name]) config.command[name] = cmd;
+      }
     },
 
     'experimental.chat.system.transform': async (input, output) => {
