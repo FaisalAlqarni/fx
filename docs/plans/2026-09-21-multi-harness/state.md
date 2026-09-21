@@ -718,3 +718,44 @@ Task 08: minor (deferred): two more defects in task-supplied test code, an empty
 
 Task 06: fix round 2 dispatched now that task 08's implementer has reported.
 
+Task 06: fix round 2 landed, commit 9636720. The git and find gates are now
+        allowlists: `log diff show blame status rev-parse ls-files ls-tree
+        cat-file describe shortlog grep for-each-ref merge-base name-rev
+        rev-list`, and find actions limited to matching and printing. `tree` was
+        dropped rather than gated. Every round-2 bypass now exits 2, verified,
+        and the reviewer's untried list too.
+
+**Controller found a third level.** `git diff --output=/tmp/pwned.diff` exits 0
+        and writes 83 bytes. The subcommand is legitimately read-only; the
+        **flag** writes.
+
+Ruling: stop the arms race and name the ceiling. Three rounds have now found the
+        same flaw at three granularities: binaries, then subcommands, then flags.
+        A fourth would find it at argument values. **A shell-parsing gate cannot
+        be made complete, and pretending otherwise is the actual risk**, because
+        each round makes the guarantee look stronger than it is.
+
+        Round 3 does two things and then stops:
+        1. Refuse arguments that name an output file (`--output`, `--output=`,
+           `-o` where it takes a path, `--out`). That catches the realistic
+           accident: a lens writing a diff to a file so it can read it back.
+        2. **Write the ceiling into the code and into ADR 0019.**
+
+        The ceiling, stated honestly: this gate prevents **accidents, not an
+        adversary**. The threat model is a well-behaved lens that writes because
+        nothing told it not to, which is what the implementer identified in round
+        1 and what every real finding since has been. It is not a sandbox. A
+        determined prompt-injection through a reviewed diff is not in scope, and
+        claiming otherwise would be the kind of guarantee-by-assertion this plan
+        exists to remove.
+
+        Why fx cannot do better on Codex today: `sandbox_mode` in a role file
+        does not enforce, measured; Codex offers no per-subagent tool
+        restriction; and the only discriminator that reaches a hook is identity.
+        Claude Code and opencode both enforce declaratively and are genuinely
+        stronger. **ADR 0019 must say the three mechanisms are not equal**, which
+        it currently implies they are.
+        Cost if wrong: someone reads "read-only" on Codex as equivalent to
+        Claude Code's hard allowlist. Caught by ADR 0019 and task 13's
+        documentation, both now required to state the asymmetry.
+
