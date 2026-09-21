@@ -1513,3 +1513,4 @@ Task 15: minor (deferred):
         - no test asserts where cuts land;
         - a NaN `--part` prints the full render;
         - part order, which task 21 measures.
+Task 15: fix round 1 landed in 4504b7a. The rich fixture now renders a plan block, with a RED shown first. Scoped re-review dispatched.
