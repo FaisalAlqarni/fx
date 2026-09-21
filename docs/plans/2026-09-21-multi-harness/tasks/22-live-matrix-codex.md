@@ -81,6 +81,8 @@ test, so the test itself has no prior art.
 - [ ] Row 12 PASSes in the first session, with no restart: a read-only role dispatched with `agent_type` cannot patch, and its shell write is refused by the hook
 - [ ] Row 18 PASSes, or GAPs through its control exactly as task 16's depth ruling predicts
 - [ ] Row 15 PASSes, or is the GAP task 16 ruled, with the user-level key in its reason
+- [ ] Row 18 on Codex has evidence the hook refused the lens's `spawn_agent`, from the refusal text in the tool output. A lens that never tried to spawn proves nothing about the hook, and that case is reported as inconclusive, not as a PASS. Carried from the task 16 review
+- [ ] Before any Codex row runs, the planting helper confirms all six `fx-*.toml` roles exist in the scratch `CODEX_HOME`, not only the directory. Carried from the task 16 review
 - [ ] Row 17 PASSes: the lane check reaches `apply_patch`
 - [ ] The sentinel probe PASSes: a Codex lens returned the sentinel it read from the diff file through the shell, and the sentinel was not in its dispatch prompt
 - [ ] Untrusted run: row 01 with `FX_CODEX_HOOK_TRUST=none` shows the hooks did not run: no `$fx-tdd` in the session, and the preamble question unanswered. The report cites the log lines

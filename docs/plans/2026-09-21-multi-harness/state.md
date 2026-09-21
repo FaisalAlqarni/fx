@@ -1688,3 +1688,16 @@ Task 16: DONE, fcebc79. Verified by the controller: the codex render is now
         changes.
 Task 17: dispatched (opus, fresh implementer). It runs alongside the task 16
         review.
+Task 16: review Approved. No Critical or Important. The reviewer
+        spot-checked the depth citations at rust-v0.155.1 and they hold.
+        Minors:
+        1. The render test catches a string-replacement regression only while
+           the wording contains the problem sequence.
+        2. The planting helper checks only the agents directory.
+        3. Row 18 cannot tell hook enforcement from a lens that simply
+           declined to spawn.
+        4. "Most models" in the codex reference overstates it; the count is
+           5 of 9.
+        Minors 2 and 3 are carried into task 22's criteria, because task 22 is
+        where they matter. Minors 1 and 4 are deferred to the final review.
+        The security lens is pending.
