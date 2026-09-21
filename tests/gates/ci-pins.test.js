@@ -20,7 +20,8 @@ assert.match(y, /^\s*schedule:\s*$/m, 'runs on a schedule');
 assert.match(y, /^\s*-\s*cron:\s*['"][^'"]+['"]\s*$/m, 'has a cron line');
 assert.match(y, /^\s*workflow_dispatch:/m, 'can be run by hand');
 assert.match(y, /^\s*fail-fast:\s*false\s*$/m, 'a red @latest never cancels the floor');
-assert.ok(!/secrets\./.test(y), 'needs no secrets: the free rows make no model calls');
+assert.ok(!/\bsecrets\s*[.\[]/.test(y), 'needs no secrets: the free rows make no model calls');
+assert.ok(!/\bgithub\.token\b/.test(y), 'needs no token: nothing here writes to GitHub');
 assert.match(y, /^\s*run:\s*\$\{\{\s*matrix\.install\s*\}\}\s*$/m, 'the install step runs the entry\'s install line');
 assert.match(y, /^\s*run:\s*bash tests\/conformance\/run\.sh \$\{\{\s*matrix\.harness\s*\}\} --free\s*$/m,
   'each entry runs its free rows');
@@ -47,6 +48,10 @@ for (const h of HARNESSES) {
   const versions = mine.map((e) => e.install.slice(PKG[h].length + 1));
   assert.ok(versions.includes(FLOOR[h]), `${h} is installed at the floor ${PKG[h]}@${FLOOR[h]}`);
   assert.ok(versions.includes('latest'), `${h} is installed at ${PKG[h]}@latest`);
+  // Exactly the floor and latest, once each: a stray third pin is a probe
+  // nobody decided on.
+  assert.deepStrictEqual([...versions].sort(), [FLOOR[h], 'latest'].sort(),
+    `${h} is installed at exactly ${FLOOR[h]} and latest, once each, not ${versions.join(', ')}`);
 }
 for (const e of entries) assert.ok(HARNESSES.includes(e.harness), `matrix entry ${e.harness} is a known harness`);
 console.log('ci-pins: passed');
