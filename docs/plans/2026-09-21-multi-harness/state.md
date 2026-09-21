@@ -497,3 +497,31 @@ Task 07: fix round 1 QUEUED, not dispatched. Task 06's implementer is live, and
         costs nothing to honour here: the defect is recorded, the evidence is
         durable, and the round goes out the moment 06 reports.
 
+Task 06: implementer reported DONE_WITH_CONCERNS, commits 018e8ed and b914732.
+        It disclosed that during development an existing task-04 test with no
+        `CODEX_HOME` set invoked its new `plantRoles()` and wrote fx's six role
+        files into **this machine's real `~/.codex/agents/`**. It caught that,
+        cleaned up, and fixed the test harness to isolate `CODEX_HOME`.
+
+        Verified by the controller, because a claim about the user's machine is
+        the last claim to take on trust: `~/.codex/agents` is empty, no
+        `fx-*.toml` exists anywhere under `~/.codex`, no `hooks.json` is present,
+        and `config.toml` holds only the one pre-existing project entry. The
+        empty `agents/` directory itself was a leftover and has been removed, so
+        the Codex home is byte-for-byte as this session found it.
+
+        Also checked the other two runtime homes. `~/.config/opencode/skills`
+        exists with 215 entries dated 28 August, zero of them `fx-*` and none of
+        them symlinks: a prior unrelated install, untouched by this work.
+
+Correction: earlier in this session I recorded that `~/.config/opencode` had no
+        `skills/` directory. That was wrong. I had truncated the `ls` output at
+        160 characters and the entry fell off the end. The directory has existed
+        since August. Nothing downstream depended on the claim, but it was mine
+        and it was stated as fact.
+
+        **This is the near-miss worth naming.** The disclosure is what made it
+        recoverable. An implementer that quietly cleaned up would have left a
+        correct-looking report and an unexplained mutation of the user's home
+        directory. The template asks for exactly this and it paid.
+
