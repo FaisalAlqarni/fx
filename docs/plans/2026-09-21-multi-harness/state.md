@@ -423,3 +423,48 @@ Ruling: seven stale cross-references repointed. The red-team split the old
         matrix exists to prevent, arriving through the plan's own prose. Caught
         here; nothing downstream would have.
 
+Task 07: implementer reported DONE_WITH_CONCERNS, commit a01fc2a.
+        Verified fresh: `scripts/check-all` -> `ALL GREEN`; all five
+        user-invoked lanes carry `disable-model-invocation: true` **and**
+        `allow_implicit_invocation: false`, so each is hidden on both runtimes;
+        exactly five skills carry the Claude Code flag and no others.
+
+        **The investigation earned its place.** Codex's auto-migration of
+        commands is non-deterministic: `fx-handoff` migrated 3 times out of 3
+        from the real repository, but controlled probes on near-identical
+        content gave 2 of 2 and then 0 of 4. And when it does fire, the result
+        lands outside `skills/` and is **unhidden**. So the generator is not
+        redundant, which is the opposite of what I suspected when I told the
+        implementer to check. Had it built blind, it would have shipped either a
+        redundant generator or a gap; had it skipped the check, it would never
+        have known which.
+
+Ruling: the `disable-model-invocation` conflict is resolved by keeping `true` on
+        all five and accepting the Codex lint failure. The implementer verified
+        the lint is cosmetic and not the ingestion path, and never set the field
+        `false`, which was the forbidden escape.
+        Why: Claude Code's guarantee is real behaviour and Codex's complaint is a
+        scaffolding script. Trading a working guarantee for a clean lint would
+        have made the model auto-select the audit lane on Claude Code, the exact
+        thing the task exists to prevent.
+        Cost if wrong: fx ships a plugin that fails the official lint. Caught by
+        task 13, which must document it, and it is documented in the report.
+
+Ruling: task 07's edit to `scripts/fx-opencode-install` stands, though that file
+        belongs to task 09. Verified by reading the diff: two lines of guard plus
+        a comment explaining it. Without it the installer converts a
+        generated skill a second time and crashes `convert_skill_command` on a
+        template citation like `../../references/stacks/<name>.md`, which names
+        no real file.
+        Why: the alternative was leaving `scripts/check-all` red at the end of a
+        task, which is worse than a scoped edit to a neighbouring file. The
+        implementer flagged it rather than hiding it.
+        Cost if wrong: task 09 reworks that installer and may conflict. Mitigated
+        by the pointer now carried into task 09's dispatch, telling it to read
+        this diff first. Caught by the task 09 review.
+
+Task 07: minor (deferred): the implementer fixed a broken regex in the
+        task-supplied `tests/gates/user-invoked.test.js`, which falsely flagged
+        correctly-deepened two-level citations. Another defect in test code I
+        wrote and never executed.
+
