@@ -300,6 +300,9 @@ else # claude-code
   # loader accepts them and reports the inventory an install actually needs
   # (skills, agents, commands), not merely that the manifest parses.
   AGENT_COUNT="$(ls "$FX"/agents/*.md | wc -l | tr -d ' ')"
+  # The CLI writes .claude.json and .claude/backups into whatever home it
+  # runs under (amendment A7), so it runs under the scratch home instead.
+  export HOME="$HOME_FIXTURE" CLAUDE_CONFIG_DIR="$HOME_FIXTURE/.claude"
   check "the plugin manifest validates" \
     'claude plugin validate "$FX" >/dev/null'
   check "the plugin reports its full component inventory" \

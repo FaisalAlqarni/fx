@@ -75,6 +75,7 @@ run opencode-plugin.test.js  node tests/gates/opencode-plugin.test.js
 run install-opencode        bash tests/install/run.sh opencode
 run install-codex           bash tests/install/run.sh codex
 run install-claude-code     bash tests/install/run.sh claude-code
+run install-home-untouched bash tests/install/home-untouched.test.sh
 run conformance-runner-isolation bash tests/conformance/runner-isolation.test.sh
 run conformance-plant-codex-roles bash tests/conformance/plant-codex-roles.test.sh
 run conformance-free-claude-code bash tests/conformance/run.sh claude-code --free
