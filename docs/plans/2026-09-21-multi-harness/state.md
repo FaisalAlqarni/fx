@@ -1498,3 +1498,4 @@ Ruling: lens #2 is parked into task 22. Its step 1 already researches where
         Cost if wrong: a user who updates fx silently runs without the guard
         until they re-trust. Caught by task 22's untrusted-run criterion and
         task 13's docs.
+Task 14: fix round 1 landed in d94135b. The hook now allows a read-only or unrecorded subagent only classifier-cleared Bash, and refuses every other tool. A classifier throw is refused. The controller spawn tests exist, and they kill the reviewer's mutant. Scoped re-review and lens re-check dispatched.
