@@ -421,6 +421,42 @@ withScratch((scratch) => {
   }
 });
 
+// Fix round 3: `diff`, `log` and `show` are legitimately read-only git
+// subcommands (on GIT_ALLOWED_SUBCOMMANDS). The FLAG is what writes: git
+// diff/log/show all accept --output=<path> (and the space form) to send
+// their own output to a file instead of stdout. This is the third level
+// this detector has been wrong at (binaries, then subcommands, then
+// flags) and per the coordinator's ruling it is also the last one this
+// task chases — see the ceiling comment at the top of
+// lib/plant-roles.js's write-detection section for why a fourth round is
+// not coming.
+withScratch((scratch) => {
+  const startedProbe3 = fire({
+    hook_event_name: 'SubagentStart', cwd: scratch,
+    agent_id: 'probe-3', agent_type: 'fx-lens-security',
+  });
+  assert.strictEqual(startedProbe3.status, 0);
+
+  const probe3 = (command) => fire({
+    hook_event_name: 'PreToolUse', cwd: scratch,
+    agent_id: 'probe-3',
+    tool_name: 'Bash', tool_input: { command },
+  }).status;
+
+  const cases3 = [
+    ['git diff --output=/tmp/pwned.diff', 2, '--output= on git diff (round 3 bypass, reproduced, wrote 83 bytes)'],
+    ['git diff --output /tmp/x', 2, '--output space form on git diff'],
+    ['git show --output=/tmp/x', 2, '--output= on git show'],
+    ['git log --output=/tmp/x', 2, '--output= on git log'],
+    ['git log --oneline -5', 0, '--oneline is not --output — must stay allowed'],
+    ['git diff', 0, 'git diff with no flags — must stay allowed'],
+    ['git status', 0, 'git status — must stay allowed'],
+  ];
+  for (const [command, expected, label] of cases3) {
+    assert.strictEqual(probe3(command), expected, `${label}: ${command}`);
+  }
+});
+
 fs.rmSync(testCodexHome, { recursive: true, force: true });
 
 console.log('codex lens enforcement: OK');
