@@ -1175,3 +1175,56 @@ Task 12: carries findings-11 Minor 1 (`--fre` runs live rows) and Minor 3
 
 Task 12: dispatched (opus, fresh implementer), BASE 31d19e7. Task 13 is blocked by 12,
         so the frontier is empty until it reports.
+
+Task 12: behavioural conformance matrix, run 2026-09-21. Claude Code 2.1.278,
+        Codex CLI 0.155.1, opencode 1.18.25 (on the local Qwen 3.8 27B). Each
+        runtime ran alone, under a fresh fake HOME, with FX_REAL_HOME naming
+        the real home for the credential copy-in only.
+
+```
+claude-code: 12 pass, 3 fail, 2 gap
+codex: 6 pass, 0 fail, 11 gap
+opencode: 16 pass, 1 fail, 0 gap
+```
+
+        claude-code FAIL 01, 02, 16: the session and the subagent answer the
+        preamble's opening fact but not its closing one, and never see the plan
+        block. Claude Code holds any SessionStart/SubagentStart context over
+        about 10KB back as a file and shows the model a 2KB preview. The
+        assembled preamble is 13KB, so everything after the first 2KB,
+        including the repo.md note and the plan-state block, never reaches the
+        model inline. Measured by asking the session, which quoted the
+        `<persisted-output>` marker and "Preview (first 2KB)".
+        claude-code GAP 13:
+          no row checks this at runtime on this harness (task 11 ruling).
+        claude-code GAP 14:
+          no row checks user-invocability at runtime on this harness (task 11 ruling).
+        codex GAP 04, 05, 06, 07, 08, 12, 15, 16, 17:
+          not run: quota or credit exhausted ("You've hit your usage limit",
+          resets 2026-10-21). None of these is a pass.
+        codex GAP 13:
+          no row checks this at runtime on this harness (task 11 ruling).
+        codex GAP 14:
+          no row checks user-invocability at runtime on this harness (task 11 ruling).
+        opencode FAIL 15: the child session has no task tool, so it cannot
+        dispatch. Seen twice, in the development run and in the matrix.
+        `subagent_depth` in the plugin config did not give the child one.
+
+Task 12: Codex rows measured before the quota ran out, same rows and runner,
+        during development, NOT the matrix: 01, 02, 05, 06, 07, 08, 15, 16 PASS;
+        04 FAIL twice (a naive prompt loaded fx-brainstorm, not fx-tdd);
+        12 FAIL (spawn_agent in 0.155.1 takes no agent type, so no planted role
+        can be dispatched: its schema is fork_turns, message, model,
+        reasoning_effort, task_name); 17 FAIL (no lane-check marker).
+Task 12: finding, for the controller. Codex 0.155.1 runs the plugin's
+        `hooks/hooks.json` (the Claude Code hooks: fx-context.js and
+        fx-pretooluse.js), not the root `hooks.json` that wires
+        `hooks/fx-codex.js`. Measured three ways: a Codex session receives
+        Claude Code's addressing (`fx:fx-tdd`, "the `Skill` tool"); a debug
+        line added to fx-codex.js in a copy never appears; no role is ever
+        planted in CODEX_HOME/agents. So on Codex today: no role planting, no
+        agent identity, no read-only enforcement, no apply_patch lane check,
+        and the wrong addressing. The git guard works only because
+        fx-pretooluse.js shares the Bash shape. A copy with `hooks/hooks.json`
+        replaced by the root one rendered `$fx-tdd` and refused an unrecorded
+        subagent's write, which is how row 12's identity mutation was shown.

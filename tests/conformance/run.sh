@@ -50,7 +50,10 @@ SCRATCH="$(mktemp -d)" || { echo "mktemp -d failed" >&2; exit 2; }
 case "$SCRATCH" in /tmp/?*|"${TMPDIR:-/tmp}"/?*) ;; *)
   echo "refusing scratch dir outside the temp dir: '$SCRATCH'" >&2; exit 2 ;; esac
 trap 'rm -rf -- "$SCRATCH"' EXIT
-export FX_REAL_HOME="$HOME"
+# A caller may name the credential home explicitly (a live run started under a
+# fresh fake HOME does); otherwise it is the home the runner started from. It
+# is only ever read from.
+export FX_REAL_HOME="${FX_REAL_HOME:-$HOME}"
 export HOME="$SCRATCH/home"
 export CODEX_HOME="$HOME/.codex" XDG_CONFIG_HOME="$HOME/.config" \
        CLAUDE_CONFIG_DIR="$HOME/.claude"

@@ -116,7 +116,14 @@ env HOME="$FAKE" FX_CONFORMANCE_ROWS="$ROWS" PROBE_OUT="$OUT/extra" \
 rc=$?
 check "extra: runner exits 2 on a third argument (rc=$rc)" '[ "$rc" -eq 2 ]'
 
-# 5. A GAP is a visible state only if it says why. A row exiting 77 with
+# 5. FX_REAL_HOME set on the command line survives into the row. A live run
+# starts the runner under a fresh fake HOME and names the credential home
+# explicitly; overwriting it with the fake HOME would make every live row GAP.
+env HOME="$FAKE" FX_REAL_HOME="$T/named-home" FX_CONFORMANCE_ROWS="$ROWS" \
+    PROBE_OUT="$OUT/named" bash "$RUNNER" codex --free > "$OUT/named.log" 2>&1
+check "named: row sees the FX_REAL_HOME it was given" '[ "$(sed -n 5p "$OUT/named" 2>/dev/null)" = "$T/named-home" ]'
+
+# 6. A GAP is a visible state only if it says why. A row exiting 77 with
 # nothing on stderr is a FAIL; one that gives a reason stays a GAP, and the
 # reason reaches the reader.
 GR="$T/rows-gap"; mkdir -p "$GR"
