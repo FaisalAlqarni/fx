@@ -1946,3 +1946,23 @@ Task 20: re-review of round 1 approved. The reviewer re-ran the codex and
           XDG_STATE_HOME under the scratch HOME. It matters only if a caller
           has them exported; today opencode uses HOME defaults.
 Task 20: complete (commits c0d268f..f0767d2, 1 fix round, review approved).
+Task 18: DONE_WITH_CONCERNS, 2929900.
+        - The config hook grants `general` `task: allow`, and read-only
+          agents stay denied through task 17's deny-all.
+        - Measured under a fake HOME: `opencode agent list` shows general with
+          `task: allow`.
+        - Row 12 now needs at least two lens dispatches, and row 15's opencode
+          prompt names general.
+        Concern that needs a ruling: opencode rewrites a user's
+        `general.permission: "ask"` to `{"*": "ask"}` before the hook runs, so
+        the added `task: allow` wins over the user's wildcard.
+Ruling: the hook adds `task: allow` only when the user's
+        `general.permission` has neither a `task` key nor a `*` key. A user
+        who set a wildcard made a choice about every tool, `task` included.
+        Why: the task says a user setting "is left as it was". A wildcard is a
+        setting about task.
+        Cost if wrong: a user with `general.permission: ask` does not get
+        two-level dispatch until they allow task. The live row runs on the
+        default config and is unaffected. Caught by the task 18 review.
+        Review dispatched, with this ruling as a named risk. The fix goes
+        through the fix loop only if the reviewer confirms it.
