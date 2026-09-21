@@ -1087,3 +1087,14 @@ Ruling: park the two outside-task findings for the final review. They are
         files, and nothing removes anything.
         Cost if wrong: the CLI writes state into the real ~/.claude while the
         gate runs. Caught by the final review, which gets this line.
+
+Task 11: review, needs fixes: 0 Critical, 4 Important, 8 Minor. See
+        findings-11.md. The controller saved that file because the reviewer's
+        harness refused the write. I opened `run.sh:54-60`, `plugins/fx.js:141`,
+        `state.md:121-131` and row 9's lines 7-25, and each matches the citation.
+        The reviewer measured the INT/TERM ruling and found it correct.
+Task 11: fix round 1 dispatched: Important 1-4.
+Task 11: minor (deferred): findings-11 Minor 1-8. Minor 1 (`--fre` runs live
+        rows) and Minor 3 (GAP without a reason) matter before task 12. The fix
+        round carries them as optional, and the final review triages whatever
+        is left.
