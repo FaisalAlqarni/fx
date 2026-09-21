@@ -2124,3 +2124,21 @@ User decision (2026-09-22): restore the intro, confirm, then commit. Before
         two new assertions (render starts with the imperative, intro absent)
         and adds one pinning the intro as the only text above it.
 Task 24: fix round 2 dispatched with that scope.
+Task 24: fix round 2, confirmation. Variant f (intro restored): opencode row
+        04 scored 6/10 in total, against a gate of 8/10, so it missed. Claude
+        Code scored 5/5. Nothing was committed. The intro recovers only part
+        of the drop.
+Controller finding: row 04's guarantee is "a naive prompt auto-invokes a
+        lane", but the row demands fx-tdd. The trimmed preamble fires a lane
+        10/10 on opencode, but it picks fx-brainstorm there.
+User decision (2026-09-22): "I want the plugin to work as it intended on all
+        harness. same experience." So the requirement is **parity**. The same
+        prompt must reach the same lane on every runtime. Row 04 keeps
+        demanding fx-tdd (the prompt file is fx-tdd.txt). opencode must return
+        to its pre-trim rate of about 9/10.
+        This is read as authorisation to apply the minimal restoration the
+        measurement shows is needed, provided the worst case stays under 9,000
+        chars. The diff is reported either way.
+Task 24: fix round 3 dispatched: continue the bisect with the intro kept, find
+        the minimal restoration that reaches 8/10 or better, confirm it,
+        commit. This is the last round for this implementer.
