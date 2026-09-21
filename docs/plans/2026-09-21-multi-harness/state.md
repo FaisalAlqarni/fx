@@ -619,3 +619,32 @@ Ruling: the lens write-detector changes from a denylist to an **allowlist**, wit
         review returns thin. Visible, recoverable, and caught by task 12's
         conformance row 12 plus any lens actually running.
 
+Task 06: fix round 1 landed, commit 3e8c46c. The detector is now an allowlist.
+        A lens may run: cat, head, tail, wc, nl, grep/egrep/fgrep/rg, find, ls,
+        tree, git (subcommand-gated: log/diff/show/blame/status yes,
+        commit/checkout/push no), diff, pwd, file, basename, dirname, realpath,
+        stat, echo/printf (refused if redirected). Nothing else, anywhere,
+        including inside `bash -c`, `$(...)` and backticks, recursively.
+
+        Verified by the controller with an adversarial probe that deliberately
+        went beyond the cases the implementer tested:
+
+        | probe | exit |
+        |---|---|
+        | `bash -c` redirect, `python3 -c`, `node -e` | 2 |
+        | `/bin/bash -c "echo x > f"` (absolute path) | 2 |
+        | `/usr/bin/env bash -c`, `command bash -c` | 2 |
+        | `bash -c "bash -c \"echo x > f\""` (nested) | 2 |
+        | `cat f > out` (allowlisted binary, redirected) | 2 |
+        | `awk '{print > "f"}'`, `xargs -I{} cp {} /tmp/x` | 2 |
+        | `git status`, `grep -rn TODO .`, `git log`, `cat README.md` | 0 |
+
+        The absolute-path, `env`, `command` and nesting cases are the ones a
+        denylist would have kept leaking on. They pass because the allowlist is
+        applied per unwrapped segment, which is what closes the class rather than
+        the instances.
+
+        The implementer also took the file-permission fix (0700 dir, 0600 file)
+        and left `process.ppid` scoping as ruled, with a comment saying plainly
+        that it fails closed if `ppid` proves unstable. Task 12 measures it live.
+
