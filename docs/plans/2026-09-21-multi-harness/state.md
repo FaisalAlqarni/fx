@@ -2277,3 +2277,4 @@ User approval (2026-09-22, "yes for all"):
         The S3 artifacts are preserved in bootstrap-candidate/, because /tmp
         is ephemeral. Task 24's commit b09f5ac stays: it removed the split
         machinery. Its trimmed router text is replaced by task 25.
+User asleep (2026-09-22): the user asked me to run autonomously overnight and not stop. Queue: spike to 25 to 26 to the 21 remainder to 13 to 22A to the final review, then the full gate, then the completion report. Not without the user: push, merge, PR, deletes outside scratch, and the Codex real-model run (part B, 2026-10-21, the merge gate). Every subagent keeps caveman full and ponytail full. Stop only on the four stop conditions. A blocked task is skipped and ledgered.
