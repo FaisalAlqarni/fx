@@ -2021,3 +2021,38 @@ Task 21: dispatched (opus, fresh implementer). It spends Claude quota and the
         user's local Qwen. Quota exhaustion is reported as `GAP: not run`, and
         the controller re-dispatches after the reset. The merge gate needs rows
         01, 02, 12, 15, 16 and 18 to PASS on both runtimes.
+Task 21: first pass, partial. opencode on the installer route: 18 pass, 0
+        fail, 0 gap. All six merge-gate rows pass, all probes pass, and a full
+        fx-review returned a real lens finding. Claude Code: rows 01 to 11
+        pass, so the preamble split delivers whole. Then the session limit
+        hit. Owed after the reset:
+        - rows 12, 15, 16, 17 and 18;
+        - probes 90, 92 and 93;
+        - the row 08 guard-off re-run;
+        - the row 16 part order.
+        Committed 158513b (test infra only). Product defects measured:
+        - PD1: on opencode's plugin-only route, config does not reliably reach
+          sessions. `general` is denied task in 2 of 2 runs, while
+          `opencode agent list` shows it granted. Root cause unknown.
+        - PD2: on the plugin-only route, `/fx-audit` cannot be invoked,
+          because the plugin registers no commands.
+        - PD3: the Claude Code preamble part order is unstable. Part 2 landed
+          above part 1 in 3 of 7 sessions and 2 of 2 subagents, which breaks
+          "nothing above the opening imperative".
+User decisions:
+        - PD3: trim to one part under 9KB, the fallback the user chose earlier.
+          The user asked how the other plugins solved it. Neither splits, and
+          both stay under the limit with one hook. ponytail's SKILL.md is
+          6.6KB and is filtered per mode at emission (filterSkillBodyForMode).
+          caveman's SKILL.md is 7.1KB, and its AGENTS.md holds pointers only.
+          fx copies both: filter per harness at emission, and move long-form
+          detail into files loaded on demand. That amends the global
+          constraint "nothing inside it is made indirect" for the moved
+          detail. The imperative, the routing and the non-negotiables stay
+          inline. **The user reviews the exact cuts before any commit.**
+        - PD1 and PD2: add task 23. Root-cause PD1 first, then fix both. Copy
+          caveman's `config.command` registration for PD2.
+Plan: task 24 (preamble to one part) and task 23 (opencode plugin-only route)
+        will be added. A read-only agent drafts the task 24 cut proposal for
+        the user's approval. The Claude Code remainder of task 21 is re-run
+        after task 24, because rows 01, 02 and 16 depend on the preamble.
