@@ -1563,3 +1563,4 @@ Ruling: reopen the task 06 ceiling ruling. Round 3 replaces the flag denylist
         the lens reads less. Caught by task 22's sentinel probe and the lens's
         own report.
 Task 14: fix round 3 dispatched to the same implementer.
+Task 14: fix round 3 landed in 91a5b56. The classifier now uses a flag allowlist for each binary: git gets one per subcommand; -c and --config-env are refused; abbreviations are refused; an env-assignment prefix is refused; and any token the shell would expand before the program sees it is refused. Marker probes: all 7 attacks were refused through the real hook before running. Open concerns: unquoted globs can expand to a flag-named file that the repo controls, and git -C applies another directory's config. Scoped re-review and lens re-check dispatched.
