@@ -1455,3 +1455,22 @@ Task 14: minor (deferred): no test refuses spawn from an unrecorded id; a
         `denied()` exit 2 accepts empty stderr; `hookEventName` is not checked
         against the event; scratch dirs are left behind on failure; and the
         `hooks.json` description is stale.
+Task 15: DONE, ce206d9. The preamble splits into two parts on every harness,
+        claude-code at 8720 and 5231 chars, behind three handlers per event.
+        Review dispatched.
+Task 15: found outside the task, **verified by the controller**. `render` for
+        Codex duplicates the preamble's opening line. `node -e render(...)`
+        gives codex 13276 chars with the opening line twice, against 12357 and
+        12345 chars with it once for claude-code and opencode. The cause is
+        `{{RESOLUTION}}`: Codex's text contains `$` followed by a backtick,
+        which `String.replace` treats as "the text before the match". This has
+        been in every Codex session since task 01.
+Ruling: task 16 owns the fix, because it already edits `lib/preamble.js`. It
+        must pass the replacement as a function for every placeholder, and add
+        a test asserting that every harness's render contains the opening line
+        exactly once.
+        Why: one file, one owner, and the test belongs beside the new
+        `{{DISPATCH}}` placeholder test.
+        Cost if wrong: Codex keeps a garbled preamble until task 16. Nothing
+        live runs on Codex before task 22, so no user-visible run is affected.
+        Caught by the task 16 review, which gets this line.
