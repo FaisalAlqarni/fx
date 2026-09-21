@@ -345,3 +345,39 @@ Waiting on the task 05 implementer. Task 07's blockers (02 and 04) are both
         satisfied, so it is ready, but implementers run serially and 05 and 07
         both append to `scripts/check-all`. 06 blocks on 05. Deliberate wait.
 
+Task 05: implementer reported DONE_WITH_CONCERNS, commit 314ee08. It wired
+        `apply_patch` to the lane check and said plainly that the field name was
+        unverified and might be inert. It was right.
+
+## Measurements
+
+Codex `apply_patch` payload shape, measured 2026-09-21 against Codex CLI
+0.155.1 with a live `codex exec` and a stdin-dumping PreToolUse hook:
+
+```
+tool_name='apply_patch'  tool_input keys=['command']
+    command = '*** Begin Patch\n*** Update File: target.js\n@@\n-const b = 2;\n+const b = 3;\n*** End Patch'
+```
+
+Two consequences.
+
+1. **There is no `file_path` and no `path`.** The shipped wiring reads
+   `tool_input.file_path || tool_input.path`, so it is inert: the lane check
+   never fires on Codex today. Paths live inside the patch text, on
+   `*** Update File:`, `*** Add File:` and `*** Delete File:` lines.
+2. **`apply_patch` uses the key `command`, the same key `Bash` uses.** Routing
+   must stay keyed on `tool_name`. A hook that dispatched on the presence of
+   `tool_input.command` would hand raw patch text to the git guard, which
+   inspects it as a shell command. Nothing does that today; it is a trap for
+   the next person to touch this file.
+
+Task 05: fix round 1 dispatched, resuming the original implementer. One item:
+        parse the affected paths out of the patch text on `*** Update File:`,
+        `*** Add File:` and `*** Delete File:` lines, check every path a patch
+        names rather than the first, keep the check fail-open so a parser bug
+        cannot wedge a session, and comment the measured format so nobody
+        re-derives it from a live session again. Plus a comment noting that the
+        `tool_name` check is load-bearing because `apply_patch` and `Bash` share
+        the `command` key.
+        Task 07 stays queued: a fix round is a writer, and this one is live.
+
