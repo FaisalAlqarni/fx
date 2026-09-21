@@ -575,3 +575,47 @@ Task 07: complete (commits 4059996..660b10a, 1 fix round, re-review clean).
         `review-agent`: a reviewer's prose said `openapi.yaml` and a wrong
         filename there would have silently disabled the hiding on all five.
 
+Task 06: review returned **spec FAIL, quality FAIL**, one Critical finding and
+        two Important. The Critical is a reproducible write bypass in the lens
+        detector.
+
+        Reproduced by the controller independently, with a lens identity
+        recorded through `SubagentStart` and `CODEX_HOME` isolated:
+
+        | command | exit |
+        |---|---|
+        | `echo pwned > evidence.txt` | 2, caught |
+        | `bash -c "echo pwned > evidence.txt"` | **0, bypass** |
+        | `sh -c "echo pwned > evidence.txt"` | **0, bypass** |
+        | `python3 -c "..."` | **0, bypass** |
+        | `node -e "..."` | **0, bypass** |
+        | `bash -c "rm evidence.txt"` | 2, caught |
+        | `git status` | 0, correct |
+
+        Root cause: `REDIRECT` is tested once against the raw command and never
+        re-applied to the segments unwrapped from `bash -c`. The `rm` case
+        proves the segment machinery itself works.
+
+        The sharpest detail is the reviewer's: **`lib/git-guard.js` was already
+        hardened for this class**, and `lib/git-guard.test.js` carries
+        `bash -c 'git push origin main'` as a required-blocked case. The pattern
+        existed one file over and was not carried across. That is precisely the
+        "when you fix one, look for its mirror" failure the dispatch template
+        warns about.
+
+Ruling: the lens write-detector changes from a denylist to an **allowlist**, with
+        the denylist kept behind it as defence in depth.
+        Why: a denylist over shell commands is unwinnable. One probe session
+        found four trivial bypasses, and the reviewer listed five more it did not
+        need to try (`curl -o`, `wget`, `eval`, command substitution, `node -e`).
+        Every future interpreter is another hole. A read-only agent, by contrast,
+        runs a small and knowable set of commands: search, read, list, inspect
+        history. Enumerating what a lens may do is finite; enumerating what it
+        must not do is not.
+        The safe direction is over-refusal: a lens blocked from a read it needed
+        reports a refusal a human can see, while a lens permitted a write nobody
+        expected is the silent failure this task exists to prevent.
+        Cost if wrong: a lens cannot run a command it legitimately needs, and a
+        review returns thin. Visible, recoverable, and caught by task 12's
+        conformance row 12 plus any lens actually running.
+
