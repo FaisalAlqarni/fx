@@ -1740,3 +1740,15 @@ Task 17: DONE, ad7896f.
         have Bash. Task 13 owns those files.
         Review and security lens dispatched. The task 16 fix round runs now,
         because the task 17 implementer has finished.
+Task 16: fix round 1 landed in fa252f1. The FX check is written into the
+        fx-setup command itself, not a lib function. The implementer's reason
+        is correct: a check loaded from FX/lib would come from the tree it is
+        checking. The command refuses FX at or under cwd, symlinks included,
+        and refuses FX without an `fx` manifest or without PREAMBLE.md. A new
+        test runs the shipped command text. The helper JSON is now built with
+        JSON.stringify.
+        Remaining named limit: a complete fake fx tree outside the repo,
+        pointed to by an absolute path, still passes. A reviewed diff cannot
+        place files outside its repo, so the attacker already needs local write
+        access. Parked for the final review.
+        Scoped re-review and lens re-check dispatched.
