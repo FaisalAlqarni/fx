@@ -8,13 +8,16 @@
 following the documentation, and every claim in it is one the conformance
 matrix proved.
 
-**Amended 2026-09-21.** The design amendment (decisions A1 to A9) changes what
+**Amended 2026-09-21.** The design amendment (decisions A1 to A9, in the design) changes what
 this documentation must say. It must also cover:
 - **Codex:** after installing, the user trusts fx's hooks in `/hooks`, and
   trusts them again whenever fx changes a handler setting. ponytail's README
   states the same step (ponytail section 4 of
-  `research/prior-art-multi-harness.md`); copy its plainness. The first session plants the review roles,
-  and the user sees a notice to restart Codex once.
+  `research/prior-art-multi-harness.md`); copy its plainness. The order
+  matters: the hooks run only once trusted, so the first session after trust
+  plants the review roles and shows a notice to restart Codex once, and only
+  the session after that restart can dispatch a role. `fx-setup` plants them
+  too, for a user who has not trusted the hooks yet.
 - **Read-only agents** cannot write on any runtime, by a different mechanism
   on each: no shell on Claude Code and opencode, and on Codex a kept shell
   whose writes the hook refuses. ADR 0019 is corrected by task 17, and this
@@ -23,7 +26,7 @@ this documentation must say. It must also cover:
   tools for read-only agents, if task 17 found no rule to deny them, and Codex
   row 15, if task 16 ruled it a GAP, with the user-level config key.
 - **The preamble** reaches Claude Code in parts, and why.
-- **The nightly workflow** (task 20): what it checks, at the floor and at
+- **The nightly workflow**, from task 20: what it checks, at the floor and at
   `@latest`, and what it does not.
 - **Rows 13 and 14** report GAP on Claude Code and Codex, and these docs list
   them with their reasons. Codex is proven live only after task 22. Until
@@ -31,9 +34,31 @@ this documentation must say. It must also cover:
 
 **Carried from task 17:** `SURFACE.md:92` and `INSTALL.md:29` still show the
 lenses with `Bash` and `bash: allow`. Correct them. Also document that an
-existing opencode install keeps `bash: allow` for the read-only agents until
-the installer is run again, because the plugin skips agents already present.
-It never overwrites them.
+existing opencode install keeps its old read-only permissions until the
+installer is run again, because the plugin skips agents already present and
+never overwrites them. Since task 17 fix round 1 that means more than
+`bash: allow`: an old install also lacks the deny-all rule, so its read-only
+agents keep `webfetch` and MCP tools as well.
+
+**Carried from the coverage audit** (`state.md`, "Coverage audit"). These
+ledger rulings named this task and were missing from its criteria:
+- the Codex validator reports five expected failures, one per hidden lane
+  (`state.md`, the task 07 rulings);
+- hiding a lane on Codex rests on Codex's command-to-skill migrator rejecting
+  fx's command frontmatter, which is undocumented Codex behaviour (`state.md`,
+  the task 07 fix ruling);
+- `README.md`'s gate table lacks `check-tool-names` and later gates, and
+  `README.md` still names the old `tests/opencode-install/` path;
+- a user whose opencode `general.permission` is a wildcard gets no `task`
+  grant from the plugin (task 18 ruling), so two-level dispatch needs them to
+  allow `task` themselves;
+- `fx-setup` checks role and hook state on Codex only (`state.md`, task 10
+  minor); the equivalent checks on Claude Code and opencode are a follow-up
+  plan.
+
+The git-gate criteria this task used to carry are overtaken. Task 14 round 5
+removed git from Codex read-only agents entirely, so there is no git gate to
+comment beside, and ADR 0019 already records why, through task 17.
 
 **Files:**
 - Modify: `INSTALL.md`
@@ -41,7 +66,6 @@ It never overwrites them.
 - Modify: `SURFACE.md`
 - Modify: `docs/adr/0019-read-only-is-three-mechanisms-and-one-guarantee.md`
 - Modify: `lib/plan-state.js`  (comment only, no code)
-- Modify: `lib/plant-roles.js`  (comment only, near the git gate, no code)
 
 **Interfaces:**
 - Consumes: the conformance results recorded in `state.md` by task 12, and task 21's matrix block
@@ -68,7 +92,8 @@ is now a third injector and a shared renderer.
   write. True on two runtimes; on Codex the hook enforces it and the role file
   does not. Point at ADR 0019 rather than restating the mechanism.
 - that opencode is "a genuine port, not a downgrade", with the subagent claim
-  marked unverified. Task 10 verified it. Replace the hedge with the result.
+  marked unverified. Row 15 on opencode in task 21 measures it. Replace the
+  hedge with that result.
 
 **ADR 0019 gains the measurements** from task 21's rows 12 and 18 on Claude
 Code and opencode. Codex row 12 has never been measured passing: task 12
@@ -105,13 +130,48 @@ and task 21's matrix: no claim without a row.
 - [ ] `SURFACE.md`'s opencode subagent claim carries the measured result, not a hedge
 - [ ] Every capability claim in the three documents maps to a row in `state.md` that passed
 - [ ] No document says fx has six lenses: there are five, plus a read-only devil's advocate
-- [ ] `docs/adr/0019` records the known fourth-level bypass
-      `git -c diff.external=<program> diff`, demonstrated invoking an
-      arbitrary program that wrote a file. It is accepted, not fixed, per the
-      ceiling ruling. Recording it is what keeps the ceiling honest
-- [ ] A comment near the git gate in `lib/plant-roles.js` names that instance,
-      so the next reader does not rediscover it and assume it is unknown
+- [ ] `docs/adr/0019` states that git is unavailable to Codex read-only agents,
+      and why: git runs commands from repository config the agent does not
+      control (`diff.external`, textconv, `core.fsmonitor`, a nested
+      repository's config). No criterion asks for a git-gate comment, and
+      `lib/plant-roles.js` is not in this task's Files (from gap 5 of the audit, replacing
+      the overtaken `git -c diff.external` criteria)
 - [ ] Every `GAP` in `state.md` appears in `INSTALL.md` as a stated limitation
+- [ ] `INSTALL.md` states the Codex order: trust fx's hooks in `/hooks`, start
+      a session, which plants the roles and shows the restart notice, restart
+      Codex once, then dispatch a review agent; or run `fx-setup`, which plants
+      them without trusted hooks (from gap 1 of the audit)
+- [ ] `INSTALL.md` states that after every fx update on Codex the user
+      re-opens `/hooks` and trusts the changed hooks, and what happens until
+      they do: the preamble, the guard and read-only enforcement do not run
+      (from gap 2 of the audit)
+- [ ] `SURFACE.md` and `INSTALL.md` show no read-only agent with `Bash` or
+      `bash: allow`, and `INSTALL.md` says an opencode install made before this
+      release keeps its old read-only permissions, including shell and
+      webfetch, until the installer runs again (from gap 3 of the audit)
+- [ ] `INSTALL.md` names, per runtime, how a read-only agent is stopped from
+      writing, links ADR 0019, and says the Codex gate is a heuristic that
+      stops accidents, not an adversary (from gap 4 of the audit)
+- [ ] ADR 0019 records rows 12 and 18 from task 21 on Claude Code and
+      opencode, dated, with the CLI versions (from gap 4 of the audit)
+- [ ] `INSTALL.md` states the Codex validator reports five expected failures,
+      one per hidden lane, and that hiding a lane on Codex depends on its
+      command migrator rejecting fx's command frontmatter, which is
+      undocumented Codex behaviour (from gap 6 of the audit)
+- [ ] `README.md` lists every gate `scripts/check-all` runs, and names no
+      retired path such as `tests/opencode-install/` (from gap 6 of the audit)
+- [ ] `INSTALL.md` describes the nightly workflow at the floor and at
+      `@latest`, what it checks and what it does not; says the Claude Code
+      preamble arrives in parts, and why; and marks Codex live verification
+      pending, never done (from gap 6 of the audit)
+- [ ] `INSTALL.md` says a user who set opencode's `general.permission` to a
+      wildcard must allow `task` themselves for two-level dispatch (from gap 7 of the audit)
+- [ ] `SURFACE.md`'s opencode subagent claim cites task 21's row 15 result,
+      not task 10 (from gap 8 of the audit)
+- [ ] `INSTALL.md` says `fx-setup` checks role and hook state on Codex only,
+      and names what it does not detect on Claude Code and opencode: plugin
+      trust and enable state, CLAUDE.md pointer drift, a second skills pool,
+      `subagent_depth` (from gap 24 of the audit)
 - [ ] `lib/plan-state.js` no longer claims `PreToolUse` does not fire for
       `Write` or `Edit`: that belief was measured false and the lane check was
       measured firing. Comment only; change no code in that file
@@ -164,7 +224,7 @@ Expected: `ALL GREEN`.
 - [ ] **8. Commit**
 
 ```
-git add INSTALL.md README.md SURFACE.md docs/adr/0019-read-only-is-three-mechanisms-and-one-guarantee.md lib/plan-state.js lib/plant-roles.js
+git add INSTALL.md README.md SURFACE.md docs/adr/0019-read-only-is-three-mechanisms-and-one-guarantee.md lib/plan-state.js
 git commit -m "docs: document three install paths and correct the falsified claims"
 ```
 

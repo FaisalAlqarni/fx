@@ -94,7 +94,7 @@ behavioural rows spend quota and never do.
 | 19 | Three small defects the live rows found | none | Dead tests run; install test out of HOME; heredoc guard for any shell in the pipeline | Amendment |
 | 20 | Nightly conformance against the real CLIs | none | Floor and latest CLIs, free rows, no secrets | Amendment |
 | 21 | Live matrix on Claude Code and opencode | 14, 15, 16, 17, 18, 19 | Amended guarantees proven live on two runtimes; preamble part order measured | Amendment |
-| 22 | Live matrix on Codex, the merge gate | 14, 16, 17, 19 | Codex proven live after the 2026-10-21 quota reset, trust path included; docs carry the result | Amendment |
+| 22 | Live matrix on Codex, the merge gate | 13, 14, 16, 17, 19 | Codex proven live after the 2026-10-21 quota reset, trust path included; docs carry the result | Amendment |
 | 13 | Install and surface documentation | 12, 14, 15, 16, 17, 18, 19, 20, 21 | Three install paths documented and accurate | Polish |
 
 **Amendment edges.** Tasks 14 to 22 come from the design amendment of
@@ -109,12 +109,17 @@ behavioural rows spend quota and never do.
   `tests/gates/codex-manifest.test.js`.
 - 21 needs every product fix.
 - 22 needs 14, 16, 17 and 19, the fixes its Codex rows exercise, and it is
-  blocked by date as well. It does not wait for 21, which covers the other
-  two runtimes.
-- 13 needs 21, because it documents measured results only. 22 lands after
-  13 in practice, since it is date-blocked, and its last step writes the
-  measured Codex result into the documents 13 produced. The branch merges only
-  after 22.
+  blocked by date as well. It does not wait for 21 directly, which covers the
+  other two runtimes.
+- 13 needs 21, because it documents measured results only.
+- 22 needs 13, because both edit `INSTALL.md`, `SURFACE.md` and ADR 0019, and
+  22's measured Codex result must be the last word there: run the other way,
+  13 would rewrite it back to "pending".
+
+**Merge gate.** The branch merges only when rows 01, 02, 12, 15, 16 and 18
+PASS on Claude Code and opencode in task 21, and every live Codex row PASSes
+or is a GAP a ledger ruling accepted in task 22. A product defect either task
+measures opens a new numbered task.
 
 Shared files with no edge between their editors: 14, 16, 19 and 20 each
 append one line to `scripts/check-all`, each beside a named neighbour, so the

@@ -15,7 +15,7 @@ tools are `bash, edit, glob, grep, read, skill, webfetch, write`, with no
 on the agent's own config, and a wildcard `"*": "allow"` does not satisfy it.
 `subagent_depth`, which `plugins/fx.js` already raises to 2, only limits
 nesting once `task` is granted (`research/opencode-subagents.md`, verified
-against opencode source at 1.18.31, installed 1.18.25).
+against opencode source at 1.18.31, installed 1.18.25, both measured).
 
 **Prior art:** none. Neither ponytail nor caveman touches opencode's
 permission or agent configuration (ponytail section 5 and caveman section 5 of
@@ -35,8 +35,11 @@ copy.
   - every read-only agent's `permission.task === 'deny'`
   - `config.subagent_depth >= 2`, unchanged from today
 - The hook never overwrites a `general` agent setting the user already has.
-  It merges `task: 'allow'` into `general.permission`, only when `task` is
-  absent there.
+  It merges `task: 'allow'` into `general.permission` only when that object
+  has neither a `task` key nor a `*` key (`state.md`, the task 18 ruling). A user
+  wildcard is a choice about every tool, `task` included. opencode rewrites a
+  string such as `general.permission: "ask"` to `{"*": "ask"}` before the hook
+  runs, so that form counts as a wildcard too.
 
 **Seam:** the plugin's `config` hook, called directly as the existing test
 already does. Live row 15 in task 21 is the proof.
@@ -71,12 +74,13 @@ key is absent, so a second run changes nothing.
 - [ ] Carried from the task 17 review, Minor 3: the tools-line and `*_*` assertions loop over `READ_ONLY_AGENTS`, not over every agent file
 - [ ] After the config hook, `general` has `permission.task` of `'allow'`
 - [ ] A `general.permission.task` the user already set, of any value, is left as it was
+- [ ] A `general.permission` holding `*`, or a string that opencode expands to `*`, gets no `task` key added, and a test pins it: `{"*": "deny"}` stays exactly `{"*": "deny"}` (from gap 7 of the coverage audit)
 - [ ] Every read-only agent has `permission.task` of `'deny'`
 - [ ] Running the config hook twice leaves the same config as running it once
 - [ ] `subagent_depth` is still at least 2
 - [ ] Row 15's opencode prompt names `general` as the agent type for both the first and the nested dispatch, and its Claude Code and Codex prompts are unchanged
 - [ ] The report states that the config-object test cannot prove the native `general` override works, and that live row 15 is the proof
-- [ ] Live row 15 passes on opencode (verified in task 21)
+- [ ] Live row 15 passes on opencode, verified in task 21
 
 ## Steps
 
@@ -95,6 +99,10 @@ for (const name of ['fx-devils-advocate', 'fx-lens-a11y', 'fx-lens-database', 'f
   const user = { agent: { general: { permission: { task: 'ask' } } } };
   await hooks.config(user);
   assert.strictEqual(user.agent.general.permission.task, 'ask', 'user setting kept');
+  // A user wildcard is a choice about task too (task 18 ruling).
+  const wild = { agent: { general: { permission: { '*': 'deny' } } } };
+  await hooks.config(wild);
+  assert.deepStrictEqual(wild.agent.general.permission, { '*': 'deny' }, 'user wildcard kept, no task added');
   // Idempotent.
   const again = JSON.parse(JSON.stringify(config));
   await hooks.config(again);
