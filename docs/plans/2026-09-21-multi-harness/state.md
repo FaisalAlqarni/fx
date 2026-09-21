@@ -1785,3 +1785,4 @@ Task 16: complete (commits c1ef82c..fa252f1, 1 fix round, review approved,
         Parked: a full fake fx tree outside the repo passes the FX check.
 Task 18: dispatched next (opus, fresh implementer). Task 17 is waiting only
         on its security lens, and 18's blocker (17) is otherwise done.
+Correction: task 18 waits for the task 17 security lens, because a fix round there would touch the same opencode permission file. Task 19 is dispatched instead: it has no blockers and a disjoint file set, BASE 5f23119.
