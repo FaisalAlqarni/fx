@@ -9,7 +9,7 @@ each.
 | Runtime | Mechanism | What is missing or refused | Strength |
 |---|---|---|---|
 | Claude Code | `tools: Read, Grep, Glob` | no write tool and no shell | hard; the harness offers the agent no tool that writes |
-| opencode | `permission: { edit: deny, bash: deny, "*_*": deny }` | no write tool (`write` and `patch` collapse onto `edit`), no shell, and no MCP tool, see below | hard |
+| opencode | permission allowlist: `"*": deny` first, then `read`, `grep`, `glob` and `list` allowed, `edit` and `bash` denied, and `external_directory` allowed only under fx's references | only the read tools are left: no write tool (`write` and `patch` collapse onto `edit`), no shell, no `webfetch` or `websearch`, no `task`, no MCP tool, and nothing opencode adds later; see below | hard |
 | Codex | `sandbox_mode` in the role file (intent only) **and** a `PreToolUse` deny keyed on the identity SubagentStart recorded | the shell is kept, because Codex has no read tool; for a read-only or unrecorded agent id the hook refuses any shell call the classifier in `lib/plant-roles.js` does not clear, `apply_patch`, `spawn_agent`, every `mcp__*` tool, and every other tool | **strictly weaker: a heuristic gate in fx's own hook, not a harness-enforced boundary. See "Codex is not equivalent" below.** |
 
 Until task 17 (amendment A5) the Claude Code row read `tools: Read, Grep,
@@ -20,31 +20,36 @@ unprompted. The shell is now gone on both, the agents read the packaged diff
 file they are handed instead of running git, and row 12 probes a shell write
 as well as an editing-tool write.
 
-**opencode MCP tools are denied by one wildcard rule.** In opencode 1.18.31
-(and byte-identical in the installed 1.18.25) an MCP tool's id is always
-`<server>_<tool>`, both parts sanitized to `[a-zA-Z0-9_-]`
-(`packages/opencode/src/mcp/catalog.ts`, lines 117 to 119).
-`Permission.disabled()` matches each tool id against every rule's key as a
-wildcard and hides the tool when the last match is a deny
-(`packages/opencode/src/permission/index.ts`, lines 204 to 214), and the model
-is offered only the tools that survive it (`session/llm/request.ts`, lines 208
-to 214; code mode's MCP catalog, `tool/registry.ts` line 286). So `"*_*": deny`
-hides every MCP tool. No built-in tool a read-only agent uses has an
-underscore in its id. The rule also matches the `external_directory` and
-`doom_loop` permissions, turning their asks into denies, which a read-only
-agent can live with. Measured from source, not from a live session: task 21
-runs row 12 on opencode.
+**opencode is a permission allowlist** (task 17 fix round 1). The first
+version denied `edit`, `bash` and every MCP tool by name and pattern, and the
+security lens found `webfetch` still allowed: outbound HTTP from an agent that
+reads untrusted diffs. A denylist misses whatever it does not name, so the
+block is now the same fail-closed shape as the Codex hook. Evidence, from
+opencode 1.18.31 at the commit `research/opencode-subagents.md` used, each
+file byte-identical in the installed 1.18.25:
 
-Codex needs both halves. Its documentation says a role file may set
-`sandbox_mode = "read-only"`, and its own worked examples do. But it also says
-the parent turn's live runtime overrides are reapplied when a child is spawned,
-even if the role file sets different defaults. A role file is therefore a
-default, not a boundary. The docs say as much about the other half too: treat
-tool hooks as a useful guardrail, not a complete enforcement boundary.
+- The last matching rule wins, in key order: `fromConfig` turns keys into
+  rules in order (`packages/opencode/src/permission/index.ts`, lines 186 to
+  198), and `evaluate` and `disabled` both take the last rule whose key
+  matches as a wildcard (lines 28 to 32 and 204 to 214). The agent's block
+  is merged after the defaults (`agent/agent.ts`, line 293). So `"*": deny`
+  goes first and the allows follow it.
+- A hidden tool is never offered to the model (`session/llm/request.ts`,
+  lines 208 to 214), and code mode's MCP catalog is filtered the same way
+  (`tool/registry.ts`, line 286).
+- The pure reads are `read` (`tool/read.ts`, line 256), `grep`
+  (`tool/grep.ts`, line 40) and `glob` (`tool/glob.ts`, line 29). `list` asks
+  nothing in 1.18.31, but the config schema still declares it.
+- A read outside the project asks `external_directory` with the pattern
+  `<parent dir>/*` (`tool/external-directory.ts`, lines 28 to 37), and `*`
+  crosses `/` (`packages/core/src/util/wildcard.ts`). So `<references>/*`
+  allows every file under fx's references, and every other directory outside
+  the project stays denied.
 
-Corroboration that neither half is sufficient alone: OpenAI's own read-only
-reviewer ships as a **skill** whose read-only property is prose, and the
-built-in `explorer` role is a zero-byte TOML file.
+`read: allow` replaces opencode's default ask on `.env` files for these
+agents, which matches Claude Code, where `Read` has no such ask. Measured from
+source, not from a live session: task 21 runs row 12 on opencode, and adds a
+refused `webfetch` and MCP call.
 
 ## What made the hook half possible
 

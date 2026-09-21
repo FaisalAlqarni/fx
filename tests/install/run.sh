@@ -246,8 +246,10 @@ if [ "$HARNESS" = opencode ]; then
   # gives the loop its own shell, so only the subshell's exit status escapes.
   check "generated read-only agents deny edit" \
     '( for f in "$DEST"/agents/fx-lens-*.md "$DEST"/agents/fx-devils-advocate.md; do grep -q "edit: deny" "$f" || exit 1; done )'
-  check "generated read-only agents deny the shell and every MCP tool" \
-    '( for f in "$DEST"/agents/fx-lens-*.md "$DEST"/agents/fx-devils-advocate.md; do grep -q "bash: deny" "$f" && grep -qF "\"*_*\": deny" "$f" || exit 1; done )'
+  # The read-only permission block is an allowlist, and opencode lets the
+  # last matching rule win, so the deny-all line must be the first one.
+  check "generated read-only agents deny everything first, then allow reads" \
+    '( for f in "$DEST"/agents/fx-lens-*.md "$DEST"/agents/fx-devils-advocate.md; do [ "$(sed -n "/^permission:/{n;p;q}" "$f")" = "  \"*\": deny" ] && grep -q "^  bash: deny" "$f" && grep -q "^  read: allow" "$f" && grep -qF "  \"$DEST/references/*\": allow" "$f" || exit 1; done )'
   check "no generated artifact carries the plugin prefix" \
     '! grep -rq "fx:fx-" "$DEST"'
   check "apply_patch is never used as a permission key" \

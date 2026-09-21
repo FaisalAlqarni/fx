@@ -79,15 +79,39 @@ const root = path.join(__dirname, '..', '..');
     assert.ok(a.description && a.prompt, `${name} needs a description and a prompt`);
   }
 
-  // Task 17 (amendment A5): a read-only agent has no shell on opencode.
-  for (const name of ['fx-devils-advocate', 'fx-lens-a11y', 'fx-lens-database', 'fx-lens-pipeline', 'fx-lens-security', 'fx-lens-silent-failure']) {
-    assert.strictEqual(config.agent[name].permission.edit, 'deny', `${name} edit`);
-    assert.strictEqual(config.agent[name].permission.bash, 'deny', `${name} bash`);
-    // An MCP tool's id is `<server>_<tool>` (opencode 1.18.31
-    // packages/opencode/src/mcp/catalog.ts:117-119), and Permission.disabled()
-    // wildcard-matches a tool id against each rule's key (permission/index.ts:
-    // 204-214), so `*_*` hides every MCP tool from the agent.
-    assert.strictEqual(config.agent[name].permission['*_*'], 'deny', `${name} MCP tools`);
+  // Task 17 (amendment A5, fix round 1): a read-only agent's permission block
+  // is an allowlist. Evaluated the way opencode 1.18.31 evaluates it:
+  // fromConfig turns each key into rules in order (permission/index.ts:
+  // 186-198), the LAST rule whose key and pattern both wildcard-match wins
+  // (index.ts:28-32, core/src/util/wildcard.ts), and the agent's own block is
+  // merged after opencode's defaults (agent/agent.ts:293), whose first rule
+  // is `"*": "allow"` (agent.ts:120). So no match here means allow.
+  const wildcard = (input, pattern) => new RegExp('^' + pattern
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$', 's').test(input);
+  const effective = (perm, permission, pattern = '*') => {
+    let action = 'allow';
+    for (const [key, value] of Object.entries(perm)) {
+      for (const [p, a] of typeof value === 'string' ? [['*', value]] : Object.entries(value)) {
+        if (wildcard(permission, key) && wildcard(pattern, p)) action = a;
+      }
+    }
+    return action;
+  };
+  const refs = path.join(root, 'references');
+  for (const name of READ_ONLY_AGENTS) {
+    const perm = config.agent[name].permission;
+    assert.strictEqual(Object.keys(perm)[0], '*', `${name}: the deny-all rule goes first, since the last match wins`);
+    for (const denied of ['webfetch', 'websearch', 'task', 'todowrite', 'edit', 'bash', 'skill', 'ctx7_query']) {
+      assert.strictEqual(effective(perm, denied), 'deny', `${name} must not use ${denied}`);
+    }
+    for (const allowed of ['read', 'grep', 'glob', 'list']) {
+      assert.strictEqual(effective(perm, allowed), 'allow', `${name} must be able to ${allowed}`);
+    }
+    // external_directory asks with `<parent dir>/*` (tool/external-directory.ts).
+    assert.strictEqual(effective(perm, 'external_directory', `${refs}/vocab/*`), 'allow',
+      `${name} must be able to read fx's references`);
+    assert.strictEqual(effective(perm, 'external_directory', '/etc/*'), 'deny',
+      `${name} must not read outside the project and fx's references`);
   }
 
   assert.ok(config.subagent_depth >= 2, 'an implementer must be able to dispatch a reviewer');

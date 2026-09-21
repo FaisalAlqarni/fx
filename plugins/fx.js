@@ -56,6 +56,10 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));   // .../plugins
 const ROOT = path.join(HERE, '..');
 const AGENTS_DIR = path.join(ROOT, 'agents');
 const SKILLS_DIR = path.join(ROOT, 'skills');
+// Both paths a read-only agent may be handed for a reference: through the
+// path this plugin was loaded from, and the checkout it resolves to.
+const REFERENCES = path.join(ROOT, 'references');
+const REFERENCES_DIRS = [...new Set([REFERENCES, fs.realpathSync(REFERENCES)])];
 
 // The five lanes a person must type, never a model auto-selection.
 // tests/gates/user-invoked.test.js pins the same set for Claude Code
@@ -123,7 +127,7 @@ export const fx = async ({ directory } = {}) => {
       for (const name of READ_ONLY_AGENTS) {
         if (config.agent[name]) continue;   // idempotent across repeat config() calls
         const mdText = fs.readFileSync(path.join(AGENTS_DIR, `${name}.md`), 'utf8');
-        config.agent[name] = toOpencodeAgent(mdText);
+        config.agent[name] = toOpencodeAgent(mdText, { referencesDirs: REFERENCES_DIRS });
       }
 
       // Depth: `subagent_depth` defaults to 1, which stops an implementer

@@ -9,7 +9,7 @@ directory the installer owns, never a whole-folder symlink.
 Agents are GENERATED, because the two runtimes disagree on frontmatter:
 
     Claude Code            opencode
-    tools: Read, Grep      permission: { edit: deny, bash: deny, "*_*": deny }
+    tools: Read, Grep      permission: { "*": deny, read: allow, grep: allow, ... }
     (subagent by dir)      mode: subagent
 
 The conversion itself -- which `tools:` become which `permission:` -- has
@@ -106,24 +106,26 @@ _LOAD_OPENCODE_AGENTS_JS = """
 const fs = require('fs');
 const path = require('path');
 const root = process.argv[1];
+const referencesDirs = JSON.parse(process.argv[2]);
 const { READ_ONLY_AGENTS } = require(path.join(root, 'lib', 'plant-roles.js'));
 const { toOpencodeAgent } = require(path.join(root, 'lib', 'agent-dialects.js'));
 const out = {};
 for (const name of READ_ONLY_AGENTS) {
   const mdText = fs.readFileSync(path.join(root, 'agents', name + '.md'), 'utf8');
-  out[name] = toOpencodeAgent(mdText);
+  out[name] = toOpencodeAgent(mdText, { referencesDirs });
 }
 process.stdout.write(JSON.stringify(out));
 """
 
 
-def load_opencode_agents():
+def load_opencode_agents(references_dirs):
     """{name: {mode, description, prompt, permission}}, one entry per
     lib/plant-roles.js's READ_ONLY_AGENTS, computed by the single opencode
     dialect converter (lib/agent-dialects.js). node is not a new runtime
     dependency: hooks/ and plugins/fx.js are already JavaScript that every
     fx install already needs working."""
-    result = subprocess.run(["node", "-e", _LOAD_OPENCODE_AGENTS_JS, str(FX)],
+    result = subprocess.run(["node", "-e", _LOAD_OPENCODE_AGENTS_JS, str(FX),
+                             json.dumps(references_dirs)],
                              capture_output=True, text=True)
     if result.returncode != 0:
         sys.exit(f"lib/agent-dialects.js failed to convert an agent: {result.stderr.strip()}")
@@ -137,10 +139,16 @@ def render_opencode_agent(name, agent):
     perm = agent["permission"]
     out = ["---", f"description: {yaml_quote(agent['description'])}",
            f"mode: {agent['mode']}",
-           "permission:",
-           *(f"  {k if re.fullmatch(r'[a-z_]+', k) else yaml_quote(k)}: {v}"
-             for k, v in perm.items()),
-           "---", "", GENERATED]
+           "permission:"]
+    # Key order is rule order, and opencode lets the last match win.
+    key = lambda k: k if re.fullmatch(r"[a-z_]+", k) else yaml_quote(k)
+    for k, v in perm.items():
+        if isinstance(v, dict):
+            out.append(f"  {key(k)}:")
+            out += [f"    {key(p)}: {a}" for p, a in v.items()]
+        else:
+            out.append(f"  {key(k)}: {v}")
+    out += ["---", "", GENERATED]
     return "\n".join(out) + agent["prompt"] + "\n"
 
 
@@ -419,7 +427,10 @@ def main():
     warn_duplicate_pool(skills_dest, linked)
 
     generated = []
-    opencode_agents = load_opencode_agents()
+    # Both paths an agent may be handed for a reference: through the link
+    # this install makes, and the checkout it points at.
+    opencode_agents = load_opencode_agents(list(dict.fromkeys(
+        [str(dest_abs / "references"), str(FX / "references")])))
     for name, agent in opencode_agents.items():
         text = render_opencode_agent(name, agent)
         refuse_if_foreign_generated(agents_out / f"{name}.md")
