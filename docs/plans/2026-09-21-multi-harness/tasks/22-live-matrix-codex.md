@@ -1,6 +1,8 @@
 # 22: Live matrix on Codex, the merge gate
 
-**Status:** blocked-until 2026-10-21 (Codex quota reset)
+**Status:** two parts. Part A (the full matrix on the local model) is
+ready-for-agent. Part B (the short real-model confirmation, which is the merge
+gate) is blocked until 2026-10-21, when the Codex quota resets.
 **Blocked by:** 13, 14, 16, 17, 19
 **Phase:** Amendment
 
@@ -59,6 +61,25 @@ The coverage audit added what the matrix alone never shows a Codex user:
 thread (ponytail section 4 of `research/prior-art-multi-harness.md`). That is
 the step the trust runs below prove for fx. Neither project proves it by
 test, so the test itself has no prior art.
+
+
+**Amended 2026-09-22: run Codex on the local model now.** Codex 0.155.1
+speaks only the Responses API. The user's local llama-server serves
+`/v1/responses`: a probe returned 200 from Qwen 3.8 27B at
+`http://127.0.0.1:8899/v1`. So Codex can run against it as a custom model
+provider, with no OpenAI quota, the same way opencode uses it.
+- **Part A (now).** Add a `live.sh` knob that writes a
+  `[model_providers.llamacpp]` entry (`wire_api = "responses"`,
+  `base_url = "http://127.0.0.1:8899/v1"`) and `model_provider`/`model` into
+  the **scratch** `CODEX_HOME/config.toml`. Copy the key in from the real
+  opencode provider entry, and never write anything back. First probe that
+  Qwen's tool calls work through Codex on the Responses API. Then run every
+  step and criterion of this task on the local model, and record which
+  multi-agent version and depth Codex picks for an unknown model.
+- **Part B (on or after 2026-10-21).** On the real OpenAI model, run a short
+  confirmation of rows 01, 04, 12 and 15. **Part B is the merge gate**,
+  because real Codex users run OpenAI models, and routing quality depends on
+  the model.
 
 **Files:**
 - Modify: `tests/conformance/lib/live.sh`  (the Codex trust knob, the pre-plant knob and the MCP knob only)

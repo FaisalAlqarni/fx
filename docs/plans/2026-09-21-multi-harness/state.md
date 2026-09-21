@@ -2217,3 +2217,18 @@ Ruling: finding 2 feeds the spike as its sharpened-descriptions variant.
         subagents out, and fx cannot.
 Task 24: Y passed the gate: opencode row 04 8/10, Claude Code 5/5, rows 01, 02 and 16 pass on both. Worst case is 8,940, a 60-char margin. Not committed. Y is the fallback if the spike loses.
 Spike dispatched: S2 (tiny bootstrap), S3 (S2 plus sharpened descriptions), S4 (Y plus sharpened descriptions). Each is measured on row 04 (x10 opencode, x5 Claude Code), rows 01, 02 and 16, and the lane-triggering prompts. The output goes to research/bootstrap-spike.md.
+Spike: the user approved the short version. The opencode queue is trimmed to
+        S3 plus the S1 lanes baseline. Measured so far:
+        - Claude Code: S2 and S3 both route 9/9 on lane prompts and 5/5 on
+          row 04; Y routes 8/9.
+        - opencode S2 (tiny bootstrap with no description changes): lanes
+          7/9, row 04 2/5, every miss fx-brainstorm.
+        S3 on opencode decides the redesign.
+Codex (user question): its quota is exhausted until 2026-10-21. Codex 0.155.1
+        supports only the Responses API (`WireApi` has one variant in
+        model-provider-info). The local llama-server serves `/v1/responses`,
+        probed 200. User decision: run task 22's full matrix now on the local
+        Qwen as a custom provider (part A). On 2026-10-21, run a short
+        real-model confirmation of rows 01, 04, 12 and 15 (part B), which
+        stays the merge gate. Task 22 is amended. Part A is dispatched after
+        the spike, because the local model has one slot.
