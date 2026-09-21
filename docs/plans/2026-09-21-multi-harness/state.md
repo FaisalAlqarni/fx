@@ -1138,3 +1138,13 @@ Task 11: fix round 2 landed in 612e5ea. The implementer blocked on my ledger
         line tripping check-prose the same way as before, so I reworded that
         line. `scripts/check-all` is ALL GREEN, run by me. Dispatched a scoped
         re-review of round 2.
+
+Task 11: re-review of round 2: Approved.
+Task 11: minor (deferred): row 13's Codex reason says "only" one flag is
+        pinned. `user-invoked.test.js:78-88` also pins the unquoted colon in the
+        command descriptions. This understates coverage and never overstates it.
+Task 11: complete (commits 4b219ce..612e5ea, 2 fix rounds, re-review approved).
+        Files: tests/conformance/{run.sh,runner-isolation.test.sh,README.md},
+        rows 03 09 10 11 13 14, scripts/check-all. Free rows: claude-code 4 pass
+        2 gap, opencode 6 pass, codex 4 pass 2 gap. The runner never writes to
+        a real home. Its test proves that against a fake home under SIGINT.
