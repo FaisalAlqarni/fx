@@ -1500,3 +1500,16 @@ Ruling: lens #2 is parked into task 22. Its step 1 already researches where
         task 13's docs.
 Task 14: fix round 1 landed in d94135b. The hook now allows a read-only or unrecorded subagent only classifier-cleared Bash, and refuses every other tool. A classifier throw is refused. The controller spawn tests exist, and they kill the reviewer's mutant. Scoped re-review and lens re-check dispatched.
 Task 14: re-review of round 1 approved. It spawned the hook live and confirmed that default agents and the controller keep update_plan, spawn_agent and apply_patch. Minors: write_stdin is refused for lenses; when lib/plant-roles fails to load, the read-only rule is skipped, which fails open (pre-existing); and a deny message has stale wording. The security lens re-check is pending.
+Task 15: review needs fixes. 0 Critical, 1 Important: the "rich" test fixture
+        yields no plan block because its tasks/ dir is empty, so the plan-block
+        case is covered only by this worktree's own cwd. The reviewer swept max
+        from 500 to 12000 on all three harnesses, and the parts reassembled
+        exactly every time. Fix round 1 dispatched.
+Task 15: minor (deferred):
+        - a `## ` line inside a code fence counts as a cut point, and the
+          paragraph fallback can split inside a fence (PREAMBLE.md has no
+          fences today);
+        - one paragraph longer than the budget exceeds max without an error;
+        - no test asserts where cuts land;
+        - a NaN `--part` prints the full render;
+        - part order, which task 21 measures.
