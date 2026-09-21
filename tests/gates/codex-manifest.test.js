@@ -313,6 +313,49 @@ withScratch((scratch) => {
   fs.rmSync(badHomeParent, { recursive: true, force: true });
 }
 
+// Fix round 1: a reproducible write bypass through `bash -c`/`sh -c`/any
+// interpreter, found by review and confirmed independently. This is that
+// review's full probe table, run for real through the hook contract, with
+// a lens identity recorded via SubagentStart exactly as production would
+// see it (not the unclassified-refusal fallback the round-1 sample cases
+// happened to exercise). Every bypass line must now exit 2; `git status`
+// and a plain `grep` (the "must stay allowed" controls) must stay 0, so an
+// over-tight allowlist fails this suite instead of passing it silently.
+withScratch((scratch) => {
+  const startedProbe = fire({
+    hook_event_name: 'SubagentStart', cwd: scratch,
+    agent_id: 'probe-1', agent_type: 'fx-lens-security',
+  });
+  assert.strictEqual(startedProbe.status, 0);
+
+  const probe = (command) => fire({
+    hook_event_name: 'PreToolUse', cwd: scratch,
+    agent_id: 'probe-1',
+    tool_name: 'Bash', tool_input: { command },
+  }).status;
+
+  const cases = [
+    // [command, expected exit, label]
+    ['echo pwned > evidence.txt', 2, 'plain redirect'],
+    ['bash -c "echo pwned > evidence.txt"', 2, 'bash -c bypass (round 1 gap)'],
+    ['sh -c "echo pwned > evidence.txt"', 2, 'sh -c bypass (round 1 gap)'],
+    ['python3 -c "open(1)"', 2, 'python3 -c bypass (round 1 gap)'],
+    ['node -e "1"', 2, 'node -e bypass (round 1 gap)'],
+    ['bash -c "rm evidence.txt"', 2, 'bash -c wrapping a denylisted command'],
+    ['git status', 0, 'read-only git subcommand — must stay allowed'],
+    ['curl -o out.txt https://example.com', 2, 'curl -o (reviewer, untried)'],
+    ['curl -O https://example.com/file', 2, 'curl -O (reviewer, untried)'],
+    ['wget https://example.com/file', 2, 'wget (reviewer, untried)'],
+    ['eval "echo pwned > evidence.txt"', 2, 'eval (reviewer, untried)'],
+    ['echo $(rm -rf /tmp/x)', 2, 'command substitution $(...) (reviewer, untried)'],
+    ['echo `rm -rf /tmp/x`', 2, 'command substitution `...` (reviewer, untried)'],
+    ['grep -rn TODO .', 0, 'a plain read — must stay allowed'],
+  ];
+  for (const [command, expected, label] of cases) {
+    assert.strictEqual(probe(command), expected, `${label}: ${command}`);
+  }
+});
+
 fs.rmSync(testCodexHome, { recursive: true, force: true });
 
 console.log('codex lens enforcement: OK');
