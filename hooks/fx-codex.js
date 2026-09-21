@@ -193,8 +193,23 @@ process.stdin.on('end', () => {
   // user trusts them, so the setup lane and the installer are the other two
   // callers of the same plantRoles (design.md: "one function does the
   // planting and three callers invoke it").
+  //
+  // Codex reads roles once, when a session starts and before any hook runs
+  // (research/codex.md, "Follow-up: role visibility timing"), so a role this
+  // hook writes is dispatchable from the NEXT session only. Say so, once, in
+  // the session that wrote or repaired one: `systemMessage` reaches the user
+  // (ponytail's writeHookOutput shape), and the same line ends the model's
+  // context. A session that wrote nothing is silent.
+  let notice = null;
   if (input.hook_event_name === 'SessionStart' && plantRoles) {
-    try { plantRoles(); } catch { /* the session must start regardless */ }
+    try {
+      const { written, stale } = plantRoles();
+      const names = [...written, ...stale].map((p) => path.basename(p, '.toml'));
+      if (names.length) {
+        notice = `fx installed or updated its review roles (${names.join(', ')}). `
+               + 'Codex reads roles when a session starts, so restart Codex once before dispatching an fx review agent.';
+      }
+    } catch { /* the session must start regardless */ }
   }
 
   // Record which role this subagent is, at the event where agent_type is
@@ -214,10 +229,12 @@ process.stdin.on('end', () => {
          + 'and tell the user the plugin is misinstalled.';
   }
 
-  process.stdout.write(JSON.stringify({
+  const out = {
     hookSpecificOutput: {
       hookEventName: input.hook_event_name || 'SessionStart',
-      additionalContext: text,
+      additionalContext: notice ? `${text.trimEnd()}\n\n${notice}\n` : text,
     },
-  }));
+  };
+  if (notice) out.systemMessage = notice;
+  process.stdout.write(JSON.stringify(out));
 });

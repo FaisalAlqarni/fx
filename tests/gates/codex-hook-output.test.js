@@ -151,4 +151,37 @@ for (const tool of ['memory_tool', 'request_permissions_tool']) {
   assert.ok(denied(tr), 'a classifier crash is refused, not treated as a read');
 }
 
+// ---- Task 16: the restart notice reaches the user, once, when roles were written ----
+{
+  const { READ_ONLY_AGENTS } = require(path.join(root, 'lib', 'plant-roles'));
+  assert.strictEqual(READ_ONLY_AGENTS.length, 6, 'six read-only roles');
+  const fresh = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-codex-notice-home-'));
+  const env2 = { ...process.env, CODEX_HOME: fresh, HOME: fresh, TMPDIR: fresh };
+  const start = () => {
+    const r = spawnSync('node', [hook], {
+      input: JSON.stringify({ ...base, hook_event_name: 'SessionStart', source: 'startup' }),
+      env: env2, encoding: 'utf8' });
+    assert.strictEqual(r.status, 0, r.stderr);
+    keysOk(r.stdout.trim(), 'SessionStart with notice', TOP_SESSION);
+    return JSON.parse(r.stdout);
+  };
+  // plantRoles returns absolute paths; the notice names each by path.basename(p, '.toml').
+  const notice = (names) => `fx installed or updated its review roles (${names.join(', ')}). `
+    + 'Codex reads roles when a session starts, so restart Codex once before dispatching an fx review agent.';
+
+  const first = start();
+  assert.strictEqual(first.systemMessage, notice(READ_ONLY_AGENTS), 'the user sees the exact notice');
+  assert.ok(first.hookSpecificOutput.additionalContext.trimEnd().endsWith(notice(READ_ONLY_AGENTS)),
+    'the model gets the same line');
+
+  const second = start();
+  assert.ok(!('systemMessage' in second), 'second session is silent');
+  assert.ok(!second.hookSpecificOutput.additionalContext.includes('restart Codex once'), 'and carries no copy');
+
+  fs.appendFileSync(path.join(fresh, 'agents', 'fx-lens-a11y.toml'), '\n# drift\n');
+  const third = start();
+  assert.strictEqual(third.systemMessage, notice(['fx-lens-a11y']), 'only the repaired role, by name');
+  fs.rmSync(fresh, { recursive: true, force: true });
+}
+
 console.log('codex-hook-output: all passed');

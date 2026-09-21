@@ -127,7 +127,11 @@ if [ ! -e "$LIVE_INSTALLED" ]; then
   case "$HARNESS" in
     codex)
       out="$("${JAIL[@]}" codex plugin marketplace add "$FX" 2>&1 && "${JAIL[@]}" codex plugin add fx@fx 2>&1)" \
-        || fail "fx did not install into the scratch CODEX_HOME: $out" ;;
+        || fail "fx did not install into the scratch CODEX_HOME: $out"
+      # Codex reads roles only when a session starts, so plant them now, or
+      # the first session of every row runs without them (amendment A4).
+      out="$("${JAIL[@]}" bash "$FX/tests/conformance/lib/plant-codex-roles.sh" 2>&1)" \
+        || fail "fx roles were not planted into the scratch CODEX_HOME: $out" ;;
     opencode)
       out="$("${JAIL[@]}" python3 "$FX/scripts/fx-opencode-install" --dest "$XDG_CONFIG_HOME/opencode" 2>&1)" \
         || fail "fx did not install into the scratch opencode config: $out" ;;

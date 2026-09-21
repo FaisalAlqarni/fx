@@ -191,33 +191,53 @@ session.
 A `SessionStart` hook plants fx's read-only review roles into this machine's
 Codex home, but a hook fails open and silently by necessity: it can never
 tell you something is wrong, and on a fresh install it cannot run at all
-until Codex trusts it. This step is the only place that gets reported.
+until Codex trusts it. So setup plants the roles itself, then reports.
 
-On Codex only, after the steps above, run:
+Every command below loads fx's own code, never the user's repository. `FX`
+is the absolute path of the fx plugin root, the directory holding fx's
+`PREAMBLE.md` and `lib/plant-roles.js`: where this lane was loaded from.
+Substitute it.
+
+On Codex only, after the steps above, first plant:
 
 ```
-node -e "const {auditRoles} = require('./lib/plant-roles'); console.log(JSON.stringify(auditRoles({})))"
+node -e "const p = require(require('path').join(process.argv[1], 'lib', 'plant-roles')); const r = p.plantRoles({}); console.log(JSON.stringify({ written: r.written.length, stale: r.stale.length }))" "FX"
+```
+
+This writes only the six `fx-*.toml` role files fx generates, into
+`$CODEX_HOME/agents` (`~/.codex/agents` when `CODEX_HOME` is unset). A role
+that is already current is left alone. A role whose content differs is
+rewritten.
+
+Then audit:
+
+```
+node -e "const p = require(require('path').join(process.argv[1], 'lib', 'plant-roles')); console.log(JSON.stringify(p.auditRoles({})))" "FX"
 ```
 
 Report the three states it returns **separately, never merged into one
 count**:
 
 - **present**: planted, and matches what fx currently generates.
-- **missing**: never planted on this machine.
+- **missing**: never planted on this machine. After the plant step this
+  should be empty; a name here means the plant failed, so say so.
 - **stale**: planted, but the content differs from what fx currently
-  generates. Expected right after an fx update, before the hook has had a
-  chance to replant; `plantRoles` (not this report) is what repairs it, at
-  the next `SessionStart`.
+  generates. After the plant step this should be empty too.
 
 **If every role is present and none are stale, print exactly one line**
 (for example: `fx roles: 6/6 planted, none stale.`) and move on, no wall of
 output for the common case. Otherwise, list `missing` and `stale` by name,
 each under its own heading.
 
+**If the plant step wrote or rewrote any role** (`written` or `stale` above
+zero), tell the user: **restart Codex once before dispatching an fx review
+agent.** Codex reads roles only when a session starts, so this session
+cannot dispatch the roles it just received.
+
 Then check hook trust:
 
 ```
-node -e "const {hooksTrusted} = require('./lib/plant-roles'); console.log(hooksTrusted({}))"
+node -e "const p = require(require('path').join(process.argv[1], 'lib', 'plant-roles')); console.log(p.hooksTrusted({}))" "FX"
 ```
 
 - `true` / `false`: report it directly.
@@ -243,7 +263,8 @@ node -e "const {hooksTrusted} = require('./lib/plant-roles'); console.log(hooksT
 What was written, every command with its source (`Makefile:12`, `ci.yml:31`),
 whether `CONTEXT.md` exists (and if not, that it is written when the first
 term resolves), every command that came out `null`, and every `repo.md` section flagged during
-review. On Codex, the role-provisioning report (section 6): present/missing/
-stale counts and hook-trust state.
+review. On Codex, the role-provisioning report (section 6): how many roles
+were written, present/missing/stale counts, hook-trust state, and the restart
+instruction when anything was written.
 
 Print it. Do not commit.

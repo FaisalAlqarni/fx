@@ -160,6 +160,8 @@ excuse you from calling them.
 | library / framework / API docs | `context7` |
 | a screen or component, and how it looks | `fx-design` |
 
+**Dispatching an fx review agent.** {{DISPATCH}}
+
 Project facts (structure, patterns, test commands) are in `repo.md` and
 `.fx.json` at the repo root. **Never guess a test command.**
 
