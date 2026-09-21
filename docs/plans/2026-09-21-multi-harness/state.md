@@ -1301,3 +1301,14 @@ User decisions, 2026-09-21:
             GAPs is rejected. Next step: research the Codex docs, and how
             dietrichgebert/ponytail and JuliusBrussee/caveman support several
             harnesses, then amend the design and plan with new tasks.
+
+Task 12: fix round 1 landed in e98c27e. The implementer corrected its own first
+        report. Its claude-code and opencode mutation REDs were partly invalid:
+        the jail hid /tmp, where the mutated copies lived, so the plugin never
+        loaded. It re-ran them with the tree visible, and all but one now FAIL
+        for the right reason. The exception is deleting `skills/fx-tdd` on
+        opencode, where the installer refuses the tree first. The Codex
+        mutations were valid. The jail now hides the real home. A direct bwrap
+        probe cannot read any of the three credential files, and the CLIs and
+        the llama-server still work. The matrix is unchanged.
+        Scoped re-review and security lens dispatched.
