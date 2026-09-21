@@ -25,6 +25,18 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-codex.js\"",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   }
 }
