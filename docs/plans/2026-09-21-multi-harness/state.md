@@ -2161,3 +2161,36 @@ User decision (2026-09-22): **race** a caveman-compressed version of the full
         load on demand, so compressing them gains nothing.
         Round 3 told to hold its commit. The compressed competitor runs after
         round 3 because the llama-server has one slot.
+Compression candidate (scratch only, nothing committed): the full pre-trim
+        preamble in caveman style kept every rule, row, placeholder and
+        anchor. Its worst case is still about 10,300 chars, because about
+        1,800 come from outside the file (plan-state 1,587). It misses 9,000
+        without removal.
+Task 24 round 3: no single ladder piece recovers routing. Only the whole old
+        ladder does. The best cut under 9,000 is **Y**: b09f5ac, plus the
+        intro, plus most of the old ladder, with three inert pieces dropped.
+        Its worst case is 8,940, 60 under the limit. Y's confirmation is
+        running, with no commit.
+User challenge (2026-09-22): why does fx carry an always-on router that costs
+        10K when the other plugins don't? Don't reinvent the wheel. Answer:
+        ADR 0002's self-sufficiency finding put rules always-on, then every
+        later lesson was appended with no size budget. superpowers keeps a
+        3.1KB bootstrap and routes through native skill descriptions. caveman
+        uses pointers. ponytail filters per mode and ships a short AGENTS.md.
+User decision: **spike, then redesign**, the "merged approach":
+        - a tiny superpowers-style bootstrap, about 2 to 3KB: the intro, the
+          imperative, announce, and "invoke, don't read";
+        - routing moved into sharpened skill descriptions;
+        - the non-negotiables, ladder and prose moved into the lanes that
+          use them, caveman's pointer pattern;
+        - per-harness filtering at emission, ponytail's pattern.
+        The spike measures row 04 (x10 opencode, x5 Claude Code) and the
+        lane-triggering suite on Claude Code and opencode, against the
+        pre-trim baseline. If it matches or beats the baseline, the design
+        and plan are amended, with user approval. This reverses the
+        "self-sufficient" half of ADR 0002, so it needs measurement, not
+        faith. Task 24 is paused after Y's confirmation, with no commit.
+Also dispatched: plugin-dev:plugin-validator on fx's Claude Code plugin,
+        read-only, including description overlap and a superpowers comparison.
+        The user asked to use plugin-dev to be sure. `create-plugin` scaffolds
+        new plugins, and the validator is the tool for an existing one.
