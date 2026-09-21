@@ -1580,3 +1580,32 @@ Task 14: minor (deferred, final review should look): quoted regex alternation
 Task 14: round 4 goes to a fresh opus implementer, because rounds 1-3 used up
         the original. It waits for the security lens re-check so both land in
         one round.
+Task 14: lens re-check of round 3. The three earlier paths stay fixed. **Two
+        new Critical findings, each confirmed live through the real hook:**
+        1. Process substitution: `cat <(touch pwned)` is cleared and runs.
+           extractSubstitutions only extracts `$(...)` and backticks.
+        2. `git -C <dir>`: a nested repo's config diff.external runs. A tracked
+           bare repo in the reviewed tree makes that config attacker-controlled.
+        Important: unquoted globs (`rg needle *`) can expand to a file named
+        like a flag.
+Ruling: stop the arms race structurally. Round 4 replaces the enumeration of
+        dangerous shell syntax with a **character allowlist per token**. An
+        unquoted token may contain only `[A-Za-z0-9._/:@=,+%^-]`. A quoted
+        token is allowed when it is single-quoted, or double-quoted with no
+        `$`, backtick or backslash. Every other unquoted metacharacter is
+        refused, including `( ) < > { } * ? [ ] ~ ! $` and `&`. Pipes and
+        `&&` stay separators, split by the existing segment splitter. Anything
+        that changes which repository git reads is refused: `cd`, `pushd`,
+        `-C`, `--git-dir`, `--work-tree`, `--namespace`, and `GIT_*` env,
+        which the env-prefix rule already refuses. Value-flag arguments get
+        the same token check (reviewer Important). Round 4 also pins the
+        surviving mutants: the value skip and the parseGit agreement.
+        Why: four rounds each closed one bash feature and each lens pass found
+        another. The task 06 ruling predicted this. An allowlist of safe syntax
+        fails closed on features nobody listed.
+        Cost if wrong: lenses lose some shell conveniences, such as globs and
+        brace ranges. Their workarounds are quoted globs to rg -g, and
+        `-e a -e b`. The quoted regex alternation refusal ends too, because a
+        quoted `|` is inside a quoted token. Caught by the reviewer's
+        over-refusal check and task 22's sentinel probe.
+Task 14: round 4 goes to a fresh opus implementer.
