@@ -27,7 +27,7 @@ matrix proved.
 `INSTALL.md` documents one opencode path built on a symlink farm and a
 standalone Claude Code path. It must document three runtimes, each with its
 marketplace or plugin route first and its script route second, and it must
-state the Codex hook-trust step for as long as task 10's result says it is
+state the Codex hook-trust step for as long as task 12's result says it is
 needed.
 
 `README.md` describes `hooks/` as Claude Code and `plugins/` as opencode. There

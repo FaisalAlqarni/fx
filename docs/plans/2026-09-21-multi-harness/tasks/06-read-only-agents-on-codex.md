@@ -40,7 +40,7 @@ match a prefix.
 
 **Seam:** `lib/plant-roles.test.js` for the planter, plain node. Enforcement at
 the hook's stdin-to-exit-code contract, in
-`tests/gates/codex-manifest.test.js`. End-to-end in task 10.
+`tests/gates/codex-manifest.test.js`. End-to-end in task 12.
 
 **Measured facts this depends on.** Codex 0.155.1, probed directly:
 

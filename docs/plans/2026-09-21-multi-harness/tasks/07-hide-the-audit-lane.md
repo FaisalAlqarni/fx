@@ -28,7 +28,7 @@ are reachable on Codex, which has no project-scoped command surface.
   rewrite, so no body is hand-copied
 
 **Seam:** Artifact shape in the install test (task 09); absence from the
-model-facing listing in the conformance matrix (task 10).
+model-facing listing in the conformance matrix (task 12).
 
 **Measured facts this depends on.**
 

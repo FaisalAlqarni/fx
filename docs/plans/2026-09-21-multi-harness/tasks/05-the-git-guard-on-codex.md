@@ -58,7 +58,7 @@ a reason on stderr. Feed it a benign command and assert exit 0.
 - [ ] A lane-check failure exits 0: it is advice and must never wedge a session
 - [ ] A command that makes `inspect` throw exits 2, not 0
 - [ ] `lib/git-guard.js` is unchanged by this task
-- [ ] The guard refuses inside a subagent, asserted in task 10
+- [ ] The guard refuses inside a subagent, asserted by conformance row 7 in task 12
 
 ## Steps
 

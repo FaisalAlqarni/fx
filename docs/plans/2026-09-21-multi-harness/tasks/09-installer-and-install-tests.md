@@ -66,7 +66,7 @@ A refusal would break it. Warn, name the pool, name the remediation.
 `fx-setup` reports rather than rewrites when everything is already correct.
 
 **Testing:** Run the install test per harness against a temporary destination.
-No live session: that is task 10.
+No live session: that is task 12.
 
 ## Acceptance criteria
 - [ ] Every fixture the checks use is defined in the file and cleaned up by a trap

@@ -26,7 +26,7 @@ codex plugin add fx@fx
   `SessionStart` and `SubagentStart`
 
 **Seam:** Artifact shape in the install test (task 09); behaviour in the
-conformance matrix (task 10).
+conformance matrix (task 12).
 
 **Measured facts this task depends on.** All verified on Codex CLI 0.155.1:
 
@@ -47,7 +47,7 @@ conformance matrix (task 10).
 **Risks:** Codex skips a plugin's hooks until the user reviews and trusts them,
 so the preamble does not arrive on a fresh install until `/hooks` is run.
 Whether a plugin's hooks are auto-trusted is contradicted between the
-documentation and one measured install; task 10 settles it. Until then the
+documentation and one measured install; task 12 settles it. Until then the
 install documentation states the trust step.
 
 **Idempotency:** Creates files only. No writes outside the repository.

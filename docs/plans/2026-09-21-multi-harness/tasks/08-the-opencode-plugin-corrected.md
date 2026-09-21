@@ -30,7 +30,7 @@ lane check and plan-state block it has never had.
 **Seam:** `tests/gates/opencode-plugin.test.js`. The plugin is a plain async
 function returning an object, so it is callable directly from node with a
 fabricated context. No opencode process is needed for the unit level; the live
-level is task 10.
+level is task 12.
 
 **Measured facts this depends on.** opencode 1.18.25, read from the shipped
 binary:

@@ -381,3 +381,45 @@ Task 05: fix round 1 dispatched, resuming the original implementer. One item:
         the `command` key.
         Task 07 stays queued: a fix round is a writer, and this one is live.
 
+Task 05: fix round 1 landed, commit d100493. Verified fresh by the controller
+        against the real measured payload shape, not the test's fixtures:
+        an `apply_patch` payload carrying `*** Update File: lib/thing.js` exits 2
+        with the genuine `laneCheck` reason text; a malformed patch exits 0,
+        fail-open; `git branch -D x` exits 2 with the guard's reason on stderr;
+        `git status` exits 0. `scripts/check-all` -> `ALL GREEN`.
+        **The lane check now genuinely fires on Codex.** It was inert before.
+
+Ruling: my own first guard measurement in that check was wrong and I caught it.
+        I piped the hook through `head -1` and then read `$?`, which belonged to
+        `head`, not to the hook, and reported `guard exit=0` for a hook that had
+        in fact exited 2. ADR 0010 names this exact shape: "an exit code read
+        through a pipe belongs to `head`". Re-measured without the pipe: exit 2,
+        reason on stderr.
+        Why it matters: I would have opened a fix round against working code, and
+        the implementer would have been sent to repair a guard that was already
+        correct.
+        Cost if wrong: wasted round, and worse, a "fix" to code that did not need
+        one. Caught by re-reading the output rather than the exit code, which is
+        the habit that ADR exists to install.
+
+Task 05: complete (commits 8aed061..d100493, 1 fix round, re-review clean).
+        Spec 10/10 PASS, quality PASS. Files: hooks/fx-codex.js, hooks.json,
+        tests/gates/codex-manifest.test.js.
+        Guarantee: on Codex the git guard refuses irreversible commands and fails
+        closed, and the lane check follows `apply_patch` and fails open. Both
+        proven by forcing the underlying calls to throw, from outside the
+        repository, rather than by reading the branches.
+
+Ruling: seven stale cross-references repointed. The red-team split the old
+        conformance task 10 into task 11 (runner and free rows) and task 12
+        (behavioural rows), and shifted documentation to 13, but every pointer
+        to "task 10" stayed. The task 05 reviewer found one; I scanned and found
+        seven, across tasks 04, 05, 06, 07, 08, 09 and 13.
+        Why: task 10 is now "Setup reports what did not land". An implementer
+        following any of those pointers would have landed on an unrelated task
+        and concluded its own guarantee was somebody else's problem.
+        Cost if wrong: a guarantee everyone believes is asserted elsewhere, and
+        nowhere actually asserts it. That is the precise failure the conformance
+        matrix exists to prevent, arriving through the plan's own prose. Caught
+        here; nothing downstream would have.
+
