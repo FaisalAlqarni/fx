@@ -2086,3 +2086,27 @@ Task 23: review approved. The reviewer confirmed the live.sh root cause from
           silently; the config hook can now throw on a broken tree.
         - Design wording: PD2's fix gives the text parity, not reachability.
 Task 23: complete (commits 3d73cbd..edd224f, review approved).
+Task 24: DONE_WITH_CONCERNS, b09f5ac. The proposal is applied verbatim and
+        the split is removed, so there is one handler per event. Worst case
+        is 8,103 to 8,188 chars. Live results:
+        - Claude Code: rows 01, 02 and 16 PASS, row 04 5/5.
+        - opencode: rows 01, 02 and 16 PASS, but **row 04 2/10 after the
+          change against 9/10 before**, measured on d7aae89. Every failure
+          loaded fx-brainstorm.
+        - Codex: skipped (quota).
+        That is a regression, and the task counts it as a FAIL. Also:
+        amendment A3 in design.md is now stale, and the every-caller rule
+        lives only in fx-debug, so fx-implement subagents no longer see it.
+Ruling: fix round 1 is a **measurement only**. Bisect the opencode row 04 drop
+        on the local Qwen, which costs no Claude or Codex quota. Run row 04
+        five times for each variant, and never commit a variant:
+        - (a) the Order section back in its old position;
+        - (b) the cut rationalization-table rows restored;
+        - (c) the pre-trim Routing text;
+        - (d) the every-caller line restored inline.
+        Each variant must stay under 9,000 chars worst case. The outcome goes
+        to the user as a revised trim before any PREAMBLE change.
+        Why: the user approved the proposal as written, so a deviation is the
+        user's call. Measuring first keeps the fix from being a guess.
+        Cost if wrong: the Qwen time for about 20 runs. Caught by nothing,
+        because this is measurement.
