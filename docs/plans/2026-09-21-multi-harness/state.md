@@ -1564,3 +1564,19 @@ Ruling: reopen the task 06 ceiling ruling. Round 3 replaces the flag denylist
         own report.
 Task 14: fix round 3 dispatched to the same implementer.
 Task 14: fix round 3 landed in 91a5b56. The classifier now uses a flag allowlist for each binary: git gets one per subcommand; -c and --config-env are refused; abbreviations are refused; an env-assignment prefix is refused; and any token the shell would expand before the program sees it is refused. Marker probes: all 7 attacks were refused through the real hook before running. Open concerns: unquoted globs can expand to a flag-named file that the repo controls, and git -C applies another directory's config. Scoped re-review and lens re-check dispatched.
+Task 14: re-review of rounds 2 and 3: needs fixes. **Important: a value
+        flag's argument skips `hiddenFromTokenizer`.** The reviewer ran it
+        through the real hook: `git log --grep {x,--output=$S/w/PWN_OUT}`
+        exited 0 and wrote PWN_OUT. `rg -g {x,--pre=touch}` has the same
+        shape. Fix: refuse any hidden-expansion token in argsMustBeRefused
+        before branching. The value-skip mutant and the parseGit agreement
+        mutant both survive the tests.
+Task 14: minor (deferred, final review should look): quoted regex alternation
+        (`grep -E 'a|b'`) is refused. Segment splitting ignores quotes, which
+        is pre-existing and hurts lenses; the workaround is `-e a -e b`. Plain
+        reads worth allowlisting: -W, --color-words, --no-walk, and rg -p.
+        ALLOWED_BINARIES duplicates the BINARY_FLAGS keys. There are two parsers
+        of git globals. firstWord is dead code. A round 2 test comment is stale.
+Task 14: round 4 goes to a fresh opus implementer, because rounds 1-3 used up
+        the original. It waits for the security lens re-check so both land in
+        one round.
