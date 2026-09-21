@@ -970,3 +970,15 @@ Task 10: minor (deferred): the implementer identified equivalent unreported
         install time. Claude Code: plugin trust and enable drift, and CLAUDE.md
         pointer drift. **Worth a follow-up plan, not this one.**
 
+Task 10: complete (commits 4c8c69e..574510d, review clean).
+        Spec 11/11 PASS, quality PASS, one Minor deferred. Files:
+        lib/plant-roles.js, lib/plant-roles.test.js, commands/fx-setup.md,
+        skills/fx-setup/SKILL.md, tests/install/run.sh.
+        Guarantee: the setup lane reports what did not land, in three separate
+        states, without repairing anything, and gives correct advice about hook
+        trust whether or not it can determine it.
+Task 10: minor (deferred): `hooksTrusted` reads `config.toml` and discards the
+        result. The reviewer judged it a bug rather than a deliberate gap, and I
+        agree: the comment explains the `null` and not the read. One line to fix.
+        **For the final review to triage.**
+
