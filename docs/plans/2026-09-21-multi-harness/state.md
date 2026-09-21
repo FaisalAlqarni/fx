@@ -1752,3 +1752,4 @@ Task 16: fix round 1 landed in fa252f1. The FX check is written into the
         place files outside its repo, so the attacker already needs local write
         access. Parked for the final review.
         Scoped re-review and lens re-check dispatched.
+Task 16: re-review of round 1 approved. Mutations of the cwd and manifest checks both fail the test. Minors (deferred to the final review): the word "stale" means two different things in the fx-setup output; setup refuses inside the fx checkout without saying why; the caveat text is stale. The security lens re-check is pending.
