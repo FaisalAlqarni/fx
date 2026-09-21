@@ -114,8 +114,10 @@ function handlePreToolUse(input) {
     let known = null;
     try { known = lookupAgentIdentity(agentId); } catch { known = null; }
     const mustRefuseWrites = known === null ? true : isReadOnlyAgent(known);
-    let writes = false;
-    try { writes = isWritingToolCall(tool, ti); } catch { writes = false; }
+    // Amendment A5: a spawned child and an MCP server can both write, and
+    // this hook cannot see what either does, so both count as writes here.
+    let writes = tool === 'spawn_agent' || String(tool).startsWith('mcp__');
+    try { writes = writes || isWritingToolCall(tool, ti); } catch { /* keep the tool-name verdict */ }
     if (mustRefuseWrites && writes) {
       deny(known
         ? `${known} is read-only and must not write (blocked: ${tool}).`

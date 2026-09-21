@@ -16,7 +16,23 @@ const testEnv = { ...process.env, CODEX_HOME: testCodexHome };
 const codex = JSON.parse(fs.readFileSync(path.join(root, '.codex-plugin/plugin.json'), 'utf8'));
 const claude = JSON.parse(fs.readFileSync(path.join(root, '.claude-plugin/plugin.json'), 'utf8'));
 
-assert.ok(!('hooks' in codex), 'the Codex validator rejects a hooks key');
+// Amendment A1: Codex uses the manifest `hooks` key when present and falls
+// back to hooks/hooks.json (Claude Code's wiring) otherwise. research/codex.md.
+assert.strictEqual(codex.hooks, './hooks.json', 'the Codex manifest names its own hooks file');
+const cxHooks = JSON.parse(fs.readFileSync(path.join(root, 'hooks.json'), 'utf8')).hooks;
+for (const ev of ['SessionStart', 'SubagentStart', 'PreToolUse']) {
+  const cmds = cxHooks[ev].flatMap((g) => g.hooks.map((h) => h.command));
+  assert.ok(cmds.every((c) => c.includes('hooks/fx-codex.js')), `${ev} runs fx-codex.js`);
+}
+for (const ev of ['SessionStart', 'SubagentStart']) {
+  for (const g of cxHooks[ev]) for (const h of g.hooks) {
+    assert.strictEqual(h.additionalContextLimit, 0, `${ev} never truncates the preamble`);
+  }
+}
+// Codex sends source "fork" on SessionStart; the docs omit it (research/codex.md, section 2).
+for (const g of cxHooks.SessionStart) {
+  assert.ok(String(g.matcher).split('|').includes('fork'), 'SessionStart fires on fork');
+}
 assert.ok(!('agents' in codex), 'no agents key exists in the Codex manifest');
 assert.strictEqual(typeof codex.skills, 'string', 'skills is a single path string');
 assert.strictEqual(codex.skills, './skills/');
