@@ -1172,3 +1172,6 @@ Ruling: a live row copies in only what authenticates, into the runner's scratch
         the README's documented limits.
 Task 12: carries findings-11 Minor 1 (`--fre` runs live rows) and Minor 3
         (GAP without a reason) as context. Both bite when live rows arrive.
+
+Task 12: dispatched (opus, fresh implementer), BASE 31d19e7. Task 13 is blocked by 12,
+        so the frontier is empty until it reports.
