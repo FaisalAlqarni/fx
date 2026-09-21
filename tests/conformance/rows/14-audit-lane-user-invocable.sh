@@ -2,22 +2,30 @@
 # 14: hiding a lane from the model does not hide it from the user.
 #
 # The counterpart to row 13. A lane hidden from both is not hidden, it is gone.
+#   opencode:    the installer, run into a scratch config dir, generates a
+#                command for each hidden lane, which is how a user types it.
+#   claude-code: GAP. `claude plugin details` lists a lane even when it carries
+#                `user-invocable: false` (measured), so it proves the lane
+#                loads, not that a user can invoke it.
+#   codex:       GAP. No free check reads what Codex receives.
 set -uo pipefail
 [ "${1:-}" = "--describe" ] && { echo "14|audit lane user-invocable|free"; exit 0; }
+: "${FX_REAL_HOME:?run rows through tests/conformance/run.sh, which isolates HOME}"
 cd "$FX"
-node -e '
-const fs = require("fs"), path = require("path");
-const HIDDEN = ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-setup"];
-for (const n of HIDDEN) {
-  const skill = path.join("skills", n, "SKILL.md");
-  if (!fs.existsSync(skill)) { console.error(n + ": no SKILL.md to invoke"); process.exit(1); }
-  const body = fs.readFileSync(skill, "utf8").replace(/^---\n[\s\S]*?\n---\n/, "");
-  if (body.trim().length < 100) { console.error(n + ": body too thin to be real"); process.exit(1); }
-}
-// The four command-derived lanes must still have their command, which is how a
-// user types them on Claude Code and opencode.
-for (const n of ["fx-critique", "fx-grill", "fx-handoff", "fx-setup"]) {
-  if (!fs.existsSync(path.join("commands", n + ".md"))) {
-    console.error(n + ": command removed, user route gone"); process.exit(1); }
-}
-'
+HIDDEN="fx-audit fx-critique fx-grill fx-handoff fx-setup"
+case "$HARNESS" in
+  opencode)
+    # HOME is the runner's scratch home, so this destination is inside it.
+    dest="$HOME/row14-opencode"
+    python3 scripts/fx-opencode-install --dest "$dest" > "$HOME/row14.out" 2>&1 || {
+      cat "$HOME/row14.out" >&2; exit 1; }
+    for n in $HIDDEN; do
+      [ -f "$dest/commands/$n.md" ] || { echo "opencode: no command for $n, user route gone" >&2; exit 1; }
+    done ;;
+  claude-code)
+    echo "claude-code: no free check; plugin details lists a lane even with user-invocable: false. Live half is task 12" >&2
+    exit 77 ;;
+  *)
+    echo "$HARNESS: no free runtime check; the sidecar is pinned by tests/gates/user-invoked.test.js, live half is task 12" >&2
+    exit 77 ;;
+esac
