@@ -11,8 +11,8 @@ was empty after each run, and every runner scratch directory was gone.
 
 ## Spec compliance
 
-- ✅ The runner refuses an all-zero run. It exits 2 when there are no rows
-  (`run.sh:27-32`) and when nothing ran (`run.sh:71-74`).
+- ✅ The runner refuses an all-zero run. It exits 2 when there are no rows,
+  see `run.sh:27-32`, and when nothing ran, see `run.sh:71-74`.
 - ✅ `--free` selects on each row's declared kind (`run.sh:59`).
 - ✅ `FX` and `HARNESS` reach every row (`run.sh:61`).
 - ✅ Every row runs in a scratch home: `HOME`, `CODEX_HOME`, `XDG_CONFIG_HOME`
@@ -36,8 +36,8 @@ was empty after each run, and every runner scratch directory was gone.
   not.
 - ✅ Every free row passes on all three harnesses under a fake HOME: 6 pass,
   0 fail, 0 gap each.
-- ❌ Rows 9 and 13 do not assert their guarantee per runtime (Important 2 and
-  3).
+- ❌ Rows 9 and 13 do not assert their guarantee per runtime. See Important 2
+  and Important 3.
 - ✅ The step 5 breakage check works: an emptied `PREAMBLE.md` makes row 3 fail
   and the runner exit 1.
 - ⚠️ Commits 0d0fcab, 0df5afb and 0807827 have no TDD evidence, because they
