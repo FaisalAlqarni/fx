@@ -759,3 +759,50 @@ Ruling: stop the arms race and name the ceiling. Three rounds have now found the
         Claude Code's hard allowlist. Caught by ADR 0019 and task 13's
         documentation, both now required to state the asymmetry.
 
+Task 08: review returned spec PASS (21/21) and quality PASS, with one Important
+        finding. The review ran **seven mutations**, each confirmed genuinely
+        red, which is the strongest verification in this build so far:
+        reverting the arity fix produced `TypeError: Cannot read properties of
+        undefined (reading 'push')`, proving that fix load-bearing rather than
+        decorative; swapping `READ_ONLY_AGENTS` for a `fx-lens-` prefix filter
+        failed on exactly `fx-devils-advocate`; hardcoding `subagent_depth = 2`
+        failed the never-lower assertion; and reverting the implementer's fixture
+        fix made the plan-state criterion permanently unwinnable again, proving
+        that task-supplied bug was real.
+
+        It also measured the hook arity independently from the shipped binary and
+        found both call sites, one of which passes no `sessionID` key at all.
+        Confirms the previously shipped single-argument destructure would have
+        pushed nothing at either site: **the preamble never reached an opencode
+        session, and nothing reported it.** That is the defect this plan was
+        started to find.
+
+Task 08: **Important**: `tests/gates/opencode-plugin.test.js` calls
+        `tool.execute.before` only with `tool: 'edit'`. There is no `'write'` and
+        no `'apply_patch'` case. The implementation wires all three and the
+        reviewer verified each independently, but two of three write paths carry
+        no regression coverage, so a typo in a tool-name match or a broken
+        `extractPatchPaths` would ship silently. That is the exact class this
+        plan exists to prevent, and the brief asked for it: "a lane check wired
+        to one of three is not wired".
+
+Correction: an earlier ruling of mine in this ledger says task 06 creates
+        `lib/agent-dialects.js` carrying both the read-only set and the Codex
+        conversion, with task 08 adding only the opencode conversion. **That is
+        wrong and the reviewer caught it.** What exists: `lib/agent-dialects.js`
+        is new in task 08; the read-only set lives in `lib/plant-roles.js`; the
+        Codex converter is `scripts/gen-codex-agents`, a separate Python script.
+        Task 08's own task file said this unambiguously and the implementation
+        matches it. The stale prose was mine, written during the pre-flight scan
+        before those files existed. Nothing depended on it, but the ledger is the
+        artifact later reviewers check provenance against, so it gets corrected
+        rather than left.
+
+Task 08: minor (deferred): `extractPatchPaths` parses `*** Move to:`, but the
+        shipped opencode binary refuses any apply_patch containing a move
+        ("apply_patch moves are not supported yet"), so that branch cannot see
+        live traffic. Harmless, worth knowing.
+
+Task 08: fix round 1 QUEUED, not dispatched. Task 06's round 3 implementer is
+        live and a fix round is a writer.
+
