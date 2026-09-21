@@ -1999,3 +1999,4 @@ Ruling: all 24 are folded into tasks 13, 18, 21 and 22 as acceptance criteria.
         Caught by the user's quota and the task reviews.
         A writer subagent is folding them in. The controller verifies and
         commits.
+Task 18: fix round 1 landed in 8877038. The wildcard is respected, and the {"*":"ask"} and {"*":"deny"} cases are pinned with a RED captured first. Row 15 on opencode requires every top-level dispatch to be general; the nested dispatch type is still not read. Scoped re-review dispatched.
