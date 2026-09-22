@@ -1,3 +1,7 @@
 .fx/
 .worktrees/
 node_modules/
+
+# repowise: derived index (~160MB sqlite + pickle caches) — rebuild with `repowise init`
+/.repowise/*
+!/.repowise/config.yaml

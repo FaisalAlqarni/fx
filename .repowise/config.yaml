@@ -1,0 +1,11 @@
+provider: claude_cli
+model: claude_cli/claude-sonnet-5
+embedder: mock
+commit_limit: 500
+reasoning: auto
+distill:
+  commands:
+    enabled: true
+hooks:
+  read_skeleton: true
+  search_digest: true
