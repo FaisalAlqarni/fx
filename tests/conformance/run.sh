@@ -59,6 +59,13 @@ export CODEX_HOME="$HOME/.codex" XDG_CONFIG_HOME="$HOME/.config" \
        CLAUDE_CONFIG_DIR="$HOME/.claude"
 mkdir -p "$CODEX_HOME" "$XDG_CONFIG_HOME/opencode" "$CLAUDE_CONFIG_DIR" || exit 2
 
+# In --free mode a GAP is allowed only for a row listed for this harness in
+# expected-gaps: a free row makes no model call, so its result does not depend
+# on quota, and a row that used to PASS and now GAPs is a regression, not a
+# pass (final review Minor 7). Live rows keep plain GAPs: quota runs out.
+EXPECTED_GAPS="${FX_CONFORMANCE_EXPECTED_GAPS:-$FX/tests/conformance/expected-gaps}"
+expected_gap() { [ -f "$EXPECTED_GAPS" ] && grep -qxE "$HARNESS 0*$1" "$EXPECTED_GAPS"; }
+
 pass=0; fail=0; gap=0; ran=0
 for f in "${ROWS[@]}"; do
   # A row without a --describe guard runs its body here and prints nothing
@@ -78,6 +85,9 @@ for f in "${ROWS[@]}"; do
   # A GAP with no reason is indistinguishable from a row that gave up. FAIL it.
   if [ "$rc" -eq 77 ] && ! [ -s "$SCRATCH/row.err" ]; then
     echo "row exited 77 with no reason on stderr; a GAP must say why" >&2; rc=1
+  fi
+  if [ "$rc" -eq 77 ] && [ -n "$FREE" ] && ! expected_gap "$n"; then
+    echo "row $n is not an expected gap for $HARNESS ($EXPECTED_GAPS): a free row that stops passing is a FAIL" >&2; rc=1
   fi
   case "$rc" in
     0)  printf 'PASS  %2s  %s\n' "$n" "$name"; pass=$((pass+1)) ;;

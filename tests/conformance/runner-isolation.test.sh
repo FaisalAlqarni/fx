@@ -133,7 +133,8 @@ printf '%s\n' '#!/usr/bin/env bash' \
 printf '%s\n' '#!/usr/bin/env bash' \
   '[ "${1:-}" = --describe ] && { echo "93|reasoned gap|free"; exit 0; }' \
   'echo "codex: cannot support this, measured" >&2; exit 77' > "$GR/93-reasoned-gap.sh"
-env HOME="$FAKE" FX_CONFORMANCE_ROWS="$GR" \
+echo "codex 93" > "$T/expected-gaps"
+env HOME="$FAKE" FX_CONFORMANCE_ROWS="$GR" FX_CONFORMANCE_EXPECTED_GAPS="$T/expected-gaps" \
     bash "$RUNNER" codex --free > "$OUT/gap.log" 2>&1
 rc=$?
 check "gap: runner exits non-zero on a silent gap (rc=$rc)" '[ "$rc" -ne 0 ]'
@@ -142,11 +143,24 @@ check "gap: reasoned gap stays a GAP" 'grep -q "^GAP   93  reasoned gap" "$OUT/g
 check "gap: the reason reaches the reader" 'grep -q "cannot support this, measured" "$OUT/gap.log"'
 check "gap: summary counts one fail and one gap" 'grep -q "0 pass, 1 fail, 1 gap" "$OUT/gap.log"'
 
+# A free row that drops from PASS to GAP must not keep the gate green: in
+# --free mode a GAP is allowed only for a row listed as an expected gap for
+# this harness (final review Minor 7).
+UG="$T/unexpected-gap-rows"; mkdir -p "$UG"
+cp "$GR/93-reasoned-gap.sh" "$UG/"
+: > "$T/no-expected-gaps"
+env HOME="$FAKE" FX_CONFORMANCE_ROWS="$UG" FX_CONFORMANCE_EXPECTED_GAPS="$T/no-expected-gaps" \
+    bash "$RUNNER" codex --free > "$OUT/ugap.log" 2>&1
+rc=$?
+check "unexpected gap: runner exits non-zero (rc=$rc)" '[ "$rc" -ne 0 ]'
+check "unexpected gap: reported as FAIL" 'grep -q "^FAIL  93  reasoned gap" "$OUT/ugap.log"'
+check "unexpected gap: says it is not an expected gap" 'grep -q "not an expected gap" "$OUT/ugap.log"'
+
 if [ "$failures" -ne 0 ]; then
   echo "--- normal.log" >&2; cat "$OUT/normal.log" >&2
   echo "--- sigint.log" >&2; cat "$OUT/sigint.log" >&2
   echo "--- noguard.log" >&2; cat "$OUT/noguard.log" >&2
-  for f in typo extra gap; do echo "--- $f.log" >&2; cat "$OUT/$f.log" >&2; done
+  for f in typo extra gap ugap; do echo "--- $f.log" >&2; cat "$OUT/$f.log" >&2; done
   echo "runner-isolation: $failures failed" >&2
   exit 1
 fi
