@@ -24,10 +24,9 @@ says, or because you are already most of the way through.
 **Each lane's description says when it applies.** The runtime lists every lane
 with its description; read that list against the task before anything else.
 
-**Invoke, do not read.** {{SKILL_TOOL}} with the addressable name:
+**Invoke it, in full.** Use {{SKILL_TOOL}}, and address a lane by its name:
 {{LANE:fx-tdd}}, {{LANE:fx-implement}}, {{LANE:fx-review}}. {{RESOLUTION}}.
-Never `Read` a `SKILL.md` instead of invoking it: reading gives you the text
-without the obligation, which is the failure this section exists to stop.
+{{READ_RULE}}
 
 **This binds subagents exactly as it binds a controller.** You are reading this
 because it was injected into your context, whether you are running a session or
