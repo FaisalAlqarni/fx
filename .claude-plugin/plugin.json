@@ -14,19 +14,6 @@
     "rails",
     "dotnet"
   ],
-  "skills": [
-    "./skills/fx-brainstorm",
-    "./skills/fx-plan",
-    "./skills/fx-implement",
-    "./skills/fx-tdd",
-    "./skills/fx-review",
-    "./skills/fx-architecture",
-    "./skills/fx-debug",
-    "./skills/fx-humanize",
-    "./skills/fx-authoring",
-    "./skills/research",
-    "./skills/prototype"
-  ],
   "commands": [
     "./commands/"
   ]

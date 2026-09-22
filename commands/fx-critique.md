@@ -1,5 +1,6 @@
 ---
 description: Red-team a design or plan: dispatches fx-devils-advocate at the file and reports its findings
+argument-hint: [design-or-plan-path]
 ---
 
 # /fx:fx-critique

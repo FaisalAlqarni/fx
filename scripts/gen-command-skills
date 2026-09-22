@@ -60,12 +60,14 @@ def field(fm, key):
     return m.group(1).strip() if m else None
 
 
-def skill_md(name, source, description, body):
+def skill_md(name, source, description, body, argument_hint=None):
+    hint_line = f"argument-hint: {argument_hint}\n" if argument_hint else ""
     return (
         "---\n"
         f"name: {name}\n"
         "description: >\n"
         f"  {description}\n"
+        f"{hint_line}"
         "disable-model-invocation: true\n"
         f"{SOURCE_NOTE.format(source=source)}\n"
         "---\n"
@@ -96,10 +98,12 @@ def main():
         source = f"commands/{name}.md"
         fm, body = split_frontmatter(cmd_path.read_text())
         description = field(fm, "description") or name
+        argument_hint = field(fm, "argument-hint")
         deepened_body = DEEPEN.sub(r"../../\1/", body)
 
         skill_dir = SKILLS / name
-        write(skill_dir / "SKILL.md", skill_md(name, source, description, deepened_body))
+        write(skill_dir / "SKILL.md",
+              skill_md(name, source, description, deepened_body, argument_hint))
         write(skill_dir / "agents" / "openai.yaml", openai_yaml(name, source, description))
 
     # fx-audit's SKILL.md is hand-written and predates this script: only its
