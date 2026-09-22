@@ -2,15 +2,19 @@
 
 fx runs on three runtimes: Claude Code, Codex and opencode. Each install is
 independent, and none of them needs another runtime present. fx is measured
-against Claude Code 2.1.278, Codex CLI 0.155.1 and opencode 1.18.25, and
-supports those versions or later.
+against Claude Code 2.1.278, Codex CLI 0.155.1 and opencode 1.18.25. Later
+versions are checked only by the nightly free rows at `@latest` (see
+[Nightly checks](#nightly-checks)), which make no model call, so a live
+session on a newer CLI has not been proven.
 
 Each runtime has one route through its own plugin system. opencode also has a
 script route, for machines where its plugin loader is unavailable. Claude Code
-and Codex have no script route and do not need one: their plugin systems
-deliver every part of fx (skills, agents or roles, commands and hooks) with
-nothing left to wire by hand. On Codex the review roles are the one part a
-plugin cannot place, and fx's own hook and `fx-setup` place them, as the Codex
+and Codex have no script route and do not need one, because a script would
+place nothing their plugin systems do not. Claude Code's plugin delivers
+every part of fx: skills, agents, commands and hooks. Codex's plugin delivers
+the skills and hooks. Codex has no command surface, so fx's commands ship
+there as skills. A Codex plugin also cannot place the review roles, which
+live in your Codex home; fx's own hook and `fx-setup` place them, as the Codex
 section shows.
 
 What each runtime has been proven to do in live sessions is at the end, under
@@ -46,8 +50,10 @@ has no hook-trust step.
 /plugin update fx@fx
 ```
 
-Then restart the session. A `git pull` in a clone is not enough: Claude Code
-runs its own installed copy of the plugin, not your checkout.
+Then restart the session. An update lands only when fx's version number has
+changed: `/plugin update` compares versions and keeps the installed copy when
+they match. A `git pull` in a clone is not enough either: Claude Code runs its
+own installed copy of the plugin, not your checkout.
 
 ---
 
@@ -230,6 +236,10 @@ reference resolution through the symlinked tree: OK
 skills: 12  agents: 6  commands: 5
 ```
 
+It also sets `subagent_depth` to 2 in the destination's `opencode.json`,
+keeping a higher value if you set one, so a subagent can dispatch a
+subagent. The plugin raises it the same way on the plugin route.
+
 ### Refreshing
 
 - **Plugin route:** `git pull` in the clone, then restart opencode. The plugin
@@ -333,8 +343,9 @@ any hook output over 10,000 characters as a file and shows the model a 2K
 preview, so the always-on text has to stay under that. Even with the
 `repo.md` note and several plans appended, the bootstrap does, with no split
 and so no question of part order. (The 12K router it replaced had to be split,
-and Claude Code delivered the parts in an unstable order.) Codex's handlers set `additionalContextLimit: 0`, and
-opencode's system transform has no limit.
+and Claude Code delivered the parts in an unstable order.) Codex's handlers
+set `additionalContextLimit: 0`, and opencode's system transform has no
+limit.
 
 ---
 
@@ -366,9 +377,19 @@ real CLI. `docs/plans/2026-09-21-multi-harness/state.md` records every result.
 
 | Runtime | Live result |
 |---|---|
-| Claude Code | Task 21, final tree: 16 pass, 0 fail, 2 GAP (rows 13 and 14, below). Rows 01, 02, 12, 15, 16 and 18 pass. |
-| opencode | Task 21, final tree: pending, waiting for free memory on the test machine. <!-- task21-opencode --> Task 21's first pass, before the bootstrap, was 18 pass, 0 fail, 0 GAP on the script route. Task 25 ran rows 01, 02 and 16 on the bootstrap, and all three pass. |
-| Codex | **Pending.** Only the free rows have run: 03, 09, 10 and 11 pass, and 13 and 14 are GAP. |
+| Claude Code | Task 21, final tree: 16 pass, 0 fail, 2 GAP (13, 14). |
+| opencode | Task 21, final tree: pending. <!-- task21-opencode --> |
+| Codex | **Pending.** See below. |
+
+On Claude Code every merge-gate row passes: 01, 02, 12, 15, 16 and 18. The
+opencode final-tree run waits for free memory on the test machine. Before
+it, task 21's first pass was 18 pass, 0 fail, 0 GAP on the script route, and
+task 25 ran rows 01, 02 and 16 on the bootstrap, all passing.
+
+On Codex, the free rows 03, 09, 10 and 11 pass, and 13 and 14 are GAP. Rows
+01 and 02 passed in task 12, but on the hook wiring that has since been
+replaced, so they prove nothing about the current tree. Row 18 has never run
+on Codex. Part B runs every row.
 
 **Codex live verification is pending.** It happens in two parts. Part A is a
 probe on a local model. It proves mechanics only: that the hooks load, that
@@ -390,7 +411,8 @@ Every `GAP` recorded in `state.md`:
   `scripts/check-all`. Task 22 adds a check for Codex through
   `codex debug prompt-input`, which needs no model call.
 - **Codex rows 04 to 08, 12 and 15 to 17.** Not run: the Codex quota ran out
-  during task 12. None of these is a pass. Part B runs them.
+  during task 12. None of these is a pass. Row 18 has never run on Codex, and
+  rows 01 and 02 last passed on the old hook wiring. Part B runs every row.
 
 ### Nightly checks
 
@@ -428,8 +450,11 @@ it. Uninstalling Claude Code plugins removes nothing from there, so the
 selection contest fx exists to end survives until it is cleared deliberately.
 
 ```bash
-# Claude Code
-/plugin uninstall superpowers mattpocock-skills ecc humanizer
+# Claude Code, one plugin at a time
+/plugin uninstall superpowers
+/plugin uninstall mattpocock-skills
+/plugin uninstall ecc
+/plugin uninstall humanizer
 
 # opencode's pools: inspect before deleting anything
 ls ~/.agents/skills ~/.claude/skills
