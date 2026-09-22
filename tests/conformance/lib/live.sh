@@ -166,7 +166,7 @@ fi
 live_workdir() {
   WORK="$(mktemp -d "$LIVE_SCRATCH/work.XXXXXX")" || fail "mktemp failed"
   case "$WORK" in "$LIVE_SCRATCH"/work.?*) ;; *) fail "unexpected workdir: $WORK" ;; esac
-  trap 'rm -rf -- "$WORK" "$WORK.log" "$WORK.start" "$WORK.data"' EXIT
+  trap 'rm -rf -- "$WORK" "$WORK.log" "$WORK.start" "$WORK.data" "$WORK.export"' EXIT
   LOG="$WORK.log"
   git -C "$WORK" init -q -b main &&
     git -C "$WORK" config user.name fx-conformance &&
@@ -233,8 +233,11 @@ live_run() {
         for id in $(grep -oE 'ses_[A-Za-z0-9]+' "$LOG" | sort -u); do
           case " $seen_ids " in *" $id "*) continue ;; esac
           seen_ids="$seen_ids $id"; more=1
-          TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" "${JAIL[@]}" opencode export "$id" 2>/dev/null \
-            | ID="$id" node -e 'let s="";process.stdin.on("data",c=>s+=c).on("end",()=>{const i=s.indexOf("{");try{console.log(JSON.stringify({fx_export:JSON.parse(s.slice(i))}))}catch(e){console.log("export failed: "+process.env.ID+": "+e.message)}})' >> "$LOG"
+          # To a file, not a pipe: into a pipe, opencode export exits before
+          # its stdout drains and cuts the JSON at 64KB, which dropped a whole
+          # child session from row 07 (task 21).
+          TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" "${JAIL[@]}" opencode export "$id" >"$WORK.export" 2>/dev/null
+          F="$WORK.export" ID="$id" node -e 'const s=require("fs").readFileSync(process.env.F,"utf8");const i=s.indexOf("{");try{console.log(JSON.stringify({fx_export:JSON.parse(s.slice(i))}))}catch(e){console.log("export failed: "+process.env.ID+": "+e.message)}' >> "$LOG"
         done
       done ;;
   esac
