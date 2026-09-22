@@ -2322,3 +2322,4 @@ Ruling: task 25 fix round 1 covers Important 1 and 2, and Minor 1 to 3.
         and the re-review.
         The round waits for task 26's implementer, because implementers run
         one at a time.
+Task 26: DONE, e195021. A new agent-model gate; model: opus on devils-advocate; plugin.json skills array dropped with 17 still discovered; argument-hint added and now propagated by gen-command-skills; LICENSE added. check-all ALL GREEN. Concern: unquoted `argument-hint: [name]` is a YAML flow sequence. Review dispatched. Task 25 fix round 1 dispatched.
