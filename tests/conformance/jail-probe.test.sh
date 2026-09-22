@@ -60,5 +60,25 @@ probe "proxy credentials are stripped, the proxy host is kept" '
 probe "a per-call variable reaches the command" "env TMPDIR=/tmp/x bash -c '[ \"\$TMPDIR\" = /tmp/x ]'"
 probe "a private IPC namespace" "[ \"\$(readlink /proc/self/ns/ipc)\" != '$(readlink /proc/self/ns/ipc)' ]"
 probe "the network stays open" "[ \"\$(readlink /proc/self/ns/net)\" = '$(readlink /proc/self/ns/net)' ]"
+# The second-mount rule, fed fake findmnt output: any mount of the home's
+# filesystem that overlaps the home (its root contains the home, or sits inside
+# it) is hidden; one beside the home, or on another device, is not.
+mkdir -p "$T/fakebin"
+D="$(stat -c '%Hd:%Ld' "$T/real-home")"
+cat >"$T/fakebin/findmnt" <<FM
+#!/bin/sh
+printf '%s\\n' '/ $D /' '/srv/root $D /' '/srv/claude $D $T/real-home/.claude' '/srv/ssh $D $T/real-home/.ssh' \\
+  '/srv/home $D $T/real-home' '/srv/sibling $D $T/real-home2' '/srv/other $D /var/lib/other' '/srv/otherdev 9:9 /'
+FM
+chmod +x "$T/fakebin/findmnt"
+hidden="$(PATH="$T/fakebin:$PATH"; . tests/conformance/lib/jail.sh; printf '%s\n' "${JAIL[@]}")"
+for t in /srv/root /srv/claude /srv/ssh /srv/home; do
+  grep -qxF "$t" <<<"$hidden" && echo "ok   a mount overlapping the home is hidden: $t" \
+    || { echo "FAIL a mount overlapping the home is not hidden: $t"; fails=1; }
+done
+for t in /srv/sibling /srv/other /srv/otherdev; do
+  grep -qxF "$t" <<<"$hidden" && { echo "FAIL a mount beside the home is hidden: $t"; fails=1; } \
+    || echo "ok   a mount beside the home is left alone: $t"
+done
 [ "$fails" -eq 0 ] || exit 1
 echo "jail-probe: all passed"

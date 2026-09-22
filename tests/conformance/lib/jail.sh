@@ -26,13 +26,17 @@ hidden() {
   local top="${1#/}"; top="${top%%/*}"
   case "$KEEP_TOP" in *" $top "*) return 1 ;; *) return 0 ;; esac
 }
-# Any other mount of the filesystem that holds the real home, whose root
-# contains the home, is the same leak at another path: hide each one too.
+# Any other mount of the filesystem that holds the real home, overlapping it
+# (its root contains the home, or lies inside it), is the same leak at
+# another path: hide each one too.
 home_dev="$(stat -c '%Hd:%Ld' "$FX_REAL_HOME")"
 while read -r t dev r; do
   case "$t" in /|/mnt|/mnt/*) continue ;; esac
   [ "$dev" = "$home_dev" ] || continue
-  case "$FX_REAL_HOME/" in "${r%/}/"*) JAIL+=(--tmpfs "$t") ;; esac
+  case "$FX_REAL_HOME/" in "${r%/}/"*) ;; *)
+    case "${r%/}/" in "$FX_REAL_HOME/"*) ;; *) continue ;; esac ;;
+  esac
+  if [ -d "$t" ]; then JAIL+=(--tmpfs "$t"); else JAIL+=(--ro-bind /dev/null "$t"); fi
 done < <(findmnt -rn -o TARGET,MAJ:MIN,FSROOT)
 # The resolver config can point into a hidden path (WSL: /mnt/wsl/resolv.conf).
 r="$(readlink -f /etc/resolv.conf)"
