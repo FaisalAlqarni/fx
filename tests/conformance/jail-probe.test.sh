@@ -16,6 +16,9 @@ SENTINEL="$T/real-home/.claude/.credentials.json"
 echo fx-jail-sentinel >"$SENTINEL"
 SENTINEL_DEV="$(stat -c '%Hd:%Ld' "$SENTINEL")"
 FX="$PWD" FX_REAL_HOME="$T/real-home" LIVE_SCRATCH="$T/scratch" HOME="$T/scratch/home"
+# Proxy URLs carrying a username and password: only the host may cross.
+export HTTPS_PROXY='http://fxuser:fx%40secret@proxy.example:3128' http_proxy='fxuser:p@ss@proxy.example:3128/'
+export HTTP_PROXY='http://proxy.example:3128'
 gap() { echo "$*" >&2; exit 77; }; fail() { echo "$*" >&2; exit 1; }
 . tests/conformance/lib/jail.sh
 
@@ -40,6 +43,9 @@ probe "the real home's credentials are unreadable by any mount path" "
 probe "a sentinel set outside is not visible" '[ -z "${FX_JAIL_SENTINEL+x}" ]'
 probe "no inherited DBUS_SESSION_BUS_ADDRESS" '[ -z "${DBUS_SESSION_BUS_ADDRESS+x}" ]'
 probe "HOME and PATH are passed" "[ \"\$HOME\" = '$HOME' ] && [ \"\$PATH\" = '$PATH' ]"
+probe "proxy credentials are stripped, the proxy host is kept" '
+  [ "$HTTPS_PROXY" = http://proxy.example:3128 ] && [ "$http_proxy" = proxy.example:3128/ ] &&
+  [ "$HTTP_PROXY" = http://proxy.example:3128 ] || { env | grep -i _proxy; exit 1; }'
 probe "a per-call variable reaches the command" "env TMPDIR=/tmp/x bash -c '[ \"\$TMPDIR\" = /tmp/x ]'"
 probe "a private IPC namespace" "[ \"\$(readlink /proc/self/ns/ipc)\" != '$(readlink /proc/self/ns/ipc)' ]"
 probe "the network stays open" "[ \"\$(readlink /proc/self/ns/net)\" = '$(readlink /proc/self/ns/net)' ]"

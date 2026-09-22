@@ -44,7 +44,13 @@ for v in PATH HOME USER LOGNAME SHELL TERM LANG LC_ALL \
          CODEX_HOME XDG_CONFIG_HOME CLAUDE_CONFIG_DIR FX \
          HTTPS_PROXY HTTP_PROXY NO_PROXY https_proxy http_proxy no_proxy \
          NODE_EXTRA_CA_CERTS SSL_CERT_FILE SSL_CERT_DIR; do
-  [ -n "${!v+x}" ] && JAIL+=(--setenv "$v" "${!v}")
+  [ -n "${!v+x}" ] || continue
+  val="${!v}"
+  # A proxy URL's user:password never crosses: only scheme, host and port.
+  if [[ "$v" == [Hh][Tt][Tt][Pp]* && "$val" =~ ^([A-Za-z][A-Za-z0-9+.-]*://)?[^/]*@(.*)$ ]]; then
+    val="${BASH_REMATCH[1]}${BASH_REMATCH[2]}"
+  fi
+  JAIL+=(--setenv "$v" "$val")
 done
 JAIL+=(--)
 
