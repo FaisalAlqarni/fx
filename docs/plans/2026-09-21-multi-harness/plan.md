@@ -101,6 +101,7 @@ behavioural rows spend quota and never do.
 | 25 | A tiny bootstrap, with routing in the descriptions | 24 | Superpowers-style bootstrap; rules moved to lanes, audited; description overlap gate | Amendment 2 |
 | 26 | Fixes from the plugin-dev validator | 25 | model: on every agent; no stale skills list; argument-hint; LICENSE | Amendment 2 |
 | 27 | Parity and release gaps from the delta coverage audit | 25, 26 | No runtime addressing in lane text; every-caller rule reaches fixes; release-version gate; overlap pair | Amendment 2 |
+| 28 | Model routing that a controller cannot quietly skip | 27 | Claude Code tier mapping; standard-tier default; stated reason for Opus; cheapest-tier safety; babysitter rule | Amendment 2 |
 | 13 | Install and surface documentation | 12, 14, 15, 16, 17, 18, 19, 20, 21 | Three install paths documented and accurate | Polish |
 
 **Amendment edges.** Tasks 14 to 22 come from the design amendment of
