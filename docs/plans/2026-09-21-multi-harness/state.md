@@ -2300,3 +2300,25 @@ Ruling: the `fx-design__existing` five-by-two reps (final tree against S3
         Cost if wrong: an fx-design prompt that sometimes misroutes on
         opencode goes unnoticed until task 21. Caught by task 21.
         Review dispatched. No security lens: text and descriptions only.
+Task 25: review found Needs fixes: 0 Critical, 3 Important, 6 Minor. A
+        38-row audit sample was checked against its destinations.
+Ruling: task 25 fix round 1 covers Important 1 and 2, and Minor 1 to 3.
+        - I1: put a one-line prose rule back in the bootstrap, because "every
+          output" rules must hold with no lane loaded (B3).
+        - I2: replace the 4,000 fixture pin with two pins: the bootstrap alone
+          under about 3,000 (the design target), and the worst case under
+          9,000 (the real Claude Code limit with margin). Amend the task 25
+          interface line and ADR 0021 to match. This deviates from the spec's
+          acceptance text on purpose, because the 4,000 figure was a
+          self-imposed fixture budget that blocked I1.
+        - Minor 1 to 3 fix the audit's own accuracy (the worktree guard
+          citation, the locale default made explicit in the fx-plan template,
+          and "kept as intent" labels), because the no-loss claim is the
+          task's core criterion.
+        Important 3 is done by the controller: task 21 now carries the
+        fx-design__existing reps. Minor 4 to 6 are deferred to the final
+        review.
+        Cost if wrong: about 150 more always-on chars. Caught by the size pins
+        and the re-review.
+        The round waits for task 26's implementer, because implementers run
+        one at a time.

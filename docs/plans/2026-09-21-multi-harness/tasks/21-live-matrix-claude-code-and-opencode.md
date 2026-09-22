@@ -129,6 +129,7 @@ guarded by its install marker.
 - [ ] On opencode, a read-only lens told to fetch a URL, and told to call a configured MCP tool, is refused by permission for both. The report cites the refusal from the transcript. This is carried from the task 17 security lens, and it proves the permission allowlist live. The MCP tool is `fxprobe_write_marker`, from the server `FX_OPENCODE_MCP=1` writes into the scratch config and never into the real home, and a `general` control calls it successfully in the same run (from gap 20 of the coverage audit)
 - [ ] Carried from the task 23 review: the per-row opencode config merge in `live.sh` moves to `tests/conformance/lib/merge-opencode-provider.js` (arguments SRC, DST and MODEL). A free gate test seeds DST with `plugin`, `mcp` and `subagent_depth`, runs the script, and asserts all three survive
 - [ ] The plugin-route rows 12 and 15 and probes 91 and 94 are re-run, because task 21's first pass ran them under the harness bug task 23 found
+- [ ] Carried from task 25: run the opencode prompt `fx-design__existing` ("Our dashboard looks bland and generic. Rework how it looks.") five times on the final tree and five times on the S3 control. If the fx-design redirect clause is the cause of its miss, open a fix task
 - [ ] Claude Code row 06 has run under the round 2 jail
 - [ ] Every row on both runtimes has exactly one result, PASS, FAIL or GAP, with a reason for each GAP
 - [ ] No product file changed in this task
