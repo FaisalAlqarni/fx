@@ -54,29 +54,31 @@ r="$(readlink -f /etc/resolv.conf)"
 [ -f "$r" ] && hidden "$r" && JAIL+=(--ro-bind "$r" "$r")
 # Bind the narrowest thing that runs the CLI. A self-contained binary needs
 # only itself; a script needs its package, which is the nearest ancestor
-# holding a package.json. Counting directories up from the binary instead
-# bound whatever happened to sit there: a standalone `~/.local/bin/codex` bound
-# all of `~/.local`, credentials included (re-check Minor 2).
+# holding a package.json, or the directory it sits in when it has none.
+# Counting directories up from the binary instead bound whatever happened to
+# sit there: a standalone `~/.local/bin/codex` bound all of `~/.local`,
+# credentials included (re-check Minor 2).
 for c in node claude codex opencode; do
   p="$(command -v "$c")" || continue
   r="$(readlink -f "$p")"
   if hidden "$r"; then
     if [ "$(head -c2 "$r" 2>/dev/null)" = '#!' ]; then
-      d="$r"
-      while :; do
-        d="${d%/*}"
-        [ -n "$d" ] || break
-        [ -f "$d/package.json" ] && break
-      done
-      [ -n "$d" ] || fail "no package directory for $c ($r); refusing to bind a wider path into the jail"
-      # Never the real home, anything holding it, or a whole top-level
-      # directory of it: those carry credentials, not a CLI's install.
+      own="${r%/*}"                                  # the directory the script sits in
+      d="$own"
+      while [ -n "$d" ] && [ ! -f "$d/package.json" ]; do d="${d%/*}"; done
+      [ -n "$d" ] || d="$own"                        # no package: its own directory is the narrowest
+      # Never the real home or anything holding it.
       case "$FX_REAL_HOME/" in "${d%/}/"*)
         fail "refusing to bind $d into the jail for $c: it is the real home or holds it" ;;
       esac
-      case "${d%/*}" in "$FX_REAL_HOME")
-        fail "refusing to bind $d into the jail for $c: it is a whole top-level directory of the real home" ;;
-      esac
+      # Widening past the script's own directory must not reach a whole
+      # top-level directory of the home: that is where credentials sit
+      # (~/.local holds ~/.local/share/opencode/auth.json), not a CLI install.
+      if [ "$d" != "$own" ]; then
+        case "${d%/*}" in "$FX_REAL_HOME")
+          fail "refusing to bind $d into the jail for $c: it is a whole top-level directory of the real home" ;;
+        esac
+      fi
       JAIL+=(--ro-bind "$d" "$d")
     else
       JAIL+=(--ro-bind "$r" "$r")

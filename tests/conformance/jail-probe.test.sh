@@ -160,12 +160,28 @@ grep -qi 'refus' <<<"$out" \
   || { echo "FAIL a package directory that is the real home is not refused"; printf '%s\n' "$out"; fails=1; }
 rm -f -- "$T/real-home/package.json"
 echo '{"name":"broad"}' > "$T/real-home/.local/package.json"
-printf '#!/bin/sh\nexit 0\n' > "$T/real-home/.local/cli.js"; chmod +x "$T/real-home/.local/cli.js"
-ln -sf "$T/real-home/.local/cli.js" "$T/failhome/claude"
+mkdir -p "$T/real-home/.local/libexec"
+printf '#!/bin/sh\nexit 0\n' > "$T/real-home/.local/libexec/cli.js"
+chmod +x "$T/real-home/.local/libexec/cli.js"
+ln -sf "$T/real-home/.local/libexec/cli.js" "$T/failhome/claude"
 out="$(jail_for "$T/failhome")"
 grep -qi 'refus' <<<"$out" \
   && echo "ok   a package directory that is a top-level directory of the real home is refused" \
   || { echo "FAIL a broad home subtree is not refused"; printf '%s\n' "$out"; fails=1; }
+rm -f -- "$T/real-home/.local/package.json"
+
+# A script with no package of its own: the directory it sits in is the
+# narrowest thing that can work, and it is bound, not refused.
+mkdir -p "$T/real-home/tools/bin" "$T/nopkg"
+printf '#!/bin/sh\nexit 0\n' > "$T/real-home/tools/bin/cli.sh"; chmod +x "$T/real-home/tools/bin/cli.sh"
+ln -sf "$T/real-home/tools/bin/cli.sh" "$T/nopkg/claude"
+out="$(jail_for "$T/nopkg")"
+binds "$out" | grep -qxF "$T/real-home/tools/bin" \
+  && echo "ok   a script with no package binds the directory it sits in" \
+  || { echo "FAIL a script with no package does not bind its own directory"; printf '%s\n' "$out"; fails=1; }
+if binds "$out" | grep -qxF "$T/real-home/tools"; then
+  echo "FAIL a script with no package binds more than its own directory"; fails=1
+else echo "ok   a script with no package binds nothing above its own directory"; fi
 
 [ "$fails" -eq 0 ] || exit 1
 echo "jail-probe: all passed"
