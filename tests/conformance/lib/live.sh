@@ -37,7 +37,11 @@ chmod 700 "$LIVE_SCRATCH" "$HOME" "$CODEX_HOME" "$XDG_CONFIG_HOME" \
 # Every CLI call, installs included, runs inside bwrap:
 #   - the whole filesystem read-only;
 #   - the real home hidden under an empty tmpfs, so a session cannot read the
-#     real credential files, only the scratch copy made below;
+#     real credential files, only the scratch copy made below. /mnt is hidden
+#     whole too (on WSL: the Docker Desktop socket, the WSLg sockets, the
+#     Windows drives, and /mnt/wslg/distro, a second mount of the root that
+#     reaches the real home), and so is any other mount of the home's
+#     filesystem whose root contains the home;
 #   - back into that empty home, read-only, only what the CLIs run from, when
 #     it lives there: the node binary, the codex package, and the directory
 #     each other binary sits in. Nothing holding credentials or config is

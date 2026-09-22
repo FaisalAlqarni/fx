@@ -5,7 +5,19 @@
 command -v bwrap >/dev/null || gap "not run: bwrap is not installed, and live rows never run a CLI unconfined"
 case "$FX_REAL_HOME" in /|"") fail "FX_REAL_HOME is not a home: '$FX_REAL_HOME'" ;; esac
 [ -d "$FX_REAL_HOME" ] || fail "FX_REAL_HOME is not a directory: $FX_REAL_HOME"
-JAIL=(bwrap --ro-bind / / --tmpfs /tmp --tmpfs "$FX_REAL_HOME")
+# /mnt is hidden whole. On WSL it holds the Docker Desktop socket, the WSLg
+# display, audio and runtime sockets, the Windows drives, and a second mount
+# of the distro root (/mnt/wslg/distro) that reaches the real home by another
+# path. Nothing a live row needs lives there.
+JAIL=(bwrap --ro-bind / / --tmpfs /mnt --tmpfs /tmp --tmpfs "$FX_REAL_HOME")
+# Any other mount of the filesystem that holds the real home, whose root
+# contains the home, is the same leak at another path: hide each one too.
+home_dev="$(stat -c '%Hd:%Ld' "$FX_REAL_HOME")"
+while read -r t dev r; do
+  case "$t" in /|/mnt|/mnt/*) continue ;; esac
+  [ "$dev" = "$home_dev" ] || continue
+  case "$FX_REAL_HOME/" in "${r%/}/"*) JAIL+=(--tmpfs "$t") ;; esac
+done < <(findmnt -rn -o TARGET,MAJ:MIN,FSROOT)
 under_real_home() { case "$1" in "$FX_REAL_HOME"/*) return 0 ;; *) return 1 ;; esac; }
 for c in node claude codex opencode; do
   p="$(command -v "$c")" || continue
