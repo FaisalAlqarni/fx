@@ -2346,3 +2346,5 @@ Task 26: fix round 1 landed in b23b86c. The three argument-hint values are now
 Task 21: amended. The part-order criterion is n/a, because the preamble is now
         a single part. The whole matrix re-runs on the final tree, both routes.
         The remainder is dispatched to a fresh implementer.
+Task 26: re-review of round 1 Approved. A mutation proves the quoted-hint gate; Codex description-colon hiding is re-probed and unchanged.
+Task 26: complete (commits ba3b131..b23b86c, 1 fix round, review approved).
