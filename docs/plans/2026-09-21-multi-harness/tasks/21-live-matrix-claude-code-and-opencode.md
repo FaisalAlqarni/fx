@@ -29,13 +29,18 @@ Code after the quota reset):**
 - Part-order criterion: n/a, single preamble part since task 25 (ruling
   below, unchanged).
 
-**Open:** probe 93 ("review runs end to end") FAILed on Claude Code in
-the frozen run (`final2-cc-probes.out`: 3 pass, 1 fail) found no lens finding
-named `app/users_controller.rb`. This is a harness parser defect being
-fixed separately, not a product failure; it is pending a rerun, not
-recorded as a FAIL against fx. opencode's probe 93 PASSed
-(`final-oc93.out`). Task 21 is not complete until the Claude Code rerun
-lands a PASS or a product defect is filed for it.
+**Resolved 2026-09-22:** probe 93 ("review runs end to end") FAILed on
+Claude Code in the frozen run (`final2-cc-probes.out`) with no lens finding
+named `app/users_controller.rb`. The cause was a harness parser defect:
+Claude Code dispatches a subagent asynchronously, so the dispatching
+`tool_result` carries only an acknowledgement, and `events.js` read nothing
+else. fx-review itself loaded, dispatched the security, database and
+devils-advocate lenses, and the security lens did report the file. Fixed in
+`aa75cef`, which also reads `task_notification` and the subagent's own
+assistant messages. The rerun on claude-code is 4 pass, 0 fail, 0 gap
+(`logs/fix93`), and `sub_output` carries the finding naming
+`app/users_controller.rb:3`. opencode had already PASSed (`final-oc93.out`).
+No product defect was filed. **Task 21 is complete.**
 
 **What to build:** Evidence, not code. Run the full conformance matrix, free
 and live, on Claude Code and on opencode against the amended tree. Record
