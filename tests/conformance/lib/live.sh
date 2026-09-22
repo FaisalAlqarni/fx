@@ -230,9 +230,16 @@ live_run() {
   # assistant text and tool output, and a session could say the words.
   # Claude Code says "hit your session limit" or "hit your limit"; Codex says
   # "hit your usage limit".
+  # It also needs the CLI's own clean non-zero exit. A tool process the session
+  # started shares the CLI's uid, so it can write a quota line into the CLI's
+  # stderr or stdout through /proc/<pid>/fd; what it cannot do is make the CLI
+  # stop the way a real quota does. Measured 2026-09-22: claude-code, codex and
+  # opencode each exit 1 on an error they stop for (codex exec and opencode run
+  # both exit 1 on a 401 from the provider). A timeout is 124, a signal 128+n,
+  # and both of those are a crash, never a quota (security re-check Minor 1).
   local q='usage limit|hit your ([a-z]+ )?limit|credit balance is too low|insufficient_quota|quota exceeded'
   local hit
-  if hit="$(printf '%s\n' "$cli_errors" | cat - "$err" | grep -oiE "$q" | head -1)" && [ -n "$hit" ]; then
+  if [ "$rc" -eq 1 ] && hit="$(printf '%s\n' "$cli_errors" | cat - "$err" | grep -oiE "$q" | head -1)" && [ -n "$hit" ]; then
     gap "not run: quota or credit exhausted ($hit)"
   fi
   [ "$rc" -eq 124 ] && fail "session timed out"

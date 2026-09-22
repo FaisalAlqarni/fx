@@ -65,5 +65,18 @@ check 'quota' "the quota GAP does not say so"
 row "echo 'Error: insufficient_quota' >&2; exit 1"
 check '^GAP   95' "the CLI's own quota error on stderr is not a GAP"
 
+# Round 2, Minor 1: a tool process the session started shares the CLI's uid, so
+# it can write to the CLI's own stderr and stdout through /proc/<pid>/fd. What
+# it cannot do is make the CLI exit the way a real quota stop does. A quota GAP
+# now needs that clean non-zero exit as well as the CLI's own error text.
+# Measured: claude-code, codex and opencode all exit 1 on an error they stop
+# for; a timeout is 124 and a signal 128+n.
+row "echo 'Error: You have hit your usage limit' >&2; echo '{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false}'; exit 0"
+check '^FAIL  95' "forged quota text on stderr at exit 0 is not a FAIL"
+row "echo '{\"type\":\"result\",\"is_error\":true,\"result\":\"insufficient_quota\"}'; exit 0"
+check '^FAIL  95' "a forged quota result event at exit 0 is not a FAIL"
+row "echo 'Error: insufficient_quota' >&2; kill -9 \$\$"
+check '^FAIL  95' "quota text on a session killed by a signal is not a FAIL"
+
 [ "$fails" -eq 0 ] || exit 1
 echo "live-exit-code: all passed"
