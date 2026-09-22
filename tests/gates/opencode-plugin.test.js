@@ -360,6 +360,25 @@ const root = path.join(__dirname, '..', '..');
       /\[fx\]/, 'the git guard still refuses');
   }
 
+  // Triage row: a missing references directory threw at module load, so the
+  // plugin never loaded and the guard with it. Now config() reports it.
+  {
+    const noRefs = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-oc-norefs-'));
+    scratchDirs.push(noRefs);
+    for (const d of ['plugins', 'lib', 'agents', 'commands', 'codex', 'skills']) fs.cpSync(path.join(root, d), path.join(noRefs, d), { recursive: true });
+    fs.copyFileSync(path.join(root, 'PREAMBLE.md'), path.join(noRefs, 'PREAMBLE.md'));
+    const { fx: nrFx } = await import(path.join(noRefs, 'plugins', 'fx.js'));
+    const nh = await nrFx({ directory: root });
+    const errs = [];
+    const realError = console.error;
+    console.error = (...a) => errs.push(a.join(' '));
+    try { await nh.config({}); } finally { console.error = realError; }
+    assert.ok(errs.some((e) => /references/.test(e)), 'a missing references directory is reported');
+    await assert.rejects(
+      () => nh['tool.execute.before']({ tool: 'bash' }, { args: { command: 'git branch -D fx-guard-probe' } }),
+      /\[fx\]/, 'and the guard still refuses');
+  }
+
   // Final review Minor 5: a command whose frontmatter does not parse is an
   // error that names the file, never a silently missing command.
   {
