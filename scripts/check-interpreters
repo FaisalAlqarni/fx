@@ -5,35 +5,65 @@
 # execute bit. `bash scripts/x.sh` works either way; `scripts/x.sh` does not.
 #
 # A MENTION of a path is not an invocation. Only a script path sitting in
-# command position counts, which means inside a fenced block or after "Run:".
-# Flagging mentions sends someone to rewrite eight correct sentences.
+# command position counts: inside a fenced block, after "Run:", or as the
+# inline code right after "Run" (`Run `x``, which may wrap onto the next
+# line). Flagging mentions sends someone to rewrite eight correct sentences.
+#
+# A run that scans no file fails: a gate that reads nothing proves nothing.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-TARGETS=("${@:-skills references commands}")
+if [ "$#" -gt 0 ]; then TARGETS=("$@"); else TARGETS=(skills references commands); fi
 
+if ! files="$(find "${TARGETS[@]}" -name '*.md')"; then
+  echo "FAIL: could not scan ${TARGETS[*]}"
+  exit 1
+fi
+if [ -z "$files" ]; then
+  echo "FAIL: no Markdown file found under ${TARGETS[*]}: the gate scanned nothing."
+  exit 1
+fi
+
+scanned=0
 fails=0
 while IFS= read -r file; do
+  scanned=$((scanned+1))
   while IFS= read -r hit; do
     [ -z "$hit" ] && continue
     echo "  $file: $hit"
     fails=$((fails+1))
   done < <(awk '
-      /^[[:space:]]*```/ { fence = !fence; next }
+      function flag(cmd) {
+        sub(/^[[:space:]]*[$][[:space:]]*/, "", cmd)
+        sub(/^[[:space:]]+/, "", cmd)
+        split(cmd, tok, /[[:space:]]+/)
+        if (tok[1] ~ /scripts\/[A-Za-z0-9_.-]+$/) print NR": "cmd
+      }
+      /^[[:space:]]*```/ { fence = !fence; pending = 0; next }
       {
         line = $0
-        inv = fence
-        if (sub(/^[[:space:]]*Run:[[:space:]]*/, "", line)) inv = 1
-        if (!inv) next
-        sub(/^[[:space:]]*[$][[:space:]]*/, "", line)
-        sub(/^[[:space:]]+/, "", line)
-        split(line, tok, /[[:space:]]+/)
-        if (tok[1] ~ /scripts\/[A-Za-z0-9_.-]+$/) print NR": "line
+        if (fence) { flag(line); next }
+        if (sub(/^[[:space:]]*Run:[[:space:]]*/, "", line)) { flag(line); pending = 0; next }
+        # "Run" ended the previous line: this line opening with inline code is its command.
+        if (pending && match(line, /^[[:space:]]*`[^`]*`/)) {
+          code = substr(line, RSTART, RLENGTH)
+          code = substr(code, index(code, "`") + 1)
+          flag(substr(code, 1, length(code) - 1))
+        }
+        pending = 0
+        rest = line
+        while (match(rest, /(^|[^A-Za-z])Run[[:space:]]+`[^`]*`/)) {
+          seg = substr(rest, RSTART, RLENGTH)
+          code = substr(seg, index(seg, "`") + 1)
+          flag(substr(code, 1, length(code) - 1))
+          rest = substr(rest, RSTART + RLENGTH)
+        }
+        if (line ~ /(^|[^A-Za-z])Run[[:space:]]*$/) pending = 1
       }' "$file")
-done < <(find "${TARGETS[@]}" -name '*.md' 2>/dev/null)
+done <<<"$files"
 
 if [ "$fails" -gt 0 ]; then
   echo "FAIL: $fails invocation(s) do not name an interpreter."
   exit 1
 fi
-echo "check-interpreters: OK"
+echo "check-interpreters: OK ($scanned files)"

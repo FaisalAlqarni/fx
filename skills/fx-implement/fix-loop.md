@@ -45,7 +45,7 @@ does not need the whole suite.
 covering tests, the command run, and the output.** All three, or no re-review.
 
 **The re-review is scoped.** Run
-`scripts/review-package <TASK> <FIX_BASE> <HEAD>` where `FIX_BASE` is the head
+`bash scripts/review-package <TASK> <FIX_BASE> <HEAD>` where `FIX_BASE` is the head
 the previous review saw. The re-reviewer verdicts **each finding ADDRESSED or
 NOT ADDRESSED** and flags new breakage **in the fix diff only**. New
 Critical/Important breakage joins the open findings. Out-of-scope observations

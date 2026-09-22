@@ -52,7 +52,7 @@ git log <fixed-point>..HEAD --oneline
 **A bad ref or an empty diff fails HERE**, not inside five parallel subagents.
 
 **Then package the range into one diff file.** Run
-`../fx-implement/scripts/review-package <slug> <fixed-point> HEAD`: it writes
+`bash ../fx-implement/scripts/review-package <slug> <fixed-point> HEAD`: it writes
 the commit list, stat summary and full diff to one file and prints the path.
 Outside a plan, the slug is `review`. In task mode, reuse the file
 `fx-implement` already packaged. Every pass below is handed that path, never a

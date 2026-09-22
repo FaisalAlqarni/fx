@@ -474,7 +474,7 @@ at the end.
 - **Implementer self-review never replaces the task review.** Both are needed.
 
 **Hand the reviewer its diff as a file.** Run
-`scripts/review-package <TASK> <BASE> <HEAD>`; pass the reviewer the path it
+`bash scripts/review-package <TASK> <BASE> <HEAD>`; pass the reviewer the path it
 prints. Without bash: `git log --oneline`, `git diff --stat`, and
 `git diff -U10` over the range, redirected to one uniquely named file. **The
 output never enters your own context**, and the reviewer sees commit list, stat
@@ -621,7 +621,7 @@ Ledger everything it returns, including what it clears.
 
 ## Final review
 
-Package the whole branch: `scripts/review-package <PLAN> <MERGE_BASE> <HEAD>`
+Package the whole branch: `bash scripts/review-package <PLAN> <MERGE_BASE> <HEAD>`
 where `MERGE_BASE` is `git merge-base <base-branch> HEAD`. Include the printed
 path in the dispatch, **so the final reviewer reads one file instead of
 re-deriving the branch diff with git commands.**
