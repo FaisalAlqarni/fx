@@ -2478,3 +2478,7 @@ Ruling: **one fix wave**, with one fix subagent on Opus. Reason: I2, I3 and I7
         After the wave comes one scoped re-review. It uses the standard tier,
         plus the security lens, which pins opus. Then the frozen live matrix
         and the Codex part A probe.
+
+Fix wave resumed 2026-09-22 after the rate limit (agent a1291e3, Opus, justified: security-critical guard and identity fixes). Done before the limit: I1 7003f63, I2 b0d6982, I3 5c2cad7, I4 fdb1140, gate minors f5e1483. Remaining: I5-I9 and the open Minors. Waiting on it. Next: the scoped re-review.
+Fix wave complete: 17 commits 3e19af6..7e2d38f. I1-I9 fixed, fix-before-merge rows and Minors 1,3,5-13,15 fixed. check-all ALL GREEN (fresh HOME). Report: .fx/.../reports/final-fix-wave-report.md. Concerns carried: CC row 01 GAP (quota); live rows now FAIL on non-zero CLI exit, watch for false FAIL at --max-turns in the frozen matrix; Minors 6, 8, 11 were tested by revert, not test-first.
+Ruling: scoped re-review = one Sonnet reviewer (whole wave vs findings-final.md) plus the security lens on Opus (reason: I2, I3, I7 and I8 are guard, identity and jail code). Why: the ledger ruling from the final review. Cost if wrong: a missed regression, caught by the frozen live matrix for behavior, and by nothing for the security semantics except this lens.
