@@ -9,7 +9,7 @@ description: >
   depth check, high-water mark or admission control between it and the
   queue, so the backlog grows without bound.
 tools: Read, Grep, Glob
-model: opus
+model: sonnet
 ---
 
 # fx-lens-pipeline

@@ -10,7 +10,7 @@ description: >
   indexes, changed uniqueness or null constraints, and anything that backfills
   or rewrites a table. Read-only: reports problems, never fixes them.
 tools: Read, Grep, Glob
-model: opus
+model: sonnet
 ---
 
 # fx-lens-database
