@@ -23,7 +23,12 @@ EXEMPT = ('skills/fx-humanize/', 'references/testing/', 'upstream/', '.git/',
           '.fx/', 'scripts/check-prose', 'lib/fix-dashes.test.py',
           # Nested worktrees hold other branches' files, which this checkout's
           # gate does not own.
-          '.worktrees/', '.claude/worktrees/',
+          '.worktrees/',
+          # `.claude/` is the checkout's own local configuration: a CLAUDE.md
+          # an indexer wrote, settings, nested worktrees. None of it is fx's
+          # shipped prose, none of it is tracked, and a machine that happens to
+          # have one must not fail this gate.
+          '.claude/',
           # Anthropic's own skill-authoring guide, carried verbatim. Editing its
           # prose would make it a local fork of a document whose value is that
           # it is not one.
