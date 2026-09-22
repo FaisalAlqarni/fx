@@ -1,6 +1,6 @@
 # 21: Live matrix on Claude Code and opencode
 
-**Status:** not complete — 1 open item (see Result, 2026-09-22)
+**Status:** not complete, 1 open item (see Result, 2026-09-22)
 **Blocked by:** 14, 15, 16, 17, 18, 19
 **Phase:** Amendment
 
@@ -11,8 +11,8 @@ Code after the quota reset):**
 - The 4 `task21-opencode` placeholders (INSTALL.md x2, SURFACE.md,
   ADR 0019) are filled from `final-oc-matrix.out` and `final-oc-plug.out`.
 - **Merge gate holds on both runtimes:** rows 01, 02, 12, 15, 16, 18 all
-  PASS on Claude Code (`final2-cc-matrix.out`: 16 pass, 0 fail, 2 gap —
-  13, 14, both GAP with a stated reason, not a fail) and on opencode
+  PASS on Claude Code (`final2-cc-matrix.out`: 16 pass, 0 fail, 2 gap:
+  rows 13 and 14, both GAP with a stated reason, not a fail) and on opencode
   (`final-oc-matrix.out`: 18 pass, 0 fail, 0 gap).
 - Plugin-route re-run (task 23 harness-bug fix): rows 01, 12, 15 PASS
   (`final-oc-plug.out`, 3 pass, 0 fail, 0 gap).
@@ -30,7 +30,7 @@ Code after the quota reset):**
   below, unchanged).
 
 **Open:** probe 93 ("review runs end to end") FAILed on Claude Code in
-the frozen run (`final2-cc-probes.out`: 3 pass, 1 fail) — no lens finding
+the frozen run (`final2-cc-probes.out`: 3 pass, 1 fail) found no lens finding
 named `app/users_controller.rb`. This is a harness parser defect being
 fixed separately, not a product failure; it is pending a rerun, not
 recorded as a FAIL against fx. opencode's probe 93 PASSed
