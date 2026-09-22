@@ -104,8 +104,8 @@ export const fx = async ({ directory } = {}) => {
   try {
     preamble = render({ harness: 'opencode', cwd });
   } catch {
-    preamble = '[fx] PREAMBLE.md could not be read. The fx routing table and '
-             + 'non-negotiables are NOT loaded. Do not commit, and tell the '
+    preamble = '[fx] PREAMBLE.md could not be read. The fx bootstrap and its always-on '
+             + 'rules are NOT loaded. Do not commit, and tell the '
              + 'user the plugin is misinstalled.';
   }
 

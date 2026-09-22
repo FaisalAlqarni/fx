@@ -4,11 +4,11 @@
 //
 // Two events, one text. The subagent case is the one that matters: a dispatched
 // subagent reads neither CLAUDE.md nor memory, so without this hook the
-// non-negotiables reach it through nothing at all.
+// always-on rules reach it through nothing at all.
 //
 // Claude Code previews any single hook's context over 10,000 characters
-// instead of showing it, so the render stays one piece under 9,000
-// (lib/preamble.test.js pins it). One handler per event: with several, Claude
+// instead of showing it. The render is a bootstrap, under 4,000 in the worst
+// case (lib/preamble.test.js pins it, docs/adr/0021). One handler per event: with several, Claude
 // Code runs them in unstable order and a later part can land above the
 // opening imperative.
 
@@ -27,8 +27,8 @@ process.stdin.on('end', () => {
     text = render({ harness: 'claude-code', cwd });
   } catch {
     // Say so rather than starting a session that silently has no rules.
-    text = '[fx] PREAMBLE.md could not be read. The fx routing table and '
-         + 'non-negotiables are NOT loaded in this session. Do not commit, '
+    text = '[fx] PREAMBLE.md could not be read. The fx bootstrap and its always-on '
+         + 'rules are NOT loaded in this session. Do not commit, '
          + 'and tell the user the plugin is misinstalled.';
   }
 

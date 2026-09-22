@@ -5,8 +5,9 @@ description: >
   proposing fixes. Also on "debug this", "diagnose", "why is this failing",
   "this is broken", "it throws", "it's slow", "flaky test", "regression",
   "build failure". Covers correctness bugs, performance regressions and
-  non-deterministic failures. Skip it and the fix lands on the first plausible
-  cause, which moves the symptom instead of removing it.
+  non-deterministic failures. Once diagnosed, the fix goes through fx-tdd. Skip
+  it and the fix lands on the first plausible cause, which moves the symptom
+  instead of removing it.
 ---
 
 # fx-debug

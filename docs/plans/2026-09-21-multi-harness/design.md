@@ -350,13 +350,9 @@ a cache keyed by version.
   later. Every claim here was measured against these.
 - No new runtime dependencies. fx ships node and shell only.
 - The git guard module is not modified by this work, except the heredoc fix in amendment A7.
-- Nothing is added above the opening imperative of `PREAMBLE.md`. The
-  imperative section, from its heading through the paragraph binding
-  subagents, stays whole, concrete and inline; only names are substituted per
-  runtime. Outside it, the routing table and the non-negotiables stay inline.
-  Other detail may move to a lane file only when the lane that needs it loads
-  that file at the moment the detail applies, and the rendered preamble with
-  its appended blocks stays one Claude Code part under 9,000 characters.
+- Only the fixed intro sits above the opening imperative; nothing else is
+  added there. The always-on text stays a bootstrap: rules live in lanes, and
+  routing lives in descriptions.
 - Skills name actions, never tools. A skill body naming a runtime's tool is a
   defect.
 - No symlinks inside anything shipped to a runtime that copies plugin trees.

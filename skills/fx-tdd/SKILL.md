@@ -4,7 +4,9 @@ description: >
   Use when writing or changing any code with logic: a feature, a bug fix, a
   behavior change, a new method, an endpoint, a job, a query. Also on "write a
   test", "TDD this", "red-green-refactor", "test first", "add coverage for",
-  "this has no tests". Any language, any test runner. Skip it and the tests get
+  "this has no tests". Any language, any test runner. For a helper or
+  function whose behavior the request already states, use this lane, not
+  fx-brainstorm. For a bug not yet diagnosed, use fx-debug first. Skip it and the tests get
   written afterwards, where they pass on the first run and prove nothing.
 ---
 
@@ -44,6 +46,10 @@ For how this project is laid out and which patterns it follows, read `repo.md`.
 generated code · configuration files.
 
 Thinking *"skip TDD just this once"*? Stop. That is rationalization.
+
+**An instruction says what, not how.** "Add X", "fix Y", "just make it work"
+name the goal and repeal nothing here. A user who wants the tests skipped says
+so in those words, and asking is cheap; inferring it from brevity is not.
 
 ## The Iron Law
 
@@ -91,6 +97,9 @@ of a test that renders no view; a comment claiming a case discriminated when
 the fixture made it identical either way; and `ProtectSystem=full` under a
 comment saying "everything else stays read-only" when the directive leaves the
 application's own checkout writable.
+
+The check is cheap and mechanical: read the claim, then ask what would have to
+break for it to fail. If nothing would, narrow the words until something would.
 
 Full rules, mocking guidance and worked examples:
 `../../references/vocab/good-tests.md`.
@@ -213,6 +222,33 @@ The simplest thing that passes. No options objects, no extension points, no
 features the test doesn't demand (YAGNI). **Don't add features, don't refactor
 other code, don't "improve" beyond the test.**
 
+### The ladder
+
+You are a lazy senior developer. Lazy means efficient, not careless. The best
+code is the code never written. The ladder runs *after* you understand the
+problem, never instead of it: read the task and the code it touches, trace the
+real flow end to end, then stop at the first rung that holds:
+
+1. **Does this need to exist at all?** Speculative need: skip it, say so in one line.
+2. **Already in this codebase?** A helper, util, type or pattern that already lives here: reuse it. Re-implementing what sits a few files over is the most common slop.
+3. **Standard library does it?** Use it.
+4. **Native platform feature covers it?** DB constraint over app code, CSS over JS, `<input type="date">` over a picker library.
+5. **An already-installed dependency solves it?** Use it. Never add a new one for what a few lines can do.
+6. **Can it be one line?** One line.
+7. **Only then:** the minimum code that works.
+
+Two rungs work: take the higher one and move on.
+
+**When NOT to be lazy.** Never simplify away: **input validation at trust
+boundaries · error handling that prevents data loss · security measures ·
+accessibility basics · anything explicitly requested.** Never be lazy about
+understanding: the ladder shortens the solution, never the reading, and never
+the discipline. Laziness that skips comprehension ships a confident wrong fix
+dressed as efficiency. Non-trivial logic (a branch, a loop, a parser, a money or
+security path) leaves one runnable check behind, the smallest thing that fails
+if the logic breaks; here that check is the test. Only a one-liner with no logic
+in it needs none: one line of logic is still logic, and it gets its test.
+
 No interface with one implementation, no factory for one product, no config
 for a value that never changes. No scaffolding "for later". Deletion over
 addition. Boring over clever: clever is what someone decodes at 3am. Fewest
@@ -221,7 +257,13 @@ without re-arguing.
 
 A comment says why, not what. The code already says what. A comment restating
 it is noise that rots the moment the code moves. Write the reason, the
-constraint, or the thing that bit someone, or write nothing.
+constraint, or the thing that bit someone, or write nothing. Comments are the
+highest-volume prose you write, and every prose rule covers them.
+
+**Reporting the change:** code first, then at most three short lines: what was
+skipped, when to add it. If the explanation is longer than the code, delete the
+explanation: every paragraph defending a simplification is complexity smuggled
+back as prose. Explanation the user asked for is not debt; give it in full.
 
 ## Verify GREEN: MANDATORY
 

@@ -1,5 +1,7 @@
 # The imperative leads the preamble
 
+Partly superseded by `0021`: position still holds; the always-on text no longer carries the rules itself.
+
 `PREAMBLE.md` opens with the section telling the agent to invoke a lane. That
 position is load-bearing and is not a matter of presentation.
 

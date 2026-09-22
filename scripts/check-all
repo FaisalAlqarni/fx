@@ -71,6 +71,7 @@ run user-invoked.test.js    node tests/gates/user-invoked.test.js
 run fx-setup-root-check.test.js node tests/gates/fx-setup-root-check.test.js
 run plant-roles.test.js     node lib/plant-roles.test.js
 run opencode-plugin.test.js  node tests/gates/opencode-plugin.test.js
+run description-overlap.test.js node tests/gates/description-overlap.test.js
 
 run install-opencode        bash tests/install/run.sh opencode
 run install-codex           bash tests/install/run.sh codex

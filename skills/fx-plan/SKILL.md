@@ -261,7 +261,8 @@ here or nowhere. Copy it verbatim.
 ## Global Constraints
 
 <The design's project-wide requirements: version floors, dependency limits,
-naming and copy rules, platform requirements, locale/RTL rules. One line each,
+naming and copy rules, platform requirements, locale/RTL rules (Arabic is the
+default locale, with RTL support throughout). One line each,
 **exact values copied verbatim from the design.** Every task's requirements
 implicitly include this section, and it is what the reviewer is handed as its
 attention lens.>

@@ -5,6 +5,8 @@ description: |
   Use when editing or reviewing prose for inflated claims,
   sales language, vague sources, repetitive structure, stock AI words, passive
   voice, filler, or chatbot artifacts. Based on Wikipedia's "Signs of AI writing."
+  For a document an agent consumes (SKILL.md, CLAUDE.md, AGENTS.md), use
+  fx-authoring.
 license: MIT
 metadata:
   version: "2.11.2"
@@ -26,6 +28,8 @@ When given text to humanize:
 3. **Do not invent facts.** Do not add a fact, name, number, date, quote, or citation unless it comes from the source or the user. If a sentence needs a missing detail, ask for it or use a simpler sentence. You may add an opinion or reaction when the writer's voice calls for one, but you may not add a factual claim. Fiction is exempt because invented details are part of the task.
 4. **Match the voice.** Use the right tone for the text, such as formal, casual, or technical. Add personality only when the text and the writer call for it.
 5. **Never rewrite an identifier, a command, a path, a schema field or a quotation.** Plain language governs the prose around them, never them. A bulk rewriter once turned `let x = a - b` into something else inside a code fence, and the gate stayed green because it was looking at prose.
+
+These rules cover every output, without exception: chat, code comments, commit messages, ADRs, design docs, subagent reports, ledger entries, PR bodies. **Write plainly**, which is a positive instruction and not only the absence of the patterns below: lead with the main point, say who acts, use one term for one thing and keep using it, and prefer the common word.
 
 The input type controls what you return. See [How to return the result](#how-to-return-the-result). Use the same rewrite process in every mode.
 

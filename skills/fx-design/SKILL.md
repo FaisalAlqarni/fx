@@ -3,7 +3,8 @@ name: fx-design
 description: >
   Use on "make this look good", "design this page", "build a landing page",
   "make it less generic", "this looks AI-generated", or any new screen, page
-  or component where how it looks is part of the job. For a diff, use
+  or component where how it looks is part of the job. For a page whose content
+  the request already states, use this lane, not fx-brainstorm. For a diff, use
   fx-review; for the structure behind the screen, use fx-architecture. It
   carries a calibrated list of the specific treatments current models reach for
   by default, and you cannot check your own output against a list you have not
@@ -139,6 +140,7 @@ Before you call it done, remove one thing.
 - Visible keyboard focus on every interactive element.
 - `prefers-reduced-motion` respected.
 - Contrast that passes at the sizes actually used.
+- **Arabic is the default locale, with RTL support throughout.**
 - **If the project is bidirectional, the layout mirrors**: logical properties
   rather than left and right, and no icon whose meaning depends on a direction
   it no longer points.

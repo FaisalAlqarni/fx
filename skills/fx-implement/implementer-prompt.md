@@ -103,6 +103,17 @@ Subagent (general-purpose):
       and the output is pristine: no stray warnings or noise.
     - Refactor only after green, and only on code this task wrote.
 
+    ## Prose
+
+    Every line you write is covered: code comments, test names, commit
+    messages, ledger entries, your report. No inflated claims, no "it's not
+    X, it's Y", no stock AI vocabulary (*delve, leverage, robust, seamless,
+    comprehensive, crucial*), no vague attribution, no sales register, no em
+    or en dashes. Lead with the main point, say who acts, one term for one
+    thing. Never claim more than the thing does: ask what would have to break
+    for the claim to fail, and narrow the words until something would.
+    (prose-gate: quoting)
+
     ## Commits
 
     Commit your work on this branch, in this worktree.

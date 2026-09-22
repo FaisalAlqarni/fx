@@ -6,7 +6,8 @@ description: >
   or any request that would touch code whose design is not yet settled. Also on
   "let's build", "I want to add", "can we make", "new feature", "brainstorm",
   "design this", "grill me", "stress-test this", "what do you think about".
-  NO code before this skill's approval gate passes.
+  For one helper or function whose behavior the request already states, use
+  fx-tdd. For how a screen looks, use fx-design. NO code before this skill's approval gate passes.
 ---
 
 # fx-brainstorm

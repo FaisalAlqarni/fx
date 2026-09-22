@@ -224,8 +224,8 @@ process.stdin.on('end', () => {
     text = render({ harness: 'codex', cwd });
   } catch {
     // Say so rather than starting a session that silently has no rules.
-    text = '[fx] PREAMBLE.md could not be read. The fx routing table and '
-         + 'non-negotiables are NOT loaded in this session. Do not commit, '
+    text = '[fx] PREAMBLE.md could not be read. The fx bootstrap and its always-on '
+         + 'rules are NOT loaded in this session. Do not commit, '
          + 'and tell the user the plugin is misinstalled.';
   }
 
