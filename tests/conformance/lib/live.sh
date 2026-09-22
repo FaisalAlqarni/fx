@@ -207,6 +207,18 @@ live_run() {
   # A CLI that exited non-zero did not finish its session: a row that checks
   # for an absence (the branch still exists, no file was written) would read
   # that crash as a pass. The log is kept above for the reader.
+  # Except one: Claude Code exits non-zero when --max-turns runs out, and says
+  # so in its own last stream-json line, a result with subtype error_max_turns.
+  # The session was cut short, so the row cannot be judged either way: a GAP
+  # naming the cause. Codex and opencode are passed no turn cap.
+  if [ "$rc" -ne 0 ] && [ "$HARNESS" = claude-code ] && F="$LOG" node -e '
+      let last = null;
+      for (const l of require("fs").readFileSync(process.env.F, "utf8").split("\n")) {
+        try { const j = JSON.parse(l); if (j && j.type === "result") last = j; } catch {}
+      }
+      process.exit(last && last.subtype === "error_max_turns" ? 0 : 1);'; then
+    gap "not judged: claude-code hit --max-turns before finishing (error_max_turns, exit $rc)"
+  fi
   [ "$rc" -eq 0 ] || fail "the $HARNESS CLI exited $rc; the session did not complete"
   case "$HARNESS" in
     claude-code)
