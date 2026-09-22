@@ -22,7 +22,7 @@
 # claude-code, but this task built only the claude-code one; deferred to task
 # 22 part B.
 set -uo pipefail
-[ "${1:-}" = "--describe" ] && { echo "13|audit lane not model-facing|live"; exit 0; }
+[ "${1:-}" = "--describe" ] && { k=live; [ "${HARNESS:-}" = claude-code ] || k=free; echo "13|audit lane not model-facing|$k"; exit 0; }
 : "${FX_REAL_HOME:?run rows through tests/conformance/run.sh, which isolates HOME}"
 cd "$FX"
 HIDDEN="fx-audit fx-critique fx-grill fx-handoff fx-setup"

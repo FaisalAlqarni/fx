@@ -70,7 +70,7 @@ pass=0; fail=0; gap=0; ran=0
 for f in "${ROWS[@]}"; do
   # A row without a --describe guard runs its body here and prints nothing
   # parseable. That is a FAIL, never a skip: an empty kind is not "not free".
-  desc="$(bash "$f" --describe 2>/dev/null)"
+  desc="$(HARNESS="$HARNESS" bash "$f" --describe 2>/dev/null)"
   if [ $? -ne 0 ] || ! [[ "$desc" =~ ^[0-9]+\|[^|]+\|(free|live)$ ]]; then
     printf 'FAIL  ??  %s (no valid --describe)\n' "$(basename "$f")"; fail=$((fail+1)); ran=$((ran+1)); continue
   fi
