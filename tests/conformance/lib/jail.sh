@@ -12,12 +12,14 @@ case "$FX_REAL_HOME" in /|"") fail "FX_REAL_HOME is not a home: '$FX_REAL_HOME'"
 # /mnt goes too: on WSL it holds the Docker Desktop socket, the WSLg display,
 # audio and runtime sockets, the Windows drives, and a second mount of the
 # distro root (/mnt/wslg/distro) that reaches the real home by another path.
+# A dot-directory and a plain file at the top level go too: `for e in /*` saw
+# neither, so /init (the WSL init binary) stayed readable (re-check Minor 3).
 KEEP_TOP=" usr bin sbin lib lib32 lib64 libx32 etc opt var "
 JAIL=(bwrap --ro-bind / /)
-for e in /*; do
-  { [ -d "$e" ] && [ ! -L "$e" ]; } || continue
+for e in /* /.[!.]* /..?*; do
+  { [ -e "$e" ] && [ ! -L "$e" ]; } || continue
   case "$KEEP_TOP dev proc sys run tmp " in *" ${e#/} "*) continue ;; esac
-  JAIL+=(--tmpfs "$e")
+  if [ -d "$e" ]; then JAIL+=(--tmpfs "$e"); else JAIL+=(--ro-bind /dev/null "$e"); fi
 done
 JAIL+=(--tmpfs /mnt --tmpfs /tmp --tmpfs "$FX_REAL_HOME")
 # hidden <path>: true when the jail hides that path.
@@ -26,30 +28,60 @@ hidden() {
   local top="${1#/}"; top="${top%%/*}"
   case "$KEEP_TOP" in *" $top "*) return 1 ;; *) return 0 ;; esac
 }
-# Any other mount of the filesystem that holds the real home, overlapping it
-# (its root contains the home, or lies inside it), is the same leak at
-# another path: hide each one too.
+# A mount whose SOURCE is something the jail hides is the same leak at another
+# path, so hide each one too. Two sources qualify:
+#   - the filesystem that holds the real home, overlapping it (its root
+#     contains the home, or lies inside it);
+#   - the root filesystem rooted at a top-level path hidden above, which is how
+#     a bind of /development/<project> onto a kept path such as /var or /opt
+#     stayed readable (re-check Minor 3).
 home_dev="$(stat -c '%Hd:%Ld' "$FX_REAL_HOME")"
+root_dev="$(stat -c '%Hd:%Ld' /)"
+leaks() {  # leaks <maj:min> <fsroot>
+  if [ "$1" = "$home_dev" ]; then
+    case "$FX_REAL_HOME/" in "${2%/}/"*) return 0 ;; esac
+    case "${2%/}/" in "$FX_REAL_HOME/"*) return 0 ;; esac
+  fi
+  [ "$1" = "$root_dev" ] && hidden "$2"
+}
 while read -r t dev r; do
   case "$t" in /|/mnt|/mnt/*) continue ;; esac
-  [ "$dev" = "$home_dev" ] || continue
-  case "$FX_REAL_HOME/" in "${r%/}/"*) ;; *)
-    case "${r%/}/" in "$FX_REAL_HOME/"*) ;; *) continue ;; esac ;;
-  esac
+  leaks "$dev" "$r" || continue
   if [ -d "$t" ]; then JAIL+=(--tmpfs "$t"); else JAIL+=(--ro-bind /dev/null "$t"); fi
 done < <(findmnt -rn -o TARGET,MAJ:MIN,FSROOT)
 # The resolver config can point into a hidden path (WSL: /mnt/wsl/resolv.conf).
 r="$(readlink -f /etc/resolv.conf)"
 [ -f "$r" ] && hidden "$r" && JAIL+=(--ro-bind "$r" "$r")
+# Bind the narrowest thing that runs the CLI. A self-contained binary needs
+# only itself; a script needs its package, which is the nearest ancestor
+# holding a package.json. Counting directories up from the binary instead
+# bound whatever happened to sit there: a standalone `~/.local/bin/codex` bound
+# all of `~/.local`, credentials included (re-check Minor 2).
 for c in node claude codex opencode; do
   p="$(command -v "$c")" || continue
   r="$(readlink -f "$p")"
-  case "$c" in
-    node)  d="$r" ;;                                 # the node binary alone
-    codex) d="$(dirname "$(dirname "$r")")" ;;       # the @openai/codex package: bin/codex.js
-    *)     d="$(dirname "$r")" ;;                    # the directory the binary lives in
-  esac
-  hidden "$d" && JAIL+=(--ro-bind "$d" "$d")
+  if hidden "$r"; then
+    if [ "$(head -c2 "$r" 2>/dev/null)" = '#!' ]; then
+      d="$r"
+      while :; do
+        d="${d%/*}"
+        [ -n "$d" ] || break
+        [ -f "$d/package.json" ] && break
+      done
+      [ -n "$d" ] || fail "no package directory for $c ($r); refusing to bind a wider path into the jail"
+      # Never the real home, anything holding it, or a whole top-level
+      # directory of it: those carry credentials, not a CLI's install.
+      case "$FX_REAL_HOME/" in "${d%/}/"*)
+        fail "refusing to bind $d into the jail for $c: it is the real home or holds it" ;;
+      esac
+      case "${d%/*}" in "$FX_REAL_HOME")
+        fail "refusing to bind $d into the jail for $c: it is a whole top-level directory of the real home" ;;
+      esac
+      JAIL+=(--ro-bind "$d" "$d")
+    else
+      JAIL+=(--ro-bind "$r" "$r")
+    fi
+  fi
   # A PATH entry that is a symlink comes back as the same symlink, so the
   # command resolves by name and its target keeps its own path.
   if [ "$p" != "$r" ] && hidden "$p"; then JAIL+=(--symlink "$r" "$p"); fi

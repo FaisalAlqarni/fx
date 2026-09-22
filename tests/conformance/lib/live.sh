@@ -45,11 +45,14 @@ chmod 700 "$LIVE_SCRATCH" "$HOME" "$CODEX_HOME" "$XDG_CONFIG_HOME" \
 #     Docker Desktop socket, the WSLg sockets, the Windows drives, and
 #     /mnt/wslg/distro, a second mount of the root that reaches the real home;
 #     only the resolver config it holds is bound back), and so is any other
-#     mount of the home's filesystem that overlaps the home;
-#   - back into those empty directories, read-only, only what the CLIs run
-#     from, when it lives there: the node binary, the codex package, and the directory
-#     each other binary sits in. Nothing holding credentials or config is
-#     rebound;
+#     mount of the home's filesystem that overlaps the home, and any other
+#     mount whose source is a hidden top-level path, such as a bind of
+#     /development/<project> onto a kept path;
+#   - back into those empty directories, read-only, only the narrowest thing
+#     that runs each CLI: a self-contained binary on its own, or, for a script,
+#     the package directory its package.json marks. Nothing holding credentials
+#     or config is rebound, and a package directory that is the real home or a
+#     whole top-level directory of it is refused outright;
 #   - a private pid namespace with its own /proc. With the host's /proc, a
 #     session could reach /proc/<pid>/root of a host process and read the real
 #     home through it; only an ambient ptrace_scope setting stood in the way;
