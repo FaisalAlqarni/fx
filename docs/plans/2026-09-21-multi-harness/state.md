@@ -2348,3 +2348,19 @@ Task 21: amended. The part-order criterion is n/a, because the preamble is now
         The remainder is dispatched to a fresh implementer.
 Task 26: re-review of round 1 Approved. A mutation proves the quoted-hint gate; Codex description-colon hiding is re-probed and unchanged.
 Task 26: complete (commits ba3b131..b23b86c, 1 fix round, review approved).
+Task 21 final tree, Claude Code half: 16 pass, 0 fail, 2 gap (rows 13 and 14,
+        ruled). **Every merge-gate row PASSes on Claude Code**: 01, 02, 12, 15,
+        16 and 18. Probes 90 (sentinel read), 92 (references read), 93
+        (end-to-end review, where both lenses flagged the planted SQL injection
+        as Critical with no refusals) and 96 (marketplace install) PASS. The
+        guard-off row 08 FAILs as expected. The expired login affected no run.
+        Commit 0f1d9c3 extracts the merge-opencode-provider script, with a
+        gate test.
+Task 21, opencode half: stopped by the system for low memory, at 1.1 GB free
+        with swap full. The user's `repowise watch` processes hold about 17 GB.
+Ruling: do not kill the user's processes. The opencode queue relaunches behind
+        a tracked guard that starts it once MemAvailable reaches 4 GB. Task 13
+        starts meanwhile, because it is docs only and uses little memory. Its
+        opencode verdicts are cited from task 21 when they land.
+        Cost if wrong: the opencode half may wait until the user frees memory.
+        Caught by the morning report, which states it plainly.
