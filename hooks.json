@@ -1,5 +1,5 @@
 {
-  "description": "fx on Codex: the bootstrap on SessionStart and SubagentStart, and the git guard, lane check and read-only check on PreToolUse. Timeout 30s: a Codex hook that times out fails open (see tests/gates/codex-manifest.test.js).",
+  "description": "fx on Codex: the bootstrap on SessionStart and SubagentStart, and the git guard, lane check and read-only check on PreToolUse. No timeout is set, so Codex's 600s default applies: a Codex hook that times out fails open (see tests/gates/codex-manifest.test.js).",
   "hooks": {
     "SessionStart": [
       {
@@ -8,7 +8,6 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-codex.js\"",
-            "timeout": 30,
             "statusMessage": "Loading fx...",
             "additionalContextLimit": 0
           }
@@ -21,7 +20,6 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-codex.js\"",
-            "timeout": 30,
             "statusMessage": "Loading fx...",
             "additionalContextLimit": 0
           }
@@ -34,8 +32,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-codex.js\"",
-            "timeout": 30
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-codex.js\""
           }
         ]
       }
