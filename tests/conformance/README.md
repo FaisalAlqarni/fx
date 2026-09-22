@@ -97,12 +97,14 @@ spends anything. That file does four things, in one place:
    every session gets `--plugin-dir`.
 3. **Runs every CLI call inside `bwrap`**, the installs included. The whole
    filesystem is read-only and only the runner's scratch dir is writable;
-   `/tmp` is a private tmpfs. The real home is hidden under an empty tmpfs, so a
-   session cannot read the real credential files; `/mnt` and any second mount
-   of the home's filesystem are hidden as well, so no other path reaches it or
-   a host socket. Only the directories the
-   CLIs run from (each binary's directory, node's install root) are bound back,
-   read-only. The network stays open for the providers and the local
+   `/tmp` is a private tmpfs. Every top-level directory that is not system
+   software (`/home`, `/root`, `/srv`, a user data root such as `/development`)
+   is hidden under an empty tmpfs, so a session cannot read the real
+   credential files or another project's `.env`; `/mnt` and any second mount
+   of the home's filesystem are hidden as well, so no other path reaches them
+   or a host socket. Only the scratch dir (writable), the tree under test and
+   the directories the CLIs run from (each binary's directory, node's install
+   root) are bound back, the last two read-only. The network stays open for the providers and the local
    llama-server. That is what makes it safe to hand each CLI its own
    skip-permissions flag. The runtimes'
    own sandboxes are off on purpose: Claude Code's needs `socat`, and Codex's

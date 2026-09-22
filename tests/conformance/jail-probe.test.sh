@@ -8,7 +8,11 @@ set -uo pipefail
 cd "$(dirname "$0")/../.."
 command -v bwrap >/dev/null || { echo "jail-probe: bwrap not installed, not run" >&2; exit 0; }
 T="$(mktemp -d)" || exit 2
-trap 'rm -rf -- "$T"' EXIT
+# A sibling of the tree under test, holding a stand-in for another project's
+# .env: the jail must expose the tree under test and nothing beside it.
+SIB="$(mktemp -d "$(dirname "$PWD")/fx-jail-sibling.XXXXXX")" || exit 2
+trap 'rm -rf -- "$T" "$SIB"' EXIT
+echo FX_SIBLING_SECRET=1 >"$SIB/.env"
 mkdir -p "$T/real-home/.claude" "$T/scratch/home"
 # A stand-in for the real home's credentials. It lives on the root filesystem
 # (under /tmp), so any second mount of that filesystem would expose it.
@@ -40,6 +44,13 @@ probe "the real home's credentials are unreadable by any mount path" "
       r = \$4; if (r == \"/\") r = \"\"
       if (index(p, r \"/\") == 1) print \$5 substr(p, length(r) + 1) }' /proc/self/mountinfo |
   while read -r c; do [ ! -r \"\$c\" ] || { echo \"\$c\"; exit 1; }; done"
+probe "a sibling project's .env is unreadable" "[ ! -r '$SIB/.env' ]"
+probe "the tree under test stays readable" "[ -r '$PWD/tests/conformance/lib/jail.sh' ]"
+probe "the DNS resolver config is readable" '[ -s /etc/resolv.conf ]'
+for c in node claude codex opencode; do
+  command -v "$c" >/dev/null || continue
+  probe "$c still resolves and runs" "command -v $c >/dev/null && [ -x \"\$(readlink -f \"\$(command -v $c)\")\" ]"
+done
 probe "a sentinel set outside is not visible" '[ -z "${FX_JAIL_SENTINEL+x}" ]'
 probe "no inherited DBUS_SESSION_BUS_ADDRESS" '[ -z "${DBUS_SESSION_BUS_ADDRESS+x}" ]'
 probe "HOME and PATH are passed" "[ \"\$HOME\" = '$HOME' ] && [ \"\$PATH\" = '$PATH' ]"
