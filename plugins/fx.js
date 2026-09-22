@@ -118,9 +118,14 @@ function applyConfig(config) {
   // whatever else has since been added. First, before any require or file
   // read below can throw: a config step that fails partway must still leave
   // these lanes hidden (security re-review Minor 8).
-  config.permission = config.permission || {};
-  config.permission.skill = config.permission.skill || {};
-  if (!('*' in config.permission.skill)) config.permission.skill['*'] = 'allow';
+  // A bare action string is the user's rule for everything under it, the
+  // same rewrite opencode itself makes (`"ask"` becomes `{"*": "ask"}`), so
+  // it is kept as the "*" rule rather than thrown on (security re-check
+  // Minor 5). A skill block with no "*" of its own inherits the block's.
+  const asRules = (v) => (typeof v === 'string' ? { '*': v } : (v || {}));
+  config.permission = asRules(config.permission);
+  config.permission.skill = asRules(config.permission.skill);
+  if (!('*' in config.permission.skill)) config.permission.skill['*'] = config.permission['*'] || 'allow';
   for (const name of HIDDEN_SKILLS) config.permission.skill[name] = 'deny';
 
   const { READ_ONLY_AGENTS } = require('../lib/plant-roles.js');

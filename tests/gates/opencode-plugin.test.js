@@ -412,6 +412,32 @@ const root = path.join(__dirname, '..', '..');
     }
   }
 
+  // Security re-check Minor 5: a permission block, or its skill key, given as
+  // a bare action string is the user's rule for everything under it. It is
+  // kept as the "*" rule, the lanes are still denied, and config never throws.
+  {
+    const { fx: pFx } = await import(path.join(root, 'plugins', 'fx.js'));
+    const ph = await pFx({ directory: root });
+    const cases = [
+      [{ permission: { skill: 'allow' } }, 'allow'],
+      [{ permission: { skill: 'ask' } }, 'ask'],
+      [{ permission: 'allow' }, 'allow'],
+    ];
+    for (const [config, star] of cases) {
+      const label = JSON.stringify(config);
+      const errs = [];
+      const realError = console.error;
+      console.error = (...a) => errs.push(a.join(' '));
+      try { await ph.config(config); } finally { console.error = realError; }
+      assert.deepStrictEqual(errs, [], `${label}: the config step does not fail`);
+      assert.strictEqual(config.permission.skill['*'], star, `${label}: the user's rule is kept as "*"`);
+      for (const name of ['fx-audit', 'fx-critique', 'fx-grill', 'fx-handoff', 'fx-setup']) {
+        assert.strictEqual(config.permission.skill[name], 'deny', `${label}: ${name} is hidden`);
+      }
+      if (label === '{"permission":"allow"}') assert.strictEqual(config.permission['*'], 'allow', 'the whole-block rule is kept as "*"');
+    }
+  }
+
   // Final review Minor 5: a command whose frontmatter does not parse is an
   // error that names the file, never a silently missing command.
   {
