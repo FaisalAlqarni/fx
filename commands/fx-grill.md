@@ -1,6 +1,6 @@
 ---
 description: Stress-test a decision that is not heading for code: the grilling interview standalone, no classification, no design doc, no gate
-argument-hint: [topic]
+argument-hint: "[topic]"
 ---
 
 # /fx:fx-grill

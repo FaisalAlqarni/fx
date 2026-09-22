@@ -87,4 +87,22 @@ for (const name of ['fx-critique', 'fx-grill', 'fx-handoff', 'fx-setup']) {
     `unhidden as source-command-${name}`);
 }
 
+// Fix round 1, Important: an unquoted `argument-hint: [name]` parses under
+// strict YAML as a one-element flow-sequence array, not the string the field
+// is meant to carry. Every argument-hint must be a quoted scalar.
+for (const name of ['fx-critique', 'fx-grill', 'fx-handoff']) {
+  const cmd = frontmatter(path.join(root, 'commands', `${name}.md`));
+  const m = cmd.head.match(/^argument-hint:[ \t]*(.+)$/m);
+  assert.ok(m, `${name}: commands/${name}.md has no argument-hint field`);
+  const value = m[1].trim();
+  const quoted = /^"([^"\\]|\\.)*"$/.test(value) || /^'([^']|'')*'$/.test(value);
+  assert.ok(quoted, `${name}: argument-hint must be a quoted string, got ${value}`);
+
+  const skill = frontmatter(path.join(root, 'skills', name, 'SKILL.md'));
+  const sm = skill.head.match(/^argument-hint:[ \t]*(.+)$/m);
+  assert.ok(sm, `${name}: generated skills/${name}/SKILL.md has no argument-hint field`);
+  assert.strictEqual(sm[1].trim(), value,
+    `${name}: generated argument-hint has drifted from the command's`);
+}
+
 console.log('user-invoked.test.js: OK');

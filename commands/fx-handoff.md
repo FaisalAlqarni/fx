@@ -1,6 +1,6 @@
 ---
 description: Compact this session into a handoff block: paste it into another session, on this machine or any other
-argument-hint: [next-session-purpose]
+argument-hint: "[next-session-purpose]"
 ---
 
 # /fx:fx-handoff
