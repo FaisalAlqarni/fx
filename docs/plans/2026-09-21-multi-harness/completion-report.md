@@ -42,11 +42,14 @@ its own layer, and the skills stay harness-neutral.
 | Harness | Matrix | Route | Probes | Row 04 | Lanes |
 |---|---|---|---|---|---|
 | opencode | 18 pass | plugin 3 pass | 7 pass + dex 5 pass | 10/10 | 9/9 |
-| Claude Code | 16 pass, 2 gap | n/a | 4 pass | 5/5 | 9/9 |
+| Claude Code | 18 pass | n/a | 4 pass | 5/5 | 9/9 |
 
-0 fail on both. The two Claude Code gaps are rows 13 and 14: nothing checks
-user-invocability at that runtime, and the file-level flag is pinned by a
-gate test instead.
+0 fail and 0 gap on both. Rows 13 and 14 first GAPed on Claude Code, on the
+belief that no runtime check existed. The docs say otherwise, so they became
+live rows on 2026-09-23: row 13 asserts the Skill tool is never called with a
+hidden lane on a prompt that invites one, and row 14 invokes a hidden lane by
+slash command and asserts it runs. Both PASS. Codex keeps the two gaps until
+part B.
 
 **Codex, task 22 part A, local Qwen 3.8 27B.** Hooks load: PASS. The preamble
 reaches the model input: PASS, seen in all 30 captured request bodies. The
