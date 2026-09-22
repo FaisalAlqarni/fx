@@ -149,8 +149,10 @@ A subagent can also dispatch its own subagent. Task 21's row 15 measured it on
 opencode: the session dispatched `general`, and that `general` dispatched a
 second `general`, which returned `NESTED-OK`. The plugin grants `general`
 `task: allow` for this, since opencode gives no subagent the task tool
-otherwise. Task 21 runs row 15 again on the final tree.
-<!-- task21-opencode -->
+otherwise. Task 21 re-ran row 15 on the final tree, 2026-09-22: PASS, part of
+opencode's 18 pass, 0 fail, 0 GAP full matrix
+(`/tmp/tmp.wiU1YAo8Ky/logs/final-oc-matrix.out`, per-row log
+`final-oc-matrix/15-subagent-dispatches-subagent-opencode.log`).
 
 One caveat: `experimental.chat.system.transform` carries an `experimental.`
 prefix and may change: the stable fallback is `~/.config/opencode/AGENTS.md`,

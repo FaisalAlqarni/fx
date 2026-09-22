@@ -116,8 +116,10 @@ The controller re-checked I1, I2, I3, I4, I5 and I9 against the code.
     - `lib/git-guard.js:2-12`
     - `skills/fx-plan/SKILL.md:232`
     - `skills/fx-review/COVERAGE.md:82`
-14. **Pending placeholder.** ADR 0019:71-72 still carries the task21-opencode
-    placeholder. It waits for the final frozen run.
+14. **Pending placeholder.** Resolved 2026-09-22: the ADR 0019, INSTALL.md
+    (x2) and SURFACE.md task21-opencode placeholders are filled from the
+    final frozen matrix (`/tmp/tmp.wiU1YAo8Ky/logs/final-oc-matrix.out`,
+    `final-oc-plug.out`).
 15. **Test hygiene:**
     - `tests/gates/codex-manifest.test.js:15` sets no TMPDIR;
     - `tests/gates/release-version.test.js:46` throws uncaught when there is

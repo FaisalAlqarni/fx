@@ -68,8 +68,9 @@ when the control writes and the read-only agent does not.
   `task:*:deny`, while the control's grandchild wrote its file. Probe 91 in
   the same run confirmed the rest of the allowlist: the lens had no `webfetch`
   and no MCP tool, while the control used both.
-- **opencode, final tree:** task 21 re-runs rows 12 and 18 once the test
-  machine has memory free. <!-- task21-opencode -->
+- **opencode 1.18.25, 2026-09-22** (task 21, final tree): rows 12 and 18
+  PASS, with every other merge-gate row (01, 02, 15 and 16) — 18 pass, 0
+  fail, 0 gap overall (`/tmp/tmp.wiU1YAo8Ky/logs/final-oc-matrix.out`).
 - **Codex: pending.** Row 12 has never been measured passing on Codex. Task 12
   recorded it as a GAP in the matrix, because the quota ran out, and as a FAIL
   in its development run, before roles could be dispatched. Task 22 part B

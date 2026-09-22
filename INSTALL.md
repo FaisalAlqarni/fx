@@ -165,8 +165,9 @@ text. The plugin also:
   dispatch a subagent.
 
 Task 23 measured this route live: rows 01, 12 and 15 passed, and `/fx-audit`
-loads as a command. Task 21 runs it again on the final tree.
-<!-- task21-opencode -->
+loads as a command. Task 21 re-ran it on the final tree, 2026-09-22: rows 01,
+12 and 15 (plugin route) passed again, 3 pass, 0 fail, 0 GAP
+(`/tmp/tmp.wiU1YAo8Ky/logs/final-oc-plug.out`).
 
 ### Script route
 
@@ -392,7 +393,7 @@ real CLI. `docs/plans/2026-09-21-multi-harness/state.md` records every result.
 | Runtime | Live result |
 |---|---|
 | Claude Code | Task 21, final tree: 16 pass, 0 fail, 2 GAP (13, 14). |
-| opencode | Task 21, final tree: pending. <!-- task21-opencode --> |
+| opencode | Task 21, final tree, 2026-09-22: 18 pass, 0 fail, 0 GAP (`/tmp/tmp.wiU1YAo8Ky/logs/final-oc-matrix.out`). |
 | Codex | **Pending.** See below. |
 
 On Claude Code every merge-gate row passes: 01, 02, 12, 15, 16 and 18. The

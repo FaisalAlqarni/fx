@@ -1,8 +1,41 @@
 # 21: Live matrix on Claude Code and opencode
 
-**Status:** ready-for-agent
+**Status:** not complete — 1 open item (see Result, 2026-09-22)
 **Blocked by:** 14, 15, 16, 17, 18, 19
 **Phase:** Amendment
+
+**Result (2026-09-22), from the frozen final-tree matrix in
+`/tmp/tmp.wiU1YAo8Ky/logs/` (prefixes `final-` opencode, `final2-` Claude
+Code after the quota reset):**
+
+- The 4 `task21-opencode` placeholders (INSTALL.md x2, SURFACE.md,
+  ADR 0019) are filled from `final-oc-matrix.out` and `final-oc-plug.out`.
+- **Merge gate holds on both runtimes:** rows 01, 02, 12, 15, 16, 18 all
+  PASS on Claude Code (`final2-cc-matrix.out`: 16 pass, 0 fail, 2 gap —
+  13, 14, both GAP with a stated reason, not a fail) and on opencode
+  (`final-oc-matrix.out`: 18 pass, 0 fail, 0 gap).
+- Plugin-route re-run (task 23 harness-bug fix): rows 01, 12, 15 PASS
+  (`final-oc-plug.out`, 3 pass, 0 fail, 0 gap).
+- Row 04: opencode 10/10 (`final-oc-r04.out`, exceeds the 8/10 floor),
+  Claude Code 5/5 (`final2-cc-r04.out`). Lane prompts 9/9 on both
+  (`final-oc-lanes.out`, `final2-cc-lanes.out`).
+- Probes 90-95 PASS on opencode (`final-oc90.out` .. `final-oc95.out`,
+  91 re-run once as `final-oc91p.out`, also PASS).
+- Guard-off row 08 FAIL and the fx-design__existing 5/5-final-tree +
+  5/5-S3-control result are carried from task 21's first pass
+  (state.md, "Task 21 first pass"); the controller's ruling there scoped
+  the frozen re-run to the matrix, routes, row 04 and lanes only, so
+  these were not re-run and still stand.
+- Part-order criterion: n/a, single preamble part since task 25 (ruling
+  below, unchanged).
+
+**Open:** probe 93 ("review runs end to end") FAILed on Claude Code in
+the frozen run (`final2-cc-probes.out`: 3 pass, 1 fail) — no lens finding
+named `app/users_controller.rb`. This is a harness parser defect being
+fixed separately, not a product failure; it is pending a rerun, not
+recorded as a FAIL against fx. opencode's probe 93 PASSed
+(`final-oc93.out`). Task 21 is not complete until the Claude Code rerun
+lands a PASS or a product defect is filed for it.
 
 **What to build:** Evidence, not code. Run the full conformance matrix, free
 and live, on Claude Code and on opencode against the amended tree. Record
