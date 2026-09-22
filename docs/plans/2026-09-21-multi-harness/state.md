@@ -2429,3 +2429,4 @@ Ruling: fix round 1 covers four things:
         rule are the same parity guarantee as the Important. Deferred to the
         final review: the release-gate uncaught throw when the merge-base has
         no plugin.json.
+Task 27: fix round 1 landed in 03d1830. fx-audit and the template now name the agent bare. The addressing gate is strict, covers agent names, and self-tests the three evasions. The every-caller rule is above Verify GREEN. check-all ALL GREEN. Scoped re-review dispatched.
