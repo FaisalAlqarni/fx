@@ -148,7 +148,7 @@ that matter.
 
 ## Lens findings
 
-First, one line per Phase 3 dispatch. `fx:fx-lens-pipeline`: ran and
+First, one line per Phase 3 dispatch. `fx-lens-pipeline`: ran and
 returned, with its `Unread:` line quoted as it wrote it, or why it did not.
 The architecture pass: ran and returned, with its report's path, or why it did
 not.

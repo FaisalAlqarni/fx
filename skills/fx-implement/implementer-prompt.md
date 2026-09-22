@@ -98,13 +98,13 @@ Subagent (general-purpose):
       written but never compiled and executed does not count as RED.**
     - Test passes on first run? You are testing behavior that already exists.
       Fix the test.
-    - **Verify GREEN**: the test passes, the rest of the suite still passes,
-      and the output is pristine: no stray warnings or noise.
     - **A bug report names a symptom. Before a fix or a refactor edits a
       function, find every caller of it.** One guard in the shared function
       is a smaller diff than a guard in every caller, and patching only the
       path the task names leaves every sibling caller broken. The smallest
       change in the wrong place is a second bug.
+    - **Verify GREEN**: the test passes, the rest of the suite still passes,
+      and the output is pristine: no stray warnings or noise.
     - Refactor only after green, and only on code this task wrote.
 
     ## Prose

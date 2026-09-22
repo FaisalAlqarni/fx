@@ -10,13 +10,17 @@
 // ("invoke the fx-tdd lane") and never a runtime form, and never claims how a
 // name resolves.
 //
-// A paragraph fails when it mentions invoking and carries `fx:<lane>` or
-// `$<lane>` for a lane under skills/, or when it claims a name "may not
-// resolve". Slash commands (`/fx:fx-setup`, the generated command-skill
-// headers) are what a person types, not how a model invokes a lane, so a
-// match preceded by `/` is not one. Agents (`fx:fx-lens-pipeline`) are not
-// lanes. A paragraph that quotes the wrong form on purpose carries
-// `prose-gate: quoting`, the marker scripts/check-prose already honours.
+// Agents are addressed the same way: the bootstrap's dispatch rule says how
+// each runtime names one, and on Codex a wrong agent_type can run a lens
+// without its read-only role.
+//
+// A paragraph fails when it carries `fx:<lane-or-agent>` or `$<lane>` at all,
+// whatever verb sits around it ("use `fx:fx-tdd`", "the `$fx-review` lane"),
+// or when it claims a name "may not resolve". Slash commands (`/fx:fx-setup`,
+// the generated command-skill headers) are what a person types, so a match
+// preceded by `/` is not one. A paragraph that quotes the wrong form on
+// purpose carries `prose-gate: quoting`, the marker scripts/check-prose
+// already honours.
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
@@ -27,8 +31,11 @@ const MARKER = 'prose-gate: quoting';
 const LANES = fs.readdirSync(path.join(root, 'skills'))
   .filter((n) => fs.existsSync(path.join(root, 'skills', n, 'SKILL.md')));
 
-const laneForm = new RegExp(`(^|[^/\\w])(fx:|\\$)(${LANES.join('|')})(?![\\w-])`);
-const INVOKE = /\binvok/i;
+const AGENTS = fs.readdirSync(path.join(root, 'agents'))
+  .filter((n) => n.endsWith('.md')).map((n) => n.slice(0, -3));
+const alt = (names) => names.join('|');
+const runtimeForm = new RegExp(
+  `(^|[^/\\w])(fx:(${alt([...LANES, ...AGENTS])})|\\$(${alt(LANES)}))(?![\\w-])`);
 // "may not resolve" is the claim about a lane name. Plain "does not resolve"
 // stays legal: fx-audit says it of a git ref.
 const RESOLVES = /\b(may|might)\s+not\s+resolve/i;
@@ -52,9 +59,9 @@ function offences(rel, text) {
     if (i < lines.length && lines[i].trim() !== '') continue;
     const para = lines.slice(start, i).join('\n');
     if (para && !para.includes(MARKER)) {
-      const form = laneForm.test(para) && INVOKE.test(para);
+      const form = runtimeForm.test(para);
       if (form || RESOLVES.test(para)) {
-        errors.push(`${rel}:${start + 1}: ${form ? 'runtime lane form in an invoke instruction' : 'resolution claim'}`);
+        errors.push(`${rel}:${start + 1}: ${form ? 'runtime form of a lane or agent name' : 'resolution claim'}`);
       }
     }
     start = i + 1;
@@ -69,7 +76,7 @@ for (const d of DIRS) {
   }
 }
 assert.deepStrictEqual(errors, [],
-  `shared skill text must name a lane without a runtime form ("invoke the fx-tdd lane"):\n  ${errors.join('\n  ')}`);
+  `shared skill text must name a lane or agent without a runtime form ("invoke the fx-tdd lane"):\n  ${errors.join('\n  ')}`);
 
 // The gate bites.
 assert.strictEqual(offences('x', '**Invoke `fx:fx-tdd` before writing any code.**').length, 1, 'the Claude Code form fails');
@@ -80,7 +87,9 @@ assert.strictEqual(offences('x', 'Use the addressable name,\nsince a bare `fx-td
 assert.deepStrictEqual(offences('x', 'Invoke the fx-tdd lane before writing any code.'), [], 'the lane name passes');
 assert.deepStrictEqual(offences('x', 'The ref does not resolve: stop and ask.'), [], 'a git ref that does not resolve is not a claim');
 assert.deepStrictEqual(offences('x', '# /fx:fx-setup\n\nInvoke it as `/fx:fx-grill`.'), [], 'a slash command is not a lane form');
-assert.deepStrictEqual(offences('x', 'Invoke `fx:fx-lens-pipeline`.'), [], 'an agent is not a lane');
+assert.strictEqual(offences('x', 'Dispatch `fx:fx-lens-pipeline` on the file set.').length, 1, 'the Claude Code agent form fails');
+assert.strictEqual(offences('x', 'Use `fx:fx-tdd` for RED.').length, 1, 'the form fails without the word invoke');
+assert.strictEqual(offences('x', 'The `$fx-review` lane runs next.').length, 1, 'the Codex form fails without the word invoke');
 assert.deepStrictEqual(offences('x', 'Never write "invoke `fx:fx-tdd`" here.\n(prose-gate: quoting)'), [], 'a marked quote passes');
 
 console.log('no-runtime-addressing.test.js: OK');

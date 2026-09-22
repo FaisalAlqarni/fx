@@ -44,10 +44,10 @@ appended section this skill names.
   says so.
 - **It hands off to `fx-plan` and stops.** No tasks, no implementation, no
   build worktree.
-- **Phase 3 runs `fx:fx-lens-pipeline` and `fx-architecture`, and no other
+- **Phase 3 runs `fx-lens-pipeline` and `fx-architecture`, and no other
   lens.** The database, security, accessibility and silent-failure lenses read
   a diff, and an audit has none.
-- **`fx:fx-lens-pipeline` hunts all six queue groups on the audited file
+- **`fx-lens-pipeline` hunts all six queue groups on the audited file
   set**: unbounded enqueue outrunning consumers, head-of-line blocking
   between unlike workloads, redelivery with no idempotency check, poison
   messages that requeue forever, a lease shorter than the work it covers, and
@@ -236,8 +236,8 @@ path and stop.
    so untracked files that are not ignored are read too, and the audit's own
    documents are not.
 3. Dispatch both, in one message, each read-only toward the code:
-   - `fx:fx-lens-pipeline` (`../../agents/fx-lens-pipeline.md`), by that
-     addressable name, given the file set and no diff. Its output ends with an
+   - `fx-lens-pipeline` (`../../agents/fx-lens-pipeline.md`), addressed as
+     your bootstrap's dispatch rule says, given the file set and no diff. Its output ends with an
      `Unread:` line.
    - A subagent that invokes the fx-architecture lane on
      the file set, with the stated targets as the requirements it anchors on.
@@ -280,7 +280,7 @@ starts.
    - both Phase 3 dispatches ran and returned, the lens's output ends with an
      `Unread:` line, and that line names no file in the file set: a lens
      output with no `Unread:` line fails this check;
-   - `fx:fx-lens-pipeline` reported nothing Critical or Important in any of
+   - `fx-lens-pipeline` reported nothing Critical or Important in any of
      the six groups;
    - `03-gaps.md`'s Phase 3 gate choice reads `none`.
 
