@@ -47,8 +47,16 @@ chmod 700 "$LIVE_SCRATCH" "$HOME" "$CODEX_HOME" "$XDG_CONFIG_HOME" \
 #     home through it; only an ambient ptrace_scope setting stood in the way;
 #   - /tmp a private tmpfs, and the runner's scratch dir and the tree under
 #     test ($FX, read-only) bound back on top of it;
+#   - /run a private tmpfs, so the host's sockets under it (the D-Bus session
+#     bus at /run/user/<uid>/bus, docker.sock through /var/run) are gone, and
+#     a private IPC namespace;
+#   - the environment cleared and rebuilt from an allowlist, so a parent
+#     session's tokens do not leak in (lib/jail.sh names the list);
 #   - the network left open: the providers need it, and opencode needs the
-#     host's 127.0.0.1:8899.
+#     host's 127.0.0.1:8899. A shared network namespace also leaves abstract
+#     unix sockets reachable; that is the price of the open network.
+# tests/conformance/jail-probe.test.sh proves the sockets and the environment
+# with bwrap directly, never with a model session.
 # That is what lets a row hand the CLI its own skip-permissions flag: whatever
 # the model runs, nothing outside the scratch dir can change.
 #
@@ -57,26 +65,7 @@ chmod 700 "$LIVE_SCRATCH" "$HOME" "$CODEX_HOME" "$XDG_CONFIG_HOME" \
 # unguarded `git branch -D` fails there anyway, and a guard row would pass with
 # the guard deleted. The jail is the boundary; the guard under test is the only
 # thing between the model and the command.
-command -v bwrap >/dev/null || gap "not run: bwrap is not installed, and live rows never run a CLI unconfined"
-case "$FX_REAL_HOME" in /|"") fail "FX_REAL_HOME is not a home: '$FX_REAL_HOME'" ;; esac
-[ -d "$FX_REAL_HOME" ] || fail "FX_REAL_HOME is not a directory: $FX_REAL_HOME"
-JAIL=(bwrap --ro-bind / / --tmpfs /tmp --tmpfs "$FX_REAL_HOME")
-under_real_home() { case "$1" in "$FX_REAL_HOME"/*) return 0 ;; *) return 1 ;; esac; }
-for c in node claude codex opencode; do
-  p="$(command -v "$c")" || continue
-  r="$(readlink -f "$p")"
-  case "$c" in
-    node)  d="$r" ;;                                 # the node binary alone
-    codex) d="$(dirname "$(dirname "$r")")" ;;       # the @openai/codex package: bin/codex.js
-    *)     d="$(dirname "$r")" ;;                    # the directory the binary lives in
-  esac
-  under_real_home "$d" && JAIL+=(--ro-bind "$d" "$d")
-  # A PATH entry that is a symlink comes back as the same symlink, so the
-  # command resolves by name and its target keeps its own path.
-  if [ "$p" != "$r" ] && under_real_home "$p"; then JAIL+=(--symlink "$r" "$p"); fi
-done
-JAIL+=(--ro-bind "$FX" "$FX" --bind "$LIVE_SCRATCH" "$LIVE_SCRATCH" --dev /dev
-       --tmpfs /dev/shm --unshare-pid --proc /proc --die-with-parent --)
+. "$FX/tests/conformance/lib/jail.sh"
 
 OPENCODE_MODEL="llamacpp/qwen3.8-27b"
 
@@ -187,15 +176,15 @@ live_run() {
   : > "$WORK.start"
   case "$HARNESS" in
     claude-code)
-      ( cd "$WORK" && TMPDIR="$tmp" timeout 600 "${JAIL[@]}" claude -p "$prompt" --plugin-dir "$FX" \
+      ( cd "$WORK" && timeout 600 "${JAIL[@]}" env TMPDIR="$tmp" claude -p "$prompt" --plugin-dir "$FX" \
           --dangerously-skip-permissions --max-turns 30 --output-format stream-json --verbose ) \
         </dev/null >"$LOG" 2>&1 ;;
     codex)
-      TMPDIR="$tmp" timeout 900 "${JAIL[@]}" codex exec --json -C "$WORK" -s danger-full-access \
+      timeout 900 "${JAIL[@]}" env TMPDIR="$tmp" codex exec --json -C "$WORK" -s danger-full-access \
         -c 'approval_policy="never"' --dangerously-bypass-hook-trust "$prompt" </dev/null >"$LOG" 2>&1 ;;
     opencode)
       # ponytail: one llama-server slot, so opencode rows only ever run serially.
-      TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" timeout 1500 "${JAIL[@]}" \
+      timeout 1500 "${JAIL[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" \
         opencode run --format json --dir "$WORK" "$prompt" </dev/null >"$LOG" 2>&1 ;;
   esac
   rc=$?
@@ -211,6 +200,10 @@ live_run() {
     gap "not run: quota or credit exhausted ($(grep -oiE "$q" "$LOG" | head -1))"
   fi
   [ "$rc" -eq 124 ] && fail "session timed out"
+  # A CLI that exited non-zero did not finish its session: a row that checks
+  # for an absence (the branch still exists, no file was written) would read
+  # that crash as a pass. The log is kept above for the reader.
+  [ "$rc" -eq 0 ] || fail "the $HARNESS CLI exited $rc; the session did not complete"
   case "$HARNESS" in
     claude-code)
       # The session's own transcript, subagents included. A skill addressed as
@@ -236,7 +229,7 @@ live_run() {
           # To a file, not a pipe: into a pipe, opencode export exits before
           # its stdout drains and cuts the JSON at 64KB, which dropped a whole
           # child session from row 07 (task 21).
-          TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" "${JAIL[@]}" opencode export "$id" >"$WORK.export" 2>/dev/null
+          "${JAIL[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" opencode export "$id" >"$WORK.export" 2>/dev/null
           F="$WORK.export" ID="$id" node -e 'const s=require("fs").readFileSync(process.env.F,"utf8");const i=s.indexOf("{");try{console.log(JSON.stringify({fx_export:JSON.parse(s.slice(i))}))}catch(e){console.log("export failed: "+process.env.ID+": "+e.message)}' >> "$LOG"
         done
       done ;;
