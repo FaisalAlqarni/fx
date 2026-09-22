@@ -105,4 +105,23 @@ for (const name of ['fx-critique', 'fx-grill', 'fx-handoff']) {
     `${name}: generated argument-hint has drifted from the command's`);
 }
 
+// Final review I5: Claude Code registered each user-invoked lane twice, once
+// from commands/ and once from its generated skill (`plugin details` listed
+// 21 skills), and the command copy was model-invocable. The manifest declares
+// `commands: []`, which replaces the commands/ scan (ADR 0017), so only the
+// generated skills register; commands/ stays the source they are generated
+// from. The commands carry the flag too, for any runtime that reads them raw.
+{
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, '.claude-plugin', 'plugin.json'), 'utf8'));
+  assert.deepStrictEqual(manifest.commands, [],
+    'the Claude Code manifest declares no command paths, so commands/ is not registered beside the generated skills');
+  for (const file of fs.readdirSync(path.join(root, 'commands')).filter((f) => f.endsWith('.md'))) {
+    const { head } = frontmatter(path.join(root, 'commands', file));
+    assert.ok(/^disable-model-invocation:\s*true$/m.test(head), `commands/${file}: the model must not invoke it`);
+    const name = file.slice(0, -3);
+    assert.ok(fs.existsSync(path.join(root, 'skills', name, 'SKILL.md')),
+      `commands/${file} has no generated skills/${name}/SKILL.md, so with commands: [] it is unreachable`);
+  }
+}
+
 console.log('user-invoked.test.js: OK');

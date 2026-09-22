@@ -1,5 +1,6 @@
 ---
 description: Red-team a design or plan: dispatches fx-devils-advocate at the file and reports its findings
+disable-model-invocation: true
 argument-hint: "[design-or-plan-path]"
 ---
 

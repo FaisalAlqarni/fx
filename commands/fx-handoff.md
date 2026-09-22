@@ -1,5 +1,6 @@
 ---
 description: Compact this session into a handoff block: paste it into another session, on this machine or any other
+disable-model-invocation: true
 argument-hint: "[next-session-purpose]"
 ---
 

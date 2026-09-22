@@ -125,6 +125,12 @@ case "$HARNESS" in
       printf 'claude plugin details failed:\n%s\n' "$details" >&2; exit 1; }
     listed="$(printf '%s\n' "$details" | sed -n 's/^ *Skills ([0-9]*) *//p' | tr -d ' ' | tr ',' '\n')"
     [ -n "$listed" ] || { echo "claude plugin details lists no skills" >&2; exit 1; }
+    # A name listed twice is a lane registered twice (a command and its
+    # generated skill, final review I5): the model sees two claimants.
+    dups="$(printf '%s\n' "$listed" | sort | uniq -d | tr '\n' ' ')"
+    [ -z "$dups" ] || { echo "claude-code registers these names more than once: $dups" >&2; exit 1; }
+    n_listed="$(printf '%s\n' "$listed" | grep -c .)"
+    [ "$n_listed" -eq "$EXPECTED" ] || { echo "claude plugin details lists $n_listed skills, expected $EXPECTED" >&2; exit 1; }
     for d in skills/*/; do
       n="$(basename "$d")"
       printf '%s\n' "$listed" | grep -qx "$n" || { echo "claude-code does not discover $n" >&2; exit 1; }
