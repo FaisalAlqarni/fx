@@ -2383,3 +2383,5 @@ Ruling: bump the version to **0.2.0** in every manifest and marketplace entry.
         Cost if wrong: none; a version bump is required for delivery. A
         release-bump gate is noted for the final review.
 Task 13: fix round 1 landed in 0fbe64a. The version is 0.2.0 in all three files; INSTALL says a Claude Code update lands only on a version change; doc minors 1 to 7 fixed; 4 markers kept. check-all ALL GREEN. Scoped re-review dispatched.
+Task 13: re-review of round 1 approved. Re-measured: claude plugin update now moves 0.1.7 to 0.2.0, and Codex installs 0.2.0.
+Task 13: complete for review (commits 93040fc..0fbe64a, 1 fix round). Still owed: the 4 task21-opencode markers get verified against the task 21 opencode results before the final review.
