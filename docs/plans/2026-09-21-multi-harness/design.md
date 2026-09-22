@@ -460,7 +460,7 @@ fail open this way. The accepted shape is copied from ponytail's
 universal output keys (section 2 of `research/codex.md`), so it is allowed at the top level on
 SessionStart and on no other event fx uses.
 
-**A3. The preamble reaches the model whole on every runtime.**
+**A3. The preamble reaches the model whole on every runtime.** *(Superseded by amendment 2, B1: the preamble is now one bootstrap part under 3,000 characters, with a 9,000 worst-case pin. The split and the part-size gate described below are gone.)*
 - **Claude Code:** the rendered preamble is split into parts, each under 9,000
   characters, cut at section boundaries. Each part is emitted by its own
   handler on SessionStart and on SubagentStart. Part 1 opens with the opening

@@ -2385,3 +2385,23 @@ Ruling: bump the version to **0.2.0** in every manifest and marketplace entry.
 Task 13: fix round 1 landed in 0fbe64a. The version is 0.2.0 in all three files; INSTALL says a Claude Code update lands only on a version change; doc minors 1 to 7 fixed; 4 markers kept. check-all ALL GREEN. Scoped re-review dispatched.
 Task 13: re-review of round 1 approved. Re-measured: claude plugin update now moves 0.1.7 to 0.2.0, and Codex installs 0.2.0.
 Task 13: complete for review (commits 93040fc..0fbe64a, 1 fix round). Still owed: the 4 task21-opencode markers get verified against the task 21 opencode results before the final review.
+Delta coverage audit (amendment 2, tasks 22 to 26): 7 gaps, 2 Important.
+        Rulings:
+        - Gap 1: task 21 gains row 04 x10, lane-prompt and opencode row 02 and
+          16 criteria, and the part-order criterion is marked n/a.
+        - Gap 2: task 22 part B gains Codex routing criteria plus the ADR 0021
+          Codex result.
+        - Gap 5: design A3 is marked superseded by B1.
+        - Gaps 3, 4, 6 (release gate) and 7 go to a new **task 27**. Gap 4 is
+          a parity bug: `implementer-prompt.md` and three skills hardcode
+          `fx:fx-tdd` and "a bare fx-tdd may not resolve", which contradicts
+          the bootstrap on opencode and Codex.
+        - Gap 6 correction: the version-sync pin is in
+          `tests/gates/codex-manifest.test.js:39-46`, not check-manifest, as
+          the task 13 ruling wrongly said.
+        - Final-review checklist, taken from the ledger: the release gate
+          (now task 27); fx-plan:232 "routing table" wording; task 25 Minors 4
+          to 6; the stale audit "kept" bullet; the task 20 Minors (bin check,
+          XDG exports); the task 14 and 16 Minors.
+Task 27: dispatched (opus, fresh implementer). It is free-gate only and needs
+        no memory headroom.

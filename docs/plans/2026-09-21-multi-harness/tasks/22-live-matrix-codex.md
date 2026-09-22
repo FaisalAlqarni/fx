@@ -168,6 +168,7 @@ removes.
 - [ ] The sentinel probe PASSes: a Codex lens returned the sentinel it read from the diff file through the shell, and the sentinel was not in its dispatch prompt
 - [ ] Untrusted run: row 01 with `FX_CODEX_HOOK_TRUST=none` shows the hooks did not run: no `$fx-tdd` in the session, and the preamble question unanswered. The report cites the log lines
 - [ ] Trusted run: row 01 with trust granted the way `/hooks` grants it PASSes, either through `FX_CODEX_HOOK_TRUST=granted` or through the manual step, and the report says which
+- [ ] From the delta coverage audit, part B on the real model: row 04 passes at least 4 of 5, the lane-triggering prompts hit at least 8 of 9, and the session shows `$fx-tdd` addressing from the rendered bootstrap. ADR 0021's "Measured" section gains the Codex result, dated, with the Codex version, and ADR 0021 joins this task's Files list. Amendment 2 is the fix for the earlier Codex row 04 FAIL
 - [ ] Every row has exactly one result, with a reason for each GAP
 - [ ] `INSTALL.md`, `SURFACE.md` and ADR 0019 state the measured Codex result, dated, with the Codex version, before merge
 - [ ] Merge gate: every live Codex row PASSes, or is a GAP whose reason a ledger ruling accepted. A row 04 FAIL blocks the merge and is reported as a proposed new task with its evidence (from gap 9 of the coverage audit)
