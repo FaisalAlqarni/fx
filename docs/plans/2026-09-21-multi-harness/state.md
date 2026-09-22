@@ -2279,3 +2279,24 @@ User approval (2026-09-22, "yes for all"):
         machinery. Its trimmed router text is replaced by task 25.
 User asleep (2026-09-22): the user asked me to run autonomously overnight and not stop. Queue: spike to 25 to 26 to the 21 remainder to 13 to 22A to the final review, then the full gate, then the completion report. Not without the user: push, merge, PR, deletes outside scratch, and the Codex real-model run (part B, 2026-10-21, the merge gate). Every subagent keeps caveman full and ponytail full. Stop only on the four stop conditions. A blocked task is skipped and ledgered.
 Spike final: S3 scored opencode row 04 10/10, lanes 9/9 and rows 01, 02 and 16 PASS; Claude Code 5/5, 9/9, PASS. The worst case is about 3,690 chars. The S2 to S3 difference is only the three descriptions. The redesign must still move the ladder, the worktree and locale rules, the review-dispatch clause and the repo.md and test-command pointer; task 25 audit covers this. /tmp/tmp.WMnXnQirkn was removed by exact path after checking no process used it.
+Task 25: DONE_WITH_CONCERNS, 1d90c7d.
+        - The bootstrap is about 2.7K. The worst case is 3,817, 3,800 and
+          3,902 chars, pinned under 4,000; Codex has a 98-char margin.
+        - Audit: 140 rows. 43 kept with a reason, 92 moved, 5 split, 0
+          dropped. The five items the spike flagged all have homes.
+        - The three S3 description diffs are in, plus redirect clauses in
+          fx-debug, fx-authoring and fx-design. An overlap gate is added.
+        - The fx-design clause was A/B tested: 5/5 with it, against 3/5 on
+          the S3 control.
+        - Live on the final tree: Claude Code rows 01, 02, 16 PASS, row 04
+          5/5, lanes 9/9. opencode rows 01, 02, 16 PASS, row 04 10/10, lanes
+          8/9. The miss was `fx-design__existing`, which loaded no lane. Its
+          reps were killed by low memory, so it is unsettled whether the
+          clause caused it.
+        - check-all ALL GREEN.
+Ruling: the `fx-design__existing` five-by-two reps (final tree against S3
+        control) move into the task 21 remainder, which already runs opencode
+        live. If the clause is the cause, a fix task opens.
+        Cost if wrong: an fx-design prompt that sometimes misroutes on
+        opencode goes unnoticed until task 21. Caught by task 21.
+        Review dispatched. No security lens: text and descriptions only.
