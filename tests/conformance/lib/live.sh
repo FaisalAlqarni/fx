@@ -163,8 +163,12 @@ fi
 live_workdir() {
   WORK="$(mktemp -d "$LIVE_SCRATCH/work.XXXXXX")" || fail "mktemp failed"
   case "$WORK" in "$LIVE_SCRATCH"/work.?*) ;; *) fail "unexpected workdir: $WORK" ;; esac
-  trap 'rm -rf -- "$WORK" "$WORK.log" "$WORK.start" "$WORK.data" "$WORK.export"' EXIT
-  LOG="$WORK.log"
+  # The log lives outside everything the jail binds, so a session can neither
+  # find nor edit the output live_run judges (security re-check Minor 2).
+  LOGDIR="$(mktemp -d)" || fail "mktemp failed"
+  case "$LOGDIR/" in "$LIVE_SCRATCH"/*|"$FX"/*) fail "the log dir is inside the jail: $LOGDIR" ;; esac
+  trap 'rm -rf -- "$WORK" "$LOGDIR" "$WORK.start" "$WORK.data" "$WORK.export"' EXIT
+  LOG="$LOGDIR/log"
   git -C "$WORK" init -q -b main &&
     git -C "$WORK" config user.name fx-conformance &&
     git -C "$WORK" config user.email fx-conformance@example.invalid &&
@@ -182,40 +186,65 @@ live_run() {
   local prompt="$1" rc
   local tmp="$LIVE_SCRATCH/tmp"; mkdir -p "$tmp"
   : > "$WORK.start"
+  # stdout and stderr each reach their file through a pipe read on the host
+  # side: the CLI holds only the pipes, never a file it could reopen, rewrite
+  # or truncate through /proc/<pid>/fd. stderr is kept apart, so the quota
+  # check below can read the CLI's own errors without any model text.
+  local err="$LOGDIR/stderr" p1 p2
+  mkfifo "$LOGDIR/out.pipe" "$LOGDIR/err.pipe" || fail "mkfifo failed"
+  cat "$LOGDIR/out.pipe" >"$LOG" & p1=$!
+  cat "$LOGDIR/err.pipe" >"$err" & p2=$!
   case "$HARNESS" in
     claude-code)
       ( cd "$WORK" && timeout 600 "${JAIL[@]}" env TMPDIR="$tmp" claude -p "$prompt" --plugin-dir "$FX" \
           --dangerously-skip-permissions --max-turns 30 --output-format stream-json --verbose ) \
-        </dev/null >"$LOG" 2>&1 ;;
+        </dev/null >"$LOGDIR/out.pipe" 2>"$LOGDIR/err.pipe" ;;
     codex)
       timeout 900 "${JAIL[@]}" env TMPDIR="$tmp" codex exec --json -C "$WORK" -s danger-full-access \
-        -c 'approval_policy="never"' --dangerously-bypass-hook-trust "$prompt" </dev/null >"$LOG" 2>&1 ;;
+        -c 'approval_policy="never"' --dangerously-bypass-hook-trust "$prompt" </dev/null >"$LOGDIR/out.pipe" 2>"$LOGDIR/err.pipe" ;;
     opencode)
       # ponytail: one llama-server slot, so opencode rows only ever run serially.
       timeout 1500 "${JAIL[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" \
-        opencode run --format json --dir "$WORK" "$prompt" </dev/null >"$LOG" 2>&1 ;;
+        opencode run --format json --dir "$WORK" "$prompt" </dev/null >"$LOGDIR/out.pipe" 2>"$LOGDIR/err.pipe" ;;
   esac
   rc=$?
+  wait "$p1" "$p2"
+  rm -f -- "$LOGDIR/out.pipe" "$LOGDIR/err.pipe"
+  # The CLI's own errors, as JSON: a top-level error event (Codex's error and
+  # turn.failed, opencode's error) or Claude Code's result with is_error.
+  # Assistant text and tool output are nested inside other event types, so
+  # nothing a model says or a tool prints can appear here.
+  local cli_errors
+  cli_errors="$(F="$LOG" node -e '
+    for (const l of require("fs").readFileSync(process.env.F, "utf8").split("\n")) {
+      let j; try { j = JSON.parse(l); } catch { continue; }
+      if (j && (j.type === "error" || j.type === "turn.failed" || (j.type === "result" && j.is_error))) console.log(l);
+    }')"
+  # stderr is appended for the reader, each line prefixed so events.js skips it.
+  sed 's/^/stderr: /' "$err" >> "$LOG"
   keep_log() { [ -z "${FX_CONFORMANCE_LOGS:-}" ] || cp "$LOG" "$FX_CONFORMANCE_LOGS/$(basename "$0" .sh)-$HARNESS.log"; }
   keep_log
   # Quota or credit exhausted: the row did not run, and a row that did not run
-  # is never a pass. Checked on the CLI's own output, before any transcript is
-  # appended, so instructions quoted in a transcript cannot trip it.
+  # is never a pass. Matched only on the CLI's own stderr and its own error
+  # events above, never on the whole stream: with --verbose that carries
+  # assistant text and tool output, and a session could say the words.
   # Claude Code says "hit your session limit" or "hit your limit"; Codex says
   # "hit your usage limit".
   local q='usage limit|hit your ([a-z]+ )?limit|credit balance is too low|insufficient_quota|quota exceeded'
-  if grep -qiE "$q" "$LOG"; then
-    gap "not run: quota or credit exhausted ($(grep -oiE "$q" "$LOG" | head -1))"
+  local hit
+  if hit="$(printf '%s\n' "$cli_errors" | cat - "$err" | grep -oiE "$q" | head -1)" && [ -n "$hit" ]; then
+    gap "not run: quota or credit exhausted ($hit)"
   fi
   [ "$rc" -eq 124 ] && fail "session timed out"
   # A CLI that exited non-zero did not finish its session: a row that checks
   # for an absence (the branch still exists, no file was written) would read
   # that crash as a pass. The log is kept above for the reader.
-  # Except one: Claude Code exits non-zero when --max-turns runs out, and says
-  # so in its own last stream-json line, a result with subtype error_max_turns.
-  # The session was cut short, so the row cannot be judged either way: a GAP
-  # naming the cause. Codex and opencode are passed no turn cap.
-  if [ "$rc" -ne 0 ] && [ "$HARNESS" = claude-code ] && F="$LOG" node -e '
+  # Except one: Claude Code exits 1 when --max-turns runs out, and says so in
+  # its own last result event, subtype error_max_turns. The session was cut
+  # short, so the row cannot be judged either way: a GAP naming the cause. Any
+  # other exit code (a kill is 128+signal) is a crash. Codex and opencode are
+  # passed no turn cap.
+  if [ "$rc" -eq 1 ] && [ "$HARNESS" = claude-code ] && F="$LOG" node -e '
       let last = null;
       for (const l of require("fs").readFileSync(process.env.F, "utf8").split("\n")) {
         try { const j = JSON.parse(l); if (j && j.type === "result") last = j; } catch {}

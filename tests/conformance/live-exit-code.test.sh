@@ -20,7 +20,8 @@ cat > "$T/rows/95-probe.sh" <<'ROW'
 . "$FX/tests/conformance/lib/live.sh"
 live_workdir
 live_run 'anything'
-exit 0
+echo "the row's own check failed" >&2
+exit 1
 ROW
 row() {  # row <stub body>: run the probe row against a stub claude
   printf '#!/bin/sh\n%s\n' "$1" > "$FAKE/bin/claude"; chmod +x "$FAKE/bin/claude"
@@ -45,6 +46,24 @@ row "echo '{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",
 check '^FAIL  95' "a crash that quotes error_max_turns is not a FAIL"
 row "echo '$MAXT'; echo '{\"type\":\"result\",\"subtype\":\"error_during_execution\",\"is_error\":true}'; exit 1"
 check '^FAIL  95' "a later error result is not a FAIL"
+
+# Round 2, spoofs. The session must not be able to write the log live_run
+# judges: a max-turns line appended to where the log used to live
+# ($WORK.log, beside the session's working directory) is not a GAP.
+row "echo '{\"type\":\"result\",\"subtype\":\"error_max_turns\"}' >> \"\$PWD.log\"; exit 1"
+check '^FAIL  95' "a max-turns line the session appended to the log is not a FAIL"
+row "echo '$MAXT'; kill -9 \$\$"
+check '^FAIL  95' "a session killed after a max-turns line is not a FAIL"
+# Quota: only the CLI's own error, never assistant or tool text.
+row "echo '{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"quota exceeded, you hit your usage limit\"}]}}'; exit 0"
+check '^FAIL  95' "assistant text naming a quota is not a FAIL"
+row "echo '{\"type\":\"user\",\"message\":{\"content\":[{\"type\":\"tool_result\",\"content\":\"insufficient_quota\"}]}}'; exit 1"
+check '^FAIL  95' "tool output naming a quota is not a FAIL"
+row "echo '{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":true,\"result\":\"You have hit your session limit\"}'; exit 1"
+check '^GAP   95' "the CLI's own quota result is not a GAP"
+check 'quota' "the quota GAP does not say so"
+row "echo 'Error: insufficient_quota' >&2; exit 1"
+check '^GAP   95' "the CLI's own quota error on stderr is not a GAP"
 
 [ "$fails" -eq 0 ] || exit 1
 echo "live-exit-code: all passed"
