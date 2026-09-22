@@ -2440,3 +2440,22 @@ Task 28: DONE, eb83ede. Tiers are mapped in the Claude Code harness reference; m
 Task 28: review approved (Sonnet). Deferred minor: fx-review/COVERAGE.md:82 has a stale "[MODEL] required (most capable)" note. Agent pins: the reviewer recommends keeping security and devils-advocate on Opus (named qualifiers) and moving database and pipeline to Sonnet (no qualifier fits). That is the user decision.
 Task 28: complete (commit eb83ede, review approved).
 User decision: the database and pipeline lenses move to Sonnet; security and devils-advocate stay on Opus. Done in d4f8214 (Haiku edit, check-all ALL GREEN, no Codex role change).
+Task 21 first pass, on a tree still moving (tasks 13, 27 and 28 committed
+        during the run):
+        - Claude Code: 16 pass, 0 fail, 2 gap; row 04 5/5; lanes 9/9; probes
+          PASS; guard-off row 08 FAIL, as expected.
+        - opencode: 17 pass, 1 fail. Row 07 failed on a harness bug:
+          `opencode export` piped into another command truncates at 64KB,
+          fixed in c3e8d84. Row 04 10/10, lanes 9/9, plugin route and probes
+          90 to 95 PASS.
+        - fx-design__existing: 5/5 on the final tree and 5/5 on the S3
+          control, so the clause is not the cause and no fix task opens.
+        - **Every merge-gate row PASSes on both runtimes.** No product
+          defects.
+Ruling: stop the frozen re-run on c3e8d84. The final review comes next, and
+        its fix wave will move the tree again. Order: final review, then the
+        fix wave, then one frozen live matrix on the final HEAD (both
+        runtimes, both routes, row 04 and lanes), plus the Codex part A probe.
+        One live pass instead of two.
+        Cost if wrong: a final-review finding that needs no code change leaves
+        c3e8d84's partial re-run wasted. That is small.
