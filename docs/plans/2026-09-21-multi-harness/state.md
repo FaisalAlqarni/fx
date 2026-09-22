@@ -2406,3 +2406,26 @@ Delta coverage audit (amendment 2, tasks 22 to 26): 7 gaps, 2 Important.
 Task 27: dispatched (opus, fresh implementer). It is free-gate only and needs
         no memory headroom.
 Task 27: DONE_WITH_CONCERNS, 18dde40. The addressing gate found 7 sites (4 known plus 3); all reworded to "invoke the fx-X lane", with a mutation test. Release gate: 0.2.0 over 0.1.7 passes and the same version fails, shown in archive fixtures; it skips with no main (as in CI). The every-caller rule now also lives in implementer-prompt TDD rules. prototype/fx-design pair declared. check-all ALL GREEN. Concerns: agent names (fx:fx-lens-*) and /fx:* commands still use the Claude Code form, excluded by design; the release gate was not built test-first; CI skips the release gate. Review dispatched with these as named risks.
+Task 27: review found Needs fixes. Important: `skills/fx-audit/SKILL.md:239-240`
+        tells the model to dispatch `fx:fx-lens-pipeline` "by that addressable
+        name". That contradicts `{{DISPATCH}}` on opencode and Codex, and on
+        Codex a wrong agent_type risks the lens running without its read-only
+        role. It is the only site: the other skills name agents bare. Minor:
+        the addressing gate only catches forms next to "invoke"; the reviewer
+        slipped `fx:fx-tdd` past it in another sentence.
+        Correction: the release gate is never run in CI, so the report's "it
+        skips in CI" was wrong. It runs in local check-all, which fx-implement
+        runs.
+        Process note: the reviewer removed its own scratch `tmp.*` dirs with a
+        glob, which breaks the exact-path rule. It says every dir the glob
+        matched was its own. Recorded; future dispatches repeat the rule.
+Ruling: fix round 1 covers four things:
+        - the fx-audit site plus any other agent-dispatch instruction;
+        - the gate extended to agent names from agents/*.md;
+        - the gate made strict, with the INVOKE condition dropped;
+        - the every-caller rule moved above Verify GREEN in the implementer
+          prompt, and audit row 87 updated.
+        These go in the fix round because the strict gate and the agent-name
+        rule are the same parity guarantee as the Important. Deferred to the
+        final review: the release-gate uncaught throw when the merge-base has
+        no plugin.json.
