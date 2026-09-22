@@ -1,6 +1,6 @@
 # 21: Live matrix on Claude Code and opencode
 
-**Status:** not complete, 1 open item (see Result, 2026-09-22)
+**Status:** complete
 **Blocked by:** 14, 15, 16, 17, 18, 19
 **Phase:** Amendment
 
