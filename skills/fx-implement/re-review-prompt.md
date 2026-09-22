@@ -9,9 +9,8 @@ already happened.
 ```markdown
 Subagent (general-purpose):
   description: "Re-review task NN fix round R"
-  model: [MODEL, REQUIRED: per SKILL.md Model Selection. Scoped re-reviews of
-         small fix diffs take a cheap-to-mid tier. An omitted model silently
-         inherits the session's most expensive one.]
+  model: [MODEL, REQUIRED: default: standard tier; the most capable tier only
+         with a stated reason (see model-selection.md).]
   prompt: |
     You are re-reviewing one task's fix round. A previous review produced
     findings; an implementer has attempted to fix them. Your job is to verdict
@@ -125,7 +124,8 @@ Subagent (general-purpose):
 **Placeholders:**
 - `[FINDINGS_FILE]`: REQUIRED, the per-finding verdicts, written before the
   summary
-- `[MODEL]`: REQUIRED; cheap-to-mid tier for small fix diffs
+- `[MODEL]`: REQUIRED; default: standard tier, most capable only with a
+  stated reason (see model-selection.md)
 - `[TASK_FILE]`: the same file the implementer worked from
 - `[FINDINGS]`: the Critical/Important findings and spec gaps from the previous
   review, **copied verbatim**, one per bullet

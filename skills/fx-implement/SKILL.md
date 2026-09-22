@@ -349,7 +349,11 @@ the net for conflicts that only emerge from implementation.
 Always specify the model explicitly when dispatching: an omitted model
 inherits the session's, usually the most capable and most expensive.
 
-Tier table, the turn-count-beats-token-price rule, and the complexity signals:
+**Default: standard tier.** The most capable tier needs a one-line reason,
+written in the dispatch and in the ledger.
+
+The default, the most-capable qualifying list, the cheapest-tier safety rule,
+the babysitter rule, and the complexity signals:
 `../../references/vocab/model-selection.md`.
 
 ## The task loop

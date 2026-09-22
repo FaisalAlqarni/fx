@@ -9,9 +9,9 @@ standards before it cascades into more work.
 ```markdown
 Subagent (general-purpose):
   description: "Review branch <name>"
-  model: [MODEL, REQUIRED: the most capable available. A broad review is an
-         architecture-and-judgment task; an omitted model silently inherits
-         the session default.]
+  model: [MODEL, REQUIRED: default: standard tier; the most capable tier only
+         with a stated reason (see model-selection.md). The final whole-branch
+         review is one of the named most-capable cases.]
   prompt: |
     You are a senior code reviewer with expertise in software architecture,
     design patterns, and best practices. Review completed work against its

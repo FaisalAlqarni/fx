@@ -8,8 +8,8 @@ compliance and code quality.
 ```markdown
 Subagent (general-purpose):
   description: "Review task NN (spec + quality)"
-  model: [MODEL, REQUIRED: per SKILL.md Model Selection. An omitted model
-         silently inherits the session's most expensive one.]
+  model: [MODEL, REQUIRED: default: standard tier; the most capable tier only
+         with a stated reason (see model-selection.md).]
   prompt: |
     You are reviewing one task's implementation: first whether it matches
     its requirements, then whether it is well built. This is a task-scoped

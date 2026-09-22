@@ -5,8 +5,8 @@ Dispatch one implementer per task. Fill every `[PLACEHOLDER]`.
 ```markdown
 Subagent (general-purpose):
   description: "Implement task NN: [title]"
-  model: [MODEL, REQUIRED: per SKILL.md Model Selection. An omitted model
-         silently inherits the session's most expensive one.]
+  model: [MODEL, REQUIRED: default: standard tier; the most capable tier only
+         with a stated reason (see model-selection.md).]
   prompt: |
     You are implementing task [NN]: [title]
 
