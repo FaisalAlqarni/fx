@@ -24,10 +24,12 @@ EXEMPT = ('skills/fx-humanize/', 'references/testing/', 'upstream/', '.git/',
           # Nested worktrees hold other branches' files, which this checkout's
           # gate does not own.
           '.worktrees/',
-          # `.claude/` is the checkout's own local configuration: a CLAUDE.md
-          # an indexer wrote, settings, nested worktrees. None of it is fx's
-          # shipped prose, none of it is tracked, and a machine that happens to
-          # have one must not fail this gate.
+          # `.claude/` is this checkout's own configuration, not fx's shipped
+          # prose. `.claude/CLAUDE.md` is tracked and it is written by an
+          # indexer, which rewrites it on every reindex: its dashes belong to
+          # that tool and no edit of ours survives the next run. The rest of
+          # the directory is local settings and nested worktrees, which this
+          # checkout's gate does not own either.
           '.claude/',
           # Anthropic's own skill-authoring guide, carried verbatim. Editing its
           # prose would make it a local fork of a document whose value is that
