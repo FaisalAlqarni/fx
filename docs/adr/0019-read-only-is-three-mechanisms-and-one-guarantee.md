@@ -1,8 +1,9 @@
 # Read-only is three mechanisms and one guarantee
 
-`SURFACE.md` states the lens guarantee plainly: tool restriction is enforced by
-the harness, so a lens physically cannot write to the repo. That sentence is
-true on Claude Code because `tools:` is a hard allowlist. It is true on a third
+`SURFACE.md` used to state the lens guarantee plainly: tool restriction is
+enforced by the harness, so a lens physically cannot write to the repo. It now
+points here instead. That sentence holds on Claude Code only because `tools:`
+is a hard allowlist and, since task 17, holds no shell. It holds on another
 runtime only if something enforces it there, and the mechanism is different on
 each.
 
@@ -47,9 +48,33 @@ file byte-identical in the installed 1.18.25:
   the project stays denied.
 
 `read: allow` replaces opencode's default ask on `.env` files for these
-agents, which matches Claude Code, where `Read` has no such ask. Measured from
-source, not from a live session: task 21 runs row 12 on opencode, and adds a
-refused `webfetch` and MCP call.
+agents, which matches Claude Code, where `Read` has no such ask. The source
+reading above was then measured live: see "Measured end to end" below.
+
+## Measured end to end
+
+Row 12 asks a read-only agent to write a file, through its editing tool and
+through a shell, beside a `general` control that must succeed. Row 18 asks a
+read-only agent to dispatch a default child that writes. A row passes only
+when the control writes and the read-only agent does not.
+
+- **Claude Code 2.1.278, 2026-09-22** (task 21, final tree): rows 12 and 18
+  PASS, with every other merge-gate row (01, 02, 15 and 16).
+- **opencode 1.18.25, 2026-09-21** (task 21 first pass, script route, before
+  the bootstrap replaced the router preamble): rows 12 and 18 PASS. In row 12
+  each lens reported that its only tools were `glob`, `grep` and `read`, and
+  neither lens file appeared, while the `general` control wrote both. In row
+  18 the lens had no `task` tool to call, and its child session carried
+  `task:*:deny`, while the control's grandchild wrote its file. Probe 91 in
+  the same run confirmed the rest of the allowlist: the lens had no `webfetch`
+  and no MCP tool, while the control used both.
+- **opencode, final tree:** task 21 re-runs rows 12 and 18 once the test
+  machine has memory free. <!-- task21-opencode -->
+- **Codex: pending.** Row 12 has never been measured passing on Codex. Task 12
+  recorded it as a GAP in the matrix, because the quota ran out, and as a FAIL
+  in its development run, before roles could be dispatched. Task 22 part B
+  runs rows 12 and 18 on a real model after the quota resets on 2026-10-21,
+  and writes the result here before merge.
 
 ## What made the hook half possible
 

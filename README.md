@@ -79,15 +79,25 @@ on branch reviews only, never per task; `/fx:fx-audit` also runs it.
 ### Always on, underneath all of it
 
 ```
-PREAMBLE.md ---> SessionStart  ---> every session
-            \--> SubagentStart ---> every dispatched subagent
+                 lib/preamble.js renders PREAMBLE.md for each runtime
+                        |                 |                  |
+Claude Code   hooks/fx-context.js   Codex   hooks/fx-codex.js   opencode   plugins/fx.js
+              SessionStart                  SessionStart                   system transform
+              SubagentStart                 SubagentStart                  (sessions and child
+                                                                            sessions alike)
                  (subagents read neither CLAUDE.md nor memory:
                   this is the only channel that reaches them)
 
-hooks/fx-pretooluse.js -> PreToolUse, every tool
-   + lib/git-guard.js   -> Bash: the absolutes, fail closed
-   + lib/lane-check.js  -> Write/Edit: one nudge per session, fail open
+guard and lane check, one shared lib on every runtime:
+   hooks/fx-pretooluse.js   Claude Code, PreToolUse, every tool
+   hooks/fx-codex.js        Codex, PreToolUse, every tool, plus read-only enforcement
+   plugins/fx.js            opencode, tool.execute.before
+      + lib/git-guard.js    shell: the absolutes, fail closed
+      + lib/lane-check.js   file writes: one nudge per session, fail open
 ```
+
+`PREAMBLE.md` is a small bootstrap, about 2.9K characters. Routing lives in
+each skill's own description (`docs/adr/0021`).
 
 **The guard does not police where you are.** Which branch you commit on is the
 workflow's business: work happens in a worktree because `fx-implement` sets one
@@ -103,25 +113,34 @@ one of those strings is data and does.
 ## Layout
 
 ```markdown
-skills/       13: 10 lanes, prototype and research, and fx-audit, which only you invoke
+skills/       17: 10 lanes, prototype and research, and 5 you invoke yourself:
+              fx-audit, plus fx-setup, fx-critique, fx-grill and fx-handoff,
+              generated from commands/
 agents/       6: 5 review lenses plus the devil's advocate, all read-only
+codex/agents/ the same 6 as Codex role files, generated
 commands/     4: /fx:fx-setup, /fx:fx-critique, /fx:fx-grill, /fx:fx-handoff
 references/   loaded on demand by a lane, never selectable
-hooks/        Claude Code: preamble injection, git guard, lane check
-plugins/      opencode: preamble and guard, same shared lib
-lib/          git-guard.js, lane-check.js, plan-state.js
-tests/        lane-triggering: does a naive prompt reach the lane
+hooks/        Claude Code: hooks.json, fx-context.js, fx-pretooluse.js
+              Codex: fx-codex.js, wired by the root hooks.json
+plugins/      opencode: fx.js
+lib/          shared by all three: preamble.js (the renderer), git-guard.js,
+              lane-check.js, plan-state.js, plant-roles.js, agent-dialects.js,
+              opencode-commands.js
+tests/        conformance: the live and free rows, per runtime
+              install: the install test for all three runtimes
+              gates: the node gate tests check-all runs
+              lane-triggering: does a naive prompt reach the lane
               lens-pipeline: the fixture fx-lens-pipeline is run against
-PREAMBLE.md   injected into every session AND every subagent
+PREAMBLE.md   the bootstrap, injected into every session AND every subagent
 ```
 
 ## The skills
 
 Model-selectable. Ten lanes own an intent; two are procedures a lane calls.
 **Ten of the twelve work standalone**, with no plan and no pipeline: only
-`fx-plan` and `fx-implement` need an artifact to start from. The thirteenth
-skill, `fx-audit`, is not model-selectable and is not in this table: you type it,
-as the next section shows.
+`fx-plan` and `fx-implement` need an artifact to start from. The other five
+skills are not model-selectable and are not in this table: you type them, as
+the next section shows.
 
 | Skill | Use when |
 |---|---|
@@ -141,8 +160,9 @@ as the next section shows.
 ## The commands
 
 Every command is typed with its `fx-` name: `/fx:fx-<name>` on Claude Code,
-which adds the plugin prefix, and `/fx-<name>` on opencode. The table shows the
-Claude Code form.
+which adds the plugin prefix, `/fx-<name>` on opencode, and `$fx-<name>` on
+Codex, where each command ships as a skill generated from `commands/`. The
+table shows the Claude Code form.
 
 | Command | Does |
 |---|---|
@@ -151,28 +171,39 @@ Claude Code form.
 | `/fx:fx-grill` | the stress-test interview alone, for a decision not heading to code |
 | `/fx:fx-handoff` | prints a block you paste into another session, on this machine or any other |
 
-`/fx:fx-audit`, or `/fx-audit` on opencode, is typed the same way but is a
-user-invoked skill, not a command: `skills/fx-audit/`, with
-`disable-model-invocation: true`, so the model never selects it. opencode cannot
-hide a skill from the model, so there the installer generates it as a command. It audits an existing system in four gated phases, ending in a
-`design.md` for `fx-plan`.
+`/fx:fx-audit` is typed the same way but is a user-invoked skill, not a
+command: `skills/fx-audit/`, with `disable-model-invocation: true`, so the
+model never selects it. It audits an existing system in four gated phases,
+ending in a `design.md` for `fx-plan`.
+
+All five are hidden from the model on every runtime and stay typeable: by
+`disable-model-invocation` on Claude Code, by `agents/openai.yaml` on Codex,
+and on opencode by a `deny` in `permission.skill` plus a generated command.
+The Codex hiding has a known fragility, described in `INSTALL.md`.
 
 ## Install
 
-The two installs are **independent**: neither runtime requires the other.
-
-**opencode**: `./scripts/fx-opencode-install`. Nothing reads `~/.claude`.
+The three installs are **independent**: no runtime requires another.
 
 **Claude Code**: `/plugin marketplace add FaisalAlqarni/fx` then
 `/plugin install fx@fx`.
 
-Full steps for both: [`INSTALL.md`](INSTALL.md).
+**Codex**: `codex plugin marketplace add FaisalAlqarni/fx` then
+`codex plugin add fx@fx`, then trust fx's hooks in `/hooks` and restart Codex
+once after the first session.
+
+**opencode**: add `plugins/fx.js` from a clone to your `opencode.json`, or run
+`./scripts/fx-opencode-install`. Nothing reads `~/.claude`.
+
+Full steps, refreshing an install, and what each runtime has been proven to
+do: [`INSTALL.md`](INSTALL.md).
 
 Then, in each repository you work in:
 
 ```
 /fx:fx-setup     # Claude Code
 /fx-setup        # opencode
+$fx-setup        # Codex
 ```
 
 which reads the machine facts, then asks two short rounds about what the code
@@ -190,9 +221,9 @@ other, and the guard is right not to try to tell them apart.
 ```
 FIX=$(scripts/make-git-fixture /tmp/fx-fixture)
 
-node lib/git-guard.test.js   $FIX      # 80 assertions
+node lib/git-guard.test.js   $FIX      # 85 assertions
 node lib/base-branch.test.js $FIX      # 27
-node lib/heredoc.test.js     $FIX      # 13
+node lib/heredoc.test.js     $FIX      # 25
 node lib/plan-state.test.js            # 17
 ```
 
@@ -216,20 +247,44 @@ of these except `check-collisions`, which is run by hand because it reads
 skill directories on this machine, not this repository:
 
 ```
-scripts/check-manifest                     keys the installer accepts, and the two it rejects
+scripts/check-manifest                     manifest keys, declared paths, and convention-discovered directories
 scripts/check-paths                        every reference citation resolves
 scripts/check-reference-leaves             no reference links to another reference
 scripts/check-prose                        no dashes, no stock vocabulary, parens balanced
+scripts/check-tool-names                   no skill body names a runtime's tool
+scripts/check-interpreters                 every script invocation in a skill names its interpreter
 tests/gates/check-prose-explicit-path.sh   check-prose reads a path named explicitly even under .worktrees/
 scripts/check-artifacts                    nothing in skills/, agents/ or commands/ names the OS temp directory
 tests/gates/check-artifacts-remote.sh      the remote-asset rule in check-artifacts, proven against scratch trees
+scripts/check-generated                    generated files match their sources
+tests/gates/agent-model.test.js            every agent pins a model
 scripts/check-collisions                   other installed skills contesting an fx lane
 ```
 
-`scripts/check-all` also runs the installer test, `tests/opencode-install/run.sh`,
-straight after the four node suites above. `tests/companion/ignore-guarantees.sh`,
-the visual companion's ignore guarantees, is run by hand instead: it starts
-real servers.
+After the four node suites above, `scripts/check-all` also runs:
+
+```
+lib/preamble.test.js                         the bootstrap renders per runtime, within its size budgets
+tests/gates/codex-manifest.test.js           the Codex manifest and hook wiring
+tests/gates/codex-hook-output.test.js        Codex hook output uses only keys Codex accepts
+tests/gates/user-invoked.test.js             the five user-invoked lanes stay hidden from the model
+tests/gates/fx-setup-root-check.test.js      fx-setup loads code only from a verified fx root
+lib/plant-roles.test.js                      Codex role planting and the read-only classifier
+tests/gates/opencode-plugin.test.js          the opencode plugin's config, guard and lane check
+tests/gates/description-overlap.test.js      two lanes claiming one trigger name each other
+tests/install/run.sh                         the install test, once per runtime
+tests/install/home-untouched.test.sh         the gates write nothing into HOME
+tests/conformance/runner-isolation.test.sh   the conformance runner never writes to a real home
+tests/conformance/plant-codex-roles.test.sh  the runner plants Codex roles into its scratch home
+tests/conformance/merge-opencode-provider.test.sh  the runner's opencode provider merge
+tests/conformance/run.sh <runtime> --free    the free conformance rows, once per runtime
+tests/gates/ci-pins.test.js                  the nightly workflow's pins and permissions
+```
+
+`tests/companion/ignore-guarantees.sh`, the visual companion's ignore
+guarantees, is run by hand instead: it starts real servers. The live
+conformance rows are run by hand too, because they spend model quota:
+`tests/conformance/README.md` says how.
 
 `fx-plan` and `fx-implement` are absent from the lane suite on purpose: their
 triggers need repository state a scratch directory cannot supply.

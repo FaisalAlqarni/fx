@@ -48,24 +48,29 @@ trigger list, so neither can contest a lane.
 | `research` | 12 + 1 | One added paragraph: query terms may not carry module names, file paths or internal service names: searches reach third parties | ✅ |
 | `prototype` | 26 + `LOGIC.md` + `UI.md` | Verbatim body. **Called by `fx-brainstorm` §4**, next to the visual companion: a picture answers "what would it look like", a prototype answers "would it work" | ✅ |
 
-Upstream ships an `agents/openai.yaml` beside each. Not copied: it is a Codex
-interface manifest for a runtime fx does not target, and it restates the
-`description` we deliberately rewrote.
+Upstream ships an `agents/openai.yaml` beside each. Not copied: fx targets
+Codex, but upstream's file restates the `description` we deliberately
+rewrote, and Codex reads the skill's own frontmatter without it. fx ships its
+own `agents/openai.yaml` only where it has a job: on the five user-invoked
+skills, where it hides the skill from the model on Codex.
 
 **Dropped:** `wizard`, `resolving-merge-conflicts`: merge conflicts are handled
 by hand, and infra-setup wizards are rare here.
 **Removed from inventory:** the 7 Android skills (`docs/adr/0012`).
 
-## User-invoked skills: 1
+## User-invoked skills: 5
 
-`disable-model-invocation: true`: the model never selects it, so it contests no
-lane and adds no context load. Only the user types it. It is a skill rather than
-a command because a skill is given its own base directory, which is how it
-finds its templates.
+`disable-model-invocation: true`: the model never selects them, so they contest
+no lane and add no context load. Only the user types them. `fx-audit` is a
+skill rather than a command because a skill is given its own base directory,
+which is how it finds its templates. The other four are generated from
+`commands/` by `scripts/gen-command-skills`, because Codex has no command
+surface and reaches them only as skills.
 
 | Skill | Typed as | Does |
 |---|---|---|
-| `fx-audit` | `/fx:fx-audit`, or `/fx-audit` on opencode | Audits an existing system in four gated phases, ending in a `design.md` for `fx-plan` |
+| `fx-audit` | `/fx:fx-audit`, `/fx-audit` on opencode, `$fx-audit` on Codex | Audits an existing system in four gated phases, ending in a `design.md` for `fx-plan` |
+| `fx-setup`, `fx-critique`, `fx-grill`, `fx-handoff` | as the commands below | The same text as the command of the same name |
 
 ## Agents: 6 (performance lens cut, `docs/adr/0008`; pipeline lens added, `docs/adr/0014`)
 
@@ -89,49 +94,63 @@ a cheap miss is an incident. It adds no per-task cost, because it fires only on
 the branch review and in `/fx:fx-audit`. An omitted model silently inherits the
 session's, usually the priciest, so every agent file pins one explicitly.
 
-All read-only: `tools: Read, Grep, Glob, Bash`. Tool restriction is enforced by
-the harness, so a lens physically cannot write to the repo.
+All read-only: `tools: Read, Grep, Glob` on Claude Code, with no shell. No
+lens or devil's advocate can write, but the mechanism differs per runtime, and
+on Codex it is fx's own hook rather than the runtime:
+`docs/adr/0019` has the table and its measurements.
 
-## Delivery: one preamble, two runtimes
+## Delivery: one bootstrap, three runtimes
 
-`PREAMBLE.md` is the single canonical text (**measured 1,173 tokens**: 27% over
-the 920 estimated here originally), paid per session and
-per subagent dispatch. Contents, all four agreed:
+`PREAMBLE.md` is a small bootstrap, about 2.9K characters, paid per session
+and per subagent dispatch. It makes the model invoke a lane before it acts,
+and carries only the rules that must hold with no lane loaded: no attribution
+trailers, integration only when asked, nothing leaves the machine, evidence
+before claims, and the core prose rule. Routing lives in each skill's own
+description, and each lane carries its own rules (`docs/adr/0021`, which
+partly supersedes `docs/adr/0002`).
 
-| Part | ~tok | Why it must be here |
-|---|---:|---|
-| The ladder + "when NOT to be lazy" | 550 | Governs every code response |
-| Routing table | 150 | Deterministic routing that doesn't depend on description matching, and the only copy a subagent sees |
-| Non-negotiables | 100 | No attribution trailers · commits only in a worktree · nothing leaves the machine · Arabic/RTL default · evidence before claims. **All of these live in CLAUDE.md and memory, which subagents never read** |
-| Anti-slop prose rule | 120 | Applies to commit messages, ADRs, `CONTEXT.md` and chat |
+It used to be a router of about 12K, carrying the routing table, the
+non-negotiables, the ladder and the prose rules. That no longer fit one
+Claude Code hook output, and a split delivered its parts in an unstable
+order. `docs/plans/2026-09-21-multi-harness/bootstrap-no-loss-audit.md` maps
+every sentence of the old router to its new home.
 
 ```
 PREAMBLE.md                          ← single source, fx owns it
- ├─ Claude Code  hooks/fx-context.js    SessionStart + SubagentStart
+ │  rendered per runtime by lib/preamble.js
  │                 + lib/plan-state.js  names unfinished plans found on disk
+ ├─ Claude Code  hooks/fx-context.js    SessionStart + SubagentStart
  │               hooks/fx-pretooluse.js  PreToolUse · all tools
- │                 + lib/git-guard.js   fail closed
- │                 + lib/lane-check.js  fail open (fires for dispatched subagents, DEBT #30/#48)
+ ├─ Codex        hooks/fx-codex.js      SessionStart + SubagentStart + PreToolUse
+ │                                      plants the review roles, enforces read-only
  └─ opencode     plugins/fx.js          experimental.chat.system.transform
                                         tool.execute.before
+    every runtime  + lib/git-guard.js   fail closed
+                   + lib/lane-check.js  fail open, measured firing on file writes
 ```
 
-`fx-context.js` emits two things: the preamble, identical every time, and a
+Each injector emits two things: the bootstrap, identical every time, and a
 block generated from the repo. The generated half exists because the static
-routing table is read once per message, before the agent has looked around and
+text is read once per message, before the agent has looked around and
 learned there is a plan waiting. Naming the real slug, path and task count at
 `SessionStart` is the only carrier that survives a session boundary. DEBT #33.
 
-**opencode is a genuine port, not a downgrade.** Its plugin API supports system-prompt
+**opencode is a full port.** Its plugin API supports system-prompt
 injection and tool blocking: `tool.execute.before` blocks by throwing, the same
 pattern its docs use to prevent `.env` reads. Shares `PREAMBLE.md` and the guard
 predicate with the Claude Code side.
 
 **Subagents are covered too.** opencode implements them as **child sessions**: `TaskTool` calls `Session.create({ parentID })` then `SessionPrompt.prompt()`, so they go through the same session-creation and prompt-construction path as a
 top-level session. One mechanism covers both, where Claude Code needs two
-separate events. *(Architecture confirmed; that the system-transform hook fires
-on child sessions follows from it but is not documented outright. Verify with a
-throwaway subagent probe before relying on it.)*
+separate events. Conformance row 02 measured the preamble reaching a child
+session, and task 25 measured it again with the bootstrap.
+
+A subagent can also dispatch its own subagent. Task 21's row 15 measured it on
+opencode: the session dispatched `general`, and that `general` dispatched a
+second `general`, which returned `NESTED-OK`. The plugin grants `general`
+`task: allow` for this, since opencode gives no subagent the task tool
+otherwise. Task 21 runs row 15 again on the final tree.
+<!-- task21-opencode -->
 
 One caveat: `experimental.chat.system.transform` carries an `experimental.`
 prefix and may change: the stable fallback is `~/.config/opencode/AGENTS.md`,
@@ -182,11 +201,13 @@ files, which no priority order resolves honestly.
 
 Typed as shown on Claude Code. On opencode, drop the plugin prefix: `/fx-setup`.
 
+On Codex each command ships as a skill, typed `$fx-setup`.
+
 `/fx:fx-audit`, or `/fx-audit` on opencode, is typed like a command but is a user-invoked skill, counted under
 "User-invoked skills" above, not here.
 
-**`/fx:help` cut**: it printed the routing table, which the preamble already
-carries in every session and every subagent. A command that prints what you are
+**`/fx:help` cut**: it printed the routing table, which every runtime already
+shows the model as the skill descriptions. A command that prints what you are
 already looking at is a no-op paying maintenance.
 
 ## References: 27 files, 22 markdown, one TypeScript example, two vendored libraries and their two licence files
@@ -210,6 +231,9 @@ three ways. Enforced by `scripts/check-reference-leaves`. See the design doc §2
 `references/stacks/`; `data.md` is unwritten on purpose, as that table records.
 
 ## The routing table
+
+The routing itself lives in each skill's `description`, which is what the
+model reads (`docs/adr/0021`). This table summarizes it for people.
 
 | Trigger | Lane |
 |---|---|
