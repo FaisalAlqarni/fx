@@ -2365,3 +2365,20 @@ Ruling: do not kill the user's processes. The opencode queue relaunches behind
         Cost if wrong: the opencode half may wait until the user frees memory.
         Caught by the morning report, which states it plainly.
 Task 13: DONE_WITH_CONCERNS, 82e7aae. 29/29 criteria met, 4 of them resting on opencode results that task 21 has not recorded yet (4 task21-opencode markers). check-all ALL GREEN. Concerns: refresh commands were taken from CLI help, not executed; ADR 0019 cites the Claude Code version installed today. Review dispatched.
+Task 13: review found Needs fixes: 1 Important, 9 Minor. The reviewer ran
+        every privilege-free install command in a fake HOME. The Codex refresh
+        works even with no version bump.
+        **Important (measured): `claude plugin update fx@fx` only updates on a
+        version change.** The branch is still 0.1.7, the same as main, so
+        existing Claude Code users would keep the old tree after the merge.
+Ruling: bump the version to **0.2.0** in every manifest and marketplace entry.
+        This is a minor-version bump, because behaviour changes: the Codex hook
+        wiring, the bootstrap redesign, and the read-only allowlists.
+        check-manifest keeps the versions identical. INSTALL states that a
+        Claude Code update lands only on a version change.
+        Doc Minors 1 to 7 go in the same round, because the task criterion
+        "every claim maps to a passing row" covers 1, 2 and 5. Minor 8
+        (fx-plan's stale "routing table" wording) is outside task 13, so it
+        goes to the final review.
+        Cost if wrong: none; a version bump is required for delivery. A
+        release-bump gate is noted for the final review.
