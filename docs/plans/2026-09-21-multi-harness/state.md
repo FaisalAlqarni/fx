@@ -2364,3 +2364,4 @@ Ruling: do not kill the user's processes. The opencode queue relaunches behind
         opencode verdicts are cited from task 21 when they land.
         Cost if wrong: the opencode half may wait until the user frees memory.
         Caught by the morning report, which states it plainly.
+Task 13: DONE_WITH_CONCERNS, 82e7aae. 29/29 criteria met, 4 of them resting on opencode results that task 21 has not recorded yet (4 task21-opencode markers). check-all ALL GREEN. Concerns: refresh commands were taken from CLI help, not executed; ADR 0019 cites the Claude Code version installed today. Review dispatched.
