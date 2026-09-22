@@ -2506,3 +2506,17 @@ Security fix round done:
 - max-turns: acec8f6.
 - Minor 8: ae0c932.
 check-all ALL GREEN. Before the fix, the probe listed 70+ reachable sockets in the jail. Next: the security lens re-checks this round only (Opus, security-critical).
+Security re-check of the fix round: all 8 targeted items closed. NOT CLEAN on 1 Important and 4 Minor (.fx/.../reports/security-fix-round-recheck.md).
+- Important: other projects' .env files under /development are readable in the jail (--ro-bind / /). This predates the round.
+- Minor: the model can fake the max-turns GAP and the quota GAP.
+- Minor: a partial second mount of the home is not hidden.
+- Minor: the plugins/fx.js hide step throws when permission.skill is a string.
+Ruling: fix round 2 on Opus (security-critical), covering all 5. The jail keeps visible only the trees a row needs. Loop count: 2 of 5.
+Fix round 2 done:
+- /development readable: 4181775 (the jail uses an allowlist of top-level dirs).
+- Partial home mount: f0212d0.
+- GAP spoofs: 6f372e2 (the log is captured on the host side; quota detection reads stderr and CLI error events only).
+- opencode string permission: 1cbbb6a.
+check-all ALL GREEN. Round 1 had broken DNS in the jail (resolv.conf points into /mnt); 4181775 fixes it and the probe pins it. No live row ran between the two rounds.
+Ruling: accept the residual GAP spoof, where a same-user process injects into the CLI's output pipe via /proc. Why: it needs a deliberately deceptive model, and it only mislabels FAIL as GAP, never as PASS. Closing it needs a separate uid. Cost if wrong: a hidden FAIL, caught by reviewing the GAP reasons in the matrix report.
+Ruling: the frozen matrix runs on HEAD now, in parallel with a scoped security re-check of round 2. Why: the matrix takes hours, and round 2 already passed its own failing-first probes. Cost if wrong: if the re-check changes the jail, the matrix reruns. Caught by the re-check verdict.
