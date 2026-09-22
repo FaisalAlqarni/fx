@@ -2459,3 +2459,22 @@ Ruling: stop the frozen re-run on c3e8d84. The final review comes next, and
         One live pass instead of two.
         Cost if wrong: a final-review finding that needs no code change leaves
         c3e8d84's partial re-run wasted. That is small.
+
+Final review (Opus, fx-review branch mode with lenses): ready to merge with
+        fixes. 0 Critical, 9 Important, 16 Minor. See findings-final.md, which
+        the controller saved because the reviewer's harness refused the write.
+        The controller re-checked I1, I2, I3, I4, I5 and I9 against the code.
+Ruling: **one fix wave**, with one fix subagent on Opus. Reason: I2, I3 and I7
+        are security-critical enforcement, a named qualifier. It gets the
+        complete list:
+        - all 9 Important;
+        - every "fix before merge" triage row;
+        - Minors 1, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13 and 15.
+        Minor 2 (write_stdin) and Minor 4 (opencode global merge order) need
+        live Codex or opencode measurement, so they move to task 22 part B and
+        a follow-up. Minor 14 fills in after the frozen run. Minor 16 is fine
+        as is. The I2 fix reopens the task 06 ruling at state.md:648: key
+        identity on agent_id per user, not on ppid.
+        After the wave comes one scoped re-review. It uses the standard tier,
+        plus the security lens, which pins opus. Then the frozen live matrix
+        and the Codex part A probe.
