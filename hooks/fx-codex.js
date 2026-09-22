@@ -23,8 +23,12 @@
 // damage, so a broken guard must refuse; the lane check is advice, so a
 // broken one must not wedge the session.
 
+// Only builtins load unguarded. Every fx module is required inside a try, so
+// a broken install can never crash the hook at load: a crash exits 1, which
+// Codex treats as a failed, non-blocking run, and that would skip the guard
+// and the read-only check (security re-review I2). lib/preamble, which only
+// the context events need, is required where it is used, below.
 const path = require('path');
-const { render } = require('../lib/preamble');
 
 // Read-only agents (task 06): identity from SubagentStart, enforcement here.
 // See lib/plant-roles.js's header for the full reasoning; this file only
@@ -182,8 +186,17 @@ function handlePreToolUse(input) {
 let raw = '';
 process.stdin.on('data', (c) => { raw += c; });
 process.stdin.on('end', () => {
+  // Empty stdin is a context event with nothing to say. Anything else must
+  // parse to an object: a malformed payload cannot be told apart from a
+  // PreToolUse event, and printing SessionStart output for it would allow the
+  // call (security re-review Minor 5).
   let input = {};
-  try { input = JSON.parse(raw); } catch { /* fall through — emit anyway */ }
+  if (raw.trim() !== '') {
+    try { input = JSON.parse(raw); } catch { input = null; }
+    if (input === null || typeof input !== 'object' || Array.isArray(input)) {
+      deny('hook input is not a JSON object. Refusing rather than guessing which event this is.');
+    }
+  }
 
   if (input.hook_event_name === 'PreToolUse') {
     handlePreToolUse(input);
@@ -225,7 +238,7 @@ process.stdin.on('end', () => {
 
   let text;
   try {
-    text = render({ harness: 'codex', cwd });
+    text = require('../lib/preamble').render({ harness: 'codex', cwd });
   } catch {
     // Say so rather than starting a session that silently has no rules.
     text = '[fx] PREAMBLE.md could not be read. The fx bootstrap and its always-on '

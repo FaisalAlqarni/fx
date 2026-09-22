@@ -110,8 +110,12 @@ const allowed = fire({
 assert.strictEqual(allowed.status, 0, 'a benign command must pass');
 assert.strictEqual(allowed.stderr.trim(), '', 'a pass must be silent');
 
+// Malformed input cannot be told apart from a PreToolUse event, so it is
+// refused with a reason, never answered with SessionStart output (security
+// re-review Minor 5; tests/gates/codex-hook-output.test.js pins the rest).
 const garbage = spawnSync('node', [hook], { input: 'not json', encoding: 'utf8' });
-assert.strictEqual(garbage.status, 0, 'malformed input must not wedge a session');
+assert.strictEqual(garbage.status, 2, 'malformed input is refused');
+assert.ok(garbage.stderr.trim().length > 0, 'and the refusal states its reason');
 
 // PreToolUse for a non-shell tool is not this hook's business.
 const other = fire({

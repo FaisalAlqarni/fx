@@ -213,4 +213,54 @@ for (const tool of ['memory_tool', 'request_permissions_tool']) {
   console.log('plant-roles load failure: passed');
 }
 
+// Security re-review I2: lib/preamble (and lib/plan-state behind it) is only
+// needed to render context. If either throws at load, a PreToolUse call must
+// still be judged, never crash the hook with exit 1, which Codex treats as a
+// failed, non-blocking run: the read-only check and the git guard would both
+// be skipped.
+for (const mod of ['preamble.js', 'plan-state.js']) {
+  const broken = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-codex-broken-'));
+  try {
+    for (const d of ['hooks', 'lib', 'codex']) fs.cpSync(path.join(root, d), path.join(broken, d), { recursive: true });
+    fs.copyFileSync(path.join(root, 'PREAMBLE.md'), path.join(broken, 'PREAMBLE.md'));
+    fs.writeFileSync(path.join(broken, 'lib', mod), `throw new Error('stubbed ${mod} failure');\n`);
+    const runBroken = (payload) => {
+      const r = spawnSync('node', [path.join(broken, 'hooks', 'fx-codex.js')], { input: JSON.stringify(payload), env, encoding: 'utf8' });
+      return { code: r.status, out: r.stdout.trim(), err: r.stderr };
+    };
+    const sub = runBroken({ ...base, hook_event_name: 'SubagentStart', agent_id: 'lens-np', agent_type: 'fx-lens-security' });
+    assert.strictEqual(sub.code, 0, `${mod}: the subagent still starts`);
+    const lens = runBroken({ ...base, hook_event_name: 'PreToolUse', agent_id: 'lens-np', tool_name: 'apply_patch', tool_input: { command: PATCH } });
+    assert.strictEqual(lens.code, 2, `${mod}: a lens apply_patch is refused when ${mod} did not load`);
+    const push = runBroken({ ...base, hook_event_name: 'PreToolUse', tool_name: 'Bash', tool_input: { command: 'git push --force origin main' } });
+    assert.strictEqual(push.code, 2, `${mod}: a controller git push --force is refused when ${mod} did not load`);
+    const ss = runBroken({ ...base, hook_event_name: 'SessionStart', source: 'startup' });
+    assert.strictEqual(ss.code, 0, `${mod}: the session still starts`);
+    assert.match(JSON.parse(ss.out).hookSpecificOutput.additionalContext, /NOT loaded/, `${mod}: and says the rules are missing`);
+  } finally {
+    fs.rmSync(broken, { recursive: true, force: true });
+  }
+}
+console.log('preamble load failure: passed');
+
+// Security re-review Minor 5: stdin that is not a JSON object is refused. It
+// cannot be told apart from a PreToolUse event, so falling through to the
+// SessionStart output would allow the call. Empty stdin still starts a session.
+{
+  const raw = (input) => {
+    const r = spawnSync('node', [hook], { input, env, encoding: 'utf8' });
+    return { code: r.status, out: r.stdout.trim(), err: r.stderr };
+  };
+  for (const garbage of ['{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git push --force"', 'not json', 'null', '42']) {
+    const g = raw(garbage);
+    assert.strictEqual(g.code, 2, `garbage stdin ${JSON.stringify(garbage)} is refused`);
+    assert.ok(g.err.trim() !== '', 'and says why');
+  }
+  const empty = raw('');
+  assert.strictEqual(empty.code, 0, 'empty stdin still starts a session');
+  keysOk(empty.out, 'empty stdin');
+  assert.ok(JSON.parse(empty.out).hookSpecificOutput.additionalContext.includes('$fx-tdd'), 'with the preamble');
+}
+console.log('malformed stdin: passed');
+
 console.log('codex-hook-output: all passed');
