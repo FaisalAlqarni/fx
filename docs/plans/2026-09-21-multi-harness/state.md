@@ -2326,3 +2326,16 @@ Task 26: DONE, e195021. A new agent-model gate; model: opus on devils-advocate; 
 Task 26: review Approved. The reviewer re-ran the generators (zero diff), ran row 09 live (17 skills), mutation-tested the model gate and checked the MIT text. Codex hiding is unchanged: the description colon still breaks strict parsing first. Important (non-blocking): unquoted `argument-hint: [name]` parses as a one-element array under strict YAML, confirmed.
 Ruling: quote the three argument-hint values as fix round 1 of task 26, after task 25 commits, so implementers run one at a time. Why: fx behaviour on Codex already depends on strict versus lenient frontmatter parsing, so ambiguity here is the wrong default. Cost if wrong: none, because a quoted string is valid for every parser. Caught by the round and check-generated.
 Task 25: fix round 1 landed in 66defbb. The bootstrap alone is 2,863, 2,846 and 2,948 (Codex 52 under 3,000). Worst case about 4,000, under 9,000. Audit: 0 dropped. Live: rows 01 and 04 pass on both runtimes (3/3 each). check-all ALL GREEN. Scoped re-review dispatched. Task 26 fix round (quote argument-hint) dispatched.
+Task 25: re-review of round 1: Approved. All five items fixed; no new
+        Critical or Important. The Codex 52-char margin under the 3,000 target
+        is rated Minor, because the pin is a deliberate design-pressure gate
+        and the real limit (9,000) has room. Minors (deferred): only rows 01
+        and 04 were re-run after the prose line (task 21 covers the rest); one
+        stale "kept" bullet in the audit summary; prose-line bullet naming.
+Task 25: complete (commits 785e4f3..66defbb, 1 fix round, review approved).
+        - A 2.9K bootstrap; routing in the descriptions, with an overlap gate.
+        - 140-row no-loss audit, 0 dropped.
+        - ADR 0021 partly supersedes ADR 0002.
+        - Live: Claude Code 9/9 lanes and 5/5 on row 04; opencode 8/9 lanes
+          and 10/10 on row 04. The fx-design__existing reps are carried in
+          task 21.
