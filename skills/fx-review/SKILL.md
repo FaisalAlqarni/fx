@@ -178,7 +178,10 @@ the brief:
 > wrong. Quote the spec line for each finding. Under 400 words."
 
 **Lens briefs**: the `fx-lens-*` agents, each given the diff file path and
-the paths that triggered it. Read-only by construction.
+the paths that triggered it, and this line: "Cite each finding as the source
+file and its line number at HEAD, never a line number inside the diff file."
+A diff line number points into a file the reader never opens. Read-only by
+construction.
 
 **Branch mode also dispatches the broad reviewer**: [reviewer-prompt.md](./reviewer-prompt.md),
 on the most capable available model, pointed at the ledger's deferred-minor and

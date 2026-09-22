@@ -79,7 +79,7 @@ A claim with no verdict is a build error.
 | Output Format: Strengths · Critical/Important/Minor with their scope notes · Recommendations · Assessment with Ready-to-merge | P |
 | Critical Rules: 5 DOs and 5 DON'Ts | P |
 | Example Output | D: illustrative; every rule it demonstrates is stated normatively. Reinstate if the format proves unclear |
-|: | **Added:** `[MODEL]` required (most capable) · Global Constraints block · carried deferred/parked findings for triage · tautological-assertion check · nothing-leaves-the-machine |
+|: | **Added:** `[MODEL]` required (standard tier by default, most capable only with a stated reason) · Global Constraints block · carried deferred/parked findings for triage · tautological-assertion check · nothing-leaves-the-machine |
 
 ## superpowers:receiving-code-review (99 to 183)
 

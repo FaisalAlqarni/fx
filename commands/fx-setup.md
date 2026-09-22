@@ -181,9 +181,8 @@ working tree.
 **Not run end-to-end against a live Codex session while this section was
 written.** No live `codex` process was exercised to produce the text below;
 `auditRoles` and `hooksTrusted` are proven only against temporary fixtures in
-`lib/plant-roles.test.js`. What a real user sees on a real machine is
-unverified until task 12's conformance run measures it against a live
-session.
+`lib/plant-roles.test.js`. What a real user sees on a real machine has not
+been measured against a live Codex session.
 
 A `SessionStart` hook plants fx's read-only review roles into this machine's
 Codex home, but a hook fails open and silently by necessity: it can never

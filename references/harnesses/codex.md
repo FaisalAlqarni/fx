@@ -32,7 +32,7 @@ planted or repaired during a session, by fx's SessionStart hook or by
 writes one.
 
 Nesting depth, read from the 0.155.1 source. On a model whose catalog entry
-selects MultiAgentV2 (most models in the bundled catalog do), there is no depth
+selects MultiAgentV2 (5 of the 9 models in the 0.155.1 bundled catalog), there is no depth
 limit: a child keeps `spawn_agent`, and only concurrency is capped, at 4
 threads per session including the root by default
 (`[agents] max_concurrent_threads_per_session`). On a model that selects V1,

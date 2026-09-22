@@ -158,7 +158,8 @@ Subagent (general-purpose):
     [Style, optimization opportunities, documentation polish]
 
     Each issue: file:line · what is wrong · why it matters · how to fix if not
-    obvious.
+    obvious. The file:line is the source file at HEAD, never a line number
+    inside the diff file.
 
     ### Carried findings triage
     For each deferred/parked finding: must-fix-before-merge, or confirmed

@@ -229,7 +229,7 @@ identical to the interactive path; only the "who decides" step changes.
 
 The block at the top is not decoration. Whoever builds this plan is very likely
 a **different session** from the one that wrote it, opening a repo of finished
-artifacts with no memory of how they got there. The routing table they see is
+artifacts with no memory of how they got there. The bootstrap they see is
 generic and is read before they have looked at the repo. This file is the one
 thing guaranteed to be read by anyone about to act on it, so the handoff lives
 here or nowhere. Copy it verbatim.
