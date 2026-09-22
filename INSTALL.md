@@ -417,14 +417,21 @@ Codex behaviour in a live session counts as proven.
 
 Every `GAP` recorded in `state.md`:
 
-- **Rows 13 and 14 on Claude Code and Codex.** No row checks, inside a live
-  session on those runtimes, that the five user-invoked lanes are hidden from
-  the model (13) and still typeable (14). On Claude Code the check cannot be
-  made the way the row needs: `claude plugin details` lists a lane even when
-  it is marked `user-invocable: false`. The frontmatter flags that do the
-  hiding are pinned by `tests/gates/user-invoked.test.js`, which runs in
-  `scripts/check-all`. Task 22 adds a check for Codex through
-  `codex debug prompt-input`, which needs no model call.
+- **Rows 13 and 14 on Codex.** No row checks, inside a live session on Codex,
+  that the five user-invoked lanes are hidden from the model (13) and still
+  typeable (14). The frontmatter flags that do the hiding are pinned by
+  `tests/gates/user-invoked.test.js`, which runs in `scripts/check-all`. Part
+  B builds the live check the same way Claude Code's is built.
+
+  On Claude Code both rows are live and passing since 2026-09-23. The check
+  is not made through `claude plugin details`, which lists a lane whether or
+  not it is hidden: row 13 runs a session on a prompt that echoes `fx-audit`'s
+  own description without naming a lane, and asserts the `Skill` tool is never
+  called with any of the five, attempted or blocked; row 14 types
+  `/fx:fx-handoff` and asserts both the load and the handoff block. Nothing
+  can assert the names are absent from the model's context: the session-start
+  event lists tools, MCP servers and plugins, never the skills a session can
+  see.
 - **Codex rows 04 to 08, 12 and 15 to 17.** Not run: the Codex quota ran out
   during task 12. None of these is a pass. Row 18 has never run on Codex, and
   rows 01 and 02 last passed on the old hook wiring. Part B runs every row.
@@ -446,7 +453,8 @@ The free rows check that:
 - every reference citation resolves (10);
 - the six read-only agents are registered (11);
 - the user-invoked lanes are hidden and still typeable, at the file and
-  config level (13 and 14; GAP on Claude Code and Codex, as above).
+  config level (13 and 14; on Claude Code these two are live rows, so the
+  nightly free run skips them, and on Codex they are GAP, as above).
 
 The nightly run makes no model call and uses no secrets, so it does not check
 anything a live session shows: the bootstrap reaching a session or a

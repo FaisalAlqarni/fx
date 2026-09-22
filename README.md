@@ -179,10 +179,10 @@ ending in a `design.md` for `fx-plan`.
 All five are hidden from the model on every runtime and stay typeable: by
 `disable-model-invocation` on Claude Code, by `agents/openai.yaml` on Codex,
 and on opencode by a `deny` in `permission.skill` plus a generated command.
-The Codex hiding has a known fragility, described in `INSTALL.md`. On
-Claude Code and Codex no live row checks this yet: conformance rows 13 and 14
-are GAP there (`INSTALL.md`, "Stated limitations"), and the frontmatter flags
-are pinned by a gate test instead.
+The Codex hiding has a known fragility, described in `INSTALL.md`. On Claude
+Code, conformance rows 13 and 14 check both halves inside a live session. On
+Codex no live row checks it yet (`INSTALL.md`, "Stated limitations"); there
+the frontmatter flags are pinned by a gate test instead.
 
 ## Install
 

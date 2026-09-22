@@ -1,6 +1,4 @@
 # Free rows allowed to GAP, one "<harness> <row>" per line. run.sh --free
 # fails any other free GAP. Each GAP below states its reason when it runs.
-claude-code 13
-claude-code 14
 codex 13
 codex 14
