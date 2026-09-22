@@ -43,9 +43,8 @@ Subagent (general-purpose):
 
     ## Before you begin
 
-    **Invoke `fx:fx-tdd` before writing any code.** (That is the addressable
-    name: a plugin skill resolves as `plugin:skill`, and a bare `fx-tdd` may
-    not resolve at all.) It owns the RED/GREEN
+    **Invoke the fx-tdd lane before writing any code.** Your bootstrap says
+    how this runtime addresses a lane. It owns the RED/GREEN
     discipline this task assumes: the Iron Law and verify-RED live there, not
     here; the TDD rules below are the summary, not a substitute.
 
@@ -101,6 +100,11 @@ Subagent (general-purpose):
       Fix the test.
     - **Verify GREEN**: the test passes, the rest of the suite still passes,
       and the output is pristine: no stray warnings or noise.
+    - **A bug report names a symptom. Before a fix or a refactor edits a
+      function, find every caller of it.** One guard in the shared function
+      is a smaller diff than a guard in every caller, and patching only the
+      path the task names leaves every sibling caller broken. The smallest
+      change in the wrong place is a second bug.
     - Refactor only after green, and only on code this task wrote.
 
     ## Prose

@@ -425,7 +425,7 @@ Template: [implementer-prompt.md](./implementer-prompt.md)
 
 **Fill the template rather than composing from memory.** Measured over one
 twelve-task build: 26 of 26 dispatches were written in the tool call, and each
-dropped whichever clause was not in mind that minute. `fx:fx-tdd` was never
+dropped whichever clause was not in mind that minute. The fx-tdd lane was never
 invoked once across 111 subagents. Tailoring is still wanted, and the briefs
 carrying ledger rulings and named risks are why several defects were caught.
 Reconstruction is the part that fails: open the template, fill it, then add the
@@ -622,7 +622,7 @@ where `MERGE_BASE` is `git merge-base <base-branch> HEAD`. Include the printed
 path in the dispatch, **so the final reviewer reads one file instead of
 re-deriving the branch diff with git commands.**
 
-Invoke `fx:fx-review` in branch mode on the **most capable available model**.
+Invoke the fx-review lane in branch mode on the **most capable available model**.
 Point it at the ledger's **deferred-minor and parked lines** so it can triage
 which must be fixed before merge.
 

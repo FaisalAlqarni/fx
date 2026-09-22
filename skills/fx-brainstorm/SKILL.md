@@ -310,8 +310,8 @@ Fresh eyes on what you wrote:
 4. **Ambiguity check**: could any requirement be read two different ways? Pick
    one and make it explicit.
 5. **Prose check**: does it read like a brochure? Inflated claims, "it's not X
-   it's Y", stock vocabulary, a sales register. If so, invoke `fx:fx-humanize`
-   on it. A design document is the artifact the user reads most closely, and it
+   it's Y", stock vocabulary, a sales register. If so, invoke the fx-humanize
+   lane on it. A design document is the artifact the user reads most closely, and it
    is the one most likely to have drifted into pitch.
 
 Fix inline. No need to re-review: fix and move on.

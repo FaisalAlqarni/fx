@@ -45,9 +45,9 @@ session that is most of it, which is why this stays short.
    it costs if wrong. **These are the part most likely to be lost**, because
    they live in a file the next session may never open and were decisions made
    on the user's behalf.
-5. **Lanes to invoke**, by addressable name: `fx:fx-implement`, `fx:fx-tdd`.
-   A plugin skill resolves as `plugin:skill`, and a bare name may not resolve.
-   Say which and why, not the whole routing table.
+5. **Lanes to invoke**, by lane name: fx-implement, fx-tdd. The next
+   session's bootstrap says how its runtime addresses a lane, so name the lane
+   and not a runtime form. Say which and why, not the whole routing table.
 6. **What is not written down anywhere.** The thing you would say out loud if
    you were handing this over in person. If nothing, say so.
 7. **Artifacts by path**, listed and not restated. Mark any the reader cannot

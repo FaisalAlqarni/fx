@@ -147,7 +147,7 @@ fx-tdd is routed for any code with logic, and every implementer invokes it.
 | 71 | 113-114 | "The ladder runs after you understand the problem, never instead of it." | moved | Same | Same |
 | 72 | 114-115 | "Read the task and the code it touches, trace the real flow end to end, then climb." | moved | Same | Same |
 | 73 | 115 | "Two rungs work: take the higher one and move on." | moved | Same | Same |
-| 74 | 117 | "A bug report names a symptom." | moved | `skills/fx-debug/SKILL.md`, Phase 5 (task 24) | fx-debug is routed for every bug; Phase 5 is the edit |
+| 74 | 117 | "A bug report names a symptom." | moved | `skills/fx-debug/SKILL.md`, Phase 5 (task 24), and `skills/fx-implement/implementer-prompt.md`, TDD rules (task 27) | fx-debug is routed for every bug, and Phase 5 is the edit. A planned fix or refactor dispatched by fx-implement never passes through fx-debug, so the rule also sits in the implementer prompt, which every implementer reads at dispatch, before it writes code |
 | 75 | 117-118 | "Before editing, find every caller of the function you are about to touch." | moved | Same | Same |
 | 76 | 118-120 | "One guard in the shared function is a smaller diff than a guard in every caller, and patching only the path the task names leaves every sibling caller broken." | moved | Same | Same |
 | 77 | 122-123 | "Rules: no interface with one implementation, no factory for one product, no config for a value that never changes." | moved | `skills/fx-tdd/SKILL.md`, GREEN (task 24) | GREEN |
@@ -272,6 +272,7 @@ quoted trigger phrase two descriptions share; today there is none.
 | fx-humanize / fx-authoring | editing a document | "For a document an agent consumes (SKILL.md, CLAUDE.md, AGENTS.md), use fx-authoring." | "Prose for humans is fx-humanize." | S3 diff; new clause |
 | fx-brainstorm / fx-design | a new page or component | "For how a screen looks, use fx-design." | "For a page whose content the request already states, use this lane, not fx-brainstorm." | S3 diff; new clause, measured below |
 | fx-review / fx-architecture | checking code | "For EXISTING code with no diff, use fx-architecture instead." | "For a DIFF, use fx-review." | existing |
+| prototype / fx-design | variations of a screen | "Building the screen that ships is fx-design; this lane throws its variations away." | "For throwaway variations that settle a question, use prototype." | task 27; new clauses, not measured live |
 
 The fx-design clause was added after the live gate: the pricing-page prompt
 ("We need a pricing page... Make it look good") loaded fx-brainstorm instead of

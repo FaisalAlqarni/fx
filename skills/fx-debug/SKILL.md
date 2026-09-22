@@ -322,7 +322,7 @@ With a correct seam:
    JUnit, XCTest: `.fx.json` names the runner); **a one-off test script if
    there is no framework at that seam.** A script that reproduces and asserts
    is worth more than no test at all, and it can be promoted later.
-2. **Watch it fail.** Invoke `fx:fx-tdd` for the RED/GREEN mechanics: including
+2. **Watch it fail.** Invoke the fx-tdd lane for the RED/GREEN mechanics: including
    which RED is valid (runtime vs compile-time) and the anti-tautology rules.
 3. Apply the fix.
 4. Watch it pass.

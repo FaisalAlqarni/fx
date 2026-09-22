@@ -30,6 +30,8 @@ const DECLARED = [
     evidence: { 'fx-humanize': /\bediting or reviewing prose\b/, 'fx-authoring': /\bany document an agent consumes\b/ } },
   { lanes: ['fx-brainstorm', 'fx-design'], trigger: 'a new page or component',
     evidence: { 'fx-brainstorm': /\bbuilding a component\b/, 'fx-design': /\bany new screen, page\b/ } },
+  { lanes: ['prototype', 'fx-design'], trigger: 'variations of a screen',
+    evidence: { prototype: /\btry a few variations of this screen\b/, 'fx-design': /\bany new screen\b/ } },
   { lanes: ['fx-review', 'fx-architecture'], trigger: 'checking code',
     evidence: { 'fx-review': /\bchanged code needs checking\b/, 'fx-architecture': /\bEXISTING code\b/ } },
 ];

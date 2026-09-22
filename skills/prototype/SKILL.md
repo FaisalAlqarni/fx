@@ -5,8 +5,10 @@ description: >
   something runnable to settle it: "let's try it and see", "I can't tell until I
   see it work", "spike this", "build a throwaway", "try a few variations of this
   screen", "prove it before we commit". Never the entry point for new work,
-  `fx-brainstorm` owns that and calls this when talking has stopped paying. Skip
-  it and the question gets settled by argument instead of by something that runs.
+  `fx-brainstorm` owns that and calls this when talking has stopped paying.
+  Building the screen that ships is fx-design; this lane throws its variations
+  away. Skip it and the question gets settled by argument instead of by
+  something that runs.
 ---
 
 # Prototype

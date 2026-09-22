@@ -239,7 +239,7 @@ path and stop.
    - `fx:fx-lens-pipeline` (`../../agents/fx-lens-pipeline.md`), by that
      addressable name, given the file set and no diff. Its output ends with an
      `Unread:` line.
-   - A subagent that invokes the skill `fx:fx-architecture`, by that name, on
+   - A subagent that invokes the fx-architecture lane on
      the file set, with the stated targets as the requirements it anchors on.
      **Bound it in the brief:** its HTML report goes in this slug directory,
      which is the plan directory; it stops once the candidates are written,

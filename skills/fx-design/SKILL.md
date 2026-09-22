@@ -5,7 +5,8 @@ description: >
   "make it less generic", "this looks AI-generated", or any new screen, page
   or component where how it looks is part of the job. For a page whose content
   the request already states, use this lane, not fx-brainstorm. For a diff, use
-  fx-review; for the structure behind the screen, use fx-architecture. It
+  fx-review; for the structure behind the screen, use fx-architecture; for
+  throwaway variations that settle a question, use prototype. It
   carries a calibrated list of the specific treatments current models reach for
   by default, and you cannot check your own output against a list you have not
   read.
