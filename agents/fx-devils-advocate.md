@@ -130,8 +130,10 @@ Hunt for what a directed review structurally cannot catch:
 
 - **Verification theater**: a claim marked "verified" where the check ran in
   the wrong context (wrong env, wrong engine, bare command instead of `bundle
-  exec`), proves a different thing than the claim, or wasn't actually run. See
-  `../references/vocab/verification.md`.
+  exec`), proves a different thing than the claim, or wasn't actually run. A
+  claim needs the evidence that proves it: test output with 0 failures, the
+  original symptom retested, a red-green cycle for a regression test, the diff
+  for a subagent's work. A report that it passed is not that evidence.
 - **Untestable-by-construction code**: a security- or money-critical
   comparison, guard, or branch with no test that could fail if the logic were
   wrong. A passing suite around code like this proves nothing.
