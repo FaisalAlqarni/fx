@@ -53,8 +53,14 @@ function claude() {
     const top = r.parent_tool_use_id == null;
     const content = (r.message && Array.isArray(r.message.content)) ? r.message.content : [];
     if (r.type === 'assistant') {
+      // A dispatch is asynchronous: the tool_result below is only an
+      // acknowledgement ("Async agent launched successfully"). What the
+      // subagent returns to its parent arrives as its own assistant messages,
+      // which name the dispatching tool_use in parent_tool_use_id.
+      const sub = !top && dispatch.has(r.parent_tool_use_id);
       for (const b of content) {
         if (b.type === 'text' && top) out.answer.push(b.text);
+        if (b.type === 'text' && sub) out.sub_output.push(b.text);
         if (b.type !== 'tool_use') continue;
         if (b.name === 'Agent' || b.name === 'Task') {
           if (top) {
@@ -80,6 +86,11 @@ function claude() {
         if (!top) out.sub_tool_output.push(t);
         if (top && dispatch.has(b.tool_use_id)) out.sub_output.push(t);
       }
+    }
+    // The other half of an asynchronous dispatch: the completion notice, which
+    // carries the subagent's summary and names the dispatch in tool_use_id.
+    if (r.type === 'system' && r.subtype === 'task_notification' && dispatch.has(r.tool_use_id)) {
+      out.sub_output.push(text(r.summary));
     }
     if (r.type === 'result') {
       if (typeof r.result === 'string') out.answer.push(r.result);
