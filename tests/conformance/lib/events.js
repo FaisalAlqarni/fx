@@ -13,6 +13,7 @@
 //   KIND=sub_tool_output  what tool calls made INSIDE a subagent returned
 //   KIND=max_depth        how deep dispatch went: 0 none, 1 a subagent, 2 its child
 //   KIND=skills           the name of every skill a session loaded, one per line
+//   KIND=skill_attempts   every Skill tool call attempted, loaded or blocked
 //
 // Formats, measured against Claude Code 2.1.278, Codex CLI 0.155.1 and
 // opencode 1.18.25:
@@ -29,7 +30,7 @@ const harness = process.env.HARNESS;
 const lines = fs.readFileSync(process.argv[2], 'utf8').split('\n');
 const out = {
   answer: [], tool_output: [], sub_input: [], sub_output: [], sub_type: [],
-  sub_tool_output: [], skills: [], max_depth: 0,
+  sub_tool_output: [], skills: [], skill_attempts: [], max_depth: 0,
 };
 
 const records = [];
@@ -81,7 +82,12 @@ function claude() {
         if (b.type !== 'tool_result') continue;
         const t = text(b.content);
         out.tool_output.push(t);
-        if (b.tool_use_id in skillCalls && !b.is_error) out.skills.push(skillCalls[b.tool_use_id]);
+        // A blocked call (disable-model-invocation: true) still reached the
+        // model as an attempt; skills counts only a load that succeeded.
+        if (b.tool_use_id in skillCalls) {
+          out.skill_attempts.push(skillCalls[b.tool_use_id]);
+          if (!b.is_error) out.skills.push(skillCalls[b.tool_use_id]);
+        }
         if (nested.has(b.tool_use_id) && !b.is_error) out.max_depth = Math.max(out.max_depth, 2);
         if (!top) out.sub_tool_output.push(t);
         if (top && dispatch.has(b.tool_use_id)) out.sub_output.push(t);

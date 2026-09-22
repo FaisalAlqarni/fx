@@ -107,4 +107,23 @@ const nestedLog = asyncLog.concat([
 assert.doesNotMatch(slice('sub_output', 'claude-code', nestedLog), /GRANDCHILD ANSWER/,
   'a nested subagent\'s answer is not a top-level subagent\'s answer');
 
+// A Skill call Claude Code blocks (disable-model-invocation: true) still
+// reaches the model as an attempt, even though it never becomes a load: the
+// tool_result comes back with is_error true. `skills` only counts a load
+// that succeeded; row 13 needs to know an attempt happened at all, blocked
+// or not, so it has its own kind.
+const blockedSkillLog = [
+  { type: 'assistant', parent_tool_use_id: null, message: { content: [
+    { type: 'tool_use', id: 'toolu_skill', name: 'Skill', input: { skill: 'fx-audit' } },
+  ] } },
+  { type: 'user', parent_tool_use_id: null, message: { content: [
+    { type: 'tool_result', tool_use_id: 'toolu_skill', is_error: true,
+      content: [{ type: 'text', text: 'This skill is not available for automatic invocation.' }] },
+  ] } },
+];
+assert.match(slice('skill_attempts', 'claude-code', blockedSkillLog), /^fx-audit$/m,
+  'skill_attempts must record a Skill call even when Claude Code blocks it');
+assert.strictEqual(slice('skills', 'claude-code', blockedSkillLog), '',
+  'skills must not record a blocked Skill call as a successful load');
+
 console.log('events: all passed');
