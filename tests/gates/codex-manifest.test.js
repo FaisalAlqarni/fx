@@ -30,6 +30,17 @@ for (const ev of ['SessionStart', 'SubagentStart']) {
     assert.strictEqual(h.additionalContextLimit, 0, `${ev} never truncates the preamble`);
   }
 }
+// Final review I8: Codex treats a hook timeout as a failed run, and a failed
+// PreToolUse run does not block (rust-v0.155.1, codex-rs/hooks/src/engine/
+// command_runner.rs:324-334 sets `error: "hook timed out"`, and
+// events/pre_tool_use.rs:205-211 turns any error into HookRunStatus::Failed
+// with should_block false). So a timeout skips the guard silently. Each call
+// pays for a login shell and a cold node start; 5s left too little margin.
+for (const ev of ['SessionStart', 'SubagentStart', 'PreToolUse']) {
+  for (const g of cxHooks[ev]) for (const h of g.hooks) {
+    assert.ok(h.timeout >= 30, `${ev}: timeout ${h.timeout}s is too tight; a timed-out Codex hook fails open`);
+  }
+}
 // Codex sends source "fork" on SessionStart; the docs omit it (research/codex.md, section 2).
 for (const g of cxHooks.SessionStart) {
   assert.ok(String(g.matcher).split('|').includes('fork'), 'SessionStart fires on fork');
