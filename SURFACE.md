@@ -156,6 +156,11 @@ One caveat: `experimental.chat.system.transform` carries an `experimental.`
 prefix and may change: the stable fallback is `~/.config/opencode/AGENTS.md`,
 which every session including child sessions reads.
 
+The script route (`scripts/fx-opencode-install`) is not a second way to get the
+plugin. With plugins turned off there is no bootstrap, no git guard, no lane
+check and no `task` grant; `AGENTS.md` is the only bootstrap fallback, and
+nothing replaces the guard.
+
 `fx` never writes to `~/.claude/CLAUDE.md`. opencode reads it as a global
 fallback, but it's the user's file: `/fx:fx-setup` writes to
 `~/.config/opencode/AGENTS.md` instead, so upgrades can replace rather than

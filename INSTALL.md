@@ -174,6 +174,20 @@ Use this when opencode's plugin loader is unavailable. opencode has forks, two
 environment switches turn plugins off entirely, and part of the registration
 surface the plugin relies on is experimental.
 
+**This route places files. It does not replace the plugin.** With plugins off,
+none of `plugins/fx.js` runs, so the session has:
+
+- no bootstrap: nothing injects `PREAMBLE.md`;
+- no git guard and no lane check: no `tool.execute.before` hook refuses
+  anything;
+- no `task: allow` grant for `general`, and `subagent_depth` stays at
+  opencode's default, so a subagent cannot dispatch a reviewer.
+
+The skills, agents and commands still load, and each agent file still carries
+its own read-only permissions. The only bootstrap fallback is
+`~/.config/opencode/AGENTS.md`: paste the rendered `PREAMBLE.md` there. Nothing
+stands in for the guard.
+
 ```bash
 git clone https://github.com/FaisalAlqarni/fx.git ~/src/fx
 cd ~/src/fx
