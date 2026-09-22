@@ -360,6 +360,21 @@ const root = path.join(__dirname, '..', '..');
       /\[fx\]/, 'the git guard still refuses');
   }
 
+  // Final review Minor 5: a command whose frontmatter does not parse is an
+  // error that names the file, never a silently missing command.
+  {
+    const { opencodeCommands } = require(path.join(root, 'lib', 'opencode-commands.js'));
+    const bad = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-oc-cmd-'));
+    scratchDirs.push(bad);
+    for (const d of ['commands', 'skills', 'references', 'agents']) fs.cpSync(path.join(root, d), path.join(bad, d), { recursive: true });
+    fs.writeFileSync(path.join(bad, 'commands', 'fx-broken.md'), 'no frontmatter here\n');
+    assert.throws(() => opencodeCommands(bad, bad), /fx-broken\.md/, 'a malformed command is an error naming it');
+    fs.rmSync(path.join(bad, 'commands', 'fx-broken.md'));
+    const skill = path.join(bad, 'skills', 'fx-audit', 'SKILL.md');
+    fs.writeFileSync(skill, fs.readFileSync(skill, 'utf8').replace(/^---\n/, ''));
+    assert.throws(() => opencodeCommands(bad, bad), /fx-audit/, 'a malformed SKILL.md is an error naming it');
+  }
+
   for (const dir of scratchDirs) fs.rmSync(dir, { recursive: true, force: true });
   console.log('opencode-plugin.test.js: OK');
 })().catch((e) => { console.error(e); process.exit(1); });
