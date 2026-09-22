@@ -2405,3 +2405,4 @@ Delta coverage audit (amendment 2, tasks 22 to 26): 7 gaps, 2 Important.
           XDG exports); the task 14 and 16 Minors.
 Task 27: dispatched (opus, fresh implementer). It is free-gate only and needs
         no memory headroom.
+Task 27: DONE_WITH_CONCERNS, 18dde40. The addressing gate found 7 sites (4 known plus 3); all reworded to "invoke the fx-X lane", with a mutation test. Release gate: 0.2.0 over 0.1.7 passes and the same version fails, shown in archive fixtures; it skips with no main (as in CI). The every-caller rule now also lives in implementer-prompt TDD rules. prototype/fx-design pair declared. check-all ALL GREEN. Concerns: agent names (fx:fx-lens-*) and /fx:* commands still use the Claude Code form, excluded by design; the release gate was not built test-first; CI skips the release gate. Review dispatched with these as named risks.
