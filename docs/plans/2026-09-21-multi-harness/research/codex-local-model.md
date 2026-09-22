@@ -245,3 +245,33 @@ llama-server -m <qwen3-coder-gguf> --alias qwen3-coder \
 | Failure handling, meaning what the harness does on a bad call | **Partly** | `unsupported call` and parse-error paths are exercised far more often than on OpenAI models. That is useful, but it is not representative. |
 
 Verdict: a local run is a cheap mechanics smoke test. It can show that hooks load, that a preamble is injected, and that a shell PreToolUse guard refuses. It cannot validate role dispatch, MCP use, edit-tool guards or any routing quality, and a failure in those areas should not be read as a harness defect without checking the blockers above first.
+
+## Measured, 2026-09-22 (task 22 part A probe)
+
+Blocker 3 above was confirmed live, not just from source. One probe session
+through `tests/conformance/run.sh codex` against this server (Qwen 3.8 27B,
+`127.0.0.1:8899`) made 30 identical `POST /v1/responses` calls in ~22 seconds
+and then exited 1. A captured request body, replayed once directly against
+the server with `curl` (after the live session had already exited, no
+further Codex or model call involved), returned:
+
+```
+HTTP_STATUS:500
+{"error":{"code":500,"message":"...raise_exception('System message must be
+at the beginning...Error: Jinja Exception: System message must be at the
+beginning.","type":"server_error"}}
+```
+
+The request's `input` array carried roles `developer, user, developer, user`
+(two `developer` items, rendered as two `system`-role messages by the
+`/v1/responses` shim, never merged with the leading `instructions` message),
+exactly the shape this file's section on `Qwen3.5-4B.jinja` predicted.
+
+Of the three mechanics part A can probe: hooks loading and the preamble
+reaching the model's input both PASS, checked from the captured request
+(markers from both ends of `PREAMBLE.md` were present in every one of the 30
+bodies), never from a reply. The PreToolUse Bash-guard mechanic is BLOCKED,
+not FAILed: the template exception fires before the model produces a single
+token, so no shell call is ever offered to the guard. Full detail:
+`.fx/2026-09-21-multi-harness/reports/22a-codex-local-report.md`. Rows 01 and
+06 were not run, per the amendment's own stop condition.
