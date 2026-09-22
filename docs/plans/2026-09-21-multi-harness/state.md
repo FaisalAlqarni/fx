@@ -2339,3 +2339,10 @@ Task 25: complete (commits 785e4f3..66defbb, 1 fix round, review approved).
         - Live: Claude Code 9/9 lanes and 5/5 on row 04; opencode 8/9 lanes
           and 10/10 on row 04. The fx-design__existing reps are carried in
           task 21.
+Task 26: fix round 1 landed in b23b86c. The three argument-hint values are now
+        quoted and regenerated, and a gate asserts they stay quoted (RED shown).
+        Codex's description-colon hiding is unchanged. check-all ALL GREEN.
+        Scoped re-review dispatched.
+Task 21: amended. The part-order criterion is n/a, because the preamble is now
+        a single part. The whole matrix re-runs on the final tree, both routes.
+        The remainder is dispatched to a fresh implementer.

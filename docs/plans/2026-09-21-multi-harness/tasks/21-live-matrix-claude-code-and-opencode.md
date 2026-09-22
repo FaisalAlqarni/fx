@@ -58,6 +58,14 @@ This task shows whether those fixes hold in real sessions. It also runs the
 one check task 12 still owes: Claude Code row 06 under the round 2 jail. That
 run hit Claude's session limit.
 
+
+**Amended 2026-09-22 (after tasks 23 to 26).** The preamble is now one small
+bootstrap (task 25), so the part-order criterion no longer applies: there is
+one part. Record it as "n/a, single part" and do not measure it. Every row
+runs on the **final tree**, so task 21's earlier results no longer stand. That
+covers both routes: the installer route and the plugin-only route (task 23
+fixed the harness bug that invalidated the first plugin-route pass).
+
 **Files:**
 - Modify: `tests/conformance/lib/live.sh`  (the opencode install block only: two knobs, `FX_OPENCODE_ROUTE` and `FX_OPENCODE_MCP`)
 - Create: `tests/conformance/lib/mcp-probe-server.js`
