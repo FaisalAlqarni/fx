@@ -43,6 +43,7 @@ function releaseCheck(repo) {
   const mb = git(repo, 'merge-base', base, 'HEAD');
   const changed = !ok(repo, 'diff', '--quiet', mb, '--', '.', ...NOT_SHIPPED.map((p) => `:!${p}`));
   if (!changed) return { errors: [] };
+  if (!ok(repo, 'cat-file', '-e', `${mb}:${MANIFEST}`)) return { skipped: `no ${MANIFEST} at the merge-base ${mb.slice(0, 7)}` };
   const was = JSON.parse(git(repo, 'show', `${mb}:${MANIFEST}`)).version;
   const now = JSON.parse(fs.readFileSync(path.join(repo, MANIFEST), 'utf8')).version;
   return { errors: newer(now, was) ? [] : [
@@ -84,6 +85,19 @@ try {
   fs.mkdirSync(bare);
   git(bare, 'init', '-q', '-b', 'feat');
   assert.ok(releaseCheck(bare).skipped, 'no base branch skips');
+
+  // A merge-base with no manifest yet (the plugin is new on this branch) has
+  // no version to exceed: skipped with a reason, never an uncaught throw.
+  const fresh = path.join(tmp, 'fresh');
+  fs.mkdirSync(fresh);
+  const g = (...a) => git(fresh, '-c', 'user.name=fx', '-c', 'user.email=fx@example.invalid', ...a);
+  fs.writeFileSync(path.join(fresh, 'a.md'), 'one\n');
+  g('init', '-q', '-b', 'main'); g('add', '.'); g('commit', '-q', '-m', 'base');
+  g('checkout', '-q', '-b', 'feat');
+  fs.mkdirSync(path.join(fresh, '.claude-plugin'));
+  fs.writeFileSync(path.join(fresh, MANIFEST), JSON.stringify({ version: '0.1.0' }));
+  g('add', '.'); g('commit', '-q', '-m', 'add manifest');
+  assert.match(String(releaseCheck(fresh).skipped), /no .*plugin\.json/, 'a merge-base without a manifest skips, and says why');
 } finally {
   fs.rmSync(tmp, { recursive: true, force: true });
 }

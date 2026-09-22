@@ -12,7 +12,8 @@ const root = path.join(__dirname, '..', '..');
 // CODEX_HOME so running this suite can never write into the real
 // ~/.codex on the machine running it.
 const testCodexHome = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-codex-manifest-home-'));
-const testEnv = { ...process.env, CODEX_HOME: testCodexHome };
+// TMPDIR too: the hook's identity records and any temp file stay inside it.
+const testEnv = { ...process.env, CODEX_HOME: testCodexHome, TMPDIR: testCodexHome };
 const codex = JSON.parse(fs.readFileSync(path.join(root, '.codex-plugin/plugin.json'), 'utf8'));
 const claude = JSON.parse(fs.readFileSync(path.join(root, '.claude-plugin/plugin.json'), 'utf8'));
 

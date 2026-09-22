@@ -35,7 +35,8 @@ function keysOk(out, label, top = TOP) {
   for (const k of Object.keys(j.hookSpecificOutput || {})) assert.ok(INNER.has(k), `${label}: unknown key ${k}`);
 }
 function denied(r) {
-  return r.code === 2 || (r.out !== '' && JSON.parse(r.out).hookSpecificOutput.permissionDecision === 'deny');
+  // A deny must say why: exit 2 with an empty stderr is a silent refusal (final review Minor 11).
+  return (r.code === 2 && r.err.trim() !== '') || (r.out !== '' && JSON.parse(r.out).hookSpecificOutput.permissionDecision === 'deny');
 }
 
 const base = { session_id: 's', turn_id: 't', cwd: root, transcript_path: null };
