@@ -222,15 +222,16 @@ if (!named) no("no plugin.json naming fx");
 if (!fs.existsSync(path.join(fx, "PREAMBLE.md"))) no("no PREAMBLE.md");
 const p = require(path.join(fx, "lib", "plant-roles"));
 const r = p.plantRoles({});
-console.log(JSON.stringify({ written: r.written, stale: r.stale, audit: p.auditRoles({}), hooksTrusted: p.hooksTrusted({}) }));
+console.log(JSON.stringify({ written: r.written, stale: r.stale, kept: r.kept, audit: p.auditRoles({}), hooksTrusted: p.hooksTrusted({}) }));
 ' "FX"
 ```
 
 It plants first. That writes only the six `fx-*.toml` role files fx
 generates, into `$CODEX_HOME/agents` (`~/.codex/agents` when `CODEX_HOME` is
 unset). A role that is already current is left alone. A role whose content
-differs is rewritten, and `written` and `stale` list what it changed. Then
-it audits, and reads hook trust.
+differs is rewritten, and `written` and `stale` list what it changed. A
+same-named file fx did not generate, or a symlink, is the user's: it is left
+alone and listed in `kept`. Then it audits, and reads hook trust.
 
 Report the three states under `audit` **separately, never merged into one
 count**:
@@ -239,7 +240,9 @@ count**:
 - **missing**: never planted on this machine. After the plant this should
   be empty; a name here means the plant failed, so say so.
 - **stale**: planted, but the content differs from what fx currently
-  generates. After the plant this should be empty too.
+  generates. After the plant this should be empty, except for a name in
+  `kept`: tell the user that file is theirs, so fx's role of that name is not
+  installed until they move it.
 
 **If every role is present and none are stale, print exactly one line**
 (for example: `fx roles: 6/6 planted, none stale.`) and move on, no wall of
