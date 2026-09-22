@@ -57,14 +57,19 @@ body_carried() {
 # for the function definition itself is what "one implementation" actually
 # means, and only lib/plant-roles.js defines it.
 #
-# commands/fx-setup.md joined the callers in task 10 ("Setup reports what
-# did not land"): it now runs auditRoles/hooksTrusted from lib/plant-roles.js
-# to report role state on Codex, which is what makes the third leg of "one
-# implementation, three callers" checkable here at all -- task 09 could only
-# assert two of three because this file was not yet task 10's.
+# commands/fx-setup.md joined in task 10 ("Setup reports what did not land"):
+# it now runs auditRoles/hooksTrusted from lib/plant-roles.js to report role
+# state on Codex.
+#
+# The second check is weaker than its old name claimed, and ADR 0027 records
+# why: it greps for the module name, which a require() for any export
+# satisfies, so it proves that nothing reimplements planting, not that all
+# three files call plantRoles(). Only two do; scripts/fx-opencode-install
+# imports READ_ONLY_AGENTS alone, because opencode has no .toml roles to
+# plant. The one-implementation check above is the strong one.
 check "role planting has exactly one implementation" \
   'test "$(grep -rl "^function plantRoles" "$FX/lib" "$FX/hooks" "$FX/scripts" 2>/dev/null | wc -l)" -eq 1'
-check "every caller routes through the planter" \
+check "every file that provisions roles imports the one module" \
   'grep -q "plant-roles" "$FX/hooks/fx-codex.js" && grep -q "plant-roles" "$FX/scripts/fx-opencode-install" && grep -q "plant-roles" "$FX/commands/fx-setup.md"'
 
 if [ "$HARNESS" = opencode ]; then

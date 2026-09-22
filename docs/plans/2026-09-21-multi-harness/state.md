@@ -2542,3 +2542,34 @@ User challenged the two claude-code GAPs (rows 13 and 14). Checked against the o
 Ruling: the claude-code GAP on rows 13 and 14 was avoidable. Turn both into live rows in the existing harness: row 13 asserts no Skill call to any of the five hidden lanes on a tempting prompt, row 14 asserts a user slash-command invocation runs the lane. The codex branch stays GAP, with the reason rewritten to point at task 22 part B. Agent dispatched (Sonnet).
 Rows 13 and 14 closed on claude-code (78ff5b3): row 13 runs a live session on a prompt echoing fx-audit's own description and asserts the Skill tool was never called with any of the five hidden lanes, attempted or blocked (events.js gained a skill_attempts kind, since the old skills kind recorded only successful loads); row 14 invokes /fx:fx-handoff in print mode and asserts both the load and the finished deliverable. Both PASS live. The system/init event carries no skills list, so absence from the model's context cannot be asserted; the row says so.
 Marking them live dropped opencode's free check for them, because a row had one kind for every harness. Fixed by me: run.sh passes HARNESS to --describe, and the two rows pick live for claude-code and free elsewhere. Verified: opencode free is 6 pass, claude-code free is 4 pass, check-all ALL GREEN. Codex keeps the GAP, now pointing at task 22 part B.
+
+## 2026-09-23: seven ADRs for what this branch decided and never recorded
+
+An audit of `state.md`'s rulings, both design amendments and the code against
+ADRs 0001 to 0021 found eight load-bearing decisions with no ADR. Two of them
+were one decision seen twice, so seven were written: 0022 to 0028. They are in
+`docs/adr/`.
+
+Three claims in the audit were wrong and were corrected while writing:
+
+- **The Codex hooks bug did not last "months".** `8aed061` (03:31) shipped the
+  undeclared root `hooks.json`; `af56f8c` (17:20) declared it. Same day, same
+  unreleased branch, and `main` never carried either state. 0022 says so.
+- **`plantRoles` has two callers, not three.** `hooks/fx-codex.js:223` and
+  `commands/fx-setup.md:221`, mirrored into `skills/fx-setup/SKILL.md:224` by
+  the generator. `scripts/fx-opencode-install` imports the module for
+  `READ_ONLY_AGENTS` and never calls the function. Verified by grepping every
+  call site.
+- **`tests/install/run.sh`'s second role check overclaimed.** It was named
+  "every caller routes through the planter" and greps each of three files for
+  the string `plant-roles`, which a `require()` for an unrelated export
+  satisfies. Renamed to what it proves, with the reasoning in a comment beside
+  it and in 0027. The strong check, one definition of `plantRoles` across
+  `lib`, `hooks` and `scripts`, is unchanged.
+
+Ruling: the ADRs land before the merge, not after. Why: they exist to stop a
+maintainer undoing this work, and every one of them names a change that looks
+like a cleanup. Cost if wrong: seven documents nobody reads, caught by nothing,
+which is the cheap side of this bet.
+
+`HOME="$(mktemp -d)" scripts/check-all`: ALL GREEN.
