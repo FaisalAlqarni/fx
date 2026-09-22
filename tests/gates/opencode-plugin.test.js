@@ -379,6 +379,39 @@ const root = path.join(__dirname, '..', '..');
       /\[fx\]/, 'and the guard still refuses');
   }
 
+  // Security re-review Minor 8: the user-invoked lanes stay hidden from the
+  // model even when the config step throws partway. Three breaks: plant-roles
+  // throws on require, a read-only agent's .md is missing, and the references
+  // directory is missing. Each must still leave every hidden lane denied.
+  {
+    const HIDDEN = ['fx-audit', 'fx-critique', 'fx-grill', 'fx-handoff', 'fx-setup'];
+    const breaks = {
+      'plant-roles throws': (d) => fs.writeFileSync(path.join(d, 'lib', 'plant-roles.js'), "throw new Error('stubbed');\n"),
+      'an agent file is missing': (d) => fs.rmSync(path.join(d, 'agents', 'fx-lens-security.md')),
+      'references is missing': () => {},
+    };
+    for (const [label, breakIt] of Object.entries(breaks)) {
+      const d = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-oc-deny-'));
+      scratchDirs.push(d);
+      for (const sub of ['plugins', 'lib', 'agents', 'commands', 'codex', 'skills']) fs.cpSync(path.join(root, sub), path.join(d, sub), { recursive: true });
+      fs.copyFileSync(path.join(root, 'PREAMBLE.md'), path.join(d, 'PREAMBLE.md'));
+      if (label !== 'references is missing') fs.cpSync(path.join(root, 'references'), path.join(d, 'references'), { recursive: true });
+      breakIt(d);
+      const { fx: dFx } = await import(path.join(d, 'plugins', 'fx.js'));
+      const dh = await dFx({ directory: root });
+      const config = {};
+      const errs = [];
+      const realError = console.error;
+      console.error = (...a) => errs.push(a.join(' '));
+      try { await dh.config(config); } finally { console.error = realError; }
+      assert.ok(errs.length > 0, `${label}: the config step did fail`);
+      for (const name of HIDDEN) {
+        assert.strictEqual(config.permission && config.permission.skill && config.permission.skill[name], 'deny',
+          `${label}: ${name} is still hidden from the model`);
+      }
+    }
+  }
+
   // Final review Minor 5: a command whose frontmatter does not parse is an
   // error that names the file, never a silently missing command.
   {

@@ -112,6 +112,17 @@ function extractPatchPaths(text) {
 // or a missing references directory throws here, where config() catches and
 // reports it, and never at module load, where it would take the guard down.
 function applyConfig(config) {
+  // Hide the five user-invoked lanes from the model via permission.skill
+  // deny. The last matching rule wins, so the broad allow goes first —
+  // and only once, so a repeat config() call does not reorder it behind
+  // whatever else has since been added. First, before any require or file
+  // read below can throw: a config step that fails partway must still leave
+  // these lanes hidden (security re-review Minor 8).
+  config.permission = config.permission || {};
+  config.permission.skill = config.permission.skill || {};
+  if (!('*' in config.permission.skill)) config.permission.skill['*'] = 'allow';
+  for (const name of HIDDEN_SKILLS) config.permission.skill[name] = 'deny';
+
   const { READ_ONLY_AGENTS } = require('../lib/plant-roles.js');
   const { toOpencodeAgent } = require('../lib/agent-dialects.js');
   const { opencodeCommands } = require('../lib/opencode-commands.js');
@@ -162,15 +173,6 @@ function applyConfig(config) {
   // dispatching a reviewer. Raise it, but never lower a value already
   // set higher than what fx needs.
   config.subagent_depth = Math.max(config.subagent_depth || 1, 2);
-
-  // Hide the five user-invoked lanes from the model via permission.skill
-  // deny. The last matching rule wins, so the broad allow goes first —
-  // and only once, so a repeat config() call does not reorder it behind
-  // whatever else has since been added.
-  config.permission = config.permission || {};
-  config.permission.skill = config.permission.skill || {};
-  if (!('*' in config.permission.skill)) config.permission.skill['*'] = 'allow';
-  for (const name of HIDDEN_SKILLS) config.permission.skill[name] = 'deny';
 
   // Commands: a hidden lane is typeable only as a command, and with no
   // installer run nothing else registers one (task 23, PD2). The text is
