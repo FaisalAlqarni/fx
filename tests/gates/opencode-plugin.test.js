@@ -332,6 +332,34 @@ const root = path.join(__dirname, '..', '..');
     );
   }
 
+  // Final review I3: a broken install (plant-roles throws on require, no
+  // references directory) must not take the guard down with it. The failure
+  // is reported, and the git guard still refuses.
+  {
+    const broken = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-oc-broken-'));
+    scratchDirs.push(broken);
+    for (const d of ['plugins', 'lib', 'agents', 'commands']) fs.cpSync(path.join(root, d), path.join(broken, d), { recursive: true });
+    fs.copyFileSync(path.join(root, 'PREAMBLE.md'), path.join(broken, 'PREAMBLE.md'));
+    fs.writeFileSync(path.join(broken, 'lib', 'plant-roles.js'), "throw new Error('stubbed plant-roles failure');\n");
+    const { fx: brokenFx } = await import(path.join(broken, 'plugins', 'fx.js'));
+    const bh = await brokenFx({ directory: root });
+    const errors = [];
+    const realError = console.error;
+    console.error = (...a) => errors.push(a.join(' '));
+    try {
+      await bh.config({});
+    } finally {
+      console.error = realError;
+    }
+    assert.ok(errors.some((e) => /plant-roles/.test(e)), 'the config failure is reported on stderr');
+    const out = { system: [] };
+    await bh['experimental.chat.system.transform']({}, out);
+    assert.ok(out.system.join('\n').includes('stubbed plant-roles failure'), 'and the model is told, so it can tell the user');
+    await assert.rejects(
+      () => bh['tool.execute.before']({ tool: 'bash' }, { args: { command: 'git branch -D fx-guard-probe' } }),
+      /\[fx\]/, 'the git guard still refuses');
+  }
+
   for (const dir of scratchDirs) fs.rmSync(dir, { recursive: true, force: true });
   console.log('opencode-plugin.test.js: OK');
 })().catch((e) => { console.error(e); process.exit(1); });

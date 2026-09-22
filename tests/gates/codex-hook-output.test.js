@@ -184,4 +184,32 @@ for (const tool of ['memory_tool', 'request_permissions_tool']) {
   fs.rmSync(fresh, { recursive: true, force: true });
 }
 
+// Final review I3: if lib/plant-roles fails to load, a subagent's call must
+// not slip past the read-only check. A copy of the plugin whose plant-roles
+// throws on require stands in for a broken install.
+{
+  const broken = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-codex-broken-'));
+  try {
+    for (const d of ['hooks', 'lib', 'codex']) fs.cpSync(path.join(root, d), path.join(broken, d), { recursive: true });
+    fs.copyFileSync(path.join(root, 'PREAMBLE.md'), path.join(broken, 'PREAMBLE.md'));
+    fs.writeFileSync(path.join(broken, 'lib', 'plant-roles.js'), "throw new Error('stubbed plant-roles failure');\n");
+    const runBroken = (payload) => {
+      const r = spawnSync('node', [path.join(broken, 'hooks', 'fx-codex.js')], { input: JSON.stringify(payload), env, encoding: 'utf8' });
+      return { code: r.status, out: r.stdout.trim(), err: r.stderr };
+    };
+    for (const [tool, input] of [['apply_patch', { command: PATCH }], ['Bash', { command: 'cat README.md' }]]) {
+      const b = runBroken({ ...base, hook_event_name: 'PreToolUse', agent_id: 'lens-broken', tool_name: tool, tool_input: input });
+      assert.strictEqual(b.code, 2, `a subagent's ${tool} is refused when plant-roles did not load`);
+      assert.match(b.err, /plant-roles/, 'and stderr names the module that failed');
+    }
+    const ctl = runBroken({ ...base, hook_event_name: 'PreToolUse', tool_name: 'Bash', tool_input: { command: 'cat README.md' } });
+    assert.strictEqual(ctl.code, 0, 'the controller (no agent_id) is not affected');
+    const ss = runBroken({ ...base, hook_event_name: 'SessionStart', source: 'startup' });
+    assert.strictEqual(ss.code, 0, 'the session still starts');
+  } finally {
+    fs.rmSync(broken, { recursive: true, force: true });
+  }
+  console.log('plant-roles load failure: passed');
+}
+
 console.log('codex-hook-output: all passed');

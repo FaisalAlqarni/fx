@@ -1,6 +1,6 @@
 // opencode plugin — parity with Claude Code, corrected against the shipped
 // opencode 1.18.25 binary (strings-read against
-// /home/faisal/.opencode/bin/opencode, 2026-09-21; see the task and the
+// ~/.opencode/bin/opencode, 2026-09-21; see the task and the
 // commit message for what was measured and how).
 //
 // MEASURED, not assumed:
@@ -46,21 +46,37 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { inspect } = require('../lib/git-guard.js');
-const { laneCheck } = require('../lib/lane-check.js');
-const { render } = require('../lib/preamble.js');
-const { READ_ONLY_AGENTS } = require('../lib/plant-roles.js');
-const { toOpencodeAgent } = require('../lib/agent-dialects.js');
-const { opencodeCommands } = require('../lib/opencode-commands.js');
+
+// No require runs at module load unguarded: a throw here fails the import,
+// and a plugin that fails to import has no guard at all (final review I3).
+// The guard's own require failing makes every bash call refuse; the lane
+// check and the preamble degrade; everything config() needs is required
+// inside config(), behind a catch that reports.
+let inspect, guardLoadError;
+try {
+  ({ inspect } = require('../lib/git-guard.js'));
+  if (typeof inspect !== 'function') throw new Error('inspect is not a function');
+} catch (e) {
+  guardLoadError = e;
+}
+let laneCheck;
+try {
+  ({ laneCheck } = require('../lib/lane-check.js'));
+} catch {
+  laneCheck = () => null;            // advice only; never block because it is missing
+}
+let render;
+try {
+  ({ render } = require('../lib/preamble.js'));
+} catch {
+  render = () => { throw new Error('lib/preamble.js failed to load'); };
+}
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));   // .../plugins
 const ROOT = path.join(HERE, '..');
 const AGENTS_DIR = path.join(ROOT, 'agents');
 const SKILLS_DIR = path.join(ROOT, 'skills');
-// Both paths a read-only agent may be handed for a reference: through the
-// path this plugin was loaded from, and the checkout it resolves to.
 const REFERENCES = path.join(ROOT, 'references');
-const REFERENCES_DIRS = [...new Set([REFERENCES, fs.realpathSync(REFERENCES)])];
 
 // The five lanes a person must type, never a model auto-selection.
 // tests/gates/user-invoked.test.js pins the same set for Claude Code
@@ -92,6 +108,82 @@ function extractPatchPaths(text) {
   return paths;
 }
 
+// Everything config() does, with its requires inside it: a missing module
+// or a missing references directory throws here, where config() catches and
+// reports it, and never at module load, where it would take the guard down.
+function applyConfig(config) {
+  const { READ_ONLY_AGENTS } = require('../lib/plant-roles.js');
+  const { toOpencodeAgent } = require('../lib/agent-dialects.js');
+  const { opencodeCommands } = require('../lib/opencode-commands.js');
+  // Both paths a read-only agent may be handed for a reference: through the
+  // path this plugin was loaded from, and the checkout it resolves to.
+  const REFERENCES_DIRS = [...new Set([REFERENCES, fs.realpathSync(REFERENCES)])];
+
+  // Skills: append idempotently. The config hook may run more than
+  // once; appending the same path twice registers every skill twice,
+  // and opencode keeps the first and logs the rest as duplicates.
+  config.skills = config.skills || {};
+  config.skills.paths = config.skills.paths || [];
+  if (!config.skills.paths.includes(SKILLS_DIR)) {
+    config.skills.paths.push(SKILLS_DIR);
+  }
+
+  // Agents: every read-only role, from the same set Codex's roles are
+  // derived from (lib/plant-roles.js) — never a `fx-lens-` prefix match,
+  // which would leave fx-devils-advocate writable here while it is
+  // read-only on Claude Code and Codex.
+  config.agent = config.agent || {};
+  for (const name of READ_ONLY_AGENTS) {
+    if (config.agent[name]) continue;   // idempotent across repeat config() calls
+    const mdText = fs.readFileSync(path.join(AGENTS_DIR, `${name}.md`), 'utf8');
+    config.agent[name] = toOpencodeAgent(mdText, { referencesDirs: REFERENCES_DIRS });
+  }
+
+  // Nested dispatch (amendment A6): opencode gives a subagent the task
+  // tool only when its own permission block has a rule keyed exactly
+  // `task`; `"*": "allow"` does not count (subagent-permissions.ts,
+  // canTask). `general` is the built-in subagent's key: opencode 1.18.31
+  // packages/opencode/src/agent/agent.ts:182-195, and `opencode agent
+  // list` on 1.18.25 prints `general (subagent)`. opencode merges this
+  // block over the native agent. Merge only when `task` and `*` are both
+  // absent, so a user's own value and a repeat config() call are both
+  // left alone. A user's `*` key is their answer for task too: 1.18.25
+  // rewrites `permission: "ask"` to `{"*": "ask"}` before this hook, and
+  // a task rule added after it would win. A bare action string is the
+  // user's too.
+  const general = (config.agent.general = config.agent.general || {});
+  general.permission = general.permission || {};
+  if (typeof general.permission === 'object' && !('task' in general.permission)
+      && !('*' in general.permission)) {
+    general.permission.task = 'allow';
+  }
+
+  // Depth: `subagent_depth` defaults to 1, which stops an implementer
+  // dispatching a reviewer. Raise it, but never lower a value already
+  // set higher than what fx needs.
+  config.subagent_depth = Math.max(config.subagent_depth || 1, 2);
+
+  // Hide the five user-invoked lanes from the model via permission.skill
+  // deny. The last matching rule wins, so the broad allow goes first —
+  // and only once, so a repeat config() call does not reorder it behind
+  // whatever else has since been added.
+  config.permission = config.permission || {};
+  config.permission.skill = config.permission.skill || {};
+  if (!('*' in config.permission.skill)) config.permission.skill['*'] = 'allow';
+  for (const name of HIDDEN_SKILLS) config.permission.skill[name] = 'deny';
+
+  // Commands: a hidden lane is typeable only as a command, and with no
+  // installer run nothing else registers one (task 23, PD2). The text is
+  // the installer's, from the one generator both call, with fx's
+  // references cited under the checkout this plugin was loaded from.
+  // A command already present (an installer's file, or the user's own)
+  // is left alone, so neither route registers it twice.
+  config.command = config.command || {};
+  for (const [name, cmd] of Object.entries(opencodeCommands(ROOT, ROOT))) {
+    if (!config.command[name]) config.command[name] = cmd;
+  }
+}
+
 export const fx = async ({ directory } = {}) => {
   const cwd = directory || process.cwd();
 
@@ -109,70 +201,17 @@ export const fx = async ({ directory } = {}) => {
              + 'user the plugin is misinstalled.';
   }
 
+  let configError = null;
+
   return {
     config: async (config) => {
-      // Skills: append idempotently. The config hook may run more than
-      // once; appending the same path twice registers every skill twice,
-      // and opencode keeps the first and logs the rest as duplicates.
-      config.skills = config.skills || {};
-      config.skills.paths = config.skills.paths || [];
-      if (!config.skills.paths.includes(SKILLS_DIR)) {
-        config.skills.paths.push(SKILLS_DIR);
-      }
-
-      // Agents: every read-only role, from the same set Codex's roles are
-      // derived from (lib/plant-roles.js) — never a `fx-lens-` prefix match,
-      // which would leave fx-devils-advocate writable here while it is
-      // read-only on Claude Code and Codex.
-      config.agent = config.agent || {};
-      for (const name of READ_ONLY_AGENTS) {
-        if (config.agent[name]) continue;   // idempotent across repeat config() calls
-        const mdText = fs.readFileSync(path.join(AGENTS_DIR, `${name}.md`), 'utf8');
-        config.agent[name] = toOpencodeAgent(mdText, { referencesDirs: REFERENCES_DIRS });
-      }
-
-      // Nested dispatch (amendment A6): opencode gives a subagent the task
-      // tool only when its own permission block has a rule keyed exactly
-      // `task`; `"*": "allow"` does not count (subagent-permissions.ts,
-      // canTask). `general` is the built-in subagent's key: opencode 1.18.31
-      // packages/opencode/src/agent/agent.ts:182-195, and `opencode agent
-      // list` on 1.18.25 prints `general (subagent)`. opencode merges this
-      // block over the native agent. Merge only when `task` and `*` are both
-      // absent, so a user's own value and a repeat config() call are both
-      // left alone. A user's `*` key is their answer for task too: 1.18.25
-      // rewrites `permission: "ask"` to `{"*": "ask"}` before this hook, and
-      // a task rule added after it would win. A bare action string is the
-      // user's too.
-      const general = (config.agent.general = config.agent.general || {});
-      general.permission = general.permission || {};
-      if (typeof general.permission === 'object' && !('task' in general.permission)
-          && !('*' in general.permission)) {
-        general.permission.task = 'allow';
-      }
-
-      // Depth: `subagent_depth` defaults to 1, which stops an implementer
-      // dispatching a reviewer. Raise it, but never lower a value already
-      // set higher than what fx needs.
-      config.subagent_depth = Math.max(config.subagent_depth || 1, 2);
-
-      // Hide the five user-invoked lanes from the model via permission.skill
-      // deny. The last matching rule wins, so the broad allow goes first —
-      // and only once, so a repeat config() call does not reorder it behind
-      // whatever else has since been added.
-      config.permission = config.permission || {};
-      config.permission.skill = config.permission.skill || {};
-      if (!('*' in config.permission.skill)) config.permission.skill['*'] = 'allow';
-      for (const name of HIDDEN_SKILLS) config.permission.skill[name] = 'deny';
-
-      // Commands: a hidden lane is typeable only as a command, and with no
-      // installer run nothing else registers one (task 23, PD2). The text is
-      // the installer's, from the one generator both call, with fx's
-      // references cited under the checkout this plugin was loaded from.
-      // A command already present (an installer's file, or the user's own)
-      // is left alone, so neither route registers it twice.
-      config.command = config.command || {};
-      for (const [name, cmd] of Object.entries(opencodeCommands(ROOT, ROOT))) {
-        if (!config.command[name]) config.command[name] = cmd;
+      try {
+        applyConfig(config);
+      } catch (e) {
+        // Reported, never thrown: a throw here would stop opencode loading
+        // the plugin, guard included.
+        configError = e;
+        console.error(`[fx] the plugin's config step failed (${e.message}); fx's skills, review agents or commands may be missing. The git guard still runs.`);
       }
     },
 
@@ -180,6 +219,10 @@ export const fx = async ({ directory } = {}) => {
       // `input.sessionID` is undefined at the agent-generation call site;
       // nothing here reads it, so there is nothing to guard.
       output.system.push(preamble);
+      if (configError) {
+        output.system.push(`[fx] The fx plugin failed to configure (${configError.message}). `
+          + 'Its review agents may be missing. Tell the user the plugin is misinstalled.');
+      }
     },
 
     'tool.execute.before': async (input, output) => {
@@ -189,6 +232,9 @@ export const fx = async ({ directory } = {}) => {
       if (tool === 'bash') {
         const command = args.command;
         if (!command) return;
+        if (guardLoadError) {
+          throw new Error(`[fx] git guard failed to load (${guardLoadError.message}). Denying every command until the plugin is repaired.`);
+        }
         let verdict;
         try {
           verdict = inspect(command, cwd);

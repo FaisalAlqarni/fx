@@ -29,16 +29,15 @@ const { render } = require('../lib/preamble');
 // Read-only agents (task 06): identity from SubagentStart, enforcement here.
 // See lib/plant-roles.js's header for the full reasoning; this file only
 // routes to it.
-let plantRoles, recordAgentIdentity, lookupAgentIdentity, isReadOnlyAgent, isWritingToolCall;
+let plantRoles, recordAgentIdentity, lookupAgentIdentity, isReadOnlyAgent, isWritingToolCall, rolesLoadError;
 try {
   ({ plantRoles, recordAgentIdentity, lookupAgentIdentity, isReadOnlyAgent, isWritingToolCall } =
     require('../lib/plant-roles'));
-} catch {
-  // Loaded lazily below with guards at each call site: a broken require here
-  // must not stop SessionStart from rendering the preamble, and must not
-  // stop the guard/lane checks PreToolUse already performs (ADR 0019: the
-  // read-only guarantee is belt-and-braces, not the only thing this hook
-  // does).
+} catch (e) {
+  // A broken require must not stop SessionStart from rendering the
+  // preamble. It must not open the read-only check either: PreToolUse
+  // refuses every subagent call while this is set (final review I3).
+  rolesLoadError = e;
 }
 
 // Codex's apply_patch carries its whole payload as raw text under `command`
@@ -110,7 +109,12 @@ function handlePreToolUse(input) {
   // consulted: it is undocumented here, so the only identity trusted is
   // whatever SubagentStart recorded for this agent_id. Unrecorded ==
   // unclassifiable == refused on a write, same as a classified lens.
-  if (agentId && lookupAgentIdentity && isWritingToolCall) {
+  // Without plant-roles there is no way to tell a lens from an implementer,
+  // or a read from a write, so a subagent's call is refused. Fail closed.
+  if (agentId && rolesLoadError) {
+    deny(`lib/plant-roles failed to load (${rolesLoadError.message}), so subagent ${agentId}'s role cannot be verified; refusing the call. Reinstall the plugin.`);
+  }
+  if (agentId) {
     let known = null;
     try { known = lookupAgentIdentity(agentId); } catch { known = null; }
     const mustRefuseWrites = known === null ? true : isReadOnlyAgent(known);
