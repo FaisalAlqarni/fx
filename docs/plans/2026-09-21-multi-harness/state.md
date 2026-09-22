@@ -2482,3 +2482,27 @@ Ruling: **one fix wave**, with one fix subagent on Opus. Reason: I2, I3 and I7
 Fix wave resumed 2026-09-22 after the rate limit (agent a1291e3, Opus, justified: security-critical guard and identity fixes). Done before the limit: I1 7003f63, I2 b0d6982, I3 5c2cad7, I4 fdb1140, gate minors f5e1483. Remaining: I5-I9 and the open Minors. Waiting on it. Next: the scoped re-review.
 Fix wave complete: 17 commits 3e19af6..7e2d38f. I1-I9 fixed, fix-before-merge rows and Minors 1,3,5-13,15 fixed. check-all ALL GREEN (fresh HOME). Report: .fx/.../reports/final-fix-wave-report.md. Concerns carried: CC row 01 GAP (quota); live rows now FAIL on non-zero CLI exit, watch for false FAIL at --max-turns in the frozen matrix; Minors 6, 8, 11 were tested by revert, not test-first.
 Ruling: scoped re-review = one Sonnet reviewer (whole wave vs findings-final.md) plus the security lens on Opus (reason: I2, I3, I7 and I8 are guard, identity and jail code). Why: the ledger ruling from the final review. Cost if wrong: a missed regression, caught by the frozen live matrix for behavior, and by nothing for the security semantics except this lens.
+Dispatched: re-review (Sonnet), security lens (Opus), and task 22 part A Codex local-model probe (Sonnet; mechanics only, runs in parallel because it changes no product code). Blocked on these three. The frozen matrix follows the re-review verdict; it waits for part A to free the single llama-server slot.
+Security lens on the fix wave: 1 Critical, 2 Important, 6 Minor (.fx/.../reports/final-rereview-security.md).
+- C1: the Docker Desktop socket is reachable in the jail at /mnt/wsl/docker-desktop-bind-mounts/*/docker.sock.
+- I1: the real home is readable via /mnt/wslg/distro, and /mnt/c is readable.
+- I2: the hooks/fx-codex.js preamble require is unguarded, so it fails open.
+Ruling: the frozen live matrix is held until one fix round closes C1, I1 and I2. The fix round is combined with the Sonnet re-review's findings. Part A stays running: it uses the local Qwen, rows 01/06, with benign prompts. The exposure is the same as every earlier live run, and it is not worth losing the slot. Cost if wrong: a misbehaving local model reaches the host docker socket. Nothing catches it except that risk being low.
+Re-review (Sonnet): APPROVED. One Important still open: a live row hard-FAILs on a non-zero exit, but claude --max-turns 30 exits non-zero on error_max_turns.
+Ruling: security fix round, one agent on Opus (reason: jail, hook fail-open, and permission code are security-critical). It covers C1, I1 and I2, Minors 4, 5, 6, 8 and 9, and the max-turns Important. Minor 7 (identity-store DoS, fails closed) is accepted as is. After it: a security-lens re-check of that round only, then the frozen matrix. Blocked on the fix round and the part A probe.
+Task 22 part A done (782f34e). Codex on local Qwen:
+- Hooks load: PASS.
+- Preamble in the request: PASS (captured in all 30 request bodies).
+- Guard refuses Bash: BLOCKED. The Qwen chat template raises "System message must be at the beginning." on Codex's developer/user/developer/user roles, before any token.
+- Rows 01/06: not run, per the amendment's stop rule. Mechanics-only evidence, not a merge pass.
+Possible user-side option: restart llama-server with a template that merges system messages. That is on the user's Windows machine, so it is not done here.
+Probe note: sourcing live.sh overwrites a caller's EXIT trap. The probe's proxy leaked, and the agent killed it by PID. Parked as a follow-up, not a product defect.
+Part B (real model, merge gate) stays blocked until 2026-10-21.
+Security fix round done:
+- C1 + I1 + Minor 4: 37e2f61.
+- I2 + Minor 5: 5b718d2.
+- Minor 6: 649b8fd.
+- Minor 9: ff57986.
+- max-turns: acec8f6.
+- Minor 8: ae0c932.
+check-all ALL GREEN. Before the fix, the probe listed 70+ reachable sockets in the jail. Next: the security lens re-checks this round only (Opus, security-critical).
