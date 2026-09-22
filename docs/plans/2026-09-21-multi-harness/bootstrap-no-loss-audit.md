@@ -18,11 +18,19 @@ section 4). Those rows name the home task 24 gave them; this task keeps them.
 
 | Status | Rows |
 |---|---|
-| Kept in bootstrap | 43 |
-| Moved to a lane, a description, a reference or the guard | 92 |
+| Kept in bootstrap | 40 |
+| Kept in bootstrap in a one-line form, detail in a lane | 12 |
+| Kept as intent (the counter-sentence's wording dropped on purpose) | 3 |
+| Moved to a lane, a description, a reference or the guard | 80 |
 | Split: the decision kept in bootstrap, the discipline moved to a lane | 5 |
 | Dropped | 0 |
 | Total | 140 |
+
+"Dropped" counts rules. Three rows keep their rule as intent but not their
+words: the counter-sentences of rows 23, 28 and 31 ("Lanes tell you HOW to
+look", "Skills change; your memory of one does not", "You cannot tell from
+outside") were left out on purpose, because S3 routed without the
+rationalization table (`research/bootstrap-spike.md`).
 
 ## Intro and title
 
@@ -65,15 +73,15 @@ bootstrap in the sentence that already answers it; task 24's trim proposal
 | 20 | 46-47 | Table header "Thought / Reality" | kept | `PREAMBLE.md` | Structure of rows 21-34 |
 | 21 | 48 | "This is just a simple question" / "Questions are tasks. Check for a lane." | kept | `PREAMBLE.md`, imperative: "before any response, including before a clarifying question" | Decision to invoke |
 | 22 | 49 | "I need more context first" / "The lane check comes BEFORE clarifying questions." | kept | `PREAMBLE.md`, imperative: "before a clarifying question" | Decision to invoke |
-| 23 | 50 | "Let me look at the code first" / "Lanes tell you HOW to look." | kept | `PREAMBLE.md`, imperative: "before reading a single file" | Decision to invoke |
+| 23 | 50 | "Let me look at the code first" / "Lanes tell you HOW to look." | kept as intent | `PREAMBLE.md`, imperative: "before reading a single file" | Decision to invoke. The row's counter-sentence was dropped on purpose: S3 routed 9/9 lanes and row 04 10/10 on opencode without the rationalization table (`research/bootstrap-spike.md`) |
 | 24 | 51 | "I know what that means" / "Knowing the concept is not using the lane." | kept | `PREAMBLE.md`, imperative: "because you remember roughly what it says" | Decision to invoke |
 | 25 | 52 | "This does not need a formal process" / "If a lane exists for it, use it." | kept | `PREAMBLE.md`, imperative: "A lane that applies is not a suggestion" | Decision to invoke |
 | 26 | 53 | "Method is test-first and a hook enforces it" / "the summary is not a substitute" | moved | `skills/fx-implement/implementer-prompt.md`: "the TDD rules below are the summary, not a substitute" | Read by every implementer, at dispatch, before it writes code |
 | 27 | 54 | "The task file is detailed enough to just execute" / "Detail in a task is a reason to trust the task, never a reason to skip the lane." | moved | Plan-state block (`lib/plan-state.js`), appended to every render when a plan exists: "A task file detailed enough to execute is not a reason to skip the lane" | Rendered with the bootstrap exactly when task files exist |
-| 28 | 55 | "I know what the skill says" / "Then invoking it costs you nothing... Skills change; your memory of one does not." | kept | `PREAMBLE.md`, imperative: "because you remember roughly what it says" | Decision to invoke |
+| 28 | 55 | "I know what the skill says" / "Then invoking it costs you nothing... Skills change; your memory of one does not." | kept as intent | `PREAMBLE.md`, imperative: "because you remember roughly what it says" | Decision to invoke. The row's counter-sentence was dropped on purpose: S3 routed 9/9 lanes and row 04 10/10 on opencode without the rationalization table (`research/bootstrap-spike.md`) |
 | 29 | 56 | "This is a one-line fix" / "One line of logic is logic. The ladder shortens the solution, never the discipline." | kept + moved | `PREAMBLE.md`, imperative: "because the work looks small"; `skills/fx-tdd/SKILL.md`, GREEN, "The ladder": "one line of logic is still logic, and it gets its test" | The decision is in the bootstrap; the discipline applies at GREEN |
 | 30 | 57 | "I am a subagent, the controller already handled that" / "The controller cannot invoke a lane on your behalf." | kept | `PREAMBLE.md`, subagent paragraph | Subagents read nothing else |
-| 31 | 58 | "I will invoke it if it turns out to be needed" / "You cannot tell from outside." | kept | `PREAMBLE.md`, imperative: "even a 1% chance" | Decision to invoke |
+| 31 | 58 | "I will invoke it if it turns out to be needed" / "You cannot tell from outside." | kept as intent | `PREAMBLE.md`, imperative: "even a 1% chance" | Decision to invoke. The row's counter-sentence was dropped on purpose: S3 routed 9/9 lanes and row 04 10/10 on opencode without the rationalization table (`research/bootstrap-spike.md`) |
 | 32 | 59 | "I can do this directly, and do it well" / measured: a model reviewed a diff competently and invoked nothing | kept + moved | `PREAMBLE.md`, imperative: "You do not get to decide it is unnecessary"; the measured instance to `skills/fx-authoring/SKILL.md`, "PREAMBLE.md" | The decision is in the bootstrap; the measurement is rationale for whoever edits the bootstrap |
 | 33 | 60 | "The prompt did not tell me to" / "A dispatch that omits a clause does not repeal it." | kept | `PREAMBLE.md`, subagent paragraph: "whatever the dispatching prompt did or did not say" | Subagents read nothing else |
 | 34 | 61 | "I already started, it is too late" / "Delete what you wrote without a failing test and start again." | kept + moved | `PREAMBLE.md`, imperative: "already most of the way through"; `skills/fx-tdd/SKILL.md`, The Iron Law: "Wrote code before the test? Delete it. Start over." | The decision is in the bootstrap; deletion is fx-tdd's rule |
@@ -103,8 +111,8 @@ bootstrap in the sentence that already answers it; task 24's trim proposal
 |---|---|---|---|---|---|
 | 44 | 80 | Heading "Non-negotiables" | kept | `PREAMBLE.md`, "Always, lane or no lane" | The rules below that must hold with no lane loaded |
 | 45 | 82-83 | "No attribution trailers. Never Co-Authored-By, Claude-Session, or 'Generated with' in a commit message, PR body, or anywhere else." | kept | `PREAMBLE.md`, Always | A commit can happen from any lane or none. The guard also enforces it (`lib/git-guard.js`), and `implementer-prompt.md` repeats it |
-| 46 | 84-85 | "Work happens in a worktree. Set one up before you start" | moved | `skills/fx-implement/SKILL.md`, Setup, "1. Workspace"; `references/vocab/worktree-setup.md` | fx-implement owns every build, and its Setup creates the worktree before any task; the plan-state block names that it "supplies the worktree" |
-| 47 | 85-86 | "so the branch you are building on is never the one the user is standing in" | moved | `skills/fx-implement/SKILL.md`: "A worktree, so the main checkout is never written to" | Same |
+| 46 | 84-85 | "Work happens in a worktree. Set one up before you start" | moved | `skills/fx-implement/SKILL.md`, Setup, "1. Workspace"; `references/vocab/worktree-setup.md`; enforced always-on by `lib/git-guard.js`, which refuses every git mutation (commit, merge, push and the rest) on the main checkout | fx-implement owns every build and its Setup creates the worktree before any task. The guard runs in every session and subagent, lane or no lane. Edits made before a commit are not guarded: a file written in the main checkout is caught only when it is committed |
+| 47 | 85-86 | "so the branch you are building on is never the one the user is standing in" | moved | `skills/fx-implement/SKILL.md`: "A worktree, so the main checkout is never written to"; `lib/git-guard.js` (main checkout: every mutation refused) | Same. The guard protects the branch the user stands in from commits, not the working files from edits |
 | 48 | 86-87 | "This is a workflow, not a wall: commits belong wherever the work is, and the work belongs in a worktree." | moved | `references/vocab/worktree-setup.md`, intro (task 24) | fx-implement Setup reads it before creating a worktree |
 | 49 | 88 | "Integration is the user's decision, and you ask for it." | kept | `PREAMBLE.md`, Always: "Integration is the user's decision." | A merge or PR can be proposed from any lane or none |
 | 50 | 88-89 | "Merging, opening a PR, or moving the base branch are not steps you take at the end of a task." | kept | `PREAMBLE.md`, Always: "Never merge, open a PR, or move the base branch as the end of a task." | Same |
@@ -114,7 +122,7 @@ bootstrap in the sentence that already answers it; task 24's trim proposal
 | 54 | 91-92 | "No publishing, uploading or posting unless the user initiates it." | kept | `PREAMBLE.md`, Always: "unless the user initiates it" | Same |
 | 55 | 92 | "Reports are local files." | moved | `skills/fx-implement/implementer-prompt.md`, "Nothing leaves the machine": "Reports are local files." | Every dispatched implementer, the one writing reports |
 | 56 | 92-93 | "Pushing a feature branch is the one exception, and it names its target: never force-push, never a bare push." | moved | `lib/git-guard.js`: force push refused (line 137), a bare push refused (line 154), a push to the base branch refused (line 147) | The guard runs on every git command in every session and subagent, lane or no lane |
-| 57 | 94 | "Arabic is the default locale; RTL support throughout." | moved | `skills/fx-plan/SKILL.md`, Global Constraints template; `skills/fx-design/SKILL.md`, "7. The quality floor"; `agents/fx-lens-a11y.md` (already: "Arabic as the default locale with RTL throughout") | fx-plan writes it into every plan's constraints, which every implementer prompt copies verbatim; fx-design loads for any screen; the a11y lens reviews every UI diff |
+| 57 | 94 | "Arabic is the default locale; RTL support throughout." | moved | `skills/fx-plan/SKILL.md`, Global Constraints template, as an explicit default line; `skills/fx-design/SKILL.md`, "7. The quality floor"; `agents/fx-lens-a11y.md` (already: "Arabic as the default locale with RTL throughout") | fx-plan writes it into every plan's constraints, which every implementer prompt copies verbatim; fx-design loads for any screen; the a11y lens reviews every UI diff |
 | 58 | 95-96 | "Evidence before claims. 'Tests pass' means you ran them and read the output." | kept | `PREAMBLE.md`, Always | A claim of done can be made from any lane or none. Also `references/vocab/verification.md` and fx-implement's Iron Law |
 | 59 | 96 | "If a step was skipped, say so." | kept | `PREAMBLE.md`, Always | Same |
 
@@ -187,34 +195,34 @@ the description of its lane.
 
 ## Prose
 
-The prose rules apply at the moment prose is written. Three lanes load at those
-moments: fx-humanize for a document, fx-tdd for code comments and test names,
-and the implementer prompt for everything a dispatched implementer writes
-(comments, commit messages, reports, ledger entries). fx-brainstorm's design
-review already checks its document against the same list and invokes
-fx-humanize. The dash rule stays in the bootstrap because it is the one rule a
-gate checks mechanically in every file and every chat line.
+The prose rules apply to every output, including chat, commits, reviews and
+plans, which are often written with no prose lane loaded. So the core list
+stays in the bootstrap in a one-line form (fix round 1), beside the dash rule.
+The detail lives where prose is written: fx-humanize for a document, fx-tdd for
+code comments and test names, and the implementer prompt for everything a
+dispatched implementer writes. fx-brainstorm's design review also checks its
+document against the list and invokes fx-humanize.
 
 | # | Line | Rule | Status | New home | Loaded when / reason |
 |---|---|---|---|---|---|
-| 110 | 168 | Heading "Prose" | moved | `skills/fx-humanize/SKILL.md`, "What to do", scope paragraph | Editing any prose |
-| 111 | 170-171 | "Applies to every output, without exception: chat, code comments, commit messages, ADRs, design docs, subagent reports, ledger entries, PR bodies." | moved | `skills/fx-humanize/SKILL.md`, "What to do"; `implementer-prompt.md`, "Prose" | Editing prose; every implementer at dispatch |
-| 112 | 172 | "Comments are the highest-volume prose you write: they are covered." | moved | `skills/fx-tdd/SKILL.md`, GREEN, comment paragraph | Writing code and its comments |
-| 113 | 174 | "No inflated claims." | moved | `skills/fx-humanize/SKILL.md` pattern 1; `implementer-prompt.md`, "Prose" | Same moments |
-| 114 | 174 | "No 'it's not X, it's Y'." | moved | `skills/fx-humanize/SKILL.md` pattern 9; `implementer-prompt.md`, "Prose" | Same |
-| 115 | 174-175 | "No stock AI vocabulary (delve, leverage, robust, seamless, comprehensive, crucial)." | moved | `skills/fx-humanize/SKILL.md` pattern 7; `implementer-prompt.md`, "Prose" | Same |
-| 116 | 175-176 | "No vague attribution ('experts say', 'studies show')." | moved | `skills/fx-humanize/SKILL.md` pattern 5; `implementer-prompt.md`, "Prose" | Same |
-| 117 | 176 | "No sales register." | moved | `skills/fx-humanize/SKILL.md` pattern 4; `implementer-prompt.md`, "Prose" | Same |
+| 110 | 168 | Heading "Prose" | kept (one-line form) | `PREAMBLE.md`, Always, the prose bullet (one-line form); detail in `skills/fx-humanize/SKILL.md`, "What to do", scope paragraph | Applies to every output, chat, commits, reviews and plans included, with or without a lane loaded (B3) |
+| 111 | 170-171 | "Applies to every output, without exception: chat, code comments, commit messages, ADRs, design docs, subagent reports, ledger entries, PR bodies." | kept (one-line form) | `PREAMBLE.md`, Always, the prose bullet (one-line form); detail in `skills/fx-humanize/SKILL.md`, "What to do"; `implementer-prompt.md`, "Prose" | Applies to every output, chat, commits, reviews and plans included, with or without a lane loaded (B3) |
+| 112 | 172 | "Comments are the highest-volume prose you write: they are covered." | kept (one-line form) | `PREAMBLE.md`, Always, the prose bullet (one-line form); detail in `skills/fx-tdd/SKILL.md`, GREEN, comment paragraph | Applies to every output, chat, commits, reviews and plans included, with or without a lane loaded (B3) |
+| 113 | 174 | "No inflated claims." | kept (one-line form) | `PREAMBLE.md`, Always, the prose bullet (one-line form); detail in fx-humanize pattern 1; `implementer-prompt.md`, "Prose" | Applies to every output, chat, commits, reviews and plans included, with or without a lane loaded (B3) |
+| 114 | 174 | "No 'it's not X, it's Y'." | kept (one-line form) | `PREAMBLE.md`, Always, the prose bullet (one-line form); detail in fx-humanize pattern 9; `implementer-prompt.md`, "Prose" | Applies to every output, chat, commits, reviews and plans included, with or without a lane loaded (B3) |
+| 115 | 174-175 | "No stock AI vocabulary (delve, leverage, robust, seamless, comprehensive, crucial)." | kept (one-line form) | `PREAMBLE.md`, Always, the prose bullet (one-line form); detail in fx-humanize pattern 7 (the word list); `implementer-prompt.md`, "Prose" | Applies to every output, chat, commits, reviews and plans included, with or without a lane loaded (B3) |
+| 116 | 175-176 | "No vague attribution ('experts say', 'studies show')." | kept (one-line form) | `PREAMBLE.md`, Always, the prose bullet (one-line form); detail in fx-humanize pattern 5; `implementer-prompt.md`, "Prose" | Applies to every output, chat, commits, reviews and plans included, with or without a lane loaded (B3) |
+| 117 | 176 | "No sales register." | kept (one-line form) | `PREAMBLE.md`, Always, the prose bullet (one-line form); detail in fx-humanize pattern 4; `implementer-prompt.md`, "Prose" | Applies to every output, chat, commits, reviews and plans included, with or without a lane loaded (B3) |
 | 118 | 177 | `(prose-gate: quoting)` marker | moved | `implementer-prompt.md`, "Prose", which quotes the list | The marker exempts the block that quotes the words |
 | 119 | 179 | "No em dashes or en dashes. Not 'sparingly': none." | kept | `PREAMBLE.md`, Always: "No em dashes or en dashes in any output, chat and commit messages included." | Applies to every line of output, lane or no lane; `scripts/check-prose` checks it mechanically |
 | 120 | 179-180 | "Use a period, a comma, a colon, or parentheses, or rewrite the sentence." | moved | `skills/fx-humanize/SKILL.md` pattern 14, Rule | Editing prose |
 | 121 | 180-182 | "stated as an absolute because the softer version is unmeasurable, and an unmeasurable rule is one nobody checks" | moved | `skills/fx-authoring/SKILL.md`, "PREAMBLE.md" (task 24) | Writing a rule for agents |
 | 122 | 182-183 | "`scripts/check-prose` greps for it." | moved | Same | Same |
 | 123 | 185-186 | "Write plainly, which is a positive instruction and not the absence of the ones above." | moved | `skills/fx-humanize/SKILL.md`, "What to do", scope paragraph | Editing prose |
-| 124 | 186 | "Lead with the main point." | moved | Same; `implementer-prompt.md`, "Prose" | Same moments |
-| 125 | 186-187 | "Say who acts: active voice, not 'it was decided'." | moved | Same; `skills/fx-humanize/SKILL.md` pattern 13 | Same |
-| 126 | 187 | "Use one term for one thing and keep using it." | moved | Same; `skills/fx-humanize/SKILL.md` pattern 11 | Same |
-| 127 | 187 | "Prefer the common word." | moved | `skills/fx-humanize/SKILL.md`, "What to do", scope paragraph | Editing prose |
+| 124 | 186 | "Lead with the main point." | kept (one-line form) | `PREAMBLE.md`, Always, the prose bullet (one-line form); detail in fx-humanize, "What to do", scope paragraph; `implementer-prompt.md`, "Prose" | Applies to every output, chat, commits, reviews and plans included, with or without a lane loaded (B3) |
+| 125 | 186-187 | "Say who acts: active voice, not 'it was decided'." | kept (one-line form) | `PREAMBLE.md`, Always, the prose bullet (one-line form); detail in fx-humanize, scope paragraph and pattern 13 | Applies to every output, chat, commits, reviews and plans included, with or without a lane loaded (B3) |
+| 126 | 187 | "Use one term for one thing and keep using it." | kept (one-line form) | `PREAMBLE.md`, Always, the prose bullet (one-line form); detail in fx-humanize, scope paragraph and pattern 11 | Applies to every output, chat, commits, reviews and plans included, with or without a lane loaded (B3) |
+| 127 | 187 | "Prefer the common word." | kept (one-line form) | `PREAMBLE.md`, Always, the prose bullet (one-line form); detail in fx-humanize, "What to do", scope paragraph | Applies to every output, chat, commits, reviews and plans included, with or without a lane loaded (B3) |
 | 128 | 189-190 | "Never rewrite an identifier, a command, a path, a schema field or a quotation." | moved | `skills/fx-humanize/SKILL.md`, "What to do" step 5 (task 24) | A prose pass, where the failure happened |
 | 129 | 190 | "Plain language governs the prose around them, never them." | moved | Same | Same |
 | 130 | 190-193 | The `let x = a - b` story | moved | Same | Same |
@@ -247,6 +255,8 @@ rows:
   per-runtime.
 - Rows 90-92, 119, 131: the pointer to the descriptions, the dash rule
   (checked in every output), and the pointer to fx-humanize.
+- Rows 110-117 and 124-127: the core prose rules in a one-line form. They
+  apply to every output, lane or no lane.
 
 ## Lane-overlap audit (B2)
 

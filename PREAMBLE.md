@@ -51,6 +51,9 @@ visible to the person reading along.
 - **Evidence before claims.** "Tests pass" means you ran them and read the
   output. If a step was skipped, say so.
 - **No em dashes or en dashes** in any output, chat and commit messages included.
+  No inflated claims, no "it's not X, it's Y", no stock AI words, no vague
+  attribution, no sales register. Lead with the point, say who acts, one term
+  for one thing, the common word.
 
 {{LANE:fx-humanize}} carries the full prose treatment, 35 patterns with examples.
 

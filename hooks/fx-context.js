@@ -7,8 +7,9 @@
 // always-on rules reach it through nothing at all.
 //
 // Claude Code previews any single hook's context over 10,000 characters
-// instead of showing it. The render is a bootstrap, under 4,000 in the worst
-// case (lib/preamble.test.js pins it, docs/adr/0021). One handler per event: with several, Claude
+// instead of showing it. The render stays under 9,000 in the worst case, and
+// the bootstrap alone under 3,000 (lib/preamble.test.js pins both,
+// docs/adr/0021). One handler per event: with several, Claude
 // Code runs them in unstable order and a later part can land above the
 // opening imperative.
 

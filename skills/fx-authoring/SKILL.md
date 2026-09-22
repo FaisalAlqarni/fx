@@ -345,8 +345,9 @@ Rules live in lanes, and routing lives in the skill descriptions. So:
   what the first one already produced.
 
 Only the fixed intro sits above the opening imperative; nothing else is added
-there (`docs/adr/0002`). The render, with its repo.md note and plan-state block,
-stays under 4,000 characters (`lib/preamble.test.js`).
+there (`docs/adr/0002`). The bootstrap alone stays under 3,000 characters, and
+the render with its repo.md note and plan-state block under 9,000
+(`lib/preamble.test.js`).
 
 The imperative is not softened because a model seems capable. Measured: a model
 reviewed a diff competently and invoked nothing. Doing the work from memory gets

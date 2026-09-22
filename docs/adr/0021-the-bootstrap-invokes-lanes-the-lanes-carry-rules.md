@@ -42,18 +42,22 @@ routing work.
 - **A rule stays in the bootstrap only when it must hold with no lane loaded**:
   the rules about whether to invoke a lane, and the ones any lane or none can
   break (attribution, integration, nothing leaves the machine, evidence before
-  claims, no dashes), plus the per-runtime dispatch wording, which only the
-  rendered bootstrap can vary by runtime.
+  claims, the core prose rules in one line, no dashes), plus the per-runtime
+  dispatch wording, which only the rendered bootstrap can vary by runtime.
 
 `docs/plans/2026-09-21-multi-harness/bootstrap-no-loss-audit.md` maps every
 sentence of the old router to its new home and the moment that home is loaded.
-Nothing was dropped.
+No rule was dropped. Three counter-sentences of the old rationalization table
+keep their rule as intent but not their wording, because S3 routed without
+that table.
 
 ## Consequences
 
-- The render is under 4,000 characters in the worst case, so there is no split,
-  no ordering problem and no size budget to defend. `lib/preamble.test.js`
-  pins it.
+- Two budgets, both pinned by `lib/preamble.test.js`. The bootstrap alone
+  stays under 3,000 characters: the design target, and the pressure that keeps
+  it a bootstrap. The worst case, with the repo.md note and three plans, stays
+  under 9,000: Claude Code's per-hook limit of 10,000, with margin. With one
+  part there is no split and no ordering problem.
 - A rule added to the bootstrap needs the reason no lane can carry it. The
   default home for a rule is the lane that is loaded when it applies.
 - A lane that is never invoked now takes its rules with it. The imperative and

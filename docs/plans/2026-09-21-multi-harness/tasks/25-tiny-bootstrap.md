@@ -55,8 +55,9 @@ rules must reach subagents (ADR 0002).
 
 **Interfaces:**
 - Produces: `render({ harness, cwd })` returns the bootstrap, repo.md note and
-  plan-state block. It is under 4,000 characters in the worst-case fixture on
-  every harness.
+  plan-state block. On every harness the bootstrap alone (no repo.md, no plans)
+  is under 3,000 characters, the design target, and the worst-case fixture is
+  under 9,000, Claude Code's per-hook limit with margin (fix round 1).
 - Produces: `bootstrap-no-loss-audit.md` has one row per sentence or table row
   of the pre-trim preamble. Each row gives the new home (file and heading), or
   "kept in bootstrap", with the reason.
@@ -86,7 +87,7 @@ plus the lane-triggering prompts, on Claude Code and opencode.
 - [ ] The three measured description diffs are applied, and the overlap audit's further clauses are added
 - [ ] `description-overlap.test.js` passes, and it fails when the fx-tdd clause naming fx-brainstorm is removed
 - [ ] The no-loss audit maps every sentence and table row of the pre-trim preamble, and nothing is unmapped
-- [ ] The worst-case render is under 4,000 characters on all three harnesses, and a test pins it
+- [ ] The bootstrap alone is under 3,000 characters and the worst-case render under 9,000 on all three harnesses, and a test pins both
 - [ ] The intro is the only text above the imperative, and a test pins it
 - [ ] The new ADR records B4 and cites the spike
 - [ ] Live on Claude Code: rows 01, 02 and 16 PASS, row 04 passes 5 of 5, and the lane-triggering prompts hit at least as often as S3 did
