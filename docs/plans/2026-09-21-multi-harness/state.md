@@ -2382,3 +2382,4 @@ Ruling: bump the version to **0.2.0** in every manifest and marketplace entry.
         goes to the final review.
         Cost if wrong: none; a version bump is required for delivery. A
         release-bump gate is noted for the final review.
+Task 13: fix round 1 landed in 0fbe64a. The version is 0.2.0 in all three files; INSTALL says a Claude Code update lands only on a version change; doc minors 1 to 7 fixed; 4 markers kept. check-all ALL GREEN. Scoped re-review dispatched.
