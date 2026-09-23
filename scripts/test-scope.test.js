@@ -17,4 +17,7 @@ assert.deepStrictEqual(dry('skills/fx-plan/SKILL.md'),
 assert.deepStrictEqual(dry('hooks/fx-context.js'),
   ['node lib/preamble.test.js', 'node tests/gates/codex-hook-output.test.js', 'node tests/gates/opencode-plugin.test.js', LAST]);
 assert.deepStrictEqual(dry('no/such/file.js'), [LAST], 'a deleted path is skipped');
+assert.deepStrictEqual(dry('tests/conformance/lib/live.sh'), ['scripts/check-all', LAST], 'unmapped path falls back to check-all');
+assert.deepStrictEqual(dry('.codex-plugin/plugin.json'), ['node tests/gates/codex-manifest.test.js', LAST], 'codex manifest routes to the gate that reads it');
+assert.deepStrictEqual(dry('.agents/plugins/marketplace.json'), ['node tests/gates/codex-manifest.test.js', LAST], 'marketplace.json routes to the gate that reads it');
 console.log('test-scope: ok');

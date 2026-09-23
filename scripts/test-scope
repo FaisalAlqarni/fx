@@ -37,10 +37,18 @@ function commandsFor(p) {
     return ['node lib/preamble.test.js', 'node tests/gates/codex-hook-output.test.js', 'node tests/gates/opencode-plugin.test.js'];
   }
   const base = path.basename(p);
-  if (p.startsWith('.claude-plugin/') || base === 'plugin.json' || base === 'marketplace.json') {
+  // codex-manifest.test.js is the only gate that reads .codex-plugin/plugin.json
+  // and any marketplace.json (it cross-checks them against the Claude manifest);
+  // scripts/check-manifest never opens either (Critical 2, task 12 fix round 1).
+  if (p.startsWith('.codex-plugin/') || base === 'marketplace.json') {
+    return ['node tests/gates/codex-manifest.test.js'];
+  }
+  if (p.startsWith('.claude-plugin/')) {
     return ['scripts/check-manifest'];
   }
-  return [];
+  // Unsure which class a path is in: run scripts/check-all, per the task's own
+  // rule. A missed gate is the failure that matters (Critical 1, fix round 1).
+  return ['scripts/check-all'];
 }
 
 // Keeps only the last occurrence of each command, so the unconditional
