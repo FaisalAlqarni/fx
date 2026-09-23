@@ -42,10 +42,23 @@ if (critical === null && important === null) {
   usage(`no Critical or Important heading in ${findingsPath}: not a template-shaped review`);
 }
 
-const bulletCount = (s) => ((s || '').match(/^\s*-\s+\S/gm) || []).length;
+// A finding starts at a dash, star or numbered item ("1." or "1)"); the lines
+// that follow, up to the next item, belong to it.
+const ITEM_RE = /^\s*(?:[-*]|\d+[.)])\s+\S/;
+function findings(body) {
+  const items = [];
+  for (const line of (body || '').split(/\r?\n/)) {
+    if (ITEM_RE.test(line)) items.push(line);
+    else if (items.length && line.trim()) items[items.length - 1] += '\n' + line;
+  }
+  return items;
+}
 const combined = [critical || '', important || ''].join('\n');
+const match = matchArg === 'NONE' ? null : new RegExp(matchArg, 'i');
 
-const caught = matchArg === 'NONE' ? false : new RegExp(matchArg, 'i').test(combined);
-const falsePositive = bulletCount(critical) + bulletCount(important) > 0;
+const caught = match ? match.test(combined) : false;
+// A false positive is a Critical or Important finding that is not the case's
+// defect; the finding that catches it does not count.
+const falsePositive = [...findings(critical), ...findings(important)].some((f) => !match || !match.test(f));
 
-process.stdout.write(JSON.stringify({ caught, falsePositive, important: bulletCount(important) }) + '\n');
+process.stdout.write(JSON.stringify({ caught, falsePositive, important: findings(important).length }) + '\n');

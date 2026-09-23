@@ -227,5 +227,49 @@ const readmeMatch = fs.readFileSync(path.join(__dirname, 'cases', 'readme-binary
   assert.match(r.stderr, /NEW_PLACEHOLDER/, 'the failure must name the leftover token');
 }
 
+// 10. falsePositive counts only Critical or Important findings that do NOT
+// match the case's regex: the finding that catches the defect is not a false
+// positive (final review, silent-failure 2).
+const sections = (importantLines) => [
+  '### Issues', '', '#### Critical (Must Fix)', 'None.', '',
+  '#### Important (Should Fix)', ...importantLines, '', '#### Minor (Nice to Have)',
+  '- cli.js:1 - a style nit that is not the defect', '',
+].join('\n');
+{
+  const r = run(write('catch-only.md', sections(['- lib/store.js:10 - a name can resolve outside NOTES_DIR'])), 'outside NOTES_DIR');
+  const out = JSON.parse(r.stdout);
+  assert.strictEqual(out.caught, true);
+  assert.strictEqual(out.falsePositive, false, 'the catching finding alone is not a false positive');
+}
+{
+  const r = run(write('catch-plus-other.md', sections([
+    '- lib/store.js:10 - a name can resolve outside NOTES_DIR',
+    '  and the check is missing entirely',
+    '- cli.js:4 - no error handling on a missing argument',
+  ])), 'outside NOTES_DIR');
+  const out = JSON.parse(r.stdout);
+  assert.strictEqual(out.caught, true);
+  assert.strictEqual(out.falsePositive, true, 'a second, non-matching Important finding is a false positive');
+  assert.strictEqual(out.important, 2, 'a continuation line is part of its finding, not a new one');
+}
+
+// 11. Numbered findings count the same as dash bullets (carried minor M4).
+{
+  const r = run(write('numbered-control.md', sections(['1. cli.js:4 - no error handling on a missing argument'])), 'NONE');
+  const out = JSON.parse(r.stdout);
+  assert.strictEqual(out.falsePositive, true, 'a numbered control finding is a false positive');
+  assert.strictEqual(out.important, 1, 'a numbered finding is counted');
+}
+{
+  const r = run(write('numbered-catch.md', sections([
+    '1. lib/store.js:10 - a name can resolve outside NOTES_DIR',
+    '2) cli.js:4 - no error handling on a missing argument',
+  ])), 'outside NOTES_DIR');
+  const out = JSON.parse(r.stdout);
+  assert.strictEqual(out.caught, true);
+  assert.strictEqual(out.falsePositive, true, 'the second numbered finding does not match');
+  assert.strictEqual(out.important, 2);
+}
+
 fs.rmSync(root, { recursive: true, force: true });
 console.log('score.test.js: ok');
