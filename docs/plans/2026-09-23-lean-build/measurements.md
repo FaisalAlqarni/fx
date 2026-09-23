@@ -26,6 +26,8 @@ Three earlier smoke builds (47m, 56m, 42m) showed implementers never got a fixtu
 
 Medians: wall clock 41.5m against 44m; total tokens 23.3M against 21.1M; controller tokens 6.1M against 5.1M. Run-to-run spread (33 to 55 minutes) is larger than any effect.
 
+Re-scored with build-cost fixed for the post-08 transcripts (9a7b1a6), every run read by the same code: controller context growth per task is 7.7K and 6.9K at baseline (median 7.3K) against 6.2K and 5.9K combined (median 6.1K), about 17 percent lower; tasks completed 6 in all four runs; fix rounds 0 and 3 at baseline, 2 and 2 combined. Two runs a side: a direction, not a proof.
+
 Not usable: the bench's control false-positive count. Both sides flag the control's real test gaps in 3 of 3 reps; the baseline shows 1 of 3 only because score.js counts dash bullets and two baseline reviews used numbered lists. The first combined bench (bench-combined.json) ran stale cases and is discarded. build-cost's per-type and per-task numbers for the combined runs are unreliable (coverage audit G2); totals, wall clock and controller tokens are sound.
 
 ## Verdicts
