@@ -63,7 +63,11 @@ so a trap placed there is answered before it can be sprung.
   (`<session>/subagents/*.jsonl`) whose first user message contains
   `You are implementing task <NN>` are that task's implementers and fixers; the
   earliest by first timestamp is the original. Its head is the last 7 to 40
-  character hex SHA in its final assistant message's text. A task with no
+  character hex SHA in its **first reply**: the last assistant text before the
+  first later user record that is neither a tool result nor a skill
+  expansion (amended 2026-09-23, Ruling I: `fx-implement` resumes the same
+  agent for fix rounds 1 to 3, so the file's final message is the post-fix
+  head). A task with no
   parseable SHA is omitted (scored `unknown`).
 - Produces: `tests/fixture-build/run.sh <runs> <label>` writes
   `docs/plans/2026-09-23-lean-build/runs/<label>-<n>.json`, one per run:
@@ -112,10 +116,10 @@ catch it. No fixture file uses the word "trap".
 |---|------|-----------|------|-------------|
 | 01 | `lib/store.js` | none | **path-escape**: "Names come from the command line, so a name that would resolve outside `NOTES_DIR` is rejected with `err.code === 'EBADNAME'`." **missing-note-error**: "Loading a note that does not exist throws with `err.code === 'ENOTE'`; callers must be able to tell it from an empty note." | `save('../x','y')` and `load('../../etc/hostname')` throw `EBADNAME`, and `<tmp>/x` does not exist; `load('nope')` throws `ENOTE` |
 | 02 | `cli.js`: `add`, `show` | 01 | none | |
-| 03 | `README.md` usage section (filed as docs) | 02 | **readme-example**: "The example must work when pasted into a shell at the repository root; there is no installed binary." | first fenced `sh` block, run line by line in the repo with a temp `NOTES_DIR`, exits 0 and prints the note text |
+| 03 | `README.md` usage section (filed as docs) | 02 | **readme-example**: "The example must work when pasted into a shell at the repository root; there is no installed binary." | first fenced `sh` block, run top to bottom as one script in a **temp copy** of the repo (a temp `NOTES_DIR` in the environment, which the block may override), exits 0 and its output contains the text its `add` line saved (amended, Ruling I) |
 | 04 | `lib/export.js` | 01 | **export-order**: "Notes appear in the order `list()` returns them." | three notes saved out of order export sorted |
 | 05 | `lib/search.js` | 01 | **search-case**: "People type queries in any case." | `search('HELLO')` finds a note containing `hello` |
-| 06 | `cli.js`: `export`, `search` | 02, 04 | **cli-wiring**: declared `Parallel with: 05` ("06 only touches `cli.js`"), but its `search` command needs `lib/search.js` from 05 | `node cli.js search HELLO` prints the matching name, `node cli.js export` prints sorted output, and `cli.js` requires `./lib/search` (no second search implementation) |
+| 06 | `cli.js`: `export`, `search` | 02, 04 | **cli-wiring**: declared `Parallel with: 05` ("06 only touches `cli.js`"), but its `search` command needs `lib/search.js` from 05 | in a temp copy of the repo with `lib/search.js` replaced by `exports.search = () => ['SENTINEL']`, `node cli.js search x` prints `SENTINEL` (the CLI uses `lib/search.js`, however it loads it); and `node cli.js export` prints sorted output. No query depends on case, so task 05's case rule never leaks into this trap (amended, Ruling I) |
 
 Tasks 04 and 05 declare `**Parallel with:**` each other with a true reason:
 disjoint files, both consume only `lib/store.js`. That is the pair step 4 can
