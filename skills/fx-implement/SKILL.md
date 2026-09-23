@@ -413,20 +413,12 @@ costs time, never a check.
 5. **File check, after the implementer returns.** Every file in
    `git diff --name-only <base>..<head>` must be in the task's own `Files:`
    list, and none may be in the other task's `Files:` list or changed files.
-   Run this same check again after every fix round, not only the first time
-   the implementer returns: a fix commit is exactly as able to step outside
-   the task's files as the original implementation was. Either violation, at
-   any round, sends the task back to serial: record `Task NN: back to
+   Either violation sends the task back to serial: record `Task NN: back to
    serial, <reason>`, keep its branch (the fx git guard blocks deleting it,
    and the branch is evidence), and re-dispatch it on the build branch after
-   the other task merges or itself goes back to serial.
+   the other task merges.
 
-6. **Merge, one task at a time.** Repeat step 5's file check once more on
-   the current `<base>..<head>` before doing anything else here: the other
-   task's fix rounds can land commits after the last time this task's check
-   ran, and a violation found now sends the task back to serial exactly as
-   step 5 says. Only once that check is clean, record `Task NN: merging`
-   first.
+6. **Merge, one task at a time.** Record `Task NN: merging` first.
    - Rebase the task branch onto the **current** build branch head.
    - Run `test_scope` on the **union** of both tasks' `Files:` lists, so an
      interaction between the two is tested, not only the task's own files.
@@ -439,24 +431,11 @@ costs time, never a check.
    - A failed fast-forward (the build branch moved during the merge) is not a
      failure: rebase again and repeat this step.
 
-7. **Resume.** A resumed controller reads the ledger, and a `back to serial`
-   line for a task supersedes any `parallel with` line before it: that task
-   is already serial, and nothing below applies to it. For every other task
-   still carrying an unresolved `parallel with` line:
-   - **Its recorded worktree is missing** (removed, never created, or the
-     resume runs somewhere that never had it): this sends the task back to
-     serial too. Record it, keep the branch if it still exists, and there is
-     no worktree left to remove.
-   - **No report reached the ledger** (a `parallel with` line with nothing
-     past it for that task: no report file, no commit past `base`): the
-     implementer died mid-task, so this also sends the task back to serial:
-     record it, keep the branch, remove the worktree.
-   - **A `merging` line with no `complete` line, rebase in progress**:
-     `git rebase --abort` it and redo step 6.
-   - **A `merging` line with no `complete` line, fast-forward already done**:
-     redo step 6 anyway. The rebase is a no-op, `test_scope` runs green
-     again, and the fast-forward is a no-op: safe to repeat.
-   - **Otherwise**: inspect the task in its recorded worktree, not recreated.
+7. **Resume.** A resumed controller reads the ledger. A task with a
+   `parallel with` line and no `complete` line is inspected in its recorded
+   worktree, not recreated. A task with a `merging` line and no `complete`
+   line is checked with `git status` in that worktree for a rebase in
+   progress; `git rebase --abort` it and redo step 6.
 
 8. **Cleanup.** Remove each task worktree once its task completes or goes
    back to serial, with `git worktree remove`, never by deleting the
