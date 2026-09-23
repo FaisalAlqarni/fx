@@ -15,7 +15,9 @@ function fail(reason) {
   process.exit(2);
 }
 
-// Returns parsed records, or null if the file cannot be read at all.
+// Returns parsed records with a `__line` (1-based) on each, or null if the
+// file cannot be read at all. A malformed line exits 2 naming the file and
+// line number instead of throwing a raw parse error.
 function readRecords(file) {
   let raw;
   try {
@@ -23,10 +25,21 @@ function readRecords(file) {
   } catch (e) {
     return null;
   }
-  return raw
-    .split('\n')
-    .filter((line) => line.trim().length > 0)
-    .map((line) => JSON.parse(line));
+  const lines = raw.split('\n');
+  const records = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.trim().length === 0) continue;
+    let rec;
+    try {
+      rec = JSON.parse(line);
+    } catch (e) {
+      fail(`malformed JSON: ${file}:${i + 1}`);
+    }
+    rec.__line = i + 1;
+    records.push(rec);
+  }
+  return records;
 }
 
 function callKey(rec) {
@@ -43,21 +56,25 @@ function usageOf(u) {
 }
 
 // Dedupes assistant records into calls, keyed per the task's fallback order.
-// A call's usage comes from its first record; its content is every tool_use
-// block across all records sharing the key (Claude Code splits one call's
-// blocks across several JSONL lines).
-function dedupCalls(records) {
+// A call's usage comes from the first record of the call that carries one (a
+// leading content-only record must not zero it out); its content is every
+// tool_use block across all records sharing the key (Claude Code splits one
+// call's blocks across several JSONL lines).
+function dedupCalls(records, file) {
   const calls = [];
   const byKey = new Map();
   for (const rec of records) {
     if (rec.type !== 'assistant') continue;
     const key = callKey(rec);
-    if (key == null) continue;
+    if (key == null) fail(`assistant record has no requestId, message.id, or uuid: ${file}:${rec.__line}`);
     let call = byKey.get(key);
+    const u = usageOf(rec.message && rec.message.usage);
     if (!call) {
-      call = { timestamp: rec.timestamp, usage: usageOf(rec.message && rec.message.usage), content: [] };
+      call = { timestamp: rec.timestamp, usage: u, content: [] };
       byKey.set(key, call);
       calls.push(call);
+    } else if (!call.usage && u) {
+      call.usage = u;
     }
     for (const block of (rec.message && rec.message.content) || []) call.content.push(block);
   }
@@ -177,7 +194,7 @@ function main() {
   if (assistantRecords.length === 0) fail(`no assistant records: ${file}`);
   if (!assistantRecords.some((r) => r.message && r.message.usage)) fail(`no record carries usage: ${file}`);
 
-  const controllerCalls = dedupCalls(records);
+  const controllerCalls = dedupCalls(records, file);
   const contexts = controllerCalls.map((c) => (c.usage ? c.usage.context : 0));
   const { tasksCompleted, ctxGrowthPerTask, fixRounds } = analyzeLedger(controllerCalls);
 
@@ -203,6 +220,7 @@ function main() {
   try {
     subFiles = fs.readdirSync(sessionDir).filter((f) => f.endsWith('.jsonl')).sort().map((f) => path.join(sessionDir, f));
   } catch (e) {
+    if (e.code !== 'ENOENT') fail(`cannot read subagents directory ${sessionDir}: ${e.code}`);
     subFiles = [];
   }
 
@@ -211,10 +229,11 @@ function main() {
 
   for (const subFile of subFiles) {
     const subRecords = readRecords(subFile);
-    if (!subRecords || subRecords.length === 0) continue;
+    if (subRecords === null) fail(`cannot read subagent file: ${subFile}`);
+    if (subRecords.length === 0) continue;
     allTimestamps = allTimestamps.concat(timestamps(subRecords));
     const type = classify(subRecords);
-    const calls = dedupCalls(subRecords);
+    const calls = dedupCalls(subRecords, subFile);
     const tokens = calls.reduce((sum, c) => sum + (c.usage ? c.usage.tokens : 0), 0);
     const fileTimestamps = timestamps(subRecords);
     const durationMs = fileTimestamps.length ? Math.max(...fileTimestamps) - Math.min(...fileTimestamps) : 0;
