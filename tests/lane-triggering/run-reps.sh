@@ -34,47 +34,55 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUT="${TMPDIR:-/tmp}/fx-reps/$$"
 mkdir -p "$OUT"
 
-# A scratch HOME and CLAUDE_CONFIG_DIR, holding only a copy of the credential.
-# Without this, claude ran with the real HOME: the owner's other plugins,
-# CLAUDE.md and memory leaked into every rep.
+# The claude call runs inside the conformance jail (tests/conformance/lib/
+# jail.sh, the one live.sh uses): the real filesystem is read-only, every
+# top-level directory except the tree under test and this run's scratch dir
+# is hidden, and the child's environment is cleared and rebuilt from an
+# allowlist. That is what actually stops a rep from reading the real home or
+# another repo by absolute path; the scratch HOME and CLAUDE_CONFIG_DIR only
+# stop the owner's real CLAUDE.md, memory and other plugins from loading.
+#
+# REAL_HOME is read once, before HOME is overwritten, and never exported: it
+# is passed to scratch_home_claude and to jail.sh as a plain shell variable,
+# never to the claude process or to any other unjailed child.
 . "$SCRIPT_DIR/../conformance/lib/scratch-home.sh"
-FX_REAL_HOME="$HOME"
-export FX_REAL_HOME
-SCRATCH_HOME="$(mktemp -d)" || { echo "mktemp failed" >&2; exit 2; }
-case "$SCRATCH_HOME" in
-  "${TMPDIR:-/tmp}"/*) ;;
-  *) echo "unexpected scratch home: $SCRATCH_HOME" >&2; exit 2 ;;
+gap()  { echo "[SKIP] $*" >&2; exit 0; }
+fail() { echo "$*" >&2; exit 1; }
+REAL_HOME="$HOME"
+LIVE_SCRATCH="$(mktemp -d)" || fail "mktemp failed"
+case "$LIVE_SCRATCH" in
+  /tmp/?*|"${TMPDIR:-/tmp}"/?*) ;;
+  *) fail "unexpected scratch dir: $LIVE_SCRATCH" ;;
 esac
-cleanup_scratch_home() {
-  case "$SCRATCH_HOME" in
-    "${TMPDIR:-/tmp}"/*) rm -rf -- "$SCRATCH_HOME" ;;
-  esac
-}
-trap cleanup_scratch_home EXIT
-export HOME="$SCRATCH_HOME"
-export CLAUDE_CONFIG_DIR="$SCRATCH_HOME/.claude"
-scratch_home_claude "$CLAUDE_CONFIG_DIR"
+trap 'case "$LIVE_SCRATCH" in /tmp/?*|"${TMPDIR:-/tmp}"/?*) rm -rf -- "$LIVE_SCRATCH" ;; esac' EXIT
+HOME="$LIVE_SCRATCH/home"
+CLAUDE_CONFIG_DIR="$HOME/.claude"
+FX_REAL_HOME="$REAL_HOME"
+FX="$PLUGIN_DIR"
+scratch_home_claude "$CLAUDE_CONFIG_DIR" "$REAL_HOME"
 case $? in
   0) ;;
-  1) echo "[SKIP] no credential" >&2; exit 0 ;;
-  *) echo "credential copy failed" >&2; exit 1 ;;
+  1) gap "no credential" ;;
+  *) fail "credential copy failed" ;;
 esac
+. "$SCRIPT_DIR/../conformance/lib/jail.sh"
 
 echo "lane   $LANE"
-echo "tree   $PLUGIN_DIR"
+echo "tree   $FX"
 echo "reps   $REPS"
 echo
 
 fired=0
 inconclusive=0
 for i in $(seq 1 "$REPS"); do
-  W="$OUT/rep$i"; mkdir -p "$W"
+  W="$LIVE_SCRATCH/rep$i"; mkdir -p "$W"
   # Optional per-lane fixture: some triggers cannot fire in an empty directory.
-  # It runs inside the scratch cwd, so it can only write there.
+  # It runs unjailed (it is this repo's own trusted script, not the model),
+  # inside the scratch cwd, so it can only write there.
   [ -f "$SCRIPT_DIR/fixtures/${LANE}.sh" ] && ( cd "$W" && bash "$SCRIPT_DIR/fixtures/${LANE}.sh" >/dev/null 2>&1 )
-  LOG="$W/stream.json"
-  ( cd "$W" && timeout 300 claude -p "$PROMPT" \
-      --plugin-dir "$PLUGIN_DIR" \
+  LOG="$OUT/rep$i.stream.json"
+  ( cd "$W" && timeout 300 "${JAIL[@]}" claude -p "$PROMPT" \
+      --plugin-dir "$FX" \
       --dangerously-skip-permissions \
       --max-turns 3 \
       --output-format stream-json --verbose ) > "$LOG" 2>&1 || true
