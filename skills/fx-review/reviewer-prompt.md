@@ -125,7 +125,7 @@ Subagent (general-purpose):
     ## Write your findings to a file, then summarise
 
     **Write the full findings to [FINDINGS_FILE] before your final message.**
-    Then reply with the verdict, the counts by severity, and that path.
+    Then reply with the five-line contract in Output format below.
 
     Your findings are the only copy of work nobody can redo cheaply. An
     implementer's work survives in the commit; a review's exists in one message
@@ -161,6 +161,13 @@ Subagent (general-purpose):
     obvious. The file:line is the source file at HEAD, never a line number
     inside the diff file.
 
+    ### Spec compliance
+
+    - ✅ Plan aligned | ❌ Issues found: [missing/extra/misunderstood, with
+      file:line]
+    - ⚠️ Cannot verify from diff: [what you could not verify, and what the
+      controller should check]
+
     ### Carried findings triage
     For each deferred/parked finding: must-fix-before-merge, or confirmed
     deferred: with a one-line reason.
@@ -172,6 +179,31 @@ Subagent (general-purpose):
 
     **Ready to merge?** [Yes | No | With fixes]
     **Reasoning:** [1 to 2 sentences, technical.]
+
+    ### Ledger lines
+
+    Add a heading that reads exactly `## Ledger lines`: two `#` characters,
+    not three (this section's own `###` above is this document's structure,
+    not what you write). Under it, write one line per new Minor finding:
+    plain text, no bullet, no backticks, starting with the word `Task`, one
+    per line:
+
+    Task <NN>: minor (deferred): <one-liner>
+
+    Name the task each finding belongs to. The controller greps these lines
+    and checks their count against the Minor number in your `C/I/M`, never by
+    reading your findings.
+
+    ### Reply
+
+    Reply with at most five lines:
+
+    - **Spec:** ✅ | ❌ | ⚠️ (count)
+    - **Quality:** approved | changes requested
+    - **C/I/M:** `<critical>/<important>/<minor>`; if any Important finding
+      is plan-mandated, append `, plan-mandated: <n>`
+    - **Findings:** [FINDINGS_FILE]
+    - **Ready:** yes | no | with fixes
 
     ## Critical rules
 
@@ -190,5 +222,6 @@ never under a git-ignored `.fx/`)
 `[GLOBAL_CONSTRAINTS]` `[BASE_SHA]` `[HEAD_SHA]` `[DIFF_FILE]`
 `[DEFERRED_MINORS_AND_PARKED]`
 
-**Reviewer returns:** Strengths · Issues (Critical / Important / Minor) ·
-carried-findings triage · Recommendations · Assessment.
+**Reviewer returns:** Spec · Quality · C/I/M · Findings (path) · Ready, in the
+five-line reply. Strengths, issues, carried-findings triage, recommendations
+and ledger lines live in the findings file.

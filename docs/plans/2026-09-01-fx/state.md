@@ -381,3 +381,5 @@ of, and dogfooding covered the ones I did not.
 guard, so heredocs containing example commands stay blocked here. Tasks are
 being written with the file tools instead, which do not route through the Bash
 hook. Both fixes go live when the plugin is updated.
+
+Plan complete: tasks 01 to 08 complete; task 08's live install is the owner's, not a build step (backfilled 2026-09-23)

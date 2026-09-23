@@ -3784,3 +3784,5 @@ The completion report is final at `completion-report.md`, and the decisions are
 laid out with their evidence in `report-20260912-decisions.html`, a local file with
 inline styles and no external request. The integration question goes to the user,
 and the base branch does not move until they answer.
+
+Plan complete: exit gate passed, fix wave re-reviewed (backfilled 2026-09-23)

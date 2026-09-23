@@ -183,6 +183,11 @@ file and its line number at HEAD, never a line number inside the diff file."
 A diff line number points into a file the reader never opens. Read-only by
 construction.
 
+Lenses have no Write tool (Ruling, task 08): each returns its full findings
+as its reply, as it did before the five-line contract existed. The
+controller records that reply to a findings file itself, without reasoning
+over it: see `fx-implement` §3's Lens dispatch for the exact command.
+
 **Branch mode also dispatches the broad reviewer**: [reviewer-prompt.md](./reviewer-prompt.md),
 on the most capable available model, pointed at the ledger's deferred-minor and
 parked lines so it can triage what must be fixed before merge.

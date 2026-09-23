@@ -9,10 +9,12 @@ confirmed as a real gap.
 
 **Two routes leave the loop before it starts.**
 
-- **Minor findings never enter the loop.** Record them as you go:
-  `Task <NN>: minor (deferred): <one-liner>`, and point the final
-  whole-branch review at that list so it can triage what must be fixed before
-  merge. *A roll-up nobody reads is a silent discard.*
+- **Minor findings never enter the loop.** The reviewer already wrote them,
+  ready to copy, under `## Ledger lines` in its findings file
+  (`Task <NN>: minor (deferred): <one-liner>`). Append them:
+  `sed -n '/^## Ledger lines/,/^## /p' <findings> | grep '^Task ' >> state.md`.
+  Point the final whole-branch review at that list so it can triage what must
+  be fixed before merge. *A roll-up nobody reads is a silent discard.*
 - **A plan-mandated finding is yours to rule on.** Weigh the finding against the
   task text, decide with the design as the binding authority, and ledger the
   ruling **before** acting. Do not dismiss the finding because the plan mandates
@@ -24,35 +26,57 @@ Everything else enters the loop.
 A **fix round** is one fix dispatch plus one scoped re-review. **Five rounds
 maximum per task.**
 
-- **Rounds 1 to 3:** resume the original implementer, sending the open findings
-  verbatim. Its context is intact: it knows the task, the code, and its own
-  choices. If the harness cannot message a live subagent, dispatch a fresh one
-  with the task path, the report-file path and the findings; the report file
-  is the persistent memory either way.
-- **Rounds 4 to 5:** dispatch a **fresh** implementer on a **more capable model**,
-  with the task path, the report-file path, the open findings, and this
-  framing: *"A prior implementer attempted this task N times; you own it now.
-  Read the report file for what was tried."* A loop surviving three resumes
-  usually means the implementer cannot see its own problem: fresh eyes and a
-  capability bump in one move.
+- **Rounds 1 to 3:** resume the original implementer, pointing it at the
+  findings file(s) as a whole: the task (or branch) reviewer's, any lens
+  findings file from this task's dispatch, and any `Task <NN>: confirmed ⚠️:
+  <exact text>` ledger line. State the rule for what is open: spec ❌, any
+  Critical or Important item, a confirmed ⚠️ (its ledger text, not the
+  reviewer's file, since the file carries no confirmed marker), and a lens's
+  `[Critical]` and `[Important]` lines (its `[Minor]` lines are never open;
+  you already ledgered them yourself, below, when you recorded the reply).
+  Minor is never open. Its context is intact: it knows the task, the code,
+  and its own choices. If the harness cannot message a live subagent, dispatch
+  a fresh one with the task path, the report-file path and the same
+  findings-file(s) and rule; the report file is the persistent memory either
+  way.
+- **Rounds 4 to 5:** dispatch a **fresh** implementer on a **more capable
+  model**, with the task path, the report-file path, the same findings-file(s)
+  and open-items rule, and this framing: *"A prior implementer attempted this
+  task N times; you own it now. Read the report file for what was tried."* A
+  loop surviving three resumes usually means the implementer cannot see its
+  own problem: fresh eyes and a capability bump in one move.
+- **From round 2 on**, the findings file is the previous round's re-review
+  file, not the original review: open there means every item under
+  `### Finding verdicts` marked NOT ADDRESSED, plus anything under `### New
+  breakage in the fix diff` rated Critical or Important.
 
-**Every round:** the implementer fixes, re-runs the tests covering the amended
-code, appends its fix report to the same report file, and returns the short
-contract. **Name the covering test files in the fix message**: a one-line fix
-does not need the whole suite.
+**Every round:** the implementer reads the findings file, fixes, re-runs the
+tests covering the amended code, appends its fix report to the same report
+file, and returns the short contract. **Name the covering test files in the
+fix message**: a one-line fix does not need the whole suite.
 
 **Before re-dispatching the reviewer, confirm the fix report contains the
 covering tests, the command run, and the output.** All three, or no re-review.
 
 **The re-review is scoped.** Run
 `bash scripts/review-package <TASK> <FIX_BASE> <HEAD>` where `FIX_BASE` is the head
-the previous review saw. The re-reviewer verdicts **each finding ADDRESSED or
-NOT ADDRESSED** and flags new breakage **in the fix diff only**. New
-Critical/Important breakage joins the open findings. Out-of-scope observations
-go to the ledger as deferred minors: **they never extend the loop.**
+the previous review saw. Pass the re-reviewer the findings file(s) as a whole
+(same rule as above), plus any confirmed-⚠️ ledger line, never the findings
+pasted in. The re-reviewer verdicts **each finding ADDRESSED or NOT
+ADDRESSED** and flags new breakage **in the fix diff only**, with its
+severity. New Critical/Important breakage joins the open findings. New Minor
+breakage and out-of-scope observations go to the ledger as deferred minors:
+**they never extend the loop.**
 
-Ledger each round:
-`Task <NN>: fix round <R>/5 (<X> addressed, <Y> open: <one-liners>; commits <a7>..<b7>)`
+The re-reviewer writes, ready to copy under `## Ledger lines` in its own
+findings file: the round line,
+`Task <NN>: fix round <R>/5 (<X> addressed, <Y> open: <one-liners>; commits <a7>..<b7>)`,
+plus one `Task <NN>: minor (deferred): <one-liner>` line per out-of-scope
+observation and per Minor new-breakage item, and reports that count as the
+ledger number in its `Fixed` field. Append them all the same way:
+`sed -n '/^## Ledger lines/,/^## /p' <findings> | grep '^Task ' >> state.md`,
+and check the appended count against 1 (the round line) plus that reported
+ledger number.
 
 **Never fix findings yourself in the controller session.** Your context stays
 clean for coordination, and controller fixes skip review entirely.

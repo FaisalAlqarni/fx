@@ -54,16 +54,23 @@ JAIL+=(--)
 FX_LIVE_TIMEOUT=10800 FX_LIVE_MAX_TURNS=2000 live_run 'The plan in docs/plans/2026-01-01-notes/ is approved and ready. Build it. This is an unattended headless run: nobody will answer questions, so take the recommended option at every choice. Never end your turn while a subagent is outstanding: dispatch subagents as foreground calls (several in one message run at the same time). Finish with the branch reviewed and not merged.'
 JAIL=("${SCORE_JAIL[@]}")
 
-# 4. The build: the first linked worktree, or $WORK itself. Listed to a file,
-# not straight into awk: awk's own `exit` once it has its answer would close
-# the pipe out from under jgit before jgit finishes writing, and the SIGPIPE
-# that follows must never be misread as the worktree lookup itself failing.
+# 4. The build: the linked worktree the ledger never names as a task
+# worktree, not "the Nth entry" of `git worktree list` (no cross-version
+# ordering guarantee: see hidden/pick-build-worktree.sh and its test for the
+# git 2.43.0 repro). Listed to a file, not straight into awk: awk's own
+# `exit` once it has its answer would close the pipe out from under jgit
+# before jgit finishes writing, and the SIGPIPE that follows must never be
+# misread as the worktree lookup itself failing.
 WTLIST="$(mktemp "$LIVE_SCRATCH/worktrees.XXXXXX")" || fail "mktemp failed"
 jgit -C "$WORK" worktree list --porcelain >"$WTLIST" || fail "build: could not list worktrees in $WORK"
-BUILD="$(awk '/^worktree /{ if (++n == 2) { sub(/^worktree /, ""); print; exit } }' "$WTLIST")"
-rm -f "$WTLIST"
+LEDGERTMP="$(mktemp "$LIVE_SCRATCH/ledger.XXXXXX")" || fail "mktemp failed"
+while IFS= read -r p; do cat "$p/$PLAN/state.md" 2>/dev/null; done \
+  < <(awk '/^worktree /{ sub(/^worktree /, ""); print }' "$WTLIST") >"$LEDGERTMP"
+BUILD="$("$HIDDEN/pick-build-worktree.sh" "$WORK" "$WTLIST" "$LEDGERTMP" 2>&1)"; RC=$?
+rm -f "$WTLIST" "$LEDGERTMP"
+[ "$RC" -eq 0 ] || fail "build: $BUILD"
 ON_MAIN=false
-[ -n "$BUILD" ] || { BUILD="$WORK"; ON_MAIN=true; }
+[ "$BUILD" != "$WORK" ] || ON_MAIN=true
 HEAD_SHA="$(jgit -C "$BUILD" rev-parse HEAD)" || fail "build: cannot read HEAD in $BUILD"
 [ "$HEAD_SHA" != "$SEED" ] || fail "build: no commits on top of the seed in $BUILD"
 
