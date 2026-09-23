@@ -1,0 +1,10 @@
+# Final review, unprimed adversarial pass (code mode), 2026-09-23
+
+1. High. tests/review-bench/rows/01-review-bench.sh:61 commits the case head as "case: $CASE"; review-package prints git log into the diff, so every bench reviewer sees the case name (control included). Inflates caught on both bench sides equally. Fix: neutral subject such as "task $TASK_NUM".
+2. High. tests/fixture-build/rows/01-fixture-build.sh:50 hides tests/fixture-build, docs/plans, .fx, .worktrees, but not tests/review-bench (full correct implementation and match regexes) nor $FX/.git; the bench row hides nothing. Controller check: no baseline or combined build transcript mentions review-bench or hidden/traps (0 of 4 runs), so the fixture results stand. Fix: add tests/review-bench and .git to the tmpfs list and hide the same in the bench row.
+3. High. skills/fx-implement/SKILL.md:536 saves lens replies with a quoted EOF heredoc; a reply containing a line that is exactly EOF truncates the file and runs the rest as shell. Fix: use the Write tool.
+4. Important. scripts/test-scope:35 runs node lib/git-guard.test.js with no arguments; it exits 2 without a fixture (lib/git-guard.test.js:10); base-branch.test.js and heredoc.test.js the same. Any task touching them is red before code runs. Fix: route them to scripts/check-all or build the fixture as check-all does.
+5. Important. scripts/test-scope:30 runs nothing for a deleted path (asserted by scripts/test-scope.test.js:27), so deleting a skill or lib file skips check-paths and check-generated. Fix: classify by path string, fall back to check-all.
+6. Minor. scripts/build-cost:299 spreads all timestamps into Math.max/min; RangeError above about 100k arguments on a long build. Fix: loop.
+7. Minor. Parallel scaffolding outlived the revert: 01-fixture-build.sh:37 FX_FIXTURE_PARALLEL sets isolated_test_execution (which relaxes serial dispatch with no guards now), lines 110-124 mergeDefects, and the fixture README's parallel claim. Fix: delete them.
+8. Minor. tests/gates/return-contract.test.js:31 passes when its anchor is missing (indexOf -1); field checks match common words in a wide window.

@@ -1,0 +1,9 @@
+# Final review, security lens (branch mode), 2026-09-23
+
+1. Important. tests/review-bench/rows/01-review-bench.sh:114,116: with FX_BENCH_KEEP set, the host runs plain cp outside the jail on the prompt and findings files in $WORK, which the skip-permissions reviewer can write; it can replace the findings file with a symlink to the real credential file, the host cp follows it, and the token lands in the kept directory. Fix: copy only regular, non-symlink files, or copy inside the scoring jail.
+2. Important. tests/lane-triggering/run-reps.sh:21,61 with tests/conformance/lib/jail.sh:91: the fourth argument becomes FX unvalidated and the jail binds $FX back read-only after hiding everything; passing /, $HOME, /development or a parent of the real home undoes the hiding. Fix: refuse an FX that is /, a top-level directory, the real home or a parent of it, or not an absolute directory holding .claude-plugin/plugin.json.
+3. Minor. run-reps.sh:34,35,83 and run-test.sh:51-53: predictable kept-log paths under default umask; symlink planting on a shared host. Fix: mktemp -d and umask 077.
+4. Minor. tests/lane-triggering/jail-isolation.test.sh:34,58,70-71: cannot catch a regression (stand-in home under /tmp, which the jail hides anyway; fake claude never prints env).
+5. Minor. tests/fixture-build/rows/01-fixture-build.sh:98,121,126: host-side reads of model-writable files follow symlinks; branch names from state.md reach jgit and may start with "-".
+6. Minor. lib/plan-state.js:313: readFileSync on state.md with no file-type or size check (a FIFO blocks the SessionStart hook; a huge file is read whole).
+Checked with no finding: every rm in scope targets a checked mktemp path; scratch-home copies at 0600 into 0700 and only reads the real home; FX_REAL_HOME not exported; FX_FIXTURE_KEEP copy under umask 077 keeps symlinks as symlinks; hooks pass a boolean only.
