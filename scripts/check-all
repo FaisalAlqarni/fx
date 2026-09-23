@@ -83,6 +83,7 @@ run opencode-plugin.test.js  node tests/gates/opencode-plugin.test.js
 run description-overlap.test.js node tests/gates/description-overlap.test.js
 run no-runtime-addressing.test.js node tests/gates/no-runtime-addressing.test.js
 run release-version.test.js node tests/gates/release-version.test.js
+run parallel-implement.test.js node tests/gates/parallel-implement.test.js
 
 run install-opencode        bash tests/install/run.sh opencode
 run install-codex           bash tests/install/run.sh codex
