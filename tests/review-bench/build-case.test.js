@@ -106,13 +106,12 @@ for (const caseName of fs.readdirSync(CASES_DIR)) {
 
   // Review's own instruction: confirm the given (visible) test passes on the
   // good version and on each defective version, since the planted defects are
-  // not what those example tests check. One documented exception: task 03's
-  // own test requires a "## Usage" heading that traps.self-test.js's README
-  // (built only to satisfy the readme-example hidden trap) never has, so it
-  // fails against both the good and the readme-binary README - a pre-existing
-  // fixture gap, not the planted "wrong binary" defect. A real implementer
-  // would have seen this test red regardless of which README they wrote here.
-  const GIVEN_TEST_EXPECTED_TO_FAIL = new Set(['readme-binary']);
+  // not what those example tests check (readme-binary's given test checks
+  // structure only - a "## Usage" heading, the words "add"/"show", NOTES_DIR
+  // named - never that the example actually runs, which is what the hidden
+  // readme-example trap is for; the wrong-binary defect never touches any of
+  // that structure, so this given test passes regardless, same as every
+  // other case's).
   test(`${caseName}: the task's own given test at head`, () => {
     let passed = true;
     try {
@@ -120,11 +119,7 @@ for (const caseName of fs.readdirSync(CASES_DIR)) {
     } catch (e) {
       passed = false;
     }
-    if (GIVEN_TEST_EXPECTED_TO_FAIL.has(caseName)) {
-      assert.strictEqual(passed, false, `${caseName} was a documented exception (fixture README lacks "## Usage"); if it now passes, this exception is stale`);
-    } else {
-      assert.strictEqual(passed, true, `${caseName}'s given test (${ownedTestFile}) must pass at head: the planted defect is not what it checks`);
-    }
+    assert.strictEqual(passed, true, `${caseName}'s given test (${ownedTestFile}) must pass at head: the planted defect is not what it checks`);
   });
 }
 
