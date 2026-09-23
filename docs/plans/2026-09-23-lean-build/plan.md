@@ -31,7 +31,7 @@
 ## Global Constraints
 
 - Per-task review, the five-round fix loop, trigger-gated lenses, the coverage audit and the branch-end review are not weakened by any task.
-- A step ships only if, pooled over its 3 fixture runs, no trap is caught at the end fewer times than at baseline and no trap is missed by review more times, and row 04 and lane-triggering fire rates are unchanged or better. Cost and time compare on medians.
+- A step ships only if, pooled over its 3 fixture runs, no trap is caught at the end fewer times than at baseline; pooled over the review bench's reps, no planted defect is caught fewer times and the clean control draws no more false positives; and row 04 and lane-triggering fire rates are unchanged or better. Cost and time compare on medians. (Amended 2026-09-23, owner decision: byReview is recorded, not gating.)
 - Bootstrap alone under 3,000 characters; worst-case render under 9,000.
 - Nothing moves into the always-on text (ADR 0021).
 - Every parallel guard fails toward serial.
@@ -47,7 +47,8 @@
 | 01 | Build-cost report | none | `scripts/build-cost` reads a build's transcripts and prints deduplicated cost and time | MVP |
 | 02 | Lane-triggering suite covers every model-facing lane | none | prompts for the 5 missing lanes, should-not-fire prompts, wrong-first-lane rule, scratch home | MVP |
 | 03 | Seeded fixture build | 01, 02 | `tests/fixture-build/`: repo, 6-task plan, hidden trap tests scored at the end and by review, run script | MVP |
-| 04 | OWNER RUN: smoke, then baseline | 01, 02, 03 | `measurements.md` with the baseline | MVP |
+| 03b | Review bench | 03 | `tests/review-bench/`: planted-defect diffs scored against fx's own task reviewer | MVP |
+| 04 | OWNER RUN: smoke, then baseline | 01, 02, 03, 03b | `measurements.md` with the baseline | MVP |
 | 05 | A finished plan is not listed | 04 | `Plan complete:` line, written by `fx-implement`, read by `plan-state`; three ledgers backfilled | Core |
 | 06 | Subagents do not receive the plans block | 04 | `render({ subagent })`; Claude Code hook passes it on `SubagentStart` | Core |
 | 07 | OWNER RUN: measure step 2 | 05, 06 | verdict for step 2 | Core |

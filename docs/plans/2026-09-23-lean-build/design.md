@@ -179,8 +179,14 @@ before the baseline exists.
   they get no positive prompt (amended 2026-09-23; story 6 said 17).
 - Size gate: already in place. `lib/preamble.test.js` asserts both limits and
   `scripts/check-all` runs it (found while planning; story 7 needs no work).
-- Baseline: a one-run smoke build first, then three fixture builds on the
-  current pipeline.
+- Review bench (added 2026-09-23, owner decision after three smoke builds in
+  which no trap was ever red at an implementer's commit): fx's own task
+  reviewer, filled from the working-tree template, reviews diffs that carry
+  one planted defect each, plus a clean control; scored on whether a Critical
+  or Important finding names the defect. This measures review directly, at a
+  fraction of a build's cost.
+- Baseline: a one-run smoke build first, then three fixture builds and the
+  review bench on the current pipeline.
 
 **Step 2, plan-state notice.** Finished means the ledger contains a line
 starting `Plan complete:`. `fx-implement`'s completion step writes it. The hook
@@ -251,9 +257,12 @@ it cost. Prior art: `lib/preamble.test.js`, the plan-state tests,
 - Per-task review, the five-round fix loop, trigger-gated lenses, the coverage
   audit and the branch-end review are not weakened by any step.
 - A step ships only if, pooled over its 3 fixture runs, no trap is caught at
-  the end fewer times than at baseline and no trap is missed by review more
-  times than at baseline, and row 04 and triggering fire rates
-  are unchanged or better. Cost and time compare on medians.
+  the end fewer times than at baseline; pooled over the review bench's reps, no
+  planted defect is caught fewer times and the clean control draws no more false
+  positives than at baseline; and row 04 and triggering fire rates are unchanged
+  or better. Cost and time compare on medians. (Amended 2026-09-23 after three
+  smoke builds, owner decision: the by-review metric is recorded but no longer
+  gates, because implementers never got a fixture trap wrong.)
 - Bootstrap alone under 3,000 characters; worst-case render under 9,000.
 - Nothing moves into the always-on text (ADR 0021).
 - Every parallel guard fails toward serial.

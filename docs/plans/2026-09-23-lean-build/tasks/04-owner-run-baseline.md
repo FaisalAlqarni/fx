@@ -1,7 +1,7 @@
 # 04: OWNER RUN: baseline
 
 **Status:** ready-for-agent
-**Blocked by:** 01, 02, 03
+**Blocked by:** 01, 02, 03, 03b
 **Phase:** MVP
 **Owner-run:** yes. `fx-implement` does not dispatch this task. It stops,
 shows the owner the commands below, and resumes when the owner reports back.
@@ -39,6 +39,7 @@ reruns the smoke as `smoke-b`. Only a clean smoke continues:
 
 ```
 tests/fixture-build/run.sh 3 baseline
+tests/review-bench/run.sh 3 baseline
 tests/lane-triggering/run-all.sh
 FX_CONFORMANCE_ROWS=tests/conformance/rows tests/conformance/run.sh claude-code
 ```

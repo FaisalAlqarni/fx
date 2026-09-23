@@ -21,6 +21,7 @@ shows the owner the commands below, and resumes when the owner reports back.
 
 ```
 tests/fixture-build/run.sh 3 step2
+tests/review-bench/run.sh 3 step2
 tests/lane-triggering/run-all.sh
 FX_CONFORMANCE_ROWS=tests/conformance/rows tests/conformance/run.sh claude-code
 ```
@@ -32,9 +33,10 @@ sessions still get the plans block.
 ## Ship rule (from the design, exact)
 
 Ship if **all** hold:
-- quality, pooled over the 3 runs against the baseline's 3 runs, per trap:
-  no trap is caught at the end fewer times, and no trap is `missed` by review
-  more times (a trap `clean` more often is not a loss);
+- quality: pooled over the 3 fixture runs, no trap is caught at the end fewer
+  times than at baseline; pooled over the bench reps, no planted defect is
+  caught fewer times and the control draws no more false positives than at
+  baseline (byReview is recorded, not gating);
 - row 04 claude-code passes, opencode is at or above its baseline count;
 - `run-all.sh` has no FAIL that was not already a baseline failure;
 - rows 02 and 16 pass;

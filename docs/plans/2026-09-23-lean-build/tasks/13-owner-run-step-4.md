@@ -22,6 +22,7 @@ shows the owner the commands below, and resumes when the owner reports back.
 
 ```
 FX_FIXTURE_PARALLEL=1 tests/fixture-build/run.sh 3 step4
+tests/review-bench/run.sh 3 step4
 tests/lane-triggering/run-all.sh
 FX_CONFORMANCE_ROWS=tests/conformance/rows tests/conformance/run.sh claude-code
 ```
@@ -33,9 +34,10 @@ with its reason.
 ## Ship rule (from the design, exact)
 
 Parallel (tasks 10 and 11) ships only if **all** hold:
-- quality, pooled over the 3 runs against the baseline's 3 runs, per trap:
-  no trap is caught at the end fewer times, and no trap is `missed` by review
-  more times (a trap `clean` more often is not a loss);
+- quality: pooled over the 3 fixture runs, no trap is caught at the end fewer
+  times than at baseline; pooled over the bench reps, no planted defect is
+  caught fewer times and the control draws no more false positives than at
+  baseline (byReview is recorded, not gating);
 - `mergeDefects` is `0` in all 3 runs;
 - the ledger of at least 2 of the 3 runs shows tasks 04 and 05 ran in
   parallel (otherwise nothing was measured), and task 06 went back to serial
