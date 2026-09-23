@@ -1,1 +1,1 @@
-case
+case[- ]?(insensitiv|fold|sensitiv)|toLowerCase|toUpperCase|upper.?case|lower.?case|mixed.?case

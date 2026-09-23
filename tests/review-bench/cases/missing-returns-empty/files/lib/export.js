@@ -1,1 +1,0 @@
-const s = require('./store'); exports.exportAll = () => s.list().map((n) => '# ' + n + '\n\n' + s.load(n) + '\n').join('');

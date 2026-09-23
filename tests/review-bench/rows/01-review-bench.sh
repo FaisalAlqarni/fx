@@ -29,23 +29,37 @@ TASK_FILE="$(ls "$FX/tests/fixture-build/repo/docs/plans/2026-01-01-notes/tasks/
 [ -n "$TASK_FILE" ] || fail "no fixture task file for task $TASK_NUM"
 MATCH="$(cat "$CASE_DIR/match")"
 
+# [GLOBAL_CONSTRAINTS] carries plan.md's Global Constraints plus the fixture
+# design's "Storage and search rules" (review finding I3, ledger Ruling P):
+# the exact rules six of the nine planted defects violate live in the
+# design's body, not the plan, since Ruling K moved them there so the
+# coverage audit and branch review (and now this bench) read them.
 PLAN="$FX/tests/fixture-build/repo/docs/plans/2026-01-01-notes/plan.md"
-GLOBAL_CONSTRAINTS="$(P="$PLAN" node -e '
-  const t = require("fs").readFileSync(process.env.P, "utf8");
-  const m = t.match(/^## Global Constraints\n([\s\S]*?)\n## /m);
-  if (!m) process.exit(1);
-  process.stdout.write(m[1].trim());
-')" || fail "could not read Global Constraints from $PLAN"
+DESIGN="$FX/tests/fixture-build/repo/docs/plans/2026-01-01-notes/design.md"
+GLOBAL_CONSTRAINTS="$(P="$PLAN" D="$DESIGN" node -e '
+  const fs = require("fs");
+  const plan = fs.readFileSync(process.env.P, "utf8");
+  const design = fs.readFileSync(process.env.D, "utf8");
+  const gc = plan.match(/^## Global Constraints\n([\s\S]*?)\n## /m);
+  const rules = design.match(/^## Storage and search rules\n([\s\S]*?)\n## /m);
+  if (!gc || !rules) process.exit(1);
+  process.stdout.write(gc[1].trim() + "\n\nStorage and search rules (design.md):\n" + rules[1].trim());
+')" || fail "could not read Global Constraints from $PLAN and $DESIGN"
 
-# 2. base and head: the seed repo, then the case's implementation on top.
+# 2. base and head. Base carries the seed plus the good reference of every
+# fixture module except this case's own task file(s); head replaces just
+# that file with the case's version, so the diff a reviewer reads touches
+# only the task's own file(s) (review finding I2).
 live_workdir
 cp -a "$FX/tests/fixture-build/repo/." "$WORK/" || fail "could not copy the seed repo"
-git -C "$WORK" add -A && git -C "$WORK" commit -q -m "seed: notes plan" || fail "could not commit the seed"
-BASE="$(git -C "$WORK" rev-parse HEAD)"
+OWNED="$(node "$FX/tests/review-bench/build-case.js" "$CASE_DIR" "$FX/tests/review-bench/good" "$WORK")" \
+  || fail "build-case.js failed for $CASE"
+git -C "$WORK" add -A && git -C "$WORK" commit -q -m "base: everything but ${OWNED//$'\n'/, }" || fail "could not commit the base"
+BASE="$(git -C "$WORK" rev-parse HEAD)" || fail "could not read the base commit"
 
-cp -a "$CASE_DIR/files/." "$WORK/" || fail "could not copy the case's files"
+cp -a "$CASE_DIR/files/." "$WORK/" || fail "could not copy the case's own files"
 git -C "$WORK" add -A && git -C "$WORK" commit -q -m "case: $CASE" || fail "could not commit the case"
-HEAD_SHA="$(git -C "$WORK" rev-parse HEAD)"
+HEAD_SHA="$(git -C "$WORK" rev-parse HEAD)" || fail "could not read the head commit"
 
 # 3. the review package, an empty ledger, and a one-line report: exactly what
 # a real task review reads, nothing that hints at the planted defect.
@@ -68,9 +82,25 @@ PROMPT="$(TASK_FILE="$TASK_FILE" GLOBAL_CONSTRAINTS="$GLOBAL_CONSTRAINTS" LEDGER
   REPORT_FILE="$REPORT_FILE" BASE_SHA="$BASE" HEAD_SHA="$HEAD_SHA" DIFF_FILE="$DIFF_FILE" FINDINGS_FILE="$FINDINGS_FILE" \
   node "$FX/tests/review-bench/fill-template.js" "$FX/skills/fx-implement/task-reviewer-prompt.md")" \
   || fail "could not fill the reviewer template"
+PROMPT_FILE="$WORK/.review-bench-prompt.md"
+printf '%s' "$PROMPT" > "$PROMPT_FILE" || fail "could not write $PROMPT_FILE"
 
 # 5. one headless reviewer session, at the tier fx dispatches reviewers on.
 FX_LIVE_MODEL=sonnet live_run "$PROMPT"
+
+# FX_BENCH_KEEP, if set, keeps this case's rep's findings file and filled
+# prompt before $WORK is removed, so a miss can be audited (task Risks: "keep
+# every miss's findings file"), same pattern as the fixture row's
+# FX_FIXTURE_KEEP. Copied before the findings-file check below, so even a run
+# where the reviewer never wrote one still leaves the prompt to audit.
+if [ -n "${FX_BENCH_KEEP:-}" ]; then
+  KEEP_DIR="$FX_BENCH_KEEP/$CASE-$REP"
+  mkdir -p "$KEEP_DIR" || fail "keep: cannot create $KEEP_DIR"
+  cp "$PROMPT_FILE" "$KEEP_DIR/prompt.md" || fail "keep: could not copy the filled prompt to $KEEP_DIR"
+  if [ -f "$FINDINGS_FILE" ]; then
+    cp "$FINDINGS_FILE" "$KEEP_DIR/findings.md" || fail "keep: could not copy the findings file to $KEEP_DIR"
+  fi
+fi
 
 [ -f "$FINDINGS_FILE" ] || fail "the reviewer never wrote $FINDINGS_FILE"
 

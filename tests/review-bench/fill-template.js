@@ -34,7 +34,16 @@ function fillPlaceholders(body, values) {
   return out;
 }
 
-module.exports = { extractPromptBody, fillPlaceholders };
+// Every `[A-Z_]+` token the template's own body names as a placeholder, that
+// is still literally present after filling: a template change that adds a
+// placeholder (task 08 edits this template) would otherwise send that
+// bracketed text to the reviewer silently (lens finding 2).
+function findLeftoverPlaceholders(originalBody, filledBody) {
+  const tokens = new Set(originalBody.match(/\[[A-Z_]+\]/g) || []);
+  return [...tokens].filter((t) => filledBody.includes(t));
+}
+
+module.exports = { extractPromptBody, fillPlaceholders, findLeftoverPlaceholders };
 
 if (require.main === module) {
   const templatePath = process.argv[2];
@@ -46,5 +55,11 @@ if (require.main === module) {
   const values = {};
   for (const k of KEYS) if (process.env[k] !== undefined) values[k] = process.env[k];
   const body = extractPromptBody(fs.readFileSync(templatePath, 'utf8'));
-  process.stdout.write(fillPlaceholders(body, values));
+  const filled = fillPlaceholders(body, values);
+  const leftover = findLeftoverPlaceholders(body, filled);
+  if (leftover.length) {
+    process.stderr.write(`fill-template.js: leftover placeholder token(s) in the filled prompt: ${leftover.join(', ')}\n`);
+    process.exit(1);
+  }
+  process.stdout.write(filled);
 }

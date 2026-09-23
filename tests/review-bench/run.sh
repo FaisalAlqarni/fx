@@ -4,11 +4,14 @@
 # to docs/plans/2026-09-23-lean-build/runs/bench-<label>.json.
 #
 #   tests/review-bench/run.sh <reps> <label>
+#   FX_BENCH_KEEP=<dir> tests/review-bench/run.sh <reps> <label>
 #
 # Every rep of every case is a real headless reviewer session: it spends
 # quota. Nothing here calls claude directly; tests/review-bench/rows/01-review-bench.sh
 # does, through tests/conformance/run.sh, which points HOME and
-# CLAUDE_CONFIG_DIR into a scratch directory.
+# CLAUDE_CONFIG_DIR into a scratch directory. FX_BENCH_KEEP, if set, keeps
+# every rep's filled prompt and reviewer findings file under
+# <dir>/<case>-<rep>/, so a miss can be audited.
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 FX="$PWD"
@@ -36,7 +39,7 @@ for casedir in "${CASE_DIRS[@]}"; do
   NAMES="$NAMES$case_name"$'\n'
   for rep in $(seq 1 "$REPS"); do
     FX_CONFORMANCE_ROWS="$FX/tests/review-bench/rows" FX_REVIEW_BENCH_OUT="$RESULTS" \
-      FX_REVIEW_BENCH_CASE="$case_name" FX_REVIEW_BENCH_REP="$rep" \
+      FX_REVIEW_BENCH_CASE="$case_name" FX_REVIEW_BENCH_REP="$rep" FX_BENCH_KEEP="${FX_BENCH_KEEP:-}" \
       bash tests/conformance/run.sh claude-code \
       || { echo "$case_name rep $rep: the review-bench row failed; stopping" >&2; exit 1; }
     # A GAP (quota) passes the runner but writes no result.
