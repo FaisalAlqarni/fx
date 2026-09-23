@@ -1,0 +1,52 @@
+{
+  "label": "combined2-r1",
+  "fxCommit": "f2c1d24",
+  "reps": 1,
+  "cases": {
+    "cli-inline-search": {
+      "caught": 1,
+      "of": 1,
+      "falsePositive": 1
+    },
+    "control": {
+      "caught": 0,
+      "of": 1,
+      "falsePositive": 1
+    },
+    "empty-throws": {
+      "caught": 1,
+      "of": 1,
+      "falsePositive": 1
+    },
+    "missing-returns-empty": {
+      "caught": 1,
+      "of": 1,
+      "falsePositive": 1
+    },
+    "path-dotdot-only": {
+      "caught": 1,
+      "of": 1,
+      "falsePositive": 1
+    },
+    "path-no-check": {
+      "caught": 1,
+      "of": 1,
+      "falsePositive": 1
+    },
+    "readme-binary": {
+      "caught": 1,
+      "of": 1,
+      "falsePositive": 1
+    },
+    "search-case-sensitive": {
+      "caught": 1,
+      "of": 1,
+      "falsePositive": 1
+    },
+    "search-query-only": {
+      "caught": 1,
+      "of": 1,
+      "falsePositive": 1
+    }
+  }
+}
