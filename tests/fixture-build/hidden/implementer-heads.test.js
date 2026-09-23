@@ -37,8 +37,20 @@ write(path.join(sub, 'd-implementer.jsonl'), [
   user(70, 'You are implementing task 02: cli add and show'),
   asst(80, 'Status: BLOCKED, nothing committed.'),
 ]);
+// fx-implement resumes the same agent for a fix round: the file's final
+// message is the post-fix head, but review judged the first reply's head
+// (SHA A), so that is what must come out, not the later fix's head (SHA B).
+const toolResult = (t, id) => ({ type: 'user', timestamp: ts(t), message: { content: [{ type: 'tool_result', tool_use_id: id, content: 'ok' }] } });
+write(path.join(sub, 'e-implementer.jsonl'), [
+  user(90, 'You are implementing task 03: readme'),
+  asst(91, 'Reading the task file.'),
+  toolResult(92, 'tool-1'),
+  asst(93, 'Status: DONE. Commits aaaaaaa..bbbbbbb, see report.'),
+  user(94, 'Task 03, fix round 1 of 5'),
+  asst(95, 'Fixed. Commits ccccccc..ddddddd, see report.'),
+]);
 
-assert.deepStrictEqual(JSON.parse(execFileSync('node', [BIN, ctl], { encoding: 'utf8' })), { '01': '4444444abc' });
+assert.deepStrictEqual(JSON.parse(execFileSync('node', [BIN, ctl], { encoding: 'utf8' })), { '01': '4444444abc', '03': 'bbbbbbb' });
 
 const p = spawnSync('node', [BIN], { encoding: 'utf8' });
 assert.strictEqual(p.status, 2, 'no argument exits 2');

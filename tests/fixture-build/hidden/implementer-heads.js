@@ -7,8 +7,13 @@
 // (<session>/subagents/*.jsonl) whose first user message contains
 // "You are implementing task <NN>" are that task's implementer and fixers; the
 // one with the earliest first timestamp is the original. Its head is the last
-// 7 to 40 character hex SHA in its final assistant message. A task with no
-// such SHA is left out, and the fixture row scores it "unknown".
+// 7 to 40 character hex SHA in its FIRST REPLY: the last assistant text
+// before the first later user record that is neither a tool result nor a
+// skill expansion (amended 2026-09-23, Ruling I). fx-implement resumes the
+// same agent for fix rounds 1 to 3, so without this the file's final message
+// would be read as the head, which is the post-fix head, not the one review
+// judged. A task with no such SHA is left out, and the fixture row scores it
+// "unknown".
 const fs = require('fs');
 const path = require('path');
 
@@ -50,10 +55,41 @@ for (const f of files) {
   if (!original[task] || start < original[task].start) original[task] = { start, recs };
 }
 
+// A boundary record: a real new coordinator message, not the async plumbing
+// around a tool call. A tool result is every block of an array content typed
+// tool_result; a skill expansion is Claude Code's own isMeta marker for
+// injected content (a loaded skill, a local command's output) that never
+// came from the coordinator either.
+function isToolResultOrSkillExpansion(rec) {
+  if (rec.isMeta === true) return true;
+  const c = rec.message && rec.message.content;
+  return Array.isArray(c) && c.length > 0 && c.every((b) => b && b.type === 'tool_result');
+}
+
+// The last assistant text record before the first later user record that is
+// a real new message: the implementer's first reply. Absent any such later
+// user record (no fix round happened), that is the last assistant text in
+// the whole file, same as today.
+function firstReply(recs) {
+  const dispatch = recs.findIndex((r) => r.type === 'user');
+  let boundary = recs.length;
+  for (let i = dispatch + 1; i < recs.length; i++) {
+    const r = recs[i];
+    if (r.type !== 'user') continue;
+    if (isToolResultOrSkillExpansion(r)) continue;
+    boundary = i;
+    break;
+  }
+  for (let i = boundary - 1; i > dispatch; i--) {
+    if (recs[i].type === 'assistant' && textOf(recs[i]).trim()) return recs[i];
+  }
+  return null;
+}
+
 const heads = {};
 for (const task of Object.keys(original).sort()) {
-  const last = original[task].recs.filter((r) => r.type === 'assistant' && textOf(r).trim()).pop();
-  const shas = last ? textOf(last).match(/\b[0-9a-f]{7,40}\b/g) : null;
+  const reply = firstReply(original[task].recs);
+  const shas = reply ? textOf(reply).match(/\b[0-9a-f]{7,40}\b/g) : null;
   if (shas) heads[task] = shas[shas.length - 1];
 }
 process.stdout.write(JSON.stringify(heads) + '\n');

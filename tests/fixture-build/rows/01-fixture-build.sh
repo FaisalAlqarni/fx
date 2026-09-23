@@ -52,8 +52,14 @@ JAIL+=(--)
 FX_LIVE_TIMEOUT=10800 FX_LIVE_MAX_TURNS=2000 live_run 'The plan in docs/plans/2026-01-01-notes/ is approved and ready. Build it. This is an unattended headless run: nobody will answer questions, so take the recommended option at every choice. Never end your turn while a subagent is outstanding: dispatch subagents as foreground calls (several in one message run at the same time). Finish with the branch reviewed and not merged.'
 JAIL=("${SCORE_JAIL[@]}")
 
-# 4. The build: the first linked worktree, or $WORK itself.
-BUILD="$(jgit -C "$WORK" worktree list --porcelain | awk '/^worktree /{ if (++n == 2) { sub(/^worktree /, ""); print; exit } }')"
+# 4. The build: the first linked worktree, or $WORK itself. Listed to a file,
+# not straight into awk: awk's own `exit` once it has its answer would close
+# the pipe out from under jgit before jgit finishes writing, and the SIGPIPE
+# that follows must never be misread as the worktree lookup itself failing.
+WTLIST="$(mktemp "$LIVE_SCRATCH/worktrees.XXXXXX")" || fail "mktemp failed"
+jgit -C "$WORK" worktree list --porcelain >"$WTLIST" || fail "build: could not list worktrees in $WORK"
+BUILD="$(awk '/^worktree /{ if (++n == 2) { sub(/^worktree /, ""); print; exit } }' "$WTLIST")"
+rm -f "$WTLIST"
 ON_MAIN=false
 [ -n "$BUILD" ] || { BUILD="$WORK"; ON_MAIN=true; }
 HEAD_SHA="$(jgit -C "$BUILD" rev-parse HEAD)" || fail "build: cannot read HEAD in $BUILD"
@@ -90,11 +96,13 @@ END="$(traps "$BUILD")" || fail "caughtAtEnd: traps.test.js failed on $BUILD"
 HEADS="$(node "$HIDDEN/implementer-heads.js" "${CTL[0]}")" || fail "byReview: implementer-heads.js failed on ${CTL[0]}"
 AT_HEAD='{}'
 for t in "${!TASK_TRAPS[@]}"; do
-  sha="$(H="$HEADS" T="$t" node -e 'process.stdout.write(JSON.parse(process.env.H)[process.env.T] || "")')"
+  sha="$(H="$HEADS" T="$t" node -e 'process.stdout.write(JSON.parse(process.env.H)[process.env.T] || "")')" \
+    || fail "byReview: could not read task $t's head from implementer-heads.js output"
   [ -n "$sha" ] || continue
   r="$(at "$sha" "${TASK_TRAPS[$t]}")" || fail "byReview: scoring task $t at $sha failed"
   [ -n "$r" ] || { echo "$HARNESS: byReview: task $t head $sha is not in the repo; scored unknown" >&2; continue; }
-  AT_HEAD="$(A="$AT_HEAD" R="$r" node -e 'process.stdout.write(JSON.stringify({ ...JSON.parse(process.env.A), ...JSON.parse(process.env.R) }))')"
+  AT_HEAD="$(A="$AT_HEAD" R="$r" node -e 'process.stdout.write(JSON.stringify({ ...JSON.parse(process.env.A), ...JSON.parse(process.env.R) }))')" \
+    || fail "byReview: could not merge task $t's score into byReview"
 done
 
 # 8. mergeDefects: a task's traps green on its own parallel branch, red at the end.
@@ -105,7 +113,8 @@ while read -r t b; do
   [ -n "$r" ] || fail "mergeDefects: task $t branch $b is not in the repo"
   n="$(R="$r" E="$END" node -e '
     const r = JSON.parse(process.env.R), e = JSON.parse(process.env.E);
-    process.stdout.write(String(Object.keys(r).filter((k) => r[k] && !e[k]).length));')"
+    process.stdout.write(String(Object.keys(r).filter((k) => r[k] && !e[k]).length));')" \
+    || fail "mergeDefects: could not count task $t's green-then-red traps at $b"
   MERGE=$((MERGE + n))
 done < <(cat "$BUILD/$PLAN/state.md" "$WORK/$PLAN/state.md" 2>/dev/null \
   | grep -oE 'Task [0-9]+: parallel with [0-9]+, branch [^ ,]+' | sort -u \

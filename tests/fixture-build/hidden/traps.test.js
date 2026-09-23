@@ -10,7 +10,10 @@
 // Each check runs in its own fresh temp dir with NOTES_DIR=<tmp>/n, loads the
 // repo's modules with a cleared require cache, and turns any exception into
 // false. The code under test is model-written: the fixture row runs this file
-// inside the conformance jail, never on the host.
+// inside the conformance jail, never on the host. `readme-example` and
+// `cli-wiring` run the build from a temp copy under that same temp dir, so
+// neither writes into the build tree itself and neither can be confused by
+// the scorer's own NOTES_DIR (readme-example) or lib/search.js (cli-wiring).
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -37,7 +40,7 @@ function throwsCode(fn, code) {
   try { fn(); } catch (e) { return !!e && e.code === code; }
   return false;
 }
-const run = (cmd) => execSync(cmd, { cwd: repo, env: process.env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 30000 });
+const runIn = (cmd, cwd, env) => execSync(cmd, { cwd, env: env || process.env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 30000 });
 // Three notes saved out of alphabetical order; true when `out` shows them sorted.
 function saveUnsorted() {
   const store = mod('store');
@@ -48,6 +51,13 @@ function saveUnsorted() {
 function sorted(out) {
   const a = out.indexOf('APPLE-TEXT'), b = out.indexOf('BANANA-TEXT'), c = out.indexOf('CHERRY-TEXT');
   return a >= 0 && a < b && b < c;
+}
+// The text a `cli.js add <name> <text>` line in a README block saved, quoted
+// or bare. null when the block never calls add: readme-example is then
+// false, never a crash on a build whose example is not this shape.
+function addedText(block) {
+  const m = block.match(/\bcli\.js\s+add\s+\S+\s+(?:"([^"]*)"|'([^']*)'|(\S+))/);
+  return m ? (m[1] ?? m[2] ?? m[3]) : null;
 }
 
 const TRAPS = {
@@ -60,17 +70,28 @@ const TRAPS = {
   'missing-note-error'() {
     return throwsCode(() => mod('store').load('nope'), 'ENOTE');
   },
-  'readme-example'() {
+  // Runs the first fenced sh block top to bottom as one script, in a temp
+  // copy of the build so the block cannot write into the build tree, with a
+  // temp NOTES_DIR in the environment that the block is free to override
+  // (`export NOTES_DIR=...` is a plausible correct answer to the task's own
+  // "names where notes are stored" requirement). Pass: the script exits 0
+  // (sh -e; a failing command throws here, which the caller scores false)
+  // and its own stdout contains the text its add line saved, so the check
+  // never depends on the scorer's own NOTES_DIR or store module.
+  'readme-example'(tmp) {
     const md = fs.readFileSync(path.join(repo, 'README.md'), 'utf8');
     // sh, bash and shell all mean "paste this into a shell".
     const m = md.match(/^```(?:sh|bash|shell)[ \t]*\n([\s\S]*?)^```/m);
     if (!m) return false;
+    const saved = addedText(m[1]);
+    if (!saved) return false;
+    const copy = path.join(tmp, 'readme-copy');
+    fs.cpSync(repo, copy, { recursive: true });
+    const env = { ...process.env, NOTES_DIR: path.join(tmp, 'readme-notes') };
     // The block runs as one script with -e: every command must succeed, as
     // pasting it line by line requires, and a backslash continuation holds.
-    const out = execSync('sh -e', { cwd: repo, env: process.env, input: m[1], encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'], timeout: 30000 });
-    const store = mod('store');
-    const texts = store.list().map((n) => store.load(n)).filter((t) => t.length > 0);
-    return texts.length > 0 && texts.some((t) => out.includes(t));
+    const out = execSync('sh -e', { cwd: copy, env, input: m[1], encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'], timeout: 30000 });
+    return out.includes(saved);
   },
   'export-order'() {
     saveUnsorted();
@@ -83,13 +104,18 @@ const TRAPS = {
     const found = mod('search').search('HELLO');
     return Array.isArray(found) && found.includes('greeting') && !found.includes('other');
   },
-  'cli-wiring'() {
-    const src = fs.readFileSync(path.join(repo, 'cli.js'), 'utf8');
-    if (!/require\(\s*['"]\.\/lib\/search(\.js)?['"]\s*\)/.test(src)) return false;
-    mod('store').save('greeting', 'say hello there');
-    if (!run('node cli.js search HELLO').includes('greeting')) return false;
+  // Judged in a temp copy with lib/search.js replaced by a sentinel: only a
+  // CLI that actually requires lib/search.js, however it spells the path,
+  // can print SENTINEL back. The query is lower-case throughout, so a
+  // case-sensitive lib/search.js (task 05's own trap) can never fail this
+  // one: cli-wiring measures wiring, not search.
+  'cli-wiring'(tmp) {
+    const copy = path.join(tmp, 'wiring-copy');
+    fs.cpSync(repo, copy, { recursive: true });
+    fs.writeFileSync(path.join(copy, 'lib', 'search.js'), "exports.search = () => ['SENTINEL'];\n");
+    if (!runIn('node cli.js search x', copy).includes('SENTINEL')) return false;
     saveUnsorted();
-    return sorted(run('node cli.js export'));
+    return sorted(runIn('node cli.js export', copy));
   },
 };
 
@@ -101,6 +127,11 @@ if (i !== -1) {
   if (only.length === 0 || unknown.length) usage(`unknown or missing --only names: ${unknown.join(',') || '(none)'}`);
   names = names.filter((n) => only.includes(n));
 }
+// Defensive: --only above already rejects a name outside TRAPS, so this
+// cannot fire through the CLI. Kept so a future caller of this file as a
+// module, or a TRAPS edit that drops an entry, fails loudly instead of the
+// loop below silently scoring a name nothing implements.
+for (const n of names) if (typeof TRAPS[n] !== 'function') usage(`no such trap: ${n}`);
 
 // Model code that prints while loaded in this process would corrupt the JSON
 // this file prints, so stdout is closed to it until the result is ready.
@@ -109,10 +140,29 @@ process.stdout.write = () => true;
 const result = {};
 for (const name of names) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-trap-'));
+  // fresh() is scorer setup only (mkdir, chdir, clearing the require cache):
+  // no build code runs here, so a failure here is our own bug, never the
+  // build's. It is not caught with the build's own exceptions below: it
+  // fails the whole run instead of silently scoring one trap false.
   try {
     fresh(tmp);
+  } catch (e) {
+    process.stdout.write = write;
+    process.stderr.write(`traps.test.js: scorer setup failed for ${name}: ${(e && e.message) || e}\n`);
+    process.exit(1);
+  }
+  try {
     result[name] = TRAPS[name](tmp) === true;
   } catch (e) {
+    // TRAPS[name] mixes scorer glue (execSync, regex parsing, the temp
+    // copies above) with calls straight into the build's own code (mod(),
+    // runIn()), so an exception here cannot always be attributed to one
+    // side cleanly: the line the fresh()/TRAPS split draws is the clean one
+    // available. Score it false, as the build's own exceptions always have
+    // been, but keep the message on stderr so a run can be audited for a
+    // scorer bug that would otherwise look identical to a build that fails
+    // the trap.
+    process.stderr.write(`traps.test.js: ${name}: ${(e && e.message) || e}\n`);
     result[name] = false;
   }
   process.chdir(os.tmpdir());

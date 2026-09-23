@@ -42,6 +42,45 @@ const bad = {
   'lib/search.js': `const s = require('./store'); exports.search = (q) => s.list().filter((n) => s.load(n).includes(q));`,
   'README.md': '# notes\n\n```sh\nnotes add hello "hello world"\nnotes show hello\n```\n',
 };
+// cli-wiring is judged in a temp copy with lib/search.js swapped for a
+// sentinel (Ruling I), so `bad`'s case-sensitive search never reaches it:
+// `bad`'s cli.js is `good`'s, unmodified, so cli-wiring reads true on `bad`.
+// These two variants change only cli.js, to isolate wiring from every other
+// trap.
+const inlineSearchCli = {
+  ...good,
+  // A second search implementation inline in cli.js: never requires
+  // lib/search.js at all, so the sentinel swap cannot reach it.
+  'cli.js': `
+const s = require('./lib/store'); const [cmd, a, b] = process.argv.slice(2);
+if (cmd === 'add') s.save(a, b);
+else if (cmd === 'show') console.log(s.load(a));
+else if (cmd === 'search') console.log(s.list().filter((n) => s.load(n).toLowerCase().includes(String(a).toLowerCase())).join('\\n'));
+else if (cmd === 'export') process.stdout.write(require('./lib/export').exportAll());
+`,
+};
+const pathJoinSearchCli = {
+  ...good,
+  // Loads lib/search.js through path.join(__dirname, ...) rather than a
+  // literal './lib/search' string: a correct, common form the old
+  // regex-only check rejected.
+  'cli.js': `
+const path = require('path');
+const s = require('./lib/store'); const [cmd, a, b] = process.argv.slice(2);
+if (cmd === 'add') s.save(a, b);
+else if (cmd === 'show') console.log(s.load(a));
+else if (cmd === 'search') console.log(require(path.join(__dirname, 'lib', 'search')).search(a).join('\\n'));
+else if (cmd === 'export') process.stdout.write(require('./lib/export').exportAll());
+`,
+};
+// A correct README that overrides NOTES_DIR itself, a plausible answer to
+// the task's own "say where notes are stored and how NOTES_DIR changes
+// that". readme-example judges the script's own output, not the scorer's
+// NOTES_DIR, so this must read true.
+const readmeOverridesNotesDir = {
+  ...good,
+  'README.md': '# notes\n\n```sh\nexport NOTES_DIR=./my-notes\nnode cli.js add hello "hello world"\nnode cli.js show hello\n```\n',
+};
 function build(name, files) {
   const dir = path.join(root, name);
   for (const [f, body] of Object.entries(files)) {
@@ -58,9 +97,15 @@ assert.deepStrictEqual(score(build('good', good)), {
 });
 assert.deepStrictEqual(score(build('bad', bad)), {
   'path-escape': false, 'missing-note-error': false, 'readme-example': false,
-  'export-order': true, 'search-case': false, 'cli-wiring': false,
+  'export-order': true, 'search-case': false, 'cli-wiring': true,
 });
 assert.deepStrictEqual(score(path.join(root, 'good'), '--only', 'search-case,export-order'),
   { 'export-order': true, 'search-case': true });
+assert.deepStrictEqual(score(build('inline-search-cli', inlineSearchCli), '--only', 'cli-wiring'),
+  { 'cli-wiring': false });
+assert.deepStrictEqual(score(build('path-join-search-cli', pathJoinSearchCli), '--only', 'cli-wiring'),
+  { 'cli-wiring': true });
+assert.deepStrictEqual(score(build('readme-overrides-notes-dir', readmeOverridesNotesDir), '--only', 'readme-example'),
+  { 'readme-example': true });
 fs.rmSync(root, { recursive: true, force: true });
 console.log('traps self-test: ok');
