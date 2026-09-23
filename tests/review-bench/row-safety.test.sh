@@ -21,7 +21,7 @@ hides() { grep -E '^[[:space:]]*jail_hide ' "$1" | grep -qE "(^|[[:space:]])$2([
 
 check "bench: no commit message carries the case name" '! grep -E "commit .*-m" "$BENCH" | grep -q "CASE"'
 check "bench: the case head commit is a neutral task subject" 'grep -qE "commit -q -m \"task \\\$TASK_NUM\"" "$BENCH"'
-for p in tests/fixture-build/hidden tests/review-bench/good tests/review-bench/cases .git; do
+for p in tests/fixture-build/hidden tests/review-bench/good tests/review-bench/cases docs/plans tests/review-bench/README.md .git; do
   check "bench: hides $p from the reviewer" 'hides "$BENCH" "$p"'
 done
 for p in tests/fixture-build docs/plans .fx .worktrees tests/review-bench .git; do

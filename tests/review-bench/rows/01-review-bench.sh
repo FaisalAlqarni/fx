@@ -105,8 +105,9 @@ printf '%s' "$PROMPT" > "$PROMPT_FILE" || fail "could not write $PROMPT_FILE"
 
 # 5. one headless reviewer session, at the tier fx dispatches reviewers on.
 # The session cannot read the answer keys: the fixture's hidden tests, the
-# good reference, the cases and their match regexes, or fx's own history.
-jail_hide tests/fixture-build/hidden tests/review-bench/good tests/review-bench/cases .git
+# good reference, the cases and their match regexes, fx's own history, the
+# task file and run history under docs/plans, or this bench's own README.
+jail_hide tests/fixture-build/hidden tests/review-bench/good tests/review-bench/cases docs/plans tests/review-bench/README.md .git
 FX_LIVE_MODEL=sonnet live_run "$PROMPT"
 
 # FX_BENCH_KEEP, if set, keeps this case's rep's findings file and filled

@@ -78,7 +78,9 @@ SAVED_JAIL=("${JAIL[@]}")
 GITPATH=.git
 jail_hide tests/review-bench/cases "$GITPATH" no/such/path
 probe "jail_hide: a hidden directory is empty" "[ -z \"\$(ls -A '$PWD/tests/review-bench/cases')\" ]"
-probe "jail_hide: a hidden .git reads as nothing" "[ ! -s '$PWD/.git' ] && [ ! -e '$PWD/.git/HEAD' ]"
+probe "jail_hide: a hidden .git reads as nothing" "
+  if [ -d '$PWD/.git' ]; then [ -z \"\$(ls -A '$PWD/.git')\" ]; else [ ! -s '$PWD/.git' ]; fi
+  [ ! -e '$PWD/.git/HEAD' ]"
 probe "jail_hide: the rest of the tree stays readable" "[ -r '$PWD/tests/review-bench/score.js' ]"
 JAIL=("${SAVED_JAIL[@]}")
 probe "a sentinel set outside is not visible" '[ -z "${FX_JAIL_SENTINEL+x}" ]'
