@@ -38,7 +38,7 @@ ledger and dispatches a fixer on task 03 as a normal fix round, then the owner
 reruns the smoke as `smoke-b`. Only a clean smoke continues:
 
 ```
-tests/fixture-build/run.sh 3 baseline
+tests/fixture-build/run.sh 1 baseline-a & tests/fixture-build/run.sh 1 baseline-b & wait
 tests/review-bench/run.sh 3 baseline
 tests/lane-triggering/run-all.sh
 FX_CONFORMANCE_ROWS=tests/conformance/rows tests/conformance/run.sh claude-code

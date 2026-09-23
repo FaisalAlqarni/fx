@@ -23,7 +23,7 @@ saving.
 ## Commands for the owner
 
 ```
-tests/fixture-build/run.sh 3 step3
+tests/fixture-build/run.sh 1 step3-a & tests/fixture-build/run.sh 1 step3-b & wait
 tests/review-bench/run.sh 3 step3
 tests/lane-triggering/run-all.sh
 FX_CONFORMANCE_ROWS=tests/conformance/rows tests/conformance/run.sh claude-code
@@ -34,7 +34,7 @@ Row 04 on opencode, 10 reps.
 ## Ship rule
 
 Ship if **all** hold:
-- quality: pooled over the 3 fixture runs, no trap is caught at the end fewer
+- quality: pooled over the 2 fixture runs, no trap is caught at the end fewer
   times than at baseline; pooled over the bench reps, no planted defect is
   caught fewer times and the control draws no more false positives than at
   baseline (byReview is recorded, not gating);

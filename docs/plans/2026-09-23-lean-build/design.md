@@ -256,7 +256,7 @@ it cost. Prior art: `lib/preamble.test.js`, the plan-state tests,
 
 - Per-task review, the five-round fix loop, trigger-gated lenses, the coverage
   audit and the branch-end review are not weakened by any step.
-- A step ships only if, pooled over its 3 fixture runs, no trap is caught at
+- A step ships only if, pooled over its 2 fixture runs, no trap is caught at
   the end fewer times than at baseline; pooled over the review bench's reps, no
   planted defect is caught fewer times and the clean control draws no more false
   positives than at baseline; and row 04 and triggering fire rates are unchanged

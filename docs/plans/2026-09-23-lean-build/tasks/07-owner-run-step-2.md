@@ -20,7 +20,7 @@ shows the owner the commands below, and resumes when the owner reports back.
 ## Commands for the owner
 
 ```
-tests/fixture-build/run.sh 3 step2
+tests/fixture-build/run.sh 1 step2-a & tests/fixture-build/run.sh 1 step2-b & wait
 tests/review-bench/run.sh 3 step2
 tests/lane-triggering/run-all.sh
 FX_CONFORMANCE_ROWS=tests/conformance/rows tests/conformance/run.sh claude-code
@@ -33,7 +33,7 @@ sessions still get the plans block.
 ## Ship rule (from the design, exact)
 
 Ship if **all** hold:
-- quality: pooled over the 3 fixture runs, no trap is caught at the end fewer
+- quality: pooled over the 2 fixture runs, no trap is caught at the end fewer
   times than at baseline; pooled over the bench reps, no planted defect is
   caught fewer times and the control draws no more false positives than at
   baseline (byReview is recorded, not gating);

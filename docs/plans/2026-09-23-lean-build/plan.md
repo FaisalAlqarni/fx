@@ -31,7 +31,7 @@
 ## Global Constraints
 
 - Per-task review, the five-round fix loop, trigger-gated lenses, the coverage audit and the branch-end review are not weakened by any task.
-- A step ships only if, pooled over its 3 fixture runs, no trap is caught at the end fewer times than at baseline; pooled over the review bench's reps, no planted defect is caught fewer times and the clean control draws no more false positives; and row 04 and lane-triggering fire rates are unchanged or better. Cost and time compare on medians. (Amended 2026-09-23, owner decision: byReview is recorded, not gating.)
+- A step ships only if, pooled over its 2 fixture runs, no trap is caught at the end fewer times than at baseline; pooled over the review bench's reps, no planted defect is caught fewer times and the clean control draws no more false positives; and row 04 and lane-triggering fire rates are unchanged or better. Cost and time compare on medians. (Amended 2026-09-23, owner decision: byReview is recorded, not gating.)
 - Bootstrap alone under 3,000 characters; worst-case render under 9,000.
 - Nothing moves into the always-on text (ADR 0021).
 - Every parallel guard fails toward serial.

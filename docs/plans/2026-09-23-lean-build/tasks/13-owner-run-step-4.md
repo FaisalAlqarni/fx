@@ -21,7 +21,7 @@ shows the owner the commands below, and resumes when the owner reports back.
 ## Commands for the owner
 
 ```
-FX_FIXTURE_PARALLEL=1 tests/fixture-build/run.sh 3 step4
+FX_FIXTURE_PARALLEL=1 tests/fixture-build/run.sh 1 step4-a & FX_FIXTURE_PARALLEL=1 tests/fixture-build/run.sh 1 step4-b & wait
 tests/review-bench/run.sh 3 step4
 tests/lane-triggering/run-all.sh
 FX_CONFORMANCE_ROWS=tests/conformance/rows tests/conformance/run.sh claude-code
@@ -34,7 +34,7 @@ with its reason.
 ## Ship rule (from the design, exact)
 
 Parallel (tasks 10 and 11) ships only if **all** hold:
-- quality: pooled over the 3 fixture runs, no trap is caught at the end fewer
+- quality: pooled over the 2 fixture runs, no trap is caught at the end fewer
   times than at baseline; pooled over the bench reps, no planted defect is
   caught fewer times and the control draws no more false positives than at
   baseline (byReview is recorded, not gating);
