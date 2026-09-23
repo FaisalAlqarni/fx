@@ -1,0 +1,1 @@
+const s = require('./store'); exports.search = (q) => s.list().filter((n) => s.load(n).toLowerCase().includes(q.toLowerCase()));

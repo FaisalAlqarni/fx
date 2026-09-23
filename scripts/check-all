@@ -38,6 +38,7 @@ run agent-model.test.js    node tests/gates/agent-model.test.js
 run build-cost.test.js     node scripts/build-cost.test.js
 run traps.self-test.js     node tests/fixture-build/hidden/traps.self-test.js
 run implementer-heads.test.js node tests/fixture-build/hidden/implementer-heads.test.js
+run review-bench-score.test.js node tests/review-bench/score.test.js
 run verdict.test.js        node tests/lane-triggering/verdict.test.js
 
 echo "== make-git-fixture =="

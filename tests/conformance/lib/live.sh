@@ -204,8 +204,14 @@ live_run() {
   case "$HARNESS" in
     claude-code)
       # FX_LIVE_TIMEOUT and FX_LIVE_MAX_TURNS let a long row (the fixture build) raise both.
+      # FX_LIVE_MODEL pins the model claude-code dispatches on (the review
+      # bench measures fx's reviewer at the tier fx actually uses it on);
+      # unset adds no flag, so every other row's command line is unchanged.
+      local -a model_flag=()
+      [ -n "${FX_LIVE_MODEL:-}" ] && model_flag=(--model "$FX_LIVE_MODEL")
       ( cd "$WORK" && timeout "${FX_LIVE_TIMEOUT:-600}" "${JAIL[@]}" env TMPDIR="$tmp" claude -p "$prompt" --plugin-dir "$FX" \
-          --dangerously-skip-permissions --max-turns "${FX_LIVE_MAX_TURNS:-30}" --output-format stream-json --verbose ) \
+          --dangerously-skip-permissions --max-turns "${FX_LIVE_MAX_TURNS:-30}" --output-format stream-json --verbose \
+          "${model_flag[@]}" ) \
         </dev/null >"$LOGDIR/out.pipe" 2>"$LOGDIR/err.pipe" ;;
     codex)
       timeout 900 "${JAIL[@]}" env TMPDIR="$tmp" codex exec --json -C "$WORK" -s danger-full-access \
