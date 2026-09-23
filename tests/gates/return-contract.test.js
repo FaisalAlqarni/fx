@@ -79,4 +79,20 @@ for (const f of ['skills/fx-implement/task-reviewer-prompt.md', 'skills/fx-revie
   assert.ok(t.includes('not three'), `${f}: Ledger lines instructions disambiguate ## from ###`);
 }
 
+// Fix round 2, item 1 (findings/08-rereview-1.md, item 6 half-open): the
+// re-review's five-line reply carries the ledger count the controller's
+// count check needs, instead of a count the reply never states.
+assert.ok(rr.includes('ledger `<m>`'), 're-review: the Fixed field carries the ledger-line count the count check needs');
+assert.ok(loop.includes("in its `Fixed` field"), 'fix loop: the re-review count check reads the count from the reply, not from a count the reply lacks');
+assert.ok(rules.includes("Fixed` field"), 'reading rules: the re-reviewer count check cites the Fixed field, not counts absent from the reply');
+
+// Fix round 2, item 2 (New breakage 1): a lens tags each finding's own
+// severity, so its Minor findings are never open, and the false "no
+// severity split" claim is gone.
+assert.ok(!loop.toLowerCase().includes('no severity split'), 'fix loop: lenses do rate severity, so this false claim is gone');
+assert.ok(!rr.toLowerCase().includes('no severity split'), 're-review: lenses do rate severity, so this false claim is gone');
+assert.ok(loop.includes('[Critical]') && loop.includes('[Important]'), 'fix loop: routes lens findings by their own Critical/Important tags');
+assert.ok(rr.includes('[Critical]') && rr.includes('[Important]'), 're-review: routes lens findings by their own Critical/Important tags');
+assert.ok(skill.slice(lensDispatchAt, lensDispatchAt + 2000).includes('[Minor]'), 'Lens dispatch: the controller ledgers a lens\'s own Minor findings itself');
+
 console.log('return-contract: ok');

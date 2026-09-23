@@ -31,12 +31,14 @@ maximum per task.**
   findings file from this task's dispatch, and any `Task <NN>: confirmed ⚠️:
   <exact text>` ledger line. State the rule for what is open: spec ❌, any
   Critical or Important item, a confirmed ⚠️ (its ledger text, not the
-  reviewer's file, since the file carries no confirmed marker), and a lens
-  finding in full (a lens has no severity split to filter by). Minor is
-  never open. Its context is intact: it knows the task, the code, and its own
-  choices. If the harness cannot message a live subagent, dispatch a fresh one
-  with the task path, the report-file path and the same findings-file(s) and
-  rule; the report file is the persistent memory either way.
+  reviewer's file, since the file carries no confirmed marker), and a lens's
+  `[Critical]` and `[Important]` lines (its `[Minor]` lines are never open;
+  you already ledgered them yourself, below, when you recorded the reply).
+  Minor is never open. Its context is intact: it knows the task, the code,
+  and its own choices. If the harness cannot message a live subagent, dispatch
+  a fresh one with the task path, the report-file path and the same
+  findings-file(s) and rule; the report file is the persistent memory either
+  way.
 - **Rounds 4 to 5:** dispatch a **fresh** implementer on a **more capable
   model**, with the task path, the report-file path, the same findings-file(s)
   and open-items rule, and this framing: *"A prior implementer attempted this
@@ -70,10 +72,11 @@ The re-reviewer writes, ready to copy under `## Ledger lines` in its own
 findings file: the round line,
 `Task <NN>: fix round <R>/5 (<X> addressed, <Y> open: <one-liners>; commits <a7>..<b7>)`,
 plus one `Task <NN>: minor (deferred): <one-liner>` line per out-of-scope
-observation and per Minor new-breakage item. Append them all the same way:
+observation and per Minor new-breakage item, and reports that count as the
+ledger number in its `Fixed` field. Append them all the same way:
 `sed -n '/^## Ledger lines/,/^## /p' <findings> | grep '^Task ' >> state.md`,
-and check the appended count against 1 (the round line) plus the re-review's
-own out-of-scope and Minor-breakage counts.
+and check the appended count against 1 (the round line) plus that reported
+ledger number.
 
 **Never fix findings yourself in the controller session.** Your context stays
 clean for coordination, and controller fixes skip review entirely.

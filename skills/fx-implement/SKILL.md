@@ -469,8 +469,8 @@ shrinks your context if you read the rest the same way.
   read only what the next move needs.
 - **Check the ledger copy against the reply's own counts.** After appending
   a `## Ledger lines` section with `grep '^Task '`, the appended line count
-  must equal the reply's Minor count (a reviewer) or 1 plus its out-of-scope
-  and Minor-breakage lines (a re-reviewer). A mismatch: read that section
+  must equal the reply's Minor count (a reviewer) or 1 plus the ledger number
+  in its `Fixed` field (a re-reviewer). A mismatch: read that section
   directly (`sed -n '/^## Ledger lines/,/^## /p' <findings>`) instead of
   trusting the grep.
 
@@ -582,7 +582,8 @@ table) and dispatch any lens whose triggers match (`fx-lens-database`,
 diff file. This is the only door those agents have below the final review;
 skip it and an auth path or a migration ships with nobody having looked.
 Reference the table, don't copy it: fire on matching diffs, not on every
-task. A lens finding enters the fix loop below like any other.
+task. A lens's `[Critical]` and `[Important]` findings enter the fix loop
+below like any other; its `[Minor]` findings never do (see below).
 
 **A lens has no Write tool and replies with its full findings**, not a
 five-line contract (Ruling, task 08). Record that reply verbatim to
@@ -597,6 +598,14 @@ EOF
 
 That path is what the fix loop and the final review read for this lens.
 Never paste the reply itself into the ledger or a later dispatch.
+
+**Route the lens's own findings by the severity it already tagged them
+with**: `[Critical]` and `[Important]` are open, same as a reviewer's. A
+lens reply has no `## Ledger lines` section for the fix loop to grep, so you
+ledger its `[Minor]` lines yourself, right here, one line each:
+`Task <NN>: minor (deferred): <one-liner>`. "A lens has no severity split"
+is false: every lens tags each finding, and you already hold the full reply
+in context from dispatching it, so this costs no extra read.
 
 The reviewer gets three paths (the task file, the report file, the review
 package) plus the Global Constraints that bind the task.

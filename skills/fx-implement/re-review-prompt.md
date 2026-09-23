@@ -31,8 +31,10 @@ Subagent (general-purpose):
     - **A first-round findings file** (the task or branch reviewer's): every
       item under `### Issues` → `#### Critical (Must Fix)` and `#### Important
       (Should Fix)`, and every ❌ under `### Spec Compliance`.
-    - **A lens findings file**: the entire reply, verbatim; a lens has no
-      severity split of its own to filter by.
+    - **A lens findings file**: only its `[Critical]` and `[Important]`
+      lines. Its `[Minor]` lines are never open: the controller ledgers them
+      itself when it records the reply, since a lens file has no `## Ledger
+      lines` section for the fix loop to grep.
     - **A later-round findings file** (a previous re-review's): every item
       under `### Finding verdicts` marked NOT ADDRESSED, plus anything under
       `### New breakage in the fix diff` rated Critical or Important.
@@ -154,7 +156,7 @@ Subagent (general-purpose):
 
     Use the task number named in [TASK_FILE]'s filename and round [ROUND].
     The controller greps these lines and checks their count against 1 (the
-    round line) plus your out-of-scope and Minor-breakage counts.
+    round line) plus the ledger count you report in `Fixed`.
 
     ### Reply
 
@@ -163,7 +165,9 @@ Subagent (general-purpose):
     - **Verdict:** all addressed, no new breakage | findings remain open
     - **Open:** count (NOT ADDRESSED findings, plus new Critical or Important
       breakage; new Minor breakage is not open, it is ledgered instead)
-    - **Fixed:** count
+    - **Fixed:** count fixed; ledger `<m>` (the number of `minor (deferred)`
+      lines you wrote: one per out-of-scope observation plus one per Minor
+      new-breakage item)
     - **Findings:** [FINDINGS_FILE]
     - **New breakage:** none | Minor | Important | Critical, the highest
       severity found
@@ -184,7 +188,7 @@ Subagent (general-purpose):
 - `[HEAD_SHA]`
 - `[DIFF_FILE]`: the path `scripts/review-package <slug> FIX_BASE HEAD` printed
 
-**Re-reviewer returns:** Verdict · Open (count) · Fixed (count) · Findings
-(path) · New breakage (none/Minor/Important/Critical), in the five-line
-reply. Per-finding verdicts, out-of-scope observations and ledger lines live
-in the findings file.
+**Re-reviewer returns:** Verdict · Open (count) · Fixed (count; ledger count) ·
+Findings (path) · New breakage (none/Minor/Important/Critical), in the
+five-line reply. Per-finding verdicts, out-of-scope observations and ledger
+lines live in the findings file.
