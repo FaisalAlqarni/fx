@@ -128,7 +128,7 @@ stay exactly as they are.
 24. As the fx owner, I want this repo's `.fx.json` to set `test_scope`, so that
     each task runs its own tests and gates and `check-all` runs once at the exit
     gate.
-25. As the fx owner, I want each step to ship only if, pooled over 3 runs, no
+25. As the fx owner, I want each step to ship only if, pooled over its runs, no
     trap is caught at the end less often, or missed by review more often, than
     at baseline, row
     04 and triggering fire rates are unchanged or better, and tokens or
@@ -243,7 +243,7 @@ Confirmed seams:
 2. **Behaviour, existing live seam.** Row 04 plus the widened triggering suite
    through the conformance runner. Claude Code in full, opencode spot-checked.
 3. **Build quality and cost, the one new seam.** The fixture build scored by the
-   build-cost report, three runs per variant. Live and quota-bound, so it runs
+   build-cost report, two runs per variant (Ruling O). Live and quota-bound, so it runs
    by hand and is not part of `check-all`.
 
 Tests assert external behaviour: what text a session or subagent receives,

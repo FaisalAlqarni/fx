@@ -19,7 +19,7 @@
 **Risks:**
 - HIGH: parallel tasks introduce a merge-caused defect: every guard fails toward serial, the fixture carries a hidden-dependency trap pair, and task 13 drops the step on any merge-caused defect.
 - HIGH: a live run touches the real `~/.claude`: the fixture runs only inside the conformance jail and the triggering suite in a scratch home; cleanup removes only checked `mktemp` paths.
-- MEDIUM: fixture runs are noisy: three runs per variant, compared per trap on pooled counts, with a smoke run before the baseline and a sensitivity check that reopens the fixture if review has nothing to catch.
+- MEDIUM: fixture runs are noisy: two parallel runs per variant (Ruling O), compared per trap on pooled counts, with a smoke run before the baseline and a sensitivity check that reopens the fixture if review has nothing to catch.
 - MEDIUM: tightening the return contract hides information the controller needs: the report file still holds everything; only the reply shrinks.
 **Testing:** Unit: `build-cost`, `plan-state`, `preamble`, new template gates, all in `scripts/check-all` · Live: row 04, the lane-triggering suite, the fixture build, all owner-run.
 

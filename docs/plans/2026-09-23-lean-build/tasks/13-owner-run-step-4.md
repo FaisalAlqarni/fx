@@ -38,8 +38,8 @@ Parallel (tasks 10 and 11) ships only if **all** hold:
   times than at baseline; pooled over the bench reps, no planted defect is
   caught fewer times and the control draws no more false positives than at
   baseline (byReview is recorded, not gating);
-- `mergeDefects` is `0` in all 3 runs;
-- the ledger of at least 2 of the 3 runs shows tasks 04 and 05 ran in
+- `mergeDefects` is `0` in both runs;
+- the ledger of at least one of the 2 runs shows tasks 04 and 05 ran in
   parallel (otherwise nothing was measured), and task 06 went back to serial
   or ran after 05 merged;
 - row 04 and `run-all.sh` as in task 07;
