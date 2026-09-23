@@ -107,6 +107,28 @@ const queryOnlyLowerSearch = {
   ...good,
   'lib/search.js': `const s = require('./store'); exports.search = (q) => s.list().filter((n) => s.load(n).includes(q.toLowerCase()));`,
 };
+// A correct store shaped differently from the reference: builds the path
+// with path.join(dir(), name) and checks the result with startsWith(dir()),
+// rather than comparing path.dirname(f) to dir(). It still rejects every
+// traversal (path.join normalizes, so a name that walks above dir() fails
+// startsWith), but it nests an absolute-looking name inside dir() instead
+// of throwing: never resolves outside NOTES_DIR, so design.md's rule never
+// applies to it. Must score path-escape true (Ruling M).
+const joinStartsWithStore = {
+  ...good,
+  'lib/store.js': `
+const fs = require('fs'); const path = require('path');
+const dir = () => path.resolve(process.env.NOTES_DIR || './notes');
+function file(name) {
+  const f = path.join(dir(), name);
+  if (!f.startsWith(dir())) { const e = new Error('bad name'); e.code = 'EBADNAME'; throw e; }
+  return f;
+}
+exports.save = (n, t) => { const f = file(n); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, t); };
+exports.load = (n) => { const f = file(n); if (!fs.existsSync(f)) { const e = new Error('no note'); e.code = 'ENOTE'; throw e; } return fs.readFileSync(f, 'utf8'); };
+exports.list = () => (fs.existsSync(dir()) ? fs.readdirSync(dir()).sort() : []);
+`,
+};
 function build(name, files) {
   const dir = path.join(root, name);
   for (const [f, body] of Object.entries(files)) {
@@ -139,5 +161,7 @@ assert.deepStrictEqual(score(build('empty-is-missing-store', emptyIsMissingStore
   { 'missing-note-error': false });
 assert.deepStrictEqual(score(build('query-only-lower-search', queryOnlyLowerSearch), '--only', 'search-case'),
   { 'search-case': false });
+assert.deepStrictEqual(score(build('join-starts-with-store', joinStartsWithStore), '--only', 'path-escape'),
+  { 'path-escape': true });
 fs.rmSync(root, { recursive: true, force: true });
 console.log('traps self-test: ok');

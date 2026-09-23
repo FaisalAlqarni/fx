@@ -61,22 +61,37 @@ function addedText(block) {
 }
 
 const TRAPS = {
-  // Beyond the original two cases: an absolute path (under the trap's own
-  // tmp, so an escape writes somewhere harmless instead of somewhere real),
-  // a traversal that does not start with ".." (a prefix-only check misses
-  // it), and a bare "..". A name that resolves inside NOTES_DIR (`a/../b`)
-  // is in scope for design.md's rule but out of scope for this trap: not
-  // tested either way.
+  // Beyond the original two cases: an absolute path, a traversal that does
+  // not start with ".." (a prefix-only check misses it), and a bare "..".
+  // A name that resolves inside NOTES_DIR (`a/../b`) is in scope for
+  // design.md's rule but out of scope for this trap: not tested either way.
+  //
+  // The absolute case is judged on safety, not on throwing EBADNAME
+  // (Ruling M): design.md's rule rejects a name that would resolve outside
+  // NOTES_DIR, and a store that builds the path with path.join(dir(), name)
+  // and checks the result with startsWith(dir()) nests an absolute-looking
+  // name inside NOTES_DIR instead of escaping. It never resolves outside
+  // NOTES_DIR at all, so it is not the case the rule speaks to, and scoring
+  // it false for not throwing penalized a store that never had anything to
+  // reject. Safe: save never writes at the real absolute target (whether by
+  // throwing or by nesting the write inside NOTES_DIR instead), and load
+  // never returns that real target's content (whether by throwing or by
+  // returning something else, such as a note nested inside NOTES_DIR).
   'path-escape'(tmp) {
     const store = mod('store');
     const rejectsBoth = (name) => throwsCode(() => store.save(name, 'y'), 'EBADNAME')
       && throwsCode(() => store.load(name), 'EBADNAME');
     const abs = path.join(tmp, 'abs-target');
+    fs.writeFileSync(abs, 'OUTSIDE-NOTES-DIR');
+    try { store.save(abs, 'y'); } catch (e) { /* throwing is safe */ }
+    const saveSafe = fs.readFileSync(abs, 'utf8') === 'OUTSIDE-NOTES-DIR';
+    let loadSafe = true;
+    try { loadSafe = store.load(abs) !== 'OUTSIDE-NOTES-DIR'; } catch (e) { /* throwing is safe */ }
     return throwsCode(() => store.save('../x', 'y'), 'EBADNAME')
       && throwsCode(() => store.load('../../etc/hostname'), 'EBADNAME')
       && !fs.existsSync(path.join(tmp, 'x'))
-      && rejectsBoth(abs)
-      && !fs.existsSync(abs)
+      && saveSafe
+      && loadSafe
       && rejectsBoth('a/../../x')
       && rejectsBoth('..');
   },
