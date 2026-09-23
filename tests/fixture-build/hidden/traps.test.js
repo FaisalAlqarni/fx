@@ -61,14 +61,34 @@ function addedText(block) {
 }
 
 const TRAPS = {
+  // Beyond the original two cases: an absolute path (under the trap's own
+  // tmp, so an escape writes somewhere harmless instead of somewhere real),
+  // a traversal that does not start with ".." (a prefix-only check misses
+  // it), and a bare "..". A name that resolves inside NOTES_DIR (`a/../b`)
+  // is in scope for design.md's rule but out of scope for this trap: not
+  // tested either way.
   'path-escape'(tmp) {
     const store = mod('store');
+    const rejectsBoth = (name) => throwsCode(() => store.save(name, 'y'), 'EBADNAME')
+      && throwsCode(() => store.load(name), 'EBADNAME');
+    const abs = path.join(tmp, 'abs-target');
     return throwsCode(() => store.save('../x', 'y'), 'EBADNAME')
       && throwsCode(() => store.load('../../etc/hostname'), 'EBADNAME')
-      && !fs.existsSync(path.join(tmp, 'x'));
+      && !fs.existsSync(path.join(tmp, 'x'))
+      && rejectsBoth(abs)
+      && !fs.existsSync(abs)
+      && rejectsBoth('a/../../x')
+      && rejectsBoth('..');
   },
   'missing-note-error'() {
-    return throwsCode(() => mod('store').load('nope'), 'ENOTE');
+    const store = mod('store');
+    if (!throwsCode(() => store.load('nope'), 'ENOTE')) return false;
+    store.save('empty', '');
+    try {
+      return store.load('empty') === '';
+    } catch (e) {
+      return false;
+    }
   },
   // Runs the first fenced sh block top to bottom as one script, in a temp
   // copy of the build so the block cannot write into the build tree, with a
@@ -97,12 +117,18 @@ const TRAPS = {
     saveUnsorted();
     return sorted(mod('export').exportAll());
   },
+  // Beyond the query-all-caps case: a mixed-case query matched inside a
+  // mixed-case word (`wORL` in `Hello World`), which a fix that only
+  // lower-cases one side of the comparison can still miss.
   'search-case'() {
     const store = mod('store');
     store.save('greeting', 'say hello there');
     store.save('other', 'nothing to see');
     const found = mod('search').search('HELLO');
-    return Array.isArray(found) && found.includes('greeting') && !found.includes('other');
+    if (!(Array.isArray(found) && found.includes('greeting') && !found.includes('other'))) return false;
+    store.save('mixed', 'Hello World');
+    const found2 = mod('search').search('wORL');
+    return Array.isArray(found2) && found2.includes('mixed');
   },
   // Judged in a temp copy with lib/search.js replaced by a sentinel: only a
   // CLI that actually requires lib/search.js, however it spells the path,

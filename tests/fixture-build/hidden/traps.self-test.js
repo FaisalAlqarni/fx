@@ -81,6 +81,32 @@ const readmeOverridesNotesDir = {
   ...good,
   'README.md': '# notes\n\n```sh\nexport NOTES_DIR=./my-notes\nnode cli.js add hello "hello world"\nnode cli.js show hello\n```\n',
 };
+// Passes the original path-escape cases (every name it rejects contains
+// "..") but never checks an absolute path, which does not: it must miss
+// the new case (Ruling L).
+const onlyDotDotStore = {
+  ...good,
+  'lib/store.js': good['lib/store.js'].replace(
+    "if (path.dirname(f) !== dir()) { const e = new Error('bad name'); e.code = 'EBADNAME'; throw e; }",
+    "if (name.includes('..')) { const e = new Error('bad name'); e.code = 'EBADNAME'; throw e; }",
+  ),
+};
+// Passes load('nope') (file does not exist) but treats an existing, empty
+// file the same as a missing one: it must miss the new empty-text case.
+const emptyIsMissingStore = {
+  ...good,
+  'lib/store.js': good['lib/store.js'].replace(
+    "if (!fs.existsSync(f)) { const e = new Error('no note'); e.code = 'ENOTE'; throw e; } return fs.readFileSync(f, 'utf8');",
+    "const t = fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : ''; if (!t) { const e = new Error('no note'); e.code = 'ENOTE'; throw e; } return t;",
+  ),
+};
+// Lower-cases only the query, not the note text: passes search('HELLO')
+// against all-lowercase text, but must miss a mixed-case word in mixed-case
+// text ("wORL" in "Hello World").
+const queryOnlyLowerSearch = {
+  ...good,
+  'lib/search.js': `const s = require('./store'); exports.search = (q) => s.list().filter((n) => s.load(n).includes(q.toLowerCase()));`,
+};
 function build(name, files) {
   const dir = path.join(root, name);
   for (const [f, body] of Object.entries(files)) {
@@ -107,5 +133,11 @@ assert.deepStrictEqual(score(build('path-join-search-cli', pathJoinSearchCli), '
   { 'cli-wiring': true });
 assert.deepStrictEqual(score(build('readme-overrides-notes-dir', readmeOverridesNotesDir), '--only', 'readme-example'),
   { 'readme-example': true });
+assert.deepStrictEqual(score(build('only-dot-dot-store', onlyDotDotStore), '--only', 'path-escape'),
+  { 'path-escape': false });
+assert.deepStrictEqual(score(build('empty-is-missing-store', emptyIsMissingStore), '--only', 'missing-note-error'),
+  { 'missing-note-error': false });
+assert.deepStrictEqual(score(build('query-only-lower-search', queryOnlyLowerSearch), '--only', 'search-case'),
+  { 'search-case': false });
 fs.rmSync(root, { recursive: true, force: true });
 console.log('traps self-test: ok');
