@@ -15,15 +15,19 @@
 # triggers cost the old ones. Both must pass.
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
-pass=0; fail=0; failed=()
+# run-test.sh exits 77 on SKIP (no CLI, no credential). A skip exercised no
+# lane, so it is never a pass, and any skip fails the suite.
+pass=0; fail=0; skip=0; failed=()
 for p in prompts/*.txt; do
   lane="$(basename "$p" .txt)"; lane="${lane%%__*}"
-  if ./run-test.sh "$lane" "$p" >/dev/null 2>&1; then
-    echo "PASS  $(basename "$p" .txt)"; pass=$((pass+1))
-  else
-    echo "FAIL  $(basename "$p" .txt)"; fail=$((fail+1)); failed+=("$(basename "$p" .txt)")
-  fi
+  ./run-test.sh "$lane" "$p" >/dev/null 2>&1
+  case $? in
+    0)  echo "PASS  $(basename "$p" .txt)"; pass=$((pass+1)) ;;
+    77) echo "SKIP  $(basename "$p" .txt)"; skip=$((skip+1)) ;;
+    *)  echo "FAIL  $(basename "$p" .txt)"; fail=$((fail+1)); failed+=("$(basename "$p" .txt)") ;;
+  esac
 done
 echo
-echo "$pass passed, $fail failed"
+echo "$pass passed, $fail failed, $skip skipped"
 [ $fail -eq 0 ] || { echo "not triggered: ${failed[*]}"; exit 1; }
+[ $skip -eq 0 ] || { echo "skipped runs exercised no lane; this is not a pass"; exit 1; }

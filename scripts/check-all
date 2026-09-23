@@ -93,6 +93,7 @@ run conformance-events node tests/conformance/events.test.js
 run conformance-runner-isolation bash tests/conformance/runner-isolation.test.sh
 run conformance-jail-probe bash tests/conformance/jail-probe.test.sh
 run lane-triggering-jail-isolation bash tests/lane-triggering/jail-isolation.test.sh
+run lane-triggering-skip-exit bash tests/lane-triggering/skip-exit.test.sh
 run conformance-live-exit-code bash tests/conformance/live-exit-code.test.sh
 run conformance-plant-codex-roles bash tests/conformance/plant-codex-roles.test.sh
 run conformance-merge-opencode-provider bash tests/conformance/merge-opencode-provider.test.sh

@@ -34,7 +34,7 @@ if [ ! -f "$PROMPT_FILE" ]; then
 fi
 if ! command -v claude >/dev/null 2>&1; then
   echo "[SKIP] the claude CLI is not on PATH" >&2
-  exit 0
+  exit 77
 fi
 
 # Resolve and read the prompt BEFORE any cd. A relative path plus a subshell
@@ -68,7 +68,8 @@ LOG="$OUT/stream.json"
 # claude process (the jail's clearenv does not forward it either way) or to
 # any other unjailed child.
 . "$SCRIPT_DIR/../conformance/lib/scratch-home.sh"
-gap()  { echo "[SKIP] $*" >&2; exit 0; }
+# SKIP exits 77, never 0: a run that exercised no lane is not a pass (Ruling J).
+gap()  { echo "[SKIP] $*" >&2; exit 77; }
 fail() { echo "$*" >&2; exit 1; }
 REAL_HOME="$HOME"
 LIVE_SCRATCH="$(mktemp -d)" || fail "mktemp failed"

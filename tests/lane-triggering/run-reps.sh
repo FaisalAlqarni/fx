@@ -25,7 +25,29 @@ if [ -z "$LANE" ] || [ -z "$PROMPT_FILE" ]; then
   exit 2
 fi
 [ -f "$PROMPT_FILE" ] || { echo "no such prompt file: $PROMPT_FILE" >&2; exit 2; }
-command -v claude >/dev/null 2>&1 || { echo "[SKIP] claude not on PATH" >&2; exit 0; }
+# The plugin tree is bound back read-only after the jail hides everything, so
+# a tree that is /, a top-level directory, or the real home or a parent of it
+# would undo the hiding. Only an absolute plugin checkout is accepted.
+if [ -n "$PLUGIN_DIR" ]; then
+  case "$PLUGIN_DIR" in
+    /*) ;;
+    *) echo "plugin tree must be an absolute path: $PLUGIN_DIR" >&2; exit 2 ;;
+  esac
+  [ -d "$PLUGIN_DIR" ] && PLUGIN_DIR="$(cd "$PLUGIN_DIR" && pwd -P)" \
+    || { echo "plugin tree is not a directory: $PLUGIN_DIR" >&2; exit 2; }
+  home_real="$(cd "$HOME" 2>/dev/null && pwd -P || printf '%s' "$HOME")"
+  case "$PLUGIN_DIR" in
+    /*/*) ;;
+    *) echo "plugin tree is / or a top-level directory: $PLUGIN_DIR" >&2; exit 2 ;;
+  esac
+  case "$home_real/" in
+    "$PLUGIN_DIR"/*) echo "plugin tree is the real home or a parent of it: $PLUGIN_DIR" >&2; exit 2 ;;
+  esac
+  [ -f "$PLUGIN_DIR/.claude-plugin/plugin.json" ] \
+    || { echo "plugin tree holds no .claude-plugin/plugin.json: $PLUGIN_DIR" >&2; exit 2; }
+fi
+# SKIP exits 77, never 0: a run that exercised no lane is not a pass (Ruling J).
+command -v claude >/dev/null 2>&1 || { echo "[SKIP] claude not on PATH" >&2; exit 77; }
 
 PROMPT="$(cat "$PROMPT_FILE")"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -46,7 +68,7 @@ mkdir -p "$OUT"
 # is passed to scratch_home_claude and to jail.sh as a plain shell variable,
 # never to the claude process or to any other unjailed child.
 . "$SCRIPT_DIR/../conformance/lib/scratch-home.sh"
-gap()  { echo "[SKIP] $*" >&2; exit 0; }
+gap()  { echo "[SKIP] $*" >&2; exit 77; }
 fail() { echo "$*" >&2; exit 1; }
 REAL_HOME="$HOME"
 LIVE_SCRATCH="$(mktemp -d)" || fail "mktemp failed"
