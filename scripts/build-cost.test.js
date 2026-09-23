@@ -211,5 +211,57 @@ for (const [label, file] of [['missing', path.join(root, 'nope.jsonl')], ['empty
   assert.ok(!r8.subagents.other, 'none of the six wrapper phrasings falls into other');
 }
 
+// Final review, silent-failure 4: a Bash ledger write is recognised by its
+// command shape too, not only through bashEditDiff (a harness may omit it).
+{
+  const ctl9 = path.join(root, 's9.jsonl');
+  write(ctl9, [
+    asst(1, 'r1', 1000, [bash("printf 'Task 01: complete (commits a..b, review clean)\\n' | tee -a docs/plans/x/state.md")]),
+    asst(2, 'r2', 2000, [bash("cat >> docs/plans/x/state.md <<'EOF'\nTask 02: fix round 1/5 (1 addressed)\nTask 02: complete (commits b..c, review clean)\nEOF")]),
+    asst(3, 'r3', 3000, [bash("printf '%s\\n' 'Task 03: complete (commits c..d, review clean)' >> state.md")]),
+    asst(4, 'r4', 4000, [bash("echo 'Task 04: complete (commits d..e, review clean)' | tee --append state.md >/dev/null")]),
+    asst(5, 'r5', 5000, [bash("echo 'Task 05: complete (commits e..f, review clean)' | tee state.md.bak")]),
+  ]);
+  const r9 = JSON.parse(execFileSync(BIN, [ctl9, '--json'], { encoding: 'utf8' }));
+  assert.strictEqual(r9.controller.tasksCompleted, 4, 'tee -a, tee --append, cat >> and printf >> are ledger writes; tee to another file is not');
+  assert.strictEqual(r9.controller.fixRounds, 1);
+}
+
+// Final review, broad 2: a subagent with an agent-<id>.meta.json is
+// classified from its agentType first. The final-review fixer names the
+// silent-failure lens in its prose but is not a lens; a lens dispatched with
+// "Review the diff at" prose is one.
+{
+  const ctl10 = path.join(root, 's10.jsonl');
+  write(ctl10, [asst(1, 'r1', 100, [{ type: 'text', text: 'hi' }])]);
+  const subDir10 = path.join(root, 's10', 'subagents');
+  const agents = [
+    ['agent-a1', { agentType: 'general-purpose', description: 'Final-review fix wave' },
+      'You are the implementer for the final-review fix wave. Findings: silent-failure lens, security lens.'],
+    ['agent-a2', { agentType: 'fx:fx-lens-security', description: 'Security lens on task 01' },
+      'Review the diff at /x/review/a..b.md and report what you find.'],
+    ['agent-a3', { agentType: 'fx:fx-lens-silent-failure', description: 'Silent-failure lens on branch' },
+      'Review the branch diff at /x/review/a..b.md.'],
+    ['agent-a4', { agentType: 'general-purpose', description: 'Spec pass on branch' },
+      'Spec review, read-only. Check the security section too.'],
+  ];
+  for (const [id, meta, text] of agents) {
+    write(path.join(subDir10, `${id}.jsonl`), [
+      { type: 'user', timestamp: '2026-01-01T00:00:00.000Z', message: { content: text } },
+      asst(1, `x-${id}`, 10, []),
+    ]);
+    fs.writeFileSync(path.join(subDir10, `${id}.meta.json`), JSON.stringify(meta));
+  }
+  // No meta file: the text rules still apply, lens regex included.
+  write(path.join(subDir10, 'agent-a5.jsonl'), [
+    { type: 'user', timestamp: '2026-01-01T00:00:00.000Z', message: { content: 'Database lens: review the migration.' } },
+    asst(1, 'x-a5', 10, []),
+  ]);
+  const r10 = JSON.parse(execFileSync(BIN, [ctl10, '--json'], { encoding: 'utf8' }));
+  assert.strictEqual(r10.subagents.implementer.count, 1, 'the fix-wave implementer is an implementer, not a lens');
+  assert.strictEqual(r10.subagents.lens.count, 3, 'two lenses by agentType, one by text with no meta file');
+  assert.strictEqual(r10.subagents.other.count, 1, 'a non-lens agentType never falls into lens on prose alone');
+}
+
 fs.rmSync(root, { recursive: true, force: true });
 console.log('build-cost: ok');
