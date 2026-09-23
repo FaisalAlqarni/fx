@@ -85,7 +85,6 @@ run description-overlap.test.js node tests/gates/description-overlap.test.js
 run parallel-contract.test.js node tests/gates/parallel-contract.test.js
 run no-runtime-addressing.test.js node tests/gates/no-runtime-addressing.test.js
 run release-version.test.js node tests/gates/release-version.test.js
-run parallel-implement.test.js node tests/gates/parallel-implement.test.js
 
 run install-opencode        bash tests/install/run.sh opencode
 run install-codex           bash tests/install/run.sh codex

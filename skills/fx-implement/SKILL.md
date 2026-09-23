@@ -380,66 +380,8 @@ wakes you, and a controller that believed it was waiting has in fact stopped.
 **Serial implementers.** Never dispatch implementation subagents in parallel: the **shared test environment** (one Postgres, one ClickHouse, one Redis,
 one broker set) means a worktree is a second checkout, not a second database.
 Concurrent test runs produce false RED and false GREEN, poisoning every
-verification downstream. The one exception is two tasks the plan declares
-`Parallel with` each other, gated exactly as the Parallel tasks section below
-states; outside that gate, serial stays the default.
-
-### Parallel tasks
-
-Two tasks the plan marks `**Parallel with:**` each other build at the same
-time only when every gate below holds. **At most two tasks at once.** Any
-gate that fails, or anything that goes wrong afterward, sends the task back to
-serial rather than skip a check or damage the build branch: a wrong guess
-costs time, never a check.
-
-1. **Gate, all required.**
-   - `.fx.json` sets `isolated_test_execution: true`.
-   - Both tasks are on the frontier: every blocker complete and review-clean.
-   - Each names the other under `Parallel with`.
-   - Their `Files:` lists share no path.
-   - Neither lists a hot file (the hot-file list named in `fx-plan`).
-   - At most two tasks run this way at once.
-
-2. **Dispatch record, before dispatching either task.** Append one ledger
-   line per task, in this exact form:
-   `Task NN: parallel with MM, branch <b>, base <sha>, worktree <path>`.
-   The fixture's merge-defect scorer (task 03) reads this exact form.
-
-3. **Isolation.** Each task gets its own task worktree and branch, created
-   from the build branch head. Never run two implementers in one checkout.
-
-4. **Review.** Runs on each task's own branch, exactly as for a serial task.
-
-5. **File check, after the implementer returns.** Every file in
-   `git diff --name-only <base>..<head>` must be in the task's own `Files:`
-   list, and none may be in the other task's `Files:` list or changed files.
-   Either violation sends the task back to serial: record `Task NN: back to
-   serial, <reason>`, keep its branch (the fx git guard blocks deleting it,
-   and the branch is evidence), and re-dispatch it on the build branch after
-   the other task merges.
-
-6. **Merge, one task at a time.** Record `Task NN: merging` first.
-   - Rebase the task branch onto the **current** build branch head.
-   - Run `test_scope` on the **union** of both tasks' `Files:` lists, so an
-     interaction between the two is tested, not only the task's own files.
-   - Fast-forward the build branch. The completion line then names the
-     rebased range.
-   - A rebase conflict: `git rebase --abort`, then back to serial with a
-     fresh review of the task redone on the build branch.
-   - A red `test_scope` after the rebase: back to serial with a fresh review
-     of the rebased diff.
-   - A failed fast-forward (the build branch moved during the merge) is not a
-     failure: rebase again and repeat this step.
-
-7. **Resume.** A resumed controller reads the ledger. A task with a
-   `parallel with` line and no `complete` line is inspected in its recorded
-   worktree, not recreated. A task with a `merging` line and no `complete`
-   line is checked with `git status` in that worktree for a rebase in
-   progress; `git rebase --abort` it and redo step 6.
-
-8. **Cleanup.** Remove each task worktree once its task completes or goes
-   back to serial, with `git worktree remove`, never by deleting the
-   directory by hand.
+verification downstream. Relax only if `.fx.json` sets
+`isolated_test_execution: true`. Parallelism belongs to reviews and batched work.
 
 ### Controller reading rules
 
