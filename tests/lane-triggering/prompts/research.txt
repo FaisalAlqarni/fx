@@ -1,0 +1,1 @@
+We're on Postgres 16 and considering the new pg_stat_io view. Find out what it actually measures and what changed relative to earlier versions.

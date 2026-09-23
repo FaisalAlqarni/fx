@@ -1,0 +1,5 @@
+We keep dispatching a code-review subagent with this prompt and it reviews the wrong files every time:
+
+"Review the changes and report issues."
+
+Reword it so a fresh agent with no memory of this conversation reviews the actual diff, not whatever files happen to be open.

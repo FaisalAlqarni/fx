@@ -52,6 +52,33 @@ OUT="${TMPDIR:-/tmp}/fx-lane-triggering/$$/${LANE}"
 mkdir -p "$OUT"
 LOG="$OUT/stream.json"
 
+# A scratch HOME and CLAUDE_CONFIG_DIR, holding only a copy of the credential.
+# Without this, claude ran with the real HOME: the owner's other plugins,
+# CLAUDE.md and memory leaked into every run, and a none__ prompt could fire
+# some other plugin's instructions instead of proving fx stayed quiet.
+. "$SCRIPT_DIR/../conformance/lib/scratch-home.sh"
+FX_REAL_HOME="$HOME"
+export FX_REAL_HOME
+SCRATCH_HOME="$(mktemp -d)" || { echo "mktemp failed" >&2; exit 2; }
+case "$SCRATCH_HOME" in
+  "${TMPDIR:-/tmp}"/*) ;;
+  *) echo "unexpected scratch home: $SCRATCH_HOME" >&2; exit 2 ;;
+esac
+cleanup_scratch_home() {
+  case "$SCRATCH_HOME" in
+    "${TMPDIR:-/tmp}"/*) rm -rf -- "$SCRATCH_HOME" ;;
+  esac
+}
+trap cleanup_scratch_home EXIT
+export HOME="$SCRATCH_HOME"
+export CLAUDE_CONFIG_DIR="$SCRATCH_HOME/.claude"
+scratch_home_claude "$CLAUDE_CONFIG_DIR"
+case $? in
+  0) ;;
+  1) echo "[SKIP] no credential" >&2; exit 0 ;;
+  *) echo "credential copy failed" >&2; exit 1 ;;
+esac
+
 # A scratch cwd, so the run cannot be steered by whatever repo you happen to
 # be sitting in, and cannot write to it either.
 #
@@ -89,18 +116,14 @@ if ! grep -q '"type":"assistant"' "$LOG"; then
   exit 2
 fi
 
-if grep -q '"name":"Skill"' "$LOG" && grep -qE '"skill":"([^"]*:)?'"${LANE}"'"' "$LOG"; then
-  verdict=PASS
-else
-  verdict=FAIL
-fi
-
 echo
 echo "lanes invoked in this run:"
 grep -o '"skill":"[^"]*"' "$LOG" 2>/dev/null | sort -u | sed 's/^/  /' || echo "  (none)"
 
 echo
-echo "$verdict  $LANE"
+verdict="$(node "$SCRIPT_DIR/verdict.js" "$LANE" "$LOG")"
+vrc=$?
+echo "$verdict  ($LANE)"
 echo "log  $LOG"
 
-[ "$verdict" = PASS ]
+exit "$vrc"

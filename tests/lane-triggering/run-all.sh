@@ -3,9 +3,10 @@
 #
 #   ./run-all.sh
 #
-# fx-plan and fx-implement are absent on purpose: their triggers require an
-# approved design and a tasks/ directory, so a naive prompt in a scratch cwd
-# cannot reach them. Test those inside a real plan.
+# fx-plan and fx-implement need repository state a naive prompt in an empty
+# scratch cwd does not have. Each has a fixtures/<lane>.sh that run-test.sh
+# runs inside the scratch cwd first, so the prompt has a design or a plan to
+# point at.
 #
 # A lane may have MORE THAN ONE prompt: `<lane>.txt` is the primary and
 # `<lane>__<variant>.txt` is another way in. This is the regression net for

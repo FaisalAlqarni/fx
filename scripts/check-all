@@ -36,6 +36,7 @@ run check-artifacts-remote.sh bash tests/gates/check-artifacts-remote.sh
 run check-generated        scripts/check-generated
 run agent-model.test.js    node tests/gates/agent-model.test.js
 run build-cost.test.js     node scripts/build-cost.test.js
+run verdict.test.js        node tests/lane-triggering/verdict.test.js
 
 echo "== make-git-fixture =="
 # Path is unique per process ($$ is this script's own PID): a fixed path

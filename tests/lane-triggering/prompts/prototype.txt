@@ -1,0 +1,1 @@
+We're arguing about how our upload retry should behave: exponential backoff with jitter, or a fixed three retries then fail. I can't tell from the descriptions alone which one leaves the user staring at a spinner longer under a flaky connection. Build something runnable that shows the difference.

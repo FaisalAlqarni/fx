@@ -34,6 +34,32 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUT="${TMPDIR:-/tmp}/fx-reps/$$"
 mkdir -p "$OUT"
 
+# A scratch HOME and CLAUDE_CONFIG_DIR, holding only a copy of the credential.
+# Without this, claude ran with the real HOME: the owner's other plugins,
+# CLAUDE.md and memory leaked into every rep.
+. "$SCRIPT_DIR/../conformance/lib/scratch-home.sh"
+FX_REAL_HOME="$HOME"
+export FX_REAL_HOME
+SCRATCH_HOME="$(mktemp -d)" || { echo "mktemp failed" >&2; exit 2; }
+case "$SCRATCH_HOME" in
+  "${TMPDIR:-/tmp}"/*) ;;
+  *) echo "unexpected scratch home: $SCRATCH_HOME" >&2; exit 2 ;;
+esac
+cleanup_scratch_home() {
+  case "$SCRATCH_HOME" in
+    "${TMPDIR:-/tmp}"/*) rm -rf -- "$SCRATCH_HOME" ;;
+  esac
+}
+trap cleanup_scratch_home EXIT
+export HOME="$SCRATCH_HOME"
+export CLAUDE_CONFIG_DIR="$SCRATCH_HOME/.claude"
+scratch_home_claude "$CLAUDE_CONFIG_DIR"
+case $? in
+  0) ;;
+  1) echo "[SKIP] no credential" >&2; exit 0 ;;
+  *) echo "credential copy failed" >&2; exit 1 ;;
+esac
+
 echo "lane   $LANE"
 echo "tree   $PLUGIN_DIR"
 echo "reps   $REPS"
@@ -58,11 +84,12 @@ for i in $(seq 1 "$REPS"); do
     inconclusive=$((inconclusive+1)); continue
   fi
   skills="$(grep -o '"skill":"[^"]*"' "$LOG" | sort -u | tr '\n' ' ')"
-  if grep -qE '"skill":"([^"]*:)?'"${LANE}"'"' "$LOG"; then
+  verdict="$(node "$SCRIPT_DIR/verdict.js" "$LANE" "$LOG")"
+  if [ "$verdict" = PASS ]; then
     echo "  rep $i  FIRED         ${skills}"
     fired=$((fired+1))
   else
-    echo "  rep $i  no            ${skills:-(no skill invoked)}"
+    echo "  rep $i  no            $verdict   ${skills:-(no skill invoked)}"
   fi
 done
 

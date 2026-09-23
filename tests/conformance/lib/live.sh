@@ -77,6 +77,7 @@ chmod 700 "$LIVE_SCRATCH" "$HOME" "$CODEX_HOME" "$XDG_CONFIG_HOME" \
 # the guard deleted. The jail is the boundary; the guard under test is the only
 # thing between the model and the command.
 . "$FX/tests/conformance/lib/jail.sh"
+. "$FX/tests/conformance/lib/scratch-home.sh"
 
 OPENCODE_MODEL="llamacpp/qwen3.8-27b"
 
@@ -92,9 +93,12 @@ OPENCODE_URL="http://127.0.0.1:8899/v1"
 # --- credentials, copied in ---------------------------------------------------
 case "$HARNESS" in
   claude-code)
-    src="$FX_REAL_HOME/.claude/.credentials.json"
-    [ -f "$src" ] || gap "not run: no credential source at $src"
-    install -m 600 "$src" "$CLAUDE_CONFIG_DIR/.credentials.json" || fail "credential copy failed" ;;
+    scratch_home_claude "$CLAUDE_CONFIG_DIR"
+    case $? in
+      0) ;;
+      1) gap "not run: no credential source at $FX_REAL_HOME/.claude/.credentials.json" ;;
+      *) fail "credential copy failed" ;;
+    esac ;;
   codex)
     src="$FX_REAL_HOME/.codex/auth.json"
     [ -f "$src" ] || gap "not run: no credential source at $src"
