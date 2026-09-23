@@ -94,3 +94,4 @@ Task 03: minor (deferred): firstReply edge case with injected user messages.
 Task 03: minor (deferred): the repo copy and SENTINEL stub write sit inside the trap's try, so a copy failure reads as a missed trap with only a stderr line.
 Task 03: controller corrected the task file's self-test note for Ruling I (the buggy build's cli-wiring is true).
 Task 03: complete (commits 4ff8360..6ae266d, review clean). Files: tests/fixture-build/ (repo, hidden, rows, run.sh, README.md), tests/conformance/lib/live.sh, scripts/check-all. Guarantee: traps.self-test.js and implementer-heads.test.js green; implementer-heads on transcript 6db8ac72 gives the original heads 4bd8448 and 1c63776; the live row is unrun until task 04.
+Task 04: owner-run. Controller stopped and handed the owner the commands (smoke, then baseline, triggering, conformance, row 04 x10 on opencode). Resumes when the owner reports; controller then records measurements.md and runs the sensitivity check.
