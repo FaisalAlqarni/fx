@@ -689,6 +689,16 @@ reviewer running the file rather than the tests.
 The offences themselves were two spaces. The cost was that a branch reported
 ready for twelve tasks was not.
 
+## Write the plan-complete line
+
+Once the exit gate has passed, append one line to the ledger before the
+completion report: `lib/plan-state.js` looks for it to stop naming a finished
+plan in a later session's preamble.
+
+```
+Plan complete: tasks <first> to <last> complete, <K> parked, final review <clean|fixed>
+```
+
 ## Completion report
 
 You do not integrate the work. You report it, then **offer the choice and
