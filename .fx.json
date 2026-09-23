@@ -1,7 +1,7 @@
 {
   "stacks": [],
   "test_one": "bash -c 'B=/tmp/fx-fixture-test-one-$$; trap \"rm -rf $B\" EXIT; F=$(scripts/make-git-fixture $B) && node {file} $F'",
-  "test_scope": null,
+  "test_scope": "scripts/test-scope {paths}",
   "test_all": "scripts/check-all",
   "setup": "bash -c 'B=/tmp/fx-fixture-setup-$$; trap \"rm -rf $B\" EXIT; scripts/make-git-fixture $B > /dev/null'",
   "lint": null,

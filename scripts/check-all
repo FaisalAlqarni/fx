@@ -72,6 +72,7 @@ run git-guard.test.js   node lib/git-guard.test.js   "$MAIN" "$WT"
 run base-branch.test.js node lib/base-branch.test.js "$MAIN" "$WT"
 run heredoc.test.js     node lib/heredoc.test.js     "$MAIN" "$WT"
 run plan-state.test.js  node lib/plan-state.test.js
+run test-scope.test.js  node scripts/test-scope.test.js
 run preamble.test.js    node lib/preamble.test.js
 run codex-manifest.test.js  node tests/gates/codex-manifest.test.js
 run codex-hook-output.test.js node tests/gates/codex-hook-output.test.js
