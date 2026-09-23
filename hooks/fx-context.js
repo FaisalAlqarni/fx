@@ -25,7 +25,7 @@ process.stdin.on('end', () => {
 
   let text;
   try {
-    text = render({ harness: 'claude-code', cwd });
+    text = render({ harness: 'claude-code', cwd, subagent: input.hook_event_name === 'SubagentStart' });
   } catch {
     // Say so rather than starting a session that silently has no rules.
     text = '[fx] PREAMBLE.md could not be read. The fx bootstrap and its always-on '
