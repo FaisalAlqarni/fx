@@ -255,7 +255,7 @@ assert.deepStrictEqual(score(build('good', good)), {
 });
 assert.deepStrictEqual(score(build('bad', bad)), {
   'path-escape': false, 'missing-note-error': false, 'readme-example': false,
-  'export-order': true, 'search-case': false, 'cli-wiring': false,
+  'export-order': true, 'search-case': false, 'cli-wiring': true,
 });
 assert.deepStrictEqual(score(path.join(root, 'good'), '--only', 'search-case,export-order'),
   { 'export-order': true, 'search-case': true });
@@ -263,8 +263,9 @@ fs.rmSync(root, { recursive: true, force: true });
 console.log('traps self-test: ok');
 ```
 
-`cli-wiring` is `false` on the buggy build because its CLI search inherits the
-case bug from `lib/search.js`.
+After Ruling I, `cli-wiring` is `true` on the buggy build: its CLI is wired to
+`lib/search.js`, and no query depends on case. The shipped self-test also has a
+miswired-CLI case that reads `false` (fix round 1).
 
 - [ ] **2. Run it: verify RED.** Run: `node tests/fixture-build/hidden/traps.self-test.js`. Expected: FAIL, `Cannot find module .../traps.test.js`.
 
