@@ -1,0 +1,64 @@
+{
+  "label": "baseline-a",
+  "run": 1,
+  "fxCommit": "b7d1091",
+  "parallel": false,
+  "builtOnMain": false,
+  "caughtAtEnd": {
+    "path-escape": true,
+    "missing-note-error": true,
+    "readme-example": true,
+    "export-order": true,
+    "search-case": true,
+    "cli-wiring": true
+  },
+  "byReview": {
+    "path-escape": "clean",
+    "missing-note-error": "clean",
+    "readme-example": "clean",
+    "export-order": "clean",
+    "search-case": "clean",
+    "cli-wiring": "clean"
+  },
+  "mergeDefects": 0,
+  "cost": {
+    "controller": {
+      "calls": 41,
+      "tokens": 4078603,
+      "ctxMedian": 97379,
+      "ctxP90": 150056,
+      "tasksCompleted": 6,
+      "ctxGrowthPerTask": 7736.2,
+      "fixRounds": 0
+    },
+    "subagents": {
+      "lens": {
+        "count": 3,
+        "tokens": 273460,
+        "medianMs": 41954
+      },
+      "reviewer": {
+        "count": 7,
+        "tokens": 2169428,
+        "medianMs": 81075
+      },
+      "other": {
+        "count": 7,
+        "tokens": 6246003,
+        "medianMs": 70902
+      },
+      "implementer": {
+        "count": 6,
+        "tokens": 6321926,
+        "medianMs": 79673
+      },
+      "re-review": {
+        "count": 1,
+        "tokens": 256528,
+        "medianMs": 85354
+      }
+    },
+    "wallClockMs": 1974458,
+    "controllerActiveMs": 860083
+  }
+}

@@ -64,7 +64,14 @@ for (const caseName of fs.readdirSync(CASES_DIR)) {
       }
     })(path.join(caseDir, 'files'), '');
     assert.deepStrictEqual(owned.slice().sort(), expectedOwned.sort());
-    assert.strictEqual(owned.length, 1, `each of this bench's cases owns exactly one file, got ${JSON.stringify(owned)}`);
+    assert.strictEqual(owned.length, 2, `each of this bench's cases owns its implementation file and its test file, got ${JSON.stringify(owned)}`);
+    assert.ok(owned.some((f) => f.startsWith('test/')), `case ${caseName} must own a test/*.test.js file (review Ruling S)`);
+  });
+
+  const ownedTestFile = owned.find((f) => f.startsWith('test/'));
+
+  test(`${caseName}: the owned test file does not exist before the case's own files are overlaid`, () => {
+    assert.ok(!fs.existsSync(path.join(dest, ownedTestFile)), `${ownedTestFile} must not exist at base: it is this case's own deliverable`);
   });
 
   const actualOwned = buildBase(caseDir, GOOD_DIR, dest);
@@ -84,11 +91,44 @@ for (const caseName of fs.readdirSync(CASES_DIR)) {
   // Overlay the case's own files/, mimicking the row's head commit.
   fs.cpSync(path.join(caseDir, 'files'), dest, { recursive: true });
 
+  test(`${caseName}: head contains the owned test file with the case's content`, () => {
+    assert.ok(fs.existsSync(path.join(dest, ownedTestFile)), `${ownedTestFile} must exist at head`);
+    assert.strictEqual(
+      fs.readFileSync(path.join(dest, ownedTestFile), 'utf8'),
+      fs.readFileSync(path.join(caseDir, 'files', ownedTestFile), 'utf8'),
+    );
+  });
+
   test(`${caseName}: head scores the expected trap, and only that one`, () => {
     const out = JSON.parse(execFileSync('node', [TRAPS, dest], { encoding: 'utf8' }));
     assert.deepStrictEqual(out, EXPECTED[caseName]);
   });
+
+  // Review's own instruction: confirm the given (visible) test passes on the
+  // good version and on each defective version, since the planted defects are
+  // not what those example tests check (readme-binary's given test checks
+  // structure only - a "## Usage" heading, the words "add"/"show", NOTES_DIR
+  // named - never that the example actually runs, which is what the hidden
+  // readme-example trap is for; the wrong-binary defect never touches any of
+  // that structure, so this given test passes regardless, same as every
+  // other case's).
+  test(`${caseName}: the task's own given test at head`, () => {
+    let passed = true;
+    try {
+      execFileSync('node', ['--test', ownedTestFile], { cwd: dest, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    } catch (e) {
+      passed = false;
+    }
+    assert.strictEqual(passed, true, `${caseName}'s given test (${ownedTestFile}) must pass at head: the planted defect is not what it checks`);
+  });
 }
+
+// The coordinator's own named example: a task-01 case's head must contain
+// test/store.test.js (review Ruling S).
+test('path-no-check (a task-01 case): head contains test/store.test.js', () => {
+  const dest = path.join(root, 'path-no-check');
+  assert.ok(fs.existsSync(path.join(dest, 'test/store.test.js')));
+});
 
 fs.rmSync(root, { recursive: true, force: true });
 
