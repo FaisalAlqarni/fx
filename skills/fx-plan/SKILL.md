@@ -100,15 +100,6 @@ blockers are all done. For a purely linear chain that means top to bottom. Get
 them right: an edge that isn't a real dependency serialises work for nothing,
 and a missing one lets a task start against code that doesn't exist yet.
 
-**Parallel with.** Parallelism is never inferred from a missing blocking edge;
-a model writing a plan can miss one, so parallel work needs a positive claim
-with a reason. Declare it only when neither task consumes the other's
-`Produces`, their **Files:** lists share no path, and neither touches a hot
-file: plugin and package manifests (`.claude-plugin/`, `package.json`, `*.toml`
-manifests), version files, `scripts/check-all`, changelogs, or any registry or
-index file every task appends to. The claim is symmetric: both tasks carry it,
-each naming why the other's output isn't needed.
-
 **Each step within a task is one action**: write the failing test, run it,
 implement, run it, run the suite, commit. Two actions in one step means the
 implementer can half-finish it and still tick the box.
@@ -280,10 +271,10 @@ attention lens.>
 
 ## Tasks
 
-| # | Title | Blocked by | Parallel with | Delivers | Phase |
-|---|-------|-----------|---------------|----------|-------|
-| 01 | … | none | none | … | MVP |
-| 02 | … | 01 | none | … | MVP |
+| # | Title | Blocked by | Delivers | Phase |
+|---|-------|-----------|----------|-------|
+| 01 | … | none | … | MVP |
+| 02 | … | 01 | … | MVP |
 ```
 
 ## tasks/NN-<slug>.md template
@@ -293,8 +284,6 @@ attention lens.>
 
 **Status:** ready-for-agent
 **Blocked by:** 01, 02   (or "None: can start immediately")
-**Parallel with:** 04: <why neither task needs the other's output>   (optional;
-several as `04: reason; 07: reason`; absent means serial)
 **Phase:** MVP
 
 **What to build:** the end-to-end behavior this makes work, from the user's

@@ -30,8 +30,7 @@ has no profile, so **it is not optional**.
   "setup":     "make setup",
   "lint":      "bundle exec rubocop",
   "coverage":  null,
-  "coverage_floor": null,
-  "isolated_test_execution": false
+  "coverage_floor": null
 }
 ```
 
@@ -44,7 +43,6 @@ has no profile, so **it is not optional**.
 | `setup` | From a clean checkout to a runnable state |
 | `lint` | Empty if the repo has no linter: **do not invent one** |
 | `coverage` / `coverage_floor` | `null` when the repo has no coverage tooling. `fx-tdd` enforces a floor only when both are set |
-| `isolated_test_execution` | true when test runs share no service (database, broker, cache) and each run uses its own temp paths; enables parallel tasks declared in a plan |
 
 **`test_scope` needs a fact only the user has: what a change can safely not
 run.** Suites partition along a seam the repo knows and you do not: an engine, a
@@ -87,8 +85,7 @@ anything the code does deliberately that looks like a mistake.
 
 **Round 2, the workflow.** What must be true before a change ships; which branch
 is the base; where worktrees go; anything an agent should not touch without
-asking; "Do your tests use a shared service such as a database or broker?"
-(yes sets `isolated_test_execution` to `false`, no sets it to `true`).
+asking.
 
 Offer your own reading as the first option every time, drawn from step 1, so the
 common answer is one keystroke. You are asking to be corrected, not
