@@ -22,10 +22,23 @@ Subagent (general-purpose):
 
     ## The findings under verification
 
-    The open findings (Critical and Important, plus any ⚠️ item confirmed as a
-    real gap) are in [PRIOR_FINDINGS_FILE], under `### Issues` (`#### Critical
-    (Must Fix)` and `#### Important (Should Fix)`). Read that file yourself:
-    they are not pasted here.
+    The open findings live in the findings file(s) as a whole:
+    [PRIOR_FINDINGS_FILES], plus any confirmed ⚠️ the controller quotes
+    directly below (its ledger line reads `Task <NN>: confirmed ⚠️: <exact
+    text>`; a findings file carries no confirmed/unconfirmed marker of its
+    own). What counts as open, per file:
+
+    - **A first-round findings file** (the task or branch reviewer's): every
+      item under `### Issues` → `#### Critical (Must Fix)` and `#### Important
+      (Should Fix)`, and every ❌ under `### Spec Compliance`.
+    - **A lens findings file**: the entire reply, verbatim; a lens has no
+      severity split of its own to filter by.
+    - **A later-round findings file** (a previous re-review's): every item
+      under `### Finding verdicts` marked NOT ADDRESSED, plus anything under
+      `### New breakage in the fix diff` rated Critical or Important.
+
+    Minor is never open, in any of them. Read the file(s) yourself: they are
+    not pasted here.
 
     ## The fix
 
@@ -125,23 +138,35 @@ Subagent (general-purpose):
 
     ### Ledger lines
 
-    Under a heading `## Ledger lines`, write the one ready-to-copy line the
-    controller appends to the ledger:
+    Add a heading that reads exactly `## Ledger lines`: two `#` characters,
+    not three (this section's own `###` above is this document's structure,
+    not what you write). Under it, write these as plain text with no bullet
+    and no backticks, one finding per line, starting with the word `Task`:
 
-    `Task <NN>: fix round <R>/5 (<X> addressed, <Y> open: <one-liners>;
-    commits <FIX_BASE_SHA short>..<HEAD_SHA short>)`
+    - The round line, exactly one:
+
+    Task <NN>: fix round <R>/5 (<X> addressed, <Y> open: <one-liners>; commits <FIX_BASE_SHA short>..<HEAD_SHA short>)
+
+    - One line per out-of-scope observation and per Minor item under New
+      breakage:
+
+    Task <NN>: minor (deferred): <one-liner>
 
     Use the task number named in [TASK_FILE]'s filename and round [ROUND].
+    The controller greps these lines and checks their count against 1 (the
+    round line) plus your out-of-scope and Minor-breakage counts.
 
     ### Reply
 
     Reply with at most five lines:
 
     - **Verdict:** all addressed, no new breakage | findings remain open
-    - **Open:** count
+    - **Open:** count (NOT ADDRESSED findings, plus new Critical or Important
+      breakage; new Minor breakage is not open, it is ledgered instead)
     - **Fixed:** count
     - **Findings:** [FINDINGS_FILE]
-    - **New breakage:** yes | no
+    - **New breakage:** none | Minor | Important | Critical, the highest
+      severity found
 ```
 
 **Placeholders:**
@@ -150,9 +175,9 @@ Subagent (general-purpose):
 - `[MODEL]`: REQUIRED; default: standard tier, most capable only with a
   stated reason (see model-selection.md)
 - `[TASK_FILE]`: the same file the implementer worked from
-- `[PRIOR_FINDINGS_FILE]`: REQUIRED, the previous review's (or previous
-  round's) findings file, holding the open Critical/Important items and any
-  confirmed ⚠️ this round must address. Pass the path, never a copied extract
+- `[PRIOR_FINDINGS_FILES]`: REQUIRED, one or more paths: the previous review's
+  (or previous round's) findings file, and any lens findings file from the
+  same dispatch. Pass the path(s), never a copied extract
 - `[ROUND]`: REQUIRED, this fix round's number (1 to 5), for the ledger line
 - `[REPORT_FILE]`: the implementer's report file, fix reports appended
 - `[FIX_BASE_SHA]`: the head the previous review saw
@@ -160,5 +185,6 @@ Subagent (general-purpose):
 - `[DIFF_FILE]`: the path `scripts/review-package <slug> FIX_BASE HEAD` printed
 
 **Re-reviewer returns:** Verdict · Open (count) · Fixed (count) · Findings
-(path) · New breakage (yes/no), in the five-line reply. Per-finding verdicts,
-out-of-scope observations and ledger lines live in the findings file.
+(path) · New breakage (none/Minor/Important/Critical), in the five-line
+reply. Per-finding verdicts, out-of-scope observations and ledger lines live
+in the findings file.

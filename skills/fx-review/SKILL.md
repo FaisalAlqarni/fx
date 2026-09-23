@@ -177,21 +177,16 @@ the brief:
 > (c) requirements that look implemented but where the implementation looks
 > wrong. Quote the spec line for each finding. Under 400 words."
 
-**Lens briefs**: the `fx-lens-*` agents, each given the diff file path, the
-paths that triggered it, a findings-file path to write to (name it after the
-lens, beside the other findings for this review), and this line: "Cite each
-finding as the source file and its line number at HEAD, never a line number
-inside the diff file." A diff line number points into a file the reader never
-opens. Read-only by construction.
+**Lens briefs**: the `fx-lens-*` agents, each given the diff file path and
+the paths that triggered it, and this line: "Cite each finding as the source
+file and its line number at HEAD, never a line number inside the diff file."
+A diff line number points into a file the reader never opens. Read-only by
+construction.
 
-Also tell it: "Write your findings, in your normal Output format, to that
-path." Reply with at most five lines:
-
-- **Lens:** name
-- **C/I/M:** `<critical>/<important>/<minor>`
-- **Findings:** path
-- **Scope:** files read
-- **Blocked:** none, or why
+Lenses have no Write tool (Ruling, task 08): each returns its full findings
+as its reply, as it did before the five-line contract existed. The
+controller records that reply to a findings file itself, without reasoning
+over it: see `fx-implement` §3's Lens dispatch for the exact command.
 
 **Branch mode also dispatches the broad reviewer**: [reviewer-prompt.md](./reviewer-prompt.md),
 on the most capable available model, pointed at the ledger's deferred-minor and

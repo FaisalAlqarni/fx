@@ -182,13 +182,17 @@ Subagent (general-purpose):
 
     ### Ledger lines
 
-    Under a heading `## Ledger lines`, write one ready-to-copy line per new
-    Minor finding, in the exact form the fix loop ledgers:
+    Add a heading that reads exactly `## Ledger lines`: two `#` characters,
+    not three (this section's own `###` above is this document's structure,
+    not what you write). Under it, write one line per new Minor finding:
+    plain text, no bullet, no backticks, starting with the word `Task`, one
+    per line:
 
-    `Task <NN>: minor (deferred): <one-liner>`
+    Task <NN>: minor (deferred): <one-liner>
 
-    Name the task each finding belongs to. The controller appends these to the
-    ledger with `grep`, never by reading your findings.
+    Name the task each finding belongs to. The controller greps these lines
+    and checks their count against the Minor number in your `C/I/M`, never by
+    reading your findings.
 
     ### Reply
 
@@ -196,7 +200,8 @@ Subagent (general-purpose):
 
     - **Spec:** ✅ | ❌ | ⚠️ (count)
     - **Quality:** approved | changes requested
-    - **C/I/M:** `<critical>/<important>/<minor>`
+    - **C/I/M:** `<critical>/<important>/<minor>`; if any Important finding
+      is plan-mandated, append `, plan-mandated: <n>`
     - **Findings:** [FINDINGS_FILE]
     - **Ready:** yes | no | with fixes
 

@@ -18,15 +18,26 @@ function contract(file, fields, from = 0) {
   for (const f of fields) assert.ok(tail.includes(f), `${file}: five-line reply names ${f}`);
   return text;
 }
-const REVIEWER = ['Spec', 'Quality', 'C/I/M', 'Findings', 'Ready'];
+// Ruling R (task 08 fix round 1): lenses are read-only, cannot write a file,
+// and keep returning their full findings as their reply, as before task 08.
+// So 'plan-mandated' below is required of the two reviewer reply contracts
+// only, and the lens contract check that used to sit here is gone.
+const REVIEWER = ['Spec', 'Quality', 'C/I/M', 'Findings', 'Ready', 'plan-mandated'];
 contract('skills/fx-implement/implementer-prompt.md', ['Status', 'Commits', 'Tests', 'Report', 'Concerns']);
 contract('skills/fx-implement/task-reviewer-prompt.md', REVIEWER);
 contract('skills/fx-review/reviewer-prompt.md', REVIEWER);
 const rr = contract('skills/fx-implement/re-review-prompt.md', ['Verdict', 'Open', 'Fixed', 'Findings', 'New breakage']);
-const review = read('skills/fx-review/SKILL.md');
-contract('skills/fx-review/SKILL.md', ['Lens', 'C/I/M', 'Findings', 'Scope', 'Blocked'], review.indexOf('Lens briefs'));
 const skill = read('skills/fx-implement/SKILL.md');
 contract('skills/fx-implement/SKILL.md', ['Gaps', 'Findings', 'Tasks affected', 'Verdict', 'Next'], skill.indexOf('one coverage audit'));
+
+const reviewSkill = read('skills/fx-review/SKILL.md');
+assert.ok(!reviewSkill.includes(MARK), 'Ruling R: lenses no longer carry the five-line contract');
+assert.ok(/no Write tool/i.test(reviewSkill), 'Ruling R: fx-review/SKILL.md says lenses have no Write tool');
+
+const lensDispatchAt = skill.indexOf('**Lens dispatch.**');
+assert.ok(lensDispatchAt >= 0, 'fx-implement/SKILL.md still has a Lens dispatch paragraph');
+assert.ok(skill.slice(lensDispatchAt, lensDispatchAt + 1500).includes('heredoc'), 'Lens dispatch: the controller records a lens reply with a heredoc, without reasoning over it');
+assert.ok(skill.includes('confirmed ⚠️:'), "confirming a ⚠️ is ledgered with the finding's exact text, for the fixer and re-reviewer to read");
 
 assert.ok(!/under 15 lines/.test(read('skills/fx-implement/implementer-prompt.md')), 'implementer: the old 15-line contract is gone');
 assert.ok(!/final message \*\*is\*\* the report/i.test(rr), 're-review: the final message is no longer the report');
@@ -38,11 +49,34 @@ const loop = read('skills/fx-implement/fix-loop.md');
 assert.ok(!/open findings\s+verbatim/i.test(loop), 'fix loop: findings go as a path, not pasted verbatim');
 assert.ok(loop.includes('## Ledger lines'), 'fix loop: ledgers one-liners from the findings file');
 
+// Review item 2: the fixer and re-reviewer are pointed at the findings
+// file(s) as a whole, with a rule for what counts as open, not at one
+// heading that fails to hold spec gaps, confirmed warnings, lens findings,
+// or a round-2+ re-review file's own sections.
+assert.ok(loop.includes('findings file(s) as a whole'), 'fix loop: points the fixer at the findings file(s) as a whole');
+assert.ok(rr.includes('findings file(s) as a whole'), 're-review: points at the findings file(s) as a whole');
+assert.ok(rr.includes('Finding verdicts'), "re-review: names the prior re-review file's own section for round 2+");
+
+// Review item 3: re-review ledgers out-of-scope and Minor breakage as
+// deferred minors, and New breakage states the highest severity found.
+assert.ok(rr.includes('out-of-scope'), 're-review: Ledger lines cover out-of-scope observations');
+assert.ok(rr.includes('none | Minor | Important | Critical'), 're-review: New breakage states the highest severity');
+
 const i = skill.indexOf('### Controller reading rules');
 assert.ok(i >= 0, 'fx-implement has a Controller reading rules section');
 assert.ok(i < skill.indexOf('### 1. Dispatch the implementer'), 'the rules come before the first dispatch step');
-const rules = skill.slice(i, i + 3000);
-for (const needle of ['>>', 'tail', 'git log --oneline', 'review-package', 'five lines', 'report contract breached']) {
+const rules = skill.slice(i, i + 3500);
+for (const needle of ['>>', 'tail', 'git log --oneline', 'review-package', 'five lines', 'report contract breached', 'BLOCKED', 'Concerns', 'appended line count']) {
   assert.ok(rules.includes(needle), `reading rules mention ${needle}`);
 }
+
+// Review item 6: the ledger-copy shape is unambiguous (a plain line, no
+// backticks, no bullet, and the `##` heading distinguished from the
+// templates' own `###` subheading).
+for (const f of ['skills/fx-implement/task-reviewer-prompt.md', 'skills/fx-review/reviewer-prompt.md', 'skills/fx-implement/re-review-prompt.md']) {
+  const t = read(f);
+  assert.ok(t.includes('no backticks'), `${f}: Ledger lines instructions rule out backticks`);
+  assert.ok(t.includes('not three'), `${f}: Ledger lines instructions disambiguate ## from ###`);
+}
+
 console.log('return-contract: ok');
