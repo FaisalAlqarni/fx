@@ -52,7 +52,7 @@ a path. What changes:
   - implementer and fixer: `Status`, `Commits` (`<base7>..<head7>`), `Tests` (one line), `Report` (path), `Concerns` (count; detail in the report).
   - task reviewer and branch reviewer: `Spec` (✅, ❌, or ⚠️ with a count), `Quality` (approved or changes requested), `C/I/M` (counts), `Findings` (path), `Ready` (yes, no, with fixes).
   - re-review: `Verdict`, `Open` (count), `Fixed` (count), `Findings` (path), `New breakage` (yes or no).
-  - lens: `Lens` (name), `C/I/M`, `Findings` (path), `Scope` (files read), `Blocked` (none, or why).
+  - lens: no five-line reply (amended, Ruling R): lens agents are read-only and cannot write a file, so a lens returns its full findings as its reply, and the controller records that reply to a findings file with a heredoc without reasoning over it.
   - coverage audit: `Gaps` (count), `Findings` (path), `Tasks affected` (numbers), `Verdict`, `Next` (one line).
 - `## Ledger lines` in every findings file: one line per finding in the exact
   ledger forms the fix loop already uses, for example
