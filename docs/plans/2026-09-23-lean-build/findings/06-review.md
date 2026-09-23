@@ -9,8 +9,8 @@
 - ✅ opencode (`plugins/fx.js`) left unchanged, correctly: `render({ harness: 'opencode', cwd })` runs once at plugin construction (plugins/fx.js:204) and the `experimental.chat.system.transform` call site the report cites (plugins/fx.js:225) carries no per-call subagent signal; verified by reading the file, matching the report's claim.
 - ✅ Render without `subagent` is byte-identical for every existing caller: default parameter `subagent = false` (lib/preamble.js:59) and the gate only removes text on an explicit `true`; `plugins/fx.js` is untouched, `hooks/fx-context.js`/`hooks/fx-codex.js` pass `false` for every non-`SubagentStart` event, same as before.
 - ✅ TDD evidence: report shows a real RED (`claude-code: a subagent does not`, failing on `doesNotMatch`) before `lib/preamble.js` was touched, then a second RED on the updated hook assertion before `hooks/fx-context.js` was wired, then GREEN.
-- ✅ Stage by path: commit ef5206f touches exactly `hooks/fx-codex.js`, `hooks/fx-context.js`, `lib/preamble.js`, `lib/preamble.test.js` — matches the task's `git add` list plus the conditional `fx-codex.js` addition (changed, so correctly included); `plugins/fx.js` and version files correctly absent (unchanged, no bump needed).
-- ✅ No em or en dashes, no attribution trailers, introduced in the diff itself (checked line by line; the one em dash in the diff, hooks/fx-codex.js "fall through — emit anyway", is a pre-existing unchanged context line).
+- ✅ Stage by path: commit ef5206f touches exactly `hooks/fx-codex.js`, `hooks/fx-context.js`, `lib/preamble.js`, `lib/preamble.test.js`: matches the task's `git add` list plus the conditional `fx-codex.js` addition (changed, so correctly included); `plugins/fx.js` and version files correctly absent (unchanged, no bump needed).
+- ✅ No em or en dashes, no attribution trailers, introduced in the diff itself (checked line by line; the one em dash in the diff, hooks/fx-codex.js "fall through: emit anyway", is a pre-existing unchanged context line).
 
 ### Strengths
 
@@ -20,15 +20,15 @@
 
 ### Issues (Critical / Important / Minor)
 
-**Minor** — lib/preamble.test.js:179: `fs.mkdtempSync(path.join(os.tmpdir(), 'fx-empty-'))` is created fresh inside the harness loop (once per entry in `HARNESSES`) and never removed; only the outer `dir` is cleaned up in the `finally` block. Three temp directories leak per test run.
+**Minor**: lib/preamble.test.js:179: `fs.mkdtempSync(path.join(os.tmpdir(), 'fx-empty-'))` is created fresh inside the harness loop (once per entry in `HARNESSES`) and never removed; only the outer `dir` is cleaned up in the `finally` block. Three temp directories leak per test run.
 
-**Minor** — lib/preamble.test.js:178: the acceptance criteria ask the subagent render to carry both the 111-subagents and the 35-patterns markers; only the 111 marker is asserted with a regex. The 35-patterns marker is preserved in practice because the gate never touches PREAMBLE.md's own text, but that guarantee rests on reading the code, not on an assertion in this test.
+**Minor**: lib/preamble.test.js:178: the acceptance criteria ask the subagent render to carry both the 111-subagents and the 35-patterns markers; only the 111 marker is asserted with a regex. The 35-patterns marker is preserved in practice because the gate never touches PREAMBLE.md's own text, but that guarantee rests on reading the code, not on an assertion in this test.
 
-**Minor** — tests/gates/codex-hook-output.test.js:45-50: pins only the output's key shape (`keysOk`) for Codex's `SessionStart` and `SubagentStart` cases; it never asserts the plans-block content difference for Codex the way lib/preamble.test.js does for `hooks/fx-context.js` (lines 136-144). The Codex wiring's content-level correctness is proven only by code inspection plus the harness-generic unit test in lib/preamble.js, not by an end-to-end pipe check on fx-codex.js itself.
+**Minor**: tests/gates/codex-hook-output.test.js:45-50: pins only the output's key shape (`keysOk`) for Codex's `SessionStart` and `SubagentStart` cases; it never asserts the plans-block content difference for Codex the way lib/preamble.test.js does for `hooks/fx-context.js` (lines 136-144). The Codex wiring's content-level correctness is proven only by code inspection plus the harness-generic unit test in lib/preamble.js, not by an end-to-end pipe check on fx-codex.js itself.
 
-**Minor** — no test in this diff exercises `hooks/fx-context.js` or `hooks/fx-codex.js` with a missing or unknown `hook_event_name`. Both hooks default to `subagent: false` in that case (ternary compares against the literal string `'SubagentStart'`), which is the safe default (full render, no missing rules), but the review's own quality lens calls this edge case out and it is untested before and after this change.
+**Minor**: no test in this diff exercises `hooks/fx-context.js` or `hooks/fx-codex.js` with a missing or unknown `hook_event_name`. Both hooks default to `subagent: false` in that case (ternary compares against the literal string `'SubagentStart'`), which is the safe default (full render, no missing rules), but the review's own quality lens calls this edge case out and it is untested before and after this change.
 
-**Minor (observational, not a gate finding)** — the task's own report, `.fx/2026-09-23-lean-build/reports/06-subagents-skip-plans-block-report.md`, lines 23, 25, 26, 27, uses em dashes, against the standing house rule against em or en dashes in agent output. `.fx/` is gitignored so this does not trip `check-prose` or affect the shipped diff.
+**Minor (observational, not a gate finding)**: the task's own report, `.fx/2026-09-23-lean-build/reports/06-subagents-skip-plans-block-report.md`, lines 23, 25, 26, 27, uses em dashes, against the standing house rule against em or en dashes in agent output. `.fx/` is gitignored so this does not trip `check-prose` or affect the shipped diff.
 
 ### Assessment (Approved | Needs fixes)
 

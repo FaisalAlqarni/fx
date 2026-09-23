@@ -22,7 +22,7 @@ TDD evidence: the diff's four new test blocks at `lib/plan-state.test.js:98-121`
 
 ### Issues (Critical / Important / Minor)
 
-**Minor** — `lib/plan-state.js:48,54`: `hasState` used to mean "a `state.md` path exists" (`fs.existsSync`); it now means "a `state.md` was successfully read as text." For the unreadable case (e.g. a directory at `state.md`), `hasState` flips from `true` to `false`. Two visible effects, both edge-case only and untested:
+**Minor**: `lib/plan-state.js:48,54`: `hasState` used to mean "a `state.md` path exists" (`fs.existsSync`); it now means "a `state.md` was successfully read as text." For the unreadable case (e.g. a directory at `state.md`), `hasState` flips from `true` to `false`. Two visible effects, both edge-case only and untested:
   1. The rendered bullet for that plan now reads "no `state.md`, so the build has not started" (`lib/plan-state.js:75`), which is wrong when a `state.md` path exists but can't be read as text.
   2. `fresh = plans.filter((p) => !p.hasState)` (`lib/plan-state.js:69`) now buckets an unreadable-state plan with never-started plans for the top-3 selection, changing which plans get named when more than 3 plans are unfinished and one has an unreadable ledger.
   Neither effect is covered by a test, and neither violates an acceptance criterion (the plan does stay listed, and nothing throws). The implementer's own report flags this same point under "Concerns." Fix, if picked up, is cheap: keep `hasState` derived from existence (`fs.existsSync` or a second null check distinguishing ENOENT from other errors) independent of readability.
