@@ -7,8 +7,7 @@
 
 **What to build:** a user who half remembers a note finds it by a word in its
 text. Search returns the names of the notes whose text contains the query, in
-the order `list()` returns them. People type queries in any case. A query that
-matches nothing returns `[]`.
+the order `list()` returns them. A query that matches nothing returns `[]`.
 
 **Files:**
 - Create: `lib/search.js`

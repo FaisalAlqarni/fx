@@ -16,7 +16,9 @@ tests/fixture-build/run.sh <runs> <label>
 
 Example: `tests/fixture-build/run.sh 3 baseline`. Set `FX_FIXTURE_PARALLEL=1`
 to build with `isolated_test_execution` turned on, which lets `fx-implement`
-run tasks 04 and 05 in parallel.
+run tasks 04 and 05 in parallel. Set `FX_FIXTURE_KEEP=<dir>` to keep each
+run's controller and subagent transcripts under
+`<dir>/<label>-<n>/` before the scratch home they ran in is removed.
 
 This spends quota: it runs a real headless Claude Code session per run. A run
 takes up to 3 hours. Results land in

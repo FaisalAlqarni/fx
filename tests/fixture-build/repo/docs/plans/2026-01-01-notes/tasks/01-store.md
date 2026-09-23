@@ -6,8 +6,9 @@
 
 **What to build:** the storage every other task reads through. A note is saved
 under its name as one file in the notes directory, loaded back by name, and
-listed. Names come from the command line, so a name that would resolve outside `NOTES_DIR` is rejected with `err.code === 'EBADNAME'`. Loading a note that does not exist throws with `err.code === 'ENOTE'`; callers must be able to tell it from an empty note. The
-notes directory is created on the first save.
+listed. Names come from the command line. Callers must be able to tell a
+missing note from an empty one. The notes directory is created on the first
+save.
 
 **Files:**
 - Create: `lib/store.js`

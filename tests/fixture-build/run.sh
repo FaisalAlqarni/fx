@@ -5,6 +5,7 @@
 #
 #   tests/fixture-build/run.sh <runs> <label>
 #   FX_FIXTURE_PARALLEL=1 tests/fixture-build/run.sh <runs> <label>
+#   FX_FIXTURE_KEEP=<dir> tests/fixture-build/run.sh <runs> <label>
 #
 # Every run goes through the conformance runner, which points HOME and
 # CLAUDE_CONFIG_DIR into a scratch directory. Nothing here calls claude.
@@ -25,7 +26,8 @@ done
 
 for i in $(seq 1 "$RUNS"); do
   FX_CONFORMANCE_ROWS="$FX/tests/fixture-build/rows" FX_FIXTURE_OUT="$OUT" FX_FIXTURE_LABEL="$LABEL" \
-    FX_FIXTURE_RUN="$i" FX_FIXTURE_PARALLEL="${FX_FIXTURE_PARALLEL:-}" bash tests/conformance/run.sh claude-code \
+    FX_FIXTURE_RUN="$i" FX_FIXTURE_PARALLEL="${FX_FIXTURE_PARALLEL:-}" FX_FIXTURE_KEEP="${FX_FIXTURE_KEEP:-}" \
+    bash tests/conformance/run.sh claude-code \
     || { echo "run $i: the fixture row failed; stopping" >&2; exit 1; }
   # A GAP (quota) passes the runner but writes no result.
   [ -f "$OUT/$LABEL-$i.json" ] || { echo "run $i: no result file, the row did not run (see its reason above); stopping" >&2; exit 1; }

@@ -7,7 +7,9 @@
 # Run it through tests/fixture-build/run.sh, which sets FX_FIXTURE_OUT,
 # FX_FIXTURE_LABEL and FX_FIXTURE_RUN and runs this through the conformance
 # runner, so HOME and CLAUDE_CONFIG_DIR are already scratch. It spends quota
-# and takes up to 3 hours.
+# and takes up to 3 hours. FX_FIXTURE_KEEP, if set to a directory, keeps this
+# run's controller and subagent transcripts under it before the scratch home
+# is removed.
 #
 # Everything that runs model-written code, or git in the model's repo (hooks,
 # config), runs inside the jail. The session's jail also hides the hidden
@@ -122,6 +124,17 @@ done < <(cat "$BUILD/$PLAN/state.md" "$WORK/$PLAN/state.md" 2>/dev/null \
 
 # 9. cost.
 COST="$("$FX/scripts/build-cost" "${CTL[0]}" --json)" || fail "cost: scripts/build-cost failed on ${CTL[0]}"
+
+# Keep this run's transcripts, if asked: the whole $CLAUDE_CONFIG_DIR/projects/$enc
+# tree, controller jsonl plus its subagents directory, copied out before the
+# conformance runner removes the scratch home on its own exit. Outside the
+# jail, same as the result write below: a plain copy of files the row itself
+# produced, not model code.
+if [ -n "${FX_FIXTURE_KEEP:-}" ]; then
+  KEEP_DIR="$FX_FIXTURE_KEEP/$FX_FIXTURE_LABEL-$FX_FIXTURE_RUN"
+  mkdir -p "$KEEP_DIR" || fail "keep: cannot create $KEEP_DIR"
+  cp -a "$CLAUDE_CONFIG_DIR/projects/$enc/." "$KEEP_DIR/" || fail "keep: could not copy transcripts to $KEEP_DIR"
+fi
 
 # 10. The result, outside the jail.
 mkdir -p "$FX_FIXTURE_OUT" || fail "cannot create $FX_FIXTURE_OUT"

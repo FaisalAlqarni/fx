@@ -37,6 +37,12 @@ tells a new user how to run it.
 - Export format: for each note, a `# <name>` heading, a blank line, the body,
   and a newline.
 
+## Storage and search rules
+
+- A name that would resolve outside `NOTES_DIR` is rejected: `err.code === 'EBADNAME'`.
+- Loading a note that does not exist throws `err.code === 'ENOTE'`, distinct from an empty note.
+- Search matches a query against a note's text without regard to case.
+
 ## Global Constraints
 
 - CommonJS, synchronous APIs, no dependencies.
