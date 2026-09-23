@@ -1,0 +1,11 @@
+{
+  "stacks": null,
+  "test_one": "node --test {file}",
+  "test_scope": "node --test {paths}",
+  "test_all": "node --test",
+  "setup": "node --version",
+  "lint": null,
+  "coverage": null,
+  "coverage_floor": null,
+  "isolated_test_execution": false
+}
