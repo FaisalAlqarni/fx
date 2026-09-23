@@ -71,6 +71,16 @@ probe "no top-level dot-entry or regular file outside the allowlist is readable"
       [ ! -s "$e" ] || { echo "$e is readable"; exit 1; }
     fi
   done'
+# jail_hide <path under $FX>...: the session cannot read a hidden directory
+# (the answer keys) or a hidden file (a worktree's .git pointer), and the rest
+# of the tree stays readable. Final review adversarial 2.
+SAVED_JAIL=("${JAIL[@]}")
+GITPATH=.git
+jail_hide tests/review-bench/cases "$GITPATH" no/such/path
+probe "jail_hide: a hidden directory is empty" "[ -z \"\$(ls -A '$PWD/tests/review-bench/cases')\" ]"
+probe "jail_hide: a hidden .git reads as nothing" "[ ! -s '$PWD/.git' ] && [ ! -e '$PWD/.git/HEAD' ]"
+probe "jail_hide: the rest of the tree stays readable" "[ -r '$PWD/tests/review-bench/score.js' ]"
+JAIL=("${SAVED_JAIL[@]}")
 probe "a sentinel set outside is not visible" '[ -z "${FX_JAIL_SENTINEL+x}" ]'
 probe "no inherited DBUS_SESSION_BUS_ADDRESS" '[ -z "${DBUS_SESSION_BUS_ADDRESS+x}" ]'
 probe "HOME and PATH are passed" "[ \"\$HOME\" = '$HOME' ] && [ \"\$PATH\" = '$PATH' ]"

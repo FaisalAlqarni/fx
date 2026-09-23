@@ -58,7 +58,10 @@ git -C "$WORK" add -A && git -C "$WORK" commit -q -m "base: everything but ${OWN
 BASE="$(git -C "$WORK" rev-parse HEAD)" || fail "could not read the base commit"
 
 cp -a "$CASE_DIR/files/." "$WORK/" || fail "could not copy the case's own files"
-git -C "$WORK" add -A && git -C "$WORK" commit -q -m "case: $CASE" || fail "could not commit the case"
+# A neutral subject: review-package prints the log into the diff, so a case
+# name here would tell the reviewer what to look for (final review,
+# adversarial 1).
+git -C "$WORK" add -A && git -C "$WORK" commit -q -m "task $TASK_NUM" || fail "could not commit the case"
 HEAD_SHA="$(git -C "$WORK" rev-parse HEAD)" || fail "could not read the head commit"
 
 # 3. the review package, an empty ledger, and a one-line report: exactly what
@@ -101,6 +104,9 @@ PROMPT_FILE="$WORK/.review-bench-prompt.md"
 printf '%s' "$PROMPT" > "$PROMPT_FILE" || fail "could not write $PROMPT_FILE"
 
 # 5. one headless reviewer session, at the tier fx dispatches reviewers on.
+# The session cannot read the answer keys: the fixture's hidden tests, the
+# good reference, the cases and their match regexes, or fx's own history.
+jail_hide tests/fixture-build/hidden tests/review-bench/good tests/review-bench/cases .git
 FX_LIVE_MODEL=sonnet live_run "$PROMPT"
 
 # FX_BENCH_KEEP, if set, keeps this case's rep's findings file and filled
@@ -111,13 +117,16 @@ FX_LIVE_MODEL=sonnet live_run "$PROMPT"
 if [ -n "${FX_BENCH_KEEP:-}" ]; then
   KEEP_DIR="$FX_BENCH_KEEP/$CASE-$REP"
   mkdir -p "$KEEP_DIR" || fail "keep: cannot create $KEEP_DIR"
+  # Both files sit in $WORK, which the session can write: copied only as
+  # regular files, never through a symlink it planted.
+  live_regular "$PROMPT_FILE" || fail "keep: $PROMPT_FILE is not a regular file"
   cp "$PROMPT_FILE" "$KEEP_DIR/prompt.md" || fail "keep: could not copy the filled prompt to $KEEP_DIR"
-  if [ -f "$FINDINGS_FILE" ]; then
+  if live_regular "$FINDINGS_FILE"; then
     cp "$FINDINGS_FILE" "$KEEP_DIR/findings.md" || fail "keep: could not copy the findings file to $KEEP_DIR"
   fi
 fi
 
-[ -f "$FINDINGS_FILE" ] || fail "the reviewer never wrote $FINDINGS_FILE"
+live_regular "$FINDINGS_FILE" || fail "the reviewer never wrote $FINDINGS_FILE as a regular file"
 
 # 6. score it.
 SCORE="$(node "$FX/tests/review-bench/score.js" "$FINDINGS_FILE" "$MATCH")" || fail "score.js exited $? on $FINDINGS_FILE"

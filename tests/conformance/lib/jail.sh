@@ -110,3 +110,17 @@ for v in PATH HOME USER LOGNAME SHELL TERM LANG LC_ALL \
 done
 JAIL+=(--)
 
+
+# jail_hide <path under $FX>...: hide each path from calls made with $JAIL
+# after this point, on top of everything above. A directory goes under an
+# empty tmpfs; a file (a worktree's .git is one) under /dev/null; a missing
+# path is skipped. For rows whose session must not read what scores it.
+jail_hide() {
+  unset 'JAIL[${#JAIL[@]}-1]'
+  local p
+  for p in "$@"; do
+    if [ -d "$FX/$p" ]; then JAIL+=(--tmpfs "$FX/$p")
+    elif [ -e "$FX/$p" ]; then JAIL+=(--ro-bind /dev/null "$FX/$p"); fi
+  done
+  JAIL+=(--)
+}

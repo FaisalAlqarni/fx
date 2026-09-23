@@ -184,6 +184,12 @@ live_workdir() {
     || fail "could not create the scratch repo"
 }
 
+# live_regular <path>: true only for a regular file that is not a symlink.
+# Every host-side read of a file the session could write goes through this
+# first: the session can replace it with a symlink to the real home's
+# credentials, or a FIFO that blocks the row (final review, security 1 and 5).
+live_regular() { [ -f "$1" ] && [ ! -L "$1" ]; }
+
 # --- one headless session ------------------------------------------------------
 # Every runtime writes a machine-readable event stream to $LOG. Not everything
 # is in that stream, so after the session the transcripts of every session it

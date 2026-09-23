@@ -4,7 +4,6 @@
 # headless build: it spends quota and takes up to 3 hours.
 #
 #   tests/fixture-build/run.sh <runs> <label>
-#   FX_FIXTURE_PARALLEL=1 tests/fixture-build/run.sh <runs> <label>
 #   FX_FIXTURE_KEEP=<dir> tests/fixture-build/run.sh <runs> <label>
 #
 # Every run goes through the conformance runner, which points HOME and
@@ -26,7 +25,7 @@ done
 
 for i in $(seq 1 "$RUNS"); do
   FX_CONFORMANCE_ROWS="$FX/tests/fixture-build/rows" FX_FIXTURE_OUT="$OUT" FX_FIXTURE_LABEL="$LABEL" \
-    FX_FIXTURE_RUN="$i" FX_FIXTURE_PARALLEL="${FX_FIXTURE_PARALLEL:-}" FX_FIXTURE_KEEP="${FX_FIXTURE_KEEP:-}" \
+    FX_FIXTURE_RUN="$i" FX_FIXTURE_KEEP="${FX_FIXTURE_KEEP:-}" \
     bash tests/conformance/run.sh claude-code \
     || { echo "run $i: the fixture row failed; stopping" >&2; exit 1; }
   # A GAP (quota) passes the runner but writes no result.
@@ -38,6 +37,6 @@ for i in $(seq 1 "$RUNS"); do
     const count = (v) => review.filter((x) => x === v).length;
     const tokens = r.cost.controller.tokens + Object.values(r.cost.subagents).reduce((s, a) => s + a.tokens, 0);
     console.log(`run ${r.run}: end ${end}/6, review caught ${count("caught")} missed ${count("missed")}, ` +
-      `merge defects ${r.mergeDefects}, parallel ${r.parallel ? 1 : 0}, controller calls ${r.cost.controller.calls}, ` +
+      `controller calls ${r.cost.controller.calls}, ` +
       `tokens ${tokens}, wall ${Math.round(r.cost.wallClockMs / 60000)}m`);'
 done

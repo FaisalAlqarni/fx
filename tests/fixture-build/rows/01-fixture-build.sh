@@ -33,24 +33,14 @@ jgit() { jailed git -c core.hooksPath=/dev/null "$@"; }
 # 2. The seed repository, committed on main. hidden/ is never copied.
 live_workdir
 cp -a "$FX/tests/fixture-build/repo/." "$WORK/" || fail "could not copy the seed repo"
-PARALLEL=false
-if [ "${FX_FIXTURE_PARALLEL:-}" = 1 ]; then
-  PARALLEL=true
-  F="$WORK/.fx.json" node -e '
-    const fs = require("fs"), f = process.env.F, c = JSON.parse(fs.readFileSync(f, "utf8"));
-    c.isolated_test_execution = true;
-    fs.writeFileSync(f, JSON.stringify(c, null, 2) + "\n");' || fail "could not set isolated_test_execution"
-fi
 git -C "$WORK" add -A && git -C "$WORK" commit -q -m "seed: notes plan" || fail "could not commit the seed"
 SEED="$(git -C "$WORK" rev-parse HEAD)"
 
-# 3. The build. The session's jail is the scoring jail plus tmpfs over every
-# path under $FX that holds the hidden tests or talks about them.
-unset 'JAIL[${#JAIL[@]}-1]'
-for d in tests/fixture-build docs/plans .fx .worktrees; do
-  [ -d "$FX/$d" ] && JAIL+=(--tmpfs "$FX/$d")
-done
-JAIL+=(--)
+# 3. The build. The session's jail is the scoring jail with every path under
+# $FX hidden that holds the hidden tests or talks about them: the review
+# bench carries a correct implementation and the defect regexes, and fx's own
+# .git holds every one of them in its history.
+jail_hide tests/fixture-build docs/plans .fx .worktrees tests/review-bench .git
 FX_LIVE_TIMEOUT=10800 FX_LIVE_MAX_TURNS=2000 live_run 'The plan in docs/plans/2026-01-01-notes/ is approved and ready. Build it. This is an unattended headless run: nobody will answer questions, so take the recommended option at every choice. Never end your turn while a subagent is outstanding: dispatch subagents as foreground calls (several in one message run at the same time). Finish with the branch reviewed and not merged.'
 JAIL=("${SCORE_JAIL[@]}")
 
@@ -73,6 +63,9 @@ shopt -s nullglob
 CTL=("$CLAUDE_CONFIG_DIR/projects/$enc"/*.jsonl)
 shopt -u nullglob
 [ "${#CTL[@]}" -eq 1 ] || fail "transcript: expected one *.jsonl in $CLAUDE_CONFIG_DIR/projects/$enc, found ${#CTL[@]}: ${CTL[*]:-none}"
+# The session could write the transcript directory; the host reads the
+# transcript below (implementer-heads.js, build-cost), so only as a regular file.
+live_regular "${CTL[0]}" || fail "transcript: ${CTL[0]} is not a regular file"
 
 traps() { timeout 600 "${SCORE_JAIL[@]}" node "$HIDDEN/traps.test.js" "$@"; }
 # at <rev> <traps>: the named traps' JSON at <rev>, in a temp checkout outside
@@ -80,6 +73,8 @@ traps() { timeout 600 "${SCORE_JAIL[@]}" node "$HIDDEN/traps.test.js" "$@"; }
 # found. It runs in a command substitution, so a caller checks its status.
 at() {
   local co out rc
+  # <rev> comes from the model-written transcript: never let it reach git as an option.
+  case "$1" in -*) fail "refusing a revision that starts with -: $1" ;; esac
   jgit -C "$WORK" rev-parse -q --verify "$1^{commit}" >/dev/null || return 0
   co="$(mktemp -d "$LIVE_SCRATCH/head.XXXXXX")" || fail "mktemp failed"
   jgit -C "$WORK" worktree add -q --detach "$co" "$1" || fail "could not check out $1"
@@ -107,22 +102,7 @@ for t in "${!TASK_TRAPS[@]}"; do
     || fail "byReview: could not merge task $t's score into byReview"
 done
 
-# 8. mergeDefects: a task's traps green on its own parallel branch, red at the end.
-MERGE=0
-while read -r t b; do
-  [ -n "${TASK_TRAPS[$t]:-}" ] || continue
-  r="$(at "$b" "${TASK_TRAPS[$t]}")" || fail "mergeDefects: scoring task $t at $b failed"
-  [ -n "$r" ] || fail "mergeDefects: task $t branch $b is not in the repo"
-  n="$(R="$r" E="$END" node -e '
-    const r = JSON.parse(process.env.R), e = JSON.parse(process.env.E);
-    process.stdout.write(String(Object.keys(r).filter((k) => r[k] && !e[k]).length));')" \
-    || fail "mergeDefects: could not count task $t's green-then-red traps at $b"
-  MERGE=$((MERGE + n))
-done < <(cat "$BUILD/$PLAN/state.md" "$WORK/$PLAN/state.md" 2>/dev/null \
-  | grep -oE 'Task [0-9]+: parallel with [0-9]+, branch [^ ,]+' | sort -u \
-  | sed -E 's/^Task ([0-9]+): parallel with [0-9]+, branch (.*)$/\1 \2/')
-
-# 9. cost.
+# 8. cost.
 COST="$("$FX/scripts/build-cost" "${CTL[0]}" --json)" || fail "cost: scripts/build-cost failed on ${CTL[0]}"
 
 # Keep this run's transcripts, if asked: the whole $CLAUDE_CONFIG_DIR/projects/$enc
@@ -136,10 +116,10 @@ if [ -n "${FX_FIXTURE_KEEP:-}" ]; then
   cp -a "$CLAUDE_CONFIG_DIR/projects/$enc/." "$KEEP_DIR/" || fail "keep: could not copy transcripts to $KEEP_DIR"
 fi
 
-# 10. The result, outside the jail.
+# 9. The result, outside the jail.
 mkdir -p "$FX_FIXTURE_OUT" || fail "cannot create $FX_FIXTURE_OUT"
 OUT="$OUT" LABEL="$FX_FIXTURE_LABEL" RUN="$FX_FIXTURE_RUN" FXC="$(git -C "$FX" rev-parse --short=7 HEAD)" \
-PAR="$PARALLEL" MAIN="$ON_MAIN" E="$END" A="$AT_HEAD" M="$MERGE" C="$COST" node -e '
+MAIN="$ON_MAIN" E="$END" A="$AT_HEAD" C="$COST" node -e '
   const env = process.env, end = JSON.parse(env.E), atHead = JSON.parse(env.A);
   const byReview = {};
   for (const t of Object.keys(end)) {
@@ -147,8 +127,8 @@ PAR="$PARALLEL" MAIN="$ON_MAIN" E="$END" A="$AT_HEAD" M="$MERGE" C="$COST" node 
     else if (atHead[t]) byReview[t] = end[t] ? "clean" : "missed";
     else byReview[t] = end[t] ? "caught" : "missed";
   }
-  const result = { label: env.LABEL, run: Number(env.RUN), fxCommit: env.FXC, parallel: env.PAR === "true",
-    builtOnMain: env.MAIN === "true", caughtAtEnd: end, byReview, mergeDefects: Number(env.M), cost: JSON.parse(env.C) };
+  const result = { label: env.LABEL, run: Number(env.RUN), fxCommit: env.FXC,
+    builtOnMain: env.MAIN === "true", caughtAtEnd: end, byReview, cost: JSON.parse(env.C) };
   require("fs").writeFileSync(env.OUT, JSON.stringify(result, null, 2) + "\n", { flag: "wx" });
 ' || fail "could not write $OUT"
 echo "$HARNESS: wrote $OUT" >&2
