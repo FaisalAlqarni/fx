@@ -57,13 +57,17 @@ for (const f of files) {
 
 // A boundary record: a real new coordinator message, not the async plumbing
 // around a tool call. A tool result is every block of an array content typed
-// tool_result; a skill expansion is Claude Code's own isMeta marker for
-// injected content (a loaded skill, a local command's output) that never
-// came from the coordinator either.
+// tool_result. A skill expansion is specifically an isMeta record whose text
+// starts "Base directory for this skill:" (amended 2026-09-23, fix round 2):
+// isMeta alone is not enough, because the coordinator's own fix-round message
+// is isMeta too (a real resumed-agent transcript's record 166, "The
+// coordinator sent a message while you were working: ..."), and that one
+// must end the first reply exactly like a plain user record does.
+const SKILL_EXPANSION = 'Base directory for this skill:';
 function isToolResultOrSkillExpansion(rec) {
-  if (rec.isMeta === true) return true;
   const c = rec.message && rec.message.content;
-  return Array.isArray(c) && c.length > 0 && c.every((b) => b && b.type === 'tool_result');
+  if (Array.isArray(c) && c.length > 0 && c.every((b) => b && b.type === 'tool_result')) return true;
+  return rec.isMeta === true && textOf(rec).startsWith(SKILL_EXPANSION);
 }
 
 // The last assistant text record before the first later user record that is

@@ -12,6 +12,7 @@ const BIN = path.join(__dirname, 'implementer-heads.js');
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-heads-'));
 const ts = (s) => new Date(Date.UTC(2026, 0, 1, 0, 0, s)).toISOString();
 const user = (t, text) => ({ type: 'user', timestamp: ts(t), message: { content: text } });
+const metaUser = (t, text) => ({ type: 'user', timestamp: ts(t), isMeta: true, message: { content: text } });
 const asst = (t, text) => ({ type: 'assistant', timestamp: ts(t), message: { content: [{ type: 'text', text }] } });
 const write = (file, recs) => { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, recs.map((r) => JSON.stringify(r)).join('\n') + '\n'); };
 
@@ -50,7 +51,24 @@ write(path.join(sub, 'e-implementer.jsonl'), [
   asst(95, 'Fixed. Commits ccccccc..ddddddd, see report.'),
 ]);
 
-assert.deepStrictEqual(JSON.parse(execFileSync('node', [BIN, ctl], { encoding: 'utf8' })), { '01': '4444444abc', '03': 'bbbbbbb' });
+// Shaped like a real resumed-agent file (Ruling I, fix round 2): the
+// dispatch is a plain string, no isMeta; a loaded skill is an isMeta record
+// whose text starts "Base directory for this skill:" and must still be
+// skipped; the coordinator's fix-round message is ALSO isMeta but its text
+// is not that marker, so it must end the first reply exactly like a plain
+// user record does. Getting this wrong (skipping every isMeta record) reads
+// the post-fix SHA B instead of the first reply's SHA A.
+write(path.join(sub, 'f-real-shape.jsonl'), [
+  user(200, 'You are implementing task 05: sentinel'),
+  asst(201, 'Loading the skill.'),
+  metaUser(202, 'Base directory for this skill: /some/path/skills/fx-tdd\n\n# fx-tdd\n...'),
+  asst(203, 'Status: DONE. Commits eeeeeee..fffffff, see report.'),
+  metaUser(204, 'The coordinator sent a message while you were working:\nTask 05, fix round 1 of 5'),
+  asst(205, 'Fixed. Commits 1212121..3434343, see report.'),
+]);
+
+assert.deepStrictEqual(JSON.parse(execFileSync('node', [BIN, ctl], { encoding: 'utf8' })),
+  { '01': '4444444abc', '03': 'bbbbbbb', '05': 'fffffff' });
 
 const p = spawnSync('node', [BIN], { encoding: 'utf8' });
 assert.strictEqual(p.status, 2, 'no argument exits 2');
