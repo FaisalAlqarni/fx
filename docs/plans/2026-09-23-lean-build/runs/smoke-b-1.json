@@ -1,0 +1,69 @@
+{
+  "label": "smoke-b",
+  "run": 1,
+  "fxCommit": "c8c08fa",
+  "parallel": false,
+  "builtOnMain": false,
+  "caughtAtEnd": {
+    "path-escape": true,
+    "missing-note-error": true,
+    "readme-example": true,
+    "export-order": true,
+    "search-case": true,
+    "cli-wiring": true
+  },
+  "byReview": {
+    "path-escape": "clean",
+    "missing-note-error": "clean",
+    "readme-example": "clean",
+    "export-order": "clean",
+    "search-case": "clean",
+    "cli-wiring": "clean"
+  },
+  "mergeDefects": 0,
+  "cost": {
+    "controller": {
+      "calls": 61,
+      "tokens": 6373580,
+      "ctxMedian": 104622,
+      "ctxP90": 153048,
+      "tasksCompleted": 7,
+      "ctxGrowthPerTask": 7506.333333333333,
+      "fixRounds": 1
+    },
+    "subagents": {
+      "reviewer": {
+        "count": 7,
+        "tokens": 1673202,
+        "medianMs": 87086
+      },
+      "implementer": {
+        "count": 7,
+        "tokens": 7373583,
+        "medianMs": 84778
+      },
+      "lens": {
+        "count": 6,
+        "tokens": 3523925,
+        "medianMs": 60951.5
+      },
+      "re-review": {
+        "count": 2,
+        "tokens": 532927,
+        "medianMs": 69023.5
+      },
+      "other": {
+        "count": 5,
+        "tokens": 8927218,
+        "medianMs": 61923
+      },
+      "coverage": {
+        "count": 2,
+        "tokens": 602395,
+        "medianMs": 121500
+      }
+    },
+    "wallClockMs": 3360498,
+    "controllerActiveMs": 1119574
+  }
+}
