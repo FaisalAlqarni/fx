@@ -36,7 +36,11 @@ assert.ok(/no Write tool/i.test(reviewSkill), 'Ruling R: fx-review/SKILL.md says
 
 const lensDispatchAt = skill.indexOf('**Lens dispatch.**');
 assert.ok(lensDispatchAt >= 0, 'fx-implement/SKILL.md still has a Lens dispatch paragraph');
-assert.ok(skill.slice(lensDispatchAt, lensDispatchAt + 1500).includes('heredoc'), 'Lens dispatch: the controller records a lens reply with a heredoc, without reasoning over it');
+{
+  const lens = skill.slice(lensDispatchAt, skill.indexOf('The reviewer gets three paths', lensDispatchAt));
+  assert.ok(lens.includes('your Write tool'), 'Lens dispatch: the controller records a lens reply with its Write tool, without reasoning over it');
+  assert.ok(!/<<\s*'?EOF/.test(lens), 'adversarial 3: no heredoc saves a lens reply (a reply line reading EOF ends it and runs the rest)');
+}
 assert.ok(skill.includes('confirmed ⚠️:'), "confirming a ⚠️ is ledgered with the finding's exact text, for the fixer and re-reviewer to read");
 
 assert.ok(!/under 15 lines/.test(read('skills/fx-implement/implementer-prompt.md')), 'implementer: the old 15-line contract is gone');
@@ -46,6 +50,11 @@ for (const f of ['skills/fx-implement/task-reviewer-prompt.md', 'skills/fx-revie
   assert.ok(read(f).includes('## Ledger lines'), `${f}: writes ready-to-copy ledger lines`);
 }
 const loop = read('skills/fx-implement/fix-loop.md');
+// Authoring hard limit: a reference file over 100 lines opens with a table
+// of contents, so a partial read still shows its scope.
+if (loop.split('\n').length > 101) {
+  assert.ok(/^## Contents$/m.test(loop.split('\n').slice(0, 20).join('\n')), 'fix-loop.md: over 100 lines, so it opens with a ## Contents table');
+}
 assert.ok(!/open findings\s+verbatim/i.test(loop), 'fix loop: findings go as a path, not pasted verbatim');
 assert.ok(loop.includes('## Ledger lines'), 'fix loop: ledgers one-liners from the findings file');
 

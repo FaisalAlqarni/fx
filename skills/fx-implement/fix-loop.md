@@ -7,6 +7,14 @@ gap**. A task whose review comes back clean never reaches this file.
 Triggers on: spec ❌, any Critical or Important finding, or a ⚠️ item you
 confirmed as a real gap.
 
+## Contents
+
+- Two routes leave the loop before it starts: Minor and plan-mandated findings
+- A fix round: who fixes in rounds 1 to 3 and 4 to 5, and what counts as open
+- Every round: the fix report, then the scoped re-review and its ledger lines
+- Never fix findings yourself
+- The breaker: adjudicating at the cap, three categories
+
 **Two routes leave the loop before it starts.**
 
 - **Minor findings never enter the loop.** The reviewer already wrote them,

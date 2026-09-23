@@ -528,15 +528,11 @@ task. A lens's `[Critical]` and `[Important]` findings enter the fix loop
 below like any other; its `[Minor]` findings never do (see below).
 
 **A lens has no Write tool and replies with its full findings**, not a
-five-line contract (Ruling, task 08). Record that reply verbatim to
-`docs/plans/<slug>/findings/<NN>-lens-<name>.md` with a heredoc, without
-reasoning over it:
-
-```
-cat > docs/plans/<slug>/findings/<NN>-lens-<name>.md <<'EOF'
-<the lens's full reply, unedited>
-EOF
-```
+five-line contract (Ruling, task 08). Save that reply verbatim with
+your Write tool to `docs/plans/<slug>/findings/<NN>-lens-<name>.md`, the
+reply text as the file content, without reasoning over it. The Write tool
+takes the text as it is, so no line inside the reply can end the file early
+or run as a command.
 
 That path is what the fix loop and the final review read for this lens.
 Never paste the reply itself into the ledger or a later dispatch.
