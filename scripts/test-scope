@@ -21,13 +21,20 @@ function allGateCommands() {
     .map((f) => `node tests/gates/${f}`);
 }
 
+// Tests that need the <main> <worktree> git fixture scripts/check-all builds;
+// run bare they exit 2 before testing anything. lib/git-guard.js is tested by
+// all three.
+const NEEDS_GIT_FIXTURE = new Set(['lib/git-guard.js', 'lib/git-guard.test.js', 'lib/heredoc.test.js', 'lib/base-branch.test.js']);
+
 // Every matching rule contributes, in the order the task specifies; a path
 // can fall into more than one class (lib/preamble.js is both "a .js file
 // with a sibling .test.js" and one of the two files the hooks/plugins rule
 // names explicitly). dedupeKeepLast resolves any overlap in the commands
 // this produces.
 function commandsFor(p) {
-  if (!fs.existsSync(path.join(ROOT, p))) return [];
+  // A deleted path cannot be run, and its gates (check-paths, check-generated
+  // for a deleted skill) are the ones a narrow rule would miss: check-all.
+  if (!fs.existsSync(path.join(ROOT, p)) || NEEDS_GIT_FIXTURE.has(p)) return ['scripts/check-all'];
   const commands = [];
   if (p.endsWith('.test.js')) commands.push(`node ${p}`);
   if (p.endsWith('.js')) {

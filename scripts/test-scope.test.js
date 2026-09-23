@@ -24,7 +24,16 @@ assert.deepStrictEqual(dry('skills/fx-plan/SKILL.md'),
   ['scripts/check-prose', 'scripts/check-paths', 'scripts/check-generated', 'scripts/check-manifest', ...GATES, LAST]);
 assert.deepStrictEqual(dry('hooks/fx-context.js'),
   ['node lib/preamble.test.js', 'node tests/gates/codex-hook-output.test.js', 'node tests/gates/opencode-plugin.test.js', LAST]);
-assert.deepStrictEqual(dry('no/such/file.js'), [LAST], 'a deleted path is skipped');
+// A deleted path cannot be checked by running it, and deleting a skill or a
+// lib file must still reach check-paths and check-generated: check-all.
+assert.deepStrictEqual(dry('no/such/file.js'), ['scripts/check-all', LAST], 'a deleted path falls back to check-all');
+assert.deepStrictEqual(dry('skills/no-such-skill/SKILL.md'), ['scripts/check-all', LAST], 'a deleted skill file falls back to check-all');
+assert.deepStrictEqual(dry('lib/no-such.test.js'), ['scripts/check-all', LAST], 'a deleted test is never run by name');
+// These three need the <main> <worktree> fixture check-all builds; run bare
+// they exit 2 before testing anything.
+for (const p of ['lib/git-guard.js', 'lib/git-guard.test.js', 'lib/heredoc.test.js', 'lib/base-branch.test.js']) {
+  assert.deepStrictEqual(dry(p), ['scripts/check-all', LAST], `${p} needs the git fixture`);
+}
 assert.deepStrictEqual(dry('tests/conformance/lib/live.sh'), ['scripts/check-all', LAST], 'unmapped path falls back to check-all');
 assert.deepStrictEqual(dry('.codex-plugin/plugin.json'), ['node tests/gates/codex-manifest.test.js', LAST], 'codex manifest routes to the gate that reads it');
 assert.deepStrictEqual(dry('.agents/plugins/marketplace.json'), ['node tests/gates/codex-manifest.test.js', LAST], 'marketplace.json routes to the gate that reads it');
