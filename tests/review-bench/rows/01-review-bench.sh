@@ -71,8 +71,23 @@ LEDGER_FILE="$WORK/.review-bench-ledger.md"
 printf '# fx ledger: plan: docs/plans/2026-01-01-notes/plan.md\n\nNo entries yet.\n' > "$LEDGER_FILE" \
   || fail "could not write $LEDGER_FILE"
 
+# [REPORT_FILE] states the truth: the case's own task file (added alongside
+# its implementation at head, review Ruling S) is run for real, and its real
+# `node --test` summary line goes in the report, whichever way it comes out.
+# The planted defects are not what these given tests check, so every case
+# passes except readme-binary, a documented pre-existing gap (task 03's own
+# test needs a "## Usage" heading the fixture's reference README never has);
+# a fabricated pass line would hint that nothing is wrong, which is itself a
+# hint by omission. Neither outcome names the planted defect.
+TEST_PATH="$(printf '%s\n' "$OWNED" | grep '^test/' | head -1)"
+[ -n "$TEST_PATH" ] || fail "no test file recorded as owned for case $CASE"
+TEST_OUTPUT="$(cd "$WORK" && node --test "$TEST_PATH" 2>&1)"
+TEST_SUMMARY="$(printf '%s\n' "$TEST_OUTPUT" | grep -E '^# (pass|fail) ' | tr '\n' ' ')"
+[ -n "$TEST_SUMMARY" ] || fail "could not read a test summary line from node --test $TEST_PATH"
+
 REPORT_FILE="$WORK/.review-bench-report.md"
-printf 'Task %s: done (%s).\n' "$TASK_NUM" "$HEAD_SHA" > "$REPORT_FILE" || fail "could not write $REPORT_FILE"
+printf 'Task %s: done (%s). `node --test %s` run: %s\n' "$TASK_NUM" "$HEAD_SHA" "$TEST_PATH" "$TEST_SUMMARY" \
+  > "$REPORT_FILE" || fail "could not write $REPORT_FILE"
 
 FINDINGS_FILE="$WORK/.review-bench-findings.md"
 
