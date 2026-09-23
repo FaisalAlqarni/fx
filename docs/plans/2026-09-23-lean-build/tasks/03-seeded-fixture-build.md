@@ -107,7 +107,10 @@ names: `lib/store.js` exports `save(name, text)`, `load(name) -> string`,
 `lib/search.js` exports `search(q) -> string[]`; `cli.js` commands
 `add <name> <text>`, `show <name>`, `export`, `search <q>`.
 
-Tasks and traps. The trap sentence sits once in the task's **What to build**
+Tasks and traps. (Ruling K, after the smoke run: path-escape, missing-note-error
+and search-case keep only a weak hint in task prose, and their exact rule and
+error codes live in the fixture design's body, not its Global Constraints. The
+table's sentences below are the original wording.) The trap sentence sits once in the task's **What to build**
 prose; the task's example test and acceptance criteria do not mention it. The
 spec reviewer, which checks the diff against the whole task file, is meant to
 catch it. No fixture file uses the word "trap".
