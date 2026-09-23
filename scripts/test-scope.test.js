@@ -7,9 +7,17 @@ const ROOT = path.join(__dirname, '..');
 const dry = (...paths) => execFileSync(path.join(__dirname, 'test-scope'), ['--dry-run', ...paths], { cwd: ROOT, encoding: 'utf8' }).trim().split('\n');
 const LAST = 'node tests/gates/release-version.test.js';
 
+const HOOKS_RULE = ['node lib/preamble.test.js', 'node tests/gates/codex-hook-output.test.js', 'node tests/gates/opencode-plugin.test.js'];
 assert.deepStrictEqual(dry('lib/plan-state.test.js'), ['node lib/plan-state.test.js', LAST]);
-assert.deepStrictEqual(dry('lib/plan-state.js'), ['node lib/plan-state.test.js', LAST]);
-assert.deepStrictEqual(dry('lib/plan-state.js', 'lib/plan-state.test.js'), ['node lib/plan-state.test.js', LAST], 'deduplicated');
+// lib/plan-state.js matches both the .js-with-sibling rule and the
+// hooks/plugins/preamble/plan-state rule; both apply (task 12 fix round 2).
+assert.deepStrictEqual(dry('lib/plan-state.js'), ['node lib/plan-state.test.js', ...HOOKS_RULE, LAST]);
+assert.deepStrictEqual(dry('lib/plan-state.js', 'lib/plan-state.test.js'),
+  [...HOOKS_RULE, 'node lib/plan-state.test.js', LAST], 'deduplicated');
+// lib/preamble.js matches the same two rules; its own sibling test is also
+// the hooks rule's first command, so dedup keeps one copy at the hooks
+// rule's position.
+assert.deepStrictEqual(dry('lib/preamble.js'), [...HOOKS_RULE, LAST]);
 const GATES = require('fs').readdirSync(path.join(ROOT, 'tests', 'gates')).filter((f) => f.endsWith('.test.js')).sort()
   .map((f) => `node tests/gates/${f}`).filter((c) => c !== LAST);
 assert.deepStrictEqual(dry('skills/fx-plan/SKILL.md'),

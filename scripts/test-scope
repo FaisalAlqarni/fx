@@ -21,34 +21,42 @@ function allGateCommands() {
     .map((f) => `node tests/gates/${f}`);
 }
 
-// First matching rule wins, in the order the task specifies.
+// Every matching rule contributes, in the order the task specifies; a path
+// can fall into more than one class (lib/preamble.js is both "a .js file
+// with a sibling .test.js" and one of the two files the hooks/plugins rule
+// names explicitly). dedupeKeepLast resolves any overlap in the commands
+// this produces.
 function commandsFor(p) {
   if (!fs.existsSync(path.join(ROOT, p))) return [];
-  if (p.endsWith('.test.js')) return [`node ${p}`];
+  const commands = [];
+  if (p.endsWith('.test.js')) commands.push(`node ${p}`);
   if (p.endsWith('.js')) {
     const sibling = `${p.slice(0, -'.js'.length)}.test.js`;
-    if (fs.existsSync(path.join(ROOT, sibling))) return [`node ${sibling}`];
+    if (fs.existsSync(path.join(ROOT, sibling))) commands.push(`node ${sibling}`);
   }
-  if (p.endsWith('.test.sh')) return [`bash ${p}`];
+  if (p.endsWith('.test.sh')) commands.push(`bash ${p}`);
   if (p.startsWith('skills/') || p.startsWith('agents/') || p.startsWith('commands/') || p.endsWith('.md')) {
-    return ['scripts/check-prose', 'scripts/check-paths', 'scripts/check-generated', 'scripts/check-manifest', ...allGateCommands()];
+    commands.push('scripts/check-prose', 'scripts/check-paths', 'scripts/check-generated', 'scripts/check-manifest', ...allGateCommands());
   }
+  // lib/preamble.js and lib/plan-state.js also match the .js-with-sibling
+  // rule above; both rules apply here (task 12 fix round 2, controller-named
+  // check: the sibling rule was short-circuiting this one).
   if (p.startsWith('hooks/') || p.startsWith('plugins/') || p === 'lib/preamble.js' || p === 'lib/plan-state.js') {
-    return ['node lib/preamble.test.js', 'node tests/gates/codex-hook-output.test.js', 'node tests/gates/opencode-plugin.test.js'];
+    commands.push('node lib/preamble.test.js', 'node tests/gates/codex-hook-output.test.js', 'node tests/gates/opencode-plugin.test.js');
   }
   const base = path.basename(p);
   // codex-manifest.test.js is the only gate that reads .codex-plugin/plugin.json
   // and any marketplace.json (it cross-checks them against the Claude manifest);
   // scripts/check-manifest never opens either (Critical 2, task 12 fix round 1).
   if (p.startsWith('.codex-plugin/') || base === 'marketplace.json') {
-    return ['node tests/gates/codex-manifest.test.js'];
-  }
-  if (p.startsWith('.claude-plugin/')) {
-    return ['scripts/check-manifest'];
+    commands.push('node tests/gates/codex-manifest.test.js');
+  } else if (p.startsWith('.claude-plugin/')) {
+    commands.push('scripts/check-manifest');
   }
   // Unsure which class a path is in: run scripts/check-all, per the task's own
   // rule. A missed gate is the failure that matters (Critical 1, fix round 1).
-  return ['scripts/check-all'];
+  if (commands.length === 0) commands.push('scripts/check-all');
+  return commands;
 }
 
 // Keeps only the last occurrence of each command, so the unconditional
