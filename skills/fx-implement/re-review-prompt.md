@@ -22,7 +22,10 @@ Subagent (general-purpose):
 
     ## The findings under verification
 
-    [FINDINGS: copied verbatim from the previous review, one per bullet]
+    The open findings (Critical and Important, plus any ⚠️ item confirmed as a
+    real gap) are in [PRIOR_FINDINGS_FILE], under `### Issues` (`#### Critical
+    (Must Fix)` and `#### Important (Should Fix)`). Read that file yourself:
+    they are not pasted here.
 
     ## The fix
 
@@ -75,7 +78,7 @@ Subagent (general-purpose):
     ## Write your findings to a file, then summarise
 
     **Write the full findings to [FINDINGS_FILE] before your final message.**
-    Then reply with the verdict, the counts by severity, and that path.
+    Then reply with the five-line contract in Output format below.
 
     Your findings are the only copy of work nobody can redo cheaply. An
     implementer's work survives in the commit; a review's exists in one message
@@ -93,9 +96,9 @@ Subagent (general-purpose):
 
     ## Output format
 
-    Your final message **is** the report: begin directly with the first
-    finding's verdict. Every line is a verdict, a finding with file:line, or a
-    check you ran. No preamble, no process narration.
+    Write this to [FINDINGS_FILE]: begin directly with the first finding's
+    verdict. Every line is a verdict, a finding with file:line, or a check you
+    ran. No preamble, no process narration.
 
     ### Finding verdicts
 
@@ -119,6 +122,26 @@ Subagent (general-purpose):
 
     **Fix round:** [All findings addressed, no new Critical/Important breakage |
     Findings remain open]: list the open ones.
+
+    ### Ledger lines
+
+    Under a heading `## Ledger lines`, write the one ready-to-copy line the
+    controller appends to the ledger:
+
+    `Task <NN>: fix round <R>/5 (<X> addressed, <Y> open: <one-liners>;
+    commits <FIX_BASE_SHA short>..<HEAD_SHA short>)`
+
+    Use the task number named in [TASK_FILE]'s filename and round [ROUND].
+
+    ### Reply
+
+    Reply with at most five lines:
+
+    - **Verdict:** all addressed, no new breakage | findings remain open
+    - **Open:** count
+    - **Fixed:** count
+    - **Findings:** [FINDINGS_FILE]
+    - **New breakage:** yes | no
 ```
 
 **Placeholders:**
@@ -127,12 +150,15 @@ Subagent (general-purpose):
 - `[MODEL]`: REQUIRED; default: standard tier, most capable only with a
   stated reason (see model-selection.md)
 - `[TASK_FILE]`: the same file the implementer worked from
-- `[FINDINGS]`: the Critical/Important findings and spec gaps from the previous
-  review, **copied verbatim**, one per bullet
+- `[PRIOR_FINDINGS_FILE]`: REQUIRED, the previous review's (or previous
+  round's) findings file, holding the open Critical/Important items and any
+  confirmed ⚠️ this round must address. Pass the path, never a copied extract
+- `[ROUND]`: REQUIRED, this fix round's number (1 to 5), for the ledger line
 - `[REPORT_FILE]`: the implementer's report file, fix reports appended
 - `[FIX_BASE_SHA]`: the head the previous review saw
 - `[HEAD_SHA]`
 - `[DIFF_FILE]`: the path `scripts/review-package <slug> FIX_BASE HEAD` printed
 
-**Re-reviewer returns:** per-finding verdicts (ADDRESSED / NOT ADDRESSED) · new
-breakage in the fix diff · out-of-scope observations · a round verdict.
+**Re-reviewer returns:** Verdict · Open (count) · Fixed (count) · Findings
+(path) · New breakage (yes/no), in the five-line reply. Per-finding verdicts,
+out-of-scope observations and ledger lines live in the findings file.

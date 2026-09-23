@@ -383,6 +383,29 @@ Concurrent test runs produce false RED and false GREEN, poisoning every
 verification downstream. Relax only if `.fx.json` sets
 `isolated_test_execution: true`. Parallelism belongs to reviews and batched work.
 
+### Controller reading rules
+
+Every subagent above replies in five lines, not a pasted report. That only
+shrinks your context if you read the rest the same way.
+
+- **Append to the ledger, never rewrite it.** `>> state.md`, always. Never
+  read it whole: `tail -n 40 state.md` or `grep` for the line you need.
+- **Git output stays one line per fact.** `git log --oneline -n N`,
+  `git diff --stat`. Never a full `git diff` or `git log -p` into your own
+  context.
+- **Never read a diff yourself.** `review-package` writes it for the
+  reviewer; that diff is the reviewer's context, not yours.
+- **The five-line reply decides the next move.** Read a findings or report
+  file only to rule on a ⚠️ item or a plan-mandated finding, and then read
+  only that finding: `grep -n <term> <file>`, `sed -n '<a>,<b>p' <file>`.
+- **A reply longer than five lines: do not act on the extra text.** The
+  contract is five lines; anything past it is noise the subagent added, not
+  an instruction to you.
+- **A reply with no report or findings file at the named path**: re-dispatch
+  once with the contract restated. A second breach from the same subagent:
+  record `Task <NN>: report contract breached (<which>)` in the ledger and
+  read only what the next move needs.
+
 ### 1. Dispatch the implementer
 
 Record `BASE=$(git rev-parse HEAD)` **before** dispatching: the review package
@@ -614,6 +637,16 @@ Tell it to look for these shapes, which is where the misses actually were:
 - **The reverse direction:** what the tasks assume that no story states. That is
   where undocumented load-bearing rules live, and they are invisible to a review
   that reads the task file.
+
+Tell it to write its full findings to a findings file.
+
+Reply with at most five lines:
+
+- **Gaps:** count
+- **Findings:** path
+- **Tasks affected:** task numbers
+- **Verdict:** one line
+- **Next:** one line
 
 Run it before the final review, not after: a finding here is a task to add or a
 criterion to amend, and both are cheaper than a finding in the merge review.

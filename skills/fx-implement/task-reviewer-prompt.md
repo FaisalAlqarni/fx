@@ -206,10 +206,9 @@ Subagent (general-purpose):
     would otherwise answer with a bare "yes". A tight report that cites lines
     gives the controller everything it needs.
 
-    Your final message is the **summary**: the verdict, the counts, and the
-    path to [FINDINGS_FILE]. Begin directly with the
-    spec-compliance verdict. Every line is a verdict, a finding with file:line,
-    or a check you ran. No preamble, no process narration, no closing summary.
+    Write to [FINDINGS_FILE], beginning directly with the spec-compliance
+    verdict. Every line is a verdict, a finding with file:line, or a check you
+    ran. No preamble, no process narration, no closing summary.
 
     ## Calibration
 
@@ -233,7 +232,7 @@ Subagent (general-purpose):
     ## Write your findings to a file, then summarise
 
     **Write the full findings to [FINDINGS_FILE] before your final message.**
-    Then reply with the verdict, the counts by severity, and that path.
+    Then reply with the five-line contract in Output format below.
 
     Your findings are the only copy of work nobody can redo cheaply. An
     implementer's work survives in the commit; a review's exists in one message
@@ -274,6 +273,26 @@ Subagent (general-purpose):
 
     **Task quality:** [Approved | Needs fixes]
     **Reasoning:** [1 to 2 sentences, technical.]
+
+    ### Ledger lines
+
+    Under a heading `## Ledger lines`, write one ready-to-copy line per Minor
+    finding, in the exact form the fix loop ledgers:
+
+    `Task <NN>: minor (deferred): <one-liner>`
+
+    Use the task number named in [TASK_FILE]'s filename. The controller
+    appends these to the ledger with `grep`, never by reading your findings.
+
+    ### Reply
+
+    Reply with at most five lines:
+
+    - **Spec:** ✅ | ❌ | ⚠️ (count)
+    - **Quality:** approved | changes requested
+    - **C/I/M:** `<critical>/<important>/<minor>`
+    - **Findings:** [FINDINGS_FILE]
+    - **Ready:** yes | no | with fixes
 ```
 
 **Placeholders:**
@@ -294,5 +313,6 @@ Subagent (general-purpose):
 - `[DIFF_FILE]`: REQUIRED, the path `scripts/review-package` printed. The
   package never enters the controller's context
 
-**Reviewer returns:** spec verdict (✅/❌/⚠️) · strengths · issues
-(Critical/Important/Minor) · task-quality verdict.
+**Reviewer returns:** Spec · Quality · C/I/M · Findings (path) · Ready, in the
+five-line reply. Strengths, issues and Minor ledger lines live in the
+findings file.

@@ -342,15 +342,13 @@ Subagent (general-purpose):
       controller cannot tell them apart
     - Concerns
 
-    Then reply with ONLY this, under 15 lines: the detail lives in the file:
+    The detail lives in [REPORT_FILE]. Reply with at most five lines:
 
     - **Status:** DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
-    - Commits created (short SHA + subject)
-    - Any instruction you did not follow as written, in one line each
-    - One-line test summary ("14/14 passing, output pristine")
-    - Files changed (paths only)
-    - Concerns, if any
-    - The report file path
+    - **Commits:** `<base7>..<head7>`
+    - **Tests:** one line ("14/14 passing, output pristine")
+    - **Report:** [REPORT_FILE]
+    - **Concerns:** count; detail in the report
 
     If BLOCKED or NEEDS_CONTEXT, put the specifics in this final message:
     the controller acts on it directly.
@@ -364,5 +362,6 @@ Subagent (general-purpose):
 **Placeholders:** `[MODEL]` `[NN]` `[TASK_FILE]` `[REPORT_FILE]` `[STACK]`
 `[WORKTREE_PATH]` `[GLOBAL_CONSTRAINTS]` and the Context block.
 
-**Implementer returns:** status · commits · one-line test summary · files
-changed · concerns · report path.
+**Implementer returns:** status · commits · one-line test summary · concerns
+count · report path. Files changed live in the report; the reply stays five
+lines.
