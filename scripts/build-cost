@@ -81,12 +81,53 @@ function dedupCalls(records, file) {
   return calls;
 }
 
-function isLedgerWrite(block) {
+// Post-task-08 fix-loop dispatches copy ledger lines with
+// `sed ... | grep '^Task ' | tee -a state.md`: no '>>' in the command, and no
+// ledger text in it either, since the text is produced by running it against
+// the findings file, not written in the command string. The harness records
+// what a Bash call actually changed as toolUseResult.bashEditDiff on the
+// sibling tool_result record; this reads the real appended lines from there,
+// covering `tee -a`, a shell loop with variable expansion, or anything else
+// a command could do to the file.
+function stateMdAddedLines(bashEditDiff) {
+  if (!bashEditDiff || !Array.isArray(bashEditDiff.files)) return '';
+  const file = bashEditDiff.files.find((f) => (f.filePath || '').endsWith('state.md'));
+  if (!file) return '';
+  const added = [];
+  for (const hunk of file.hunks || []) {
+    for (const line of hunk.lines || []) {
+      if (line.startsWith('+')) added.push(line.slice(1));
+    }
+  }
+  return added.join('\n');
+}
+
+// Maps a Bash tool_use id to the state.md text it actually added, read from
+// the tool_result record's toolUseResult.bashEditDiff.
+function buildLedgerDiffMap(records) {
+  const map = new Map();
+  for (const rec of records) {
+    if (rec.type !== 'user') continue;
+    const tur = rec.toolUseResult;
+    if (!tur || !tur.bashEditDiff) continue;
+    const text = stateMdAddedLines(tur.bashEditDiff);
+    if (!text) continue;
+    const content = rec.message && rec.message.content;
+    if (!Array.isArray(content)) continue;
+    for (const b of content) {
+      if (b && b.type === 'tool_result' && b.tool_use_id) map.set(b.tool_use_id, text);
+    }
+  }
+  return map;
+}
+
+function isLedgerWrite(block, diffMap) {
   if (!block || block.type !== 'tool_use') return false;
   const input = block.input || {};
   if (block.name === 'Bash') {
     const cmd = input.command || '';
-    return cmd.includes('>>') && cmd.includes('state.md');
+    if (cmd.includes('>>') && cmd.includes('state.md')) return true;
+    return diffMap.has(block.id);
   }
   if (block.name === 'Edit' || block.name === 'Write') {
     return (input.file_path || '').endsWith('state.md');
@@ -94,9 +135,9 @@ function isLedgerWrite(block) {
   return false;
 }
 
-function ledgerText(block) {
+function ledgerText(block, diffMap) {
   const input = block.input || {};
-  return [input.command, input.new_string, input.content].filter(Boolean).join('\n');
+  return [input.command, input.new_string, input.content, diffMap.get(block.id)].filter(Boolean).join('\n');
 }
 
 const COMPLETE_RE = /Task (\d\d): complete \(commits/g;
@@ -106,15 +147,15 @@ const FIX_ROUND_RE = /Task (\d\d): fix round (\d)\/5/g;
 // ctxGrowthPerTask: context spread between the first and last completion
 // call, in the order tasks were completed.
 // fixRounds: per task, the highest round seen, summed over tasks.
-function analyzeLedger(calls) {
+function analyzeLedger(calls, diffMap) {
   const completions = [];
   const seen = new Set();
   const fixMax = new Map();
 
   for (const call of calls) {
     for (const block of call.content) {
-      if (!isLedgerWrite(block)) continue;
-      const text = ledgerText(block);
+      if (!isLedgerWrite(block, diffMap)) continue;
+      const text = ledgerText(block, diffMap);
       let m;
       COMPLETE_RE.lastIndex = 0;
       while ((m = COMPLETE_RE.exec(text))) {
@@ -170,9 +211,14 @@ function textOf(rec) {
 function classify(records) {
   const firstUser = records.find((r) => r.type === 'user');
   const text = firstUser ? textOf(firstUser) : '';
-  if (/You are re-reviewing/.test(text)) return 're-review';
-  if (/You are reviewing/.test(text) || /You are a senior code reviewer/.test(text)) return 'reviewer';
-  if (/You are implementing task/.test(text)) return 'implementer';
+  // Task 08 wraps these dispatches as "your operating rules are the <role>
+  // template at <path>" rather than pasting the template's own opening line,
+  // so the narrower, role-naming forms are checked before the generic ones.
+  if (/You are re-reviewing/.test(text) || /re-review template/i.test(text) || /scoped re-reviewer/i.test(text)) return 're-review';
+  if (/You are reviewing/.test(text) || /You are a senior code reviewer/.test(text)
+    || /task reviewer template/i.test(text) || /branch reviewer template/i.test(text)
+    || /broad whole-branch reviewer/i.test(text)) return 'reviewer';
+  if (/You are implementing task/.test(text) || /You are the implementer for task/.test(text)) return 'implementer';
   if (/coverage audit/i.test(text)) return 'coverage';
   if (/security|database|accessibility|a11y|silent.failure|pipeline/i.test(text)) return 'lens';
   return 'other';
@@ -196,7 +242,8 @@ function main() {
 
   const controllerCalls = dedupCalls(records, file);
   const contexts = controllerCalls.map((c) => (c.usage ? c.usage.context : 0));
-  const { tasksCompleted, ctxGrowthPerTask, fixRounds } = analyzeLedger(controllerCalls);
+  const ledgerDiffMap = buildLedgerDiffMap(records);
+  const { tasksCompleted, ctxGrowthPerTask, fixRounds } = analyzeLedger(controllerCalls, ledgerDiffMap);
 
   const callTimestamps = controllerCalls.map((c) => new Date(c.timestamp).getTime()).sort((a, b) => a - b);
   let controllerActiveMs = 0;

@@ -768,6 +768,16 @@ plan in a later session's preamble.
 Plan complete: tasks <first> to <last> complete, <K> parked, final review <clean|fixed>
 ```
 
+**Commit it yourself, now.** This is the last write of the build: no task
+commit and no subagent dispatch follows it to carry `state.md` along. An
+appended line nobody commits never leaves the worktree, so the plan reads as
+unfinished on the base branch after merge.
+
+```
+git add docs/plans/<slug>/state.md
+git commit -m "docs(plan): record plan completion"
+```
+
 ## Completion report
 
 You do not integrate the work. You report it, then **offer the choice and

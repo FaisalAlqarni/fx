@@ -95,4 +95,17 @@ assert.ok(loop.includes('[Critical]') && loop.includes('[Important]'), 'fix loop
 assert.ok(rr.includes('[Critical]') && rr.includes('[Important]'), 're-review: routes lens findings by their own Critical/Important tags');
 assert.ok(skill.slice(lensDispatchAt, lensDispatchAt + 2000).includes('[Minor]'), 'Lens dispatch: the controller ledgers a lens\'s own Minor findings itself');
 
+// G1: the plan-complete line is the last write of the build, after the last
+// task commit, so nothing else carries state.md into git. The section must
+// commit it itself, not just append the line.
+{
+  const at = skill.indexOf('## Write the plan-complete line');
+  assert.ok(at >= 0, 'fx-implement has a Write the plan-complete line section');
+  const nextAt = skill.indexOf('## Completion report');
+  assert.ok(nextAt > at, 'the plan-complete section comes before the completion report');
+  const section = skill.slice(at, nextAt);
+  assert.ok(/git commit/.test(section), 'plan-complete section: commits the ledger itself');
+  assert.ok(/git add .*state\.md/.test(section), 'plan-complete section: stages state.md before committing');
+}
+
 console.log('return-contract: ok');

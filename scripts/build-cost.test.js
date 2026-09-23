@@ -144,5 +144,72 @@ for (const [label, file] of [['missing', path.join(root, 'nope.jsonl')], ['empty
   assert.deepStrictEqual(r6.subagents, {}, 'empty subagent file: legitimate skip, no error');
 }
 
+// G2, post-task-08 shape 1: the fix loop now copies ledger lines with
+// `sed ... | grep '^Task ' | tee -a state.md`, which has no literal '>>' and
+// no ledger text at all in the command string; the real appended text only
+// exists in the command's effect, which the harness records as
+// toolUseResult.bashEditDiff on the sibling tool_result record. build-cost
+// must read that diff to see the completion and fix-round lines it produced.
+{
+  const ctl7 = path.join(root, 's7.jsonl');
+  const teeCmd = "sed -n '/^## Ledger lines/,/^## /p' findings/07-rereview-1.md | grep '^Task ' | tee -a state.md";
+  const toolUseId = 'toolu_tee7';
+  const bashBlock = { type: 'tool_use', id: toolUseId, name: 'Bash', input: { command: teeCmd } };
+  fs.mkdirSync(root, { recursive: true });
+  fs.writeFileSync(ctl7, [
+    JSON.stringify({ type: 'user', timestamp: '2026-01-01T00:00:00.000Z', message: { content: 'go' } }),
+    JSON.stringify(asst(1, 'r1', 1000, [bashBlock])),
+    JSON.stringify({
+      type: 'user',
+      timestamp: '2026-01-01T00:00:02.000Z',
+      message: { content: [{ type: 'tool_result', tool_use_id: toolUseId, content: "Task 07: fix round 1/5 (1 addressed, 0 open: none; commits a..b)\nTask 07: complete (commits a..b, review clean)" }] },
+      toolUseResult: {
+        stdout: "Task 07: fix round 1/5 (1 addressed, 0 open: none; commits a..b)\nTask 07: complete (commits a..b, review clean)",
+        bashEditDiff: {
+          files: [{
+            filePath: '/work/docs/plans/x/state.md',
+            hunks: [{ oldStart: 10, oldLines: 1, newStart: 10, newLines: 3, lines: [
+              ' Task 07: file check clean',
+              '+Task 07: fix round 1/5 (1 addressed, 0 open: none; commits a..b)',
+              '+Task 07: complete (commits a..b, review clean)',
+            ] }],
+          }],
+        },
+      },
+    }) + '\n',
+  ].join('\n') + '\n');
+  const r7 = JSON.parse(execFileSync(BIN, [ctl7, '--json'], { encoding: 'utf8' }));
+  assert.strictEqual(r7.controller.tasksCompleted, 1, 'tee -a copy form: completion line read from the bash edit diff');
+  assert.strictEqual(r7.controller.fixRounds, 1, 'tee -a copy form: fix round line read from the bash edit diff');
+}
+
+// G2, post-task-08 shape 2: the controller now wraps reviewer, re-review and
+// fix-round implementer dispatches in prose that never says the old opening
+// lines classify() looked for, so every one of them fell into 'other'.
+{
+  const ctl8 = path.join(root, 's8.jsonl');
+  write(ctl8, [asst(1, 'r1', 100, [{ type: 'text', text: 'hi' }])]);
+  const subDir8 = path.join(root, 's8', 'subagents');
+  const cases = [
+    ['reviewer-a.jsonl', 'reviewer', 'Your operating rules are the task reviewer template at /x/reviewer-rules.md. Read it in full.'],
+    ['reviewer-b.jsonl', 'reviewer', 'Your operating rules are the branch reviewer template at /x/reviewer-rules.md. Read it in full.'],
+    ['reviewer-c.jsonl', 'reviewer', 'You are the broad whole-branch reviewer. Your standing instructions are in /x.'],
+    ['rereview-a.jsonl', 're-review', 'Your operating rules are the re-review template at /x/rereview-rules.md. Read it in full.'],
+    ['rereview-b.jsonl', 're-review', 'You are the scoped re-reviewer for task 07, fix round 1. Your standing instructions are the prompt block.'],
+    ['implementer-fixround.jsonl', 'implementer', 'You are the implementer for task 07 (Note store), fix round 1 of 5. A previous implementer built it.'],
+  ];
+  for (const [file, , text] of cases) {
+    write(path.join(subDir8, file), [
+      { type: 'user', timestamp: '2026-01-01T00:00:00.000Z', message: { content: text } },
+      asst(1, `x-${file}`, 10, []),
+    ]);
+  }
+  const r8 = JSON.parse(execFileSync(BIN, [ctl8, '--json'], { encoding: 'utf8' }));
+  assert.strictEqual(r8.subagents.reviewer.count, 3, 'reviewer wrapper phrasings all classify as reviewer');
+  assert.strictEqual(r8.subagents['re-review'].count, 2, 're-review wrapper phrasings all classify as re-review');
+  assert.strictEqual(r8.subagents.implementer.count, 1, 'fix-round implementer phrasing classifies as implementer');
+  assert.ok(!r8.subagents.other, 'none of the six wrapper phrasings falls into other');
+}
+
 fs.rmSync(root, { recursive: true, force: true });
 console.log('build-cost: ok');
