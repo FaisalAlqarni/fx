@@ -1,7 +1,7 @@
 provider: claude_cli
-model: claude_cli/claude-sonnet-5
+model: claude_cli/claude-haiku-4-5
 embedder: mock
-commit_limit: 500
+commit_limit: 10000
 reasoning: auto
 distill:
   commands:
@@ -9,3 +9,5 @@ distill:
 hooks:
   read_skeleton: true
   search_digest: true
+editor_files:
+  agents_md: true

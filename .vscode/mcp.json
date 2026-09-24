@@ -5,6 +5,7 @@
       "command": "repowise",
       "args": [
         "mcp",
+        "/development/fx",
         "--transport",
         "stdio"
       ],
