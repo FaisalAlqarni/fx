@@ -160,31 +160,82 @@ and the 20-line cap is what keeps it one.
 
 ## 5. Defaults that stick
 
-### 5a. Model check on dispatch
+### 5a. Model routing on all three runtimes
 
-**Claude Code.** `hooks/fx-pretooluse.js` gains a branch for the dispatch tool
-(`Agent`, and `Task` for older versions):
+**Why per-call choice cannot work.** On Codex a role's `model` overrides the
+`spawn_agent` argument (`multi_agents_v2/spawn.rs:128-143` at `rust-v0.155.1`).
+OpenCode's `task` tool has no model argument; a subagent with no pinned model
+inherits the parent's (`tool/task.ts:43-60,181-184` at `v1.18.25`). So the
+tier must live in the agent definition, and the dispatch picks the agent.
 
-- no `model` and a `subagent_type` that does not pin one in frontmatter (fx's
-  six agents pin theirs) → deny: "set model explicitly (haiku, sonnet or opus;
-  see model-selection)".
-- `model: opus` and the prompt carries no line starting `Opus because:` →
-  deny, naming the qualifying reasons from `references/vocab/model-selection.md`.
-- Hook error → allow. This is advice-class, like the lane check: fail open.
+**Four new fx roles**, one file each in `agents/`, tier pinned in frontmatter:
 
-It applies to every dispatch in a session with fx installed, which matches the
-owner's standing rule to route models explicitly.
+| Role | Tier | Used for |
+|---|---|---|
+| `fx-implementer` | standard | implementer, fix rounds 1 to 3 (resumed) |
+| `fx-implementer-capable` | most capable | fix rounds 4 to 5, end-pass fixer when a Critical is in the wave |
+| `fx-reviewer` | standard | task review, scoped re-review |
+| `fx-reviewer-capable` | most capable | the branch reviewer |
 
-**Codex.** Hooks see `spawn_agent` but its contents are encrypted
-(`references/harnesses/codex.md:16-22`), so no check is possible. The plan
-includes one research task: does a Codex role TOML accept a model key? If yes,
-`scripts/gen-codex-agents` carries each agent's pinned model through; if no,
-`references/harnesses/codex.md` states the gap in a "Model tiers" section.
+Each body is short: follow the dispatch prompt, which stays in the existing
+templates. The templates change `Subagent (general-purpose)` plus a `model:`
+line to the role name. The reviewers run tests and read-only git, so they are
+**not** in the read-only class: read-only is instructed in their prompt, not
+enforced. Writers and reviewers get their own list, separate from
+`deriveReadOnlyAgents()` (`lib/plant-roles.js:35-42`), `READ_ONLY_AGENTS`
+(`plugins/fx.js:131`) and `is_read_only()` (`scripts/gen-codex-agents:57-60`).
+This supersedes ADR-0019 and ADR-0028 in part.
 
-**OpenCode.** `plugins/fx.js`'s `tool.execute.before` sees `task` calls. The
-same research task settles whether `task` args carry a model and whether
-`toOpencodeAgent` can carry frontmatter `model`. Enforce what the runtime
-exposes; state the rest in `references/harnesses/opencode.md`.
+**Tier to model, with no hardcoded names** (names differ per account and
+provider):
+
+| Tier | Claude Code | Codex | OpenCode |
+|---|---|---|---|
+| cheapest | `haiku` | user's `model`, effort `low` | `small_model`, else `model` |
+| standard | `sonnet` | user's `model`, effort `medium` | `model` |
+| most capable | `opus` | user's `model`, effort `high` | `model` plus a capable `variant` if the provider has one |
+
+On Codex, `plantRoles()` reads the user's `model` from `$CODEX_HOME/config.toml`
+at plant time and writes `model` and `model_reasoning_effort` into each role
+TOML; the committed `codex/agents/` files stay model-free so `check-generated`
+still byte-matches. On OpenCode, the plugin `config` hook sets `model` (and
+`variant`) on each fx agent, and leaves alone any agent the user already
+configured in `opencode.json` (ADR-0026: the user's answer wins). The six
+existing lenses and devil's advocate get the same treatment: their frontmatter
+tiers are dropped by both converters today.
+
+**The check, per runtime.** Each denies a dispatch whose model is not pinned,
+fails open on a hook error, and names the fix in its message.
+
+- **Claude Code**, `hooks/fx-pretooluse.js` on `Agent` (and `Task`): deny when
+  there is no `model` and the `subagent_type` pins none.
+- **Codex**, `hooks/fx-codex.js` on `spawn_agent`: deny when `agent_type` is
+  missing or not a planted role. The hook receives the raw JSON arguments
+  (`tools/registry.rs:129-138`); the encryption fx recorded applies to the
+  message delivered to the child, not to the hook payload. A live probe must
+  confirm this before the deny ships (§11).
+- **OpenCode**, `plugins/fx.js` `tool.execute.before` on `task`: throw when
+  `subagent_type` names an agent with no pinned model after the config hook.
+  If the user has no `model` configured at all, fx cannot resolve a tier and
+  the throw says so.
+
+**Most capable needs a reason.** A dispatch to `fx-*-capable`, or with
+`model: opus` on Claude Code, is denied unless the prompt has a line starting
+`Capable because:` with one of the qualifying reasons from
+`references/vocab/model-selection.md`. Claude Code and OpenCode see the
+prompt; on Codex this part ships only if the probe shows the message is
+readable by the hook.
+
+**Scope, stated.** Each check covers every dispatch in a session with fx
+installed, including the user's own `general-purpose`, `general`, `explore`
+and Codex forks: a hook cannot tell fx's dispatches from the user's. That
+matches the owner's standing rule to route models explicitly.
+
+**Limits that remain.** Codex runs plugin hooks only after the user trusts
+them, and a newly planted role is usable after one Codex restart (both already
+in `INSTALL.md`). A tier map naming a model the account lacks fails at the API,
+not at plant time. The installed `opencode` here is v2.0.18 while fx is
+measured against 1.18.25; the probe runs on the installed version.
 
 ### 5b. Standing rulings
 
@@ -295,8 +346,8 @@ owns.
   caveats verbatim in substance, and the plain statement that the new defaults
   are not yet measured. Figures come only from `fx-cost.py` output and the
   `/usage` report, each cited.
-- "Always on": the model check and the companions line, with the Codex and
-  OpenCode limits as settled by §5a's research task.
+- "Always on": the fx roles and the dispatch check per runtime, the tier
+  table from §5a, and the companions line.
 
 ## 10. ADRs
 
@@ -304,12 +355,13 @@ owns.
 |---|---|
 | 0029 | Per-task review is the reviewer plus a tripwire; lenses and devil's advocate run at the end |
 | 0030 | Small fixes are re-reviewed by the controller; the baseline suite is dropped |
-| 0031 | Defaults are held by mechanism: the dispatch model check and standing rulings |
+| 0031 | Defaults are held by mechanism: tier-pinned fx roles, the dispatch check on three runtimes, standing rulings |
 | 0032 | The preamble carries a conditional companion-tools line |
 | 0033 | fx-brainstorm ends its interview with a confidence check |
 | 0034 | External review, security and design content absorbed; ADR-0012 amended |
 
-0029 supersedes the lean-build clause; 0034 marks ADR-0012's motion paragraph
+0029 supersedes the lean-build clause; 0031 supersedes ADR-0019 and ADR-0028
+in part (writer and reviewer roles are not read-only); 0034 marks ADR-0012's motion paragraph
 superseded and adds SEO and paid web search to its no's.
 
 ## 11. Verification
@@ -324,6 +376,13 @@ superseded and adds SEO and paid web search to its no's.
   paths`, `your Write tool`, `confirmed ⚠️:`). Edits keep these strings.
 - Agent edits are followed by `scripts/gen-codex-agents`, then
   `scripts/check-generated`.
+- **Live probes, first plan task, one per runtime** (spend quota, run by
+  hand like the existing live conformance rows): Codex PreToolUse receives
+  `agent_type` and `model` for `spawn_agent`, and a planted role's model is
+  the one that runs; OpenCode `tool.execute.before` sees `task` args and the
+  config-hook model is the one that runs; Claude Code the deny fires. A probe
+  that fails stops that runtime's check from shipping and comes back to the
+  owner.
 - **Build measurement.** The next real fx-implement build is measured with
   `fx-cost.py` and compared with the table above. Targets: non-tripwire tasks
   run exactly two agents (implementer, reviewer) plus fix rounds; zero
@@ -338,5 +397,6 @@ superseded and adds SEO and paid web search to its no's.
 - [x] Keep defaults in force → mechanism on three runtimes (R4)
 - [x] Companion tools → built-in, conditional, overridable (R5)
 - [x] External skills → absorb content, no new lanes (R7, R8)
-- [ ] Codex and OpenCode model enforcement → settled by the plan's research task
+- [x] Codex and OpenCode model routing → tier-pinned roles plus a dispatch check (§5a)
+- [ ] Codex hook sees `spawn_agent` arguments in plaintext → live probe, first plan task
 - [ ] Press scale: 0.97 chosen over 0.96; owner may overrule at review
