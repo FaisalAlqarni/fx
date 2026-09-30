@@ -19,14 +19,14 @@ If `permission.evaluate` cannot be registered, `tool.execute.before` throws for 
 
 **Layer 2: installer-written policies.** `lib/opencode-v2-policies.js` holds deny policies for the absolutes that a wildcard can express: force push, push to `main`, `master` or `trunk`, branch deletion on a remote, `--no-verify` on `commit` and `push`, `reset --hard`, `clean -f`, `branch -D`, `stash drop` and `stash clear`, `checkout .` and `restore .`, and tag deletion. The installer writes them into `experimental.policies` and records them as its own. A policy cannot be overridden by the user's session and gives only a generic message, so every pattern is tight. Each has a `sample` the guard refuses and `allowed` commands the guard allows, and `tests/gates/opencode-v2-policies.test.js` checks both directions against `lib/git-guard.js`. The patterns cover plain spellings: no `-C` or `-c` options, no `HEAD:refs/heads/main`, no `branch -d --force`. Layer 1 covers those.
 
-**Layer 3: the throwing `execute.before`.** This is the fallback when layer 1 cannot be registered. It has the same predicate and no call-id lookup.
+**Layer 3: the throwing `execute.before`.** This is the fallback when layer 1 cannot be registered. It carries no predicate: when `permission.evaluate` failed to register, `tool.execute.before` throws for every shell call, whatever the command, and the message names the failure. It does nothing when layer 1 registered.
 
 Real 2.0.18, through a model, with the plugin linked into a scratch config: `git push --force origin main` ended with a shell tool status of `error` and the message "force push rewrites history that has already left the machine." That is fx's reason, not the policy text.
 
 ## What the 2.x guard does not catch
 
 - `echo "git reset --hard" | sh`. `lib/git-guard.js` does not scan the quoted body of an `echo` that feeds a shell. This gap is older than this ADR and exists on every runtime that shares the library.
-- A shell call that OpenCode parses into zero commands never reaches `permission.evaluate`, so layer 1 sees nothing. Layer 3 does not see it if layer 1 registered.
+- A shell call that OpenCode parses into zero commands never reaches `permission.evaluate`, so layer 1 sees nothing. Layer 3 is inactive whenever layer 1 registered. This is read from the 2.0.18 source, not probed.
 - Free text in a push option can make a policy block a command the guard would allow. Policies cannot be overridden. A push option that carries text matching a policy pattern is blocked.
 
 ## Limits on hiding the lanes and on read-only agents
@@ -34,7 +34,7 @@ Real 2.0.18, through a model, with the plugin linked into a scratch config: `git
 - An agent the user defines in `opencode.json` is applied after fx's transforms, so fx's skill-deny rules do not reach it. It lists the five hidden lanes. A call to one is still refused at run time by the `permission.evaluate` backstop. Probe question 11 disproved the plan to hide them there.
 - Hiding steers the model. A direct read of a `SKILL.md` file is not blocked.
 - `opencode api skill.list` is unfiltered. Hiding is in each agent's `skill` deny rules, shown by `opencode debug agents`.
-- A host that sets session-level permissions cannot widen fx's six read-only agents: the evaluate hook allows only read, grep, glob and list for them, and denies `external_directory` under fx's references.
+- A host that sets session-level permissions cannot widen fx's six read-only agents: the evaluate hook allows them read, grep, glob and list, allows `external_directory` only when every resource is under fx's own `references` directory, and denies every other action. This is read from the 2.0.18 source; the gate test uses a stub.
 
 ## Consequences
 

@@ -344,7 +344,7 @@ any other answer stops it with an error naming `--major`: it never guesses.
 
 On 2.x the installer:
 
-- links the plugin (`plugins/fx-opencode-v2.js`), `references/` and each skill
+- links the plugin (`plugins/fx-opencode-v2.js`, installed as `plugins/fx.js`), `references/` and each skill
   into the config directory;
 - generates the six read-only agents with rule-list permissions;
 - writes fx's guard policies and `experimental.subagent_depth` 2 into
@@ -362,7 +362,7 @@ files on 2.x and removes the generated ones a 1.x install left.
 
 A `file://` entry in `plugin` does not work on 2.0.18 (it answers "configured
 plugin path must be a directory"). To use the plugin without the installer,
-link `plugins/fx-opencode-v2.js` into `~/.config/opencode/plugins/` and add
+link `plugins/fx-opencode-v2.js` into `~/.config/opencode/plugins/fx.js` and add
 `~/src/fx/skills` to `skills`. That route gives the plugin's hooks, agents and
 commands, but not the guard policies or `subagent_depth`.
 
@@ -403,7 +403,7 @@ Full detail and the limits are in `docs/adr/0037`.
   the quoted body of an `echo` that feeds a shell. This gap was there before
   the 2.x plugin and is the same on every runtime.
 - A shell call that opencode parses into zero commands never reaches
-  `permission.evaluate`.
+  `permission.evaluate` (read from the 2.0.18 source, not probed).
 - Free text in a push option can make a policy block a command the guard would
   allow, because a policy cannot be overridden.
 
@@ -425,8 +425,9 @@ Limits:
 - `opencode api skill.list` lists every skill whatever the rules say. Read
   `opencode debug agents` for what an agent is denied.
 - If your host sets session-level permissions, they cannot widen fx's six
-  read-only agents: the evaluate hook allows them only read, grep, glob and
-  list.
+  read-only agents: the evaluate hook allows them read, grep, glob and list,
+  and `external_directory` only under fx's own `references` directory, and
+  denies everything else. This is read from the 2.0.18 source, not probed.
 
 ### What fx cannot observe on 2.x
 
