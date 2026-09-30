@@ -151,6 +151,40 @@ is re-run once and both results are recorded, never the better one alone.
 and the shell. Each probe has a general agent as its control, so a refusal
 that also stops the control is a failure, not a pass.
 
+## Live rows on OpenRouter
+
+`FX_LIVE_PROVIDER=openrouter` runs the live rows on OpenRouter for all four
+harnesses. Without it nothing changes. It needs `OPENROUTER_API_KEY` in the
+environment (a GAP without it) and an account with purchased credits: a key
+without them gets a free-model allowance the matrix exceeds.
+
+```
+OPENROUTER_API_KEY=... FX_LIVE_PROVIDER=openrouter bash tests/conformance/run.sh codex
+```
+
+- Models (`lib/openrouter.js`): Codex and both OpenCode majors on
+  `qwen/qwen3.8-27b:free`, Claude Code on `anthropic/claude-haiku-4.5` (other
+  models fail there). `FX_LIVE_MODEL=openrouter/<id>` picks another for the
+  three non-Claude harnesses. OpenCode v1 needs its own 1.18.x binary first on
+  `PATH`.
+- No credential copy: the scratch home holds the provider's config and never
+  `.credentials.json` or Codex's `auth.json`, so a session cannot run on the
+  owner's subscription. The jail passes `OPENROUTER_API_KEY` and the provider's
+  variables (`FX_JAIL_PROVIDER_ENV`) through `--clearenv`.
+- A row that stops on a provider error (HTTP 401, 429, 5xx, `Insufficient
+  credits`, `Too Many Requests`, or no output before the timeout) exits 75. It
+  is read only from the CLI's own error events and stderr, never model output.
+  `run.sh` then re-runs the row once on `deepseek/deepseek-v4-flash`, prints
+  `attempt=2 (fallback)`, and keeps the first log as `<row>-<harness>.attempt1.log`
+  in `FX_CONFORMANCE_LOGS`. A second 75 is a GAP. Claude Code has no fallback:
+  its 75 is a GAP. A capability failure is not a provider error; it is re-run
+  once on the same model, as above.
+- Each live row's line ends in `model=<id>`, the model the session itself
+  reported (Claude Code's init event, Codex's `turn_context`, the OpenCode
+  session export), or `model=<id> (config)` when the log names none. A session
+  that reports another model than requested fails the row.
+- A log containing `sk-or-` fails the row inside `keep_log` and is not copied.
+
 ## Isolation, not restoration
 
 Every row runs against a scratch home. The runner creates one `mktemp -d`,

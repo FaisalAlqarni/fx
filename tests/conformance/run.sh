@@ -66,6 +66,15 @@ mkdir -p "$CODEX_HOME" "$XDG_CONFIG_HOME/opencode" "$CLAUDE_CONFIG_DIR" || exit 
 EXPECTED_GAPS="${FX_CONFORMANCE_EXPECTED_GAPS:-$FX/tests/conformance/expected-gaps}"
 expected_gap() { [ -f "$EXPECTED_GAPS" ] && grep -qxE "$HARNESS 0*$1" "$EXPECTED_GAPS"; }
 
+# FX_LIVE_PROVIDER=openrouter: live rows run on OpenRouter (lib/live.sh). The
+# row reports the model its session named through FX_ROW_MODEL_FILE.
+OPENROUTER=""
+if [ "${FX_LIVE_PROVIDER:-}" = openrouter ]; then
+  OPENROUTER=1
+  OR_FALLBACK="$(node -p "require('$FX/tests/conformance/lib/openrouter.js').MODELS.fallback")" || exit 2
+  export FX_ROW_MODEL_FILE="$SCRATCH/row.model"
+fi
+
 pass=0; fail=0; gap=0; ran=0
 for f in "${ROWS[@]}"; do
   # A row without a --describe guard runs its body here and prints nothing
@@ -79,8 +88,25 @@ for f in "${ROWS[@]}"; do
 
   # The row's stderr is its reason. It is captured so a GAP can be held to
   # having one, and passed through so the reader still sees it.
-  FX="$FX" HARNESS="$HARNESS" bash "$f" 2>"$SCRATCH/row.err"; rc=$?
-  cat "$SCRATCH/row.err" >&2
+  run_row() { rm -f "$SCRATCH/row.model"; FX="$FX" HARNESS="$HARNESS" bash "$f" 2>"$SCRATCH/row.err"; rc=$?; cat "$SCRATCH/row.err" >&2; }
+  run_row
+  suffix=""
+  if [ -n "$OPENROUTER" ] && [ "$kind" = live ]; then
+    # 75 is a provider error (live.sh). Re-run once on the fallback model, and
+    # keep the first attempt's log beside the second. Claude Code has no
+    # fallback: only Haiku works there, so its 75 is a GAP as it stands.
+    if [ "$rc" -eq 75 ] && [ "$HARNESS" != claude-code ]; then
+      first="$(basename "$f" .sh)-$HARNESS"
+      [ -z "${FX_CONFORMANCE_LOGS:-}" ] || [ ! -f "$FX_CONFORMANCE_LOGS/$first.log" ] \
+        || cp "$FX_CONFORMANCE_LOGS/$first.log" "$FX_CONFORMANCE_LOGS/$first.attempt1.log"
+      echo "row $n: provider error on the primary model, re-running once on $OR_FALLBACK" >&2
+      FX_LIVE_MODEL="openrouter/$OR_FALLBACK" run_row
+      suffix=" attempt=2 (fallback)"
+    fi
+    suffix="model=$(cat "$SCRATCH/row.model" 2>/dev/null || echo unknown)$suffix"
+    [ -z "$suffix" ] || suffix=" $suffix"
+    [ "$rc" -ne 75 ] || rc=77   # a provider error that survived the re-run is a GAP, its reason is on stderr above
+  fi
   ran=$((ran+1))
   # A GAP with no reason is indistinguishable from a row that gave up. FAIL it.
   if [ "$rc" -eq 77 ] && ! [ -s "$SCRATCH/row.err" ]; then
@@ -90,9 +116,9 @@ for f in "${ROWS[@]}"; do
     echo "row $n is not an expected gap for $HARNESS ($EXPECTED_GAPS): a free row that stops passing is a FAIL" >&2; rc=1
   fi
   case "$rc" in
-    0)  printf 'PASS  %2s  %s\n' "$n" "$name"; pass=$((pass+1)) ;;
-    77) printf 'GAP   %2s  %s\n' "$n" "$name"; gap=$((gap+1)) ;;
-    *)  printf 'FAIL  %2s  %s\n' "$n" "$name"; fail=$((fail+1)) ;;
+    0)  printf 'PASS  %2s  %s%s\n' "$n" "$name" "$suffix"; pass=$((pass+1)) ;;
+    77) printf 'GAP   %2s  %s%s\n' "$n" "$name" "$suffix"; gap=$((gap+1)) ;;
+    *)  printf 'FAIL  %2s  %s%s\n' "$n" "$name" "$suffix"; fail=$((fail+1)) ;;
   esac
 done
 

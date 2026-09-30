@@ -108,6 +108,8 @@ run review-bench-row-safety bash tests/review-bench/row-safety.test.sh
 run conformance-live-exit-code bash tests/conformance/live-exit-code.test.sh
 run conformance-plant-codex-roles bash tests/conformance/plant-codex-roles.test.sh
 run conformance-merge-opencode-provider bash tests/conformance/merge-opencode-provider.test.sh
+run conformance-openrouter node tests/conformance/openrouter.test.js
+run conformance-live-openrouter bash tests/conformance/live-openrouter.test.sh
 run conformance-free-claude-code bash tests/conformance/run.sh claude-code --free
 run conformance-free-opencode    bash tests/conformance/run.sh opencode --free
 run conformance-free-opencode-v2 bash tests/conformance/run.sh opencode-v2 --free

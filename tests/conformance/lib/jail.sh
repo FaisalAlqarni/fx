@@ -96,7 +96,11 @@ JAIL+=(--ro-bind "$FX" "$FX" --bind "$LIVE_SCRATCH" "$LIVE_SCRATCH" --dev /dev
 # needs on top (TMPDIR, XDG_DATA_HOME) goes through `env` inside the jail:
 #   "${JAIL[@]}" env TMPDIR="$tmp" claude ...
 JAIL+=(--clearenv)
-for v in PATH HOME USER LOGNAME SHELL TERM LANG LC_ALL \
+# OpenRouter: the key and the provider's own variables cross too (live.sh
+# exports their names in FX_JAIL_PROVIDER_ENV). Without the switch, unchanged.
+PROVIDER_VARS=""
+[ "${FX_LIVE_PROVIDER:-}" = openrouter ] && PROVIDER_VARS="OPENROUTER_API_KEY ${FX_JAIL_PROVIDER_ENV:-}"
+for v in $PROVIDER_VARS PATH HOME USER LOGNAME SHELL TERM LANG LC_ALL \
          CODEX_HOME XDG_CONFIG_HOME CLAUDE_CONFIG_DIR FX \
          HTTPS_PROXY HTTP_PROXY NO_PROXY https_proxy http_proxy no_proxy \
          NODE_EXTRA_CA_CERTS SSL_CERT_FILE SSL_CERT_DIR; do

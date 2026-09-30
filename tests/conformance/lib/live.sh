@@ -33,6 +33,30 @@ umask 077
 chmod 700 "$LIVE_SCRATCH" "$HOME" "$CODEX_HOME" "$XDG_CONFIG_HOME" \
   "$XDG_CONFIG_HOME/opencode" "$CLAUDE_CONFIG_DIR" || fail "cannot restrict the scratch home"
 
+# --- OpenRouter (FX_LIVE_PROVIDER=openrouter) -----------------------------------
+# Opt-in. The provider's variables are exported here, and their names listed in
+# FX_JAIL_PROVIDER_ENV, BEFORE jail.sh is sourced: the jail clears the
+# environment, so a variable it does not allowlist never reaches the CLI. The
+# credential copies below are skipped, so a session cannot run on the owner's
+# subscription. The key comes only from the environment and is never written.
+OPENROUTER=""
+if [ "${FX_LIVE_PROVIDER:-}" = openrouter ]; then
+  OPENROUTER=1
+  OR_JS="$FX/tests/conformance/lib/openrouter.js"
+  [ -n "${OPENROUTER_API_KEY:-}" ] || gap "not run: FX_LIVE_PROVIDER=openrouter needs OPENROUTER_API_KEY in the environment"
+  if [ "$HARNESS" = claude-code ]; then OR_MODEL="$(node -p "require('$OR_JS').MODELS.claude")"
+  else OR_MODEL="${FX_LIVE_MODEL:-}"; OR_MODEL="${OR_MODEL#openrouter/}"; [ -n "$OR_MODEL" ] || OR_MODEL="$(node -p "require('$OR_JS').MODELS.primary")"; fi
+  FX_JAIL_PROVIDER_ENV=""
+  while IFS='=' read -r k v; do
+    [ -n "$k" ] || continue
+    export "$k=$v"; FX_JAIL_PROVIDER_ENV="$FX_JAIL_PROVIDER_ENV $k"
+  done < <(node "$OR_JS" env "$HARNESS" "$OR_MODEL")
+  if [ "$HARNESS" = claude-code ]; then
+    export ANTHROPIC_AUTH_TOKEN="$OPENROUTER_API_KEY"; FX_JAIL_PROVIDER_ENV="$FX_JAIL_PROVIDER_ENV ANTHROPIC_AUTH_TOKEN"
+  fi
+  export FX_JAIL_PROVIDER_ENV
+fi
+
 # --- the jail -------------------------------------------------------------------
 # Every CLI call, installs included, runs inside bwrap:
 #   - the whole filesystem read-only;
@@ -92,6 +116,11 @@ esac
 OPENCODE_URL="http://127.0.0.1:8899/v1"
 
 # --- credentials, copied in ---------------------------------------------------
+# Under OpenRouter nothing is copied: the scratch home gets the provider's
+# config instead, and never the owner's .credentials.json or auth.json.
+if [ -n "$OPENROUTER" ]; then
+  node "$OR_JS" setup "$HARNESS" "$OR_MODEL" "$HOME" || fail "could not write the OpenRouter config"
+else
 case "$HARNESS" in
   claude-code)
     scratch_home_claude "$CLAUDE_CONFIG_DIR"
@@ -120,6 +149,7 @@ case "$HARNESS" in
     [ "$code" != 000 ] || gap "not run: the local llama-server at $OPENCODE_URL is unreachable" ;;
   *) fail "unknown harness" ;;
 esac
+fi
 
 # --- the binary must be the harness's major: a 2.x machine never measures v1
 # while claiming it, and the reverse ----------------------------------------
@@ -224,6 +254,8 @@ live_regular() { [ -f "$1" ] && [ ! -L "$1" ]; }
 # and opencode's exported sessions.
 live_run() {
   local prompt="$1" rc
+  # Until the session names its model, the result line says the config did.
+  [ -z "$OPENROUTER" ] || [ -z "${FX_ROW_MODEL_FILE:-}" ] || echo "$OR_MODEL (config)" > "$FX_ROW_MODEL_FILE"
   local tmp="$LIVE_SCRATCH/tmp"; mkdir -p "$tmp"
   : > "$WORK.start"
   # stdout and stderr each reach their file through a pipe read on the host
@@ -241,7 +273,7 @@ live_run() {
       # bench measures fx's reviewer at the tier fx actually uses it on);
       # unset adds no flag, so every other row's command line is unchanged.
       local -a model_flag=()
-      [ -n "${FX_LIVE_MODEL:-}" ] && model_flag=(--model "$FX_LIVE_MODEL")
+      [ -n "${FX_LIVE_MODEL:-}" ] && [ -z "$OPENROUTER" ] && model_flag=(--model "$FX_LIVE_MODEL")
       ( cd "$WORK" && timeout "${FX_LIVE_TIMEOUT:-600}" "${JAIL[@]}" env TMPDIR="$tmp" claude -p "$prompt" --plugin-dir "$FX" \
           --dangerously-skip-permissions --max-turns "${FX_LIVE_MAX_TURNS:-30}" --output-format stream-json --verbose \
           "${model_flag[@]}" ) \
@@ -253,8 +285,9 @@ live_run() {
       # --standalone: no managed service, so nothing shares a port with the
       # developer's OpenCode. </dev/null is required: an inherited stdin
       # blocks the run forever (probe-findings.md, change 1).
-      timeout 1500 "${JAIL[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" \
-        opencode run --standalone --format json --dir "$WORK" "$prompt" </dev/null >"$LOGDIR/out.pipe" 2>"$LOGDIR/err.pipe" ;;
+      # 2.0.18 has no --dir flag ("Unrecognized flag: --dir"): the session runs in the cwd.
+      ( cd "$WORK" && timeout 1500 "${JAIL[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" \
+        opencode run --standalone --format json "$prompt" ) </dev/null >"$LOGDIR/out.pipe" 2>"$LOGDIR/err.pipe" ;;
     opencode)
       # ponytail: one llama-server slot, so opencode rows only ever run serially.
       timeout 1500 "${JAIL[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" \
@@ -262,6 +295,7 @@ live_run() {
   esac
   rc=$?
   wait "$p1" "$p2"
+  local out_empty=0; [ -s "$LOG" ] || out_empty=1
   rm -f -- "$LOGDIR/out.pipe" "$LOGDIR/err.pipe"
   # The CLI's own errors, as JSON: a top-level error event (Codex's error and
   # turn.failed, opencode's error) or Claude Code's result with is_error.
@@ -275,7 +309,15 @@ live_run() {
     }')"
   # stderr is appended for the reader, each line prefixed so events.js skips it.
   sed 's/^/stderr: /' "$err" >> "$LOG"
-  keep_log() { [ -z "${FX_CONFORMANCE_LOGS:-}" ] || cp "$LOG" "$FX_CONFORMANCE_LOGS/$(basename "$0" .sh)-$HARNESS.log"; }
+  # Under OpenRouter the log is scanned for the key before it is copied; a hit
+  # fails the row and nothing is kept.
+  keep_log() {
+    [ -n "${FX_CONFORMANCE_LOGS:-}" ] || return 0
+    if [ -n "$OPENROUTER" ] && node "$OR_JS" leaks "$LOG"; then
+      fail "the session log contains an OpenRouter key (sk-or-); it was not kept"
+    fi
+    cp "$LOG" "$FX_CONFORMANCE_LOGS/$(basename "$0" .sh)-$HARNESS.log"
+  }
   keep_log
   # Quota or credit exhausted: the row did not run, and a row that did not run
   # is never a pass. Matched only on the CLI's own stderr and its own error
@@ -294,6 +336,17 @@ live_run() {
   local hit
   if [ "$rc" -eq 1 ] && hit="$(printf '%s\n' "$cli_errors" | cat - "$err" | grep -oiE "$q" | head -1)" && [ -n "$hit" ]; then
     gap "not run: quota or credit exhausted ($hit)"
+  fi
+  # A provider error stops the row with 75, so run.sh can re-run it on the
+  # fallback model. Same evidence rule as the quota check: the CLI's own exit,
+  # its own error events and its own stderr, never the stream. A timeout with
+  # no output at all is the no-first-token case.
+  if [ -n "$OPENROUTER" ] && { [ "$rc" -eq 1 ] || { [ "$rc" -eq 124 ] && [ "$out_empty" = 1 ]; }; }; then
+    local hit2 errtxt; errtxt="$(cat "$err")"
+    [ "$rc" -eq 124 ] && errtxt="$errtxt"$'\n'"$(node -p "require('$OR_JS').NO_FIRST_TOKEN")"
+    if hit2="$(E="$cli_errors" S="$errtxt" node "$OR_JS" error)"; then
+      echo "$HARNESS: provider error ($hit2)" >&2; exit 75
+    fi
   fi
   [ "$rc" -eq 124 ] && fail "session timed out"
   # A CLI that exited non-zero did not finish its session: a row that checks
@@ -356,6 +409,11 @@ live_run() {
         done
       done ;;
   esac
+  if [ -n "$OPENROUTER" ]; then
+    local sm; sm="$(node "$OR_JS" model "$HARNESS" "$LOG")"
+    [ -z "$sm" ] || { [ -z "${FX_ROW_MODEL_FILE:-}" ] || echo "$sm" > "$FX_ROW_MODEL_FILE"; }
+    [ -z "$sm" ] || [ "$sm" = "$OR_MODEL" ] || fail "the session reported model $sm, not the requested $OR_MODEL"
+  fi
   keep_log
   return 0
 }
