@@ -37,11 +37,20 @@ try {
   laneCheck = () => null;            // advice only; never block because it is missing
 }
 
+// Routing is advice and fails open, but the user is told: systemMessage is
+// shown by Claude Code, stderr alone is not.
+let routingOffMsg = null;
+function routingOff(e) {
+  const m = `[fx] dispatch routing off: ${String((e && e.message) || e)}`;
+  process.stderr.write(`${m}\n`);
+  routingOffMsg = m;
+}
+
 let route;
 try {
   ({ route } = require('../lib/dispatch-route'));
 } catch (e) {
-  process.stderr.write(`[fx] dispatch routing off: ${e.message}\n`);
+  routingOff(e);
   route = () => null;                // routing is advice; a broken module passes calls through
 }
 
@@ -88,13 +97,19 @@ process.stdin.on('end', () => {
     try {
       result = route(ti);
     } catch (e) {
-      process.stderr.write(`[fx] dispatch routing off: ${e.message}\n`);
+      routingOff(e);
       result = null;
     }
+    let payload = '';
     if (result && typeof result === 'object') {
-      process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', updatedInput: result } }));
+      payload = JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', updatedInput: result } });
+    } else if (routingOffMsg) {
+      payload = JSON.stringify({ systemMessage: routingOffMsg });
     }
-    process.exit(0);
+    // exit only after stdout drains: a large prompt can outrun the pipe
+    if (payload) process.stdout.write(payload, () => process.exit(0));
+    else process.exit(0);
+    return;
   }
 
   process.exit(0);

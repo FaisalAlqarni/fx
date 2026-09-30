@@ -16,8 +16,17 @@ assert.deepStrictEqual(
   route({ subagent_type: 'general-purpose', description: 'd', prompt: 'p' }),
   { subagent_type: 'general-purpose', description: 'd', prompt: 'p', model: 'sonnet' },
   'a general dispatch with no model gets the standard tier');
-assert.strictEqual(route({ prompt: 'p' }), null, 'no type may be a fork: left alone');
-assert.strictEqual(route({ model: 'opus', prompt: 'p' }), null, 'a fork is left alone even with a model');
+assert.strictEqual(route({ prompt: 'p' }).model, 'sonnet', 'no type is a general dispatch on current Claude Code');
+assert.strictEqual(route({ subagent_type: '', prompt: 'p' }).model, 'sonnet', 'an empty type is a general dispatch');
+assert.strictEqual(route({ model: 'opus', prompt: 'p' }).model, 'sonnet', 'no type with opus and no reason runs on the standard tier');
+assert.strictEqual(route({ subagent_type: 'fork', prompt: 'p' }), null, 'a fork inherits the parent model: left alone');
+assert.strictEqual(route({ subagent_type: 'fork', model: 'opus', prompt: 'p' }), null, 'a fork is left alone even with a model');
+for (const m of ['fable', 'claude-opus-4-1', 'claude-fable-5']) {
+  assert.strictEqual(route({ subagent_type: 'general-purpose', model: m, prompt: 'p' }).model, 'sonnet',
+    `${m} without a reason runs on the standard tier`);
+  assert.strictEqual(route({ subagent_type: 'general-purpose', model: m, prompt: 'Capable because: x' }), null,
+    `${m} with a reason stands`);
+}
 assert.strictEqual(route({ subagent_type: 'claude', prompt: 'p' }).model, 'sonnet', 'claude is general');
 assert.strictEqual(route({ subagent_type: 'Plan', prompt: 'p' }).model, 'sonnet', 'Plan is general');
 assert.strictEqual(route({ subagent_type: 'general-purpose', model: 'haiku', prompt: 'p' }), null, 'a chosen tier stands');
@@ -76,14 +85,33 @@ assert.strictEqual(JSON.parse(r.out).hookSpecificOutput.updatedInput.model, 'son
   fs.writeFileSync(path.join(tmp, 'lib', 'dispatch-route.js'), "module.exports = { route() { throw new Error('boom'); } };\n");
   let b = runCopy();
   assert.strictEqual(b.status, 0, `a throwing route never refuses: ${b.stderr}`);
-  assert.strictEqual(b.stdout.trim(), '', 'a throwing route leaves the call unchanged');
+  let j = JSON.parse(b.stdout);
+  assert.match(j.systemMessage, /^\[fx\] dispatch routing off: boom/, 'a throwing route tells the user');
+  assert.strictEqual(j.hookSpecificOutput, undefined, 'a throwing route leaves the call unchanged');
   assert.match(b.stderr, /dispatch routing off: boom/, 'a throwing route leaves a trace on stderr');
   fs.writeFileSync(path.join(tmp, 'lib', 'dispatch-route.js'), "throw new Error('load');\n");
   b = runCopy();
   assert.strictEqual(b.status, 0, `a module that fails to load never refuses: ${b.stderr}`);
-  assert.strictEqual(b.stdout.trim(), '', 'a module that fails to load leaves the call unchanged');
+  j = JSON.parse(b.stdout);
+  assert.match(j.systemMessage, /^\[fx\] dispatch routing off: load/, 'a module that fails to load tells the user');
+  assert.strictEqual(j.hookSpecificOutput, undefined, 'a module that fails to load leaves the call unchanged');
   assert.match(b.stderr, /dispatch routing off: load/, 'a module that fails to load leaves a trace on stderr');
+  fs.writeFileSync(path.join(tmp, 'lib', 'dispatch-route.js'), "module.exports = { route() { throw 'plain string'; } };\n");
+  b = runCopy();
+  assert.strictEqual(b.status, 0, `a non-Error throw never refuses: ${b.stderr}`);
+  assert.match(JSON.parse(b.stdout).systemMessage, /routing off: plain string/, 'a non-Error throw is reported');
   fs.rmSync(tmp, { recursive: true, force: true });
+}
+
+// a large prompt survives the exit
+{
+  const big = 'x'.repeat(300 * 1024);
+  const r2 = spawnSync('node', [hook], {
+    input: JSON.stringify({ ...base, tool_name: 'Agent', tool_input: { subagent_type: 'general-purpose', prompt: big } }),
+    encoding: 'utf8', maxBuffer: 10 * 1024 * 1024,
+  });
+  assert.strictEqual(r2.status, 0);
+  assert.strictEqual(JSON.parse(r2.stdout).hookSpecificOutput.updatedInput.prompt, big, 'a 300 KB prompt arrives intact');
 }
 
 console.log('dispatch-route.test.js: OK');
