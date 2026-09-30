@@ -42,6 +42,12 @@ try {
 // Full shell command text by tool call id: recorded in execute.before,
 // read in evaluate, dropped in execute.after.
 const commands = new Map();
+// Scoped by session, message and call id: a provider can repeat a call id
+// across sessions. Any missing part gives no key, and no key is a miss.
+const callKey = (sessionID, messageID, id) => {
+  const parts = [sessionID, messageID, id];
+  return parts.every((p) => typeof p === 'string' && p) ? parts.join('\u0000') : undefined;
+};
 
 const HIDDEN = ['fx-audit', 'fx-critique', 'fx-grill', 'fx-handoff', 'fx-setup'];
 const hideRule = (lane) => ({ action: 'skill', resource: lane, effect: 'deny' });
@@ -161,13 +167,19 @@ export default {
         // The git guard fails closed: any error below denies the call.
         try {
           if (guardError) throw guardError;
-          const command = ev.source && commands.get(ev.source.id);
+          const key = ev.source ? callKey(ev.sessionID, ev.source.messageID, ev.source.id) : undefined;
+          const command = key === undefined ? undefined : commands.get(key);
           if (command === undefined) {
             deny(ev, "fx could not see this command's full text, so the git guard cannot check it.");
             return;
           }
           const verdict = inspect(command, ctx.location.directory);
-          if (!verdict.allow) deny(ev, verdict.reason);
+          if (!verdict.allow) return deny(ev, verdict.reason);
+          // The pieces as they stand now, after any other plugin's rewrite.
+          for (const piece of [].concat(ev.resources || [])) {
+            const v = inspect(String(piece), ctx.location.directory);
+            if (!v.allow) return deny(ev, v.reason);
+          }
         } catch (e) {
           deny(ev, `the fx git guard failed, so the command is refused: ${messageOf(e)}`);
         }
@@ -209,12 +221,15 @@ export default {
         // Not inside attempt(): this throw is the refusal.
         if (evaluateError) throw new Error(`fx git guard is not installed (permission.evaluate failed to register: ${messageOf(evaluateError)}), so shell commands are refused.`);
         // Only a string is recorded; anything else misses in evaluate and is denied.
-        attempt('record command', () => { if (ev.input && typeof ev.input.command === 'string') commands.set(ev.id, ev.input.command); });
+        attempt('record command', () => {
+          const key = callKey(ev.sessionID, ev.messageID, ev.id);
+          if (key !== undefined && ev.input && typeof ev.input.command === 'string') commands.set(key, ev.input.command);
+        });
       });
       beforeRegistered = true;
     });
     await attempt('tool.execute.after', () => ctx.tool.hook('execute.after', (ev) => {
-      attempt('forget command', () => { commands.delete(ev.id); });
+      attempt('forget command', () => { commands.delete(callKey(ev.sessionID, ev.messageID, ev.id)); });
     }));
     if (evaluateError && !beforeRegistered) {
       failures.push('fx: the git guard is off: no hook could be registered, so every shell call is unguarded and only the installed policy layer stands.');

@@ -136,8 +136,8 @@ async function evaluate(rec, ev) {
   async function shell(command, pieces) {
     const id = `call_${++n}`;
     for (const cb of g.rec.hooks['tool.execute.before'] || []) await cb({ tool: 'shell', sessionID: 's', agent: 'build', messageID: 'm', id, input: { command } });
-    const e = await evaluate(g.rec, { action: 'shell', resources: pieces || [command], source: { type: 'tool', messageID: 'm', id }, effect: 'allow' });
-    for (const cb of g.rec.hooks['tool.execute.after'] || []) await cb({ tool: 'shell', id, status: 'completed' });
+    const e = await evaluate(g.rec, { sessionID: 's', action: 'shell', resources: pieces || [command], source: { type: 'tool', messageID: 'm', id }, effect: 'allow' });
+    for (const cb of g.rec.hooks['tool.execute.after'] || []) await cb({ tool: 'shell', sessionID: 's', messageID: 'm', id, status: 'completed' });
     return e;
   }
   for (const [cmd, pieces] of [
@@ -154,9 +154,27 @@ async function evaluate(rec, ev) {
   }
   for (const cmd of ['git status', 'ls']) assert.strictEqual((await shell(cmd)).effect, 'allow', `${cmd} is untouched`);
 
-  const miss = await evaluate(g.rec, { action: 'shell', resources: ['ls'], source: { type: 'tool', messageID: 'm', id: 'never_recorded' }, effect: 'allow' });
+  const miss = await evaluate(g.rec, { sessionID: 's', action: 'shell', resources: ['ls'], source: { type: 'tool', messageID: 'm', id: 'never_recorded' }, effect: 'allow' });
   assert.strictEqual(miss.effect, 'deny', 'a call id with no recorded command is denied');
-  const nosrc = await evaluate(g.rec, { action: 'shell', resources: ['ls'], effect: 'allow' });
+  const nosrc = await evaluate(g.rec, { sessionID: 's', action: 'shell', resources: ['ls'], effect: 'allow' });
+  const nullsrc = await evaluate(g.rec, { sessionID: 's', action: 'shell', resources: ['ls'], source: null, effect: 'allow' });
+  assert.strictEqual(nullsrc.effect, 'deny', 'a null source is denied');
+  const nosess = await evaluate(g.rec, { action: 'shell', resources: ['ls'], source: { type: 'tool', messageID: 'm', id: 'call_1' }, effect: 'allow' });
+  assert.strictEqual(nosess.effect, 'deny', 'an evaluation with no sessionID is a miss and is denied');
+
+  // --- two sessions share a call id: each evaluation sees its own command ---
+  const before = async (sessionID, command) => { for (const cb of g.rec.hooks['tool.execute.before'] || []) await cb({ tool: 'shell', sessionID, messageID: 'm', id: 'dup', input: { command } }); };
+  const eval1 = (sessionID) => evaluate(g.rec, { sessionID, action: 'shell', resources: ['x'], source: { type: 'tool', messageID: 'm', id: 'dup' }, effect: 'allow' });
+  await before('s1', 'ls');
+  await before('s2', 'git reset --hard');
+  assert.strictEqual((await eval1('s1')).effect, 'allow', "session s1 sees its own command, not s2's");
+  assert.strictEqual((await eval1('s2')).effect, 'deny', 'session s2 sees its own command');
+
+  // --- the pieces are checked too: a rewrite between record and use ---------
+  await before('s3', 'ls');
+  const rewritten = await evaluate(g.rec, { sessionID: 's3', action: 'shell', resources: ['git push --force origin main'], source: { type: 'tool', messageID: 'm', id: 'dup' }, effect: 'allow' });
+  assert.strictEqual(rewritten.effect, 'deny', 'a resource the guard refuses is denied even when the recorded text was clean');
+
   assert.strictEqual(nosrc.effect, 'deny', 'a shell evaluation with no source is denied');
 
   // --- fail closed: a guard that cannot load, and a guard that throws -------
@@ -168,8 +186,8 @@ async function evaluate(rec, ev) {
     const m = await import(pathToFileURL(path.join(copy, 'plugins', 'fx-opencode-v2.js')).href);
     const b = stub(dir);
     await m.default.setup(b.ctx);
-    for (const cb of b.rec.hooks['tool.execute.before'] || []) await cb({ tool: 'shell', id: 'c1', input: { command: 'ls' } });
-    const e = await evaluate(b.rec, { action: 'shell', resources: ['ls'], source: { type: 'tool', messageID: 'm', id: 'c1' }, effect: 'allow' });
+    for (const cb of b.rec.hooks['tool.execute.before'] || []) await cb({ tool: 'shell', sessionID: 's', messageID: 'm', id: 'c1', input: { command: 'ls' } });
+    const e = await evaluate(b.rec, { sessionID: 's', action: 'shell', resources: ['ls'], source: { type: 'tool', messageID: 'm', id: 'c1' }, effect: 'allow' });
     fs.rmSync(copy, { recursive: true, force: true });
     return e;
   }
@@ -197,8 +215,8 @@ async function evaluate(rec, ev) {
   // --- command recording: only a string command is recorded ----------------
   for (const [label, input] of [['an array command', { command: ['git', 'push', '--force'] }], ['no command field', {}], ['no input', undefined]]) {
     const id = `shape_${label}`;
-    for (const cb of g.rec.hooks['tool.execute.before'] || []) await cb({ tool: 'shell', id, input });
-    const e = await evaluate(g.rec, { action: 'shell', resources: ['x'], source: { type: 'tool', messageID: 'm', id }, effect: 'allow' });
+    for (const cb of g.rec.hooks['tool.execute.before'] || []) await cb({ tool: 'shell', sessionID: 's', messageID: 'm', id, input });
+    const e = await evaluate(g.rec, { sessionID: 's', action: 'shell', resources: ['x'], source: { type: 'tool', messageID: 'm', id }, effect: 'allow' });
     assert.strictEqual(e.effect, 'deny', `${label} is not recorded, so the shell call is denied`);
   }
 
@@ -227,7 +245,7 @@ async function evaluate(rec, ev) {
 
   const noBefore = failing(['before']);
   await mod.default.setup(noBefore.ctx);
-  const nb = await evaluate(noBefore.rec, { action: 'shell', resources: ['ls'], source: { type: 'tool', messageID: 'm', id: 'nb' }, effect: 'allow' });
+  const nb = await evaluate(noBefore.rec, { sessionID: 's', action: 'shell', resources: ['ls'], source: { type: 'tool', messageID: 'm', id: 'nb' }, effect: 'allow' });
   assert.ok(nb.effect === 'deny' && /before registration broke/.test(nb.message), 'a failed execute.before registration shows in the denial');
 
   fs.rmSync(lc, { recursive: true, force: true });
