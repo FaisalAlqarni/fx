@@ -8,8 +8,9 @@ compliance and code quality.
 ```markdown
 Subagent (general-purpose):
   description: "Review task NN (spec + quality)"
-  model: [MODEL, REQUIRED: default: standard tier; the most capable tier only
-         with a stated reason (see model-selection.md).]
+  model: [MODEL, REQUIRED: default: standard tier. The most capable tier
+         only with a first prompt line `Capable because: <reason>` (see
+         model-selection.md); without it the dispatch runs on the standard tier.]
   prompt: |
     You are reviewing one task's implementation: first whether it matches
     its requirements, then whether it is well built. This is a task-scoped

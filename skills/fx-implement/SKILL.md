@@ -345,7 +345,7 @@ Always specify the model explicitly when dispatching: an omitted model
 inherits the session's, usually the most capable and most expensive.
 
 **Default: standard tier.** The most capable tier needs a one-line reason,
-written in the dispatch and in the ledger.
+written as the dispatch prompt's `Capable because:` line and in the ledger.
 
 The default, the most-capable qualifying list, the cheapest-tier safety rule,
 the babysitter rule, and the complexity signals:
@@ -606,7 +606,7 @@ confirmed as a real gap. **Minor findings never enter it**: ledger them as
 `Task <NN>: minor (deferred): <one-liner>` for the final review to triage.
 
 Five rounds maximum. Rounds 1 to 3 resume the original implementer; rounds 4 to 5 use
-a fresh one on a more capable model. Every round ends with a **scoped**
+a fresh one on a more capable model (`Capable because: fix round <R>`). Every round ends with a **scoped**
 re-review: a dispatched re-reviewer, or you reading the fix diff when it
 qualifies as small ([fix-loop.md](./fix-loop.md)). **Never fix findings yourself in the controller session.**
 
@@ -692,7 +692,7 @@ where `MERGE_BASE` is `git merge-base <base-branch> HEAD`. Include the printed
 path in the dispatch, **so the final reviewer reads one file instead of
 re-deriving the branch diff with git commands.**
 
-Invoke the fx-review lane in branch mode on the **most capable available model**.
+Invoke the fx-review lane in branch mode on the **most capable available model** (`Capable because: final branch review`).
 Point it at the ledger's **deferred-minor and parked lines** so it can triage
 which must be fixed before merge.
 

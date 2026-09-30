@@ -9,9 +9,10 @@ standards before it cascades into more work.
 ```markdown
 Subagent (general-purpose):
   description: "Review branch <name>"
-  model: [MODEL, REQUIRED: default: standard tier; the most capable tier only
-         with a stated reason (see model-selection.md). The final whole-branch
-         review is one of the named most-capable cases.]
+  model: [MODEL, REQUIRED: default: standard tier. The most capable tier
+         only with a first prompt line `Capable because: <reason>` (see
+         model-selection.md); without it the dispatch runs on the standard tier.]
+         The final whole-branch review is one of the named most-capable cases.
   prompt: |
     You are a senior code reviewer with expertise in software architecture,
     design patterns, and best practices. Review completed work against its

@@ -9,8 +9,9 @@ already happened.
 ```markdown
 Subagent (general-purpose):
   description: "Re-review task NN fix round R"
-  model: [MODEL, REQUIRED: default: standard tier; the most capable tier only
-         with a stated reason (see model-selection.md).]
+  model: [MODEL, REQUIRED: default: standard tier. The most capable tier
+         only with a first prompt line `Capable because: <reason>` (see
+         model-selection.md); without it the dispatch runs on the standard tier.]
   prompt: |
     You are re-reviewing one task's fix round. A previous review produced
     findings; an implementer has attempted to fix them. Your job is to verdict

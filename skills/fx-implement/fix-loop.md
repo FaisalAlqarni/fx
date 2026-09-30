@@ -49,7 +49,7 @@ maximum per task.**
   findings-file(s) and rule; the report file is the persistent memory either
   way.
 - **Rounds 4 to 5:** dispatch a **fresh** implementer on a **more capable
-  model**, with the task path, the report-file path, the same findings-file(s)
+  model** (`Capable because: fix round <R>` as the prompt's first line), with the task path, the report-file path, the same findings-file(s)
   and open-items rule, and this framing: *"A prior implementer attempted this
   task N times; you own it now. Read the report file for what was tried."* A
   loop surviving three resumes usually means the implementer cannot see its

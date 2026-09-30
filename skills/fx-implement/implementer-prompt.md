@@ -5,8 +5,9 @@ Dispatch one implementer per task. Fill every `[PLACEHOLDER]`.
 ```markdown
 Subagent (general-purpose):
   description: "Implement task NN: [title]"
-  model: [MODEL, REQUIRED: default: standard tier; the most capable tier only
-         with a stated reason (see model-selection.md).]
+  model: [MODEL, REQUIRED: default: standard tier. The most capable tier
+         only with a first prompt line `Capable because: <reason>` (see
+         model-selection.md); without it the dispatch runs on the standard tier.]
   prompt: |
     You are implementing task [NN]: [title]
 

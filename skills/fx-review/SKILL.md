@@ -193,7 +193,7 @@ controller records that reply to a findings file itself, without reasoning
 over it: see `fx-implement` §3's Lens dispatch for the exact command.
 
 **Branch mode also dispatches the broad reviewer**: [reviewer-prompt.md](./reviewer-prompt.md),
-on the most capable available model, pointed at the ledger's deferred-minor and
+on the most capable available model, with `Capable because: final branch review` as the prompt's first line, pointed at the ledger's deferred-minor and
 parked lines so it can triage what must be fixed before merge.
 
 **Branch mode also dispatches the unprimed adversarial pass**: `fx-devils-

@@ -26,6 +26,12 @@ prompt and in the ledger entry for that dispatch. Work that qualifies:
 - Fix rounds 4 and 5.
 - The final whole-branch review.
 
+Write the reason as its own line in the dispatch prompt, starting
+`Capable because:`, for example `Capable because: fix round 4`. On runtimes
+that route dispatches, a most-capable dispatch without that line runs on the
+standard tier, and a general dispatch that names no model runs on the
+standard tier.
+
 This names what is expected to qualify, not a closed set: other work that
 genuinely needs it still needs the reason written down.
 

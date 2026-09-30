@@ -15,6 +15,7 @@
 // FAIL CLOSED on the guard, FAIL OPEN on the lane check. They are different
 // kinds of rule: the guard prevents irreversible damage, so a broken guard must
 // refuse; the lane check is advice, so a broken one must not wedge the session.
+// The Agent routing branch is advice-class and fails open, like the lane check.
 
 const path = require('path');
 
@@ -34,6 +35,13 @@ try {
   ({ laneCheck } = require('../lib/lane-check'));
 } catch {
   laneCheck = () => null;            // advice only; never block because it is missing
+}
+
+let route;
+try {
+  ({ route } = require('../lib/dispatch-route'));
+} catch {
+  route = () => null;                // routing is advice; a broken module passes calls through
 }
 
 process.on('uncaughtException', (e) =>
@@ -71,6 +79,19 @@ process.stdin.on('end', () => {
       reason = null;                 // advice: a bug here must not block a write
     }
     if (reason) deny(reason);
+    process.exit(0);
+  }
+
+  if (tool === 'Agent' || tool === 'Task') {
+    let result = null;
+    try {
+      result = route(ti);
+    } catch {
+      result = null;
+    }
+    if (result && typeof result === 'object') {
+      process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', updatedInput: result } }));
+    }
     process.exit(0);
   }
 
