@@ -1,34 +1,34 @@
-# 11: README, full gate and live routing probe
+# 11: README and the full gate
 
 **Status:** ready-for-agent
-**Blocked by:** 01, 02, 03, 04, 05, 06, 07, 08, 09, 10
+**Blocked by:** 01, 02, 03, 04, 05, 06, 07, 08, 09
 **Phase:** Verify
 
-**What to build:** the README describes the pipeline as it now runs and says, with measured numbers and their limits, what a build cost before this change. The full gate runs once on the finished branch. One live probe on Claude Code shows that the routing hook sets the model a subagent actually runs on.
+**What to build:** the README describes the pipeline as it now runs and says, with measured numbers and their limits, what a build cost before this change. The full gate runs once on the finished branch. (The live routing probe runs in task 03, where the hook is built; OpenCode versions are task 10's, which this task does not wait for.)
 
 **Files:**
 - Modify: `README.md`
 
 **Interfaces:**
-- Consumes: the lens table from task 01, the rules from tasks 02 to 06, the INSTALL results from task 10, and `docs/plans/2026-09-29-lean-review/measure/fx-cost.py`.
+- Consumes: the lens table from task 01, the rules from tasks 02 to 06, the probe result in task 03's commit message, and `docs/plans/2026-09-29-lean-review/measure/fx-cost.py`.
 - Produces: nothing other tasks read.
 
-**Seam:** the README text; `scripts/check-all`; a subagent transcript's `message.model`.
+**Seam:** the README text; `scripts/check-all`.
 
-**Risks:** every number in the README comes from `design.md` §Problem, which cites `fx-cost.py` output and one `/usage` report; copy them, do not recompute or round differently. The probe spends a small amount of model quota: three one-line subagent calls.
+**Risks:** every number in the README comes from `design.md` §Problem, which cites `fx-cost.py` output and one `/usage` report; copy them, do not recompute or round differently.
 
-**Idempotency:** README edits are replacements of named sections; the probe runs in a fresh temp directory and only reads transcripts.
+**Idempotency:** README edits are replacements of named sections.
 
-**Testing:** `scripts/check-all` (the one full run in this build); the live probe.
+**Testing:** `scripts/check-all`, the one full run in this build.
 
 ## Acceptance criteria
 - [ ] The pipeline diagram's per-task block shows the task reviewer plus tripwire lenses, the fix loop's controller re-review, and no baseline suite; the final block shows every lens plus devil's advocate and the one `test_all` with failure classification. The fx-brainstorm block names the confidence check.
 - [ ] The lens table matches task 01's columns, and the sentence under it says which lenses fire per task and on what.
 - [ ] A new section "What a build costs" carries the §Problem table from `design.md` verbatim in its numbers, the method, the caveats, and the sentence that the new defaults have not been measured on a build yet.
 - [ ] "Always on" names the routing hook (Claude Code only; Codex and opencode deferred, ADR-0031) and the companions line with its `.fx.json` override.
-- [ ] "Install" says opencode is measured on 1.18.25 and 2.0.18.
+- [ ] "Install" points at `INSTALL.md` "What is verified" for the opencode versions, without claiming a version this branch has not measured.
 - [ ] `scripts/check-all` prints `ALL GREEN`.
-- [ ] The probe shows: a general dispatch with no model ran on a Sonnet model; an Opus dispatch without the reason line ran on Sonnet; an Opus dispatch with `Capable because:` ran on Opus. The three model ids are recorded in the commit message body.
+- [ ] "Always on" quotes the three probe model ids from task 03's commit message as the evidence that routing works.
 
 ## Steps
 
@@ -76,7 +76,7 @@ dispatch routing, Claude Code only:
 
 and a paragraph after the `PREAMBLE.md` size paragraph: the companions line (what it names, that a missing tool is skipped, `.fx.json` `companions` to replace it or `""` to turn it off, that it sits outside the bootstrap).
 
-- [ ] **6. Install section**: after the opencode install line, add `fx is measured on opencode 1.18.25 and 2.0.18 (\`INSTALL.md\`, "What is verified").`
+- [ ] **6. Install section**: after the opencode install line, add `Which opencode versions fx is measured on, and with what result: \`INSTALL.md\`, "What is verified".`
 
 - [ ] **7. Check the README**
 
@@ -88,29 +88,9 @@ Expected: both pass.
 Run: `scripts/check-all`
 Expected: `ALL GREEN`. On a failure, report the failing gate and its output; fix only if the cause is in this task's README edit, otherwise report it as a finding against the task that owns the file.
 
-- [ ] **9. Live routing probe.** From the worktree root:
-
-```
-FX="$(git rev-parse --show-toplevel)"; P="$(mktemp -d)"; cd "$P"
-claude -p --plugin-dir "$FX" --output-format json \
-  "Use the Agent tool once: subagent_type general-purpose, description 'probe one', prompt 'Reply with the word OK.' Do not set a model." > one.json
-claude -p --plugin-dir "$FX" --output-format json \
-  "Use the Agent tool once: subagent_type general-purpose, model opus, description 'probe two', prompt 'Reply with the word OK.'" > two.json
-claude -p --plugin-dir "$FX" --output-format json \
-  "Use the Agent tool once: subagent_type general-purpose, model opus, description 'probe three', prompt 'Capable because: routing probe\nReply with the word OK.'" > three.json
-for f in one two three; do
-  sid=$(jq -r .session_id $f.json)
-  find ~/.claude/projects -path "*$sid*/subagents/*.jsonl" -exec jq -r 'select(.message.model) | .message.model' {} \; | sort -u | sed "s/^/$f: /"
-done
-```
-
-Expected: `one:` and `two:` print a `claude-sonnet-*` id; `three:` prints a `claude-opus-*` id. If a transcript is not found under that path, find it with `grep -rl "$sid" ~/.claude/projects --include='*.jsonl'` and read `message.model` from the subagent file. Any other result is a FAIL: report it with the three outputs; do not change the hook in this task.
-
-- [ ] **10. Commit**
+- [ ] **9. Commit**
 
 ```
 git add README.md
-git commit -m "docs(readme): lean-review pipeline, measured build cost, routing" -m "Routing probe: one=<model id>, two=<model id>, three=<model id>"
+git commit -m "docs(readme): lean-review pipeline, measured build cost, routing"
 ```
-
-with the three real model ids.

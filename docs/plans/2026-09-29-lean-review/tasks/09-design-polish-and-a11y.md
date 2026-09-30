@@ -29,7 +29,7 @@
 
 ## Acceptance criteria
 - [ ] `references/stacks/web-polish.md` exists with the content below.
-- [ ] `fx-design` §7 loads it, next to the `web.md` load; item 4 of §3 carries the hierarchy clause.
+- [ ] `fx-design` loads it in §5 (motion) and §7 (next to the `web.md` load); item 4 of §3 carries the hierarchy clause.
 - [ ] `fx-lens-a11y` Perception has the animation-only-signal bullet; RTL has the flip table.
 - [ ] ADR-0012's motion paragraph says it is superseded in part by ADR-0034, and ADR-0012 gains "No SEO or marketing audit" and "No paid web search backend".
 - [ ] ADR-0034 lists what was absorbed from each of the four sources, where it went, and what was not adopted and why.
@@ -54,7 +54,10 @@ for (const phrase of ['scale(0.97)', 'Never `ease-in`', 'under 300 ms', 'transit
 assert.ok(polish.includes('heuristics'), 'web-polish says its rules are heuristics');
 
 const design = read('skills/fx-design/SKILL.md');
-assert.ok(design.includes('references/stacks/web-polish.md'), 'fx-design loads web-polish');
+const s5 = design.slice(design.indexOf('## 5. Structure, motion, background'), design.indexOf('## 6. Restraint'));
+const s7 = design.slice(design.indexOf('## 7. The quality floor'), design.indexOf('## 8. Writing is design content'));
+assert.ok(s5.includes('references/stacks/web-polish.md'), 'fx-design §5 loads web-polish for motion');
+assert.ok(s7.includes('references/stacks/web-polish.md'), 'fx-design §7 loads web-polish');
 assert.ok(design.includes('a layered shadow that separates one surface from another is not this tell'),
   'the card-kit tell is narrowed');
 
@@ -134,6 +137,8 @@ win over any value here.
 - [ ] **5. Edit `skills/fx-design/SKILL.md`.**
 
 §3, item 4: `the same soft grey shadow under each,` becomes `the same soft grey shadow under each (uniform depth regardless of hierarchy; a layered shadow that separates one surface from another is not this tell),`.
+
+§5, after the paragraph starting `**Motion that nobody triggered is for attention**`, add: `Motion values (easing, duration, press scale, what never animates) are in \`../../references/stacks/web-polish.md\`.`
 
 §7, after the paragraph that loads `../../references/stacks/web.md` (ending `this skill is the judgment.**`), add:
 

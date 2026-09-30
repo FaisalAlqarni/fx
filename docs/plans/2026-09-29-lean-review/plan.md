@@ -17,11 +17,12 @@
 **Stack:** Node (plain `node:assert` scripts, no framework), Markdown skills and agents, Python generator `scripts/gen-codex-agents`, bash `scripts/check-all`.
 **Complexity:** Medium
 **Risks:**
-- HIGH: the routing hook runs on every `Agent` call in every session with fx installed: it must never refuse and must pass the call unchanged on any error (task 03 tests both paths it can).
+- HIGH: the routing hook runs on every `Agent` call in every session with fx installed: it must never refuse, must pass the call unchanged on any error (task 03 tests a throwing and an unloadable module), and must leave forks and fx's own pinned agents alone. Whether Claude Code applies `updatedInput` without `permissionDecision` is settled by a live probe inside task 03, before later tasks build on it.
 - MEDIUM: preamble size budgets (bootstrap under 3,000, worst case under 9,000 characters) with the companions line and standing rulings added: tasks 04 and 05 extend the worst-case fixture to prove it.
 - MEDIUM: prose edits break text gates (`return-contract.test.js`, `check-prose`, `no-runtime-addressing`): every task runs them before committing.
-- MEDIUM: OpenCode live rows need the local model server (`OPENCODE_URL`, default `http://127.0.0.1:8899/v1`); task 10 reports BLOCKED if it is down rather than guessing.
-**Testing:** Unit: `lib/dispatch-route`, `lib/plan-state`, `lib/preamble` · Gate: one text gate per prose task, added to `scripts/check-all` · Integration: the hook run as a process with JSON on stdin · Live: one Claude Code routing probe, OpenCode live conformance on 1.18.25 and 2.0.18.
+- MEDIUM: OpenCode live rows need the local model server on `127.0.0.1:8899` and a standalone binary the conformance jail can see; task 10 records them as pending if the server is down, and nothing else waits on task 10.
+- MEDIUM: the exit-gate classification must not let a new failing test pass as pre-existing: task 02 treats a test absent on the merge base as introduced and runs `setup` in the merge-base worktree.
+**Testing:** Unit: `lib/dispatch-route`, `lib/plan-state`, `lib/preamble` · Gate: one text gate per prose task, added to `scripts/check-all` · Integration: the hook run as a process with JSON on stdin · Live: one Claude Code routing probe (task 03), OpenCode live conformance on 1.18.25 and 2.0.18 (task 10, non-blocking).
 
 ## Global Constraints
 
@@ -45,14 +46,14 @@
 |---|-------|-----------|----------|-------|
 | 01 | Per-task tripwires in the lens table | none | security, database, silent-failure fire per task only on a tripwire; a11y and pipeline at the end | MVP |
 | 02 | Fix-loop controller re-review and one full test run | 01 | small fixes re-reviewed by the controller; no baseline `test_all`; exit-gate failure classification | MVP |
-| 03 | Model routing hook on Claude Code | 02 | unrouted dispatches run on Sonnet; Opus only with `Capable because:` | Core |
+| 03 | Model routing hook on Claude Code | 02 | general dispatches default to Sonnet; Opus only with `Capable because:`; live probe | Core |
 | 04 | Standing rulings survive plans and compaction | 03 | `docs/plans/rulings.md`, ledger copy, rulings in the session block | Core |
 | 05 | Companion tools line in the preamble | 04 | conditional repowise, ponytail, caveman, fx-humanize line; `.fx.json` override | Core |
 | 06 | Confidence check in fx-brainstorm | none | 95% check and 2-line plan before approaches | Core |
 | 07 | Review prompt content | 03 | caller and variant sweep, fact re-read, test-constant drift, doc drift | Polish |
-| 08 | Security lens checks | none | 8 per-diff checks, 2 branch-only checks | Polish |
+| 08 | Security lens checks | 03 | 8 per-diff checks, 2 branch-only checks, lens mode in fx-review's brief | Polish |
 | 09 | Design polish reference and a11y lines | 07, 08 | `web-polish.md`, a11y lines, fx-design clause, ADR-0034, ADR-0012 amended | Polish |
-| 10 | OpenCode measured on 1.18.25 and 2.0.18 | 05 | live conformance on both versions, `INSTALL.md` updated | Verify |
-| 11 | README, full gate and live routing probe | 01 to 10 | README cost section and diagram, `check-all` green, probe recorded | Verify |
+| 10 | OpenCode checked on 1.18.25 and 2.0.18 | 05 | install and free rows once, live rows per version (pending if no server), `INSTALL.md` | Verify |
+| 11 | README and the full gate | 01 to 09 | README cost section, diagram and routing evidence, `check-all` green | Verify |
 
 Phases: MVP (01, 02) changes review shape and ships alone. Core (03 to 06) adds the mechanisms. Polish (07 to 09) absorbs external content. Verify (10, 11) measures and documents. Implementers run serially, so edges exist only where two tasks edit the same file or one consumes another's output.

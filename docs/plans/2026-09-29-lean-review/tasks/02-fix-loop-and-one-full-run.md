@@ -9,6 +9,7 @@
 **Files:**
 - Modify: `skills/fx-implement/SKILL.md`
 - Modify: `skills/fx-implement/fix-loop.md`
+- Modify: `skills/fx-implement/implementer-prompt.md`
 - Create: `docs/adr/0030-small-fixes-are-re-reviewed-by-the-controller.md`
 - Create: `tests/gates/fix-loop-shape.test.js`
 - Modify: `scripts/check-all`
@@ -19,7 +20,7 @@
 
 **Seam:** the prose of `fx-implement/SKILL.md` §2, §"Handle the report", §"The fix loop", the exit gate, and `fix-loop.md`, pinned by a gate test.
 
-**Risks:** `fix-loop.md` is over 100 lines and must keep opening with `## Contents` (return-contract gate); keep `findings file(s) as a whole`, `## Ledger lines` and "Never fix findings yourself in the controller session." Update the Contents list if you add a heading.
+**Risks:** a controller-reviewed round must leave the same re-review file a dispatched one would, because round 2 onward reads the previous round's `### Finding verdicts` and `### New breakage in the fix diff` (`fix-loop.md`, "From round 2 on"). Two existing lines contradict the new rule and must change with it: the controller reading rule "**Never read a diff yourself.**" and the rationalizations row "The fix was small, skip the re-review". `fix-loop.md` is over 100 lines and must keep opening with `## Contents` (return-contract gate); keep `findings file(s) as a whole`, `## Ledger lines` and "Never fix findings yourself in the controller session." Update the Contents list if you add a heading.
 
 **Idempotency:** text replacements; re-running finds the new text in place. The `check-all` line is added only if absent.
 
@@ -27,11 +28,12 @@
 
 ## Acceptance criteria
 - [ ] §2 says `test_all` runs once, at the exit gate, and no longer runs a baseline before task 01; the heading, the "Run the baseline suite" paragraph, the `Baseline:` report line and the red-flag row about baseline tests are updated to match.
-- [ ] "Handle the report" says what to do when an implementer ran `test_all` although `.fx.json` has `test_scope`.
-- [ ] `fix-loop.md` has a "Small fixes: controller re-review" rule with all four conditions, the `git diff --numstat` count that excludes test and doc files, the verdict per finding, and the ledger line.
+- [ ] "Handle the report" says what to do when an implementer ran `test_all` although `.fx.json` has `test_scope`, and the implementer's five-line `Tests:` field names the command it ran, so the controller can see it.
+- [ ] The controller reading rule and the rationalizations row are amended to match the controller re-review.
+- [ ] `fix-loop.md` has a "Small fixes: controller re-review" rule with all four conditions, the `git diff --numstat` count with glob excludes for test and doc files at any depth, binary files counted as over the cap, a re-review file with both sections including new breakage, and the ledger line.
 - [ ] `SKILL.md` §"The fix loop" names the controller re-review as the alternative to a dispatched one.
 - [ ] The final review allows splitting a multi-lens fix wave into serial fixers grouped by file, one re-review each, no second wave.
-- [ ] The exit gate has a "Classify every failing test" subsection: `test_one` on the branch, then on the merge base in a throwaway detached worktree, three outcomes, one ledger line each, "introduced" blocks completion.
+- [ ] The exit gate has a "Classify every failing test" subsection, placed after "Run what the repository's own gate runs" and before "Write the plan-complete line": `setup` run in a throwaway detached worktree of the merge base; a test file absent on the merge base is introduced; pre-existing only when the same assertion fails on both; one ledger line each; "introduced" blocks completion.
 - [ ] ADR-0030 records all three with the evidence from `design.md` §3 and §4 (543 fix commits, median 16 production lines, 55% at or under 20; full suite 35 to 45 minutes).
 - [ ] `tests/gates/fix-loop-shape.test.js` passes and is in `scripts/check-all`.
 
@@ -58,18 +60,26 @@ assert.ok(!impl.includes('once here for the baseline'), 'the baseline test_all r
 assert.ok(impl.includes('`test_all` runs once in a run, at the exit gate.'), 'test_all runs once');
 assert.ok(!impl.includes('Run the baseline suite **before task 01**'), 'no baseline paragraph');
 assert.ok(impl.includes('ran test_all (rule)'), 'a per-task test_all run is ledgered');
+assert.ok(read('skills/fx-implement/implementer-prompt.md').includes('naming the command it ran'), 'the Tests field names the command');
+assert.ok(impl.includes('**Never read a diff yourself**, except'), 'the reading rule names its one exception');
+assert.ok(!impl.includes('| "The fix was small, skip the re-review" | Unreviewed fixes'), 'the old rationalization row is replaced');
 
 assert.ok(loop.includes('**Small fixes: controller re-review.**'), 'the controller re-review rule exists');
 assert.ok(loop.includes('20 production lines or fewer'), 'the cap counts production lines');
 assert.ok(loop.includes('git diff --numstat'), 'the count is a command, not a guess');
+assert.ok(loop.includes("':(glob,exclude)**/spec/**'"), 'test paths are excluded at any depth');
+assert.ok(loop.includes('binary file'), 'a binary file counts as over the cap');
+assert.ok(loop.includes('### New breakage in the fix diff'), 'the controller checks for new breakage and writes it down');
 assert.ok(loop.includes('controller re-review (<L> lines)'), 'the ledger line shape is given');
 assert.ok(loop.includes('Never fix findings yourself in the controller session.'), 'the controller still never fixes');
 assert.ok(impl.includes('or you reading the fix diff when it qualifies as small'), 'SKILL.md points at the rule');
 
 const gateAt = impl.indexOf('### Classify every failing test');
 assert.ok(gateAt > 0, 'the exit gate classifies failures');
-const gate = impl.slice(gateAt, gateAt + 1500);
-for (const word of ['test_one', 'merge base', 'pre-existing', 'introduced', 'order-dependent']) {
+assert.ok(gateAt > impl.indexOf("### Run what the repository's own gate runs"), 'classification follows the CI step');
+assert.ok(gateAt < impl.indexOf('## Write the plan-complete line'), 'classification precedes the plan-complete line');
+const gate = impl.slice(gateAt, gateAt + 1800);
+for (const word of ['test_one', 'merge base', 'setup', 'does not exist on the merge base', 'same assertion', 'pre-existing', 'introduced', 'order-dependent']) {
   assert.ok(gate.includes(word), `the classification names ${word}`);
 }
 
@@ -121,11 +131,16 @@ Leave the greenfield paragraph (`No \`.fx.json\`, or the command is \`null\`?`) 
 - [ ] **5. Add to §"Handle the report"**, after the `**DONE_WITH_CONCERNS**` paragraph:
 
 ```markdown
-**A report whose test command is `test_all`**, where `.fx.json` has a
-`test_scope`, broke the one-full-run rule. The work stands; ledger
-`Task <NN>: ran test_all (rule)` and repeat the rule in that implementer's next
-dispatch or resume.
+**A report whose `Tests:` line names `test_all`**, where `.fx.json` has a
+`test_scope`, broke the one-full-run rule. Re-running would cost more than it
+saves, so the work stands; ledger `Task <NN>: ran test_all (rule)` and repeat
+the rule in that implementer's next dispatch or resume.
 ```
+
+In `skills/fx-implement/implementer-prompt.md`'s five-line reply, replace
+`- **Tests:** one line ("14/14 passing, output pristine")` with
+`- **Tests:** one line naming the command it ran and the result ("test_scope: 14/14 passing, output pristine")`.
+Keep the field name `Tests`: the return-contract gate requires it.
 
 - [ ] **6. Edit §"The fix loop" in `SKILL.md`.** Replace `Every round ends with a **scoped**\nre-review.` with:
 
@@ -142,38 +157,53 @@ qualifies as small ([fix-loop.md](./fix-loop.md)).
 yourself when all four hold:
 
 1. The fix changes 20 production lines or fewer. Count them with
-   `git diff --numstat <FIX_BASE> <HEAD> -- . ':!spec' ':!test' ':!tests' ':!*.md'`
-   and add both columns.
+   `git diff --numstat <FIX_BASE> <HEAD> -- . ':(glob,exclude)**/spec/**' ':(glob,exclude)**/test/**' ':(glob,exclude)**/tests/**' ':(glob,exclude)**/__tests__/**' ':(glob,exclude)**/*.Tests/**' ':(glob,exclude)**/*_spec.*' ':(glob,exclude)**/*.test.*' ':(glob,exclude)**/*.spec.*' ':(glob,exclude)**/*.md'`
+   and add both columns. Where `repo.md` names this repository's test paths,
+   exclude those too. A binary file shows `-`: count it as over the cap.
 2. It touches only files already in the task's diff.
 3. Every open finding came from the task reviewer, none from a tripwire lens.
 4. No open finding is Critical.
 
-Verdict each finding ADDRESSED or NOT ADDRESSED, as a re-reviewer would, and
+Do what a re-reviewer does: verdict each finding ADDRESSED or NOT ADDRESSED,
+and read the fix diff for new breakage. Write the re-review file where a
+dispatched re-reviewer would, with `### Finding verdicts` and
+`### New breakage in the fix diff`, so the next round reads it as usual. Then
 append `Task <NN>: fix round <R>/5: controller re-review (<L> lines): <X> addressed, <Y> open`.
-A NOT ADDRESSED finding continues the loop as usual. This is the one time you
+A NOT ADDRESSED finding, or new Critical or Important breakage, continues the
+loop as usual. This is the one time you
 read a diff, and the 20-line cap is what keeps it one. The covering-tests check
 above still applies first.
 ```
 
 If `fix-loop.md`'s `## Contents` list names paragraphs, add this one.
 
-- [ ] **8. Add the exit-gate subsection** to `SKILL.md`, directly after the `### Run what the repository's own gate runs` section and before the next `###` heading:
+- [ ] **8. Add the exit-gate subsection** to `SKILL.md`, at the end of the `### Run what the repository's own gate runs` section, directly before `## Write the plan-complete line`:
 
 ```markdown
 ### Classify every failing test
 
-When `test_all` fails, run each failing test alone with `test_one`, first on
-the branch, then on the merge base in a throwaway detached worktree
+When `test_all` fails, run each failing test alone with `test_one` on the
+branch. Then make a throwaway detached worktree of the merge base
 (`git worktree add --detach <scratch> <MERGE_BASE>`, removed afterwards with
-`git worktree remove <scratch>`).
+`git worktree remove <scratch>`), run the `.fx.json` `setup` command in it once,
+and run the same tests there.
 
-- Fails on both: **pre-existing**. Report it; it does not block this branch.
-- Fails only on the branch: **introduced**. It blocks the completion claim
-  like any other failure.
+- The test's file does not exist on the merge base: **introduced**.
+- Fails on both with the same assertion: **pre-existing**. Report it; it does
+  not block this branch. Fails on the merge base some other way (setup,
+  missing dependency): treat it as **introduced**.
+- Fails alone on the branch, passes on the merge base: **introduced**.
+  Introduced blocks the completion claim like any other failure.
 - Passes alone on the branch: **order-dependent**. Report it with the order
   that failed.
 
 Append one line each: `Exit gate: <test>: pre-existing|introduced|order-dependent`.
+```
+
+- [ ] **8a. Amend the two lines the new rule contradicts** in `SKILL.md`. In "Controller reading rules", replace `- **Never read a diff yourself.** \`review-package\` writes it for the` with `- **Never read a diff yourself**, except a small fix round's controller re-review ([fix-loop.md](./fix-loop.md)), capped at 20 production lines. \`review-package\` writes it for the` (keep the rest of that bullet). In "Common rationalizations", replace the row starting `| "The fix was small, skip the re-review" |` with:
+
+```markdown
+| "The fix was small, skip the re-review" | A small fix gets a controller re-review, not none: fix-loop.md's four conditions, a re-review file with both sections, and the ledger line. |
 ```
 
 - [ ] **8b. Allow the end-pass fix wave to split.** In `SKILL.md`'s final review, after `Then exactly **one** scoped re-review.`, add:
@@ -196,7 +226,7 @@ assert.ok(impl.includes('serial fixers grouped by file'), 'the end-pass wave may
 Run: `node tests/gates/fix-loop-shape.test.js`
 Expected: `fix-loop-shape.test.js: OK`
 
-- [ ] **10. Write ADR-0030** at `docs/adr/0030-small-fixes-are-re-reviewed-by-the-controller.md`. H1: `# Small fixes are re-reviewed by the controller, and test_all runs once`. Prose: the four conditions and why the cap counts production lines (543 fix commits on advantage-backend since 2026-09-21: median 16 production lines, 52 with tests and docs; 55% at or under 20); why the controller's context is the constraint; the dropped baseline (35 to 45 minutes per full run there) and the exit-gate classification that replaces it; the per-task `test_all` rule.
+- [ ] **10. Write ADR-0030** at `docs/adr/0030-small-fixes-are-re-reviewed-by-the-controller.md`. H1: `# Small fixes are re-reviewed by the controller, and test_all runs once`. Prose: the four conditions and why the cap counts production lines (543 fix commits on advantage-backend since 2026-09-21: median 16 production lines, 52 with tests and docs; 55% at or under 20); why the controller's context is the constraint; the dropped baseline (35 to 45 minutes per full run there) and the exit-gate classification that replaces it, including why a test absent on the merge base is introduced; the per-task `test_all` rule, and why it is ledgered rather than re-run (the design's "rejects": re-running a finished task's tests costs more than it saves).
 
 - [ ] **11. Add the gate to `scripts/check-all`** after the `tripwire-table.test.js` line:
 
@@ -206,12 +236,12 @@ run fix-loop-shape.test.js node tests/gates/fix-loop-shape.test.js
 
 - [ ] **12. Run the touched gates**
 
-Run: `node tests/gates/return-contract.test.js && node tests/gates/tripwire-table.test.js && node tests/gates/no-runtime-addressing.test.js && scripts/check-prose skills/fx-implement/SKILL.md skills/fx-implement/fix-loop.md docs/adr/0030-small-fixes-are-re-reviewed-by-the-controller.md`
+Run: `node tests/gates/return-contract.test.js && node tests/gates/tripwire-table.test.js && node tests/gates/no-runtime-addressing.test.js && scripts/check-prose skills/fx-implement/SKILL.md skills/fx-implement/fix-loop.md skills/fx-implement/implementer-prompt.md docs/adr/0030-small-fixes-are-re-reviewed-by-the-controller.md`
 Expected: all pass.
 
 - [ ] **13. Commit**
 
 ```
-git add skills/fx-implement/SKILL.md skills/fx-implement/fix-loop.md docs/adr/0030-small-fixes-are-re-reviewed-by-the-controller.md tests/gates/fix-loop-shape.test.js scripts/check-all
+git add skills/fx-implement/SKILL.md skills/fx-implement/fix-loop.md skills/fx-implement/implementer-prompt.md docs/adr/0030-small-fixes-are-re-reviewed-by-the-controller.md tests/gates/fix-loop-shape.test.js scripts/check-all
 git commit -m "feat(implement): controller re-review for small fixes, one full test run"
 ```

@@ -4,7 +4,7 @@
 **Blocked by:** 02
 **Phase:** Core
 
-**What to build:** on Claude Code, every `Agent` dispatch is routed before it runs. A general dispatch with no `model` runs on the standard tier (`sonnet`) instead of inheriting the session's model. A dispatch with `model: opus` runs on `sonnet` unless its prompt has a line starting `Capable because:`. Nothing is ever refused, and any error in the hook lets the call through unchanged. fx's own templates and rules say how to write the reason line.
+**What to build:** on Claude Code, every `Agent` dispatch is routed before it runs. A general dispatch (`general-purpose`, `claude`, `Plan`) with no `model` runs on the standard tier (`sonnet`) instead of inheriting the session's model. A dispatch with `model: opus` runs on `sonnet` unless its prompt has a line starting `Capable because:`. Nothing is ever refused, and any error in the hook lets the call through unchanged. fx's own templates and rules say how to write the reason line.
 
 **Files:**
 - Create: `lib/dispatch-route.js`
@@ -30,7 +30,8 @@
 
 **Risks:**
 - The hook fires on every `Agent` call in every session with fx installed. It must not refuse, and must pass the call unchanged if `lib/dispatch-route` fails to load or throws.
-- Only general dispatch types are defaulted: no `subagent_type`, `general-purpose`, `claude`, `Plan`. Any other type (fx's lenses, other plugins' agents, `Explore`, `fork`) keeps whatever its own definition pins; the Opus rule still applies to an explicit `model: opus` on any type.
+- Only general dispatch types are defaulted: `general-purpose`, `claude`, `Plan`. A call with **no** `subagent_type` is left alone: on current Claude Code it can be a fork, which must inherit the parent's model and context (fx always names `general-purpose`). fx's own agents (`fx:` prefix) are left alone entirely, including an explicit `model: opus`, because they pin their tier in frontmatter (the security lens is pinned to the most capable tier). The Opus rule applies to an explicit `model: opus` on any other type.
+- Whether Claude Code applies `updatedInput` when `permissionDecision` is omitted is not proven by the docs, which pair it with `allow` or `ask`. Step 7 settles it with a live probe before anything else depends on it.
 - The routing branch writes JSON to stdout and exits 0. It does not use `deny()`, which writes to stderr and exits 2.
 - Skill bodies and generic references name tiers, never Haiku, Sonnet or Opus (`references/harnesses/claude-code.md` says so): model names go only in the harness file and the code.
 
@@ -39,12 +40,13 @@
 **Testing:** unit tests on `route()` and process tests on the hook in one gate file.
 
 ## Acceptance criteria
-- [ ] A general dispatch without `model` is rewritten to `model: "sonnet"`, with every other field unchanged.
+- [ ] A general dispatch (`general-purpose`, `claude`, `Plan`) without `model` is rewritten to `model: "sonnet"`, with every other field unchanged. A call with no `subagent_type` is left alone.
 - [ ] `model: "opus"` without a line matching `^\s*Capable because:` in the prompt is rewritten to `sonnet`; with the line it passes untouched.
-- [ ] A typed agent such as `fx:fx-lens-security` without `model` passes untouched.
+- [ ] Any `fx:` agent passes untouched, with or without `model`. Another typed agent with `model: opus` and no reason line is rewritten to `sonnet`.
 - [ ] A dispatch that already names `sonnet` or `haiku` passes with no output.
 - [ ] The hook prints `{"hookSpecificOutput":{"hookEventName":"PreToolUse","updatedInput":{...}}}` and exits 0 when it rewrites, prints nothing and exits 0 otherwise, for both tool names `Agent` and `Task`.
-- [ ] A load failure or throw in `lib/dispatch-route` leaves the call unchanged (code path present, same pattern as `laneCheck`).
+- [ ] A load failure or a throw in `lib/dispatch-route` leaves the call unchanged: exit 0, no output, proven by a test that runs a copy of the hook against a broken module.
+- [ ] A live probe with the parent session on the most capable tier shows the rewritten model is the one the subagent ran on, and ADR-0031 records whether `permissionDecision` is omitted or `allow` and why.
 - [ ] The four dispatch templates, `model-selection.md`, fx-implement's rounds 4 and 5 and final review, and fx-review's branch mode all tell the writer to put `Capable because: <reason>` as the prompt's first line for the most capable tier.
 - [ ] ADR-0031 records the routing rule, why Codex and OpenCode are deferred, and the research anchors from `design.md` §5a.
 - [ ] `tests/gates/dispatch-route.test.js` passes and is in `scripts/check-all`.
@@ -60,6 +62,8 @@
 // The routing hook: a general dispatch with no model runs on the standard
 // tier, and the most capable tier needs a written reason. It never refuses.
 const assert = require('node:assert');
+const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
@@ -72,7 +76,9 @@ assert.deepStrictEqual(
   route({ subagent_type: 'general-purpose', description: 'd', prompt: 'p' }),
   { subagent_type: 'general-purpose', description: 'd', prompt: 'p', model: 'sonnet' },
   'a general dispatch with no model gets the standard tier');
-assert.deepStrictEqual(route({ prompt: 'p' }), { prompt: 'p', model: 'sonnet' }, 'no type counts as general');
+assert.strictEqual(route({ prompt: 'p' }), null, 'no type may be a fork: left alone');
+assert.strictEqual(route({ model: 'opus', prompt: 'p' }), null, 'a fork is left alone even with a model');
+assert.strictEqual(route({ subagent_type: 'claude', prompt: 'p' }).model, 'sonnet', 'claude is general');
 assert.strictEqual(route({ subagent_type: 'Plan', prompt: 'p' }).model, 'sonnet', 'Plan is general');
 assert.strictEqual(route({ subagent_type: 'general-purpose', model: 'haiku', prompt: 'p' }), null, 'a chosen tier stands');
 assert.strictEqual(route({ subagent_type: 'general-purpose', model: 'sonnet', prompt: 'p' }), null, 'sonnet stands');
@@ -86,8 +92,11 @@ assert.strictEqual(
   null, 'the reason line may sit on any line');
 assert.strictEqual(route({ subagent_type: 'fx:fx-lens-security', prompt: 'p' }), null, 'a typed agent keeps its own pin');
 assert.strictEqual(route({ subagent_type: 'Explore', prompt: 'p' }), null, 'Explore keeps its own default');
-assert.strictEqual(route({ subagent_type: 'fx:fx-lens-security', model: 'opus', prompt: 'p' }).model, 'sonnet',
-  'an explicit opus on any type still needs a reason');
+assert.strictEqual(route({ subagent_type: 'fx:fx-lens-security', model: 'opus', prompt: 'p' }), null,
+  'an fx agent pins its own tier, even with an explicit model');
+assert.strictEqual(route({ subagent_type: 'other-plugin:agent', model: 'opus', prompt: 'p' }).model, 'sonnet',
+  'an explicit opus on another type still needs a reason');
+assert.strictEqual(route({ subagent_type: 'other-plugin:agent', prompt: 'p' }), null, 'another typed agent keeps its own pin');
 assert.strictEqual(route(null), null, 'no input, no change');
 assert.strictEqual(route('nonsense'), null, 'a non-object input is left alone');
 
@@ -110,11 +119,30 @@ r = run({ ...base, tool_name: 'Agent', tool_input: { subagent_type: 'general-pur
 assert.strictEqual(r.code, 0);
 assert.strictEqual(r.out, '', 'a routed call passes with no output');
 
-r = run({ ...base, tool_name: 'Task', tool_input: { prompt: 'p' } });
+r = run({ ...base, tool_name: 'Task', tool_input: { subagent_type: 'general-purpose', prompt: 'p' } });
 assert.strictEqual(JSON.parse(r.out).hookSpecificOutput.updatedInput.model, 'sonnet', 'the older tool name is routed too');
 
 r = run({ ...base, tool_name: 'Agent', tool_input: { subagent_type: 'general-purpose', model: 'opus', prompt: 'p' } });
 assert.strictEqual(JSON.parse(r.out).hookSpecificOutput.updatedInput.model, 'sonnet', 'the hook applies the opus rule');
+
+// fail open: a copy of the hook against a broken module never refuses and never rewrites
+{
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-route-broken-'));
+  fs.cpSync(path.join(root, 'hooks'), path.join(tmp, 'hooks'), { recursive: true });
+  fs.cpSync(path.join(root, 'lib'), path.join(tmp, 'lib'), { recursive: true });
+  const call = { ...base, tool_name: 'Agent', tool_input: { subagent_type: 'general-purpose', prompt: 'p' } };
+  const runCopy = () => spawnSync('node', [path.join(tmp, 'hooks', 'fx-pretooluse.js')],
+    { input: JSON.stringify(call), encoding: 'utf8' });
+  fs.writeFileSync(path.join(tmp, 'lib', 'dispatch-route.js'), "module.exports = { route() { throw new Error('boom'); } };\n");
+  let b = runCopy();
+  assert.strictEqual(b.status, 0, `a throwing route never refuses: ${b.stderr}`);
+  assert.strictEqual(b.stdout.trim(), '', 'a throwing route leaves the call unchanged');
+  fs.writeFileSync(path.join(tmp, 'lib', 'dispatch-route.js'), "throw new Error('load');\n");
+  b = runCopy();
+  assert.strictEqual(b.status, 0, `a module that fails to load never refuses: ${b.stderr}`);
+  assert.strictEqual(b.stdout.trim(), '', 'a module that fails to load leaves the call unchanged');
+  fs.rmSync(tmp, { recursive: true, force: true });
+}
 
 console.log('dispatch-route.test.js: OK');
 ```
@@ -124,7 +152,7 @@ console.log('dispatch-route.test.js: OK');
 Run: `node tests/gates/dispatch-route.test.js`
 Expected: FAIL, `Cannot find module '.../lib/dispatch-route'`.
 
-- [ ] **4. Implement `lib/dispatch-route.js`** with `fx-tdd`: export `{ route }`. The general types are exactly `undefined`, `''`, `'general-purpose'`, `'claude'`, `'Plan'`. The reason test is `/^\s*Capable because:/m` on `prompt`. Return a new object (never mutate the input). Add a header comment in the style of `lib/lane-check.js` saying what it returns and why it never refuses.
+- [ ] **4. Implement `lib/dispatch-route.js`** with `fx-tdd`: export `{ route }`. Return `null` for a non-object, for a missing or empty `subagent_type`, and for any type starting `fx:`. The general types are exactly `'general-purpose'`, `'claude'`, `'Plan'`. The reason test is `/^\s*Capable because:/m` on `prompt`. Return a new object (never mutate the input). Add a header comment in the style of `lib/lane-check.js` saying what it returns and why it never refuses.
 
 - [ ] **5. Wire it into `hooks/fx-pretooluse.js`.** Next to the `laneCheck` require, load it fail open: `let route; try { ({ route } = require('../lib/dispatch-route')); } catch { route = () => null; }`. Before the final `process.exit(0)`, add a branch for `tool === 'Agent' || tool === 'Task'`: call `route(ti)` inside a try that maps a throw to `null`; when the result is an object, write `JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', updatedInput: result } })` to stdout and exit 0; otherwise exit 0 with no output. Add one line to the header comment: the routing branch is advice-class and fails open, like the lane check.
 
@@ -133,7 +161,27 @@ Expected: FAIL, `Cannot find module '.../lib/dispatch-route'`.
 Run: `node tests/gates/dispatch-route.test.js`
 Expected: `dispatch-route.test.js: OK`
 
-- [ ] **7. Add the gate to `scripts/check-all`** after the `fix-loop-shape.test.js` line:
+- [ ] **7. Live probe, before anything else depends on the hook.** From the repo root (this spends three small subagent calls):
+
+```
+FX="$(git rev-parse --show-toplevel)"; P="$(mktemp -d)"; cd "$P"
+claude -p --model opus --plugin-dir "$FX" --output-format json \
+  "Use the Agent tool once: subagent_type general-purpose, description 'probe one', prompt 'Reply with the word OK.' Do not set a model." > one.json
+claude -p --model opus --plugin-dir "$FX" --output-format json \
+  "Use the Agent tool once: subagent_type general-purpose, model opus, description 'probe two', prompt 'Reply with the word OK.'" > two.json
+claude -p --model opus --plugin-dir "$FX" --output-format json \
+  "Use the Agent tool once: subagent_type general-purpose, model opus, description 'probe three', prompt 'Capable because: routing probe\nReply with the word OK.'" > three.json
+for f in one two three; do
+  sid=$(jq -r .session_id $f.json)
+  grep -rl "$sid" ~/.claude/projects --include='*.jsonl' | grep /subagents/ \
+    | xargs -r jq -r 'select(.message.model) | .message.model' | sort -u | sed "s/^/$f: /"
+done
+cd "$FX"
+```
+
+Expected: `one:` and `two:` print a `claude-sonnet-*` id, `three:` a `claude-opus-*` id. The parent runs on the most capable tier, so a Sonnet id can only come from the hook. If `one:` or `two:` shows Opus, the rewrite was ignored: add `permissionDecision: 'allow'` to the hook's output, change the test's `assert.strictEqual(out.permissionDecision, undefined, ...)` to expect `'allow'`, re-run step 6, and repeat this probe. If it still shows Opus, stop and report BLOCKED with the three outputs. Record the three model ids for the commit message.
+
+- [ ] **7b. Add the gate to `scripts/check-all`** after the `fix-loop-shape.test.js` line:
 
 ```
 run dispatch-route.test.js node tests/gates/dispatch-route.test.js
@@ -155,13 +203,14 @@ In `references/harnesses/claude-code.md` §"Model tiers", add after the table:
 
 ```markdown
 `hooks/fx-pretooluse.js` routes every `Agent` call through `lib/dispatch-route.js`:
-a general dispatch (no type, `general-purpose`, `claude`, `Plan`) with no
-`model` runs on `sonnet`, and `model: opus` without a `Capable because:` line
-in the prompt runs on `sonnet`. It never refuses a call. Codex and opencode
+a general dispatch (`general-purpose`, `claude`, `Plan`) with no `model` runs
+on `sonnet`, and `model: opus` without a `Capable because:` line in the prompt
+runs on `sonnet`. A call with no type (a fork) and any `fx:` agent are left
+alone. It never refuses a call. Codex and opencode
 have no equivalent yet (ADR-0031).
 ```
 
-In each of the four templates (`implementer-prompt.md`, `task-reviewer-prompt.md`, `re-review-prompt.md`, `fx-review/reviewer-prompt.md`), replace the two-line `model:` placeholder with:
+In each of the four templates (`implementer-prompt.md`, `task-reviewer-prompt.md`, `re-review-prompt.md`, `fx-review/reviewer-prompt.md`), replace the whole `model:` placeholder (two lines in the first three, three lines in `reviewer-prompt.md`, whose third line names the final whole-branch review; keep that sentence at the end) with:
 
 ```
   model: [MODEL, REQUIRED: default: standard tier. The most capable tier
@@ -175,7 +224,7 @@ In `skills/fx-implement/fix-loop.md`, wherever rounds 4 and 5 are described as a
 
 In `skills/fx-review/SKILL.md`, where branch mode says `on the most capable available model` (§ around the broad reviewer dispatch), add `, with \`Capable because: final branch review\` as the prompt's first line`.
 
-- [ ] **9. Write ADR-0031** at `docs/adr/0031-defaults-are-held-by-mechanism.md`. H1: `# Defaults are held by mechanism, not prose`. First section, "Model routing": the evidence (720+ subagents on advantage-backend, about half of implementers, fixes and reviews on Opus by explicit choice; the owner asked for routing repeatedly), the rule and the general-type list, why it rewrites instead of refusing (a hook cannot tell fx's dispatches from the user's, so refusing would block the user's own), fail open. Second section, "Codex and OpenCode deferred": neither takes a model per dispatch (a Codex role's `model` overrides the `spawn_agent` argument, `multi_agents_v2/spawn.rs:128-143` at `rust-v0.155.1`; OpenCode's `task` tool has no model argument and a subagent inherits the parent's, `tool/task.ts:43-60,181-184` at `v1.18.25`), so routing there needs tier-pinned roles per runtime; most OpenCode setups run one hosted model. Leave a third heading `## Standing rulings` with the line `Added by task 04.` for task 04 to replace.
+- [ ] **9. Write ADR-0031** at `docs/adr/0031-defaults-are-held-by-mechanism.md`. H1: `# Defaults are held by mechanism, not prose`. First section, "Model routing": the evidence (720+ subagents on advantage-backend, about half of implementers, fixes and reviews on Opus by explicit choice; the owner asked for routing repeatedly), the rule and the general-type list, why it rewrites instead of refusing (a hook cannot tell fx's dispatches from the user's, so refusing would block the user's own), fail open, what the step 7 probe showed and whether `permissionDecision` is omitted or `allow`. Record the narrowing from the design: only the three general types are defaulted; forks, `fx:` agents and other plugins' agents keep their own pins, so an unpinned third-party agent still inherits the session's model. Second section, "Codex and OpenCode deferred": neither takes a model per dispatch (a Codex role's `model` overrides the `spawn_agent` argument, `multi_agents_v2/spawn.rs:128-143` at `rust-v0.155.1`; OpenCode's `task` tool has no model argument and a subagent inherits the parent's, `tool/task.ts:43-60,181-184` at `v1.18.25`), so routing there needs tier-pinned roles per runtime; most OpenCode setups run one hosted model. Leave a third heading `## Standing rulings` with the line `Added by task 04.` for task 04 to replace.
 
 - [ ] **10. Run the touched gates**
 
@@ -186,5 +235,5 @@ Expected: all pass.
 
 ```
 git add lib/dispatch-route.js hooks/fx-pretooluse.js tests/gates/dispatch-route.test.js scripts/check-all references/vocab/model-selection.md references/harnesses/claude-code.md skills/fx-implement/implementer-prompt.md skills/fx-implement/task-reviewer-prompt.md skills/fx-implement/re-review-prompt.md skills/fx-review/reviewer-prompt.md skills/fx-implement/SKILL.md skills/fx-implement/fix-loop.md skills/fx-review/SKILL.md docs/adr/0031-defaults-are-held-by-mechanism.md
-git commit -m "feat(hooks): route Agent dispatches to the standard tier by default"
+git commit -m "feat(hooks): route Agent dispatches to the standard tier by default" -m "Routing probe: one=<model id>, two=<model id>, three=<model id>"
 ```

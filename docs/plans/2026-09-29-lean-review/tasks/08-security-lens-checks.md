@@ -1,19 +1,20 @@
 # 08: Security lens checks
 
 **Status:** ready-for-agent
-**Blocked by:** None: can start immediately
+**Blocked by:** 03
 **Phase:** Polish
 
 **What to build:** `fx-lens-security` hunts eight more data-isolation and session defects on any diff, and two that need a whole feature in view only in a branch review. The items come from `cloudflare/security-audit-skill` (MIT), taken as content only: no workflow, sandbox or report schema.
 
 **Files:**
 - Modify: `agents/fx-lens-security.md`
+- Modify: `skills/fx-review/SKILL.md`
 - Modify: `codex/agents/fx-lens-security.toml` (regenerated)
 - Create: `tests/gates/lens-content.test.js`
 - Modify: `scripts/check-all`
 
 **Interfaces:**
-- Consumes: nothing from other tasks.
+- Consumes: `skills/fx-review/SKILL.md` as tasks 01 and 03 left it (same file, so this task follows them).
 - Produces: `tests/gates/lens-content.test.js`, which task 09 extends with a11y and design checks.
 
 **Seam:** the lens's hunt list, pinned by a gate test.
@@ -26,7 +27,8 @@
 
 ## Acceptance criteria
 - [ ] The eight items below are in the hunt list under the labels given.
-- [ ] A `**Branch review only**` label carries the two whole-feature items and says when they apply.
+- [ ] A `**Branch review only**` label carries the two whole-feature items, reported only when the lens brief says `mode: branch`.
+- [ ] fx-review's lens brief gives each lens its mode (`mode: branch` from fx-review; a brief with no mode is task mode).
 - [ ] `codex/agents/fx-lens-security.toml` is regenerated; `scripts/check-generated` passes.
 - [ ] `tests/gates/lens-content.test.js` passes and is in `scripts/check-all`.
 
@@ -58,11 +60,15 @@ for (const phrase of [
   'not bound to its audience or issuer',
   'session fixation',
   '**Branch review only**',
+  'mode: branch',
   'second-order',
   'restore, rollback or undelete',
 ]) {
   assert.ok(sec.includes(phrase), `security lens hunts: ${phrase}`);
 }
+
+const review = read('skills/fx-review/SKILL.md');
+assert.ok(review.includes('`mode: branch`'), 'fx-review tells each lens its mode');
 
 console.log('lens-content.test.js: OK');
 ```
@@ -112,8 +118,9 @@ Under `**Crypto, sessions, transport**`, after the `- JWT:` bullet:
 After the `**Crypto, sessions, transport**` list, before `## Method`:
 
 ```markdown
-**Branch review only**: these need the whole feature in view. Report them when
-the diff spans more than one task, not on a single task's diff.
+**Branch review only**: these need the whole feature in view. Report them only
+when your brief says `mode: branch`; a brief with no mode is a single task's
+diff.
 
 - Data stored safely, then reused later in a context that trusts it
   (second-order injection): a name saved through a validated form and later
@@ -121,6 +128,8 @@ the diff spans more than one task, not on a single task's diff.
 - A restore, rollback or undelete that brings a record back without
   re-checking who may see it, or with grants that were revoked since.
 ```
+
+- [ ] **4b. Tell each lens its mode.** In `skills/fx-review/SKILL.md`, the `**Lens briefs**` paragraph gives each lens "the diff file path and the paths that triggered it, and this line". Add after that quoted line: ` In branch mode the brief also carries the line \`mode: branch\`; a lens that sees no mode line treats the diff as one task's.`
 
 - [ ] **5. Run it: verify GREEN**
 
@@ -140,12 +149,12 @@ run lens-content.test.js node tests/gates/lens-content.test.js
 
 - [ ] **8. Run the touched gates**
 
-Run: `node tests/gates/agent-model.test.js && node tests/gates/no-runtime-addressing.test.js && scripts/check-prose agents/fx-lens-security.md`
+Run: `node tests/gates/agent-model.test.js && node tests/gates/no-runtime-addressing.test.js && node tests/gates/tripwire-table.test.js && node tests/gates/return-contract.test.js && scripts/check-prose agents/fx-lens-security.md skills/fx-review/SKILL.md`
 Expected: all pass.
 
 - [ ] **9. Commit**
 
 ```
-git add agents/fx-lens-security.md codex/agents/fx-lens-security.toml tests/gates/lens-content.test.js scripts/check-all
+git add agents/fx-lens-security.md skills/fx-review/SKILL.md codex/agents/fx-lens-security.toml tests/gates/lens-content.test.js scripts/check-all
 git commit -m "feat(lens-security): data isolation and session checks"
 ```

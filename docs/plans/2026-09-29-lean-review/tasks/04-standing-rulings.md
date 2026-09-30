@@ -33,6 +33,7 @@
 - [ ] The block tells the reader to invoke fx-implement again after a compaction, before the next dispatch, and that these rulings override its defaults.
 - [ ] The preamble worst-case fixture carries 10 long rulings and every runtime still renders under 9,000 characters.
 - [ ] `fx-implement` §"The ledger" says: create the ledger with a `## Standing rulings` section copied from `docs/plans/rulings.md`; when the owner rules mid-run, ask "this plan only, or every plan?", and for every plan append the line to `docs/plans/rulings.md` too.
+- [ ] The completion report's "Rulings I made" lists `Ruling:` lines from outside the `## Standing rulings` section only.
 - [ ] ADR-0031's `## Standing rulings` section is written.
 
 ## Steps
@@ -68,7 +69,8 @@
   const cwd = repo({ 'p': { tasks: ['01-a.md'], state: `# fx ledger\n\n## Standing rulings\n\n${many}\n` } });
   const out = describePlans(cwd) || '';
   check((out.match(/Ruling: r\d+/g) || []).length === 10, 'at most 10 rulings are carried', out.length);
-  check(out.split('\n').every((l) => l.length <= 200), 'each carried line is capped at 200 characters');
+  check(out.split('\n').filter((l) => l.startsWith('- Ruling:')).every((l) => l.length <= 200),
+    'each carried ruling line is capped at 200 characters');
 }
 {
   const cwd = repo({ 'p': { tasks: ['01-a.md'], state: true } });
@@ -116,6 +118,8 @@ append the `Ruling:` line to `docs/plans/rulings.md` as well and commit it with
 the ledger. The session-start notice carries these rulings after a compaction,
 so they hold without the owner repeating them.
 ```
+
+- [ ] **7b. Keep standing rulings out of the controller's own list.** In `SKILL.md` §"Completion report", the bullet starting `- **Rulings I made**: **every** ledger line containing \`Ruling:\`` becomes `- **Rulings I made**: **every** ledger line containing \`Ruling:\` outside the \`## Standing rulings\` section` (keep the rest of the bullet). Standing rulings are the owner's, not this run's.
 
 - [ ] **8. Write ADR-0031's `## Standing rulings` section**, replacing `Added by task 04.`: why rulings were lost (chat and a single plan's ledger; decision 38 survived only because the agent wrote it into each ledger), the repo-level file, the ledger copy, the re-injection through `lib/plan-state.js` at every session start including after compaction, and the 10-line cap with its budget reason.
 
