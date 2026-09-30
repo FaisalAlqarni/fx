@@ -120,8 +120,8 @@ New files, none shared with v1 except pure `lib/` functions:
   links `plugins/fx-opencode-v2.js`, generates
   v2-format agents and commands, writes `experimental.subagent_depth` and
   the guard policies (§2) into `opencode.json` under keys it owns, and
-  removes a v1 `plugins/fx.js` link it placed earlier (and the reverse on
-  1.x), so the plugin that cannot load on the running major is never left
+  removes a link it placed earlier to the other major's plugin file (and
+  the reverse on 1.x), so the plugin that cannot load on the running major is never left
   behind. Its refusal markers stay; the generated header names the major.
 
 v1 changes, each justified by v1, not by v2:
@@ -247,7 +247,7 @@ changed.
    that fails changes the matching section's fallback, recorded as a
    ruling.
 2. Harness core: preamble entry, reference, `toOpencodeV2Agent`,
-   `plugins/fx-v2.js`, its gate.
+   `plugins/fx-opencode-v2.js`, its gate.
 3. Guard and lane check per the probe.
 4. Installer.
 5. Conformance plumbing and rows.
