@@ -104,3 +104,36 @@ Task 06: ⚠️ resolved by controller: check-all runs once in task 11 by plan; 
 Task 06: complete (commits fa9a02a..269bcc2, review clean, minors deferred)
 Task 07: implemented 269bcc2..7634883 (DONE). Lenses: no tripwire matched (prompt and agent prose, generated toml, gate test). Reviewer dispatched.
 Task 08: dispatched (BASE after ledger commit).
+Task 07: minor (deferred): Tests-paragraph sentence in task-reviewer-prompt.md is one 131-char line, not wrapped like neighbours.
+Task 07: complete (commits 269bcc2..7634883, review clean, 1 minor deferred)
+Task 08: implemented 8d0f745..867cae2 (DONE). Lenses: no tripwire matched (lens prose; no auth code, route, or credential). Reviewer dispatched.
+Task 09: dispatched (BASE 867cae2).
+Task 08: minor (deferred): fx-review SKILL.md:186 mode-line sentence is unwrapped on the quoted brief line.
+Task 08: ⚠️ resolved by controller: lens-content, check-generated, agent-model, tripwire-table, return-contract pass on 867cae2 (detached checkout).
+Task 08: complete (commits 8d0f745..867cae2, review clean, 1 minor deferred)
+Task 09: implemented 867cae2..a6ecb0d (DONE). Lenses: no tripwire matched (reference, lens and skill prose, ADRs, gate test). Reviewer dispatched.
+Task 10: dispatched (BASE a6ecb0d). Local model server at 127.0.0.1:8899 unreachable (curl 000, timeout) at dispatch: live rows expected pending.
+Task 09: minor (deferred): two inserted prose lines in fx-design SKILL.md and one in ADR-0012 are unwrapped single long lines.
+Task 09: minor (deferred): web-polish.md is 55 lines against the design's "about 35".
+Task 09: minor (deferred): ADR-0034 says "this task" and cites commit hashes that go stale.
+Task 09: ⚠️ resolved by controller: lens-content, check-paths, check-reference-leaves, check-generated pass on a6ecb0d (detached checkout); web-polish values were checked against the cloned sources during planning (emil SKILL.md lines 44-47, 72, 135, 201, 548; better-ui SKILL.md 20, 28, 52, 64; icons.md 87-96).
+Task 09: complete (commits 867cae2..a6ecb0d, review clean, minors deferred)
+Waiting on task 10's implementer before dispatching task 11: 11 runs check-all over the whole tree, and 10's INSTALL.md edit must be committed first so the gate sees a settled tree.
+Task 10: implemented a6ecb0d..ebd9491 (DONE_WITH_CONCERNS). Install test passes; free rows: 1.18.25 6/6, 2.0.18 5/6 (row 09: `opencode debug skill` removed in 2.x); live rows pending (server 000). Lenses: none (INSTALL.md). Reviewer dispatched.
+Ruling: the OpenCode 2.0.18 row 09 failure is recorded, not fixed in this plan. Why: it is a conformance-test incompatibility with a newer CLI, outside this plan's scope; the owner decides whether fx supports 2.x. Cost if wrong: fx claims nothing about 2.x yet, INSTALL.md records the failure; caught by the completion report's Needs you.
+Ruling: task 11's check-all runs with the 1.18.25 binary first on PATH (/tmp/tmp.zOgjMCBXsM), the version fx is measured against, so the known 2.x row 09 failure does not mask other failures. Why: check-all's opencode free rows call the binary. Cost if wrong: a 2.x-only failure beyond row 09 hides, caught by task 10's recorded 2.0.18 run (5/6, only row 09 failing).
+Task 11: dispatched (BASE ebd9491).
+Task 10: minor (deferred): INSTALL.md:398 attributes task 21's live run to 1.18.25 by inference from state.md:1180 and drops its log path.
+Task 10: minor (deferred): INSTALL.md paragraph under the verified table still says the opencode final-tree run "waits for free memory", beside rows now saying last live run 18 pass.
+Task 10: minor (deferred): Nightly checks section does not note the opencode @latest job is expected red on row 09 with 2.0.18.
+Task 10: minor (deferred): free-row counts for both versions cite no log path, so they cannot be re-audited.
+Task 10: ⚠️ resolved by controller: install test and opencode free rows re-run inside task 11's check-all (1.18.25); the 2.0.18 row 09 error string is quoted in the report.
+Task 10: complete (commits a6ecb0d..ebd9491, review clean, minors deferred)
+Task 11: implemented ebd9491..9a313f6 (DONE_WITH_CONCERNS). check-all (opencode 1.18.25 on PATH) stopped at check-prose on AGENTS.md dashes; a scratch run then stopped at check-prose-explicit-path.sh ("walk read a nested worktree").
+Exit gate: check-prose (AGENTS.md:57 and 14 more dash lines): pre-existing. Fails identically on main 68ba929 (detached /tmp checkout); AGENTS.md is repowise-generated, committed on main in e4b5260.
+Exit gate: check-prose-explicit-path.sh: pre-existing. Fails on main 68ba929 and on 9a313f6, both in /tmp checkouts outside .worktrees.
+Ruling: the remaining check-all gates run on 9a313f6 from a /tmp checkout with those two lines removed (background run blvg1n6jh). Why: check-all stops at the first failure, and both failures predate this branch. Cost if wrong: a later gate masked; caught by that run itself.
+Coverage audit: 6 gaps (findings/coverage-audit.md), no Critical. G1 lens mode scoping for silent-failure and database, G2 fix-loop condition 3 wording, G3 ADR-0031 "every session start" overclaim: go to the final review's fix wave. G5 (task 10 accepts pending) and G6 (build-measurement owner): Needs you.
+Ruling: permissionDecision omitted (task 03 live probe showed updatedInput applied without it). Why: the probe evidence in bb25aff. Cost if wrong: routing silently off, caught by a rerun of the task 03 probe.
+Ruling: routing limited to general-purpose, claude, Plan; forks and typed agents keep their pins. Why: red-team findings 3 and 4. Cost if wrong: an unpinned third-party agent inherits the session model; recorded in ADR-0031.
+Ruling: standing rulings capped at 10, not the design's 15. Why: preamble budget headroom; the cap now prints "and N more". Cost if wrong: an 11th ruling shows only as a count, caught by the "and N more" line.
