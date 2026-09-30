@@ -1,4 +1,4 @@
-# OpenCode v2 as its own harness, and live proof through OpenRouter
+# fx fully working on four harnesses: OpenCode v2 as its own harness, live proof through OpenRouter
 
 **Date:** 2026-10-01
 **Status:** draft, awaiting owner review
@@ -29,6 +29,19 @@ Codex live rows have never run.
 - D4. Live proof through OpenRouter: `qwen/qwen3.8-27b:free` first,
   `deepseek/deepseek-v4-flash` as fallback, for OpenCode v1, OpenCode v2
   and Codex.
+- D5. fx works fully on Claude Code, Codex, OpenCode v1 and OpenCode v2:
+  install test, every free row and every live row pass on each, or a gap is
+  proven unclosable and stated (ADR-0024). Codex gets the full live suite
+  for the first time.
+- D6. Plugin files are scoped by runtime: `plugins/fx-opencode-v1.js`
+  (renamed from `plugins/fx.js`) and `plugins/fx-opencode-v2.js`.
+- D7. Claude Code was proven 18 of 18 (task 21 of the multi-harness plan,
+  2026-09-22, plus rows 13 and 14 closed live in `78ff5b3`, 2026-09-23), so
+  it does not get the full live suite again. Only the rows whose code
+  changed since (lean-review: preamble rows 01, 02, 16; guard rows 06, 07,
+  08) re-run, through OpenRouter on `anthropic/claude-haiku-4.5`; the
+  owner's subscription is not used. `INSTALL.md`'s stale "2 GAP (13, 14)"
+  is corrected.
 
 ## Sources
 
@@ -81,7 +94,7 @@ probe can settle are marked **probe** and owned by task 01 of the plan.
 
 New files, none shared with v1 except pure `lib/` functions:
 
-- `plugins/fx-v2.js`: `export default { id: 'fx', setup }`. `setup(ctx)`:
+- `plugins/fx-opencode-v2.js`: `export default { id: 'fx', setup }`. `setup(ctx)`:
   - renders the preamble with `render({ harness: 'opencode-v2', cwd: ctx.location.directory })`
     and pushes it in `session.hook('context')`, for sessions and subagents;
   - registers the six fx agents with `ctx.agent.transform`, built by a new
@@ -102,14 +115,20 @@ New files, none shared with v1 except pure `lib/` functions:
   and what fx cannot observe on v2 (ADR-0024).
 - Installer: `scripts/fx-opencode-install` gains a version check
   (`opencode --version`, overridable with `--major 1|2`). On 1.x it does
-  exactly what it does today. On 2.x it links `plugins/fx-v2.js`, generates
+  exactly what it does today, from the renamed `plugins/fx-opencode-v1.js`
+  (the installed link keeps its name in the config directory). On 2.x it
+  links `plugins/fx-opencode-v2.js`, generates
   v2-format agents and commands, writes `experimental.subagent_depth` and
   the guard policies (§2) into `opencode.json` under keys it owns, and
   removes a v1 `plugins/fx.js` link it placed earlier (and the reverse on
   1.x), so the plugin that cannot load on the running major is never left
   behind. Its refusal markers stay; the generated header names the major.
 
-v1 changes, each justified by a v1 fault, not by v2:
+v1 changes, each justified by v1, not by v2:
+- The rename to `plugins/fx-opencode-v1.js` (D6): its installer link,
+  `FX_OPENCODE_ROUTE=plugin`'s `file://` path, the v1 gate's import,
+  `scripts/test-scope`, README, INSTALL, SURFACE and every doc citing
+  `plugins/fx.js`.
 - CI and `tests/gates/ci-pins.test.js`: the v1 `latest` matrix entry pins
   `opencode-ai@1` (it now installs 2.x). `opencode-v2` gets its own `PKG`
   (`opencode-ai`), `FLOOR` `2.0.18` and matrix entries (`2.0.18`, `@latest`).
@@ -162,11 +181,17 @@ for anyone not opting in):
   `opencode.json` (the v1 provider format), key from the environment.
 - **OpenCode v2:** `providers.openrouter` with the key from the
   environment (v2 providers docs).
+- **Claude Code:** `ANTHROPIC_BASE_URL=https://openrouter.ai/api`,
+  `ANTHROPIC_AUTH_TOKEN` from the environment, every model override set to
+  `anthropic/claude-haiku-4.5`, in the scratch `CLAUDE_CONFIG_DIR`.
+  Measured 2026-10-01: Haiku answers a tool task cleanly; non-Anthropic
+  models fail on Claude Code's deferred tools, or with deferral off
+  (`ENABLE_TOOL_SEARCH=false`) return an empty final answer, so they are
+  not used for Claude Code rows. Only D7's rows run.
 - **Codex:** a scratch `config.toml` with `model_provider = "openrouter"`,
   `base_url = "https://openrouter.ai/api/v1"` and command auth
   `sh -c 'echo $OPENROUTER_API_KEY'` (OpenRouter's Codex guide); measured
   working on Codex 0.155.1 with DeepSeek, 2026-09-30.
-- Claude Code live rows keep their own auth; not in scope.
 
 ## 4. Conformance for `opencode-v2`
 
@@ -183,7 +208,7 @@ for anyone not opting in):
   agents, skill denies, commands, guard and lane-check behaviour. The v1
   gate is unchanged.
 - `scripts/check-all`: `install-opencode-v2`, `conformance-free-opencode-v2`,
-  the new gate. `scripts/test-scope` routes `plugins/fx-v2.js` to the new
+  the new gate. `scripts/test-scope` routes `plugins/fx-opencode-v2.js` to the new
   gate.
 
 ## 5. Docs and ADRs
@@ -195,10 +220,24 @@ for anyone not opting in):
 - ADR-0036: OpenCode v2 is a separate harness (D2), with the shared config
   directory and the version-aware installer.
 - ADR-0037: the v2 guard layers and what each catches (D3).
-- ADR-0038: live conformance through OpenRouter, the fallback rule, and key
-  handling (D4).
+- ADR-0038: live conformance through OpenRouter, the fallback rule, key
+  handling, and Claude Code on Haiku (D4, D7).
 
-## 6. Order of work
+## 6. Two phases
+
+**Phase A, baseline.** After the harness, installer and provider work is
+in, the full matrix runs once on each of Codex, OpenCode v1 and OpenCode
+v2, plus D7's rows on Claude Code. Every FAIL and GAP is recorded in the
+ledger, one line each, with its log.
+
+**Phase B, fixes.** Each harness's failures are fixed in isolation, one
+task per harness (a fix to one harness does not touch another's files), and
+the codex rows 13 and 14 gap (`tests/conformance/expected-gaps`) is either
+closed with a live row, as Claude Code's was in `78ff5b3`, or proven
+unclosable and stated. Then the full matrix re-runs on the harnesses that
+changed.
+
+## 7. Order of work
 
 1. **Probe (task 01):** on 2.0.18 with a scratch home and OpenRouter:
    the layer-1 resource content, a tool-hook throw, `session.hook` reaching
@@ -215,9 +254,11 @@ for anyone not opting in):
 6. OpenRouter provider in `live.sh`.
 7. CI pins.
 8. Docs and ADRs.
-9. Live matrix: OpenCode 1.18.25, OpenCode 2.0.18, Codex 0.155.1.
+9. Phase A: the live matrix on Codex 0.155.1, OpenCode 1.18.25 and
+   2.0.18, and D7's Claude Code rows.
+10. Phase B: per-harness fixes, the codex 13 and 14 gap, then the re-run.
 
-## 7. Verification
+## 8. Verification
 
 - Gate tests for every new file; `scripts/check-all` once at the end.
 - Free rows for `opencode` and `opencode-v2`.
@@ -232,5 +273,7 @@ for anyone not opting in):
 - [x] One harness or two → two (D2)
 - [x] v2 guard → layers, stated coverage (D3)
 - [x] Live proof → OpenRouter, free Qwen then DeepSeek (D4)
-- [x] Codex live → included, OpenRouter (D4)
+- [x] Codex live → full suite, OpenRouter (D4, D5)
+- [x] Plugin names → scoped per runtime, v1 renamed (D6)
+- [x] Claude Code → proven earlier; re-run only changed rows on Haiku via OpenRouter (D7)
 - [ ] Everything marked **probe** → task 01
