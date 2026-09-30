@@ -67,7 +67,9 @@ measured (§11).
   tripwire. Everything else, including devil's advocate, runs once at the end.
 - R2. The end pass is fx-review branch mode, which already exists.
 - R3. Tests: `test_scope` per task, `test_all` once after all tasks.
-- R4. Defaults are held by mechanism, not prose, on all three runtimes.
+- R4. Defaults are held by mechanism, not prose. Model routing: Claude Code
+  only, Sonnet by default, Opus only with a stated reason. Codex and OpenCode
+  routing deferred. OpenCode measured on 1.18.25 and 2.0.18.
 - R5. A built-in, conditional companion-tools line in the preamble,
   overridable per repo in `.fx.json`.
 - R6. fx-brainstorm gains a confidence check before approaches or design.
@@ -132,7 +134,8 @@ file, one re-review each. No other change.
 A fix round's re-review is done by the controller reading the fix diff,
 instead of a dispatched agent, when all hold:
 
-- the fix diff is 20 changed lines or fewer;
+- the fix changes 20 production lines or fewer (test and doc files not
+  counted);
 - it touches only files already in the task's diff;
 - the finding came from the task reviewer, not a tripwire lens;
 - the finding is not Critical.
@@ -141,7 +144,9 @@ Otherwise the dispatched scoped re-review runs as now. The controller still
 never writes a fix; it only reads. Ledger line:
 `Task NN: fix round R: controller re-review (L lines): clean|<finding>`.
 This is the one sanctioned exception to "the controller never reads diffs",
-and the 20-line cap is what keeps it one.
+and the 20-line cap is what keeps it one. On advantage-backend, 543 fix
+commits since 2026-09-21 have a median of 16 production lines (52 with tests
+and docs); 55% are at or under 20, so about half the re-review agents go.
 
 ## 4. Tests
 
@@ -160,82 +165,47 @@ and the 20-line cap is what keeps it one.
 
 ## 5. Defaults that stick
 
-### 5a. Model routing on all three runtimes
+### 5a. Model routing (Claude Code)
 
-**Why per-call choice cannot work.** On Codex a role's `model` overrides the
-`spawn_agent` argument (`multi_agents_v2/spawn.rs:128-143` at `rust-v0.155.1`).
-OpenCode's `task` tool has no model argument; a subagent with no pinned model
-inherits the parent's (`tool/task.ts:43-60,181-184` at `v1.18.25`). So the
-tier must live in the agent definition, and the dispatch picks the agent.
+`hooks/fx-pretooluse.js` gains a branch for the `Agent` tool (tool name per
+the Claude Code hooks reference). It never refuses a dispatch; it rewrites
+the call through `hookSpecificOutput.updatedInput` with
+`permissionDecision: "allow"`:
 
-**Four new fx roles**, one file each in `agents/`, tier pinned in frontmatter:
+- **No `model`** and a `subagent_type` whose definition pins none → `model`
+  is set to `sonnet`. A subagent with no model otherwise inherits the
+  parent's, which is how Opus leaked.
+- **`model: opus`** and no line in the prompt starting `Capable because:` →
+  `model` is set to `sonnet`. The qualifying reasons stay those in
+  `references/vocab/model-selection.md` (security-critical, design or spike,
+  red team, fix rounds 4 and 5, final branch review); the templates for those
+  cases carry the line. This is the leak the data shows: about half of
+  implementers, fixes and reviews ran on Opus by explicit choice.
+- **Hook error** → the call passes unchanged. Advice-class, fail open, like
+  the lane check.
 
-| Role | Tier | Used for |
-|---|---|---|
-| `fx-implementer` | standard | implementer, fix rounds 1 to 3 (resumed) |
-| `fx-implementer-capable` | most capable | fix rounds 4 to 5, end-pass fixer when a Critical is in the wave |
-| `fx-reviewer` | standard | task review, scoped re-review |
-| `fx-reviewer-capable` | most capable | the branch reviewer |
+It applies to every dispatch in a session with fx installed, the user's own
+included, because a hook sees the call and not who asked for it. Since
+nothing is refused, the only effect on the user's dispatches is the Sonnet
+default, which matches the owner's standing rule.
 
-Each body is short: follow the dispatch prompt, which stays in the existing
-templates. The templates change `Subagent (general-purpose)` plus a `model:`
-line to the role name. The reviewers run tests and read-only git, so they are
-**not** in the read-only class: read-only is instructed in their prompt, not
-enforced. Writers and reviewers get their own list, separate from
-`deriveReadOnlyAgents()` (`lib/plant-roles.js:35-42`), `READ_ONLY_AGENTS`
-(`plugins/fx.js:131`) and `is_read_only()` (`scripts/gen-codex-agents:57-60`).
-This supersedes ADR-0019 and ADR-0028 in part.
+No new agent roles. Claude Code takes a model per call, so fx keeps
+dispatching `general-purpose` with an explicit model; the six fx agents keep
+their frontmatter pins.
 
-**Tier to model, with no hardcoded names** (names differ per account and
-provider):
+**Codex and OpenCode: deferred, stated.** Neither takes a model per dispatch
+(a Codex role's `model` overrides the spawn argument; OpenCode's `task` tool
+has no model argument), so routing there needs tier-pinned roles per runtime.
+Most OpenCode setups run one hosted model, where tiers change little. Both
+are left as they are and recorded in ADR-0031 as deferred, with the research
+findings (`multi_agents_v2/spawn.rs:128-143` at `rust-v0.155.1`;
+`tool/task.ts:43-60,181-184` at `v1.18.25`) so the follow-up starts from
+them. README says model routing is Claude Code only.
 
-| Tier | Claude Code | Codex | OpenCode |
-|---|---|---|---|
-| cheapest | `haiku` | user's `model`, effort `low` | `small_model`, else `model` |
-| standard | `sonnet` | user's `model`, effort `medium` | `model` |
-| most capable | `opus` | user's `model`, effort `high` | `model` plus a capable `variant` if the provider has one |
-
-On Codex, `plantRoles()` reads the user's `model` from `$CODEX_HOME/config.toml`
-at plant time and writes `model` and `model_reasoning_effort` into each role
-TOML; the committed `codex/agents/` files stay model-free so `check-generated`
-still byte-matches. On OpenCode, the plugin `config` hook sets `model` (and
-`variant`) on each fx agent, and leaves alone any agent the user already
-configured in `opencode.json` (ADR-0026: the user's answer wins). The six
-existing lenses and devil's advocate get the same treatment: their frontmatter
-tiers are dropped by both converters today.
-
-**The check, per runtime.** Each denies a dispatch whose model is not pinned,
-fails open on a hook error, and names the fix in its message.
-
-- **Claude Code**, `hooks/fx-pretooluse.js` on `Agent` (and `Task`): deny when
-  there is no `model` and the `subagent_type` pins none.
-- **Codex**, `hooks/fx-codex.js` on `spawn_agent`: deny when `agent_type` is
-  missing or not a planted role. The hook receives the raw JSON arguments
-  (`tools/registry.rs:129-138`); the encryption fx recorded applies to the
-  message delivered to the child, not to the hook payload. A live probe must
-  confirm this before the deny ships (§11).
-- **OpenCode**, `plugins/fx.js` `tool.execute.before` on `task`: throw when
-  `subagent_type` names an agent with no pinned model after the config hook.
-  If the user has no `model` configured at all, fx cannot resolve a tier and
-  the throw says so.
-
-**Most capable needs a reason.** A dispatch to `fx-*-capable`, or with
-`model: opus` on Claude Code, is denied unless the prompt has a line starting
-`Capable because:` with one of the qualifying reasons from
-`references/vocab/model-selection.md`. Claude Code and OpenCode see the
-prompt; on Codex this part ships only if the probe shows the message is
-readable by the hook.
-
-**Scope, stated.** Each check covers every dispatch in a session with fx
-installed, including the user's own `general-purpose`, `general`, `explore`
-and Codex forks: a hook cannot tell fx's dispatches from the user's. That
-matches the owner's standing rule to route models explicitly.
-
-**Limits that remain.** Codex runs plugin hooks only after the user trusts
-them, and a newly planted role is usable after one Codex restart (both already
-in `INSTALL.md`). A tier map naming a model the account lacks fails at the API,
-not at plant time. The installed `opencode` here is v2.0.18 while fx is
-measured against 1.18.25; the probe runs on the installed version.
+**OpenCode versions.** fx is measured against OpenCode 1.18.25 only, and the
+installed version here is 2.0.18. The install test and the free conformance
+rows run against both, and `INSTALL.md` names both as measured. Anything this
+design changes in `plugins/fx.js` or the preamble is checked on both.
 
 ### 5b. Standing rulings
 
@@ -346,8 +316,9 @@ owns.
   caveats verbatim in substance, and the plain statement that the new defaults
   are not yet measured. Figures come only from `fx-cost.py` output and the
   `/usage` report, each cited.
-- "Always on": the fx roles and the dispatch check per runtime, the tier
-  table from §5a, and the companions line.
+- "Always on": the model routing hook (Claude Code only, stated as such)
+  and the companions line.
+- Install: OpenCode measured on 1.18.25 and 2.0.18.
 
 ## 10. ADRs
 
@@ -355,20 +326,20 @@ owns.
 |---|---|
 | 0029 | Per-task review is the reviewer plus a tripwire; lenses and devil's advocate run at the end |
 | 0030 | Small fixes are re-reviewed by the controller; the baseline suite is dropped |
-| 0031 | Defaults are held by mechanism: tier-pinned fx roles, the dispatch check on three runtimes, standing rulings |
+| 0031 | Defaults are held by mechanism: Sonnet-default model routing on Claude Code, standing rulings; Codex and OpenCode routing deferred |
 | 0032 | The preamble carries a conditional companion-tools line |
 | 0033 | fx-brainstorm ends its interview with a confidence check |
 | 0034 | External review, security and design content absorbed; ADR-0012 amended |
 
-0029 supersedes the lean-build clause; 0031 supersedes ADR-0019 and ADR-0028
-in part (writer and reviewer roles are not read-only); 0034 marks ADR-0012's motion paragraph
+0029 supersedes the lean-build clause; 0034 marks ADR-0012's motion paragraph
 superseded and adds SEO and paid web search to its no's.
 
 ## 11. Verification
 
 - Gates: `scripts/check-all` once at the end. Touched suites while building.
-- New tests: the dispatch model check (deny without model, deny Opus without a
-  reason, allow pinned fx agents, allow on hook error); `lib/preamble.test.js`
+- New tests: the routing hook (no model becomes sonnet, Opus without a
+  reason becomes sonnet, Opus with `Capable because:` passes, a pinned agent
+  passes untouched, a hook error passes the call unchanged); `lib/preamble.test.js`
   for the companions line (default, override, `""`, bad JSON) and the size
   budgets; `lib/plan-state.test.js` for standing rulings in the block.
 - Existing text gates that pin phrases: `tests/gates/return-contract.test.js`
@@ -376,17 +347,15 @@ superseded and adds SEO and paid web search to its no's.
   paths`, `your Write tool`, `confirmed ⚠️:`). Edits keep these strings.
 - Agent edits are followed by `scripts/gen-codex-agents`, then
   `scripts/check-generated`.
-- **Live probes, first plan task, one per runtime** (spend quota, run by
-  hand like the existing live conformance rows): Codex PreToolUse receives
-  `agent_type` and `model` for `spawn_agent`, and a planted role's model is
-  the one that runs; OpenCode `tool.execute.before` sees `task` args and the
-  config-hook model is the one that runs; Claude Code the deny fires. A probe
-  that fails stops that runtime's check from shipping and comes back to the
-  owner.
+- **Live probe, Claude Code** (spends quota, run by hand like the existing
+  live rows): a dispatch with no model runs on Sonnet, and an Opus dispatch
+  without the reason line runs on Sonnet, read from the subagent transcript.
+- **OpenCode 1.18.25 and 2.0.18:** `tests/install/run.sh` and
+  `tests/conformance/run.sh opencode --free` against each.
 - **Build measurement.** The next real fx-implement build is measured with
   `fx-cost.py` and compared with the table above. Targets: non-tripwire tasks
-  run exactly two agents (implementer, reviewer) plus fix rounds; zero
-  dispatches without a model on Claude Code; no ruling repeated by the owner.
+  run exactly two agents (implementer, reviewer) plus fix rounds; no
+  subagent on Opus without a `Capable because:` line; no ruling repeated by the owner.
   The README section is updated with the result, whatever it is.
 
 ## Open questions
@@ -397,6 +366,8 @@ superseded and adds SEO and paid web search to its no's.
 - [x] Keep defaults in force → mechanism on three runtimes (R4)
 - [x] Companion tools → built-in, conditional, overridable (R5)
 - [x] External skills → absorb content, no new lanes (R7, R8)
-- [x] Codex and OpenCode model routing → tier-pinned roles plus a dispatch check (§5a)
-- [ ] Codex hook sees `spawn_agent` arguments in plaintext → live probe, first plan task
-- [ ] Press scale: 0.97 chosen over 0.96; owner may overrule at review
+- [x] Model routing → Claude Code hook, Sonnet default, Opus with a reason;
+  Codex and OpenCode deferred (§5a)
+- [x] OpenCode versions → 1.18.25 and 2.0.18 both measured
+- [x] Controller re-review cap → 20 production lines (§3)
+- [x] Press scale → 0.97
