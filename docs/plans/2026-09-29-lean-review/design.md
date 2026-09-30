@@ -363,7 +363,7 @@ superseded and adds SEO and paid web search to its no's.
 - [x] Which lanes run per task → reviewer plus tripwire (R1)
 - [x] Where the end pass runs → fx-review branch mode (R2)
 - [x] Tests → scoped per task, full once at the end (R3)
-- [x] Keep defaults in force → mechanism on three runtimes (R4)
+- [x] Keep defaults in force → mechanism: routing hook, standing rulings, companions line (R4)
 - [x] Companion tools → built-in, conditional, overridable (R5)
 - [x] External skills → absorb content, no new lanes (R7, R8)
 - [x] Model routing → Claude Code hook, Sonnet default, Opus with a reason;
