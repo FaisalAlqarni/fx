@@ -40,7 +40,8 @@ try {
 let route;
 try {
   ({ route } = require('../lib/dispatch-route'));
-} catch {
+} catch (e) {
+  process.stderr.write(`[fx] dispatch routing off: ${e.message}\n`);
   route = () => null;                // routing is advice; a broken module passes calls through
 }
 
@@ -86,7 +87,8 @@ process.stdin.on('end', () => {
     let result = null;
     try {
       result = route(ti);
-    } catch {
+    } catch (e) {
+      process.stderr.write(`[fx] dispatch routing off: ${e.message}\n`);
       result = null;
     }
     if (result && typeof result === 'object') {

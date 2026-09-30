@@ -77,10 +77,12 @@ assert.strictEqual(JSON.parse(r.out).hookSpecificOutput.updatedInput.model, 'son
   let b = runCopy();
   assert.strictEqual(b.status, 0, `a throwing route never refuses: ${b.stderr}`);
   assert.strictEqual(b.stdout.trim(), '', 'a throwing route leaves the call unchanged');
+  assert.match(b.stderr, /dispatch routing off: boom/, 'a throwing route leaves a trace on stderr');
   fs.writeFileSync(path.join(tmp, 'lib', 'dispatch-route.js'), "throw new Error('load');\n");
   b = runCopy();
   assert.strictEqual(b.status, 0, `a module that fails to load never refuses: ${b.stderr}`);
   assert.strictEqual(b.stdout.trim(), '', 'a module that fails to load leaves the call unchanged');
+  assert.match(b.stderr, /dispatch routing off: load/, 'a module that fails to load leaves a trace on stderr');
   fs.rmSync(tmp, { recursive: true, force: true });
 }
 
