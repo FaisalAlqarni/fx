@@ -124,7 +124,9 @@ async function evaluate(rec, ev) {
   }, ['fx-audit']);
   await mod.default.setup(mine.ctx);
   assert.strictEqual(mine.rec.agents.get('fx-lens-security').system, 'user owned', "a user's own agent definition wins");
-  assert.strictEqual(effect(mine.rec.agents.get('keeps-audit').permissions, 'skill', 'fx-audit'), 'allow', "a user's explicit skill rule wins");
+  assert.strictEqual(effect(mine.rec.agents.get('keeps-audit').permissions, 'skill', 'fx-audit'), 'allow', "a user's explicit skill rule keeps the lane listed to the model");
+  assert.strictEqual((await evaluate(mine.rec, { action: 'skill', resources: ['fx-audit'], effect: 'allow' })).effect, 'deny',
+    "a user's explicit skill rule does not survive the backstop: the lane is listed to the model but refused at call time (the hook's effect is final)");
   assert.ok(!mine.rec.commands.some((c) => c.name === 'fx-audit'), 'a command already listed is not added again');
 
   // --- guard: the full command, looked up by call id ------------------------
@@ -194,6 +196,54 @@ async function evaluate(rec, ev) {
   assert.strictEqual((await evaluate(l.rec, { action: 'edit', resources: [42], effect: 'allow' })).effect, 'allow', 'a lane-check crash leaves the edit alone');
   fs.rmSync(lc, { recursive: true, force: true });
   fs.rmSync(lc2, { recursive: true, force: true });
+
+  // --- fix round 1: failures are visible, the backstop fails closed ---------
+  const ctxText = async (r) => { const e = { system: [] }; await r.hooks['session.context'][0](e); return e.system.map((x) => x.text).join('\n'); };
+  const broken = stub(dir);
+  broken.ctx.agent.transform = async () => { throw new Error('boom'); };
+  broken.ctx.command.list = async () => { throw new Error('no list'); };
+  await mod.default.setup(broken.ctx);
+  const note = await ctxText(broken.rec);
+  assert.ok(note.includes('fx: agent.transform failed: boom'), 'a failed step is reported in the preamble');
+  assert.ok(/fx: .*fx commands are unavailable.*: no list/.test(note), 'a failed command registration says the commands are unavailable');
+  assert.strictEqual(broken.rec.commands.length, 0, 'no commands without the list');
+  const refused = await evaluate(broken.rec, { action: 'skill', resources: ['fx-audit'], effect: 'allow' });
+  assert.ok(refused.message.includes('boom'), 'a denied evaluation carries the failure list');
+
+  const nohook = stub(dir);
+  nohook.ctx.session.hook = async () => { throw new Error('no ctx hook'); };
+  await mod.default.setup(nohook.ctx);
+  const nh = await evaluate(nohook.rec, { action: 'skill', resources: ['fx-audit'], effect: 'allow' });
+  assert.ok(nh.message.includes('no ctx hook'), 'with no context hook the failure reaches the evaluate message');
+
+  const strthrow = stub(dir);
+  strthrow.ctx.agent.transform = async () => { throw 'plain string'; };
+  await mod.default.setup(strthrow.ctx);
+  assert.ok((await ctxText(strthrow.rec)).includes('plain string'), 'a non-Error throw is reported, not "undefined"');
+
+  const fc = stub(dir);
+  await mod.default.setup(fc.ctx);
+  const closed = await evaluate(fc.rec, { action: 'skill', resources: 'fx-audit', effect: 'allow' });
+  assert.strictEqual(closed.effect, 'deny', 'a hidden-lane evaluation that throws still denies');
+
+  const fp = stub(dir);
+  fp.ctx.session.prompt = async () => { throw new Error('prompt down'); };
+  await mod.default.setup(fp.ctx);
+  await assert.rejects(fp.rec.commands.find((c) => c.name === 'fx-audit').execute({ sessionID: 's', prompt: { text: '' } }), /prompt down/,
+    'a command whose prompt fails does not report success');
+
+  const refsDir = path.join(root, 'references');
+  for (const agent of ['fx-lens-security', 'fx-devils-advocate']) {
+    for (const [action, resources] of [['shell', ['ls']], ['edit', ['src/x.js']], ['external_directory', ['/etc/*']], ['skill', ['fx-tdd']]]) {
+      const e = await evaluate(fc.rec, { action, resources, agent, effect: 'allow' });
+      assert.strictEqual(e.effect, 'deny', `${agent}: ${action} is denied over an incoming allow (session rules cannot widen it)`);
+      assert.ok(e.message, `${agent}: ${action} denial has a message`);
+    }
+    for (const [action, resources] of [['read', ['src/x.js']], ['grep', ['*']], ['glob', ['*']], ['external_directory', [`${refsDir}/*`]]]) {
+      assert.strictEqual((await evaluate(fc.rec, { action, resources, agent, effect: 'allow' })).effect, 'allow', `${agent}: ${action} stays allowed`);
+    }
+  }
+  assert.strictEqual((await evaluate(fc.rec, { action: 'edit', resources: ['README.md'], agent: 'build', effect: 'allow' })).effect, 'allow', 'a non-fx agent is untouched by the read-only rule');
 
   fs.rmSync(dir, { recursive: true, force: true });
   console.log('opencode-v2-plugin.test.js: OK');
