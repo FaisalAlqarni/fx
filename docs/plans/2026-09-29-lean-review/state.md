@@ -144,3 +144,11 @@ Ruling: one fix wave, items F1 to F23 in findings/final-fix-wave.md. Why: the sk
 Ruling: final silent-failure findings 1, 2, 3, 5, 7 parked: pre-existing code this branch did not change. Why: out of this plan's scope. Cost if wrong: those silent paths persist, surfaced in the completion report.
 Ruling: final spec (a) 1 pushed back: docs/plans/rulings.md is per target repo, created on the first every-plan ruling. Cost if wrong: none; the fx-implement text creates it on append.
 Final fix wave: dispatched (BASE ee13f92).
+Final fix wave: committed fc85ce2..a2c0f56 (5 commits; F22 already satisfied; F23 also bumped .agents/plugins/marketplace.json). Scoped re-review and check-all tail dispatched.
+Exit gate on a2c0f56 (detached /tmp checkout, opencode 1.18.25 on PATH): scripts/check-all minus check-prose and check-prose-explicit-path: 56 sections, ALL GREEN, EXIT=0 (.fx/lean-review/check-all-rest-a2c0f56.out). release-version passes (0.2.4).
+Exit gate: check-prose on a2c0f56 fails only on AGENTS.md (15 lines): pre-existing, same as main 68ba929. check-prose-explicit-path fails identically on main and a2c0f56 ("walk read a nested worktree"): pre-existing.
+Task final: fix round 1/1 (22 addressed, 1 open: F17 ADR-0035 keeps the "every session start" overclaim; commits fc85ce2..a2c0f56)
+Task final: minor (deferred): COVERAGE.md summary counts not recounted after W118:W121 moved from K to S
+Task final: minor (deferred): preamble.test.js:286 dead .fx.json write and preamble.js:61 unwrapped comment line
+Final: parked (F17 residual: ADR-0035 title and line 11 say rulings load "at every session start"; the code adds them only while an unfinished plan exists, and Claude Code re-reads on compaction while OpenCode reads at startup) Ruling: real, doc-only, nothing builds on the wording; no second fix wave by rule, so it goes to the owner as a one-line ADR edit. Cost if wrong: a reader expects rulings with no unfinished plan, caught by the completion report.
+Plan complete: tasks 01 to 11 complete, 1 parked, final review fixed
