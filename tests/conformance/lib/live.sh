@@ -87,6 +87,7 @@ case "$HARNESS" in
   claude-code) SUBAGENT_TOOL="the Agent tool" ;;
   codex)       SUBAGENT_TOOL="spawn_agent with fork_turns set to \"none\", then wait for it" ;;
   opencode)    SUBAGENT_TOOL="the task tool" ;;
+  opencode-v2) SUBAGENT_TOOL="the subagent tool" ;;
 esac
 OPENCODE_URL="http://127.0.0.1:8899/v1"
 
@@ -103,7 +104,7 @@ case "$HARNESS" in
     src="$FX_REAL_HOME/.codex/auth.json"
     [ -f "$src" ] || gap "not run: no credential source at $src"
     install -m 600 "$src" "$CODEX_HOME/auth.json" || fail "credential copy failed" ;;
-  opencode)
+  opencode|opencode-v2)
     src="$FX_REAL_HOME/.config/opencode/opencode.json"
     [ -f "$src" ] || gap "not run: no credential source at $src"
     # Only the provider.llamacpp entry crosses over; it carries the local
@@ -142,23 +143,39 @@ if [ ! -e "$LIVE_INSTALLED" ]; then
       # the first session of every row runs without them (amendment A4).
       out="$("${JAIL[@]}" bash "$FX/tests/conformance/lib/plant-codex-roles.sh" 2>&1)" \
         || fail "fx roles were not planted into the scratch CODEX_HOME: $out" ;;
-    opencode)
+    opencode|opencode-v2)
       OC_CFG="$XDG_CONFIG_HOME/opencode/opencode.json"
+      OC_MAJOR=1; OC_PLUGIN=fx-opencode-v1.js
+      [ "$HARNESS" = opencode-v2 ] && { OC_MAJOR=2; OC_PLUGIN=fx-opencode-v2.js; }
       case "${FX_OPENCODE_ROUTE:-installer}" in
         installer)
-          out="$("${JAIL[@]}" python3 "$FX/scripts/fx-opencode-install" --major 1 --dest "$XDG_CONFIG_HOME/opencode" 2>&1)" \
+          out="$("${JAIL[@]}" python3 "$FX/scripts/fx-opencode-install" --major "$OC_MAJOR" --dest "$XDG_CONFIG_HOME/opencode" 2>&1)" \
             || fail "fx did not install into the scratch opencode config: $out" ;;
         plugin)
           # Design story 4: one config entry, no installer, no symlink. The
           # entry form is the one step 1 of task 21 read from the opencode
           # source (1.18.31): config/plugin.ts:50-51 keeps a file:// spec as
           # is, and plugin/shared.ts:171-172 treats it as a local path.
-          CFG="$OC_CFG" ENTRY="${FX_OPENCODE_PLUGIN_ENTRY:-file://$FX/plugins/fx-opencode-v1.js}" node -e '
+          # 2.x: a `plugins` config entry must be a package directory (a bare
+          # .js file is refused), so the plugin is linked into plugins/, where
+          # OpenCode discovers local plugins, and fx's skills path is added.
+          # Nothing else: no permissions key, no command or agent files.
+          if [ "$OC_MAJOR" = 2 ]; then
+            mkdir -p "$XDG_CONFIG_HOME/opencode/plugins" && ln -s "$FX/plugins/$OC_PLUGIN" "$XDG_CONFIG_HOME/opencode/plugins/fx.js" \
+              && CFG="$OC_CFG" node -e '
+                const fs = require("fs");
+                const c = JSON.parse(fs.readFileSync(process.env.CFG, "utf8"));
+                c.skills = [...(c.skills || []), process.env.FX + "/skills"];
+                fs.writeFileSync(process.env.CFG, JSON.stringify(c, null, 2) + "\n", { mode: 0o600 });
+              ' || fail "could not set up the plugin route in the scratch opencode config"
+          else
+          CFG="$OC_CFG" ENTRY="${FX_OPENCODE_PLUGIN_ENTRY:-file://$FX/plugins/$OC_PLUGIN}" node -e '
             const fs = require("fs");
             const c = JSON.parse(fs.readFileSync(process.env.CFG, "utf8"));
             c.plugin = [...(c.plugin || []), process.env.ENTRY];
             fs.writeFileSync(process.env.CFG, JSON.stringify(c, null, 2) + "\n", { mode: 0o600 });
-          ' || fail "could not add the plugin entry to the scratch opencode.json" ;;
+          ' || fail "could not add the plugin entry to the scratch opencode.json"
+          fi ;;
         *) fail "unknown FX_OPENCODE_ROUTE: $FX_OPENCODE_ROUTE" ;;
       esac
       if [ "${FX_OPENCODE_MCP:-}" = 1 ]; then
@@ -232,6 +249,12 @@ live_run() {
     codex)
       timeout 900 "${JAIL[@]}" env TMPDIR="$tmp" codex exec --json -C "$WORK" -s danger-full-access \
         -c 'approval_policy="never"' --dangerously-bypass-hook-trust "$prompt" </dev/null >"$LOGDIR/out.pipe" 2>"$LOGDIR/err.pipe" ;;
+    opencode-v2)
+      # --standalone: no managed service, so nothing shares a port with the
+      # developer's OpenCode. </dev/null is required: an inherited stdin
+      # blocks the run forever (probe-findings.md, change 1).
+      timeout 1500 "${JAIL[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" \
+        opencode run --standalone --format json --dir "$WORK" "$prompt" </dev/null >"$LOGDIR/out.pipe" 2>"$LOGDIR/err.pipe" ;;
     opencode)
       # ponytail: one llama-server slot, so opencode rows only ever run serially.
       timeout 1500 "${JAIL[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" \
@@ -302,6 +325,19 @@ live_run() {
       # One rollout per thread, subagents included; each opens with session_meta.
       find "$CODEX_HOME/sessions" -type f -name 'rollout-*.jsonl' -newer "$WORK.start" 2>/dev/null \
         | sort | while read -r f; do cat "$f"; echo; done >> "$LOG" ;;
+    opencode-v2)
+      # The same walk as 1.x, through `opencode session export` (v2 renamed
+      # `opencode export`). A child id appears in the subagent tool's output.
+      local seen_ids2="" id2 more2=1
+      while [ "$more2" = 1 ]; do
+        more2=0
+        for id2 in $(grep -oE 'ses_[A-Za-z0-9]+' "$LOG" | sort -u); do
+          case " $seen_ids2 " in *" $id2 "*) continue ;; esac
+          seen_ids2="$seen_ids2 $id2"; more2=1
+          "${JAIL[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" opencode session export "$id2" --standalone </dev/null >"$WORK.export" 2>/dev/null
+          F="$WORK.export" ID="$id2" node -e 'const s=require("fs").readFileSync(process.env.F,"utf8");const i=s.indexOf("{");try{console.log(JSON.stringify({fx_export:JSON.parse(s.slice(i))}))}catch(e){console.log("export failed: "+process.env.ID+": "+e.message)}' >> "$LOG"
+        done
+      done ;;
     opencode)
       # A dispatched subagent is a child session; its id appears in the task
       # tool's output. Export every session reachable from the run, compacted

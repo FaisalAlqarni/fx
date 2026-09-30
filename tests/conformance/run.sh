@@ -9,13 +9,13 @@
 # Row contract: `<row> --describe` prints `<number>|<name>|<free|live>`.
 # Running it exits 0 (pass), 77 (gap), anything else (fail).
 #
-# Usage: run.sh <claude-code|opencode|codex> [--free]
+# Usage: run.sh <claude-code|opencode|opencode-v2|codex> [--free]
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 FX="$PWD"
 
-HARNESS="${1:?usage: run.sh <claude-code|opencode|codex> [--free]}"
-case "$HARNESS" in claude-code|opencode|codex) ;; *)
+HARNESS="${1:?usage: run.sh <claude-code|opencode|opencode-v2|codex> [--free]}"
+case "$HARNESS" in claude-code|opencode|opencode-v2|codex) ;; *)
   echo "unknown harness: $HARNESS" >&2; exit 2 ;; esac
 # Only `--free` is accepted. Anything else, `--fre` included, used to fall
 # through to "not free" and run the live rows, spending quota on a typo.
@@ -23,7 +23,7 @@ FREE=""
 case "$#:${2:-}" in
   1:) ;;
   2:--free) FREE=1 ;;
-  *) echo "usage: run.sh <claude-code|opencode|codex> [--free]" >&2; exit 2 ;;
+  *) echo "usage: run.sh <claude-code|opencode|opencode-v2|codex> [--free]" >&2; exit 2 ;;
 esac
 
 # FX_CONFORMANCE_ROWS points the runner at another rows directory; the

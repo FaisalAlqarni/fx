@@ -126,4 +126,42 @@ assert.match(slice('skill_attempts', 'claude-code', blockedSkillLog), /^fx-audit
 assert.strictEqual(slice('skills', 'claude-code', blockedSkillLog), '',
   'skills must not record a blocked Skill call as a successful load');
 
+// --- opencode 2.x -------------------------------------------------------------
+// Shapes from probe-findings.md question 10: run lines carry the root session's
+// tool_use parts; a dispatch is the `subagent` tool and names its child in the
+// output; `session export` has no parent link, and its assistant content holds
+// {type:'tool', name, state} parts.
+const v2Root = 'ses_root1';
+const v2Dispatch = (child, prompt, answer) => ({
+  tool: 'subagent',
+  state: { status: 'completed', input: { agent: 'general', description: 'd', prompt },
+    output: `<subagent sessionID="${child}" state="completed">\n${answer}\n</subagent>`,
+    metadata: { metadata: { sessionID: child } } },
+});
+const v2Run = [
+  { type: 'step_start', sessionID: v2Root, part: { type: 'step-start' } },
+  { type: 'tool_use', sessionID: v2Root, part: { type: 'tool', ...v2Dispatch('ses_kid1', 'outer prompt', 'NESTED-OK') } },
+  { type: 'tool_use', sessionID: v2Root, part: { type: 'tool', tool: 'skill', state: { status: 'completed', input: { name: 'fx-tdd' }, output: 'loaded' } } },
+  { type: 'tool_use', sessionID: v2Root, part: { type: 'tool', tool: 'skill', state: { status: 'error', input: { name: 'fx-audit' }, error: 'denied' } } },
+  { type: 'text', sessionID: v2Root, part: { type: 'text', text: 'NESTED-OK' } },
+];
+const v2Kid = { fx_export: { info: { id: 'ses_kid1' }, messages: [{ content: [
+  { type: 'tool', id: 'c1', name: 'subagent', state: v2Dispatch('ses_kid2', 'inner prompt', 'NESTED-OK').state },
+  { type: 'tool', id: 'c2', name: 'shell', state: { status: 'completed', input: { command: 'ls' }, output: 'KIDSHELL' } },
+] }] } };
+const v2Log = [...v2Run, v2Kid];
+assert.strictEqual(slice('max_depth', 'opencode-v2', v2Log).trim(), '2', 'a child that dispatches is depth 2');
+assert.strictEqual(slice('max_depth', 'opencode-v2', v2Run).trim(), '1', 'one completed dispatch is depth 1');
+assert.strictEqual(slice('answer', 'opencode-v2', v2Log).trim(), 'NESTED-OK');
+assert.strictEqual(slice('sub_type', 'opencode-v2', v2Log).trim(), 'general', 'only the root session\'s dispatches');
+assert.strictEqual(slice('sub_input', 'opencode-v2', v2Log).trim(), 'outer prompt');
+assert.match(slice('sub_output', 'opencode-v2', v2Log), /NESTED-OK/);
+assert.match(slice('sub_tool_output', 'opencode-v2', v2Log), /KIDSHELL/);
+assert.strictEqual(slice('skills', 'opencode-v2', v2Log).trim(), 'fx-tdd', 'a denied skill call is not a load');
+assert.deepStrictEqual(slice('skill_attempts', 'opencode-v2', v2Log).trim().split('\n'), ['fx-tdd', 'fx-audit']);
+const v2Refused = [
+  { type: 'tool_use', sessionID: v2Root, part: { type: 'tool', tool: 'subagent', state: { status: 'error', input: { agent: 'general', prompt: 'p' }, error: 'Subagent depth limit reached (1)' } } },
+];
+assert.strictEqual(slice('max_depth', 'opencode-v2', v2Refused).trim(), '0', 'a refused dispatch is no depth');
+
 console.log('events: all passed');

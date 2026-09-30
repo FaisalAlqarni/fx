@@ -8,6 +8,11 @@
 #                and the real `opencode debug skill` lists every skill after
 #                fx-opencode-install, with fx-devils-advocate denied edit and
 #                bash in `opencode debug agent`.
+#   opencode-v2: the real 2.x binary against a scratch config and its own
+#                service: `opencode api skill.list` lists the skills the route
+#                promises, and `opencode debug agents` shows fx-devils-advocate
+#                denied edit and shell. FX_OPENCODE_ROUTE picks installer or
+#                plugin (lib/opencode-v2.sh).
 #   codex:       the manifest's `skills` path resolves to skills/, and the real
 #                `codex plugin marketplace add` + `plugin add` installs fx with
 #                its hooks file and every skill.
@@ -83,6 +88,42 @@ case "$HARNESS" in
         const r = (agent.permission || []).filter(r => (r.permission === tool || r.permission === "*") && r.pattern === "*").pop();
         if (!r || r.action !== "deny") {
           console.error("opencode: fx-devils-advocate " + tool + " is " + (r ? r.action : "unset") + ", not deny"); process.exit(1); }
+      }
+    ' ;;
+  opencode-v2)
+    # The real 2.x binary, a scratch config, its own service, no model call.
+    # Route installer: the installer links the twelve model-facing skills and
+    # never links the five user-invoked lanes (they are commands, row 14).
+    # Route plugin: `skills` lists all of skills/, lanes included, and the
+    # plugin hides the lanes per agent (row 13). skill.list is unfiltered
+    # either way (probe 7), so it says what is discoverable, not what the
+    # model sees.
+    . "$FX/tests/conformance/lib/opencode-v2.sh"
+    oc2_setup
+    oc2_wait skill.list 'd.some((s) => s.name === "fx-tdd")'
+    oc2_agents
+    F="$OC2_LAST" AGENTS="$OC2_ROOT/agents.json" ROUTE="$OC2_ROUTE" node -e '
+// The effect v2 gives an action on a resource: the last rule that matches.
+const effect = (rules, action, resource) => {
+  let e = "unset";
+  for (const r of rules || []) {
+    if ((r.action === action || r.action === "*") && (r.resource === resource || r.resource === "*")) e = r.effect;
+  }
+  return e;
+};
+      const fs = require("fs");
+      const HIDDEN = ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-setup"];
+      const all = fs.readdirSync("skills", { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name);
+      const listed = JSON.parse(fs.readFileSync(process.env.F, "utf8")).map(s => s.name);
+      const want = process.env.ROUTE === "plugin" ? all : all.filter(n => !HIDDEN.includes(n));
+      for (const n of want) if (!listed.includes(n)) {
+        console.error("opencode-v2 (" + process.env.ROUTE + " route) does not discover " + n); process.exit(1); }
+      if (process.env.ROUTE === "installer") for (const n of HIDDEN) if (listed.includes(n)) {
+        console.error("opencode-v2 installer route lists user-invoked lane " + n + "; the installer must not link it"); process.exit(1); }
+      const agent = JSON.parse(fs.readFileSync(process.env.AGENTS, "utf8")).find(a => a.id === "fx-devils-advocate");
+      for (const tool of ["edit", "shell"]) {
+        const e = effect(agent.permissions, tool, "*");
+        if (e !== "deny") { console.error("opencode-v2: fx-devils-advocate " + tool + " is " + e + ", not deny"); process.exit(1); }
       }
     ' ;;
   codex)

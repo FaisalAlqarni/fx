@@ -110,6 +110,7 @@ run conformance-plant-codex-roles bash tests/conformance/plant-codex-roles.test.
 run conformance-merge-opencode-provider bash tests/conformance/merge-opencode-provider.test.sh
 run conformance-free-claude-code bash tests/conformance/run.sh claude-code --free
 run conformance-free-opencode    bash tests/conformance/run.sh opencode --free
+run conformance-free-opencode-v2 bash tests/conformance/run.sh opencode-v2 --free
 run conformance-free-codex       bash tests/conformance/run.sh codex --free
 run ci-pins.test.js node tests/gates/ci-pins.test.js
 

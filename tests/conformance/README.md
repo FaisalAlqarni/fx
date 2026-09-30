@@ -10,7 +10,7 @@ caught that. This is what would have.
 ## Running it
 
 ```
-bash tests/conformance/run.sh <claude-code|opencode|codex> [--free]
+bash tests/conformance/run.sh <claude-code|opencode|opencode-v2|codex> [--free]
 ```
 
 `--free` runs only the rows that read files and spend nothing. Those are in
@@ -31,11 +31,24 @@ there, for reading a FAIL afterwards. It is opt-in, and nothing redacts it: a
 kept transcript may contain anything the session read, including the scratch
 credential copy. Keep that directory private and delete it when done.
 
+`opencode` is OpenCode 1.x and `opencode-v2` is 2.x. Both use the binary named
+`opencode`, so a run checks `opencode --version` first and fails when the
+major does not match the harness: a 2.x machine never measures 1.x while
+claiming it. The free `opencode-v2` rows call the real 2.x binary against a
+scratch config and their own managed service (`opencode service set port
+<free port>`, stopped on exit, never the developer's service), with stdin
+closed and no model call. `lib/opencode-v2.sh` holds that setup.
+
 Two knobs change only how opencode is set up, before its first session:
 
-- `FX_OPENCODE_ROUTE=plugin` runs no installer and adds one `plugin` entry,
-  `file://$FX/plugins/fx-opencode-v1.js`, to the scratch `opencode.json`. Unset or
-  `installer` runs `scripts/fx-opencode-install` as before.
+- `FX_OPENCODE_ROUTE=plugin` runs no installer. On `opencode` it adds one
+  `plugin` entry, `file://$FX/plugins/fx-opencode-v1.js`, to the scratch
+  `opencode.json`. On `opencode-v2` it links `plugins/fx-opencode-v2.js` into the
+  scratch config's `plugins/` directory and adds `"$FX/skills"` to its `skills`,
+  and nothing else: no `permissions` key, no command or agent files (a 2.0.18
+  `plugins` config entry must be a package directory, so a bare `.js` file
+  cannot be named there). Unset or `installer` runs `scripts/fx-opencode-install`
+  (`--major 1` or `--major 2`). Rows 13 and 14 run on both routes.
 - `FX_OPENCODE_MCP=1` adds one local MCP server, `fxprobe`, to the scratch
   `opencode.json`. It runs `lib/mcp-probe-server.js`, whose one tool,
   `write_marker`, writes a file.
@@ -84,7 +97,7 @@ spends anything. That file does four things, in one place:
    directories at `0700`:
    - Claude Code: `.claude/.credentials.json` into `$CLAUDE_CONFIG_DIR`.
    - Codex: `.codex/auth.json` into `$CODEX_HOME`.
-   - opencode: only the `provider.llamacpp` entry of
+   - opencode and opencode-v2: only the `provider.llamacpp` entry of
      `.config/opencode/opencode.json`, with the model set to
      `llamacpp/qwen3.8-27b`. The user's own plugins, agents and MCP servers
      stay behind, so the session measures fx alone.

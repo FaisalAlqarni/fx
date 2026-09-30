@@ -14,6 +14,11 @@ live_workdir
 # let the model pick another agent could pass without touching the override.
 AS=""
 [ "$HARNESS" = opencode ] && AS=" as agent type general"
+# opencode-v2: built-in general and explore deny the subagent tool (probe 9),
+# so they cannot nest at any depth. build allows it, so both levels are build,
+# and a PASS proves the installer's experimental.subagent_depth: 2 reached the
+# subagent tool, which refuses the second level at the default limit of 1.
+[ "$HARNESS" = opencode-v2 ] && AS=" as agent type build"
 
 live_run "Dispatch one subagent ($SUBAGENT_TOOL)$AS. Its task, word for word: \"Dispatch one subagent of your own ($SUBAGENT_TOOL)$AS. Its task, word for word: 'Reply with the word NESTED-OK.' Wait for it, then reply with exactly what it returned.\" Wait for it, then reply with exactly what it returned."
 
@@ -21,10 +26,11 @@ d="$(events max_depth)"
 # opencode: the session's dispatch must have gone to general. That agent is the
 # one that needs the plugin's task grant to nest; events.js records only
 # the session's own dispatches, so the nested one's type is not read here.
-if [ "$HARNESS" = opencode ]; then
+if [ "$HARNESS" = opencode ] || [ "$HARNESS" = opencode-v2 ]; then
+  want=general; [ "$HARNESS" = opencode-v2 ] && want=build
   types="$(events sub_type)"
-  ! grep -qvx general <<<"$types" && [ -n "$types" ] \
-    || fail "a dispatch went to another agent than general (dispatched: $(tr '\n' ' ' <<<"$types"))"
+  ! grep -qvx "$want" <<<"$types" && [ -n "$types" ] \
+    || fail "a dispatch went to another agent than $want (dispatched: $(tr '\n' ' ' <<<"$types"))"
 fi
 [ "$d" -ge 2 ] || fail "dispatch reached depth $d, not 2 (answer: $(events answer | tail -c 300))"
 # The depth says a nested dispatch completed; the word says it did the work.

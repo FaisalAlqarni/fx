@@ -23,6 +23,14 @@
 //                parent_thread_id. The dispatch message is encrypted.
 //   opencode     `run --format json` output for the root session, then one
 //                {"fx_export": ...} line per session the run reached.
+//   opencode-v2  2.0.18, probe-findings.md question 10: `run --format json`
+//                lines {type, sessionID, part}, where a tool_use part is
+//                {tool, state:{status, input, output|error, metadata}}; then
+//                one {"fx_export": {info, messages}} line per session, from
+//                `opencode session export`. A dispatch is the `subagent` tool
+//                (input {agent, description, prompt}); its child session id is
+//                in the output (<subagent sessionID="ses_...">) and the export
+//                carries no parent link, so depth is read from those ids.
 const fs = require('fs');
 
 const kind = process.env.KIND;
@@ -203,7 +211,64 @@ function opencode() {
   }
 }
 
-({ 'claude-code': claude, codex, opencode })[harness]();
+function opencodeV2() {
+  const sessions = {};               // session id -> its tool parts
+  const parent = {};                 // child session id -> dispatching session id
+  let root = null;
+  const rootParts = [];
+  for (const r of records) {
+    if (r.fx_export) continue;
+    if (r.sessionID && !root) root = r.sessionID;
+    const part = r.part || {};
+    if (r.type === 'text' && part.text) out.answer.push(part.text);
+    if (r.type === 'tool_use') rootParts.push(part);
+  }
+  sessions[root] = rootParts;
+  for (const r of records) {
+    if (!r.fx_export) continue;
+    const e = r.fx_export, parts = [];
+    for (const m of e.messages || []) {
+      for (const p of [].concat(m.content || [], m.parts || [])) {
+        if (p && p.type === 'tool') parts.push({ tool: p.name || p.tool, state: p.state });
+      }
+    }
+    if ((e.info || {}).id) sessions[e.info.id] = parts;
+  }
+  // Pass one: the parent map. A dispatch counts only when it completed and
+  // named a child; the depth-limit error names none.
+  const childOf = (st) => ((st.metadata || {}).metadata || {}).sessionID
+    || (text(st.output).match(/<subagent sessionID="(ses_[A-Za-z0-9]+)"/) || [])[1];
+  for (const [sid, parts] of Object.entries(sessions)) {
+    for (const p of parts) {
+      const st = p.state || {};
+      if (p.tool === 'subagent' && st.status === 'completed' && childOf(st)) parent[childOf(st)] = sid;
+    }
+  }
+  const depth = (id) => { let d = 0; while (id && parent[id] && d < 20) { id = parent[id]; d++; } return d; };
+  for (const c of Object.keys(parent)) out.max_depth = Math.max(out.max_depth, depth(c));
+  // Pass two: what each session did.
+  for (const [sid, parts] of Object.entries(sessions)) {
+    const d = depth(sid);
+    for (const p of parts) {
+      const st = p.state || {};
+      const t = [text(st.output), text(st.error)].filter(Boolean).join('\n');
+      out.tool_output.push(t);
+      if (d > 0) out.sub_tool_output.push(t);
+      if (p.tool === 'subagent' && d === 0) {
+        out.sub_input.push(text((st.input || {}).prompt));
+        out.sub_type.push(text((st.input || {}).agent));
+        out.sub_output.push(text(st.output));
+      }
+      if (p.tool === 'skill') {
+        const n = text((st.input || {}).name);
+        out.skill_attempts.push(n);
+        if (st.status === 'completed') out.skills.push(n);
+      }
+    }
+  }
+}
+
+({ 'claude-code': claude, codex, opencode, 'opencode-v2': opencodeV2 })[harness]();
 if (kind === 'max_depth') console.log(out.max_depth);
 else if (kind in out) { const v = out[kind].filter(Boolean); if (v.length) console.log(v.join('\n')); }
 else { console.error(`events.js: unknown KIND ${kind}`); process.exit(2); }

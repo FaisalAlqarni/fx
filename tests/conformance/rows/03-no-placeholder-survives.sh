@@ -8,7 +8,7 @@
 #
 # The text is taken from each runtime's own entry point, never from
 # lib/preamble directly: a delivery path that reads the raw PREAMBLE.md must
-# fail here. opencode: the plugin's system transform. Claude Code and Codex:
+# fail here. opencode-v2: the plugin's session context hook. opencode: the plugin's system transform. Claude Code and Codex:
 # the SessionStart hook script, spawned with a SessionStart payload. The Codex
 # hook plants roles into CODEX_HOME, which the runner points at its scratch home.
 set -uo pipefail
@@ -26,6 +26,23 @@ case "$HARNESS" in
       await hooks["experimental.chat.system.transform"]({}, out);
       process.stdout.write(out.system.join("\n"));
     ')" || { echo "opencode plugin system transform failed" >&2; exit 1; } ;;
+  opencode-v2)
+    # The plugin's setup, run against a stub ctx that keeps the session
+    # `context` hook: the text is what that hook pushes into a session.
+    text="$(node --input-type=module -e '
+      const m = await import(process.cwd() + "/plugins/fx-opencode-v2.js");
+      let hook;
+      const noop = () => {};
+      await m.default.setup({
+        location: { directory: process.cwd() },
+        session: { hook: (name, fn) => { if (name === "context") hook = fn; }, prompt: noop },
+        agent: { transform: noop }, permission: { hook: noop }, tool: { hook: noop },
+        command: { list: async () => [], transform: noop },
+      });
+      const ev = { system: [] };
+      await hook(ev);
+      process.stdout.write(ev.system.map((p) => p.text).join("\n"));
+    ')" || { echo "opencode-v2 plugin context hook failed" >&2; exit 1; } ;;
   claude-code|codex)
     hook=hooks/fx-context.js; [ "$HARNESS" = codex ] && hook=hooks/fx-codex.js
     text="$(printf '%s' "$payload" | node "$hook" | node -e '
@@ -43,7 +60,7 @@ if (text.includes("{{")) {
   process.exit(1);
 }
 // The addressing must be this runtime s own, not another s.
-const want = { "claude-code": "fx:fx-tdd", opencode: "fx-tdd", codex: "$fx-tdd" };
+const want = { "claude-code": "fx:fx-tdd", opencode: "fx-tdd", "opencode-v2": "fx-tdd", codex: "$fx-tdd" };
 if (!text.includes(want[harness])) {
   console.error(harness + " preamble does not carry " + want[harness]);
   process.exit(1);

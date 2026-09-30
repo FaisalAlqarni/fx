@@ -4,6 +4,9 @@
 # The counterpart to row 13. A lane hidden from both is not hidden, it is gone.
 #   opencode:    the installer, run into a scratch config dir, generates a
 #                command for each hidden lane, which is how a user types it.
+#   opencode-v2: the real 2.x binary, no model call: `opencode api
+#                command.list` lists the five commands the plugin registers,
+#                on the installer route and on the plugin route.
 #   claude-code: a live session, addressing fx-handoff the way a user does: a
 #                /fx:fx-<name> slash command in the print-mode prompt.
 #                docs.claude.com/en/headless.md confirms user-invoked skills
@@ -32,6 +35,23 @@ case "$HARNESS" in
     for n in $HIDDEN; do
       [ -f "$dest/commands/$n.md" ] || { echo "opencode: no command for $n, user route gone" >&2; exit 1; }
     done ;;
+  opencode-v2)
+    # The real 2.x binary. The plugin registers the five commands itself
+    # (command.transform, no command files), so this waits for them in
+    # `opencode api command.list` on the route FX_OPENCODE_ROUTE names.
+    # Invoking one is `opencode api session.command`, which needs a model
+    # (task 10); listing is what a user picks from.
+    . "$FX/tests/conformance/lib/opencode-v2.sh"
+    oc2_setup
+    oc2_wait command.list '["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-setup"].every((x) => d.some((c) => c.name === x))'
+    F="$OC2_LAST" node -e '
+      const d = JSON.parse(require("fs").readFileSync(process.env.F, "utf8"));
+      const audit = d.find(c => c.name === "fx-audit");
+      if (!audit.description) { console.error("opencode-v2: fx-audit is listed with no description"); process.exit(1); }
+    '
+    # No generated command files: the plugin is the one route to them.
+    if ls "$OC2_DEST"/commands/fx-*.md >/dev/null 2>&1; then
+      echo "opencode-v2: command files exist beside the plugin's commands" >&2; exit 1; fi ;;
   claude-code)
     . "$FX/tests/conformance/lib/live.sh"
     live_workdir
