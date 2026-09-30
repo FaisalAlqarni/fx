@@ -51,6 +51,7 @@ function commandsFor(p) {
   if (p.startsWith('hooks/') || p.startsWith('plugins/') || p === 'lib/preamble.js' || p === 'lib/plan-state.js') {
     commands.push('node lib/preamble.test.js', 'node tests/gates/codex-hook-output.test.js', 'node tests/gates/opencode-plugin.test.js');
   }
+  if (p === 'plugins/fx-opencode-v2.js') commands.push('node tests/gates/opencode-v2-plugin.test.js');
   const base = path.basename(p);
   // codex-manifest.test.js is the only gate that reads .codex-plugin/plugin.json
   // and any marketplace.json (it cross-checks them against the Claude manifest);
