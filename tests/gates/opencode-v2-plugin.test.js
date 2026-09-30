@@ -194,6 +194,42 @@ async function evaluate(rec, ev) {
   assert.strictEqual(rel.effect, 'deny', 'a project-relative resource is resolved against the project, not process.cwd()');
   assert.strictEqual((await edit(path.join(lc, 'README.md'))).effect, 'allow', 'prose is not nudged');
   assert.strictEqual((await evaluate(l.rec, { action: 'edit', resources: [42], effect: 'allow' })).effect, 'allow', 'a lane-check crash leaves the edit alone');
+  // --- command recording: only a string command is recorded ----------------
+  for (const [label, input] of [['an array command', { command: ['git', 'push', '--force'] }], ['no command field', {}], ['no input', undefined]]) {
+    const id = `shape_${label}`;
+    for (const cb of g.rec.hooks['tool.execute.before'] || []) await cb({ tool: 'shell', id, input });
+    const e = await evaluate(g.rec, { action: 'shell', resources: ['x'], source: { type: 'tool', messageID: 'm', id }, effect: 'allow' });
+    assert.strictEqual(e.effect, 'deny', `${label} is not recorded, so the shell call is denied`);
+  }
+
+  // --- guard registration: a hook that never registered must not open the guard
+  const failing = (which) => {
+    const f = stub(dir);
+    const base = f.ctx;
+    if (which.includes('evaluate')) base.permission.hook = async (name, cb) => { if (name === 'evaluate') throw new Error('evaluate registration broke'); return {}; };
+    if (which.includes('before')) { const h = base.tool.hook; base.tool.hook = async (name, cb) => { if (name === 'execute.before') throw new Error('before registration broke'); return h(name, cb); }; }
+    return f;
+  };
+  const noEval = failing(['evaluate']);
+  await mod.default.setup(noEval.ctx);
+  let thrown;
+  try {
+    for (const cb of noEval.rec.hooks['tool.execute.before'] || []) await cb({ tool: 'shell', id: 'f1', input: { command: 'git push --force origin main' } });
+  } catch (e) { thrown = e; }
+  assert.ok(thrown && /evaluate registration broke/.test(thrown.message), 'with evaluate unregistered, execute.before refuses every shell call and names the failure');
+  for (const cb of noEval.rec.hooks['tool.execute.before'] || []) await cb({ tool: 'read', id: 'f2', input: {} });
+
+  const noGuard = failing(['evaluate', 'before']);
+  await mod.default.setup(noGuard.ctx);
+  const pre = { system: [] };
+  for (const cb of noGuard.rec.hooks['session.context'] || []) await cb(pre);
+  assert.ok(/git guard is off/i.test(pre.system.map((p) => p.text).join('\n')), 'with both registrations failed, the preamble says the git guard is off');
+
+  const noBefore = failing(['before']);
+  await mod.default.setup(noBefore.ctx);
+  const nb = await evaluate(noBefore.rec, { action: 'shell', resources: ['ls'], source: { type: 'tool', messageID: 'm', id: 'nb' }, effect: 'allow' });
+  assert.ok(nb.effect === 'deny' && /before registration broke/.test(nb.message), 'a failed execute.before registration shows in the denial');
+
   fs.rmSync(lc, { recursive: true, force: true });
   fs.rmSync(lc2, { recursive: true, force: true });
 

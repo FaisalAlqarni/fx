@@ -139,16 +139,12 @@ export default {
       });
     });
 
-    await attempt('tool.execute.before', () => ctx.tool.hook('execute.before', (ev) => {
-      attempt('record command', () => {
-        if (ev.tool === 'shell') commands.set(ev.id, String(ev.input.command));
-      });
-    }));
-    await attempt('tool.execute.after', () => ctx.tool.hook('execute.after', (ev) => {
-      attempt('forget command', () => { commands.delete(ev.id); });
-    }));
-
-    await attempt('permission.evaluate', () => ctx.permission.hook('evaluate', (ev) => {
+    // The guard lives in this hook. If it never registers, execute.before below
+    // refuses every shell call instead (a throw there refuses cleanly, probe Q4).
+    let evaluateError;
+    await attempt('permission.evaluate', async () => {
+      try {
+        await ctx.permission.hook('evaluate', (ev) => {
       // fx's read-only agents: anything but a read, or a read of fx's own
       // references, is denied whatever the session's rules said.
       if (attempt('read-only check', () => {
@@ -167,18 +163,13 @@ export default {
           if (guardError) throw guardError;
           const command = ev.source && commands.get(ev.source.id);
           if (command === undefined) {
-            ev.effect = 'deny';
-            ev.message = "fx could not see this command's full text, so the git guard cannot check it.";
+            deny(ev, "fx could not see this command's full text, so the git guard cannot check it.");
             return;
           }
           const verdict = inspect(command, ctx.location.directory);
-          if (!verdict.allow) {
-            ev.effect = 'deny';
-            ev.message = verdict.reason;
-          }
+          if (!verdict.allow) deny(ev, verdict.reason);
         } catch (e) {
-          ev.effect = 'deny';
-          ev.message = `the fx git guard failed, so the command is refused: ${e && e.message}`;
+          deny(ev, `the fx git guard failed, so the command is refused: ${messageOf(e)}`);
         }
         return;
       }
@@ -207,6 +198,26 @@ export default {
         const lane = ev.action === 'skill' && [].concat(ev.resources || []).find((r) => HIDDEN.includes(r));
         if (lane) deny(ev, `${lane} is typed by the user: ask them to run /${lane}.`);
       }
+        });
+      } catch (e) { evaluateError = e; throw e; }
+    });
+
+    let beforeRegistered = false;
+    await attempt('tool.execute.before', async () => {
+      await ctx.tool.hook('execute.before', (ev) => {
+        if (ev.tool !== 'shell') return;
+        // Not inside attempt(): this throw is the refusal.
+        if (evaluateError) throw new Error(`fx git guard is not installed (permission.evaluate failed to register: ${messageOf(evaluateError)}), so shell commands are refused.`);
+        // Only a string is recorded; anything else misses in evaluate and is denied.
+        attempt('record command', () => { if (ev.input && typeof ev.input.command === 'string') commands.set(ev.id, ev.input.command); });
+      });
+      beforeRegistered = true;
+    });
+    await attempt('tool.execute.after', () => ctx.tool.hook('execute.after', (ev) => {
+      attempt('forget command', () => { commands.delete(ev.id); });
     }));
+    if (evaluateError && !beforeRegistered) {
+      failures.push('fx: the git guard is off: no hook could be registered, so every shell call is unguarded and only the installed policy layer stands.');
+    }
   },
 };
