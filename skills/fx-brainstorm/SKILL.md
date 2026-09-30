@@ -58,22 +58,24 @@ Then **create a task for each item on your path** and complete them in order.
 ### Bounded checklist
 1. Explore project context: files, docs, recent commits
 2. Ask the clarifying questions that matter
-3. Present a short design in chat: approach, files touched, testing
-4. **Get approval: STOP and wait for an explicit yes.** Presenting the design
+3. **Confidence check, then stop until the user says go** (§3)
+4. Present a short design in chat: approach, files touched, testing
+5. **Get approval: STOP and wait for an explicit yes.** Presenting the design
    and starting in the same breath is skipping the gate
-5. Implement through the normal workflow (`fx-tdd` applies). No plan document
+6. Implement through the normal workflow (`fx-tdd` applies). No plan document
 
 ### Architectural checklist
 1. Explore project context: files, docs, recent commits
 2. Show rather than tell when a question warrants it: visual companion, or
    `prototype` when the question needs something runnable (§4)
 3. Interview in clustered rounds, maintaining the open-questions ledger (§3)
-4. Propose 2 to 3 approaches with trade-offs and your recommendation (§5)
-5. Present the design **in sections**, approval after each (§6)
-6. Write the design doc (§7)
-7. Self-review it (§8)
-8. User reviews the written doc (§8)
-9. Hand off to `fx-plan` (§9)
+4. **Confidence check, then stop until the user says go** (§3)
+5. Propose 2 to 3 approaches with trade-offs and your recommendation (§5)
+6. Present the design **in sections**, approval after each (§6)
+7. Write the design doc (§7)
+8. Self-review it (§8)
+9. User reviews the written doc (§8)
+10. Hand off to `fx-plan` (§9)
 
 **Terminal states are path-bound.** Architectural: **the only skill you invoke
 after this is `fx-plan`**: never `fx-tdd`, never `fx-implement`, never a
@@ -158,9 +160,18 @@ When a term is fuzzy, conflicts with the glossary, or contradicts the code, use
 
 Focus throughout on **purpose, constraints, success criteria.**
 
-**Done when the ledger is empty**: every branch visited, nothing left silently
-assumed. **Do not act on it until the user confirms you have reached a shared
-understanding.**
+### Close the interview with a confidence check
+
+Keep asking rounds until you are 95% confident you understand exactly what
+the user is asking for: the ledger is empty and no decision rests on a guess.
+Then, in one message:
+
+1. **What made you confident**: the answers and looked-up facts that settled
+   it, each tied to the decision it settled. Name any assumption still standing.
+2. **What you will do**, in two lines.
+
+Then stop. Nothing happens until the user gives an explicit go: no file
+written, no approach proposed, no lane invoked.
 
 ## 4. Show, don't tell: visual companion, or a prototype
 
@@ -335,6 +346,7 @@ Approved → **`fx-plan`. Do not invoke any other skill.**
 | "This is too simple to need a design" | Simple means a short design, not no design. Two sentences in chat, then approval. |
 | "I'll call it bounded and skip the design doc" | Reaching for a label to skip work IS the doubt: take the heavier path. |
 | "It's bounded and the design is obvious: I'll start while they read it" | The gate is the approval, not the design's length. Present, then stop until you hear yes. |
+| "I'm confident, I'll show approaches in the same message" | The check is its own message. Approaches wait for the user's go. |
 | "I understand this kind of app, so it's bounded" | Bounded measures the repo, not your familiarity. A new project has no existing flow: it is architectural. |
 | "The spike works, so I'll keep the code" | A spike's output is an answer. Keeping the code is a new request: classify it. |
 | "It grew, but I'm almost done: no need to re-classify" | Hidden complexity upgrades the path mid-task. Stop and say so. |
