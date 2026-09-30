@@ -104,3 +104,40 @@ Task 06: fix round 1/5 (5 addressed, 0 open: none; commits 44ab55b..d12d931)
 Task 06: minor (deferred): ownership record rewritten on every run even when unchanged
 Task 06: minor (deferred): pre-round-1 installs have no record, so their depth and policies are treated as the user's
 Task 06: complete (commits d149944..34a3c72, fix 44ab55b..d12d931, 1 fix round, minors deferred)
+Task 07: implemented 5096d82..5790b9b (DONE_WITH_CONCERNS). v2 free rows 5 pass, 1 fail (row 14) on the committed tree; v1 free rows unchanged (row 09 fails on this 2.x machine, pre-existing). Deviations: plugin route links the plugin into plugins/ (2.0.18 refuses a bare .js path), rows 15 and 18 dispatch from `build` on v2 (unverified live), added lib/opencode-v2.sh and edited events.test.js; events.js v2 parser had no RED.
+Task 04: reopened by a real-binary finding from task 07: `await ctx.command.list()` inside setup (plugins/fx-opencode-v2.js:125 at 5790b9b) never resolves on 2.0.18, so commands never register and every hook after it, including the git guard's evaluate and execute.before hooks, never registers. The stub gate could not see it. Checked: the line is there.
+Task 04: fix round 2/5 dispatched (resumes a2a74e26723613999): register the guard hooks before any await on the runtime; never await a runtime list during setup without a bound; gate case with a command.list that never resolves; prove on the real binary with row 14 and a guard check. Task 07 reviewer dispatched in parallel (read-only).
+Task 04: fix round 2 committed 5790b9b..717b35b: guard hooks register first; setup never lists commands. v2 free rows 6 pass, 0 fail. Real 2.0.18 live run: git push --force origin main refused by fx's guard reason. Re-review dispatched.
+Task 04: minor (deferred): a user's same-named command vs fx's depends on transform order (Map keyed by name; last add wins); unprobed.
+Task 04: fix round 2/5 (1 addressed, 0 open; commits 5790b9b..717b35b)
+Task 04: minor (deferred): no gate for a never-resolving permission.hook/tool.hook registration; later hooks would stall sequentially
+Task 04: minor (deferred): fx commands always added; precedence versus a user's same-named file command unprobed
+Task 04: complete again (fix round 2 5790b9b..717b35b addressed)
+Task 07: minor (deferred): live.sh plugin-route setup duplicates oc2_setup's plugin branch in lib/opencode-v2.sh.
+Task 07: minor (deferred): events.js v2 parser fixture is synthetic with no watched RED; check it against task 10's first real log.
+Task 07: minor (deferred): live.sh v2 plugin route ignores FX_OPENCODE_PLUGIN_ENTRY that the v1 route honours.
+Task 07: minor (deferred): design section 4 and probe Q1 still say `file://` plugin entry; 2.0.18 needs a plugins/ link.
+Task 07: minor (deferred): check-all runs only the installer route; re-run rows 13 and 14 with FX_OPENCODE_ROUTE=plugin after task 04 fix round 2.
+Task 07: ⚠️ resolved by controller: rows 13 and 14 on opencode-v2 pass on both routes after 717b35b (plugin route 2/2, installer route 2/2, free). `build` as the dispatch agent in rows 15 and 18 and row 15's depth on the plugin route are live-only: Ruling: task 10's live run confirms them; a FAIL there goes to task 13. Cost if wrong: rows 15 and 18 need a v2-specific dispatch agent, caught by task 10.
+Task 07: complete (commits 5096d82..5790b9b, review clean, minors deferred)
+Task 08: dispatched (BASE 717b35b).
+Task 08: implemented 717b35b..1a4b0f5 (DONE_WITH_CONCERNS). Row 01 passes live on codex (429 on free Qwen, passed on DeepSeek), opencode, opencode-v2, claude-code (Haiku). Fixed task 07's opencode-v2 live run (2.0.18 rejects --dir). Added tests/conformance/live-openrouter.test.sh. Controller leak check: key absent from tree, branch history, /tmp and CLI data dirs. Lenses: security (credential handling) and silent-failure (provider-error fallback). Reviewer + both lenses dispatched.
+Task 09: dispatched (BASE 1a4b0f5).
+Task 08: silent-failure lens 1 Critical, 2 Important, 2 Minor (findings/08-lens-silent-failure.md). Critical: a no-output timeout is always classed a provider error, so a product hang could pass on the fallback or become a GAP. Fix round waits for the review and security lens.
+Task 08: minor (deferred): run.sh:758 dead `[ -z "$suffix" ]` guard.
+Task 08: minor (deferred): Claude Code 75 gets no re-run and FX_LIVE_MODEL is silently ignored for it under the switch; document or fail loudly.
+Task 08: minor (deferred): jail-probe "without the switch" case does not unset FX_LIVE_PROVIDER.
+Task 08: minor (deferred): rc 124 with empty stdout becomes 75 then GAP; no test for the 124, 401 or result-is_error paths through live.sh.
+Task 08: minor (deferred): live.sh else-block not re-indented around the credential case.
+Task 08: minor (deferred): sessionModel takes the first matching line; a forged stdout line could win for Codex turn_context.
+Task 08: review 1 Important (isProviderError over-matches, same root as the lens's finding 2). Waiting on the security lens, then one fix round.
+Task 09: implemented 1a4b0f5..d878184 (DONE_WITH_CONCERNS: check-prose fails only on AGENTS.md, pre-existing on main). Lenses: none (docs). Reviewer dispatched.
+Task 08: security lens 1 Important, 3 Minor (findings/08-lens-security.md). Important: the key rides bwrap's argv via --setenv, visible in any process listing during a run.
+Task 08: fix round 1/5 dispatched (resumes a794ad81dac8ec9c0, FIX_BASE d878184): security 1 to 4, silent-failure 1 to 3, review Important.
+Task 09: minor (deferred): INSTALL.md v2 section never names the installed link plugins/fx.js; manual route gives no link name.
+Task 09: minor (deferred): zero-command and session-permission limits are source-read, not probed; word them so.
+Task 09: minor (deferred): What is verified opencode 2.0.18 row stale (5 pass 1 fail vs 6 pass 0 fail after task 07); task 15.
+Task 09: minor (deferred): README.md:237 hiding mechanism sentence is 1.x only; add the 2.x mechanism.
+Task 09: review spec ❌ 2 Important (ADR-0037 misdescribes layer 3 and the external_directory rule). ⚠️ resolved by controller: the /credits precondition is a step of task 10 (a process step, not code); ADR-0038's timeout rule is what task 08's fix round implements now. Fix round 1/5 dispatched (resumes aad2cab786a23d34f).
+Task 09: fix round 1/5: controller re-review (0 production lines, 19 doc lines): 2 addressed, 0 open
+Task 09: complete (commits 1a4b0f5..d878184, fix d878184..6933924, 1 fix round, controller re-review)
