@@ -1,0 +1,11 @@
+Lens: security, 1 finding
+
+1. [Minor] /development/fx/.worktrees/lean-review/hooks/fx-pretooluse.js:93 (with /development/fx/.worktrees/lean-review/lib/dispatch-route.js:170 and :172): when the hook reroutes an `Agent` or `Task` call, it returns `updatedInput` as the complete tool input, copied from the original call (`{ ...ti, model }`). It does not send only the `model` change. Some users run their own PreToolUse hook that rewrites Agent input as a guard, for example to force `isolation`, restrict `subagent_type`, or add a constraint to the prompt. If Claude Code runs matching hooks in parallel and keeps the last `updatedInput`, fx's copy of the original input can overwrite the user hook's rewrite. The result would be that the user's guard is silently dropped for general dispatches that name no model and for `opus` dispatches without the reason line. Before this diff, fx wrote no output for these calls, so this is new. I have not verified how Claude Code merges `updatedInput` from several hooks, so it may not be exploitable. It needs a second hook that rewrites Agent input to matter at all.
+
+Checked, no finding:
+- **Permission flow:** the hook leaves out `permissionDecision` (:93), so the normal permission check still runs on the rewritten call. The test at `tests/gates/dispatch-route.test.js` asserts this, and ADR 0031 records a live probe that confirms it. No permission bypass.
+- **Git guard:** the new branch sits after the Bash guard (:60-71) and cannot reach it. The guard's fail-closed loading (:28-33) is unchanged, and a broken routing module fails open without affecting the guard (:41-45, :87-91).
+- **Tampering with the call:** `route()` only ever sets `model` to `sonnet`. It never raises the tier, changes `subagent_type`, or edits the prompt, and it passes every other field through untouched.
+- **Codex:** `hooks/fx-codex.js` is a separate entry point and this diff does not touch it.
+
+The `Capable because:` check (/development/fx/.worktrees/lean-review/lib/dispatch-route.js:171) matches text in a prompt the model writes itself, so it is trivial to get past. That is fine: the check controls cost, not security. One side effect is that general-purpose security reviews dispatched without the reason line now run on `sonnet`. That is a question for the design review, not a vulnerability.
