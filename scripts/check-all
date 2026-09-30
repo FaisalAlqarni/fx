@@ -89,6 +89,7 @@ run plant-roles.test.js     node lib/plant-roles.test.js
 run opencode-plugin.test.js  node tests/gates/opencode-plugin.test.js
 run opencode-v2-agent.test.js node tests/gates/opencode-v2-agent.test.js
 run opencode-v2-plugin.test.js node tests/gates/opencode-v2-plugin.test.js
+run opencode-v2-policies.test.js node tests/gates/opencode-v2-policies.test.js
 run description-overlap.test.js node tests/gates/description-overlap.test.js
 run no-runtime-addressing.test.js node tests/gates/no-runtime-addressing.test.js
 run release-version.test.js node tests/gates/release-version.test.js
