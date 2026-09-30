@@ -28,3 +28,79 @@ Ruling: tasks 01 and 02 run at the same time: 01 writes only probe-findings.md a
 | 10 to 15 | baseline.md | 10 creates; 11 to 14 append Resolved per harness; 15 adds Final; serial. OK |
 
 Per task self-consistency: 01 to 15 each name their files, interfaces and tests; 04's stub defaults and 05's gate cases depend on 01's findings (verdict lines), which each task reads first. OK.
+Task 01: dispatched (BASE bac179b, a78458f6754343e73, sonnet). Task 02: dispatched (BASE bac179b, a2995e95b505334b0, sonnet). Waiting on both: every other task blocks on 01 or 02.
+Task 02: implemented bac179b..d1c04d2 (DONE). conformance opencode --free row 09 fails on base and head alike (2.0.18, pre-existing). Lenses: no tripwire matched (rename). Reviewer dispatched.
+Task 02: minor (deferred): README.md:180 tree still says `opencode: fx.js` for the source file; should be fx-opencode-v1.js.
+Task 02: minor (deferred): README.md and INSTALL.md ASCII tables/diagrams lose column alignment with the longer plugin name.
+Task 02: ⚠️ resolved by controller: conformance opencode --free on bac179b (detached): 5 pass, 1 fail (row 09), same as head: pre-existing.
+Task 02: complete (commits bac179b..d1c04d2, review clean, 2 minor deferred)
+Task 01: implemented d1c04d2..7d3db5b (DONE_WITH_CONCERNS). Verdicts: 1-10 proven (incl. layer 1 call-id lookup, layer 3 clean throw, preamble reaches subagents, policies block), 11 disproven.
+Ruling: probe 11 accepted as a stated limit: an agent the user defines in config is applied after fx's transforms, so fx's skill-deny rules do not reach it; it lists fx-audit, and the evaluate backstop rejects the call. Why: ADR-0026, the user's own definition wins. Cost if wrong: a user-defined agent sees the hidden lanes listed; task 09 states it in INSTALL.md, caught by task 13's row 13.
+Task 01: reviewer dispatched. Task 03: dispatched (BASE 7d3db5b).
+Task 01: minor (deferred): Q3 "parallel calls: before precedes evaluate" claim has no cited evidence; cite or soften.
+Task 01: minor (deferred): Q3 "resources split only on pipes and ;" generalises from one pipe and one heredoc sample; reword as observed.
+Task 01: minor (deferred): Q11 gap not tested with a global permissions skill-deny rule (Q7 suggests it would hide for config agents); state untested.
+Task 01: minor (deferred): Q8 verdict claims TUI reach; TUI not probed.
+Task 01: ⚠️ resolved by controller: no file under /tmp or the real OpenCode data and config dirs contains the key (grep -F), apart from the key file itself.
+Task 01: complete (commits d1c04d2..7d3db5b, review clean, minors deferred)
+Task 03: implemented 7d3db5b..1d64fca (DONE_WITH_CONCERNS: nightly opencode-v2 entries red until task 07, covered by the finding 16 ruling). Lenses: security tripwire (read-only agent permission rules in toOpencodeV2Agent). Reviewer + security lens dispatched.
+Task 04: dispatched (BASE 1d64fca).
+Task 03: minor (deferred): v2 converter allows unverified `list` action for Glob (lib/agent-dialects.js:86).
+Task 03: minor (deferred): opencode-v2.md tool vocabulary omits write and patch and lacks cites for glob, grep, edit.
+Task 03: minor (deferred): agent gate never exercises the edit/shell allow branches of toOpencodeV2Agent.
+Task 03: minor (deferred): uneven comment wrap at lib/agent-dialects.js:79-80.
+Task 03: ⚠️ resolved by controller: nightly v2 entries red until task 07, ruled on as finding 16 (the branch merges only after task 15). Waiting on the security lens before completing.
+Task 04: implemented 1d64fca..d85e060 (DONE_WITH_CONCERNS: execute prompt shape per probe Q8; hiding proven via debug agents permissions since skill.list is unfiltered; Q11 limit as ruled). Lenses: silent-failure (guarded requires, preamble fallback) and security (evaluate deny, permission rules on every agent). Reviewer + both lenses dispatched.
+Ruling: task 05 dispatched while task 04's review runs; any 04 fix round waits for 05 to return (same file). Cost if wrong: a 04 fix lands on 05's edits, caught by both tasks' gates in the fix round.
+Task 05: dispatched (BASE d85e060).
+Task 03: security lens 1 Important, 1 Minor (findings/03-lens-security.md). Important: session-level permissions (merged after agent rules) can widen fx's read-only agents when a host sets them.
+Ruling: the fix belongs in the plugin, not the converter: the permission evaluate hook denies any non-read action evaluated for an fx read-only agent (ev.agent in READ_ONLY_AGENTS), so no later-merged rule can widen it. It joins task 04's fix round (same file as task 05), dispatched when task 05 returns. Task 03 completes with the finding moved there. Why: the converter cannot see session rules; the hook runs on every evaluation. Cost if wrong: read-only agents widenable by a host, caught by the task 04 fix round's gate case.
+Task 03: minor (deferred): v2 converter drops v2's default `read *.env` ask rules (parity with v1).
+Task 03: complete (commits 7d3db5b..1d64fca, review clean; lens Important moved to task 04's fix round)
+Task 04: minor (deferred): load-failure fallback and a throwing session.prompt in execute have no test case
+Task 04: minor (deferred): evaluate backstop denies a hidden lane even when an agent's own rule allowed it; task 05 to keep precedence consistent with ADR-0026
+Task 04: minor (deferred): hook failures only reach stderr via console.error, which a TUI may not show
+Task 04: ⚠️ resolved by controller: skill.list is unfiltered (probe Q7), so hiding is proven through debug agents permissions, as the report did; the acceptance line was written before the probe. Ruling: accept the report's evidence.
+Task 04: silent-failure lens 6 Important, 1 Minor (findings/04-lens-silent-failure.md). Waiting on the security lens, then fix round 1 (with task 03's session-permission Important) runs once task 05 returns.
+Task 05: implemented d85e060..605dd15 (DONE_WITH_CONCERNS). Layer 1 shipped (call-id lookup in evaluate). Lenses: security (the guard) and silent-failure (fail-closed and fail-open catches). Reviewer + both lenses dispatched.
+Ruling: `echo "git reset --hard" | sh` passes lib/git-guard.js on every runtime: pre-existing, not introduced by this build (the guard is shared and unchanged). Recorded for the completion report as a follow-up; task 09 states it among what the v2 guard does not catch. Cost if wrong: none added by this build.
+Task 06: dispatched (BASE 605dd15), in parallel with task 04's fix round later (disjoint files: installer and tests vs the v2 plugin).
+Task 04: security lens 2 Minor (findings/04-lens-security.md): no Critical or Important. Its "contradiction" note (the evaluate hook denies a hidden lane even when the user allowed it) joins the fix round as wording: the hook's evaluate effect is final (permission.ts:173-188), so the backstop narrows; the test's claim is corrected to match and ADR-0026's limit is stated in task 09.
+Task 04: minor (deferred): hiding a lane stops the skill tool, not a direct read of SKILL.md; steering, not a security boundary.
+Task 04: fix round 1/5 dispatched: silent-failure 1 to 6 (Important) plus task 03's session-permission Important, resuming a2a74e26723613999, FIX_BASE 605dd15.
+Task 05: minor (deferred): commands Map entry freed only in execute.after; a denied or aborted call may leak its id.
+Task 05: minor (deferred): withGuard copies a hand-listed set of top-level dirs; a new dir breaks it for an unrelated reason.
+Task 05: minor (deferred): policy samples use `x` placeholders and depend on `git init -b main` for base-branch refusals.
+Task 05: review spec ❌ 1 Important (a policy pattern blocks a commit whose message merely mentions --no-verify, which the guard allows; policies cannot be overridden). Fix round queued, batched with the two lens results (lib/opencode-v2-policies.js and its test: disjoint from task 04's fix round and task 06).
+Task 05: silent-failure lens 1 Critical, 1 Important, 2 Minor (findings/05-lens-silent-failure.md); citations checked at 605dd15. Critical: a failed evaluate-hook registration leaves every shell command unguarded with no signal. Task 05 fix round queued after task 04's fix round returns (same plugin file).
+Task 04: fix round 1 committed 605dd15..35e801a. Scoped re-review dispatched.
+Task 05: fix round 1/5 dispatched (resumes a316027550184bc4e, FIX_BASE 35e801a): review Important (policy over-block) + silent-failure Critical 1 and Important 2. Security lens on 05 still running; its findings join a later round if any.
+Task 04: fix round 1/5 (8 addressed, 0 open: none; commits 605dd15..35e801a)
+Task 04: minor (deferred): read-only evaluate check fails open if plant-roles fails to load or realpath(references) throws (plugins/fx-opencode-v2.js:54-57, 154-163)
+Task 04: minor (deferred): a failed context-hook registration reaches the session only through denial messages (plugins/fx-opencode-v2.js:78)
+Task 04: complete (commits 1d64fca..d85e060, fix 605dd15..35e801a, 1 fix round, minors deferred)
+Task 05: fix round 1 committed 35e801a..d149944 (also dropped mid-command tag -d and --delete forms for the same quoted-flag over-block). Registration-failure cases not seen RED alone: the re-review checks them against 35e801a. Scoped re-review dispatched on opus (Capable because: security-critical guard).
+Task 05: fix round 1/5 (3 addressed, 0 open: none; commits 35e801a..d149944)
+Task 05: minor (deferred): push policies `git push * --force *`, `* main *`, `* -d *` still block a guard-allowed `git push -o "<text holding the token>"`
+Task 05: minor (deferred): evaluate hook body in plugins/fx-opencode-v2.js:147-201 not reindented after the try wrap
+Task 05: RED verified by the re-review on 35e801a: array-command, evaluate-registration, both-fail and before-registration cases each fail on the old plugin. Waiting on task 05's security lens before completing.
+Task 06: implemented d149944..34a3c72 (DONE_WITH_CONCERNS: top-level subagent_depth removed on v2 only when it equals fx's own 2; experimental.subagent_depth left behind on a v1 run after v2, indistinguishable from the user's). 1.18.25 debug config exits 0 after --major 2 then --major 1. Lenses: security (the installer writes the guard's policy layer into the user's opencode.json). Reviewer + lens dispatched.
+Task 07: dispatched (BASE 34a3c72).
+Task 05: security lens 2 Important, 4 Minor (findings/05-lens-security.md). Fix round 2/5 dispatched (resumes a316027550184bc4e, FIX_BASE 34a3c72): 1 (key the recorded command by session and call id, not call id alone; deny if either part is missing), 2 (also run inspect on each parsed piece in ev.resources, which is post-rewrite, and deny if either refuses), plus Minor 3 (a null source denies).
+Task 05: minor (deferred): shell calls OpenCode parses to zero commands never reach evaluate (v2 behaviour, unprobed).
+Task 05: minor (deferred): test wildcard copy lacks v2's win32 case and slash handling; push-option free text over-blocks.
+Task 06: minor (deferred): experimental/policies shape refusals fire in merge_opencode_json after writes begin, not in the checks phase
+Task 06: minor (deferred): load_opencode_commands still runs on 2.x and can fail a v2 install needlessly
+Task 06: minor (deferred): live.sh major-mismatch check has no test beyond bash -n
+Task 06: minor (deferred): installer missing-binary detection path is untested
+Task 06: review spec ❌ 1 Important (v1 then v2 then v1 leaves experimental.subagent_depth 2 and an empty experimental object); security lens 2 Important, 3 Minor (findings/06-lens-security.md). Fix round 1/5 dispatched (resumes a1972953a548d7818, FIX_BASE 34a3c72).
+Task 05: fix round 2 committed 34a3c72..44ab55b (key session+message+call id; inspect on resources; null source denies). Two new cases not seen RED alone: the re-review checks them against 34a3c72. Re-review dispatched on opus (Capable because: security-critical guard).
+Task 05: fix round 2/5 (2 addressed, 0 open: none; commits 34a3c72..44ab55b)
+Task 05: minor (deferred): the no-sessionID test passes on the old plugin too (call_1 already forgotten); re-point it at a live recorded id
+Task 05: minor (deferred): nosrc assertion separated from its evaluation by the new two-session and rewrite blocks
+Task 05: complete (commits d85e060..605dd15, fixes 35e801a..d149944 and 34a3c72..44ab55b, 2 fix rounds, minors deferred)
+Task 06: fix round 1 committed d12d931 (FIX_BASE 44ab55b; task 05's 44ab55b sits between). Ruling: installs made before the ownership record count as the user's (nothing to remove). Why: fx is pre-production, no such installs outside this branch's tests. Cost if wrong: one stale depth or policy left on a dev machine. Scoped re-review dispatched.
+Task 06: fix round 1/5 (5 addressed, 0 open: none; commits 44ab55b..d12d931)
+Task 06: minor (deferred): ownership record rewritten on every run even when unchanged
+Task 06: minor (deferred): pre-round-1 installs have no record, so their depth and policies are treated as the user's
+Task 06: complete (commits d149944..34a3c72, fix 44ab55b..d12d931, 1 fix round, minors deferred)
