@@ -1,13 +1,15 @@
 # Installing fx
 
-fx runs on three runtimes: Claude Code, Codex and opencode. Each install is
-independent, and none of them needs another runtime present. fx is measured
-against Claude Code 2.1.278, Codex CLI 0.155.1 and opencode 1.18.25. Later
-versions are checked only by the nightly free rows at `@latest` (see
+fx runs on four harnesses: Claude Code, Codex, opencode 1.x and opencode 2.x.
+The two opencode majors share one binary name and one config directory but
+have different plugin APIs, so fx ships a plugin for each and treats them as
+separate harnesses (`docs/adr/0036`). Each install is independent, and none of
+them needs another runtime present. fx is measured against Claude Code 2.1.278,
+Codex CLI 0.155.1, opencode 1.18.25 and opencode 2.0.18. Later versions are
+checked only by the nightly free rows at `@latest` (see
 [Nightly checks](#nightly-checks)), which make no model call, so a live
-session on a newer CLI has not been proven. opencode 2.0.18 passes the install
-test and five of six free rows; free row 09 fails there, and its live rows are
-pending (see [What is verified](#what-is-verified)).
+session on a newer CLI has not been proven. Live results per harness are under
+[What is verified](#what-is-verified).
 
 Each runtime has one route through its own plugin system. opencode also has a
 script route, for machines where its plugin loader is unavailable. Claude Code
@@ -139,7 +141,10 @@ state today, so it always tells you to check `/hooks`.
 
 ---
 
-## opencode
+## opencode 1.x
+
+On opencode 2.x, use [opencode 2.x](#opencode-2x) below: the 1.x plugin does not
+load there.
 
 ### Plugin route
 
@@ -318,6 +323,131 @@ git guard in `tool.execute.before` is unaffected either way.
 
 ---
 
+## opencode 2.x
+
+fx ships a separate plugin for 2.x, `plugins/fx-opencode-v2.js`, and the
+installer takes a `--major` flag. The version in `opencode --version` picks the
+major when you give no flag. Measured on 2.0.18.
+
+### Install
+
+```bash
+git clone https://github.com/FaisalAlqarni/fx.git ~/src/fx
+cd ~/src/fx
+./scripts/fx-opencode-install --major 2
+```
+
+Add `--dry-run` first to see what it would do, or `--dest <path>` to install
+somewhere other than `~/.config/opencode`. Without `--major`, the installer
+reads `opencode --version` (10 second timeout). It accepts only 1 or 2, and
+any other answer stops it with an error naming `--major`: it never guesses.
+
+On 2.x the installer:
+
+- links the plugin (`plugins/fx-opencode-v2.js`), `references/` and each skill
+  into the config directory;
+- generates the six read-only agents with rule-list permissions;
+- writes fx's guard policies and `experimental.subagent_depth` 2 into
+  `opencode.json`;
+- never writes a top-level `permissions` key, which opencode 1.x refuses, so
+  the same directory still loads under 1.x;
+- records what it wrote in `.fx-opencode-owned.json` in the config directory.
+  A later run, in either major, removes only entries listed there and still
+  holding the recorded value. A policy or depth you wrote yourself is never
+  removed, even when it is identical to fx's. An install made before that
+  record existed has none, so fx treats its entries as yours.
+
+The plugin registers fx's commands itself, so the installer writes no command
+files on 2.x and removes the generated ones a 1.x install left.
+
+A `file://` entry in `plugin` does not work on 2.0.18 (it answers "configured
+plugin path must be a directory"). To use the plugin without the installer,
+link `plugins/fx-opencode-v2.js` into `~/.config/opencode/plugins/` and add
+`~/src/fx/skills` to `skills`. That route gives the plugin's hooks, agents and
+commands, but not the guard policies or `subagent_depth`.
+
+### Verify
+
+In a session, ask the model to run `git push --force origin main`. fx refuses
+it with its own reason, "force push rewrites history that has already left the
+machine." Measured on 2.0.18 through a model, with the plugin linked into a
+scratch config. If the guard failed to register, the session preamble carries a
+line naming the failed step.
+
+### What the guard catches, per layer
+
+Full detail and the limits are in `docs/adr/0037`.
+
+1. **The full command, in `permission.evaluate`.** The plugin records the whole
+   command in `tool.execute.before`, keyed by session, message and call id, and
+   `permission.evaluate` looks it up by that key. It runs fx's guard on the full
+   text and on each parsed piece. Every error path denies: a missing or
+   malformed key, a lookup that misses, a guard that fails to load or throws. If
+   `permission.evaluate` cannot be registered, `tool.execute.before` throws for
+   every shell call instead. If both fail, the guard is off and the preamble
+   says so.
+2. **Policies the installer writes.** `experimental.policies` holds deny rules
+   for the absolutes a wildcard can express: force push, push to `main`,
+   `master` or `trunk`, remote branch deletion, `--no-verify`, `reset --hard`,
+   `clean -f`, `branch -D`, `stash drop`, `checkout .` and `restore .`, tag
+   deletion. The patterns are tight and cover plain spellings only (no `-C` or
+   `-c`, no `HEAD:refs/heads/main`). Each has allowed samples in its test, such
+   as `git commit -m "explain --no-verify flag"`. A policy cannot be overridden
+   and its message is generic: "Blocked by configuration policy".
+3. **A throwing `tool.execute.before`.** The fallback when layer 1 could not
+   register.
+
+### What the guard does not catch
+
+- `echo "git reset --hard" | sh`. The shared `lib/git-guard.js` does not scan
+  the quoted body of an `echo` that feeds a shell. This gap was there before
+  the 2.x plugin and is the same on every runtime.
+- A shell call that opencode parses into zero commands never reaches
+  `permission.evaluate`.
+- Free text in a push option can make a policy block a command the guard would
+  allow, because a policy cannot be overridden.
+
+### The five user-invoked lanes
+
+fx hides `fx-audit`, `fx-setup`, `fx-critique`, `fx-grill` and `fx-handoff`
+from the model by adding a `skill` deny rule for each to the built-in agents
+and to fx's own, and the evaluate hook refuses a call to one at run time. You
+reach them as commands: the plugin registers `/fx-<name>`. On 2.0.18,
+`opencode run` has no command flag and treats `/fx-audit` as plain text, so
+type the command in the TUI, or call `opencode api session.command`.
+
+Limits:
+
+- An agent you define in `opencode.json` is applied after fx's transforms, so
+  fx's deny rules do not reach it. It lists the five lanes; a call to one is
+  still refused at run time.
+- Hiding steers the model. A direct read of a `SKILL.md` file is not blocked.
+- `opencode api skill.list` lists every skill whatever the rules say. Read
+  `opencode debug agents` for what an agent is denied.
+- If your host sets session-level permissions, they cannot widen fx's six
+  read-only agents: the evaluate hook allows them only read, grep, glob and
+  list.
+
+### What fx cannot observe on 2.x
+
+- The free rows show the agents' deny rules, not a model's own skill list. No
+  file or event records the skills a session can see.
+- `opencode debug agents` and `skill.list` return an empty or partial answer on
+  the first call after a start, while plugins load. Call again before
+  concluding anything.
+- `opencode debug agents` waits two minutes when another OpenCode service
+  already holds port 49374. Run `opencode service set port <port>` first.
+- Every scripted `opencode run` needs `</dev/null`, or it blocks on stdin.
+- Whether a command file of yours with the same name as an fx command wins over
+  fx's was not probed.
+
+### Refreshing
+
+`git pull` in the clone refreshes the linked files. Run the installer again
+after a pull that changes `agents/`, and restart opencode.
+
+---
+
 ## Per repository: every runtime
 
 ```
@@ -394,7 +524,7 @@ real CLI. `docs/plans/2026-09-21-multi-harness/state.md` records every result.
 
 | Runtime | Live result |
 |---|---|
-| Claude Code | Task 21, final tree: 16 pass, 0 fail, 2 GAP (13, 14). |
+| Claude Code | Task 21 of the multi-harness plan, 2026-09-22: 16 pass, 0 fail. Rows 13 and 14 were closed live in `78ff5b3` on 2026-09-23. |
 | opencode 1.18.25 | Lean-review task 10, 2026-09-30: install test passes, free rows 6 pass, 0 fail, 0 GAP. Live rows pending: the local model server on `127.0.0.1:8899` was down (`curl` returned `000`). Last live run: task 21, 2026-09-22, 18 pass, 0 fail, 0 GAP. |
 | opencode 2.0.18 | Lean-review task 10, 2026-09-30: install test passes, free rows 5 pass, 1 fail, 0 GAP. Row 09 fails: `Unknown subcommand "skill" for "opencode debug"`. Live rows pending: the local model server was down. |
 | Codex | **Pending.** See below. |
@@ -414,6 +544,15 @@ the bootstrap reaches the model's input, and that the git guard refuses. Part
 B runs the full matrix on a real model on 2026-10-21, when the Codex quota
 resets, and it is the merge gate for this release. Until part B passes, no
 Codex behaviour in a live session counts as proven.
+
+### Running the live rows on OpenRouter
+
+`FX_LIVE_PROVIDER=openrouter` runs the live rows of all four harnesses on
+OpenRouter (`docs/adr/0038`). It needs `OPENROUTER_API_KEY` in the environment
+and an account with purchased credits. Claude Code runs on Haiku, because
+non-Anthropic models fail there. A provider error, read only from the CLI's own
+error events and stderr, re-runs the row once on a fallback model; Claude Code
+has no fallback. See `tests/conformance/README.md`.
 
 ### Stated limitations
 

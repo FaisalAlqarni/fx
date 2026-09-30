@@ -99,7 +99,7 @@ lens or devil's advocate can write, but the mechanism differs per runtime, and
 on Codex it is fx's own hook rather than the runtime:
 `docs/adr/0019` has the table and its measurements.
 
-## Delivery: one bootstrap, three runtimes
+## Delivery: one bootstrap, four harnesses
 
 `PREAMBLE.md` is a small bootstrap, about 2.9K characters, paid per session
 and per subagent dispatch. It makes the model invoke a lane before it acts,
@@ -123,8 +123,10 @@ PREAMBLE.md                          ← single source, fx owns it
  │               hooks/fx-pretooluse.js  PreToolUse · all tools
  ├─ Codex        hooks/fx-codex.js      SessionStart + SubagentStart + PreToolUse
  │                                      plants the review roles, enforces read-only
- └─ opencode     plugins/fx-opencode-v1.js          experimental.chat.system.transform
-                                        tool.execute.before
+ ├─ opencode 1.x plugins/fx-opencode-v1.js          experimental.chat.system.transform
+ │                                      tool.execute.before
+ └─ opencode 2.x plugins/fx-opencode-v2.js          session.hook('context')
+                                        permission.evaluate + tool.execute.before + policies
     every runtime  + lib/git-guard.js   fail closed
                    + lib/lane-check.js  fail open, measured firing on file writes
 ```
@@ -157,6 +159,13 @@ opencode's 18 pass, 0 fail, 0 GAP full matrix
 One caveat: `experimental.chat.system.transform` carries an `experimental.`
 prefix and may change: the stable fallback is `~/.config/opencode/AGENTS.md`,
 which every session including child sessions reads.
+
+**opencode 2.x is a separate harness** (`docs/adr/0036`). Its plugin,
+`plugins/fx-opencode-v2.js`, injects the bootstrap with `session.hook('context')`
+and guards shell calls in three layers (`docs/adr/0037`): the full command
+inspected in `permission.evaluate`, installer-written policies, and a throwing
+`tool.execute.before` as the fallback. The shared `lib/git-guard.js` does not
+scan the quoted body of `echo "git reset --hard" | sh`, on any runtime.
 
 The script route (`scripts/fx-opencode-install`) is not a second way to get the
 plugin. With plugins turned off there is no bootstrap, no git guard, no lane

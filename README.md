@@ -120,17 +120,20 @@ exists.
 ```
                  lib/preamble.js renders PREAMBLE.md for each runtime
                         |                 |                  |
-Claude Code   hooks/fx-context.js   Codex   hooks/fx-codex.js   opencode   plugins/fx-opencode-v1.js
+Claude Code   hooks/fx-context.js   Codex   hooks/fx-codex.js   opencode 1.x   plugins/fx-opencode-v1.js
               SessionStart                  SessionStart                   system transform
               SubagentStart                 SubagentStart                  (sessions and child
                                                                             sessions alike)
+                                                                opencode 2.x   plugins/fx-opencode-v2.js
+                                                                               session.hook('context')
                  (subagents read neither CLAUDE.md nor memory:
                   this is the only channel that reaches them)
 
 guard and lane check, one shared lib on every runtime:
    hooks/fx-pretooluse.js   Claude Code, PreToolUse, every tool
    hooks/fx-codex.js        Codex, PreToolUse, every tool, plus read-only enforcement
-   plugins/fx-opencode-v1.js opencode, tool.execute.before
+   plugins/fx-opencode-v1.js opencode 1.x, tool.execute.before
+   plugins/fx-opencode-v2.js opencode 2.x, permission.evaluate, in layers (docs/adr/0037)
       + lib/git-guard.js    shell: the absolutes, fail closed
       + lib/lane-check.js   file writes: one nudge per session, fail open
 
@@ -177,12 +180,12 @@ commands/     4: /fx:fx-setup, /fx:fx-critique, /fx:fx-grill, /fx:fx-handoff
 references/   loaded on demand by a lane, never selectable
 hooks/        Claude Code: hooks.json, fx-context.js, fx-pretooluse.js
               Codex: fx-codex.js, wired by the root hooks.json
-plugins/      opencode: fx.js
-lib/          shared by all three: preamble.js (the renderer), git-guard.js,
+plugins/      opencode: fx-opencode-v1.js (1.x), fx-opencode-v2.js (2.x)
+lib/          shared by all four harnesses: preamble.js (the renderer), git-guard.js,
               lane-check.js, plan-state.js, plant-roles.js, agent-dialects.js,
               opencode-commands.js
 tests/        conformance: the live and free rows, per runtime
-              install: the install test for all three runtimes
+              install: the install test for all four harnesses
               gates: the node gate tests check-all runs
               lane-triggering: does a naive prompt reach the lane
               lens-pipeline: the fixture fx-lens-pipeline is run against
@@ -241,7 +244,7 @@ the frontmatter flags are pinned by a gate test instead.
 
 ## Install
 
-The three installs are **independent**: no runtime requires another.
+The four installs are **independent**: no harness requires another.
 
 **Claude Code**: `/plugin marketplace add FaisalAlqarni/fx` then
 `/plugin install fx@fx`.
@@ -250,8 +253,11 @@ The three installs are **independent**: no runtime requires another.
 `codex plugin add fx@fx`, then trust fx's hooks in `/hooks` and restart Codex
 once after the first session.
 
-**opencode**: add `plugins/fx-opencode-v1.js` from a clone to your `opencode.json`, or run
-`./scripts/fx-opencode-install`. Nothing reads `~/.claude`.
+**opencode 1.x**: add `plugins/fx-opencode-v1.js` from a clone to your `opencode.json`, or run
+`./scripts/fx-opencode-install --major 1`. Nothing reads `~/.claude`.
+
+**opencode 2.x**: run `./scripts/fx-opencode-install --major 2` from a clone. It
+installs `plugins/fx-opencode-v2.js`. `INSTALL.md` has the 2.x guard and its limits.
 
 Which opencode versions fx is measured on, and with what result: `INSTALL.md`,
 "What is verified".
@@ -263,7 +269,7 @@ Then, in each repository you work in:
 
 ```
 /fx:fx-setup     # Claude Code
-/fx-setup        # opencode
+/fx-setup        # opencode (1.x and 2.x)
 $fx-setup        # Codex
 ```
 
