@@ -29,14 +29,16 @@ assert.match(y, /^\s*run:\s*bash tests\/conformance\/run\.sh \$\{\{\s*matrix\.ha
 // Pair every install line with the matrix entry it belongs to.
 const entries = [];
 for (const l of lines) {
-  const h = l.match(/^\s*-\s*harness:\s*([a-z-]+)\s*$/);
+  const h = l.match(/^\s*-\s*harness:\s*([a-z0-9-]+)\s*$/);
   if (h) { entries.push({ harness: h[1], install: null }); continue; }
   const i = l.match(/^\s*install:\s*npm install -g (\S+)\s*$/);
   if (i && entries.length && entries[entries.length - 1].install === null) entries[entries.length - 1].install = i[1];
 }
 
-const PKG = { 'claude-code': '@anthropic-ai/claude-code', codex: '@openai/codex', opencode: 'opencode-ai' };
-const FLOOR = { 'claude-code': '2.1.278', codex: '0.155.1', opencode: '1.18.25' };
+const PKG = { 'claude-code': '@anthropic-ai/claude-code', codex: '@openai/codex', opencode: 'opencode-ai', 'opencode-v2': 'opencode-ai' };
+const FLOOR = { 'claude-code': '2.1.278', codex: '0.155.1', opencode: '1.18.25', 'opencode-v2': '2.0.18' };
+// opencode-ai@latest installs 2.x, so v1 tracks its own 1.x line.
+const LATEST = { 'claude-code': 'latest', codex: 'latest', opencode: '1', 'opencode-v2': 'latest' };
 for (const h of HARNESSES) {
   assert.ok(PKG[h] && FLOOR[h], `a package and a floor are defined for ${h}`);
   const mine = entries.filter((e) => e.harness === h);
@@ -47,11 +49,11 @@ for (const h of HARNESSES) {
   }
   const versions = mine.map((e) => e.install.slice(PKG[h].length + 1));
   assert.ok(versions.includes(FLOOR[h]), `${h} is installed at the floor ${PKG[h]}@${FLOOR[h]}`);
-  assert.ok(versions.includes('latest'), `${h} is installed at ${PKG[h]}@latest`);
+  assert.ok(versions.includes(LATEST[h]), `${h} is installed at ${PKG[h]}@${LATEST[h]}`);
   // Exactly the floor and latest, once each: a stray third pin is a probe
   // nobody decided on.
-  assert.deepStrictEqual([...versions].sort(), [FLOOR[h], 'latest'].sort(),
-    `${h} is installed at exactly ${FLOOR[h]} and latest, once each, not ${versions.join(', ')}`);
+  assert.deepStrictEqual([...versions].sort(), [FLOOR[h], LATEST[h]].sort(),
+    `${h} is installed at exactly ${FLOOR[h]} and ${LATEST[h]}, once each, not ${versions.join(', ')}`);
 }
 for (const e of entries) assert.ok(HARNESSES.includes(e.harness), `matrix entry ${e.harness} is a known harness`);
 console.log('ci-pins: passed');
