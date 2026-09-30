@@ -38,6 +38,12 @@ in one line and leave it to that lens.
   every lookup: *what stops user A passing user B's id?*
 - Tenant scope dropped: `Model.find` where `current_account.models.find`
   belongs. In a shared multi-tenant database this is a data breach, not a bug.
+- A new search, filter, sort or export path that drops the tenant scope the
+  rest of the model enforces: the list page is scoped, the CSV is not.
+- An export or import path with no authorization of its own: it is a second
+  door to every record the model holds.
+- A soft delete or revoke that a cache, search index or background job still
+  honours after the record or grant is gone.
 - A Pundit policy or `[Authorize]` attribute whose predicate was widened.
 - Authorization enforced in the view (hiding a button) but not in the action.
 
@@ -58,6 +64,8 @@ in one line and leave it to that lens.
   filename or content type is trusted.
 - SSRF: an outbound request to a host derived from user input; an open redirect
   from `redirect_to params[:return_to]`.
+- A webhook or callback URL a user saves and the server calls later: SSRF by
+  configuration, which a request-time check never sees.
 
 **Secrets and data exposure**
 
@@ -70,6 +78,10 @@ in one line and leave it to that lens.
 - An exception surfaced to the user with a stack trace or a SQL string in it.
 - A serializer or API response that gained a field it should not expose
   (password digest, internal ids, another tenant's data).
+- A log, analytics or ClickHouse reader that ignores the tenant, so one
+  tenant's data reaches another tenant's report.
+- Error text or status that differs between "missing" and "forbidden", which
+  tells a caller which records exist.
 
 **Crypto, sessions, transport**
 
@@ -78,10 +90,23 @@ in one line and leave it to that lens.
   verified after the payload is acted on.
 - JWT: `verify: false`, algorithm taken from the token header, no expiry check,
   a symmetric secret with a weak or defaulted value.
+- A JWT whose signature is verified but which is not bound to its audience or
+  issuer, so a token minted for another service is accepted.
+- No session reset on login (session fixation).
 - Session/cookie flags loosened: `secure`, `httponly`, `same_site`.
 - CSRF protection skipped on a state-changing endpoint; CORS widened to `*`
   with credentials.
 - A destructive or expensive endpoint added with no rate limit.
+
+**Branch review only**: these need the whole feature in view. Report them only
+when your brief says `mode: branch`; a brief with no mode is a single task's
+diff.
+
+- Data stored safely, then reused later in a context that trusts it
+  (second-order injection): a name saved through a validated form and later
+  interpolated into SQL, a shell command or HTML.
+- A restore, rollback or undelete that brings a record back without
+  re-checking who may see it, or with grants that were revoked since.
 
 ## Method
 

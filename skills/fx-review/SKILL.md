@@ -183,7 +183,7 @@ the brief:
 
 **Lens briefs**: the `fx-lens-*` agents, each given the diff file path and
 the paths that triggered it, and this line: "Cite each finding as the source
-file and its line number at HEAD, never a line number inside the diff file."
+file and its line number at HEAD, never a line number inside the diff file." In branch mode the brief also carries the line `mode: branch`; a lens that sees no mode line treats the diff as one task's.
 A diff line number points into a file the reader never opens. Read-only by
 construction.
 
