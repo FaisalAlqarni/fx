@@ -5,7 +5,9 @@ independent, and none of them needs another runtime present. fx is measured
 against Claude Code 2.1.278, Codex CLI 0.155.1 and opencode 1.18.25. Later
 versions are checked only by the nightly free rows at `@latest` (see
 [Nightly checks](#nightly-checks)), which make no model call, so a live
-session on a newer CLI has not been proven.
+session on a newer CLI has not been proven. opencode 2.0.18 passes the install
+test and five of six free rows; free row 09 fails there, and its live rows are
+pending (see [What is verified](#what-is-verified)).
 
 Each runtime has one route through its own plugin system. opencode also has a
 script route, for machines where its plugin loader is unavailable. Claude Code
@@ -393,7 +395,8 @@ real CLI. `docs/plans/2026-09-21-multi-harness/state.md` records every result.
 | Runtime | Live result |
 |---|---|
 | Claude Code | Task 21, final tree: 16 pass, 0 fail, 2 GAP (13, 14). |
-| opencode | Task 21, final tree, 2026-09-22: 18 pass, 0 fail, 0 GAP (`/tmp/tmp.wiU1YAo8Ky/logs/final-oc-matrix.out`). |
+| opencode 1.18.25 | Lean-review task 10, 2026-09-30: install test passes, free rows 6 pass, 0 fail, 0 GAP. Live rows pending: the local model server on `127.0.0.1:8899` was down (`curl` returned `000`). Last live run: task 21, 2026-09-22, 18 pass, 0 fail, 0 GAP. |
+| opencode 2.0.18 | Lean-review task 10, 2026-09-30: install test passes, free rows 5 pass, 1 fail, 0 GAP. Row 09 fails: `Unknown subcommand "skill" for "opencode debug"`. Live rows pending: the local model server was down. |
 | Codex | **Pending.** See below. |
 
 On Claude Code every merge-gate row passes: 01, 02, 12, 15, 16 and 18. The
