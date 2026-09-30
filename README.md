@@ -18,6 +18,7 @@ what scales with simplicity is the artifact, never the approval.
         v
   fx-brainstorm ........ classify (spike | bounded | architectural)
         |                clustered question rounds + open-questions ledger
+        |                confidence check: what made it 95% sure, 2-line plan, wait for go
         |                approaches, 2 or 3, recommendation first
         |                seams sketched and CONFIRMED
         |                design doc -> docs/plans/YYYY-MM-DD-slug/design.md
@@ -43,16 +44,21 @@ what scales with simplicity is the artifact, never the approval.
         +--> per task, serial, fresh subagent each time
         |      |
         |      +--> fx-tdd .......... Iron Law, RED verified, GREEN, commit
-        |      |
+        |      |                      test_scope on the touched paths only
         |      +--> task review ..... spec compliance + code quality
-        |      +--> lenses .......... only those the diff triggers
+        |      +--> tripwires ....... security, database, silent-failure,
+        |      |                      each only when its narrow trigger matches
         |      |
-        |      +--> fix loop ........ Important+ only, max 5 rounds,
-        |                             every round ends in a scoped re-review
+        |      +--> fix loop ........ Important+ only, max 5 rounds; a fix of
+        |                             20 production lines or fewer is re-read
+        |                             by the controller, larger ones re-reviewed
         |
         +--> final: fx-review (branch mode)
-        |      all axes, every triggered lens, reviewer-prompt.md
+        |      all axes, every lens on its broad trigger, reviewer-prompt.md
         |      plus fx-devils-advocate (code mode), unprimed, once per branch
+        |
+        +--> exit gate: test_all once; each failure run alone on the
+        |      branch and the merge base: pre-existing, introduced, order-dependent
         |
         v
   verification before any completion claim, then four options and a stop:
@@ -62,19 +68,52 @@ what scales with simplicity is the artifact, never the approval.
 
 ### What the lenses are, and when they fire
 
-Read-only agents. They fire on file patterns in the diff, not on every task,
-because each one costs a full subagent.
+Read-only agents. Each costs a full subagent, so per task only three of them
+fire, and only on a narrow tripwire.
 
-| Lens | Fires when the diff touches |
-|---|---|
-| `fx-lens-database` | migrations, `*.sql`, models, query chains |
-| `fx-lens-security` | auth paths, params, credentials, any new endpoint |
-| `fx-lens-a11y` | `.erb`, `.css`, view partials, user-facing strings |
-| `fx-lens-silent-failure` | `rescue`, `catch`, workers, retry paths |
-| `fx-lens-pipeline` | code that enqueues, publishes, schedules or fans out work; code that governs queue depth, admission or producer flow control |
+| Lens | Per task (tripwire) | Branch pass: fires when the diff touches |
+|---|---|---|
+| `fx-lens-database` | a migration, schema change, index or constraint change, backfill | migrations, `*.sql`, models, query chains |
+| `fx-lens-security` | auth code, credentials, a new endpoint, a user-supplied URL, string-built SQL or shell | auth paths, params, credentials, any new endpoint |
+| `fx-lens-a11y` | no | `.erb`, `.css`, view partials, user-facing strings |
+| `fx-lens-silent-failure` | a swallowing handler, `retry_on`, a job, consumer or webhook receiver, a loop past a failed record | `rescue`, `catch`, workers, retry paths |
+| `fx-lens-pipeline` | no | code that enqueues, publishes, schedules or fans out work; code that governs queue depth, admission or producer flow control |
 
-The first four fire per task and on the branch review. `fx-lens-pipeline` fires
-on branch reviews only, never per task; `/fx:fx-audit` also runs it.
+Per task, only security, database and silent-failure fire, and only on their
+tripwire. At the branch review every lens fires on its broad trigger,
+alongside devil's advocate. `/fx:fx-audit` also runs `fx-lens-pipeline`.
+
+## What a build costs
+
+The numbers come from the owner's build on advantage-backend, 2026-09-21 to
+2026-09-28: 728 subagent transcripts from two steering sessions, classified by
+`docs/plans/2026-09-29-lean-review/measure/fx-cost.py`.
+
+| Role | Agents | Agent-minutes | Share of minutes | Share of output tokens |
+|---|---|---|---|---|
+| implementer | 146 | 7079 | 57.5% | 37.6% |
+| fix round | 74 | 1639 | 13.3% | 12.7% |
+| task review | 155 | 1058 | 8.6% | 13.5% |
+| re-review | 76 | 365 | 3.0% | 5.4% |
+| all five lenses | 121 | 402 | 3.3% | 6.1% |
+| devil's advocate | 21 | 133 | 1.1% | 2.5% |
+| other (plan, audit, fork) | 135 | 1639 | 13.3% | 22.3% |
+
+Agent-minutes run first to last timestamp, so idle waits count and parallel
+agents overlap: these are upper bounds, not wall-clock. Roles are classified by
+dispatch description. Of the 620 agents with an explicit model, about half of
+implementers, fixes and reviews ran on Opus. Test scoping held: 6 full-suite
+runs against about 3,300 targeted or directory runs. One session's `/usage`
+report showed $383.95, of which Opus $374.94, with `general-purpose` subagents
+at 54% of usage.
+
+In response, per-task review is the reviewer plus tripwire lenses, small fixes
+are re-read by the controller, dispatch routing is held by a hook, and
+standing rulings carry across plans (`docs/adr/0029` to `0032`).
+
+These are the numbers before the change. The new defaults have not been
+measured on a build yet; this section will carry that measurement when it
+exists.
 
 ### Always on, underneath all of it
 
@@ -94,10 +133,26 @@ guard and lane check, one shared lib on every runtime:
    plugins/fx.js            opencode, tool.execute.before
       + lib/git-guard.js    shell: the absolutes, fail closed
       + lib/lane-check.js   file writes: one nudge per session, fail open
+
+dispatch routing, Claude Code only:
+   hooks/fx-pretooluse.js   Agent calls: no model on a general dispatch -> sonnet;
+      + lib/dispatch-route.js   opus without "Capable because:" -> sonnet; never refuses
+   Codex and opencode: deferred (docs/adr/0031)
 ```
+
+The routing was probed live from an Opus session: the subagents ran on
+`one=claude-sonnet-5-5, two=claude-sonnet-5-5, three=claude-opus-5-5`. Probe one
+set no model, two asked for opus with no reason, and three asked for opus with
+`Capable because:` as its first line.
 
 `PREAMBLE.md` is a small bootstrap, about 2.9K characters. Routing lives in
 each skill's own description (`docs/adr/0021`).
+
+After the bootstrap, `lib/preamble.js` appends one companions line to every
+session and subagent (`docs/adr/0032`). It names repowise, ponytail and caveman
+at full, and `fx-humanize` for prose, and tells the agent to skip any tool its
+runtime lacks. Set `companions` in `.fx.json` to replace the line, or to `""`
+to turn it off. The line sits outside the bootstrap's size budget.
 
 **The guard does not police where you are.** Which branch you commit on is the
 workflow's business: work happens in a worktree because `fx-implement` sets one
@@ -197,6 +252,9 @@ once after the first session.
 
 **opencode**: add `plugins/fx.js` from a clone to your `opencode.json`, or run
 `./scripts/fx-opencode-install`. Nothing reads `~/.claude`.
+
+Which opencode versions fx is measured on, and with what result: `INSTALL.md`,
+"What is verified".
 
 Full steps, refreshing an install, and what each runtime has been proven to
 do: [`INSTALL.md`](INSTALL.md).
