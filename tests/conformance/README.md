@@ -169,21 +169,36 @@ OPENROUTER_API_KEY=... FX_LIVE_PROVIDER=openrouter bash tests/conformance/run.sh
   `PATH`.
 - No credential copy: the scratch home holds the provider's config and never
   `.credentials.json` or Codex's `auth.json`, so a session cannot run on the
-  owner's subscription. The jail passes `OPENROUTER_API_KEY` and the provider's
-  variables (`FX_JAIL_PROVIDER_ENV`) through `--clearenv`.
+  owner's subscription. Only `live.sh` turns the provider path on: the jail
+  passes the provider's non-secret variables (`jail_provider_env`) and ignores an
+  inherited `FX_LIVE_PROVIDER` or `FX_JAIL_PROVIDER_ENV`.
+- The key is never a variable or an argument. `live.sh` writes it to a 0600
+  file in its own temp dir, bound read-only into session calls only, and
+  `lib/with-key.sh` exports it inside the jail for the CLI (Claude Code gets
+  `ANTHROPIC_AUTH_TOKEN` only, the others `OPENROUTER_API_KEY`). Install and
+  export calls never see it. A `kill -9` leaves that file in `/tmp/tmp.*` until
+  reboot, like the credential copy below.
 - A row that stops on a provider error (HTTP 401, 429, 5xx, `Insufficient
-  credits`, `Too Many Requests`, or no output before the timeout) exits 75. It
-  is read only from the CLI's own error events and stderr, never model output.
+  credits`) exits 75. It is read only from the CLI's own error events and
+  stderr, never model output, and only an upstream HTTP shape counts (a status
+  line, a JSON status, `API Error: 503`). A timeout with no output is a
+  provider error only beside one of those; alone it is a FAIL, "no output
+  before timeout".
   `run.sh` then re-runs the row once on `deepseek/deepseek-v4-flash`, prints
   `attempt=2 (fallback)`, and keeps the first log as `<row>-<harness>.attempt1.log`
-  in `FX_CONFORMANCE_LOGS`. A second 75 is a GAP. Claude Code has no fallback:
-  its 75 is a GAP. A capability failure is not a provider error; it is re-run
+  in `FX_CONFORMANCE_LOGS` (a row's second `live_run` keeps its own
+  `<row>-<harness>.2.log`). A second 75 is a GAP, and the summary counts the
+  passes that needed the fallback: `N pass (F on fallback)`. Claude Code has no
+  fallback: its 75 is a GAP, and `FX_LIVE_MODEL` other than Haiku fails the row
+  there. A capability failure is not a provider error; it is re-run
   once on the same model, as above.
 - Each live row's line ends in `model=<id>`, the model the session itself
   reported (Claude Code's init event, Codex's `turn_context`, the OpenCode
   session export), or `model=<id> (config)` when the log names none. A session
   that reports another model than requested fails the row.
-- A log containing `sk-or-` fails the row inside `keep_log` and is not copied.
+- A log containing `sk-or-` or the key's own value fails the row inside
+  `keep_log` and is not copied; a scan that cannot run fails it too. The same
+  scan covers the stderr `run.sh` prints for each row.
 
 ## Isolation, not restoration
 

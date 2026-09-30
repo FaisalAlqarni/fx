@@ -34,27 +34,42 @@ chmod 700 "$LIVE_SCRATCH" "$HOME" "$CODEX_HOME" "$XDG_CONFIG_HOME" \
   "$XDG_CONFIG_HOME/opencode" "$CLAUDE_CONFIG_DIR" || fail "cannot restrict the scratch home"
 
 # --- OpenRouter (FX_LIVE_PROVIDER=openrouter) -----------------------------------
-# Opt-in. The provider's variables are exported here, and their names listed in
-# FX_JAIL_PROVIDER_ENV, BEFORE jail.sh is sourced: the jail clears the
-# environment, so a variable it does not allowlist never reaches the CLI. The
-# credential copies below are skipped, so a session cannot run on the owner's
-# subscription. The key comes only from the environment and is never written.
+# Opt-in, and only this file turns it on. The provider's own variables (base
+# URL, model overrides) cross the jail through jail_provider_env, called below
+# after jail.sh is sourced. The KEY never crosses as a variable: a --setenv
+# value sits on the bwrap command line for the whole session. It goes into a
+# 0600 file under its own temp dir, bound read-only into session calls only
+# (install and export calls never see it), and lib/with-key.sh exports it
+# inside the jail for the CLI. The credential copies below are skipped, so a
+# session cannot run on the owner's subscription.
 OPENROUTER=""
 if [ "${FX_LIVE_PROVIDER:-}" = openrouter ]; then
   OPENROUTER=1
   OR_JS="$FX/tests/conformance/lib/openrouter.js"
   [ -n "${OPENROUTER_API_KEY:-}" ] || gap "not run: FX_LIVE_PROVIDER=openrouter needs OPENROUTER_API_KEY in the environment"
-  if [ "$HARNESS" = claude-code ]; then OR_MODEL="$(node -p "require('$OR_JS').MODELS.claude")"
-  else OR_MODEL="${FX_LIVE_MODEL:-}"; OR_MODEL="${OR_MODEL#openrouter/}"; [ -n "$OR_MODEL" ] || OR_MODEL="$(node -p "require('$OR_JS').MODELS.primary")"; fi
-  FX_JAIL_PROVIDER_ENV=""
+  if [ "$HARNESS" = claude-code ]; then
+    OR_MODEL="$(node -p "require('$OR_JS').MODELS.claude")"
+    # Claude Code only runs Haiku here; a pinned model would be dropped without a word.
+    [ -z "${FX_LIVE_MODEL:-}" ] || [ "${FX_LIVE_MODEL#openrouter/}" = "$OR_MODEL" ] \
+      || fail "FX_LIVE_MODEL=$FX_LIVE_MODEL is ignored for claude-code under openrouter, which runs only $OR_MODEL"
+    OR_KEY_VAR=ANTHROPIC_AUTH_TOKEN    # the only variable Claude Code reads the key from
+  else
+    OR_MODEL="${FX_LIVE_MODEL:-}"; OR_MODEL="${OR_MODEL#openrouter/}"
+    [ -n "$OR_MODEL" ] || OR_MODEL="$(node -p "require('$OR_JS').MODELS.primary")"
+    OR_KEY_VAR=OPENROUTER_API_KEY
+  fi
+  OR_ENV_NAMES=""
   while IFS='=' read -r k v; do
     [ -n "$k" ] || continue
-    export "$k=$v"; FX_JAIL_PROVIDER_ENV="$FX_JAIL_PROVIDER_ENV $k"
+    export "$k=$v"; OR_ENV_NAMES="$OR_ENV_NAMES $k"
   done < <(node "$OR_JS" env "$HARNESS" "$OR_MODEL")
-  if [ "$HARNESS" = claude-code ]; then
-    export ANTHROPIC_AUTH_TOKEN="$OPENROUTER_API_KEY"; FX_JAIL_PROVIDER_ENV="$FX_JAIL_PROVIDER_ENV ANTHROPIC_AUTH_TOKEN"
-  fi
-  export FX_JAIL_PROVIDER_ENV
+  KEYDIR="$(mktemp -d)" || fail "mktemp failed"
+  OR_KEYFILE="$KEYDIR/key"
+  # printf is a builtin: the value is on no command line. Then the variable
+  # goes, so no later child of this row inherits it.
+  ( umask 077; printf '%s' "$OPENROUTER_API_KEY" > "$OR_KEYFILE" ) || fail "cannot write the key file"
+  unset OPENROUTER_API_KEY
+  trap 'rm -rf -- "$KEYDIR"' EXIT
 fi
 
 # --- the jail -------------------------------------------------------------------
@@ -102,6 +117,8 @@ fi
 # thing between the model and the command.
 . "$FX/tests/conformance/lib/jail.sh"
 . "$FX/tests/conformance/lib/scratch-home.sh"
+# shellcheck disable=SC2086
+[ -z "$OPENROUTER" ] || jail_provider_env $OR_ENV_NAMES
 
 OPENCODE_MODEL="llamacpp/qwen3.8-27b"
 
@@ -231,7 +248,7 @@ live_workdir() {
   # find nor edit the output live_run judges (security re-check Minor 2).
   LOGDIR="$(mktemp -d)" || fail "mktemp failed"
   case "$LOGDIR/" in "$LIVE_SCRATCH"/*|"$FX"/*) fail "the log dir is inside the jail: $LOGDIR" ;; esac
-  trap 'rm -rf -- "$WORK" "$LOGDIR" "$WORK.start" "$WORK.data" "$WORK.export"' EXIT
+  trap 'rm -rf -- "$WORK" "$LOGDIR" "$WORK.start" "$WORK.data" "$WORK.export" "${KEYDIR:-}"' EXIT
   LOG="$LOGDIR/log"
   git -C "$WORK" init -q -b main &&
     git -C "$WORK" config user.name fx-conformance &&
@@ -257,6 +274,15 @@ live_run() {
   # Until the session names its model, the result line says the config did.
   [ -z "$OPENROUTER" ] || [ -z "${FX_ROW_MODEL_FILE:-}" ] || echo "$OR_MODEL (config)" > "$FX_ROW_MODEL_FILE"
   local tmp="$LIVE_SCRATCH/tmp"; mkdir -p "$tmp"
+  # Session calls only: the key file is bound in, and with-key.sh exports it
+  # for the CLI. Install and export calls keep the plain $JAIL and never see it.
+  local -a SJ=("${JAIL[@]}") KW=()
+  if [ -n "$OPENROUTER" ]; then
+    unset 'SJ[${#SJ[@]}-1]'
+    SJ+=(--ro-bind "$OR_KEYFILE" "$OR_KEYFILE" --)
+    KW=(sh "$FX/tests/conformance/lib/with-key.sh" "$OR_KEYFILE" "$OR_KEY_VAR" --)
+  fi
+  LIVE_RUN_N=$(( ${LIVE_RUN_N:-0} + 1 ))
   : > "$WORK.start"
   # stdout and stderr each reach their file through a pipe read on the host
   # side: the CLI holds only the pipes, never a file it could reopen, rewrite
@@ -274,23 +300,23 @@ live_run() {
       # unset adds no flag, so every other row's command line is unchanged.
       local -a model_flag=()
       [ -n "${FX_LIVE_MODEL:-}" ] && [ -z "$OPENROUTER" ] && model_flag=(--model "$FX_LIVE_MODEL")
-      ( cd "$WORK" && timeout "${FX_LIVE_TIMEOUT:-600}" "${JAIL[@]}" env TMPDIR="$tmp" claude -p "$prompt" --plugin-dir "$FX" \
+      ( cd "$WORK" && timeout "${FX_LIVE_TIMEOUT:-600}" "${SJ[@]}" "${KW[@]}" env TMPDIR="$tmp" claude -p "$prompt" --plugin-dir "$FX" \
           --dangerously-skip-permissions --max-turns "${FX_LIVE_MAX_TURNS:-30}" --output-format stream-json --verbose \
           "${model_flag[@]}" ) \
         </dev/null >"$LOGDIR/out.pipe" 2>"$LOGDIR/err.pipe" ;;
     codex)
-      timeout 900 "${JAIL[@]}" env TMPDIR="$tmp" codex exec --json -C "$WORK" -s danger-full-access \
+      timeout 900 "${SJ[@]}" "${KW[@]}" env TMPDIR="$tmp" codex exec --json -C "$WORK" -s danger-full-access \
         -c 'approval_policy="never"' --dangerously-bypass-hook-trust "$prompt" </dev/null >"$LOGDIR/out.pipe" 2>"$LOGDIR/err.pipe" ;;
     opencode-v2)
       # --standalone: no managed service, so nothing shares a port with the
       # developer's OpenCode. </dev/null is required: an inherited stdin
       # blocks the run forever (probe-findings.md, change 1).
       # 2.0.18 has no --dir flag ("Unrecognized flag: --dir"): the session runs in the cwd.
-      ( cd "$WORK" && timeout 1500 "${JAIL[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" \
+      ( cd "$WORK" && timeout 1500 "${SJ[@]}" "${KW[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" \
         opencode run --standalone --format json "$prompt" ) </dev/null >"$LOGDIR/out.pipe" 2>"$LOGDIR/err.pipe" ;;
     opencode)
       # ponytail: one llama-server slot, so opencode rows only ever run serially.
-      timeout 1500 "${JAIL[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" \
+      timeout 1500 "${SJ[@]}" "${KW[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" \
         opencode run --format json --dir "$WORK" "$prompt" </dev/null >"$LOGDIR/out.pipe" 2>"$LOGDIR/err.pipe" ;;
   esac
   rc=$?
@@ -309,14 +335,23 @@ live_run() {
     }')"
   # stderr is appended for the reader, each line prefixed so events.js skips it.
   sed 's/^/stderr: /' "$err" >> "$LOG"
-  # Under OpenRouter the log is scanned for the key before it is copied; a hit
-  # fails the row and nothing is kept.
+  # Under OpenRouter the log is scanned for the key before it is copied, for a
+  # key-shaped string and for the key's own value. A hit fails the row and a
+  # scan that cannot run fails it too: nothing is kept on a doubt. A row that
+  # calls live_run again keeps each call's log under its own name.
   keep_log() {
     [ -n "${FX_CONFORMANCE_LOGS:-}" ] || return 0
-    if [ -n "$OPENROUTER" ] && node "$OR_JS" leaks "$LOG"; then
-      fail "the session log contains an OpenRouter key (sk-or-); it was not kept"
+    local dest="$FX_CONFORMANCE_LOGS/$(basename "$0" .sh)-$HARNESS"
+    [ "$LIVE_RUN_N" -eq 1 ] || [ -z "$OPENROUTER" ] || dest="$dest.$LIVE_RUN_N"
+    if [ -n "$OPENROUTER" ]; then
+      node "$OR_JS" leaks "$LOG" "$OR_KEYFILE"
+      case $? in
+        0) ;;
+        10) fail "the session log contains the OpenRouter key; it was not kept" ;;
+        *) fail "the key scan of the session log could not run; the log was not kept" ;;
+      esac
     fi
-    cp "$LOG" "$FX_CONFORMANCE_LOGS/$(basename "$0" .sh)-$HARNESS.log"
+    cp "$LOG" "$dest.log"
   }
   keep_log
   # Quota or credit exhausted: the row did not run, and a row that did not run
@@ -339,15 +374,17 @@ live_run() {
   fi
   # A provider error stops the row with 75, so run.sh can re-run it on the
   # fallback model. Same evidence rule as the quota check: the CLI's own exit,
-  # its own error events and its own stderr, never the stream. A timeout with
-  # no output at all is the no-first-token case.
+  # its own error events and its own stderr, never the stream, and only an
+  # upstream HTTP error shape (lib/openrouter.js). A timeout alone is not one:
+  # a session that printed nothing and showed no upstream error is a product
+  # hang, a FAIL, never a provider flake.
   if [ -n "$OPENROUTER" ] && { [ "$rc" -eq 1 ] || { [ "$rc" -eq 124 ] && [ "$out_empty" = 1 ]; }; }; then
-    local hit2 errtxt; errtxt="$(cat "$err")"
-    [ "$rc" -eq 124 ] && errtxt="$errtxt"$'\n'"$(node -p "require('$OR_JS').NO_FIRST_TOKEN")"
-    if hit2="$(E="$cli_errors" S="$errtxt" node "$OR_JS" error)"; then
+    local hit2
+    if hit2="$(E="$cli_errors" S="$(cat "$err")" node "$OR_JS" error)"; then
       echo "$HARNESS: provider error ($hit2)" >&2; exit 75
     fi
   fi
+  [ "$rc" -eq 124 ] && [ -n "$OPENROUTER" ] && [ "$out_empty" = 1 ] && fail "no output before timeout"
   [ "$rc" -eq 124 ] && fail "session timed out"
   # A CLI that exited non-zero did not finish its session: a row that checks
   # for an absence (the branch still exists, no file was written) would read
@@ -412,6 +449,9 @@ live_run() {
   if [ -n "$OPENROUTER" ]; then
     local sm; sm="$(node "$OR_JS" model "$HARNESS" "$LOG")"
     [ -z "$sm" ] || { [ -z "${FX_ROW_MODEL_FILE:-}" ] || echo "$sm" > "$FX_ROW_MODEL_FILE"; }
+    # OpenCode names its model only in the session export; a failed export
+    # would leave the row labelled (config) with nothing checked.
+    [ -n "$sm" ] || { case "$HARNESS" in opencode|opencode-v2) ! grep -q '^export failed: ' "$LOG" || fail "the session export failed, so the session's model is unverified" ;; esac; }
     [ -z "$sm" ] || [ "$sm" = "$OR_MODEL" ] || fail "the session reported model $sm, not the requested $OR_MODEL"
   fi
   keep_log

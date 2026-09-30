@@ -6,7 +6,8 @@
 //   openrouter.js setup <harness> <model> <home>   write the config fragments under <home>
 //   openrouter.js model <harness> <logfile>        the session's own model, or nothing
 //   openrouter.js error   (env E = CLI error events, S = stderr)  print the match, exit 0 on a provider error
-//   openrouter.js leaks <file>                     exit 0 when the file holds a key
+//   openrouter.js leaks <file> [keyfile]           exit 10 when the file holds a key (or the keyfile's value),
+//                                                  0 when clean; any other exit is a scan failure, never "clean"
 // The key is never in a file or an env value: every config reads it from
 // OPENROUTER_API_KEY, and live.sh itself sets ANTHROPIC_AUTH_TOKEN.
 const fs = require('fs');
@@ -73,10 +74,18 @@ function providerSetup(harness, model) {
 
 // Only what the CLI itself reports: the error events live.sh extracts, and the
 // CLI's stderr. Never assistant text or tool output, which a model could forge.
-const NO_FIRST_TOKEN = 'fx: no first token before the timeout';
+// And only what an upstream HTTP error looks like: a status line, a JSON
+// status, "API Error: 503", or OpenRouter's own "Insufficient credits". A bare
+// "error ... 500" or "Unauthorized" is any tool's text and proves nothing. A
+// timeout is not one either: it needs one of these beside it.
+const STATUS = '(?:401|429|5\\d\\d)';
 const PROVIDER_ERROR = new RegExp([
-  'Too Many Requests', 'Insufficient credits', 'Unauthorized', NO_FIRST_TOKEN,
-  '\\b(?:status|http|error|code)\\b[^0-9\\n]{0,20}\\b(?:401|429|5\\d\\d)\\b',
+  'Insufficient credits',
+  `\\bHTTP/[\\d.]+ ${STATUS}\\b`,
+  `\\b(?:last |http )status(?: code)?[:= ]+${STATUS}\\b`,
+  `"(?:status|statusCode|code)"\\s*:\\s*${STATUS}\\b`,
+  `\\bAPI Error:? ${STATUS}\\b`,
+  `\\b${STATUS} (?:Unauthorized|Too Many Requests|Internal Server Error|Bad Gateway|Service Unavailable|Gateway Timeout)\\b`,
 ].join('|'), 'i');
 function providerErrorReason(cliErrors, stderr) {
   const m = PROVIDER_ERROR.exec(`${cliErrors}\n${stderr}`);
@@ -107,7 +116,9 @@ function sessionModel(harness, logText) {
   return null;
 }
 
-const leaksKey = (text) => String(text).includes('sk-or-');
+// A key-shaped prefix, or the key's own value when the caller has it (the value
+// need not start with sk-or-, and a prefix scan alone is easy to evade).
+const leaksKey = (text, key) => String(text).includes('sk-or-') || (!!key && String(text).includes(key));
 
 // Write a setup's files under home: JSON merges into what is there, anything
 // else goes in front of it (TOML top-level keys must precede its tables),
@@ -124,7 +135,7 @@ function applySetup(setup, home) {
   }
 }
 
-module.exports = { MODELS, NO_FIRST_TOKEN, providerSetup, isProviderError, sessionModel, leaksKey, applySetup };
+module.exports = { MODELS, providerSetup, isProviderError, sessionModel, leaksKey, applySetup };
 
 if (require.main === module) {
   const [cmd, a, b, c] = process.argv.slice(2);
@@ -132,6 +143,11 @@ if (require.main === module) {
   else if (cmd === 'setup') applySetup(providerSetup(a, b), c);
   else if (cmd === 'model') { const m = sessionModel(a, fs.readFileSync(b, 'utf8')); if (m) console.log(m); }
   else if (cmd === 'error') { const r = providerErrorReason(process.env.E || '', process.env.S || ''); if (r) console.log(r); process.exit(r ? 0 : 1); }
-  else if (cmd === 'leaks') process.exit(leaksKey(fs.readFileSync(a, 'utf8')) ? 0 : 1);
+  else if (cmd === 'leaks') {
+    try {
+      const key = b ? fs.readFileSync(b, 'utf8').trim() : (process.env.OPENROUTER_API_KEY || '');
+      process.exit(leaksKey(fs.readFileSync(a, 'utf8'), key) ? 10 : 0);
+    } catch (e) { console.error(`leak scan failed: ${e.message}`); process.exit(3); }
+  }
   else { console.error('usage: openrouter.js env|setup|model|error|leaks ...'); process.exit(2); }
 }

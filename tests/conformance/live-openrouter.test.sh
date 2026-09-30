@@ -21,11 +21,24 @@ live_workdir
 live_run 'anything'
 exit 0
 ROW
+# A row that calls live_run twice: each call's kept log needs its own name.
+cat > "$T/rows/97-twice.sh" <<'ROW'
+#!/usr/bin/env bash
+[ "${1:-}" = --describe ] && { echo '97|two sessions|live'; exit 0; }
+. "$FX/tests/conformance/lib/live.sh"
+live_workdir
+live_run 'one'
+live_run 'two'
+exit 0
+ROW
 # A row that never reaches a CLI: 75 until the runner re-runs it on the fallback.
 cat > "$T/rows75/96-fallback.sh" <<'ROW'
 #!/usr/bin/env bash
 [ "${1:-}" = --describe ] && { echo '96|fallback probe|live'; exit 0; }
-[ "${FX_STUB_ALWAYS_75:-}" = 1 ] || [ -z "${FX_LIVE_MODEL:-}" ] && { echo "stub: provider error (status: 429)" >&2; exit 75; }
+[ "${FX_STUB_LEAK:-}" = 1 ] && { echo "tail of the answer: $OPENROUTER_API_KEY" >&2; exit 1; }
+[ "${FX_STUB_ALWAYS_75:-}" = 1 ] || [ -z "${FX_LIVE_MODEL:-}" ] && {
+  [ -z "${FX_CONFORMANCE_LOGS:-}" ] || { echo first > "$FX_CONFORMANCE_LOGS/96-fallback-codex.log"; echo first2 > "$FX_CONFORMANCE_LOGS/96-fallback-codex.2.log"; }
+  echo "stub: provider error (status: 429)" >&2; exit 75; }
 echo "${FX_LIVE_MODEL#openrouter/}" > "$FX_ROW_MODEL_FILE"; exit 0
 ROW
 ok='{"type":"system","subtype":"init","model":"anthropic/claude-haiku-4.5"}'
@@ -33,8 +46,11 @@ row() {  # row <stub body>
   printf '#!/bin/sh\n%s\n' "$1" > "$FAKE/bin/claude"; chmod +x "$FAKE/bin/claude"
   rm -f "$LOGS"/*
   out="$(env PATH="$FAKE/bin:$PATH" HOME="$FAKE" FX_REAL_HOME="$FAKE" FX_CONFORMANCE_ROWS="$T/rows" FX_CONFORMANCE_LOGS="$LOGS" \
-    FX_LIVE_PROVIDER=openrouter OPENROUTER_API_KEY=fx-fake-key bash tests/conformance/run.sh claude-code 2>&1)"; rc=$?
+    FX_LIVE_PROVIDER=openrouter OPENROUTER_API_KEY=$KEY "${ENVX[@]}" bash tests/conformance/run.sh claude-code 2>&1)"; rc=$?
 }
+ENVX=(FX_X=1)
+# Built at run time, so this script's own command line never holds it.
+KEY="fxkey-$$-$RANDOM-$RANDOM"
 fails=0
 check() { grep -q "$1" <<<"$out" || { echo "FAIL: $2"; printf '%s\n' "$out"; fails=1; }; }
 
@@ -53,13 +69,69 @@ row "echo '$ok'; echo 'sk-or-v1-leaked'; exit 0"
 check '^FAIL  95' "a log with a key is not a FAIL"
 [ -z "$(ls -A "$LOGS")" ] || { echo "FAIL: a log holding a key was copied: $(ls "$LOGS")"; fails=1; }
 
+# The key crosses as a file, not a variable: Claude Code gets only
+# ANTHROPIC_AUTH_TOKEN, and OPENROUTER_API_KEY is not in its environment.
+row "m=anthropic/claude-haiku-4.5; [ \"\$ANTHROPIC_AUTH_TOKEN\" = $KEY ] && [ -z \"\${OPENROUTER_API_KEY:-}\" ] || m=ENV-WRONG; echo '{\"type\":\"system\",\"subtype\":\"init\",\"model\":\"'\$m'\"}'; exit 0"
+check '^PASS  95.*model=anthropic/claude-haiku-4.5$' "the CLI does not get only ANTHROPIC_AUTH_TOKEN holding the key"
+
+# No process on the host has the key on its command line while a session runs.
+printf '#!/bin/sh\necho %s; exec sleep 6.123\n' "'$ok'" > "$FAKE/bin/claude"; chmod +x "$FAKE/bin/claude"
+( env PATH="$FAKE/bin:$PATH" HOME="$FAKE" FX_REAL_HOME="$FAKE" FX_CONFORMANCE_ROWS="$T/rows" FX_LIVE_PROVIDER=openrouter \
+    OPENROUTER_API_KEY=$KEY bash tests/conformance/run.sh claude-code >"$T/cmdline.out" 2>&1 ) &
+runpid=$!
+seen_sleep=""
+for _ in $(seq 100); do
+  for c in /proc/[0-9]*/cmdline; do
+    { tr '\0' ' ' < "$c" | grep -q 'sleep 6.123'; } 2>/dev/null && { seen_sleep=1; break; }
+  done
+  [ -n "$seen_sleep" ] && break; sleep 0.2
+done
+[ -n "$seen_sleep" ] || { echo "FAIL: the stub session never started"; fails=1; }
+hits=""
+for c in /proc/[0-9]*/cmdline; do
+  { tr '\0' ' ' < "$c" | grep -q "$KEY"; } 2>/dev/null && hits="$hits $c"
+done
+hits="$(for c in $hits; do [ "$c" = "/proc/$$/cmdline" ] || echo "$c"; done)"
+[ -z "$hits" ] || { echo "FAIL: the key is on a command line during a session:$(for c in $hits; do echo; echo -n "  $c: "; tr '\0' ' ' < "$c" | cut -c1-200; done)"; fails=1; }
+wait "$runpid"
+
+# The key's own value is scanned for, not only the sk-or- prefix.
+row "echo '$ok'; echo 'the key is $KEY'; exit 0"
+check '^FAIL  95' "a log with the key's own value is not a FAIL"
+[ -z "$(ls -A "$LOGS")" ] || { echo "FAIL: a log holding the key value was copied"; fails=1; }
+
+# A timeout is a provider error only beside an upstream HTTP error.
+export FX_LIVE_TIMEOUT=2
+row "exec sleep 30"
+check '^FAIL  95' "a silent timeout is not a FAIL"
+check 'no output before timeout' "the silent timeout does not say so"
+row "echo 'HTTP/1.1 503 Service Unavailable' >&2; exec sleep 30"
+check '^GAP   95' "a timeout beside an upstream 503 is not a GAP"
+unset FX_LIVE_TIMEOUT
+
+# A row that calls live_run twice keeps both logs.
+cp "$T/rows/95-probe.sh" "$T/rows/95-probe.sh.keep"; mv "$T/rows/95-probe.sh" "$T/95.off"
+row "echo '$ok'; exit 0"
+[ -f "$LOGS/97-twice-claude-code.log" ] && [ -f "$LOGS/97-twice-claude-code.2.log" ] \
+  || { echo "FAIL: a second live_run overwrote the first log: $(ls "$LOGS")"; fails=1; }
+mv "$T/95.off" "$T/rows/95-probe.sh"; rm -f "$T/rows/95-probe.sh.keep"
+
 # run.sh: the re-run on the fallback, and a second 75.
-r75() { out="$(env FX_CONFORMANCE_ROWS="$T/rows75" FX_CONFORMANCE_LOGS="$LOGS" FX_LIVE_PROVIDER=openrouter "$@" bash tests/conformance/run.sh codex 2>&1)"; rc=$?; }
+r75() { rm -f "$LOGS"/*; out="$(env FX_CONFORMANCE_ROWS="$T/rows75" FX_CONFORMANCE_LOGS="$LOGS" FX_LIVE_PROVIDER=openrouter "$@" bash tests/conformance/run.sh codex 2>&1)"; rc=$?; }
 r75
 check '^PASS  96.*model=deepseek/deepseek-v4-flash attempt=2 (fallback)$' "a 75 is not re-run once on the fallback"
+check '1 pass (1 on fallback)' "the summary does not count the fallback pass apart"
+for f in 96-fallback-codex.attempt1.log 96-fallback-codex.attempt1.2.log; do
+  [ -f "$LOGS/$f" ] || { echo "FAIL: the first attempt's log is not kept as $f: $(ls "$LOGS")"; fails=1; }
+done
+[ ! -f "$LOGS/96-fallback-codex.log" ] || { echo "FAIL: the first attempt's log was left under the live name"; fails=1; }
 r75 FX_STUB_ALWAYS_75=1
 check '^GAP   96.*attempt=2 (fallback)' "a second 75 is not a GAP"
 check 'provider error' "the second-75 GAP carries no reason"
+# Rows print tails of the model's answer: the runner scans that stderr for the key.
+r75 OPENROUTER_API_KEY=$KEY FX_STUB_LEAK=1
+grep -q "$KEY" <<<"$out" && { echo "FAIL: the runner printed a row's stderr holding the key"; fails=1; }
+check '^FAIL  96' "a row whose stderr held the key is not a FAIL"
 
 [ "$fails" -eq 0 ] || exit 1
 echo "live-openrouter: all passed"

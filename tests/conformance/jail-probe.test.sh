@@ -195,20 +195,24 @@ if binds "$out" | grep -qxF "$T/real-home/tools"; then
   echo "FAIL a script with no package binds more than its own directory"; fails=1
 else echo "ok   a script with no package binds nothing above its own directory"; fi
 
-# The provider switch: under FX_LIVE_PROVIDER=openrouter the allowlist also
-# passes OPENROUTER_API_KEY and each name in FX_JAIL_PROVIDER_ENV; without the
-# switch neither crosses. Each case re-sources the jail in a subshell.
-pjail() {  # pjail <extra env assignments...> -- <test run inside the jail>
-  local -a e=(); while [ "$1" != -- ]; do e+=("$1"); shift; done; shift
-  ( export "${e[@]}" OPENROUTER_API_KEY=fx-sentinel-key ANTHROPIC_BASE_URL=https://openrouter.ai/api FX_JAIL_PROVIDER_ENV=ANTHROPIC_BASE_URL
-    . tests/conformance/lib/jail.sh; "${JAIL[@]}" bash -c "$1" ) >"$T/out" 2>&1
+# Provider variables: only live.sh turns them on, by calling jail_provider_env
+# after it sources the jail. An inherited FX_LIVE_PROVIDER or
+# FX_JAIL_PROVIDER_ENV changes nothing, and the key never crosses as a variable
+# (live.sh hands it over as a file, read inside the jail by lib/with-key.sh).
+pjail() {  # pjail <jail_provider_env args, or none> -- <test run inside the jail>
+  local -a a=(); while [ "$1" != -- ]; do a+=("$1"); shift; done; shift
+  ( export FX_LIVE_PROVIDER=openrouter FX_JAIL_PROVIDER_ENV="ANTHROPIC_BASE_URL OPENROUTER_API_KEY" \
+           OPENROUTER_API_KEY=fx-sentinel-key ANTHROPIC_BASE_URL=https://openrouter.ai/api
+    . tests/conformance/lib/jail.sh
+    [ "${#a[@]}" -eq 0 ] || jail_provider_env "${a[@]}"
+    "${JAIL[@]}" bash -c "$1" ) >"$T/out" 2>&1
 }
-if pjail FX_LIVE_PROVIDER=openrouter -- '[ "$OPENROUTER_API_KEY" = fx-sentinel-key ] && [ "$ANTHROPIC_BASE_URL" = https://openrouter.ai/api ]'
-then echo "ok   FX_LIVE_PROVIDER=openrouter passes the key and the provider variables"
-else echo "FAIL FX_LIVE_PROVIDER=openrouter does not pass the key and the provider variables"; fails=1; fi
-if pjail FX_PROBE_NOSWITCH=1 -- '[ -z "${OPENROUTER_API_KEY:-}" ] && [ -z "${ANTHROPIC_BASE_URL:-}" ]'
-then echo "ok   without the switch neither the key nor the provider variables cross"
-else echo "FAIL without the switch the key or a provider variable crosses"; fails=1; fi
+if pjail -- '[ -z "${OPENROUTER_API_KEY:-}" ] && [ -z "${ANTHROPIC_BASE_URL:-}" ]'
+then echo "ok   an inherited FX_LIVE_PROVIDER and FX_JAIL_PROVIDER_ENV pass nothing"
+else echo "FAIL an inherited FX_LIVE_PROVIDER or FX_JAIL_PROVIDER_ENV passes a variable: $(cat "$T/out")"; fails=1; fi
+if pjail ANTHROPIC_BASE_URL -- '[ "$ANTHROPIC_BASE_URL" = https://openrouter.ai/api ] && [ -z "${OPENROUTER_API_KEY:-}" ]'
+then echo "ok   jail_provider_env passes the named variable and never the key"
+else echo "FAIL jail_provider_env does not pass the named variable, or passes the key: $(cat "$T/out")"; fails=1; fi
 
 [ "$fails" -eq 0 ] || exit 1
 echo "jail-probe: all passed"

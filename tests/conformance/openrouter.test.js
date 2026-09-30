@@ -26,11 +26,18 @@ for (const [events, stderr] of [
   ['{"type":"error","message":"API Error: 503 upstream"}', ''],
   ['{"type":"turn.failed","error":{"message":"401 Unauthorized"}}', ''],
   ['', 'Insufficient credits. This account never purchased credits.'],
+  ['{"type":"error","error":{"status":503,"message":"upstream"}}', ''],
+  ['', 'HTTP/1.1 502 Bad Gateway'],
 ]) assert.ok(or.isProviderError(events, stderr), `provider error: ${events || stderr}`);
 for (const [events, stderr] of [
   ['', 'FAIL  12  read-only agent cannot edit'],
   ['', 'expected a Skill call, saw none'],
   ['', ''],
+  ['', 'error: could not write 512 bytes'],
+  ['', 'Unauthorized tool: rm'],
+  ['', 'error: exit code 500 from my script'],
+  ['', 'fatal: error at line 500 of config'],
+  ['', 'fx: no first token before the timeout'],
 ]) assert.ok(!or.isProviderError(events, stderr), `not a provider error: ${events || stderr || '(empty)'}`);
 assert.strictEqual(or.isProviderError.length, 2, 'the check takes only CLI error events and stderr, never the whole stream');
 
@@ -39,6 +46,10 @@ assert.strictEqual(or.sessionModel('claude-code', init), 'anthropic/claude-haiku
 assert.strictEqual(or.sessionModel('claude-code', '{"type":"system","subtype":"init","model":"claude-opus-4"}'), 'claude-opus-4',
   'the reported model is returned as is, so the runner can see a mismatch');
 assert.strictEqual(or.sessionModel('claude-code', 'not json'), null);
+
+// A scan that cannot run is never "clean": a missing file exits 3, not 0 or 10.
+const cp = require('child_process');
+assert.strictEqual(cp.spawnSync('node', [path.join(__dirname, 'lib', 'openrouter.js'), 'leaks', '/nonexistent/log']).status, 3);
 
 // Recorded shapes, trimmed: Codex's rollout turn_context, OpenCode 1.18.25's and
 // 2.0.18's session export (live.sh appends it as a fx_export line).
@@ -55,6 +66,9 @@ assert.strictEqual(or.sessionModel('opencode-v2', '{"type":"text","part":{"text"
 
 assert.ok(or.leaksKey('token sk-or-v1-abc'), 'a key is caught');
 assert.ok(!or.leaksKey('no secrets here'), 'clean text passes');
+assert.ok(or.leaksKey('the key is hunter2-key here', 'hunter2-key'), "the key's own value is caught, with no sk-or- prefix");
+assert.ok(!or.leaksKey('nothing', 'hunter2-key') && !or.leaksKey('nothing', ''), 'an empty or absent key value matches nothing');
+assert.strictEqual(or.NO_FIRST_TOKEN, undefined, 'a timeout is no longer a provider error by itself');
 // applySetup: a second call for the same row replaces the TOML fragment, and
 // JSON merges into the existing config without dropping its other keys.
 const fs = require('fs'), os = require('os');

@@ -96,11 +96,7 @@ JAIL+=(--ro-bind "$FX" "$FX" --bind "$LIVE_SCRATCH" "$LIVE_SCRATCH" --dev /dev
 # needs on top (TMPDIR, XDG_DATA_HOME) goes through `env` inside the jail:
 #   "${JAIL[@]}" env TMPDIR="$tmp" claude ...
 JAIL+=(--clearenv)
-# OpenRouter: the key and the provider's own variables cross too (live.sh
-# exports their names in FX_JAIL_PROVIDER_ENV). Without the switch, unchanged.
-PROVIDER_VARS=""
-[ "${FX_LIVE_PROVIDER:-}" = openrouter ] && PROVIDER_VARS="OPENROUTER_API_KEY ${FX_JAIL_PROVIDER_ENV:-}"
-for v in $PROVIDER_VARS PATH HOME USER LOGNAME SHELL TERM LANG LC_ALL \
+for v in PATH HOME USER LOGNAME SHELL TERM LANG LC_ALL \
          CODEX_HOME XDG_CONFIG_HOME CLAUDE_CONFIG_DIR FX \
          HTTPS_PROXY HTTP_PROXY NO_PROXY https_proxy http_proxy no_proxy \
          NODE_EXTRA_CA_CERTS SSL_CERT_FILE SSL_CERT_DIR; do
@@ -126,5 +122,19 @@ jail_hide() {
     if [ -d "$FX/$p" ]; then JAIL+=(--tmpfs "$FX/$p")
     elif [ -e "$FX/$p" ]; then JAIL+=(--ro-bind /dev/null "$FX/$p"); fi
   done
+  JAIL+=(--)
+}
+
+# jail_provider_env <NAME>...: pass each named variable, with the value it has
+# now, into calls made with $JAIL after this point. Only live.sh calls it, for
+# the OpenRouter provider's own (non-secret) variables. Nothing is read from an
+# inherited FX_LIVE_PROVIDER or FX_JAIL_PROVIDER_ENV: the allowlist above is
+# the whole default, so a script that sources this file cannot be talked into
+# passing a variable. The key is never passed this way: a --setenv value sits
+# on the bwrap command line, where any process listing shows it.
+jail_provider_env() {
+  unset 'JAIL[${#JAIL[@]}-1]'
+  local v
+  for v in "$@"; do [ -n "${!v+x}" ] && JAIL+=(--setenv "$v" "${!v}"); done
   JAIL+=(--)
 }
