@@ -64,12 +64,22 @@ probe can settle are marked **probe** and owned by task 01 of the plan.
   reach a subagent).
 - Tools: the shell tool is `shell`; file tools `edit`, `write`, `patch`
   (docs, tools page). `ctx.tool.hook('execute.before', ev)` with a mutable
-  `ev.input`; a thrown error in the Promise API becomes a defect, not a
-  clean refusal (**probe**).
+  `ev.input` and the tool call id `ev.id`; a thrown error or rejected
+  Promise in a Promise-API hook becomes a defect, not a clean refusal
+  (`plugin/src/promise/adapter.ts:439`, `:504` wrap each callback in
+  `Effect.promise`; **probe**).
 - Permissions: `[{ action, resource, effect }]`, last match wins; actions
   include `shell`, `edit`, `skill`, `subagent`, `external_directory`.
   `ctx.permission.hook('evaluate', ev)` can set `ev.effect = 'deny'` and a
-  message (**probe**: is the full shell command in `ev.resources`).
+  message. For `shell`, `ev.resources` holds one entry per parsed
+  sub-command, never the full command (`core/src/tool/plugin/shell.ts:134-142`,
+  `shell/parse.ts:194-197`), and `ev.source` is `{ type: 'tool', messageID,
+  id }` with the same call id the tool hook sees (`shell.ts:117-121`,
+  `core/src/tool.ts:103-110`). Edit resources are relative to the project
+  directory (`core/src/file-access.ts:108`).
+- Wildcards: `*` becomes `.*` and a trailing ` *` also matches the bare
+  command (`core/src/util/wildcard.ts:8-12`), so a pattern can match far
+  more than it reads.
 - Policies: `experimental.policies`, statements
   `{ action: 'permission', resource: 'shell:git push *', effect: 'deny' }`;
   binary, only tighten, apply after agent rules, fail with "Blocked by
@@ -79,10 +89,27 @@ probe can settle are marked **probe** and owned by task 01 of the plan.
   prompt. Subagents dispatch through the `subagent` tool; depth is
   `experimental.subagent_depth` (source only, **probe**).
 - Skills: auto-discovered from `~/.config/opencode/skills` and others;
-  config key `skills: string[]`. A `{action: 'skill', resource: <name>,
-  effect: 'deny'}` rule hides and rejects a skill.
+  config key `skills: string[]`. The skill list the model sees is filtered
+  only by the agent's static permission rules
+  (`core/src/skill.ts:33-34`): a `{action: 'skill', resource: <name>,
+  effect: 'deny'}` rule in those rules hides and rejects a skill; the
+  `evaluate` hook only rejects a call and hides nothing.
+- Agent defaults: `update` on a missing id creates it from
+  `Info.default(id)` (`schema/src/agent.ts:39-53`: `mode: 'primary'`,
+  `* * allow`, `external_directory * ask`, the `.env` read rules) plus
+  core's `external_directory` allows for its own data, tmp and config
+  directories (`core/src/agent.ts:59-64`, `:74-85`). The editor also has
+  `get`, `list`, `default` and `remove`.
 - Commands: Markdown in `commands/` with `description`, `agent`, `model`;
-  body is the template; `$ARGUMENTS`.
+  body is the template; `$ARGUMENTS`. A plugin command is
+  `{ name, description, execute(input) }` with `input.sessionID` and
+  `input.prompt` (`plugin/src/promise/command.ts:7-17`); `ctx.session`
+  offers `prompt` and `command` (`plugin/src/promise/session.ts:152-167`).
+- OpenCode 1.18.25 refuses to load a config holding a top-level
+  `permissions` key, or `permissions` on any agent: `InvalidError` "V2
+  permissions are not supported by OpenCode V1"
+  (`oc1/packages/opencode/src/config/v2-compat.ts:95-113`). The config file
+  is shared by both majors.
 - Instructions: v2 reads `AGENTS.md`; the `instructions` key is not
   resolved yet. Not relied on.
 - CLI: `opencode debug agents` (needs the managed service; slow in a
@@ -102,10 +129,22 @@ New files, none shared with v1 except pure `lib/` functions:
     (`system`, `mode: 'subagent'`, `description`, `permissions` as a rule
     list with `*` denied first). `toOpencodeAgent` is unchanged;
   - registers the guard and lane check (§2);
-  - denies the five user-invoked skills with `skill` rules, and registers
-    their commands from `opencodeCommands` (unchanged) through
-    `ctx.command.transform`, or through generated command files if the
-    transform API cannot take a template (**probe**);
+  - hides the five user-invoked lanes (`fx-audit`, `fx-critique`,
+    `fx-grill`, `fx-handoff`, `fx-setup`) by adding
+    `{ action: 'skill', resource: <lane>, effect: 'deny' }` to every
+    agent's permissions in `ctx.agent.transform`: fx's six, the built-in
+    primary agents and subagents (from `editor.list()`), and any
+    user-defined agent the transform reaches (**probe**: transform order
+    against user-defined agents). The `evaluate` hook also denies `skill`
+    on the five lanes, as a backstop for an agent the transform did not
+    reach; it hides nothing on its own;
+  - registers the five lanes' commands from `opencodeCommands` (unchanged)
+    through `ctx.command.transform`, each with `execute` prompting the
+    session with the command's template (`ctx.session.prompt` or
+    `ctx.session.command`, whichever the probe proves). If the probe
+    disproves it, the plugin registers no commands, the installer route
+    generates command files, and the plugin route has no lane commands,
+    stated in `INSTALL.md`;
   - sets nothing the user already set (ADR-0026 applies).
 - `lib/preamble.js`: an `opencode-v2` entry in `HARNESSES` and `ADDRESSING`
   (skill tool `the \`skill\` tool`, dispatch through the `subagent` tool,
@@ -118,11 +157,32 @@ New files, none shared with v1 except pure `lib/` functions:
   exactly what it does today, from the renamed `plugins/fx-opencode-v1.js`
   (the installed link keeps its name in the config directory). On 2.x it
   links `plugins/fx-opencode-v2.js`, generates
-  v2-format agents and commands, writes `experimental.subagent_depth` and
-  the guard policies (§2) into `opencode.json` under keys it owns, and
-  removes a link it placed earlier to the other major's plugin file (and
-  the reverse on 1.x), so the plugin that cannot load on the running major is never left
-  behind. Its refusal markers stay; the generated header names the major.
+  v2-format agents (and command files only when the plugin cannot register
+  commands), writes `experimental.subagent_depth` and the guard policies
+  (§2) into `opencode.json` under keys it owns, and replaces a link it
+  placed earlier to the other major's plugin file (and the reverse on 1.x),
+  so the plugin that cannot load on the running major is never left
+  behind.
+  - It writes **no** top-level `permissions` key, and no `permissions` on
+    any agent entry of `opencode.json`, on either major: OpenCode 1.x
+    refuses to start with one. None is needed: `load_skills`
+    (`scripts/fx-opencode-install:186-201`) never links the five
+    user-invoked lanes, so the installer route has nothing to hide.
+  - `--major 1` removes fx's own `experimental.policies` entries (equal to
+    a `GUARD_POLICIES` entry) and leaves the user's.
+  - The link check treats a link to any of fx's three plugin file names
+    (`plugins/fx.js`, the pre-rename source; `plugins/fx-opencode-v1.js`;
+    `plugins/fx-opencode-v2.js`) as fx's own, so switching majors or
+    upgrading an install made before the rename replaces it instead of
+    refusing with "link fx did not create".
+  - The generated header line stays byte-identical to today's, so the
+    refusal markers recognise files from either major; the major goes on
+    its own line after it (`<!-- opencode major: 2 -->`).
+  - Every v1 caller passes `--major 1` (`tests/install/run.sh`,
+    `tests/gates/opencode-plugin.test.js`, rows 09 and 14,
+    `tests/conformance/lib/live.sh`), so a machine with 2.x installed never
+    installs and tests v2 while claiming v1. `live.sh` also checks that
+    `opencode --version`'s major matches the harness under test.
 
 v1 changes, each justified by v1, not by v2:
 - The rename to `plugins/fx-opencode-v1.js` (D6): its installer link,
@@ -137,27 +197,47 @@ v1 changes, each justified by v1, not by v2:
 
 Three layers, each proven or dropped by task 01's probe:
 
-1. **Permission evaluate hook.** If `ev.resources` for `action: 'shell'`
-   carries the full command text, run `inspect(command, cwd)` there and set
-   `effect: 'deny'` with the guard's reason. This is the full v1 guard,
-   compound and disguised forms included, with no dependency.
+1. **Permission evaluate hook, keyed by call id.** `ev.resources` holds
+   parsed sub-commands, so running `inspect` per piece would miss heredoc
+   and pipe-into-shell forms. Instead, `tool.hook('execute.before')`
+   records `ev.input.command` in a map keyed by `ev.id` when `ev.tool` is
+   `shell`, and `tool.hook('execute.after')` deletes the entry. In
+   `evaluate`, for `action: 'shell'`, the plugin looks the command up by
+   `ev.source.id` and runs `inspect(command, ctx.location.directory)` on
+   the full command. It sets `effect: 'deny'` with the guard's reason when
+   `inspect` refuses, when the lookup misses (no `ev.source`, or no
+   recorded command: fail closed), and when `inspect` or the lookup throws
+   (every hook body is wrapped, since a rejected Promise is a defect, not a
+   denial). This is the full v1 guard, compound and disguised forms
+   included, with no dependency (**probe**: `execute.before` runs before
+   the shell tool's permission check and the ids match).
 2. **Policies (always).** The installer writes `experimental.policies`
-   denies for the absolutes a pattern can express: `git push --force*`,
-   `git push -f*`, `git push * --force*`, `git push origin main*` and the
-   base-branch forms, `git reset --hard*`, `git clean -f*`, `git branch -D*`,
-   `git stash drop*`, `git checkout .*`, `git tag -d*`, `git push --delete*`,
-   `git push * :*`, and `* --no-verify*`. The exact list is derived from
+   denies for the absolutes a pattern can express: force push, pushing the
+   base branch, deleting a remote branch, `--no-verify` on commit and push,
+   `reset --hard`, `clean -f`, `branch -D`, `stash drop`, `checkout .` and
+   `tag -d`. Because `*` is `.*`, patterns are tight: `git push origin
+   main` and `git push origin main *`, never `main*`; `git checkout .` and
+   `git checkout . *`, never `.*`; `--no-verify` only after `git commit` or
+   `git push`, never `* --no-verify*`. Each policy carries `sample`
+   commands `inspect` refuses and the pattern matches, and `allowed`
+   commands `inspect` allows and the pattern does not match (for example
+   `git push origin main-fix`, `git checkout .github/x`, `git log --grep
+   no-verify`), since a policy cannot be overridden and says only "Blocked
+   by configuration policy". The exact list is derived from
    `lib/git-guard.js`'s refusals in the plan.
 3. **Tool hook.** `tool.hook('execute.before')` throwing, only if the probe
    shows a throw refuses the call cleanly (the turn continues and the model
    sees the reason).
 
 Fail-closed rule: if the guard cannot load, layer 1 denies every shell
-call with the reason, as v1 does. Layer 2 does not depend on the plugin.
+call with the reason, as v1 does (`plugins/fx-opencode-v1.js`, the catch
+around `inspect`). Layer 2 does not depend on the plugin.
 
 Lane check (advice-class, fail open): through whichever of layers 1 or 3
-the probe proves, on `edit`, `write` and `patch`. If neither works, v2 has
-no lane check and `INSTALL.md` says so.
+the probe proves, on `edit`, `write` and `patch`. Each resource is
+resolved with `path.resolve(ctx.location.directory, resource)` before
+`laneCheck`, since v2 edit resources are project-relative. If neither
+layer works, v2 has no lane check and `INSTALL.md` says so.
 
 `INSTALL.md` states, per layer, what v2 catches and what it does not.
 
@@ -167,16 +247,41 @@ no lane check and `INSTALL.md` says so.
 `FX_LIVE_PROVIDER=openrouter` (default stays `llamacpp`, so nothing changes
 for anyone not opting in):
 
+- **Precondition:** the OpenRouter account has purchased credits, checked
+  before any live run with `GET https://openrouter.ai/api/v1/credits`
+  (`total_credits > 0`). A key without purchased credits gets the small
+  free-model daily allowance, which the matrix exceeds. Each harness run
+  states a request budget and paces its rows to the per-minute limit.
 - **Key:** read from `OPENROUTER_API_KEY` in the environment only; never
-  written into the repo, a transcript copy, or a log. Row logs are grepped
-  for `sk-or-` before they are kept; a hit fails the row.
+  written into the repo, a transcript copy, or a log. The scan for
+  `sk-or-` runs inside `keep_log`, before the copy, and a hit fails the
+  row; the runner output a task tees to a file is scanned the same way
+  before it is kept.
+- **Jail:** `tests/conformance/lib/jail.sh` rebuilds the environment with
+  `--clearenv` and an allowlist (`jail.sh:98-110`). Under
+  `FX_LIVE_PROVIDER=openrouter` the allowlist also carries
+  `OPENROUTER_API_KEY` and the names in `providerSetup(harness, model).env`
+  (the `ANTHROPIC_*` variables and model overrides for Claude Code), and
+  `live.sh` skips both credential copies (Claude's `.credentials.json`,
+  Codex's `auth.json`, `live.sh:94-105`). Otherwise Claude Code would run
+  on the owner's subscription while the result line says Haiku, and
+  Codex's command auth would echo an empty key.
 - **Model:** primary `openrouter/qwen/qwen3.8-27b:free`, fallback
   `openrouter/deepseek/deepseek-v4-flash`. The fallback is used only when a
-  row's failure is a provider error (HTTP 429, 5xx, "Insufficient
-  credits", timeout before the first token). A capability failure is
-  re-run once on the same model and both results are recorded, as
-  `tests/conformance/README.md` already requires. Each row's result line
-  names the model it ran on.
+  row's failure is a provider error: HTTP 401, 429, 5xx, "Insufficient
+  credits", or no first token before the timeout. A provider error is
+  matched only in the CLI's own error events and its stderr, never in
+  model output, which a model could forge (the same rule `live.sh:247-250`
+  applies to quota lines). A row's `fail` exits the row, so the fallback
+  re-run lives in `tests/conformance/run.sh`, which re-runs the row once on
+  the fallback model. A capability failure is re-run once on the same
+  model and both results are recorded, as `tests/conformance/README.md`
+  already requires. Each row's result line names the model the session
+  itself reported in its init event (Claude Code's `system`/`init`
+  `model`, and the equivalent field each other CLI emits), not the
+  runner's label; a mismatch with the requested model fails the row. A
+  CLI whose events carry no model gets `model=<id> (config)`, so the
+  reader sees which lines were verified.
 - **OpenCode v1:** provider entry `provider.openrouter` in the scratch
   `opencode.json` (the v1 provider format), key from the environment.
 - **OpenCode v2:** `providers.openrouter` with the key from the
@@ -199,6 +304,11 @@ for anyone not opting in):
   `opencode-v2`; `tests/conformance/lib/events.js` gets a v2 parser for
   `opencode run --format json` output (format **probe**);
   `tests/conformance/lib/jail.sh` binds the v2 binary.
+- `FX_OPENCODE_ROUTE=plugin` on v2 adds the plugin's `file://` entry and
+  `"$FX/skills"` to the scratch config; that route lists all of fx's
+  skills, so it relies on the plugin's `agent.transform` skill-deny rules
+  (§1) to hide the five lanes, and on `command.transform` for their
+  commands.
 - Rows that branch on the harness get an `opencode-v2` case: 03, 05, 09,
   11, 12, 13, 14, 15, 18. Row 09 uses `opencode api --standalone
   skill.list` and the agent registry. Row 15 checks the `subagent` tool and
@@ -237,11 +347,26 @@ closed with a live row, as Claude Code's was in `78ff5b3`, or proven
 unclosable and stated. Then the full matrix re-runs on the harnesses that
 changed.
 
+- A fixed row passes 2 of 2 live runs; one pass does not close it.
+- A harness has **changed** when any file that harness loads (its plugin
+  or hook, the `lib/` modules it imports, its install route, its rows, its
+  reference file, `PREAMBLE.md`, the skills and agents it installs) changed
+  since the baseline commit, found with `git diff --name-only
+  <baseline>..HEAD`.
+- Every non-PASS gets one ruling: fixed, unclosable (with evidence), or
+  **model capability**. A model capability failure is one the free model
+  cannot do while fx's part is correct: the row re-runs once on DeepSeek;
+  if it passes there, the row is PASS on the fallback, recorded as such
+  with both runs. Claude Code runs only on Haiku, so its re-run is on
+  Haiku. A row is never weakened to pass on the free model.
+
 ## 7. Order of work
 
 1. **Probe (task 01):** on 2.0.18 with a scratch home and OpenRouter:
-   the layer-1 resource content, a tool-hook throw, `session.hook` reaching
-   a subagent, `command.transform` taking a template, `subagent_depth`,
+   the layer-1 call-id lookup (`execute.before` before `evaluate`, ids
+   equal), a tool-hook throw, `session.hook` reaching a subagent,
+   `agent.transform` order against user-defined agents,
+   `command.transform` with `execute` prompting the session, `subagent_depth`,
    `opencode run --format json` output shape, and `debug agents` timing.
    Findings recorded in the plan directory; later tasks read them. A probe
    that fails changes the matching section's fallback, recorded as a
@@ -264,6 +389,9 @@ changed.
 - Free rows for `opencode` and `opencode-v2`.
 - Live rows through OpenRouter on all three, each row's model recorded;
   the results replace "pending" in `INSTALL.md`.
+- Phase B closure: each fixed row 2 of 2 live; a model capability row
+  recorded as PASS on the fallback with both runs; the re-run covers every
+  harness whose loaded files changed since the baseline commit.
 - The v1 harness's own results must not change except where a v1 fault is
   fixed (the CI pin).
 
