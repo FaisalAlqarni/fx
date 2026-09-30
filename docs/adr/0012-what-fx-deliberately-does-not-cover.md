@@ -10,7 +10,7 @@ it cannot do unprompted is notice it is producing the same page again.
 
 **No motion or animation guidance** beyond the one rule in `fx-design`: motion
 nobody triggered is for attention, and one orchestrated moment beats scattered
-effects.
+effects. Superseded in part by ADR-0034: `references/stacks/web-polish.md` now carries motion heuristics, labelled as unmeasured.
 
 **No platform procedure skills.** Android and iOS build procedures were in an
 early inventory and removed. They are project facts, so they belong in `repo.md`
@@ -24,6 +24,17 @@ and adjusting would mean owning a driver, and that is not in.
 is how a prose gate once reported clean over 117 violations. Recorded as a known
 gap rather than a decision, and it is the most likely thing on this page to
 change.
+
+**No SEO or marketing audit.** Half of a useful SEO audit is marketing
+strategy, and the rest needs a live site and search-console access that fx
+lanes do not have. `seo-audit` (coreyhaines31/marketingskills) can be
+installed beside fx; its triggers do not contest a lane. `ai-seo` was
+rejected outright: its claims are vendor anecdotes and it changes monthly.
+
+**No paid web search backend.** `firecrawl-search` was considered for the
+`research` lane and rejected: a paid service that sends per-search feedback
+off the machine by default, a second claimant for web research, and little
+over the runtime's own fetch, context7 and a browser driver.
 
 ## Still undecided
 

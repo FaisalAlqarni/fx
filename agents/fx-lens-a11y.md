@@ -77,13 +77,23 @@ finding; an unusable interface is.
 - Fixed heights or `overflow: hidden` that clip reflowed text at 200% zoom.
 - Interactive target under 24x24 CSS px with no spacing around it.
 - Animation with no `prefers-reduced-motion` guard.
+- A state change signalled only by animation: every animated state needs a
+  static cue too (text, an icon, or colour plus shape).
 
 **RTL and localisation**
 
 - Physical CSS properties where logical ones belong: `margin-left`,
   `padding-right`, `left`, `text-align: left`, `border-left` instead of
   `margin-inline-start`, `inset-inline`, `text-align: start`.
-- Directional icons (chevrons, arrows, back buttons) not mirrored in RTL.
+- An icon mirrored or not mirrored against its meaning under `dir="rtl"`
+  (after better-ui, MIT):
+
+  | Mirror in RTL | Never mirror |
+  |---|---|
+  | Back and forward arrows, chevrons in navigation | Logos and brand marks |
+  | Text-block glyphs: alignment, lists, indent | Checkmarks |
+  | Speaker and volume waves | Physical objects: clocks, cups, pencils |
+  | "Send" style directional glyphs | Media playback controls (play and rewind keep tape direction) |
 - A user-facing string hardcoded in the template instead of `t(...)`, or added
   to `en.yml` with no `ar.yml` counterpart.
 - Layout that assumes LTR ordering: flex/grid order, absolute positioning.

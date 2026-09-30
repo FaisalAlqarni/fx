@@ -67,7 +67,7 @@ tell is that they appear regardless of subject.
 2. Near-black background, one bright acid-green or vermilion accent.
 3. Broadsheet layout: hairline rules, zero border radius, dense columns.
 4. The card kit: content chopped into identical rounded cards, one radius on
-   everything regardless of hierarchy, the same soft grey shadow under each,
+   everything regardless of hierarchy, the same soft grey shadow under each (uniform depth regardless of hierarchy; a layered shadow that separates one surface from another is not this tell),
    gradient washes as decoration.
 5. Template chrome that survives any subject: a tracked-out all-caps eyebrow
    above every heading, meta strings joined with middle dots, tinted near-black
@@ -123,6 +123,7 @@ beats scattered effects.** One page-load sequence with staggered reveals lands;
 a fade-and-slide on every section and a hover transition on every card is the
 generic default and reads as machine-made. Motion that answers an action, an
 open, an expand, a confirm, is welcome, because it shows what changed.
+Motion values (easing, duration, press scale, what never animates) are in `../../references/stacks/web-polish.md`.
 
 **Backgrounds can carry atmosphere.** Layered gradients, a geometric pattern, a
 contextual effect. A flat fill is a choice worth making deliberately rather than
@@ -150,6 +151,10 @@ For the mechanical rules underneath this floor, read
 `../../references/stacks/web.md`: forms, content that varies in length,
 localisation, layout shift, theming and interface copy. **It is the checklist;
 this skill is the judgment.**
+
+For motion, surfaces and icons, read `../../references/stacks/web-polish.md`.
+It carries heuristics, not measured rules: the brief and the project's tokens
+win.
 
 ## 8. Writing is design content
 
