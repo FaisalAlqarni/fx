@@ -1,0 +1,32 @@
+### Finding verdicts
+
+- **[review Important] isProviderError too loose: `error ... 5xx` and bare `Unauthorized` turn real CLI failures into 75 and GAP**: ADDRESSED. tests/conformance/lib/openrouter.js:518-528 now matches only upstream HTTP shapes (`HTTP/x NNN`, `last|http status NNN`, JSON `"status|statusCode|code": NNN`, `API Error: NNN`, `NNN <reason phrase>`, `Insufficient credits`). Ran all three reviewer negatives (`error: could not write 512 bytes`, `fatal: error at line 500 of config`, `error: exceeded 512 tokens`) plus `Unauthorized tool: rm` and `exit code: 500` through `isProviderError`: all false. openrouter.test.js:760-764 pins four of them as negatives (the `exceeded 512 tokens` string is not in the test list, but it does not match).
+- **[silent-failure 1, Critical] every empty-stdout timeout classed as a provider error via appended NO_FIRST_TOKEN**: ADDRESSED. The sentinel is gone (openrouter.js exports no NO_FIRST_TOKEN, asserted at openrouter.test.js:795). live.sh:436-441 runs the matcher on the CLI's own stderr and error events only; a 124 with empty stdout and no HTTP evidence falls to `fail "no output before timeout"`. Covered in live-openrouter.test.sh:703-708 (silent `sleep 30` is FAIL with that reason; the same with `HTTP/1.1 503` on stderr is GAP on claude-code).
+- **[silent-failure 2, Important] provider-error regex broad over all stderr and error events**: ADDRESSED. Same fix as the review Important: bare `Unauthorized` and `Too Many Requests` and the `(status|http|error|code) ... NNN` branch are removed (openrouter.js:519-528). The evidence is still any line of CLI stderr, but it must now have an HTTP status shape.
+- **[silent-failure 3, Important] fallback pass counted as plain PASS; first-attempt log lost or overwritten**: ADDRESSED. run.sh:891-901 counts fallback passes and prints `N pass (F on fallback)`. run.sh:865-871 moves every kept log of attempt 1 (`<row>-<harness>.log` and `.N.log`) to `.attempt1*.log`, and says on stderr when FX_CONFORMANCE_LOGS is unset. live.sh:393-394 gives a second live_run call its own `.N.log`. Covered in live-openrouter.test.sh:712-727.
+- **[security 1, Important] key on the bwrap and timeout command line via `--setenv`**: ADDRESSED. jail.sh no longer puts any provider variable or the key on the command line (jail.sh:145-151; jail_provider_env at :181-186 passes only the non-secret names from `openrouter.js env`). live.sh:244-250 writes the key with the `printf` builtin to `$KEYDIR/key` (umask 077, mktemp -d dir 0700), then unsets OPENROUTER_API_KEY. Session calls bind that path read-only (live.sh:320-325), and lib/with-key.sh reads it with `cat` and `export` inside the jail, then execs, so only the path is ever an argument. Codex's auth command is `sh -c "echo $OPENROUTER_API_KEY"` with the variable name, expanded inside sh (openrouter.js:48). No path puts the value on argv. The host-/proc cmdline test at live-openrouter.test.sh:676-695 passes. The file stays outside the repo and outside the jail for install and export calls: /tmp is a tmpfs in the jail (jail.sh:24).
+- **[security 2, Minor, ruled to fix] leak scan evadable, fails open, skipped for printed stderr**: ADDRESSED. It now also matches the key's own value (openrouter.js:552; the value comes from the keyfile in keep_log, and from the environment in run.sh). A scan error exits 3 and fails the row (openrouter.js:579-584, live.sh:395-401, run.sh:841-848). run.sh scans each row's stderr before it prints it (run.sh:836-850, tested at live-openrouter.test.sh:731-734). Base64 or split encodings still pass, as the lens itself accepts for a hygiene layer.
+- **[security 3, Minor, ruled to fix] inherited FX_LIVE_PROVIDER or FX_JAIL_PROVIDER_ENV changes every jail.sh consumer**: ADDRESSED. jail.sh reads neither (grep: only a comment at jail.sh:131). jail-probe.test.sh:210-215 exports both plus a sentinel key and shows that nothing crosses. lane-triggering scripts and jail-probe's JAIL arrays can no longer hold the key.
+- **[security 4, Minor, ruled to fix] allowlist wider than the CLIs need**: ADDRESSED. claude-code gets only ANTHROPIC_AUTH_TOKEN (live.sh:228, with-key exports only OR_KEY_VAR; tested at live-openrouter.test.sh:673-674). Install and `opencode export` calls use plain `$JAIL` with no bind and no key (live.sh:320 comment, export call at :455).
+
+Checks run (fake keys only): `node tests/conformance/openrouter.test.js` OK; `bash tests/conformance/jail-probe.test.sh` all passed; `bash tests/conformance/live-openrouter.test.sh` all passed. The EXIT trap removing KEYDIR runs on SIGTERM, SIGINT and SIGHUP of a bash script with a foreground child (checked in the scratchpad). The trap is set at live.sh:250 and widened at :251 in live_workdir, and no row that sources live.sh sets its own EXIT trap. opencode-v2.sh:49 does, but only on free-row branches that never source live.sh. SIGKILL leaves the file, as README:44-45 says.
+
+### New breakage in the fix diff
+
+- Minor: live.sh:244 `mktemp -d` honours TMPDIR. run.sh accepts a SCRATCH under `$TMPDIR` (run.sh:50), so with TMPDIR=/var/tmp the key file sits under /var, which jail.sh keeps visible read-only (KEEP_TOP). Install and export calls could then read it by path, which undoes "install and export calls never see it". Fix: `mktemp -d /tmp/...`, or refuse a KEYDIR not under /tmp. Default /tmp setups are unaffected.
+- Minor: openrouter.js:525 `"code": 5xx` in any CLI stderr line counts as provider evidence. A tool's JSON on the CLI's stderr could still trigger 75. Low risk; `"code"` could be dropped in favour of `status` and `statusCode`.
+
+### Out-of-scope observations
+
+- run.sh passes OPENROUTER_API_KEY in the environment to every row, free rows included. Those rows run opencode unjailed (lib/opencode-v2.sh), so the key sits in those processes' environments. It is in no argument and no file, and this behavior predates the fix diff.
+
+### Verdict
+
+**Fix round:** All findings addressed, no new Critical/Important breakage.
+
+## Ledger lines
+
+Task 08: fix round 1/5 (8 addressed, 0 open: none; commits 56dbe40..f0c5948)
+Task 08: minor (deferred): live.sh KEYDIR via mktemp -d honours TMPDIR; under a kept path such as /var/tmp the key file is readable by install and export calls in the jail.
+Task 08: minor (deferred): provider-error regex accepts JSON "code": 5xx on any CLI stderr line; prefer status and statusCode only.
+Task 08: minor (deferred): run.sh passes OPENROUTER_API_KEY in the environment to free rows, which run opencode unjailed.

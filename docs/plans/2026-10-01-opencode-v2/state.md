@@ -141,3 +141,10 @@ Task 09: minor (deferred): README.md:237 hiding mechanism sentence is 1.x only; 
 Task 09: review spec ❌ 2 Important (ADR-0037 misdescribes layer 3 and the external_directory rule). ⚠️ resolved by controller: the /credits precondition is a step of task 10 (a process step, not code); ADR-0038's timeout rule is what task 08's fix round implements now. Fix round 1/5 dispatched (resumes aad2cab786a23d34f).
 Task 09: fix round 1/5: controller re-review (0 production lines, 19 doc lines): 2 addressed, 0 open
 Task 09: complete (commits 1a4b0f5..d878184, fix d878184..6933924, 1 fix round, controller re-review)
+Task 08: fix round 1 committed 56dbe40..f0c5948. Row 01 live: claude-code (Haiku), opencode-v2 (qwen), codex (1 pass, 1 on fallback). Controller leak check: key absent from tree, history, /tmp. Two new cases not RED on the old code (503-timeout GAP already a GAP; fail-closed scan covered only by the unit case). Re-review dispatched on opus (Capable because: security-critical credential handling).
+Task 08: fix round 1/5 (8 addressed, 0 open: none; commits 56dbe40..f0c5948)
+Task 08: minor (deferred): live.sh KEYDIR via mktemp -d honours TMPDIR; under a kept path such as /var/tmp the key file is readable by install and export calls in the jail.
+Task 08: minor (deferred): provider-error regex accepts JSON "code": 5xx on any CLI stderr line; prefer status and statusCode only.
+Task 08: minor (deferred): run.sh passes OPENROUTER_API_KEY in the environment to free rows, which run opencode unjailed.
+Task 08: complete (commits 717b35b..1a4b0f5, fix 56dbe40..f0c5948, 1 fix round, minors deferred)
+Task 10: dispatched (BASE after ledger commit).
