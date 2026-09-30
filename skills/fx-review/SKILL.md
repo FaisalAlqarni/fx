@@ -18,8 +18,8 @@ Announce: "Using fx-review (<task|branch> mode)."
 ## Two modes
 
 - **task**: called by `fx-implement` after each task. Correctness + Spec,
-  scoped to that task. Mid-tier model. Lenses off unless the task touches
-  auth, payment, or a migration.
+  scoped to that task. Mid-tier model. A lens fires only on its tripwire in
+  §2's "Per task" column.
 - **branch**: called at the end of a run, or by you on a branch or PR. All
   axes plus every triggered lens, most capable model.
 
@@ -95,13 +95,17 @@ multi-commit task.
   where an unprimed pass earns its cost: it's the one place structural blind
   spots have had room to accumulate.
 
-| Lens | Fires when the diff touches | Mode |
+| Lens | Per task (tripwire) | Branch pass: fires when the diff touches |
 |---|---|---|
-| `fx-lens-database` | `db/migrate/`, `*.sql`, `structure.sql`, any model, ClickHouse queries, EF migrations | task, branch |
-| `fx-lens-security` | Devise / Pundit / JWT / session / auth paths, params handling, credentials, any new endpoint or route, `[Authorize]` | task, branch |
-| `fx-lens-a11y` | `.erb`, `.css`, view partials, Compose `.kt`, SwiftUI `.swift`, anything with user-facing strings | task, branch |
-| `fx-lens-silent-failure` | `rescue`, `catch`, `except`, Sidekiq workers, broker consumers, attribution code | task, branch |
-| `fx-lens-pipeline` | code that enqueues, publishes, schedules or fans out work; code that governs queue depth, admission or producer flow control | branch |
+| `fx-lens-database` | tripwire: a migration, a schema file change, a new or changed index, uniqueness or null constraint, a backfill or table rewrite | `db/migrate/`, `*.sql`, `structure.sql`, any model, ClickHouse queries, EF migrations |
+| `fx-lens-security` | tripwire: authentication or authorization code (login, session, token issue or verify, policies, `authenticate` filters and their skips, `[Authorize]`, `[AllowAnonymous]`); credentials, secrets or key material; a new route or endpoint; code that fetches, redirects to or stores a user-supplied URL or host; string-built SQL or shell | Devise / Pundit / JWT / session / auth paths, params handling, credentials, any new endpoint or route, `[Authorize]` |
+| `fx-lens-a11y` | no | `.erb`, `.css`, view partials, Compose `.kt`, SwiftUI `.swift`, anything with user-facing strings |
+| `fx-lens-silent-failure` | tripwire: an error handler that swallows (`rescue nil`, or a `rescue`, `catch` or `except` whose body is empty or only logs); `retry_on` or `discard_on`; a background job, queue consumer or webhook receiver; a transaction or bulk loop that continues past a failed record | `rescue`, `catch`, `except`, Sidekiq workers, broker consumers, attribution code |
+| `fx-lens-pipeline` | no | code that enqueues, publishes, schedules or fans out work; code that governs queue depth, admission or producer flow control |
+
+Per task, a lens fires only when the task's diff matches its tripwire; the
+broad triggers in the last column apply at the branch pass, where every lens
+runs. Devil's advocate never runs per task.
 
 There is deliberately **no performance lens** as a standalone axis: query
 shape (N+1, missing indexes, `SELECT *`, unbounded result sets) is

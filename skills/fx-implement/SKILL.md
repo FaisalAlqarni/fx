@@ -517,15 +517,15 @@ Use the **BASE you recorded before dispatching**: never `HEAD~1`, which
 silently drops all but the last commit of a multi-commit task.
 **Never dispatch a task reviewer without a diff file.**
 
-**Lens dispatch.** After packaging the diff, check the task's changed file
-paths against the lens trigger patterns in `../fx-review/SKILL.md` (§2's
-table) and dispatch any lens whose triggers match (`fx-lens-database`,
-`-security`, `-a11y`, `-silent-failure`) alongside the task reviewer, same
-diff file. This is the only door those agents have below the final review;
-skip it and an auth path or a migration ships with nobody having looked.
-Reference the table, don't copy it: fire on matching diffs, not on every
-task. A lens's `[Critical]` and `[Important]` findings enter the fix loop
-below like any other; its `[Minor]` findings never do (see below).
+**Lens dispatch.** After packaging the diff, check the task's diff against the
+"Per task (tripwire)" column of the lens table in `../fx-review/SKILL.md` (§2)
+and dispatch each lens whose tripwire matches (`fx-lens-security`,
+`-database`, `-silent-failure`) alongside the task reviewer, same diff file.
+A lens whose column says `no`, and any lens whose tripwire does not match,
+waits for the branch pass, where every lens runs on its broad trigger.
+Reference the table, don't copy it. A lens's `[Critical]` and `[Important]`
+findings enter the fix loop below like any other; its `[Minor]` findings
+never do (see below).
 
 **A lens has no Write tool and replies with its full findings**, not a
 five-line contract (Ruling, task 08). Save that reply verbatim with

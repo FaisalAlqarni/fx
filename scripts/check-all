@@ -41,6 +41,7 @@ run implementer-heads.test.js node tests/fixture-build/hidden/implementer-heads.
 run review-bench-score.test.js node tests/review-bench/score.test.js
 run review-bench-build-case.test.js node tests/review-bench/build-case.test.js
 run return-contract.test.js node tests/gates/return-contract.test.js
+run tripwire-table.test.js node tests/gates/tripwire-table.test.js
 run verdict.test.js        node tests/lane-triggering/verdict.test.js
 
 echo "== make-git-fixture =="
