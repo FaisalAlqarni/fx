@@ -120,7 +120,7 @@ exists.
 ```
                  lib/preamble.js renders PREAMBLE.md for each runtime
                         |                 |                  |
-Claude Code   hooks/fx-context.js   Codex   hooks/fx-codex.js   opencode   plugins/fx.js
+Claude Code   hooks/fx-context.js   Codex   hooks/fx-codex.js   opencode   plugins/fx-opencode-v1.js
               SessionStart                  SessionStart                   system transform
               SubagentStart                 SubagentStart                  (sessions and child
                                                                             sessions alike)
@@ -130,7 +130,7 @@ Claude Code   hooks/fx-context.js   Codex   hooks/fx-codex.js   opencode   plugi
 guard and lane check, one shared lib on every runtime:
    hooks/fx-pretooluse.js   Claude Code, PreToolUse, every tool
    hooks/fx-codex.js        Codex, PreToolUse, every tool, plus read-only enforcement
-   plugins/fx.js            opencode, tool.execute.before
+   plugins/fx-opencode-v1.js opencode, tool.execute.before
       + lib/git-guard.js    shell: the absolutes, fail closed
       + lib/lane-check.js   file writes: one nudge per session, fail open
 
@@ -250,7 +250,7 @@ The three installs are **independent**: no runtime requires another.
 `codex plugin add fx@fx`, then trust fx's hooks in `/hooks` and restart Codex
 once after the first session.
 
-**opencode**: add `plugins/fx.js` from a clone to your `opencode.json`, or run
+**opencode**: add `plugins/fx-opencode-v1.js` from a clone to your `opencode.json`, or run
 `./scripts/fx-opencode-install`. Nothing reads `~/.claude`.
 
 Which opencode versions fx is measured on, and with what result: `INSTALL.md`,

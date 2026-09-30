@@ -22,4 +22,4 @@ ADR-0006 says cross-references between skills are pointers, never invocations, a
 
 ## Consequences
 
-`plugins/fx.js` renders once at construction, so an opencode session picks up a changed `.fx.json` on its next start.
+`plugins/fx-opencode-v1.js` renders once at construction, so an opencode session picks up a changed `.fx.json` on its next start.

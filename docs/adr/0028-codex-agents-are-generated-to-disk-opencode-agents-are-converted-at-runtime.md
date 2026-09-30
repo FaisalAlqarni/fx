@@ -9,7 +9,7 @@ directory and diffs it against what is committed, failing the gate on any
 drift.
 
 opencode has no equivalent committed artifact. `lib/agent-dialects.js`'s
-`toOpencodeAgent` runs live, from two call sites: `plugins/fx.js:155`, inside
+`toOpencodeAgent` runs live, from two call sites: `plugins/fx-opencode-v1.js:155`, inside
 the config hook every opencode session runs, and
 `scripts/fx-opencode-install:103`, the standalone installer's own converter
 call. Both call the same function; there is no second implementation of the

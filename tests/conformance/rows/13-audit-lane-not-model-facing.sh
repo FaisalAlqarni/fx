@@ -31,7 +31,7 @@ case "$HARNESS" in
     node --input-type=module -e '
       const fs = await import("node:fs");
       const HIDDEN = ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-setup"];
-      const { fx } = await import(process.cwd() + "/plugins/fx.js");
+      const { fx } = await import(process.cwd() + "/plugins/fx-opencode-v1.js");
       const config = {};
       await (await fx({ directory: process.cwd() })).config(config);
       const rules = (config.permission || {}).skill || {};

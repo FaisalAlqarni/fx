@@ -1,15 +1,15 @@
 # The user's own permission answer wins over fx's grant
 
-`plugins/fx.js` adds `general.permission.task = 'allow'` only inside a guard:
+`plugins/fx-opencode-v1.js` adds `general.permission.task = 'allow'` only inside a guard:
 `typeof general.permission === 'object' && !('task' in general.permission) &&
-!('*' in general.permission)` (`plugins/fx.js:172` to `174`). The obvious
+!('*' in general.permission)` (`plugins/fx-opencode-v1.js:172` to `174`). The obvious
 simplification, setting it unconditionally so fx's subagents can always
 dispatch, was written once and caught in review before it shipped.
 
 opencode gives a subagent the `task` tool only when its own permission block
 has a rule keyed exactly `task`; a bare `"*": "allow"` does not grant it
 (`subagent-permissions.ts`, `canTask`, cited in the surrounding comment at
-`plugins/fx.js:158` to `169`). fx needs its `general` built-in subagent to
+`plugins/fx-opencode-v1.js:158` to `169`). fx needs its `general` built-in subagent to
 have that key, or an implementer can never dispatch a reviewer. But opencode
 1.18.25 rewrites a bare `permission: "ask"` into `{"*": "ask"}` before this
 config hook ever runs. So a wildcard the user wrote, or opencode wrote on

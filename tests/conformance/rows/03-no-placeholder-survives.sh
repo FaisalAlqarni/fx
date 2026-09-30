@@ -20,7 +20,7 @@ payload='{"hook_event_name":"SessionStart","source":"startup","cwd":"'"$FX"'"}'
 case "$HARNESS" in
   opencode)
     text="$(node --input-type=module -e '
-      const { fx } = await import(process.cwd() + "/plugins/fx.js");
+      const { fx } = await import(process.cwd() + "/plugins/fx-opencode-v1.js");
       const hooks = await fx({ directory: process.cwd() });
       const out = { system: [] };
       await hooks["experimental.chat.system.transform"]({}, out);

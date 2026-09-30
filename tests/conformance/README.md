@@ -34,7 +34,7 @@ credential copy. Keep that directory private and delete it when done.
 Two knobs change only how opencode is set up, before its first session:
 
 - `FX_OPENCODE_ROUTE=plugin` runs no installer and adds one `plugin` entry,
-  `file://$FX/plugins/fx.js`, to the scratch `opencode.json`. Unset or
+  `file://$FX/plugins/fx-opencode-v1.js`, to the scratch `opencode.json`. Unset or
   `installer` runs `scripts/fx-opencode-install` as before.
 - `FX_OPENCODE_MCP=1` adds one local MCP server, `fxprobe`, to the scratch
   `opencode.json`. It runs `lib/mcp-probe-server.js`, whose one tool,

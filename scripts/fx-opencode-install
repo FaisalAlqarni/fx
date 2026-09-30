@@ -16,7 +16,7 @@ The conversion itself -- which `tools:` become which `permission:` -- has
 exactly one implementation, `lib/agent-dialects.js`'s `toOpencodeAgent`. This
 installer calls it (via node; see `load_opencode_agents` below) rather than
 keeping a second one, so a generated agent file here and the live opencode
-plugin's `config.agent[name]` (`plugins/fx.js`) can never compute a different
+plugin's `config.agent[name]` (`plugins/fx-opencode-v1.js`) can never compute a different
 permission for the same source. Measured against opencode 1.18.25: `write`
 and `patch` collapse onto `edit` for permission purposes, and
 `tools: { apply_patch: false }` is a silent no-op -- neither is generated.
@@ -27,7 +27,7 @@ description field, stamp the generated-file header, name commands and agents
 as opencode registers them (`fx-<name>`, with no `fx:` plugin prefix), and
 append a final `Arguments, if any: $ARGUMENTS` line.
 The generation has exactly one implementation,
-`lib/opencode-commands.js`, which `plugins/fx.js` registers from too, so the
+`lib/opencode-commands.js`, which `plugins/fx-opencode-v1.js` registers from too, so the
 plugin-only route and this installer can never register different text.
 
 A skill marked `disable-model-invocation: true` (the user must type it, the
@@ -84,7 +84,7 @@ def yaml_quote(s):
 
 
 # The node bootstrap that reads fx's agent definitions through the one
-# opencode-dialect converter. Mirrors plugins/fx.js's own registration loop
+# opencode-dialect converter. Mirrors plugins/fx-opencode-v1.js's own registration loop
 # (`for (const name of READ_ONLY_AGENTS) ... toOpencodeAgent(...)`) exactly,
 # so the installer generates the same names from the same canonical set --
 # never a bare glob of agents/*.md, which would silently start generating a
@@ -110,7 +110,7 @@ def load_opencode_agents(references_dirs):
     """{name: {mode, description, prompt, permission}}, one entry per
     lib/plant-roles.js's READ_ONLY_AGENTS, computed by the single opencode
     dialect converter (lib/agent-dialects.js). node is not a new runtime
-    dependency: hooks/ and plugins/fx.js are already JavaScript that every
+    dependency: hooks/ and plugins/fx-opencode-v1.js are already JavaScript that every
     fx install already needs working."""
     result = subprocess.run(["node", "-e", _LOAD_OPENCODE_AGENTS_JS, str(FX),
                              json.dumps(references_dirs)],
@@ -141,7 +141,7 @@ def render_opencode_agent(name, agent):
 
 
 # The node bootstrap that reads fx's commands through the one generator,
-# lib/opencode-commands.js, which plugins/fx.js registers from too: the
+# lib/opencode-commands.js, which plugins/fx-opencode-v1.js registers from too: the
 # plugin-only route and this installer never write different text.
 _LOAD_OPENCODE_COMMANDS_JS = """
 const path = require('path');
@@ -202,6 +202,9 @@ def load_skills():
 
 
 FX_SKILLS = FX / "skills"
+# Every plugin file name fx has shipped: an install made under an older name
+# leaves `plugins/fx.js` linked to it, and that link is still fx's own.
+FX_PLUGIN_SOURCES = (FX / "plugins" / "fx.js", FX / "plugins" / "fx-opencode-v1.js")
 
 
 def points_into_fx(entry, source, inside=False):
@@ -249,7 +252,8 @@ def check_link_conflicts(links):
     the install before anything is written."""
     for src, dst in links:
         if dst.is_symlink():
-            if not points_into_fx(dst, src):
+            owned = FX_PLUGIN_SOURCES if dst.name == "fx.js" else (src,)
+            if not any(points_into_fx(dst, s) for s in owned):
                 sys.exit(f"refusing to replace a link fx did not create: {dst}")
         elif dst.exists():
             sys.exit(f"refusing to replace real file/dir: {dst}")
@@ -377,7 +381,7 @@ def main():
     # references and the plugin stay whole-file symlinks, as today
     links = [
         (FX / "references", dest / "references"),
-        (FX / "plugins" / "fx.js", dest / "plugins" / "fx.js"),
+        (FX / "plugins" / "fx-opencode-v1.js", dest / "plugins" / "fx.js"),
     ]
 
     # ---- checks: every refusal fires here, before anything is written, in

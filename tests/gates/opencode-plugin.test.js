@@ -25,7 +25,7 @@
 //
 // Fix round 1 (reviewer finding): the suite above only ever called
 // `tool.execute.before` with `tool: 'edit'`. `write` and `apply_patch` are
-// the other two write-capable opencode tools `plugins/fx.js` wires through
+// the other two write-capable opencode tools `plugins/fx-opencode-v1.js` wires through
 // the same lane check, and neither had a single assertion — "a lane check
 // wired to one of three is not wired" was the task's own line, and it was
 // exactly right: a typo in a tool-name match or a broken
@@ -47,8 +47,11 @@ const path = require('path');
 
 const root = path.join(__dirname, '..', '..');
 
+assert.ok(!fs.existsSync(path.join(root, 'plugins', 'fx.js')), 'the v1 plugin source is named for its runtime');
+assert.ok(fs.existsSync(path.join(root, 'plugins', 'fx-opencode-v1.js')), 'plugins/fx-opencode-v1.js exists');
+
 (async () => {
-  const { fx } = await import(path.join(root, 'plugins', 'fx.js'));
+  const { fx } = await import(path.join(root, 'plugins', 'fx-opencode-v1.js'));
   const hooks = await fx({ directory: root });
 
   assert.deepStrictEqual(
@@ -341,7 +344,7 @@ const root = path.join(__dirname, '..', '..');
     for (const d of ['plugins', 'lib', 'agents', 'commands']) fs.cpSync(path.join(root, d), path.join(broken, d), { recursive: true });
     fs.copyFileSync(path.join(root, 'PREAMBLE.md'), path.join(broken, 'PREAMBLE.md'));
     fs.writeFileSync(path.join(broken, 'lib', 'plant-roles.js'), "throw new Error('stubbed plant-roles failure');\n");
-    const { fx: brokenFx } = await import(path.join(broken, 'plugins', 'fx.js'));
+    const { fx: brokenFx } = await import(path.join(broken, 'plugins', 'fx-opencode-v1.js'));
     const bh = await brokenFx({ directory: root });
     const errors = [];
     const realError = console.error;
@@ -367,7 +370,7 @@ const root = path.join(__dirname, '..', '..');
     scratchDirs.push(noRefs);
     for (const d of ['plugins', 'lib', 'agents', 'commands', 'codex', 'skills']) fs.cpSync(path.join(root, d), path.join(noRefs, d), { recursive: true });
     fs.copyFileSync(path.join(root, 'PREAMBLE.md'), path.join(noRefs, 'PREAMBLE.md'));
-    const { fx: nrFx } = await import(path.join(noRefs, 'plugins', 'fx.js'));
+    const { fx: nrFx } = await import(path.join(noRefs, 'plugins', 'fx-opencode-v1.js'));
     const nh = await nrFx({ directory: root });
     const errs = [];
     const realError = console.error;
@@ -397,7 +400,7 @@ const root = path.join(__dirname, '..', '..');
       fs.copyFileSync(path.join(root, 'PREAMBLE.md'), path.join(d, 'PREAMBLE.md'));
       if (label !== 'references is missing') fs.cpSync(path.join(root, 'references'), path.join(d, 'references'), { recursive: true });
       breakIt(d);
-      const { fx: dFx } = await import(path.join(d, 'plugins', 'fx.js'));
+      const { fx: dFx } = await import(path.join(d, 'plugins', 'fx-opencode-v1.js'));
       const dh = await dFx({ directory: root });
       const config = {};
       const errs = [];
@@ -416,7 +419,7 @@ const root = path.join(__dirname, '..', '..');
   // a bare action string is the user's rule for everything under it. It is
   // kept as the "*" rule, the lanes are still denied, and config never throws.
   {
-    const { fx: pFx } = await import(path.join(root, 'plugins', 'fx.js'));
+    const { fx: pFx } = await import(path.join(root, 'plugins', 'fx-opencode-v1.js'));
     const ph = await pFx({ directory: root });
     const cases = [
       [{ permission: { skill: 'allow' } }, 'allow'],

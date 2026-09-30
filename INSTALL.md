@@ -151,7 +151,7 @@ Then add the plugin to `~/.config/opencode/opencode.json`:
 
 ```json
 {
-  "plugin": ["file:///home/you/src/fx/plugins/fx.js"]
+  "plugin": ["file:///home/you/src/fx/plugins/fx-opencode-v1.js"]
 }
 ```
 
@@ -178,7 +178,7 @@ environment switches turn plugins off entirely, and part of the registration
 surface the plugin relies on is experimental.
 
 **This route places files. It does not replace the plugin.** With plugins off,
-none of `plugins/fx.js` runs, so the session has:
+none of `plugins/fx-opencode-v1.js` runs, so the session has:
 
 - no bootstrap: nothing injects `PREAMBLE.md`;
 - no git guard and no lane check: no `tool.execute.before` hook refuses
@@ -202,7 +202,7 @@ somewhere other than `~/.config/opencode`.
 
 #### What it does, and why copying the files is not enough
 
-**Symlinked**: `references/` and `plugins/fx.js`. Skills are linked one at a
+**Symlinked**: `references/` and the plugin (`plugins/fx.js` in the config directory). Skills are linked one at a
 time, `skills/<name>`, sitting beside `references/`: `skills/` itself is a
 real directory the installer owns, never a whole-folder symlink.
 

@@ -12,12 +12,12 @@ case "$S" in /tmp/?*) ;; *) echo refusing; exit 1;; esac
 trap 'rm -rf -- "$S"' EXIT
 
 echo '{"provider":{"llamacpp":{"options":{"baseURL":"http://x"}},"other":{}},"plugin":["mine"]}' > "$S/src.json"
-echo '{"plugin":["file:///fx/plugins/fx.js"],"mcp":{"fxprobe":{"type":"local"}},"subagent_depth":2}' > "$S/dst.json"
+echo '{"plugin":["file:///fx/plugins/fx-opencode-v1.js"],"mcp":{"fxprobe":{"type":"local"}},"subagent_depth":2}' > "$S/dst.json"
 node "$M" "$S/src.json" "$S/dst.json" llamacpp/m
 S="$S" node -e '
   const assert = require("assert");
   const c = JSON.parse(require("fs").readFileSync(process.env.S + "/dst.json", "utf8"));
-  assert.deepStrictEqual(c.plugin, ["file:///fx/plugins/fx.js"], "plugin entry lost or the user plugin leaked");
+  assert.deepStrictEqual(c.plugin, ["file:///fx/plugins/fx-opencode-v1.js"], "plugin entry lost or the user plugin leaked");
   assert.deepStrictEqual(c.mcp, { fxprobe: { type: "local" } }, "mcp lost");
   assert.strictEqual(c.subagent_depth, 2, "subagent_depth lost");
   assert.strictEqual(c.model, "llamacpp/m");

@@ -143,7 +143,7 @@ if [ ! -e "$LIVE_INSTALLED" ]; then
           # entry form is the one step 1 of task 21 read from the opencode
           # source (1.18.31): config/plugin.ts:50-51 keeps a file:// spec as
           # is, and plugin/shared.ts:171-172 treats it as a local path.
-          CFG="$OC_CFG" ENTRY="${FX_OPENCODE_PLUGIN_ENTRY:-file://$FX/plugins/fx.js}" node -e '
+          CFG="$OC_CFG" ENTRY="${FX_OPENCODE_PLUGIN_ENTRY:-file://$FX/plugins/fx-opencode-v1.js}" node -e '
             const fs = require("fs");
             const c = JSON.parse(fs.readFileSync(process.env.CFG, "utf8"));
             c.plugin = [...(c.plugin || []), process.env.ENTRY];

@@ -7,7 +7,7 @@ bare `fx-tdd` may not resolve at all.
 On opencode that advice is exactly backwards: `fx-tdd` is the right name and
 `fx:fx-tdd` is the wrong one. On Codex both are wrong; the form is `$fx-tdd`.
 The installer rewrites the plugin prefix in generated commands and agents, and
-has never touched the preamble, because `plugins/fx.js` reads the file directly.
+has never touched the preamble, because `plugins/fx-opencode-v1.js` reads the file directly.
 
 So the single most load-bearing paragraph in fx has been shipping wrong
 instructions to a runtime fx claims to support, since that support existed.
@@ -34,7 +34,7 @@ imperative, with no indirection and no read.
 
 ```
 PREAMBLE.md ──> lib/preamble.js ──┬─> hooks/fx-context.js   Skill · fx:fx-tdd
-   {{LANE:fx-tdd}}                ├─> plugins/fx.js         Skill · fx-tdd
+   {{LANE:fx-tdd}}                ├─> plugins/fx-opencode-v1.js         Skill · fx-tdd
                                   └─> hooks/fx-codex.js     $fx-tdd
 ```
 

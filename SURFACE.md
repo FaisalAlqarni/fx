@@ -123,7 +123,7 @@ PREAMBLE.md                          ← single source, fx owns it
  │               hooks/fx-pretooluse.js  PreToolUse · all tools
  ├─ Codex        hooks/fx-codex.js      SessionStart + SubagentStart + PreToolUse
  │                                      plants the review roles, enforces read-only
- └─ opencode     plugins/fx.js          experimental.chat.system.transform
+ └─ opencode     plugins/fx-opencode-v1.js          experimental.chat.system.transform
                                         tool.execute.before
     every runtime  + lib/git-guard.js   fail closed
                    + lib/lane-check.js  fail open, measured firing on file writes

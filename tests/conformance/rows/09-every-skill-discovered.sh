@@ -46,7 +46,7 @@ case "$HARNESS" in
   opencode)
     node --input-type=module -e '
       const path = await import("node:path");
-      const { fx } = await import(process.cwd() + "/plugins/fx.js");
+      const { fx } = await import(process.cwd() + "/plugins/fx-opencode-v1.js");
       const config = {};
       await (await fx({ directory: process.cwd() })).config(config);
       const want = path.join(process.cwd(), "skills");

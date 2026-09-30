@@ -230,11 +230,20 @@ if [ "$HARNESS" = opencode ]; then
   # all -- the failure this scenario tests for is that specific probe, not
   # an unrelated missing-module error further up.
   for d in skills agents commands references lib; do ln -s "$FX/$d" "$M/$d"; done
-  ln -s "$FX/plugins/fx.js" "$M/plugins/fx.js"
+  ln -s "$FX/plugins/fx-opencode-v1.js" "$M/plugins/fx.js"
   grep -vF '(FX / "references", dest / "references"),' "$FX/scripts/fx-opencode-install" > "$M/scripts/fx-opencode-install"
   check "the copy really lacks the references link step" '! cmp -s "$FX/scripts/fx-opencode-install" "$M/scripts/fx-opencode-install"'
   set +e; python3 "$M/scripts/fx-opencode-install" --dest "$SCRATCH/no-references" > "$SCRATCH/no-references.out" 2>&1; rc=$?; set -e
   check "a missing references entry fails the install, named" '[ "$rc" -ne 0 ] && [ ! -e "$SCRATCH/no-references/references" ] && grep -q "references did not resolve" "$SCRATCH/no-references.out"'
+
+  # 13b. an install made before the v1 plugin was renamed is re-linked; a
+  # foreign link at the same path is still refused
+  OLD="$SCRATCH/pre-rename"; mkdir -p "$OLD/plugins"; ln -s "$FX/plugins/fx.js" "$OLD/plugins/fx.js"
+  check "an install made before the rename is re-linked, not refused" \
+    'python3 "$FX/scripts/fx-opencode-install" --dest "$OLD" >/dev/null && [ "$(readlink "$OLD/plugins/fx.js")" = "$FX/plugins/fx-opencode-v1.js" ]'
+  FOREIGN="$SCRATCH/foreign-plugin"; mkdir -p "$FOREIGN/plugins"; ln -s /etc/hostname "$FOREIGN/plugins/fx.js"
+  check "a foreign plugins/fx.js link is still refused" \
+    '! python3 "$FX/scripts/fx-opencode-install" --dest "$FOREIGN" >/dev/null 2>&1 && [ "$(readlink "$FOREIGN/plugins/fx.js")" = /etc/hostname ]'
 
   # 14. the facts measured against opencode 1.18.25: permission.edit (never
   # tools:apply_patch), subagent_depth raised, exactly one skills pool (with
