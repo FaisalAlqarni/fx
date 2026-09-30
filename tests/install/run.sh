@@ -327,12 +327,39 @@ if(P.some(p=>\"sample\" in p||\"allowed\" in p)) throw 6;
   check "v2 after v1 into the first destination matches its first run" 'diff -r "$D.first" "$D"'
   check "no permissions key in either opencode.json" '! grep -q "\"permissions\"" "$D/opencode.json" "$E/opencode.json"'
 
+  # ownership is by record: a clean destination round-trips, and an entry the
+  # user already had is never removed
+  C="$SCRATCH/v2c"; python3 "$INST" --dest "$C" --major 1 >/dev/null; cp -a "$C" "$C.v1"
+  python3 "$INST" --dest "$C" --major 2 >/dev/null; python3 "$INST" --dest "$C" --major 1 >/dev/null
+  check "clean v1, v2, v1 equals a fresh v1 tree" 'diff -r "$C.v1" "$C"'
+  USERPOL="$(node -e 'const {GUARD_POLICIES:G}=require(process.argv[1]+"/lib/opencode-v2-policies.js");const {sample,allowed,...w}=G[0];console.log(JSON.stringify(w))' "$FX")"
+  U="$SCRATCH/v2u"; mkdir -p "$U"
+  printf '{"experimental":{"subagent_depth":2,"policies":[%s]},"subagent_depth":2}' "$USERPOL" > "$U/opencode.json"
+  python3 "$INST" --dest "$U" --major 2 >/dev/null; python3 "$INST" --dest "$U" --major 1 >/dev/null
+  check "a user's own identical policy and depth 2 survive v2 then v1" \
+    'node -e "const c=JSON.parse(require(\"fs\").readFileSync(process.argv[1]));const w=JSON.parse(process.argv[2]);if(c.experimental.subagent_depth!==2||c.subagent_depth!==2||c.experimental.policies.length!==1||JSON.stringify(c.experimental.policies[0])!==JSON.stringify(w)) throw 1" "$U/opencode.json" "$USERPOL"'
+  for bad in '{"experimental":null}' '{"experimental":[]}' '{"experimental":{"policies":null}}'; do
+    for m in 1 2; do
+      B="$SCRATCH/bad$m"; rm -rf "$B"; mkdir -p "$B"; printf '%s' "$bad" > "$B/opencode.json"
+      set +e; python3 "$INST" --dest "$B" --major $m > "$SCRATCH/bad.out" 2>&1; rc=$?; set -e
+      check "major $m refuses $bad before any write" '[ "$rc" -ne 0 ] && grep -q experimental "$SCRATCH/bad.out" && [ ! -e "$B/plugins" ] && [ ! -e "$B/agents" ] && [ ! -e "$B/skills" ]'
+    done
+  done
+
   # version detection through an opencode stub first on PATH
   mkdir -p "$SCRATCH/bin"
   printf '#!/bin/sh\nexit 1\n' > "$SCRATCH/bin/opencode"; chmod +x "$SCRATCH/bin/opencode"
   F="$SCRATCH/v2f"
   set +e; PATH="$SCRATCH/bin:$PATH" python3 "$INST" --dest "$F" > "$SCRATCH/v2f.out" 2>&1; rc=$?; set -e
   check "a failing opencode with no --major is an error naming --major" '[ "$rc" -ne 0 ] && grep -q -- "--major" "$SCRATCH/v2f.out" && [ ! -e "$F" ]'
+  for v in 0.9.1 3.0.0 "no number"; do
+    printf '#!/bin/sh\necho "%s"\n' "$v" > "$SCRATCH/bin/opencode"
+    set +e; PATH="$SCRATCH/bin:$PATH" python3 "$INST" --dest "$F" > "$SCRATCH/v2f.out" 2>&1; rc=$?; set -e
+    check "opencode reporting '$v' is an error naming --major" '[ "$rc" -ne 0 ] && grep -q -- "--major" "$SCRATCH/v2f.out" && [ ! -e "$F" ]'
+  done
+  printf '#!/bin/sh\nsleep 60\n' > "$SCRATCH/bin/opencode"
+  set +e; PATH="$SCRATCH/bin:$PATH" python3 "$INST" --dest "$F" > "$SCRATCH/v2f.out" 2>&1; rc=$?; set -e
+  check "a hanging opencode times out with an error naming --major" '[ "$rc" -ne 0 ] && grep -q -- "--major" "$SCRATCH/v2f.out" && [ ! -e "$F" ]'
   printf '#!/bin/sh\necho "opencode 1.18.25"\n' > "$SCRATCH/bin/opencode"
   PATH="$SCRATCH/bin:$PATH" python3 "$INST" --dest "$F" >/dev/null
   check "a 1.18.25 stub installs v1" '[[ "$(readlink "$F/plugins/fx.js")" == */fx-opencode-v1.js ]]'

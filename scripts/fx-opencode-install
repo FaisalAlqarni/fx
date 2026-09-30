@@ -348,16 +348,20 @@ def link_skills(dest, linked, args):
 
 
 def detect_major():
-    """The first integer of `opencode --version`. Anything else is an error:
-    guessing a major would write the wrong plugin."""
+    """The first integer of `opencode --version`, which must be 1 or 2.
+    Anything else is an error: guessing a major would write the wrong plugin."""
+    hint = "pass --major 1 or --major 2"
     try:
-        r = subprocess.run(["opencode", "--version"], capture_output=True, text=True)
+        r = subprocess.run(["opencode", "--version"], capture_output=True, text=True, timeout=10)
+    except subprocess.TimeoutExpired:
+        sys.exit(f"`opencode --version` did not answer in 10 s; {hint}")
     except OSError as e:
-        sys.exit(f"cannot run opencode to detect its major ({e}); pass --major 1 or --major 2")
+        sys.exit(f"cannot run opencode to detect its major ({e}); {hint}")
     m = re.search(r"\d+", r.stdout)
     if r.returncode != 0 or not m:
-        sys.exit("cannot detect the opencode major from `opencode --version`; "
-                 "pass --major 1 or --major 2")
+        sys.exit(f"cannot detect the opencode major from `opencode --version`; {hint}")
+    if int(m.group()) not in (1, 2):
+        sys.exit(f"opencode reports major {m.group()}, which fx does not support; {hint}")
     return int(m.group())
 
 
@@ -377,61 +381,125 @@ def remove_stale_commands(commands_out, names, args):
         commands_out.rmdir()
 
 
-def merge_opencode_json(dest, args, major, policies):
-    """fx's keys in the user's `opencode.json`. 1.x: top-level
-    `subagent_depth` (the shipped binary enforces `subagent_depth ?? 1`,
-    references/harnesses/opencode.md, which caps a dispatched implementer at
-    zero nested subagent calls until it is raised), and removal of fx's own
-    `experimental.policies` entries. 2.x: `experimental.subagent_depth` (a
-    top-level one is dropped there, and fx's own value of 2 is removed) and fx's policies, each added only when an
-    equal entry is absent. Never a `permissions` key: 1.x refuses to start
-    with one. Every other key survives, a higher `subagent_depth` is kept, and
-    a run that changes nothing writes nothing."""
-    config_path = dest / "opencode.json"
+OWNED_NAME = ".fx-opencode-owned.json"
+
+
+def read_json_object(path, what):
+    """{} for a missing file; exits on anything that is not a JSON object."""
     try:
-        raw = config_path.read_text()
+        raw = path.read_text()
     except FileNotFoundError:
-        data = {}
-    else:
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError as e:
-            sys.exit(f"{config_path} is not valid JSON: {e}")
-        if not isinstance(data, dict):
-            sys.exit(f"{config_path} does not hold a JSON object at its top level")
+        return {}
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as e:
+        sys.exit(f"{path} is not valid JSON: {e}")
+    if not isinstance(data, dict):
+        sys.exit(f"{path} does not hold a JSON object at its top level")
+    return data
+
+
+def write_atomic(path, data):
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(data, indent=2) + "\n")
+    os.replace(tmp, path)
+
+
+def plan_opencode_json(dest, major, policies):
+    """Read-only. fx's keys in the user's `opencode.json`, by record: what fx
+    added is listed in `<dest>/.fx-opencode-owned.json`, and only that is ever
+    removed or replaced later. A missing record means fx owns nothing, so a
+    user's own identical policy or depth is never touched. 1.x: top-level
+    `subagent_depth` (the shipped binary enforces `subagent_depth ?? 1`,
+    references/harnesses/opencode.md) and removal of fx's recorded policies
+    and depth. 2.x: `experimental.subagent_depth` and fx's policies, each added
+    only when absent, and removal of fx's recorded top-level depth (2.x drops
+    it). Never a `permissions` key: 1.x refuses to start with one. Every other
+    key survives, a higher depth is kept. Returns (config, record) for
+    write_opencode_json; exits on a malformed shape, before anything is
+    written."""
+    config_path = dest / "opencode.json"
+    data = read_json_object(config_path, "config")
+    rec = read_json_object(dest / OWNED_NAME, "record")
+    if not isinstance(rec.get("policies", []), list):
+        sys.exit(f"{dest / OWNED_NAME}: policies is not a list")
+    if "experimental" in data and not isinstance(data["experimental"], dict):
+        sys.exit(f"{config_path}: experimental must be a JSON object, not {json.dumps(data['experimental'])}")
+    if "policies" in data.get("experimental", {}) and not isinstance(data["experimental"]["policies"], list):
+        sys.exit(f"{config_path}: experimental.policies must be a list of rules")
 
     new = copy.deepcopy(data)
-    exp = new.get("experimental")
-    if exp is not None and not isinstance(exp, dict):
-        sys.exit(f"{config_path}: experimental is not a JSON object")
-    if exp is not None and exp.get("policies") is not None and not isinstance(exp["policies"], list):
-        sys.exit(f"{config_path}: experimental.policies is not a list")
+    exp = new.get("experimental", {})
+    owned_policies = [p for p in rec.get("policies", []) if p in exp.get("policies", [])]
+    # the depth fx set, kept only while the file still holds the value fx wrote
+    own_top = rec.get("subagent_depth") if new.get("subagent_depth") == rec.get("subagent_depth") else None
+    own_exp = rec.get("experimental_subagent_depth") \
+        if exp.get("subagent_depth") == rec.get("experimental_subagent_depth") else None
+    out = {}
+    removed = False
+
+    def strip_policies(rules):
+        nonlocal removed
+        keep = [p for p in rules if p not in owned_policies]
+        removed = removed or len(keep) != len(rules)
+        return keep
 
     if major == 1:
-        current = new.get("subagent_depth")
-        new["subagent_depth"] = max(current, 2) if isinstance(current, int) else 2
-        if exp is not None and "policies" in exp:
-            exp["policies"] = [p for p in exp["policies"] if p not in policies]
-            if not exp["policies"]:
+        if "policies" in exp:
+            exp["policies"] = strip_policies(exp["policies"])
+            if removed and not exp["policies"]:
                 del exp["policies"]
+        if own_exp is not None:
+            del exp["subagent_depth"]
+            removed = True
+        if removed and not exp:
+            new.pop("experimental", None)
+        current = new.get("subagent_depth")
+        if isinstance(current, int) and not isinstance(current, bool) and current >= 2:
+            if own_top is not None:
+                out["subagent_depth"] = own_top
+        else:
+            new["subagent_depth"] = 2
+            out["subagent_depth"] = 2
     else:
-        # fx's own 1.x value (2) is dead weight here; a higher one is the user's
-        if new.get("subagent_depth") == 2:
+        if own_top is not None:
             del new["subagent_depth"]
         exp = new.setdefault("experimental", {})
-        current = exp.get("subagent_depth")
-        exp["subagent_depth"] = max(current, 2) if isinstance(current, int) else 2
         have = exp.setdefault("policies", [])
-        have += [p for p in policies if p not in have]
+        stale = [p for p in owned_policies if p not in policies]
+        have[:] = [p for p in have if p not in stale]
+        added = [p for p in policies if p not in have]
+        have += added
+        out["policies"] = [p for p in policies if p in added or p in owned_policies]
+        current = exp.get("subagent_depth")
+        if isinstance(current, int) and not isinstance(current, bool) and current >= 2:
+            if own_exp is not None:
+                out["experimental_subagent_depth"] = own_exp
+        else:
+            exp["subagent_depth"] = 2
+            out["experimental_subagent_depth"] = 2
+        if not out["policies"]:
+            del out["policies"]
+    return (new if new != data else None), out
 
-    if new == data:
-        return
+
+def write_opencode_json(dest, args, major, plan):
+    """Apply plan_opencode_json's result. The record goes first, atomically,
+    and is removed when it is empty, so a clean install round-trips."""
+    new, out = plan
+    record_path = dest / OWNED_NAME
     act = "would " if args.dry_run else ""
-    print(f"{act}update {config_path} for opencode {major}.x")
+    if new is not None:
+        print(f"{act}update {dest / 'opencode.json'} for opencode {major}.x")
     if args.dry_run:
         return
     dest.mkdir(parents=True, exist_ok=True)
-    config_path.write_text(json.dumps(new, indent=2) + "\n")
+    if out:
+        write_atomic(record_path, out)
+    elif record_path.exists():
+        record_path.unlink()
+    if new is not None:
+        write_atomic(dest / "opencode.json", new)
 
 
 def main():
@@ -495,6 +563,7 @@ def main():
         refuse_if_foreign_generated(agents_out / f"{name}.md")
         generated.append((agents_out / f"{name}.md", text))
     agent_count = len(opencode_agents)
+    json_plan = plan_opencode_json(dest, major, policies)
     commands = load_opencode_commands(dest_abs)
     if major == 1:
         for name, command in commands.items():
@@ -532,7 +601,7 @@ def main():
         remove_stale_commands(commands_out, commands, args)
 
     # 4. the keys fx owns in the user's opencode.json
-    merge_opencode_json(dest, args, major, policies)
+    write_opencode_json(dest, args, major, json_plan)
 
     if args.dry_run:
         print("\ndry run: nothing written")
