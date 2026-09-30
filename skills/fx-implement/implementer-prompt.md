@@ -337,6 +337,15 @@ Subagent (general-purpose):
         expected, and whether it was runtime or compile-time RED
       - GREEN: the command run, the passing output
     - Files changed: the complete list; this is what scopes your review
+    - A line `Tripwires:` naming each content tripwire your diff hits, with
+      the file and a one-line reason: `security` (auth code, secrets, a new
+      route, a record fetched by a request parameter or a changed tenant
+      scope, a user-supplied URL, string-built SQL or shell), `database`
+      (a migration, schema change, index, constraint, backfill),
+      `silent-failure` (a swallowing handler, `retry_on`, `discard_on`, a job,
+      consumer or webhook receiver, a loop that continues past a failed
+      record); `Tripwires: none` when it hits none. The controller
+      dispatches lenses from this line without reading your diff.
     - Self-review findings
     - **Anything you did not do as instructed**, with what you did instead and
       why. Empty is a fine answer; silence is not the same as empty, and the

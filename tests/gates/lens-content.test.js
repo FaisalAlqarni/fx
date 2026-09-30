@@ -26,7 +26,14 @@ for (const phrase of [
   assert.ok(sec.includes(phrase), `security lens hunts: ${phrase}`);
 }
 
+for (const a of ['security', 'database', 'silent-failure']) {
+  assert.ok(read(`agents/fx-lens-${a}.md`).includes('With `mode: task`, report only findings in the tripwire class your brief quotes'),
+    `${a} lens: per-task scope paragraph`);
+}
+
 const review = read('skills/fx-review/SKILL.md');
+assert.ok(review.includes('Per task the brief carries `mode: task` and the text of the lens\'s tripwire cell'), 'fx-review brief sends mode: task with the tripwire text');
+assert.ok(review.includes("a record fetched by a request parameter, or a change to a query's tenant or ownership scope"), 'security tripwire covers IDOR and tenant scope');
 assert.ok(review.includes('`mode: branch`'), 'fx-review tells each lens its mode');
 
 const a11y = read('agents/fx-lens-a11y.md');

@@ -26,6 +26,16 @@ assert.ok(loop.includes('binary file'), 'a binary file counts as over the cap');
 assert.ok(loop.includes('### New breakage in the fix diff'), 'the controller checks for new breakage and writes it down');
 assert.ok(loop.includes('controller re-review (<L> lines)'), 'the ledger line shape is given');
 assert.ok(loop.includes('Never fix findings yourself in the controller session.'), 'the controller still never fixes');
+assert.ok(loop.includes('when all five hold'), 'the controller re-review has five conditions');
+assert.ok(!loop.includes("':(glob,exclude)**/*.md'"), 'Markdown is not excluded from the production count');
+for (const x of ["':(glob,exclude)docs/**'", "':(glob,exclude)README*'", "':(glob,exclude)CHANGELOG*'"]) {
+  assert.ok(loop.includes(x), `the count excludes ${x}`);
+}
+assert.ok(loop.includes('does not edit or delete an existing test assertion'), 'a weakened test always gets a dispatched re-review');
+assert.ok(impl.includes('**A `test_all` that stops at its first failure**'), 'the exit gate handles a fail-fast runner');
+assert.ok(impl.includes('Order-dependent blocks the completion claim like introduced'), 'order-dependent failures block');
+assert.ok(!impl.includes('the baseline is 0 tests'), 'no vestigial baseline wording');
+assert.ok(impl.includes('then a `## Log` heading'), 'a created ledger gets a Log heading after the rulings');
 assert.ok(impl.includes('or you reading the fix diff when it qualifies as small'), 'SKILL.md points at the rule');
 
 const gateAt = impl.indexOf('### Classify every failing test');

@@ -99,7 +99,7 @@ A claim with no verdict is a build error.
 | W107:W109 | K | The create commands |
 | W110:W111 | K | Sandbox fallback |
 | W112:W117 | S | npm/cargo/pip/poetry/go setup → `../../references/stacks/*.md`. **None of upstream's five match this user's stacks** |
-| W118:W121 | K | Baseline before work; failures → report and ask |
+| W118:W121 | S | Baseline before work; failures → report and ask. Superseded by ADR-0030: no baseline run, the exit gate classifies failures against the merge base |
 | W119 | S | npm/cargo/pytest/go test → stack profile |
 | W122:W124 | K | Report template |
 | W125:W136 | S | 12 Quick Reference rows: each restates a rule kept inline |

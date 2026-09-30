@@ -26,6 +26,8 @@ The question you ask of every path in the diff: **when this breaks in
 production at 3am, can a human see that it broke, and why?** Anything that
 answers "no" is a finding: regardless of how tidy the code looks.
 
+**Per-task scope.** With `mode: task`, report only findings in the tripwire class your brief quotes. Findings from your broad triggers wait for `mode: branch`.
+
 ## Hunt list
 
 **Swallowed errors**

@@ -98,7 +98,7 @@ multi-commit task.
 | Lens | Per task (tripwire) | Branch pass: fires when the diff touches |
 |---|---|---|
 | `fx-lens-database` | tripwire: a migration, a schema file change, a new or changed index, uniqueness or null constraint, a backfill or table rewrite | `db/migrate/`, `*.sql`, `structure.sql`, any model, ClickHouse queries, EF migrations |
-| `fx-lens-security` | tripwire: authentication or authorization code (login, session, token issue or verify, policies, `authenticate` filters and their skips, `[Authorize]`, `[AllowAnonymous]`); credentials, secrets or key material; a new route or endpoint; code that fetches, redirects to or stores a user-supplied URL or host; string-built SQL or shell | Devise / Pundit / JWT / session / auth paths, params handling, credentials, any new endpoint or route, `[Authorize]` |
+| `fx-lens-security` | tripwire: authentication or authorization code (login, session, token issue or verify, policies, `authenticate` filters and their skips, `[Authorize]`, `[AllowAnonymous]`); credentials, secrets or key material; a new route or endpoint; a record fetched by a request parameter, or a change to a query's tenant or ownership scope; code that fetches, redirects to or stores a user-supplied URL or host; string-built SQL or shell | Devise / Pundit / JWT / session / auth paths, params handling, credentials, any new endpoint or route, `[Authorize]` |
 | `fx-lens-a11y` | no | `.erb`, `.css`, view partials, Compose `.kt`, SwiftUI `.swift`, anything with user-facing strings |
 | `fx-lens-silent-failure` | tripwire: an error handler that swallows (`rescue nil`, or a `rescue`, `catch` or `except` whose body is empty or only logs); `retry_on` or `discard_on`; a background job, queue consumer or webhook receiver; a transaction or bulk loop that continues past a failed record | `rescue`, `catch`, `except`, Sidekiq workers, broker consumers, attribution code |
 | `fx-lens-pipeline` | no | code that enqueues, publishes, schedules or fans out work; code that governs queue depth, admission or producer flow control |
@@ -183,7 +183,7 @@ the brief:
 
 **Lens briefs**: the `fx-lens-*` agents, each given the diff file path and
 the paths that triggered it, and this line: "Cite each finding as the source
-file and its line number at HEAD, never a line number inside the diff file." In branch mode the brief also carries the line `mode: branch`; a lens that sees no mode line treats the diff as one task's.
+file and its line number at HEAD, never a line number inside the diff file." Per task the brief carries `mode: task` and the text of the lens's tripwire cell; in branch mode it carries `mode: branch`. A lens that sees no mode line treats the diff as one task's.
 A diff line number points into a file the reader never opens. Read-only by
 construction.
 
@@ -289,7 +289,7 @@ Never offer it; use it only on an explicit request in that message.
 - **Merging axes into one ranked list**
 - Reviewing the diff inline instead of dispatching
 - Handing a reviewer your session history
-- Firing all four lenses on a three-line diff
+- Dispatching a lens per task whose tripwire the diff does not match
 - Implementing a finding you haven't verified
 - Proceeding with an unfixed Critical
 - Spending a reviewer on what the linter already catches

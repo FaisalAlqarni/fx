@@ -203,6 +203,10 @@ Subagent (general-purpose):
     one that recomputes the expected value the way the code does, so it passes
     by construction? Any constant copied from the implementation rather than taken from the spec, which will drift with the code?
 
+    **Tripwires:** the report has a `Tripwires:` line. If the diff hits a
+    security, database or silent-failure tripwire the line missed, report it
+    as a finding.
+
     **Structure:** does each file have one clear responsibility with a
     well-defined interface? Are units decomposed so they can be understood and
     tested independently? Does it follow the file structure the plan set? Did

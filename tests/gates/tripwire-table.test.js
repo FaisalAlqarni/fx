@@ -33,6 +33,10 @@ const end = impl.indexOf('The reviewer gets three paths');
 assert.ok(start >= 0 && end > start, 'the lens dispatch span is intact');
 const span = impl.slice(start, end);
 assert.ok(span.includes('tripwire'), 'lens dispatch uses the tripwire column');
+assert.ok(span.includes("grep -n '^Tripwires:'"), 'lens dispatch reads the report Tripwires line, not the diff');
+assert.ok(span.includes('`mode: task`'), 'lens dispatch sends mode: task');
+assert.ok(read('skills/fx-implement/implementer-prompt.md').includes('A line `Tripwires:`'), 'the implementer report carries a Tripwires line');
+assert.ok(read('skills/fx-implement/task-reviewer-prompt.md').includes('`Tripwires:` line'), 'the task reviewer checks the Tripwires line');
 assert.ok(!span.includes('-a11y'), 'lens dispatch no longer sends a11y per task');
 
 console.log('tripwire-table.test.js: OK');

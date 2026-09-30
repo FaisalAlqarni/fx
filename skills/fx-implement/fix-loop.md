@@ -88,15 +88,18 @@ and check the appended count against 1 (the round line) plus that reported
 ledger number.
 
 **Small fixes: controller re-review.** Skip the dispatch and read the fix diff
-yourself when all four hold:
+yourself when all five hold:
 
 1. The fix changes 20 production lines or fewer. Count them with
-   `git diff --numstat <FIX_BASE> <HEAD> -- . ':(glob,exclude)**/spec/**' ':(glob,exclude)**/test/**' ':(glob,exclude)**/tests/**' ':(glob,exclude)**/__tests__/**' ':(glob,exclude)**/*.Tests/**' ':(glob,exclude)**/*_spec.*' ':(glob,exclude)**/*.test.*' ':(glob,exclude)**/*.spec.*' ':(glob,exclude)**/*.md'`
-   and add both columns. Where `repo.md` names this repository's test paths,
+   `git diff --numstat <FIX_BASE> <HEAD> -- . ':(glob,exclude)**/spec/**' ':(glob,exclude)**/test/**' ':(glob,exclude)**/tests/**' ':(glob,exclude)**/__tests__/**' ':(glob,exclude)**/*.Tests/**' ':(glob,exclude)**/*_spec.*' ':(glob,exclude)**/*.test.*' ':(glob,exclude)**/*.spec.*' ':(glob,exclude)docs/**' ':(glob,exclude)README*' ':(glob,exclude)CHANGELOG*'`
+   and add both columns. Other Markdown counts: in a repository whose skills,
+   agents or prompts are Markdown, that is the product. Where `repo.md` names this repository's test paths,
    exclude those too. A binary file shows `-`: count it as over the cap.
 2. It touches only files already in the task's diff.
 3. Every open finding came from the task reviewer, none from a tripwire lens.
 4. No open finding is Critical.
+5. The fix does not edit or delete an existing test assertion. A weakened test
+   always gets a dispatched re-review.
 
 Do what a re-reviewer does: verdict each finding ADDRESSED or NOT ADDRESSED,
 and read the fix diff for new breakage. Write the re-review file where a

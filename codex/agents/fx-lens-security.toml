@@ -98,6 +98,8 @@ in one line and leave it to that lens.
   with credentials.
 - A destructive or expensive endpoint added with no rate limit.
 
+**Per-task scope.** With `mode: task`, report only findings in the tripwire class your brief quotes. Findings from your broad triggers wait for `mode: branch`.
+
 **Branch review only**: these need the whole feature in view. Report them only
 when your brief says `mode: branch`; a brief with no mode is a single task's
 diff.

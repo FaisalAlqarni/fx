@@ -244,8 +244,8 @@ command by the task count. No `test_scope` in `.fx.json` means the repo has no
 safe partition, and every gate uses `test_all`.
 
 No `.fx.json`, or the command is `null`? **Ask**: with one greenfield
-exception: no `.fx.json` **and** no test suite means the baseline is 0 tests
-by definition. Proceed; task 01 establishes both the app and `.fx.json`.
+exception: no `.fx.json` **and** no test suite means a new project.
+Proceed; task 01 establishes both the app and `.fx.json`.
 Asking here would turn every new project into a stall. Ask only when
 `.fx.json` is missing from a repo that plainly already has tests.
 
@@ -295,11 +295,14 @@ The ledger is `docs/plans/<slug>/state.md`, first line
 
 **Standing rulings.** When you create the ledger, write a `## Standing rulings`
 section after the first line and copy into it every `Ruling:` line from
-`docs/plans/rulings.md`, if that file exists. When the owner gives a ruling
+`docs/plans/rulings.md`, if that file exists, then a `## Log` heading for the
+first log line. The copy is a record: the session-start notice reads only
+`docs/plans/rulings.md`, so a ruling edited or deleted there stops applying
+at once. When the owner gives a ruling
 mid-run, ask one question: this plan only, or every plan? For every plan,
 append the `Ruling:` line to `docs/plans/rulings.md` as well and commit it with
-the ledger. The session-start notice carries these rulings after a compaction,
-so they hold without the owner repeating them.
+the ledger. The session-start notice carries `docs/plans/rulings.md` after a compaction,
+so those rulings hold without the owner repeating them.
 
 - If it exists and its first line names **this** plan: tasks with a
   `Task <NN>: complete` line are DONE. **Do not re-dispatch them.** Resume at
@@ -525,10 +528,13 @@ Use the **BASE you recorded before dispatching**: never `HEAD~1`, which
 silently drops all but the last commit of a multi-commit task.
 **Never dispatch a task reviewer without a diff file.**
 
-**Lens dispatch.** After packaging the diff, check the task's diff against the
-"Per task (tripwire)" column of the lens table in `../fx-review/SKILL.md` (§2)
-and dispatch each lens whose tripwire matches (`fx-lens-security`,
-`-database`, `-silent-failure`) alongside the task reviewer, same diff file.
+**Lens dispatch.** Read the `Tripwires:` line of the implementer's report
+(`grep -n '^Tripwires:' <report>`), not the diff, and match it against the
+"Per task (tripwire)" column of the lens table in `../fx-review/SKILL.md` (§2).
+Dispatch each lens it names (`fx-lens-security`, `-database`,
+`-silent-failure`) alongside the task reviewer, same diff file, with the brief
+line `mode: task` and the text of that lens's tripwire cell. The task reviewer
+flags a tripwire the report missed; dispatch that lens then.
 A lens whose column says `no`, and any lens whose tripwire does not match,
 waits for the branch pass, where every lens runs on its broad trigger.
 Reference the table, don't copy it. A lens's `[Critical]` and `[Important]`
@@ -785,6 +791,14 @@ and run the same tests there.
   that failed.
 
 Append one line each: `Exit gate: <test>: pre-existing|introduced|order-dependent`.
+
+**A `test_all` that stops at its first failure** shows you one failure, not the
+list. Classify that one. When it is pre-existing, run the gates past it: a copy
+of the runner without that line, placed where the runner expects its own path
+(a script that resolves paths from its own location breaks anywhere else).
+Repeat until a failure is introduced or the runner reaches its end.
+**Order-dependent blocks the completion claim like introduced**, unless the
+same test also fails on the merge base.
 
 ## Write the plan-complete line
 

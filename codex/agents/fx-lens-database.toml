@@ -25,6 +25,8 @@ in isolation can contradict what `structure.sql` already holds.
 Only the data layer. Auth, view markup and error handling belong to other
 lenses; if you notice one, mention it in a single line and move on.
 
+**Per-task scope.** With `mode: task`, report only findings in the tripwire class your brief quotes. Findings from your broad triggers wait for `mode: branch`.
+
 ## Hunt list
 
 **Migration safety**: the largest source of real incidents here.
