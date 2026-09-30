@@ -34,4 +34,10 @@ Neither runtime takes a model per dispatch. A Codex role's `model` overrides the
 
 ## Standing rulings
 
-Added by task 04.
+Owner rulings were lost because they lived in chat or in one plan's ledger, so the owner repeated them each build. Decision 38 survived only because the agent happened to write it into each ledger.
+
+A ruling that holds for every build is written once, as a `Ruling:` line in `docs/plans/rulings.md`. `fx-implement` copies those lines into each new ledger's `## Standing rulings` section, and asks "this plan only, or every plan?" when the owner rules mid-run.
+
+`standingRulings()` in `lib/plan-state.js` reads both places at every session start, compaction included, and `describePlans()` adds the lines to the preamble block with a note to invoke `fx-implement` again before the next dispatch. The repo file is read too, so a ruling made after the ledger was created still arrives. Duplicates collapse to one line.
+
+The block carries at most 10 rulings, each cut to 160 characters. `describePlans()` is appended to every session's preamble, which `lib/preamble.test.js` holds under 9,000 characters with 10 long rulings present.

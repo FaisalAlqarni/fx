@@ -293,6 +293,14 @@ most expensive failure observed. Track progress in a file, not only in todos.
 The ledger is `docs/plans/<slug>/state.md`, first line
 `# fx ledger: plan: docs/plans/<slug>/plan.md`.
 
+**Standing rulings.** When you create the ledger, write a `## Standing rulings`
+section after the first line and copy into it every `Ruling:` line from
+`docs/plans/rulings.md`, if that file exists. When the owner gives a ruling
+mid-run, ask one question: this plan only, or every plan? For every plan,
+append the `Ruling:` line to `docs/plans/rulings.md` as well and commit it with
+the ledger. The session-start notice carries these rulings after a compaction,
+so they hold without the owner repeating them.
+
 - If it exists and its first line names **this** plan: tasks with a
   `Task <NN>: complete` line are DONE. **Do not re-dispatch them.** Resume at
   the first task without one.
@@ -810,7 +818,8 @@ wait**. Report:
   compressed interview and stayed silent about dropping the design doc, the
   plan and the todo file. **A deviation you did not announce is a decision made
   in secret**, and it is indistinguishable from not having noticed.
-- **Rulings I made**: **every** ledger line containing `Ruling:`, in the
+- **Rulings I made**: **every** ledger line containing `Ruling:` outside the
+  `## Standing rulings` section, in the
   order made, each with what it costs if wrong. **Exhaustive: if the ledger
   holds a ruling, the list holds it.** *It's the only place decisions made on
   the user's behalf reach them: a ruling that dies unreported was a decision
