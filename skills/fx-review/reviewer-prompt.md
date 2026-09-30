@@ -111,6 +111,7 @@ Subagent (general-purpose):
     - Migration strategy if the schema changed?
     - Backward compatibility considered?
     - Documentation complete?
+    - Docs, runbooks or examples the diff has made stale?
     - Any obvious bugs?
 
     ## Calibration

@@ -142,6 +142,9 @@ Hunt for what a directed review structurally cannot catch:
   reason (green by luck, not by correctness).
 - **Silent failure paths**: swallowed exceptions, `rescue nil`, fallbacks
   that mask a real error, retried operations with no cap.
+- **Unchanged callers and variants**: a changed shared contract whose
+  untouched callers or sibling variants now break, and two equivalent new
+  paths that disagree on validation or error mapping.
 - Anything else that scores poorly on the quality lens above but sits outside
   whatever the controller's plan asked reviewers to look at.
 

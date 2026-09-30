@@ -45,6 +45,7 @@ run tripwire-table.test.js node tests/gates/tripwire-table.test.js
 run fix-loop-shape.test.js node tests/gates/fix-loop-shape.test.js
 run dispatch-route.test.js node tests/gates/dispatch-route.test.js
 run brainstorm-confidence.test.js node tests/gates/brainstorm-confidence.test.js
+run review-content.test.js node tests/gates/review-content.test.js
 run verdict.test.js        node tests/lane-triggering/verdict.test.js
 
 echo "== make-git-fixture =="

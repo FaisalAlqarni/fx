@@ -188,13 +188,20 @@ Subagent (general-purpose):
     maintainability damage, and a second implementation of a rule is a second
     place for it to drift.
 
+    **Callers and variants.** When the diff changes a shared contract (a
+    function signature, a return shape, a shared handler, an enum or variant
+    set), check the unchanged callers and every variant the shared code
+    touches: an unconditional change in a shared handler applies to all of
+    them. Two new paths that do the same job must agree on precedence,
+    validation and error mapping. Name each caller or variant you checked.
+
     **Code:** clean separation of concerns? proper error handling? DRY without
     premature abstraction? edge cases handled?
 
     **Tests:** do the new and changed tests verify **real behavior, not
     mocks**? Are the task's edge cases covered? Any tautological assertion,
     one that recomputes the expected value the way the code does, so it passes
-    by construction?
+    by construction? Any constant copied from the implementation rather than taken from the spec, which will drift with the code?
 
     **Structure:** does each file have one clear responsibility with a
     well-defined interface? Are units decomposed so they can be understood and
@@ -231,6 +238,10 @@ Subagent (general-purpose):
     helps the implementer trust the rest of the feedback.
 
     ## Write your findings to a file, then summarise
+
+    **Before you report a finding**, re-read every fact it cites at its
+    source: the line, the caller count, the precedent. Drop any detail that
+    does not hold, and keep the finding only if it still stands without it.
 
     **Write the full findings to [FINDINGS_FILE] before your final message.**
     Then reply with the five-line contract in Output format below.
