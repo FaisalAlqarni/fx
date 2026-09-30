@@ -58,7 +58,7 @@ case "$HARNESS" in
     ' || exit 1
     command -v opencode >/dev/null || { echo "opencode CLI not on PATH: no real delivery check" >&2; exit 77; }
     mkdir -p "$HOME/tmp"
-    out="$(python3 scripts/fx-opencode-install --dest "$XDG_CONFIG_HOME/opencode" 2>&1)" || {
+    out="$(python3 scripts/fx-opencode-install --major 1 --dest "$XDG_CONFIG_HOME/opencode" 2>&1)" || {
       printf 'fx-opencode-install failed:\n%s\n' "$out" >&2; exit 1; }
     # stdout is the JSON, kept in files: it runs to hundreds of KB. stderr is
     # shown only on failure.

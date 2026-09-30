@@ -182,7 +182,7 @@ assert.ok(fs.existsSync(path.join(root, 'plugins', 'fx-opencode-v1.js')), 'plugi
     const dest = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-oc-install-'));
     try {
       require('child_process').execFileSync('python3',
-        [path.join(root, 'scripts', 'fx-opencode-install'), '--dest', dest], { stdio: 'pipe' });
+        [path.join(root, 'scripts', 'fx-opencode-install'), '--major', '1', '--dest', dest], { stdio: 'pipe' });
       for (const name of userInvoked) {
         const file = fs.readFileSync(path.join(dest, 'commands', `${name}.md`), 'utf8');
         const m = file.match(/^---\ndescription: (".*")\n---\n([\s\S]*)$/);

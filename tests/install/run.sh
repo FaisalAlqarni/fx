@@ -21,8 +21,8 @@ FX="$(cd "$(dirname "$0")/../.." && pwd -P)"
 
 HARNESS="${1:-}"
 case "$HARNESS" in
-  opencode|codex|claude-code) ;;
-  *) echo "usage: $0 <opencode|codex|claude-code>" >&2; exit 2 ;;
+  opencode|opencode-v2|codex|claude-code) ;;
+  *) echo "usage: $0 <opencode|opencode-v2|codex|claude-code>" >&2; exit 2 ;;
 esac
 
 SCRATCH="$(mktemp -d)"
@@ -32,9 +32,9 @@ trap 'rm -rf "$SCRATCH" "$HOME_FIXTURE" "$CODEX_HOME_FIXTURE"' EXIT
 
 fails=0
 check() { if eval "$2"; then echo "ok: $1"; else echo "FAIL: $1"; fails=$((fails + 1)); fi; }
-install_into() { python3 "$FX/scripts/fx-opencode-install" --dest "$1" > "$SCRATCH/$(basename "$1").out" 2>&1; }
+install_into() { python3 "$FX/scripts/fx-opencode-install" --major 1 --dest "$1" > "$SCRATCH/$(basename "$1").out" 2>&1; }
 # attempt <dest> [--dry-run]: runs the installer and keeps its exit code in rc
-attempt() { set +e; python3 "$FX/scripts/fx-opencode-install" --dest "$@" > "$SCRATCH/$(basename "$1").out" 2>&1; rc=$?; set -e; }
+attempt() { set +e; python3 "$FX/scripts/fx-opencode-install" --major 1 --dest "$@" > "$SCRATCH/$(basename "$1").out" 2>&1; rc=$?; set -e; }
 # Every path under a tree, with a link's recorded target or a file's checksum.
 snapshot() { find "$1" | sort | while read -r f; do printf '%s %s\n' "$f" "$( [ -L "$f" ] && readlink "$f" || { [ -f "$f" ] && sha256sum "$f" | cut -d' ' -f1; } || true)"; done; }
 # A generated command carries its source body: the source's first heading and
@@ -166,7 +166,7 @@ if [ "$HARNESS" = opencode ]; then
   # a real install would: the refusal must not be gated behind --dry-run
   D7="$SCRATCH/d7"; mkdir -p "$D7/skills" "$SCRATCH/outside-fx3"
   ln -s "$SCRATCH/outside-fx3" "$D7/skills/fx-tdd"
-  set +e; python3 "$FX/scripts/fx-opencode-install" --dest "$D7" --dry-run > "$SCRATCH/d7.out" 2>&1; rc=$?; set -e
+  set +e; python3 "$FX/scripts/fx-opencode-install" --major 1 --dest "$D7" --dry-run > "$SCRATCH/d7.out" 2>&1; rc=$?; set -e
   check "dry run refuses a foreign skill link" '[ "$rc" -ne 0 ] && grep -q "fx-tdd" "$SCRATCH/d7.out"'
   check "dry run wrote nothing new" '[ ! -e "$D7/references" ] && [ ! -e "$D7/commands" ] && [ ! -e "$D7/agents" ]'
 
@@ -233,24 +233,24 @@ if [ "$HARNESS" = opencode ]; then
   ln -s "$FX/plugins/fx-opencode-v1.js" "$M/plugins/fx.js"
   grep -vF '(FX / "references", dest / "references"),' "$FX/scripts/fx-opencode-install" > "$M/scripts/fx-opencode-install"
   check "the copy really lacks the references link step" '! cmp -s "$FX/scripts/fx-opencode-install" "$M/scripts/fx-opencode-install"'
-  set +e; python3 "$M/scripts/fx-opencode-install" --dest "$SCRATCH/no-references" > "$SCRATCH/no-references.out" 2>&1; rc=$?; set -e
+  set +e; python3 "$M/scripts/fx-opencode-install" --major 1 --dest "$SCRATCH/no-references" > "$SCRATCH/no-references.out" 2>&1; rc=$?; set -e
   check "a missing references entry fails the install, named" '[ "$rc" -ne 0 ] && [ ! -e "$SCRATCH/no-references/references" ] && grep -q "references did not resolve" "$SCRATCH/no-references.out"'
 
   # 13b. an install made before the v1 plugin was renamed is re-linked; a
   # foreign link at the same path is still refused
   OLD="$SCRATCH/pre-rename"; mkdir -p "$OLD/plugins"; ln -s "$FX/plugins/fx.js" "$OLD/plugins/fx.js"
   check "an install made before the rename is re-linked, not refused" \
-    'python3 "$FX/scripts/fx-opencode-install" --dest "$OLD" >/dev/null && [ "$(readlink "$OLD/plugins/fx.js")" = "$FX/plugins/fx-opencode-v1.js" ]'
+    'python3 "$FX/scripts/fx-opencode-install" --major 1 --dest "$OLD" >/dev/null && [ "$(readlink "$OLD/plugins/fx.js")" = "$FX/plugins/fx-opencode-v1.js" ]'
   FOREIGN="$SCRATCH/foreign-plugin"; mkdir -p "$FOREIGN/plugins"; ln -s /etc/hostname "$FOREIGN/plugins/fx.js"
   check "a foreign plugins/fx.js link is still refused" \
-    '! python3 "$FX/scripts/fx-opencode-install" --dest "$FOREIGN" >/dev/null 2>&1 && [ "$(readlink "$FOREIGN/plugins/fx.js")" = /etc/hostname ]'
+    '! python3 "$FX/scripts/fx-opencode-install" --major 1 --dest "$FOREIGN" >/dev/null 2>&1 && [ "$(readlink "$FOREIGN/plugins/fx.js")" = /etc/hostname ]'
 
   # 14. the facts measured against opencode 1.18.25: permission.edit (never
   # tools:apply_patch), subagent_depth raised, exactly one skills pool (with
   # a warning, never a refusal, on finding fx in the other), idempotency and
   # an honest --dry-run.
   DEST="$SCRATCH/shape"
-  HOME="$HOME_FIXTURE" python3 "$FX/scripts/fx-opencode-install" --dest "$DEST" > "$SCRATCH/shape.out" 2>&1
+  HOME="$HOME_FIXTURE" python3 "$FX/scripts/fx-opencode-install" --major 1 --dest "$DEST" > "$SCRATCH/shape.out" 2>&1
 
   # Wrapped in a subshell: `exit 1` inside a `for` loop run through this
   # script's own `check`/`eval` is not contained by the surrounding `if` --
@@ -273,16 +273,72 @@ if [ "$HARNESS" = opencode ]; then
   check "skills are installed into exactly one pool" \
     '[ -e "$DEST/skills/fx-tdd" ] && [ ! -e "$HOME_FIXTURE/.agents/skills/fx-tdd" ]'
   check "a second run changes nothing" \
-    'cp -a "$DEST" "$DEST.first" && HOME="$HOME_FIXTURE" python3 "$FX/scripts/fx-opencode-install" --dest "$DEST" >/dev/null && diff -r "$DEST.first" "$DEST"'
+    'cp -a "$DEST" "$DEST.first" && HOME="$HOME_FIXTURE" python3 "$FX/scripts/fx-opencode-install" --major 1 --dest "$DEST" >/dev/null && diff -r "$DEST.first" "$DEST"'
   check "dry-run writes nothing" \
-    'rm -rf "$DEST.dry" && python3 "$FX/scripts/fx-opencode-install" --dest "$DEST.dry" --dry-run >/dev/null && test ! -d "$DEST.dry"'
+    'rm -rf "$DEST.dry" && python3 "$FX/scripts/fx-opencode-install" --major 1 --dest "$DEST.dry" --dry-run >/dev/null && test ! -d "$DEST.dry"'
   check "a duplicate pool warns and does not refuse" \
-    'mkdir -p "$HOME_FIXTURE/.agents/skills/fx-tdd" && HOME="$HOME_FIXTURE" python3 "$FX/scripts/fx-opencode-install" --dest "$DEST" 2>&1 | grep -qi already'
+    'mkdir -p "$HOME_FIXTURE/.agents/skills/fx-tdd" && HOME="$HOME_FIXTURE" python3 "$FX/scripts/fx-opencode-install" --major 1 --dest "$DEST" 2>&1 | grep -qi already'
 
   check "the installer has no convert_agent of its own" \
     '! grep -q "^def convert_agent" "$FX/scripts/fx-opencode-install"'
   check "the installer calls the one opencode dialect converter" \
     'grep -q "agent-dialects" "$FX/scripts/fx-opencode-install"'
+
+elif [ "$HARNESS" = opencode-v2 ]; then
+  INST="$FX/scripts/fx-opencode-install"
+  SEED='{"experimental":{"subagent_depth":3,"policies":[{"action":"permission","resource":"shell:rm -rf /*","effect":"deny"}]}}'
+  # $(...) drops the trailing newline, leaving the header line itself
+  GEN_LINE="$(python3 -c "import runpy;print(runpy.run_path('$INST', run_name='x')['GENERATED'])")"
+  D="$SCRATCH/v2d"; mkdir -p "$D"; printf '%s' "$SEED" > "$D/opencode.json"
+  python3 "$INST" --dest "$D" --major 2 > "$SCRATCH/v2d.out" 2>&1 || cat "$SCRATCH/v2d.out"
+  check "v2 links plugins/fx.js to the v2 plugin" '[[ "$(readlink "$D/plugins/fx.js")" == */plugins/fx-opencode-v2.js ]]'
+  check "v2 writes six agents" '[ "$(ls "$D"/agents/*.md | wc -l)" -eq 6 ]'
+  for f in "$D"/agents/*.md; do
+    check "$(basename "$f") is a v2 agent" '[ "$(sed -n 1p "$f")" = --- ] && grep -qx "mode: subagent" "$f" && [ "$(sed -n "/^permissions:/{n;n;n;p;q}" "$f")" = "    effect: deny" ] && [ "$(sed -n "/^permissions:/{n;p;q}" "$f")" = "  - action: \"*\"" ] && grep -qxF -- "$GEN_LINE" "$f" && grep -qx "<!-- opencode major: 2 -->" "$f" && ! grep -q "^permission:" "$f"'
+  done
+  # task 04: the v2 plugin registers commands itself, so none are generated
+  check "v2 writes no command files" '[ -z "$(ls "$D"/commands 2>/dev/null)" ]'
+  check "v2 opencode.json: no permissions, user kept, policies merged" \
+    'node -e "
+const c=JSON.parse(require(\"fs\").readFileSync(process.argv[1]));
+const {GUARD_POLICIES}=require(process.argv[2]+\"/lib/opencode-v2-policies.js\");
+const P=c.experimental.policies, j=JSON.stringify;
+if(\"permissions\" in c) throw 1;
+if(Object.values(c.agent||{}).some(a=>\"permissions\" in a)) throw 2;
+if(c.experimental.subagent_depth!==3) throw 3;
+if(!P.some(p=>p.resource===\"shell:rm -rf /*\")) throw 4;
+for(const g of GUARD_POLICIES){const {sample,allowed,...w}=g; if(!P.some(p=>j(p)===j(w))) throw 5;}
+if(P.some(p=>\"sample\" in p||\"allowed\" in p)) throw 6;
+" "$D/opencode.json" "$FX"'
+  cp -a "$D" "$D.first"
+  python3 "$INST" --dest "$D" --major 2 >/dev/null
+  check "v2 second run changes nothing" 'diff -r "$D.first" "$D"'
+  E="$SCRATCH/v2e"; mkdir -p "$E"; printf '%s' "$SEED" > "$E/opencode.json"
+  python3 "$INST" --dest "$E" --major 1 >/dev/null
+  cp -a "$E" "$E.v1"
+  python3 "$INST" --dest "$E" --major 2 >/dev/null
+  check "v2 after v1 links the v2 plugin and drops the v1 commands and agents" '[[ "$(readlink "$E/plugins/fx.js")" == */fx-opencode-v2.js ]] && [ ! -e "$E/commands" ] && ! grep -q "^permission:" "$E"/agents/*.md'
+  python3 "$INST" --dest "$E" --major 1 >/dev/null
+  check "v1 after v2 restores the v1 output" 'diff -r "$E.v1" "$E"'
+  check "v1 after v2 keeps the user's policy, drops fx's" \
+    'node -e "const p=JSON.parse(require(\"fs\").readFileSync(process.argv[1])).experimental.policies; if(p.length!==1||p[0].resource!==\"shell:rm -rf /*\") throw 1" "$E/opencode.json"'
+  python3 "$INST" --dest "$D" --major 1 >/dev/null
+  python3 "$INST" --dest "$D" --major 2 >/dev/null
+  check "v2 after v1 into the first destination matches its first run" 'diff -r "$D.first" "$D"'
+  check "no permissions key in either opencode.json" '! grep -q "\"permissions\"" "$D/opencode.json" "$E/opencode.json"'
+
+  # version detection through an opencode stub first on PATH
+  mkdir -p "$SCRATCH/bin"
+  printf '#!/bin/sh\nexit 1\n' > "$SCRATCH/bin/opencode"; chmod +x "$SCRATCH/bin/opencode"
+  F="$SCRATCH/v2f"
+  set +e; PATH="$SCRATCH/bin:$PATH" python3 "$INST" --dest "$F" > "$SCRATCH/v2f.out" 2>&1; rc=$?; set -e
+  check "a failing opencode with no --major is an error naming --major" '[ "$rc" -ne 0 ] && grep -q -- "--major" "$SCRATCH/v2f.out" && [ ! -e "$F" ]'
+  printf '#!/bin/sh\necho "opencode 1.18.25"\n' > "$SCRATCH/bin/opencode"
+  PATH="$SCRATCH/bin:$PATH" python3 "$INST" --dest "$F" >/dev/null
+  check "a 1.18.25 stub installs v1" '[[ "$(readlink "$F/plugins/fx.js")" == */fx-opencode-v1.js ]]'
+  printf '#!/bin/sh\necho 2.0.18\n' > "$SCRATCH/bin/opencode"
+  PATH="$SCRATCH/bin:$PATH" python3 "$INST" --dest "$F" >/dev/null
+  check "a 2.0.18 stub installs v2" '[[ "$(readlink "$F/plugins/fx.js")" == */fx-opencode-v2.js ]]'
 
 elif [ "$HARNESS" = codex ]; then
   # Codex has no standalone installer: hooks/fx-codex.js plants roles from

@@ -95,6 +95,7 @@ run no-runtime-addressing.test.js node tests/gates/no-runtime-addressing.test.js
 run release-version.test.js node tests/gates/release-version.test.js
 
 run install-opencode        bash tests/install/run.sh opencode
+run install-opencode-v2     bash tests/install/run.sh opencode-v2
 run install-codex           bash tests/install/run.sh codex
 run install-claude-code     bash tests/install/run.sh claude-code
 run install-home-untouched bash tests/install/home-untouched.test.sh

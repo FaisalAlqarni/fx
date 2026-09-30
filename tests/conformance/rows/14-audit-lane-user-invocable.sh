@@ -27,7 +27,7 @@ case "$HARNESS" in
   opencode)
     # HOME is the runner's scratch home, so this destination is inside it.
     dest="$HOME/row14-opencode"
-    python3 scripts/fx-opencode-install --dest "$dest" > "$HOME/row14.out" 2>&1 || {
+    python3 scripts/fx-opencode-install --major 1 --dest "$dest" > "$HOME/row14.out" 2>&1 || {
       cat "$HOME/row14.out" >&2; exit 1; }
     for n in $HIDDEN; do
       [ -f "$dest/commands/$n.md" ] || { echo "opencode: no command for $n, user route gone" >&2; exit 1; }

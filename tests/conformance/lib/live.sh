@@ -120,6 +120,16 @@ case "$HARNESS" in
   *) fail "unknown harness" ;;
 esac
 
+# --- the binary must be the harness's major: a 2.x machine never measures v1
+# while claiming it, and the reverse ----------------------------------------
+case "$HARNESS" in
+  opencode|opencode-v2)
+    want=1; [ "$HARNESS" = opencode-v2 ] && want=2
+    have="$(opencode --version 2>&1 | grep -oE '[0-9]+' | head -n1)"
+    [ "$have" = "$want" ] \
+      || fail "harness $HARNESS needs opencode $want.x, but \`opencode --version\` reports ${have:-no version}" ;;
+esac
+
 # --- fx, installed into the scratch home from the tree under test --------------
 # Claude Code needs no install: --plugin-dir points each session at $FX.
 LIVE_INSTALLED="$LIVE_SCRATCH/installed-$HARNESS"
@@ -136,7 +146,7 @@ if [ ! -e "$LIVE_INSTALLED" ]; then
       OC_CFG="$XDG_CONFIG_HOME/opencode/opencode.json"
       case "${FX_OPENCODE_ROUTE:-installer}" in
         installer)
-          out="$("${JAIL[@]}" python3 "$FX/scripts/fx-opencode-install" --dest "$XDG_CONFIG_HOME/opencode" 2>&1)" \
+          out="$("${JAIL[@]}" python3 "$FX/scripts/fx-opencode-install" --major 1 --dest "$XDG_CONFIG_HOME/opencode" 2>&1)" \
             || fail "fx did not install into the scratch opencode config: $out" ;;
         plugin)
           # Design story 4: one config entry, no installer, no symlink. The
