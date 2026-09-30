@@ -31,9 +31,12 @@ fx's three generic tiers map to the Agent tool's `model` values:
 This is the harness layer: naming a model here is allowed. A skill body or
 generic reference never names Haiku, Sonnet or Opus; it names the tier.
 
-`hooks/fx-pretooluse.js` routes every `Agent` call through `lib/dispatch-route.js`:
-a general dispatch (`general-purpose`, `claude`, `Plan`) with no `model` runs
-on `sonnet`, and `model: opus` without a `Capable because:` line in the prompt
-runs on `sonnet`. A call with no type (a fork) and any `fx:` agent are left
-alone. It never refuses a call. Codex and opencode
+`hooks/fx-pretooluse.js` routes every `Agent` and `Task` call through `lib/dispatch-route.js`:
+a general dispatch (`general-purpose`, `claude`, `Plan`, or no type at all,
+which the Agent tool starts as general-purpose) with no `model` runs on
+`sonnet`, and any `model` other than `sonnet` or `haiku` without a
+`Capable because:` line in the prompt runs on `sonnet`. A fork (the explicit
+type `fork`) keeps the parent's model, and any `fx:` agent is left alone. It
+never refuses a call. When routing itself fails, the hook prints a
+`systemMessage` saying routing is off. Codex and opencode
 have no equivalent yet (ADR-0031).

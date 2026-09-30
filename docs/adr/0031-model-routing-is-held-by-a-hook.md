@@ -1,24 +1,22 @@
-# Defaults are held by mechanism, not prose
+# Model routing is held by a hook, not by prose
 
-## Model routing
-
-### Context
+## Context
 
 On advantage-backend, 720+ subagents ran in one build. About half of the implementers, fixes and reviews ran on the most capable tier by explicit choice, although `model-selection.md` says the default is the standard tier. The owner asked for routing more than once. A prose rule did not hold the default.
 
-### Decision
+## Decision
 
 `hooks/fx-pretooluse.js` routes every `Agent` (and older `Task`) call through `route()` in `lib/dispatch-route.js`.
 
-- A general dispatch (`general-purpose`, `claude`, `Plan`) with no `model` is rewritten to `model: "sonnet"`.
-- `model: "opus"` with no prompt line starting `Capable because:` is rewritten to `sonnet`. With the line, it passes.
+- A general dispatch (`general-purpose`, `claude`, `Plan`, or no `subagent_type`) with no `model` is rewritten to `model: "sonnet"`.
+- Any `model` other than `sonnet` or `haiku` (`opus`, `fable`, a full model id) with no prompt line starting `Capable because:` is rewritten to `sonnet`. With the line, it passes.
 - A dispatch that names `sonnet` or `haiku` passes untouched.
 
-The hook rewrites and never refuses. It cannot tell fx's dispatches from the user's own, so a refusal would block the user. Any load failure or throw in the routing module passes the call unchanged: exit 0, no output.
+The hook rewrites and never refuses. It cannot tell fx's dispatches from the user's own, so a refusal would block the user. Any load failure or throw in the routing module passes the call unchanged with exit 0. The hook prints `{"systemMessage":"[fx] dispatch routing off: <message>"}`, which Claude Code shows to the user, and keeps a line on stderr, so a silent loss of routing is visible. It exits only after stdout drains, because the rewritten input echoes the whole prompt and a large prompt can outrun the pipe.
 
-This narrows the design: only the three general types are defaulted. A call with no `subagent_type` can be a fork, which must inherit the parent's model. `fx:` agents pin their own tier in frontmatter. Other plugins' agents keep their own pins, so an unpinned third-party agent still inherits the session's model. An explicit `model: opus` on any non-`fx:` typed agent still needs the reason line.
+This narrows the design: only the three general types are defaulted. The Agent tool starts a general-purpose agent when `subagent_type` is omitted, so a missing or empty type is a general dispatch. A fork is the explicit type `fork`; it inherits the parent's model and is left alone. `fx:` agents pin their own tier in frontmatter. Other plugins' agents keep their own pins, so an unpinned third-party agent still inherits the session's model. An explicit model other than `sonnet` or `haiku` on any non-`fx:` typed agent still needs the reason line.
 
-### Probe result
+## Probe result
 
 Live probe, parent session on `opus`, three `claude -p` runs with `--plugin-dir` at this repo:
 
@@ -31,13 +29,3 @@ The hook therefore omits `permissionDecision`. Claude Code applied `updatedInput
 ## Codex and OpenCode deferred
 
 Neither runtime takes a model per dispatch. A Codex role's `model` overrides the `spawn_agent` argument (`multi_agents_v2/spawn.rs:128-143` at `rust-v0.155.1`). OpenCode's `task` tool has no model argument, and a subagent inherits the parent's (`tool/task.ts:43-60,181-184` at `v1.18.25`). Routing there needs tier-pinned roles per runtime. Most OpenCode setups run one hosted model, so the gain is small. Deferred.
-
-## Standing rulings
-
-Owner rulings were lost because they lived in chat or in one plan's ledger, so the owner repeated them each build. Decision 38 survived only because the agent happened to write it into each ledger.
-
-A ruling that holds for every build is written once, as a `Ruling:` line in `docs/plans/rulings.md`. `fx-implement` copies those lines into each new ledger's `## Standing rulings` section, and asks "this plan only, or every plan?" when the owner rules mid-run.
-
-`standingRulings()` in `lib/plan-state.js` reads both places at every session start, compaction included, and `describePlans()` adds the lines to the preamble block with a note to invoke `fx-implement` again before the next dispatch. The repo file is read too, so a ruling made after the ledger was created still arrives. Duplicates collapse to one line.
-
-The block carries at most 10 rulings, each cut to 160 characters. `describePlans()` is appended to every session's preamble, which `lib/preamble.test.js` holds under 9,000 characters with 10 long rulings present.

@@ -1,10 +1,10 @@
 # fx-brainstorm ends its interview with a confidence check
 
-### Context
+## Context
 
 The owner asked that `fx-brainstorm` keep interviewing until the agent is 95% confident it understands the request. The agent then sends one message saying what made it confident and, in two lines, what it will do, and waits. Before this, the interview ended when the open-questions ledger was empty, and approaches or a design could follow in the same breath.
 
-### Decision
+## Decision
 
 Section 3 of the skill closes with the subsection `Close the interview with a confidence check`. It applies to the bounded and architectural paths. The spike path keeps its own nod gate.
 
@@ -12,6 +12,6 @@ The check is a numbered step in both checklists (bounded step 3, architectural s
 
 The 95% bar has a concrete test: the ledger is empty and no decision rests on a guess. The message names what settled each decision and any assumption still standing.
 
-### Consequences
+## Consequences
 
 Every bounded or architectural brainstorm has one extra turn before approaches or a design. The architectural checklist is renumbered 1 to 10; its `(§N)` references are unchanged. `tests/gates/brainstorm-confidence.test.js` pins the text and the step order.

@@ -399,10 +399,9 @@ real CLI. `docs/plans/2026-09-21-multi-harness/state.md` records every result.
 | opencode 2.0.18 | Lean-review task 10, 2026-09-30: install test passes, free rows 5 pass, 1 fail, 0 GAP. Row 09 fails: `Unknown subcommand "skill" for "opencode debug"`. Live rows pending: the local model server was down. |
 | Codex | **Pending.** See below. |
 
-On Claude Code every merge-gate row passes: 01, 02, 12, 15, 16 and 18. The
-opencode final-tree run waits for free memory on the test machine. Before
-it, task 21's first pass was 18 pass, 0 fail, 0 GAP on the script route, and
-task 25 ran rows 01, 02 and 16 on the bootstrap, all passing.
+On Claude Code every merge-gate row passes: 01, 02, 12, 15, 16 and 18. On
+opencode, task 21's first pass was 18 pass, 0 fail, 0 GAP on the script route,
+and task 25 ran rows 01, 02 and 16 on the bootstrap, all passing.
 
 On Codex, the free rows 03, 09, 10 and 11 pass, and 13 and 14 are GAP. Rows
 01 and 02 passed in task 12, but on the hook wiring that has since been
