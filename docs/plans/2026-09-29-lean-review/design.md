@@ -63,8 +63,8 @@ measured (§11).
 
 ## Decisions (owner, this session)
 
-- R1. Per task: the task reviewer, plus a narrow security or database
-  tripwire. Everything else, including devil's advocate, runs once at the end.
+- R1. Per task: the task reviewer, plus a narrow security, database or
+  silent-failure tripwire. Everything else, including devil's advocate, runs once at the end.
 - R2. The end pass is fx-review branch mode, which already exists.
 - R3. Tests: `test_scope` per task, `test_all` once after all tasks.
 - R4. Defaults are held by mechanism, not prose. Model routing: Claude Code
@@ -94,14 +94,24 @@ Each task gets:
 - **The database tripwire**, `fx-lens-database` (pinned Sonnet), only when the
   diff contains a migration, a schema file change, a new or changed index,
   uniqueness or null constraint, or a backfill or table rewrite.
+- **The silent-failure tripwire**, `fx-lens-silent-failure` (pinned Sonnet),
+  only when the diff adds or changes any of: an error handler that swallows
+  (`rescue nil`, or a `rescue`, `catch` or `except` whose body is empty or
+  only logs); `retry_on` or `discard_on`; a background job, queue consumer or
+  webhook receiver; a transaction or bulk loop that continues past a failed
+  record. Its broad triggers (`.presence ||`, `||=` or `??` fallbacks,
+  `find_by` for `find!`, unchecked `save`/`update`, dropped `valid?`,
+  external HTTP clients) run at the end only. Owner addition, 2026-09-30:
+  P1 task 03's Critical (a sync job counting an inactive profile as synced)
+  was in a job.
 
-Nothing else fires per task: not a11y, silent-failure or pipeline, not
-security or database on the broad triggers (any model, any params), and not
-devil's advocate.
+Nothing else fires per task: not a11y or pipeline, not security, database or
+silent-failure on their broad triggers, and not devil's advocate.
 
 **Where the rule lives.** One place: the lens table in
 `skills/fx-review/SKILL.md` §2 gains a "per task" column that holds the
-tripwire text for security and database and "no" for the other three.
+tripwire text for security, database and silent-failure and "no" for a11y
+and pipeline.
 `fx-implement` keeps pointing at that table, as it does now. The conflicting
 task-mode blurb (`fx-review/SKILL.md:18-24`, "lenses off unless auth, payment
 or a migration") is rewritten to match. The agent descriptions keep their
@@ -360,7 +370,8 @@ superseded and adds SEO and paid web search to its no's.
 
 ## Open questions
 
-- [x] Which lanes run per task → reviewer plus tripwire (R1)
+- [x] Which lanes run per task → reviewer plus security, database and
+  silent-failure tripwires (R1)
 - [x] Where the end pass runs → fx-review branch mode (R2)
 - [x] Tests → scoped per task, full once at the end (R3)
 - [x] Keep defaults in force → mechanism: routing hook, standing rulings, companions line (R4)
