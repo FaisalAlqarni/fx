@@ -12,6 +12,7 @@ confirmed as a real gap.
 - Two routes leave the loop before it starts: Minor and plan-mandated findings
 - A fix round: who fixes in rounds 1 to 3 and 4 to 5, and what counts as open
 - Every round: the fix report, then the scoped re-review and its ledger lines
+- Small fixes: controller re-review
 - Never fix findings yourself
 - The breaker: adjudicating at the cap, three categories
 
@@ -85,6 +86,27 @@ ledger number in its `Fixed` field. Append them all the same way:
 `sed -n '/^## Ledger lines/,/^## /p' <findings> | grep '^Task ' >> state.md`,
 and check the appended count against 1 (the round line) plus that reported
 ledger number.
+
+**Small fixes: controller re-review.** Skip the dispatch and read the fix diff
+yourself when all four hold:
+
+1. The fix changes 20 production lines or fewer. Count them with
+   `git diff --numstat <FIX_BASE> <HEAD> -- . ':(glob,exclude)**/spec/**' ':(glob,exclude)**/test/**' ':(glob,exclude)**/tests/**' ':(glob,exclude)**/__tests__/**' ':(glob,exclude)**/*.Tests/**' ':(glob,exclude)**/*_spec.*' ':(glob,exclude)**/*.test.*' ':(glob,exclude)**/*.spec.*' ':(glob,exclude)**/*.md'`
+   and add both columns. Where `repo.md` names this repository's test paths,
+   exclude those too. A binary file shows `-`: count it as over the cap.
+2. It touches only files already in the task's diff.
+3. Every open finding came from the task reviewer, none from a tripwire lens.
+4. No open finding is Critical.
+
+Do what a re-reviewer does: verdict each finding ADDRESSED or NOT ADDRESSED,
+and read the fix diff for new breakage. Write the re-review file where a
+dispatched re-reviewer would, with `### Finding verdicts` and
+`### New breakage in the fix diff`, so the next round reads it as usual. Then
+append `Task <NN>: fix round <R>/5: controller re-review (<L> lines): <X> addressed, <Y> open`.
+A NOT ADDRESSED finding, or new Critical or Important breakage, continues the
+loop as usual. This is the one time you
+read a diff, and the 20-line cap is what keeps it one. The covering-tests check
+above still applies first.
 
 **Never fix findings yourself in the controller session.** Your context stays
 clean for coordination, and controller fixes skip review entirely.

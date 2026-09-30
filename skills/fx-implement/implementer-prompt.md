@@ -346,7 +346,7 @@ Subagent (general-purpose):
 
     - **Status:** DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
     - **Commits:** `<base7>..<head7>`
-    - **Tests:** one line ("14/14 passing, output pristine")
+    - **Tests:** one line naming the command it ran and the result ("test_scope: 14/14 passing, output pristine")
     - **Report:** [REPORT_FILE]
     - **Concerns:** count; detail in the report
 

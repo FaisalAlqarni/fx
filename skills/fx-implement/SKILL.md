@@ -230,17 +230,18 @@ commit carries it, and the ledger travels with the work. Warn; do not gate.
 **Detached HEAD: do not commit.** Those commits become unreachable the moment
 HEAD moves. Create a branch first.
 
-### 2. Project setup and clean baseline
+### 2. Project setup
 
-Run the `setup` and `test_all` commands from **`.fx.json`**: never guess them.
+Run the `setup` command from **`.fx.json`**: never guess it, or any command named there.
 Rails is not `npm install`; .NET is not `pytest`.
 
-**`test_all` runs exactly twice in a run: once here for the baseline, once at
-the exit gate.** Per-task gates use `test_scope` with the paths that task
-touched, named by `repo.md`. A full suite per task multiplies one slow command
-by the task count, and on a suite measured in tens of minutes that is the
-entire wall clock of the build. No `test_scope` in `.fx.json` means the repo
-has no safe partition, and every gate uses `test_all`.
+**`test_all` runs once in a run, at the exit gate.** There is no baseline run
+before task 01: on a suite measured in tens of minutes it cost a build as much
+again before any work began, and the exit gate's classification (below)
+answers the question it was for. Per-task gates use `test_scope` with the paths
+that task touched, named by `repo.md`. A full suite per task multiplies one slow
+command by the task count. No `test_scope` in `.fx.json` means the repo has no
+safe partition, and every gate uses `test_all`.
 
 No `.fx.json`, or the command is `null`? **Ask**: with one greenfield
 exception: no `.fx.json` **and** no test suite means the baseline is 0 tests
@@ -252,16 +253,10 @@ Then load `../../references/stacks/<name>.md` for each entry in `stacks`. These 
 ecosystem traps only. **A name with no file is not an error**: it means no
 traps file exists for that stack yet, and nothing else changes.
 
-Run the baseline suite **before task 01**: greenfield excepted, where 0 tests
-*is* the baseline and there is nothing yet to run. A dirty baseline makes
-every later failure ambiguous. Failures → report them and ask whether to
-proceed or investigate; that call is the user's.
-
 Report:
 
 ```
 Worktree ready at <full-path> on <branch>
-Baseline: <N> tests, 0 failures
 Ready to implement <feature>
 ```
 
@@ -393,7 +388,7 @@ shrinks your context if you read the rest the same way.
 - **Git output stays one line per fact.** `git log --oneline -n N`,
   `git diff --stat`. Never a full `git diff` or `git log -p` into your own
   context.
-- **Never read a diff yourself.** `review-package` writes it for the
+- **Never read a diff yourself**, except a small fix round's controller re-review ([fix-loop.md](./fix-loop.md)), capped at 20 production lines. `review-package` writes it for the
   reviewer; that diff is the reviewer's context, not yours.
 - **The five-line reply decides the next move.** Read a findings or report
   file only to rule on a ⚠️ item, a plan-mandated finding (`C/I/M` names one:
@@ -478,6 +473,11 @@ Implementers report one of four statuses.
 doubts. Read them before proceeding. Concerns about **correctness or scope**:
 address them before review. Observations ("this file is getting large"): note
 them and proceed.
+
+**A report whose `Tests:` line names `test_all`**, where `.fx.json` has a
+`test_scope`, broke the one-full-run rule. Re-running would cost more than it
+saves, so the work stands; ledger `Task <NN>: ran test_all (rule)` and repeat
+the rule in that implementer's next dispatch or resume.
 
 **NEEDS_CONTEXT**: provide the missing context and re-dispatch.
 
@@ -607,7 +607,8 @@ confirmed as a real gap. **Minor findings never enter it**: ledger them as
 
 Five rounds maximum. Rounds 1 to 3 resume the original implementer; rounds 4 to 5 use
 a fresh one on a more capable model. Every round ends with a **scoped**
-re-review. **Never fix findings yourself in the controller session.**
+re-review: a dispatched re-reviewer, or you reading the fix diff when it
+qualifies as small ([fix-loop.md](./fix-loop.md)). **Never fix findings yourself in the controller session.**
 
 At the cap, adjudicate, and **adjudicate only at the cap; adjudicating earlier
 to end a loop is pre-judging with a different name.**
@@ -697,7 +698,11 @@ which must be fixed before merge.
 
 If it returns findings: **ONE fix subagent with the complete findings list: not one fixer per finding.** *Per-finding fixers rebuild context and re-run
 suites each time; a real session's final-review fix wave cost more than all
-its tasks combined.* Then exactly **one** scoped re-review. Adjudicate
+its tasks combined.* Then exactly **one** scoped re-review.
+The branch pass now carries every lens, so its wave can be larger than a
+task's. When the findings span more than one lens, you may split them into
+serial fixers grouped by file, each followed by one scoped re-review; still
+no second wave. Adjudicate
 residuals as at the breaker: park with rulings, or rule and ledger the
 load-bearing ones. **No second fix wave**: residuals surface to the user in
 the completion report.
@@ -753,6 +758,25 @@ reviewer running the file rather than the tests.
 
 The offences themselves were two spaces. The cost was that a branch reported
 ready for twelve tasks was not.
+
+### Classify every failing test
+
+When `test_all` fails, run each failing test alone with `test_one` on the
+branch. Then make a throwaway detached worktree of the merge base
+(`git worktree add --detach <scratch> <MERGE_BASE>`, removed afterwards with
+`git worktree remove <scratch>`), run the `.fx.json` `setup` command in it once,
+and run the same tests there.
+
+- The test's file does not exist on the merge base: **introduced**.
+- Fails on both with the same assertion: **pre-existing**. Report it; it does
+  not block this branch. Fails on the merge base some other way (setup,
+  missing dependency): treat it as **introduced**.
+- Fails alone on the branch, passes on the merge base: **introduced**.
+  Introduced blocks the completion claim like any other failure.
+- Passes alone on the branch: **order-dependent**. Report it with the order
+  that failed.
+
+Append one line each: `Exit gate: <test>: pre-existing|introduced|order-dependent`.
 
 ## Write the plan-complete line
 
@@ -834,7 +858,7 @@ committed, durable, the record. Sibling directories belong to other work.
 | "One more round will converge" | Past the cap, rounds don't converge: the failure is structural. Adjudicate and route. |
 | "The reviewer will just find something new anyway" | Scoped re-reviews verify fixes; they cannot wander. New findings on untouched code go to the ledger, not the loop. |
 | "This finding is obviously wrong, I'll drop it" | You adjudicate only at the cap, and every ruling is a ledger entry. Silent discards are forbidden. |
-| "The fix was small, skip the re-review" | Unreviewed fixes are how regressions land. Every round ends with a scoped re-review. |
+| "The fix was small, skip the re-review" | A small fix gets a controller re-review, not none: fix-loop.md's four conditions, a re-review file with both sections, and the ledger line. |
 | "Reviews slow the loop down" | The loop without reviews is unverified churn. Reviews are its brakes and steering. |
 | "Ledger bookkeeping is overhead" | The ledger is what survives compaction. Controllers without one have re-dispatched entire completed sequences. |
 | "The implementer spawned its own reviewer: free extra assurance" | A duplicate seat on the same diff. The task review is the gate. A worker-spawned reviewer is a defect to flag, not rigor. |
@@ -847,4 +871,4 @@ committed, durable, the record. Sibling directories belong to other work.
 | "`git worktree add` is quicker than hunting for a native tool" | A native tool owns placement, branching and cleanup. Bypassing it is the #1 mistake: it creates phantom state the harness can't see or manage. |
 | "The worktree directory is surely ignored already" | Run `git check-ignore`. An unignored worktree directory commits the whole tree into the repo. |
 | "Any directory name works" | Explicit instructions beat an existing project-local directory, which beats the `.worktrees/` default. |
-| "The workspace is fresh: baseline tests can wait" | A dirty baseline makes every later failure ambiguous. Run them now; proceeding past failures is the user's call. |
+| "I'll run the full suite now to be safe" | `test_all` runs once, at the exit gate. A failure there is classified against the merge base, which is what a baseline would have told you. |
