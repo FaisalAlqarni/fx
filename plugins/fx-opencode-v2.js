@@ -81,70 +81,7 @@ export default {
     const notice = () => (failures.length ? ` [${failures.join('; ')}]` : '');
     const deny = (ev, message) => { ev.effect = 'deny'; ev.message = message + notice(); };
 
-    await attempt('session.context', () => ctx.session.hook('context', (ev) => attempt('context hook', () => {
-      let text;
-      try {
-        if (loadError) throw loadError;
-        text = render({ harness: 'opencode-v2', cwd: ctx.location.directory });
-      } catch (e) {
-        text = `[fx] fx failed to load: ${messageOf(e)}. The fx bootstrap and its always-on rules are NOT loaded. Tell the user the plugin is misinstalled.`;
-      }
-      if (failures.length) text += `\n${failures.join('\n')}\nSome fx parts are missing. Tell the user the plugin is misinstalled.`;
-      ev.system.push({ type: 'text', text });
-    })));
-
-    await attempt('agent.transform', () => ctx.agent.transform((editor) => attempt('agent transform body', () => {
-      attempt('fx agents', () => {
-        const { READ_ONLY_AGENTS } = require('../lib/plant-roles.js');
-        const { toOpencodeV2Agent } = require('../lib/agent-dialects.js');
-        const refs = path.join(ROOT, 'references');
-        const referencesDirs = [...new Set([refs, fs.realpathSync(refs)])];
-        for (const name of READ_ONLY_AGENTS) {
-          attempt(name, () => {
-            const def = toOpencodeV2Agent(fs.readFileSync(path.join(ROOT, 'agents', `${name}.md`), 'utf8'), { referencesDirs });
-            editor.update(name, (a) => {
-              if (a.system && a.system !== def.system) return;   // ADR-0026: the user's definition wins
-              Object.assign(a, def);
-            });
-          });
-        }
-      });
-      attempt('hide lanes', () => {
-        for (const agent of editor.list()) {
-          attempt(`hide lanes for ${agent.id}`, () => editor.update(agent.id, (a) => {
-            for (const lane of HIDDEN) {
-              if (!a.permissions.some((r) => r.action === 'skill' && r.resource === lane)) a.permissions.push(hideRule(lane));
-            }
-          }));
-        }
-      });
-    })));
-
-    await attempt('command registration (fx commands are unavailable)', async () => {
-      const { opencodeCommands } = require('../lib/opencode-commands.js');
-      const held = new Set((await ctx.command.list()).map((c) => c.name));
-      await ctx.command.transform((editor) => {
-        for (const [name, cmd] of Object.entries(opencodeCommands(ROOT, ROOT))) {
-          if (held.has(name)) continue;
-          editor.add({
-            name,
-            description: cmd.description,
-            execute: async (input) => {
-              // Rethrown: a command that delivered nothing must not look done.
-              try {
-                await ctx.session.prompt({
-                  sessionID: input.sessionID,
-                  text: cmd.template.split('$ARGUMENTS').join((input.prompt && input.prompt.text) || ''),
-                });
-              } catch (e) {
-                throw new Error(`fx: /${name} was not delivered: ${messageOf(e)}`);
-              }
-            },
-          });
-        }
-      });
-    });
-
+    // Registered first: nothing before the git guard waits on the runtime.
     // The guard lives in this hook. If it never registers, execute.before below
     // refuses every shell call instead (a throw there refuses cleanly, probe Q4).
     let evaluateError;
@@ -231,6 +168,71 @@ export default {
     await attempt('tool.execute.after', () => ctx.tool.hook('execute.after', (ev) => {
       attempt('forget command', () => { commands.delete(callKey(ev.sessionID, ev.messageID, ev.id)); });
     }));
+    await attempt('session.context', () => ctx.session.hook('context', (ev) => attempt('context hook', () => {
+      let text;
+      try {
+        if (loadError) throw loadError;
+        text = render({ harness: 'opencode-v2', cwd: ctx.location.directory });
+      } catch (e) {
+        text = `[fx] fx failed to load: ${messageOf(e)}. The fx bootstrap and its always-on rules are NOT loaded. Tell the user the plugin is misinstalled.`;
+      }
+      if (failures.length) text += `\n${failures.join('\n')}\nSome fx parts are missing. Tell the user the plugin is misinstalled.`;
+      ev.system.push({ type: 'text', text });
+    })));
+
+    await attempt('agent.transform', () => ctx.agent.transform((editor) => attempt('agent transform body', () => {
+      attempt('fx agents', () => {
+        const { READ_ONLY_AGENTS } = require('../lib/plant-roles.js');
+        const { toOpencodeV2Agent } = require('../lib/agent-dialects.js');
+        const refs = path.join(ROOT, 'references');
+        const referencesDirs = [...new Set([refs, fs.realpathSync(refs)])];
+        for (const name of READ_ONLY_AGENTS) {
+          attempt(name, () => {
+            const def = toOpencodeV2Agent(fs.readFileSync(path.join(ROOT, 'agents', `${name}.md`), 'utf8'), { referencesDirs });
+            editor.update(name, (a) => {
+              if (a.system && a.system !== def.system) return;   // ADR-0026: the user's definition wins
+              Object.assign(a, def);
+            });
+          });
+        }
+      });
+      attempt('hide lanes', () => {
+        for (const agent of editor.list()) {
+          attempt(`hide lanes for ${agent.id}`, () => editor.update(agent.id, (a) => {
+            for (const lane of HIDDEN) {
+              if (!a.permissions.some((r) => r.action === 'skill' && r.resource === lane)) a.permissions.push(hideRule(lane));
+            }
+          }));
+        }
+      });
+    })));
+
+    // ctx.command.list() is never called: on 2.0.18 it does not answer inside
+    // setup and stalls everything after it. The runtime keeps commands in a Map
+    // keyed by name (core/src/command.ts:57-61), so the later add of a name wins.
+    await attempt('command registration (fx commands are unavailable)', async () => {
+      const { opencodeCommands } = require('../lib/opencode-commands.js');
+      await ctx.command.transform((editor) => {
+        for (const [name, cmd] of Object.entries(opencodeCommands(ROOT, ROOT))) {
+          editor.add({
+            name,
+            description: cmd.description,
+            execute: async (input) => {
+              // Rethrown: a command that delivered nothing must not look done.
+              try {
+                await ctx.session.prompt({
+                  sessionID: input.sessionID,
+                  text: cmd.template.split('$ARGUMENTS').join((input.prompt && input.prompt.text) || ''),
+                });
+              } catch (e) {
+                throw new Error(`fx: /${name} was not delivered: ${messageOf(e)}`);
+              }
+            },
+          });
+        }
+      });
+    });
+
     if (evaluateError && !beforeRegistered) {
       failures.push('fx: the git guard is off: no hook could be registered, so every shell call is unguarded and only the installed policy layer stands.');
     }

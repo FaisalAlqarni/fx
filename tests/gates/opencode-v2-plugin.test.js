@@ -127,7 +127,7 @@ async function evaluate(rec, ev) {
   assert.strictEqual(effect(mine.rec.agents.get('keeps-audit').permissions, 'skill', 'fx-audit'), 'allow', "a user's explicit skill rule keeps the lane listed to the model");
   assert.strictEqual((await evaluate(mine.rec, { action: 'skill', resources: ['fx-audit'], effect: 'allow' })).effect, 'deny',
     "a user's explicit skill rule does not survive the backstop: the lane is listed to the model but refused at call time (the hook's effect is final)");
-  assert.ok(!mine.rec.commands.some((c) => c.name === 'fx-audit'), 'a command already listed is not added again');
+  assert.ok(mine.rec.commands.some((c) => c.name === 'fx-audit'), 'setup never reads the command list: the runtime merges same-named commands itself');
 
   // --- guard: the full command, looked up by call id ------------------------
   const g = stub(dir);
@@ -251,16 +251,29 @@ async function evaluate(rec, ev) {
   fs.rmSync(lc, { recursive: true, force: true });
   fs.rmSync(lc2, { recursive: true, force: true });
 
+  // --- fix round 2: setup never waits on a runtime list (2.0.18 never answers inside setup)
+  const bounded = async (c) => Promise.race([mod.default.setup(c.ctx).then(() => 'done'), new Promise((r) => setTimeout(() => r('stalled'), 1500))]);
+  for (const [label, list] of [['never resolves', () => new Promise(() => {})], ['throws', async () => { throw new Error('list down'); }]]) {
+    const h = stub(dir);
+    h.ctx.command.list = list;
+    assert.strictEqual(await bounded(h), 'done', `setup resolves when command.list ${label}`);
+    for (const name of ['permission.evaluate', 'tool.execute.before', 'tool.execute.after', 'session.context']) {
+      assert.ok((h.rec.hooks[name] || []).length === 1, `${name} is registered when command.list ${label}`);
+    }
+    assert.ok(h.rec.agents.has('fx-lens-security'), `the agents are registered when command.list ${label}`);
+    assert.ok(h.rec.commands.length > 0, `the commands are registered when command.list ${label}`);
+  }
+
   // --- fix round 1: failures are visible, the backstop fails closed ---------
   const ctxText = async (r) => { const e = { system: [] }; await r.hooks['session.context'][0](e); return e.system.map((x) => x.text).join('\n'); };
   const broken = stub(dir);
   broken.ctx.agent.transform = async () => { throw new Error('boom'); };
-  broken.ctx.command.list = async () => { throw new Error('no list'); };
+  broken.ctx.command.transform = async () => { throw new Error('no list'); };
   await mod.default.setup(broken.ctx);
   const note = await ctxText(broken.rec);
   assert.ok(note.includes('fx: agent.transform failed: boom'), 'a failed step is reported in the preamble');
   assert.ok(/fx: .*fx commands are unavailable.*: no list/.test(note), 'a failed command registration says the commands are unavailable');
-  assert.strictEqual(broken.rec.commands.length, 0, 'no commands without the list');
+  assert.strictEqual(broken.rec.commands.length, 0, 'no commands when registration fails');
   const refused = await evaluate(broken.rec, { action: 'skill', resources: ['fx-audit'], effect: 'allow' });
   assert.ok(refused.message.includes('boom'), 'a denied evaluation carries the failure list');
 
