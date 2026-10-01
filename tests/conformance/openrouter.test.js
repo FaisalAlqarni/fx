@@ -68,6 +68,15 @@ for (const [what, line] of [
   ['no JSON', 'stderr: last status: 429 Too Many Requests'],
 ]) assert.strictEqual(or.childProviderError(line), null, `not a child provider error: ${what}`);
 
+// A detector that cannot read the log is blind, never clean: a cut JSON line, or
+// no rollout in a Codex log, throws.
+assert.strictEqual(or.childCheck('codex', '{"type":"session_meta","payload":{"id":"t0"}}\n' + collab({ status: 'completed', message: 'ok' })), null);
+assert.throws(() => or.childCheck('codex', collab({ status: 'completed', message: 'ok' })), /no rollout/, 'a Codex log with no session_meta is blind');
+assert.throws(() => or.childCheck('claude-code', '{"type":"result"}\n{"type":"item.comp'), /unparseable/, 'a cut JSON line is blind');
+assert.strictEqual(or.childCheck('claude-code', 'stderr: {not json}\ntranscript: {x'), null, 'prefixed lines are not stream lines');
+const cpx = require('child_process');
+assert.strictEqual(cpx.spawnSync('node', [path.join(__dirname, 'lib', 'openrouter.js'), 'child', '/nonexistent/log', 'codex']).status, 3, 'a missing log exits 3');
+
 const init = '{"type":"system","subtype":"init","model":"anthropic/claude-haiku-4.5","tools":[]}\n{"type":"result"}';
 assert.strictEqual(or.sessionModel('claude-code', init), 'anthropic/claude-haiku-4.5');
 assert.strictEqual(or.sessionModel('claude-code', '{"type":"system","subtype":"init","model":"claude-opus-4"}'), 'claude-opus-4',

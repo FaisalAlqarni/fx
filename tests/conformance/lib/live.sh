@@ -17,12 +17,8 @@
 # A SIGKILL skips every EXIT trap, so a killed run leaves this credential copy
 # in the scratch dir under /tmp until reboot. README.md says so.
 
-# A session whose subagent hit a provider error (live_run sets
-# CHILD_PROVIDER_ERROR) cannot be judged: a row that then fails or gaps exits 75,
-# so run.sh re-runs it on the fallback model. A row that passes anyway is kept.
-child_err() { [ -z "${CHILD_PROVIDER_ERROR:-}" ] || { echo "$HARNESS: provider error in a subagent ($CHILD_PROVIDER_ERROR)" >&2; exit 75; }; }
-gap()  { echo "$HARNESS: $*" >&2; child_err; exit 77; }
-fail() { echo "$HARNESS: $*" >&2; child_err; exit 1; }
+gap()  { echo "$HARNESS: $*" >&2; exit 77; }
+fail() { echo "$HARNESS: $*" >&2; exit 1; }
 
 # Refuse to run anywhere but a runner scratch home. The runner is the only
 # place that sets HOME; a row never re-points it.
@@ -450,9 +446,21 @@ live_run() {
         done
       done ;;
   esac
-  # After the rollouts are appended: a grandchild's error is only in its parent's.
-  CHILD_PROVIDER_ERROR=""
-  [ -z "$OPENROUTER" ] || CHILD_PROVIDER_ERROR="$(node "$OR_JS" child "$LOG")" || CHILD_PROVIDER_ERROR=""
+  # A provider error anywhere in the session, in a child or a grandchild, makes
+  # the run inconclusive whatever its assertions say: a pass may never have
+  # exercised the rule (the subagent that should have broken it died), and a
+  # fail may be the dead subagent's doing. Exit 75 so run.sh re-runs it. Read
+  # after the rollouts are appended: a grandchild's error is only in its
+  # parent's. A detector that cannot read the log is inconclusive too.
+  if [ -n "$OPENROUTER" ]; then
+    local cerr cerr_rc
+    cerr="$(node "$OR_JS" child "$LOG" "$HARNESS" 2>&1)"; cerr_rc=$?
+    case $cerr_rc in
+      1) ;;
+      0) keep_log; echo "$HARNESS: provider error in a subagent ($cerr)" >&2; exit 75 ;;
+      *) keep_log; echo "$HARNESS: provider error detector could not read the session log ($cerr)" >&2; exit 75 ;;
+    esac
+  fi
   if [ -n "$OPENROUTER" ]; then
     local sm; sm="$(node "$OR_JS" model "$HARNESS" "$LOG")"
     [ -z "$sm" ] || { [ -z "${FX_ROW_MODEL_FILE:-}" ] || echo "$sm" > "$FX_ROW_MODEL_FILE"; }

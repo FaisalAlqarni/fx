@@ -5,7 +5,7 @@
 //   openrouter.js env <harness> <model>            NAME=value lines
 //   openrouter.js setup <harness> <model> <home>   write the config fragments under <home>
 //   openrouter.js model <harness> <logfile>        the session's own model, or nothing
-//   openrouter.js child  LOG  print the match for a subagent provider error, exit 0 on one
+//   openrouter.js child  LOG HARNESS  print a subagent provider error and exit 0; exit 1 for none, 3 if the log cannot be read
 //   openrouter.js error   (env E = CLI error events, S = stderr)  print the match, exit 0 on a provider error
 //   openrouter.js leaks <file> [keyfile]           exit 10 when the file holds a key (or the keyfile's value),
 //                                                  0 when clean; any other exit is a scan failure, never "clean"
@@ -119,6 +119,20 @@ function childProviderError(logText) {
   return null;
 }
 
+// The detector must read the whole log or say it could not. A line that opens a
+// JSON object and does not parse (a cut stream, a cut rollout) is blind: a
+// grandchild's error lives only in its parent's rollout. A Codex log with no
+// session_meta has no rollout appended, so a grandchild would be invisible.
+// Lines prefixed `stderr: `, `transcript: ` and the like are not stream lines.
+function childCheck(harness, logText) {
+  for (const l of String(logText).split('\n')) {
+    if (!l.startsWith('{')) continue;
+    try { JSON.parse(l); } catch { throw new Error('unparseable JSON line in the session log'); }
+  }
+  if (harness === 'codex' && !/"type":"session_meta"/.test(logText)) throw new Error('no rollout in the Codex session log');
+  return childProviderError(logText);
+}
+
 function lines(text) {
   const out = [];
   for (const l of String(text).split('\n')) { try { out.push(JSON.parse(l)); } catch { /* not JSON */ } }
@@ -161,7 +175,7 @@ function applySetup(setup, home) {
   }
 }
 
-module.exports = { MODELS, providerSetup, isProviderError, childProviderError, sessionModel, leaksKey, applySetup };
+module.exports = { MODELS, providerSetup, isProviderError, childProviderError, childCheck, sessionModel, leaksKey, applySetup };
 
 if (require.main === module) {
   const [cmd, a, b, c] = process.argv.slice(2);
@@ -169,7 +183,11 @@ if (require.main === module) {
   else if (cmd === 'setup') applySetup(providerSetup(a, b), c);
   else if (cmd === 'model') { const m = sessionModel(a, fs.readFileSync(b, 'utf8')); if (m) console.log(m); }
   else if (cmd === 'error') { const r = providerErrorReason(process.env.E || '', process.env.S || ''); if (r) console.log(r); process.exit(r ? 0 : 1); }
-  else if (cmd === 'child') { const r = childProviderError(fs.readFileSync(a, 'utf8')); if (r) console.log(r); process.exit(r ? 0 : 1); }
+  else if (cmd === 'child') {
+    // exit 0: a provider error in a subagent (printed); 1: none; 3: the log could not be read.
+    try { const r = childCheck(b, fs.readFileSync(a, 'utf8')); if (r) console.log(r); process.exit(r ? 0 : 1); }
+    catch (e) { console.error(`child check failed: ${e.message}`); process.exit(3); }
+  }
   else if (cmd === 'leaks') {
     try {
       const key = b ? fs.readFileSync(b, 'utf8').trim() : (process.env.OPENROUTER_API_KEY || '');

@@ -75,7 +75,7 @@ if [ "${FX_LIVE_PROVIDER:-}" = openrouter ]; then
   export FX_ROW_MODEL_FILE="$SCRATCH/row.model"
 fi
 
-pass=0; fail=0; gap=0; ran=0; fb=0
+pass=0; fail=0; gap=0; ran=0; fb=0; inc_total=0
 for f in "${ROWS[@]}"; do
   # A row without a --describe guard runs its body here and prints nothing
   # parseable. That is a FAIL, never a skip: an empty kind is not "not free".
@@ -105,6 +105,7 @@ for f in "${ROWS[@]}"; do
   }
   run_row
   suffix=""
+  inc=0; [ "$rc" -ne 75 ] || inc=1   # attempts that saw a provider error, whatever the row asserted
   if [ -n "$OPENROUTER" ] && [ "$kind" = live ]; then
     # 75 is a provider error (live.sh). Re-run once on the fallback model. Every
     # log the first attempt kept (one per live_run call) is renamed
@@ -122,8 +123,11 @@ for f in "${ROWS[@]}"; do
       echo "row $n: provider error on the primary model, re-running once on $OR_FALLBACK" >&2
       FX_LIVE_MODEL="openrouter/$OR_FALLBACK" run_row
       suffix=" attempt=2 (fallback)"
+      [ "$rc" -ne 75 ] || inc=2
     fi
     suffix=" model=$(cat "$SCRATCH/row.model" 2>/dev/null || echo unknown)$suffix"
+    [ "$inc" -eq 0 ] || suffix="$suffix inconclusive=$inc"
+    inc_total=$((inc_total+inc))
     [ "$rc" -ne 75 ] || rc=77   # a provider error that survived the re-run is a GAP, its reason is on stderr above
   fi
   ran=$((ran+1))
@@ -136,7 +140,7 @@ for f in "${ROWS[@]}"; do
   fi
   case "$rc" in
     0)  printf 'PASS  %2s  %s%s\n' "$n" "$name" "$suffix"; pass=$((pass+1))
-        case "$suffix" in *"(fallback)") fb=$((fb+1)) ;; esac ;;
+        case "$suffix" in *"(fallback)"*) fb=$((fb+1)) ;; esac ;;
     77) printf 'GAP   %2s  %s%s\n' "$n" "$name" "$suffix"; gap=$((gap+1)) ;;
     *)  printf 'FAIL  %2s  %s%s\n' "$n" "$name" "$suffix"; fail=$((fail+1)) ;;
   esac
@@ -144,7 +148,8 @@ done
 
 # Under OpenRouter the passes that needed the fallback model are counted apart.
 fbnote=""; [ "$fb" -eq 0 ] || fbnote=" ($fb on fallback)"
-printf '\n%s: %d pass%s, %d fail, %d gap\n' "$HARNESS" "$pass" "$fbnote" "$fail" "$gap"
+incnote=""; [ "$inc_total" -eq 0 ] || incnote=", $inc_total inconclusive"
+printf '\n%s: %d pass%s, %d fail, %d gap%s\n' "$HARNESS" "$pass" "$fbnote" "$fail" "$gap" "$incnote"
 
 # A runner that dispatched nothing looks exactly like success. Say so instead.
 if [ "$ran" -eq 0 ]; then

@@ -80,21 +80,26 @@ row "echo '$ok'; echo 'sk-or-v1-leaked'; exit 0"
 check '^FAIL  95' "a log with a key is not a FAIL"
 [ -z "$(ls -A "$LOGS")" ] || { echo "FAIL: a log holding a key was copied: $(ls "$LOGS")"; fails=1; }
 
-# A provider error inside a subagent (a Codex-shaped collab_tool_call line, exit 0)
-# turns a row's FAIL into a provider error, so run.sh can re-run it; a row that
-# passes anyway stays a PASS; the same text in a model message changes nothing.
+# A provider error anywhere in the session (here a Codex-shaped collab_tool_call
+# line, exit 0) makes the run inconclusive whatever the row's assertions said:
+# a FAIL and a PASS alike exit 75, so run.sh re-runs or GAPs it; the same text in
+# a model message changes nothing; a log the detector cannot read is inconclusive
+# too, never clean.
 child='{"type":"item.completed","item":{"type":"collab_tool_call","tool":"wait","prompt":null,"agents_states":{"t1":{"status":"errored","message":"exceeded retry limit, last status: 429 Too Many Requests"}},"status":"failed"}}'
 saved="$T/rows"; T_ROWS="$T/rows98"
 rowc() { printf '#!/bin/sh\n%s\n' "$1" > "$FAKE/bin/claude"; chmod +x "$FAKE/bin/claude"; shift; rm -f "$LOGS"/*
   out="$(env PATH="$FAKE/bin:$PATH" HOME="$FAKE" FX_REAL_HOME="$FAKE" FX_CONFORMANCE_ROWS="$T_ROWS" FX_CONFORMANCE_LOGS="$LOGS" \
     FX_LIVE_PROVIDER=openrouter OPENROUTER_API_KEY=$KEY "$@" bash tests/conformance/run.sh claude-code 2>&1)"; rc=$?; }
 rowc "echo '$ok'; echo '$child'; exit 0"
-check '^GAP   98' "a FAIL after a subagent 429 is not a provider error GAP"
+check '^GAP   98.*inconclusive=1' "a FAIL beside a subagent 429 is not an inconclusive GAP"
 check 'provider error in a subagent (last status: 429)' "the GAP does not name the subagent 429"
 rowc "echo '$ok'; echo '$child'; exit 0" FX_STUB_PASS=1
-check '^PASS  98' "a row that passes despite a subagent 429 is not a PASS"
-rowc "echo '$ok'; echo '{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"last status: 429 Too Many Requests\"}}'; exit 0"
-check '^FAIL  98' "a 429 in a model message is not a plain FAIL"
+check '^GAP   98.*inconclusive=1' "a PASS beside a subagent 429 is not inconclusive"
+rowc "echo '$ok'; echo '{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"last status: 429 Too Many Requests\"}}'; exit 0" FX_STUB_PASS=1
+check '^PASS  98' "a 429 in a model message is not a clean PASS"
+rowc "echo '$ok'; echo '{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_mess'; exit 0" FX_STUB_PASS=1
+check '^GAP   98.*inconclusive=1' "a log with a cut JSON line is not inconclusive"
+check 'could not read' "the unreadable-log GAP does not say so"
 
 # The key crosses as a file, not a variable: Claude Code gets only
 # ANTHROPIC_AUTH_TOKEN, and OPENROUTER_API_KEY is not in its environment.
@@ -146,14 +151,14 @@ mv "$T/95.off" "$T/rows/95-probe.sh"; rm -f "$T/rows/95-probe.sh.keep"
 # run.sh: the re-run on the fallback, and a second 75.
 r75() { rm -f "$LOGS"/*; out="$(env FX_CONFORMANCE_ROWS="$T/rows75" FX_CONFORMANCE_LOGS="$LOGS" FX_LIVE_PROVIDER=openrouter "$@" bash tests/conformance/run.sh codex 2>&1)"; rc=$?; }
 r75
-check '^PASS  96.*model=deepseek/deepseek-v4-flash attempt=2 (fallback)$' "a 75 is not re-run once on the fallback"
-check '1 pass (1 on fallback)' "the summary does not count the fallback pass apart"
+check '^PASS  96.*model=deepseek/deepseek-v4-flash attempt=2 (fallback) inconclusive=1$' "a 75 is not re-run once on the fallback"
+check '1 pass (1 on fallback), 0 fail, 0 gap, 1 inconclusive' "the summary does not count the fallback pass and the inconclusive attempt"
 for f in 96-fallback-codex.attempt1.log 96-fallback-codex.attempt1.2.log; do
   [ -f "$LOGS/$f" ] || { echo "FAIL: the first attempt's log is not kept as $f: $(ls "$LOGS")"; fails=1; }
 done
 [ ! -f "$LOGS/96-fallback-codex.log" ] || { echo "FAIL: the first attempt's log was left under the live name"; fails=1; }
 r75 FX_STUB_ALWAYS_75=1
-check '^GAP   96.*attempt=2 (fallback)' "a second 75 is not a GAP"
+check '^GAP   96.*attempt=2 (fallback) inconclusive=2' "a second 75 is not a GAP"
 check 'provider error' "the second-75 GAP carries no reason"
 # Rows print tails of the model's answer: the runner scans that stderr for the key.
 r75 OPENROUTER_API_KEY=$KEY FX_STUB_LEAK=1
