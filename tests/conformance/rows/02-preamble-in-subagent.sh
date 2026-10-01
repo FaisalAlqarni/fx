@@ -16,7 +16,7 @@ live_run "Dispatch exactly one subagent ($SUBAGENT_TOOL) and give it this task, 
 [ -n "$(events sub_input)" ] || fail "no subagent was dispatched"
 # A Codex subagent forked with the parent's turns inherits the parent's
 # context, preamble included, so its answer would prove nothing.
-if [ "$HARNESS" = codex ] && ! events sub_input | grep -q '"fork_turns":"none"'; then
+if [ "$HARNESS" = codex ] && events sub_fork | grep -q forked; then
   fail "the subagent was forked with the parent's context, so its answer proves nothing"
 fi
 events sub_input | grep -qwE '111|35' && fail "the parent put an answer in the subagent's prompt"

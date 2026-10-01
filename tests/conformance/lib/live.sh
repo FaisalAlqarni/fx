@@ -130,7 +130,7 @@ OPENCODE_MODEL="llamacpp/qwen3.8-27b"
 # rather than whether the model guessed the tool.
 case "$HARNESS" in
   claude-code) SUBAGENT_TOOL="the Agent tool" ;;
-  codex)       SUBAGENT_TOOL="spawn_agent with fork_turns set to \"none\", then wait for it" ;;
+  codex)       SUBAGENT_TOOL="spawn_agent without forking your history (fork_turns \"none\" if that parameter exists, otherwise fork_context false), then wait for it" ;;
   opencode)    SUBAGENT_TOOL="the task tool" ;;
   opencode-v2) SUBAGENT_TOOL="the subagent tool" ;;
 esac

@@ -164,4 +164,27 @@ const v2Refused = [
 ];
 assert.strictEqual(slice('max_depth', 'opencode-v2', v2Refused).trim(), '0', 'a refused dispatch is no depth');
 
+// Codex: sub_fork says whether each top-level spawn inherited the parent's
+// history. MultiAgentV2 forks unless fork_turns is "none"; V1 (the namespace a
+// model outside the bundled catalog gets) forks only on fork_context true.
+const spawn = (namespace, args) => [{ type: 'session_meta', payload: { id: 't0' } },
+  { type: 'response_item', payload: { type: 'function_call', name: 'spawn_agent', namespace, arguments: JSON.stringify({ message: 'm', ...args }) } }];
+for (const [ns, args, want] of [
+  ['multi_agent_v1', {}, 'isolated'],
+  ['multi_agent_v1', { fork_context: false }, 'isolated'],
+  ['multi_agent_v1', { fork_context: true }, 'forked'],
+  ['multi_agent_v2', { fork_turns: 'none' }, 'isolated'],
+  ['multi_agent_v2', {}, 'forked'],
+  ['multi_agent_v2', { fork_turns: 'all' }, 'forked'],
+  ['multi_agent_v2', { fork_turns: '2' }, 'forked'],
+]) assert.strictEqual(slice('sub_fork', 'codex', spawn(ns, args)).trim(), want, `${ns} ${JSON.stringify(args)}`);
+
+// Codex V1 hands a child's answer back as the wait call's agent state, in the
+// exec stream: `completed` with the child's last message. Only that state
+// counts as a subagent's return (row 02, qwen run 2026-10-01).
+const wait = (st) => [{ type: 'item.completed', item: { type: 'collab_tool_call', tool: 'wait', agents_states: { t1: st } } }];
+assert.strictEqual(slice('sub_output', 'codex', wait({ status: 'completed', message: 'N=111 P=35' })).trim(), 'N=111 P=35');
+assert.strictEqual(slice('sub_output', 'codex', wait({ status: 'errored', message: 'oops' })).trim(), '', 'an errored child returned nothing');
+assert.strictEqual(slice('sub_output', 'codex', wait({ status: 'pending_init', message: null })).trim(), '');
+
 console.log('events: all passed');

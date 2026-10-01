@@ -10,6 +10,7 @@
 //   KIND=sub_input        the prompt each subagent was dispatched with
 //   KIND=sub_output       what each dispatched subagent returned to its parent
 //   KIND=sub_type         the agent type each subagent was dispatched as
+//   KIND=sub_fork         codex: `forked` or `isolated` per subagent, by whether it inherited the parent's history
 //   KIND=sub_tool_output  what tool calls made INSIDE a subagent returned
 //   KIND=max_depth        how deep dispatch went: 0 none, 1 a subagent, 2 its child
 //   KIND=skills           the name of every skill a session loaded, one per line
@@ -37,7 +38,7 @@ const kind = process.env.KIND;
 const harness = process.env.HARNESS;
 const lines = fs.readFileSync(process.argv[2], 'utf8').split('\n');
 const out = {
-  answer: [], tool_output: [], sub_input: [], sub_output: [], sub_type: [],
+  answer: [], tool_output: [], sub_input: [], sub_output: [], sub_type: [], sub_fork: [],
   sub_tool_output: [], skills: [], skill_attempts: [], max_depth: 0,
 };
 
@@ -130,6 +131,10 @@ function codex() {
     if (r.type === 'item.completed' && r.item && !sawRollout) {
       if (r.item.type === 'agent_message') out.answer.push(r.item.text);
       if (r.item.type === 'command_execution') out.tool_output.push(text(r.item.aggregated_output));
+      // V1 returns a child's answer as the wait call's agent state.
+      if (r.item.type === 'collab_tool_call' && r.item.tool === 'wait') {
+        for (const st of Object.values(r.item.agents_states || {})) if (st && st.status === 'completed') out.sub_output.push(text(st.message));
+      }
       continue;
     }
     if (r.type !== 'response_item' || !r.payload) continue;
@@ -146,6 +151,9 @@ function codex() {
         let a = {};
         try { a = JSON.parse(p.arguments || '{}'); } catch { /* not JSON */ }
         out.sub_type.push(a.agent_type || a.role || 'default');
+        // V2 forks unless fork_turns is "none"; V1 forks only on fork_context true.
+        const forked = p.namespace === 'multi_agent_v2' ? a.fork_turns !== 'none' : a.fork_context === true;
+        out.sub_fork.push(forked ? 'forked' : 'isolated');
       }
     }
     if (p.type === 'function_call' || p.type === 'custom_tool_call') {
