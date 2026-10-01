@@ -46,8 +46,17 @@ Q10). The preamble reaches a subagent on every request (probe Q2).
 
 `experimental.subagent_depth` defaults to 1 and is 2 to let a subagent
 dispatch another. A top-level `subagent_depth` key is dropped. The built-in
-`general` and `explore` agents deny `subagent`, so depth 2 matters only for
-an agent that allows it (probe Q9).
+`general` and `explore` agents deny `subagent` and `build` is primary only
+(`Agent build cannot run as a subagent`), so nothing nests unless an agent
+allows `subagent` (probe Q9). The plugin allows it on `general`, as the 1.x
+plugin does for `task`; `explore` stays read-only. A `general` the user
+defines in `opencode.json` is applied after the plugin and wins.
+
+Every denial the plugin makes starts with `[fx] `. The installer's policies
+(`experimental.policies`) apply after the plugin and answer only `Blocked by
+configuration policy`, so a plain `git branch -D` shows that text, not the
+guard's reason; spellings the policies skip (`git -C . branch -D`) show the
+guard's.
 
 ## Skill hiding
 
@@ -74,3 +83,10 @@ agent, which then still sees every skill (probe Q11).
   list on the first call after a start (probe, changes 3).
 - Run every `opencode run`, `api` and `session` call with `</dev/null`, or
   it blocks without output (probe, changes 1).
+
+## Headless runs and the question tool
+
+`opencode run` has no one to answer the `question` tool. A session that calls
+it ends `Session interrupted: shutdown`. A user who runs headless denies it
+with a global rule, `"permissions": [{ "action": "question", "resource": "*",
+"effect": "deny" }]`; the conformance runner does. fx does not write that rule.
