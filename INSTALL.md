@@ -357,6 +357,21 @@ On 2.x the installer:
   removed, even when it is identical to fx's. An install made before that
   record existed has none, so fx treats its entries as yours.
 
+**Nested dispatch on 2.x is yours to allow.** The built-in `general` and
+`explore` agents deny the `subagent` tool and `build` cannot run as a subagent,
+so by default a subagent cannot dispatch another (a reviewer inside an
+implementer, for example). fx does not grant that on 2.x: it cannot see every
+place 2.0.18 reads your rules from, so it cannot tell whether you already
+answered. To let `general` dispatch subagents, add this to your `opencode.json`
+(fx's `subagent_depth` 2 then lets it nest one level):
+
+```json
+{ "agents": { "general": { "permissions": [{ "action": "subagent", "resource": "*", "effect": "allow" }] } } }
+```
+
+On 1.x fx grants the equivalent `task` permission to `general` unless you set
+your own (ADR-0026).
+
 The plugin registers fx's commands itself, so the installer writes no command
 files on 2.x and removes the generated ones a 1.x install left.
 

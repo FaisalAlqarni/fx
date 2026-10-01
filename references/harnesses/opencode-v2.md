@@ -48,9 +48,13 @@ Q10). The preamble reaches a subagent on every request (probe Q2).
 dispatch another. A top-level `subagent_depth` key is dropped. The built-in
 `general` and `explore` agents deny `subagent` and `build` is primary only
 (`Agent build cannot run as a subagent`), so nothing nests unless an agent
-allows `subagent` (probe Q9). The plugin allows it on `general`, as the 1.x
-plugin does for `task`; `explore` stays read-only. A `general` the user
-defines in `opencode.json` is applied after the plugin and wins.
+allows `subagent` (probe Q9). fx does not grant it on 2.x (ADR-0026): it
+cannot see every place 2.0.18 reads user rules from, so it cannot tell whether
+the user already answered. A user lets `general` dispatch with
+`{ "agents": { "general": { "permissions": [{ "action": "subagent",
+"resource": "*", "effect": "allow" }] } } }` in `opencode.json`; the conformance
+runner adds that rule to its scratch config. On 1.x the plugin grants the
+equivalent `task` permission unless the user set one.
 
 Every denial the plugin makes starts with `[fx] `. The installer's policies
 (`experimental.policies`) apply after the plugin and answer only `Blocked by

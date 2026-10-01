@@ -23,6 +23,8 @@ fx treats 2.x as a fourth harness, `opencode-v2`. `opencode` keeps meaning 1.x.
 
 The 2.x plugin route cannot name the plugin as a `file://` entry in `plugin`: 2.0.18 answers "configured plugin path must be a directory". The conformance runner links the plugin into the config's `plugins/` directory instead, and adds fx's `skills` directory to `skills`.
 
+fx does not grant `general` the `subagent` tool on 2.x. User rules reach 2.0.18 from `.jsonc`, ancestor directories, `OPENCODE_CONFIG`, `OPENCODE_CONFIG_CONTENT`, 1.x keys and agent Markdown, all applied after plugins, so the plugin cannot know whether the user already answered, and a grant that overrides that answer breaks ADR-0026. INSTALL.md gives the rule a user adds.
+
 A 2.x install made with the installer owns its entries by record. An install made before the record existed has no record, so its depth and policies are treated as the user's.
 
 ## Supersedes
