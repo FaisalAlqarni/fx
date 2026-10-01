@@ -23,6 +23,14 @@ If `permission.evaluate` cannot be registered, `tool.execute.before` throws for 
 
 Real 2.0.18, through a model, with the plugin linked into a scratch config: `git push --force origin main` ended with a shell tool status of `error` and the message "force push rewrites history that has already left the machine." That is fx's reason, not the policy text.
 
+## The lane check
+
+The lane check runs in `permission.evaluate` on the `edit` action, resolves each resource against the project directory, denies on a hit with fx's reason, and fails open on an error: advice never wedges an edit. On 1.x the same check runs in `tool.execute.before` for `edit`, `write` and `apply_patch`, also denies on a hit (by throwing), and fails open. Live row 17 observed `write` reaching the 2.x check. `patch` is unprobed, so no claim is made for it.
+
+## An exception to ADR-0026
+
+ADR-0026 lets the user's own permission answer win over fx's grant. Two checks here deliberately do not: the hidden-lane backstop and the read-only re-deny override an incoming `allow`. Why: neither is a grant. They enforce what the lane's author meant. The five user-invoked lanes are typed by a person, and the six review agents cannot write. A host or session rule that widens either would remove the property. A user who wants a reviewer that writes defines an agent under another name; nothing lets the model pick a hidden lane.
+
 ## What the 2.x guard does not catch
 
 - `echo "git reset --hard" | sh`. `lib/git-guard.js` does not scan the quoted body of an `echo` that feeds a shell. This gap is older than this ADR and exists on every runtime that shares the library.

@@ -191,7 +191,10 @@ OPENROUTER_API_KEY=... FX_LIVE_PROVIDER=openrouter bash tests/conformance/run.sh
   passes that needed the fallback: `N pass (F on fallback)`. Claude Code has no
   fallback: its 75 is a GAP, and `FX_LIVE_MODEL` other than Haiku fails the row
   there. A capability failure is not a provider error; it is re-run
-  once on the same model, as above.
+  once by hand on the same model, as above.
+- The runner does not check the credit balance, re-run a capability failure
+  or limit and pace requests. Check the balance on OpenRouter before a run
+  (`docs/adr/0038`).
 - Each live row's line ends in `model=<id>`, the model the session itself
   reported (Claude Code's init event, Codex's `turn_context`, the OpenCode
   session export), or `model=<id> (config)` when the log names none. A session

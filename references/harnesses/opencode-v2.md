@@ -56,6 +56,13 @@ the user already answered. A user lets `general` dispatch with
 runner adds that rule to its scratch config. On 1.x the plugin grants the
 equivalent `task` permission unless the user set one.
 
+The lane check runs in `permission.evaluate` on the `edit` action. It
+resolves each resource against the project directory, denies on a hit, and
+fails open on an error, because it is advice. `write` reaches it as observed
+through live row 17; `patch` is unprobed. 1.x denies on a hit too, from
+`tool.execute.before` for `edit`, `write` and `apply_patch`, and also fails
+open.
+
 Every denial the plugin makes starts with `[fx] `. The installer's policies
 (`experimental.policies`) apply after the plugin and answer only `Blocked by
 configuration policy`, so a plain `git branch -D` shows that text, not the

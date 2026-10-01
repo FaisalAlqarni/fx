@@ -4,7 +4,8 @@ fx runs on four harnesses: Claude Code, Codex, opencode 1.x and opencode 2.x.
 The two opencode majors share one binary name and one config directory but
 have different plugin APIs, so fx ships a plugin for each and treats them as
 separate harnesses (`docs/adr/0036`). Each install is independent, and none of
-them needs another runtime present. fx is measured against Claude Code 2.1.278,
+them needs another runtime present. One opencode config directory serves one
+major at a time (see [opencode 2.x](#opencode-2x)). fx is measured against Claude Code 2.1.278,
 Codex CLI 0.155.1, opencode 1.18.25 and opencode 2.0.18. Later versions are
 checked only by the nightly free rows at `@latest` (see
 [Nightly checks](#nightly-checks)), which make no model call, so a live
@@ -349,8 +350,11 @@ On 2.x the installer:
 - generates the six read-only agents with rule-list permissions;
 - writes fx's guard policies and `experimental.subagent_depth` 2 into
   `opencode.json`;
-- never writes a top-level `permissions` key, which opencode 1.x refuses, so
-  the same directory still loads under 1.x;
+- never writes a top-level `permissions` key to `opencode.json`, but the
+  generated agents carry `permissions`, which 1.x refuses (1.18.25: "V2
+  permissions are not supported"), and the linked plugin is the 2.x one. So one
+  config directory serves one major. To switch majors, run the installer with
+  `--major` for the new one: it replaces what fx wrote and leaves yours;
 - records what it wrote in `.fx-opencode-owned.json` in the config directory.
   A later run, in either major, removes only entries listed there and still
   holding the recorded value. A policy or depth you wrote yourself is never
@@ -427,6 +431,18 @@ Full detail and the limits are in `docs/adr/0037`.
 - Free text in a push option can make a policy block a command the guard would
   allow, because a policy cannot be overridden.
 
+### The lane check
+
+The lane check refuses the first source-file write in a repository that has no
+`docs/plans/*/design.md`, and says why. On 2.x it runs in `permission.evaluate`
+for the `edit` action. It resolves each resource against the project directory,
+denies on a hit with fx's reason, and fails open on an error: a lane check that
+cannot load or throws leaves the edit alone, because it is advice. Whether a
+model's `write` call reaches it is observed through live row 17, which passed on
+2.0.18; `patch` is unprobed, so nothing here claims it. On 1.x the check runs in
+`tool.execute.before` for `edit`, `write` and `apply_patch`. It also denies on a
+hit, by throwing, and fails open when the check itself breaks.
+
 ### The five user-invoked lanes
 
 fx hides `fx-audit`, `fx-setup`, `fx-critique`, `fx-grill` and `fx-handoff`
@@ -466,6 +482,29 @@ Limits:
 
 `git pull` in the clone refreshes the linked files. Run the installer again
 after a pull that changes `agents/`, and restart opencode.
+
+If you installed the 1.x plugin with the installer before this branch, run the
+installer again: the plugin file moved from `plugins/fx.js` in the clone to
+`plugins/fx-opencode-v1.js`, and the link in your config directory must follow.
+
+### Removing fx from opencode
+
+The installer has no uninstall flag. To remove fx by hand from the config
+directory (`~/.config/opencode`, or the `--dest` you used):
+
+1. Read `.fx-opencode-owned.json`. It lists the guard policies and the
+   `experimental.subagent_depth` value the installer wrote into `opencode.json`.
+2. In `opencode.json`, delete the listed entries from `experimental.policies`,
+   and `experimental.subagent_depth` if the record lists it. Leave any entry
+   you wrote yourself. These are the installer's guard policies; a command one
+   of them refuses is answered with "Blocked by configuration policy", which is
+   how to tell a policy denial from fx's own `[fx] ` reason.
+3. Delete the symlinks: `plugins/fx.js`, `references`, and each `skills/<name>`
+   that points into the clone.
+4. Delete the generated `agents/fx-*.md` and, on 1.x, `commands/fx-*.md`.
+5. Delete `.fx-opencode-owned.json`.
+
+The policies are global: they apply to every project until step 2 is done.
 
 ---
 
@@ -551,6 +590,9 @@ were made on 2026-10-01 on the branch that adds OpenCode 2.x. Logs are in
 | Codex | 0.155.1 | 18 | 0 | 0 | 16 | 12 (rows 12 and 17 passed on the paid primary) |
 | OpenCode | 1.18.25 | 18 | 0 | 0 | 14 | 12 |
 | OpenCode | 2.0.18 | 18 | 0 | 0 | 12 | 12 |
+
+Claude Code's other twelve rows were proven 18 of 18 in `78ff5b3`; this branch
+re-ran only the six it changed.
 
 - **Models.** Claude Code ran `anthropic/claude-haiku-4.5`. Every other model
   call ran on the fallback `deepseek/deepseek-v4-flash`: the free primary
