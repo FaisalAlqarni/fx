@@ -23,7 +23,7 @@ section shows.
 
 What each runtime has been proven to do in live sessions is at the end, under
 [What is verified](#what-is-verified). Read it before relying on a guarantee:
-Codex live verification is still pending.
+Codex rows 12 and 17 are open there.
 
 ---
 
@@ -115,7 +115,7 @@ state today, so it always tells you to check `/hooks`.
 
 ### Limits on Codex
 
-- **Live verification is pending.** See [What is verified](#what-is-verified).
+- **Live verification** is in [What is verified](#what-is-verified): rows 12 and 17 are open there.
 - **The bundled validator reports five failures, and they are expected.**
   Codex's plugin lint rejects `disable-model-invocation: true`, and fx sets it
   on each of its five user-invoked lanes (`fx-audit`, `fx-critique`,
@@ -541,62 +541,72 @@ has the per-runtime table, the Codex limits and the measurements.
 ## What is verified
 
 The conformance matrix in `tests/conformance/` runs each guarantee against the
-real CLI. `docs/plans/2026-09-21-multi-harness/state.md` records every result.
+real CLI, through OpenRouter (`FX_LIVE_PROVIDER=openrouter`). The runs below
+were made on 2026-10-01 on the branch that adds OpenCode 2.x. Logs are in
+`/tmp/fxlogs-opencode-v2-final/`, outside the repo.
 
-| Runtime | Live result |
-|---|---|
-| Claude Code | Task 21 of the multi-harness plan, 2026-09-22: 16 pass, 0 fail. Rows 13 and 14 were closed live in `78ff5b3` on 2026-09-23. |
-| opencode 1.18.25 | Lean-review task 10, 2026-09-30: install test passes, free rows 6 pass, 0 fail, 0 GAP. Live rows pending: the local model server on `127.0.0.1:8899` was down (`curl` returned `000`). Last live run: task 21, 2026-09-22, 18 pass, 0 fail, 0 GAP. |
-| opencode 2.0.18 | Lean-review task 10, 2026-09-30: install test passes, free rows 5 pass, 1 fail, 0 GAP. Row 09 fails: `Unknown subcommand "skill" for "opencode debug"`. Live rows pending: the local model server was down. |
-| Codex | **Pending.** See below. |
+| Runtime | Version | Pass | Fail | GAP | Inconclusive attempts | Passes on the fallback model |
+|---|---|---|---|---|---|---|
+| Claude Code (rows 01, 02, 06, 07, 08, 16) | 2.1.286 | 6 | 0 | 0 | 0 | 0 |
+| Codex | 0.155.1 | 16 | 2 (12, 17) | 0 | 16 | 12 |
+| OpenCode | 1.18.25 | 18 | 0 | 0 | 16 | 12 |
+| OpenCode | 2.0.18 | 18 | 0 | 0 | 12 | 12 |
 
-On Claude Code every merge-gate row passes: 01, 02, 12, 15, 16 and 18. On
-opencode, task 21's first pass was 18 pass, 0 fail, 0 GAP on the script route,
-and task 25 ran rows 01, 02 and 16 on the bootstrap, all passing.
-
-On Codex, the free rows 03, 09, 10 and 11 pass, and 13 and 14 are GAP. Rows
-01 and 02 passed in task 12, but on the hook wiring that has since been
-replaced, so they prove nothing about the current tree. Row 18 has never run
-on Codex. Part B runs every row.
-
-**Codex live verification is pending.** It happens in two parts. Part A is a
-probe on a local model. It proves mechanics only: that the hooks load, that
-the bootstrap reaches the model's input, and that the git guard refuses. Part
-B runs the full matrix on a real model on 2026-10-21, when the Codex quota
-resets, and it is the merge gate for this release. Until part B passes, no
-Codex behaviour in a live session counts as proven.
+- **Models.** Claude Code ran `anthropic/claude-haiku-4.5`. Every other model
+  call ran on the fallback `deepseek/deepseek-v4-flash`: the free primary
+  `qwen/qwen3.8-27b:free` returned 429 on every first attempt, because the day's
+  free-model quota was spent. Rows 03, 09, 10, 11 (and 13, 14 on OpenCode) are
+  free rows that make no model call.
+- **Inconclusive attempts.** A run that saw a provider error anywhere is
+  inconclusive and does not count. Each one was re-run on the fallback, and
+  only that clean run is in the Pass, Fail and GAP columns.
+- **OpenCode 1.18.25.** Needs the 1.18.25 binary first on `PATH`. Rows 07 and
+  18 failed once on the fallback (07: `nothing refused git branch -D`; 18: the
+  control agent did not dispatch) and passed on a second run; both runs are in
+  the logs.
+- **Codex rows 12 and 17 are open.** Both fail on the fallback, because
+  DeepSeek calls an `apply_patch` function that Codex does not provide for a
+  chat-completions model (`unsupported call: apply_patch`). That is a limit of
+  the fallback model, not a result for fx. On the primary model both passed
+  twice, clean, earlier on 2026-10-01 (task 11, before later edits to the shared
+  runner and `lib/preamble.js`), but the primary was rate
+  limited for this whole run, so no clean primary run exists for the final tree.
+  Re-run both on the primary after the free quota resets (00:00 UTC) and read
+  that result.
+- **Codex nesting.** Rows 15 and 18 on Codex run with `[agents] max_depth = 2`
+  in the runner's `config.toml`. That is test configuration. fx cannot ship
+  user config, so on default Codex config a model that uses the V1 subagent
+  tools cannot nest subagents: a subagent cannot dispatch another.
+- **OpenCode 2.x nesting.** Rows 15 and 18 run with the user's own rule
+  `agents.general.permissions` `subagent: allow` in the scratch config. fx does
+  not grant it (`docs/adr/0036`).
+- **Guard refusals on OpenCode 2.x.** A plain `git branch -D` is answered by
+  the policy layer with its generic text, not fx's reason, so rows 06 to 08 use
+  `git -C . branch -D` there. The guard still refuses; the reason text differs.
 
 ### Running the live rows on OpenRouter
 
 `FX_LIVE_PROVIDER=openrouter` runs the live rows of all four harnesses on
 OpenRouter (`docs/adr/0038`). It needs `OPENROUTER_API_KEY` in the environment
 and an account with purchased credits. Claude Code runs on Haiku, because
-non-Anthropic models fail there. A provider error, read only from the CLI's own
-error events and stderr, re-runs the row once on a fallback model; Claude Code
-has no fallback. See `tests/conformance/README.md`.
+non-Anthropic models fail there. A provider error, read from the CLI's own
+error events and stderr (and from child and grandchild sessions), makes that
+run inconclusive and re-runs the row once on a fallback model; Claude Code has
+no fallback. See `tests/conformance/README.md`.
 
 ### Stated limitations
 
-Every `GAP` recorded in `state.md`:
-
-- **Rows 13 and 14 on Codex.** No row checks, inside a live session on Codex,
-  that the five user-invoked lanes are hidden from the model (13) and still
-  typeable (14). The frontmatter flags that do the hiding are pinned by
-  `tests/gates/user-invoked.test.js`, which runs in `scripts/check-all`. Part
-  B builds the live check the same way Claude Code's is built.
-
-  On Claude Code both rows are live and passing since 2026-09-23. The check
-  is not made through `claude plugin details`, which lists a lane whether or
-  not it is hidden: row 13 runs a session on a prompt that echoes `fx-audit`'s
-  own description without naming a lane, and asserts the `Skill` tool is never
-  called with any of the five, attempted or blocked; row 14 types
-  `/fx:fx-handoff` and asserts both the load and the handoff block. Nothing
-  can assert the names are absent from the model's context: the session-start
-  event lists tools, MCP servers and plugins, never the skills a session can
-  see.
-- **Codex rows 04 to 08, 12 and 15 to 17.** Not run: the Codex quota ran out
-  during task 12. None of these is a pass. Row 18 has never run on Codex, and
-  rows 01 and 02 last passed on the old hook wiring. Part B runs every row.
+- **Codex rows 12 and 17**, as above: not proven on the final tree until a
+  clean primary-model run.
+- **Rows that passed on the fallback only.** Every model row on Codex,
+  OpenCode 1.18.25 and OpenCode 2.0.18 passed on `deepseek/deepseek-v4-flash`
+  in this run. The same rows passed on the primary in earlier runs of this
+  branch (`docs/plans/2026-10-01-opencode-v2/baseline.md`), which was not
+  available for the final run.
+- **Nothing can assert the names are absent** from the model's context for the
+  hidden lanes (13): the session-start event lists tools, MCP servers and
+  plugins, never the skills a session can see. Row 13 asserts the `Skill` tool
+  is never called with any of the five user-invoked lanes.
 
 ### Nightly checks
 
@@ -616,7 +626,7 @@ The free rows check that:
 - the six read-only agents are registered (11);
 - the user-invoked lanes are hidden and still typeable, at the file and
   config level (13 and 14; on Claude Code these two are live rows, so the
-  nightly free run skips them, and on Codex they are GAP, as above).
+  nightly free run skips them, and on Codex they are live rows too).
 
 The nightly run makes no model call and uses no secrets, so it does not check
 anything a live session shows: the bootstrap reaching a session or a

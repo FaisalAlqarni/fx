@@ -119,3 +119,41 @@ Non-PASS excerpts (logs `<row>-opencode-v2.log` in `/tmp/fxlogs-opencode-v2/`):
 | 16 project note and plan state | PASS | anthropic/claude-haiku-4.5 | 1 |
 
 No non-PASS rows.
+
+# Final (2026-10-01, commit debb566)
+
+All four harnesses changed since the baseline commit (the shared runner, `lib/preamble.js`, the Codex hook, the v2 plugin), so the full matrix re-ran on codex, opencode 1.18.25 and opencode-v2 2.0.18, and rows 01, 02, 06, 07, 08, 16 on Claude Code. Credits check passed (above 0). Logs: `/tmp/fxlogs-opencode-v2-final/` (`<harness>-run.txt`, `<row>-<harness>.log`, `.attempt1.log` for the inconclusive first attempt; `rerun1/` for the re-runs). Versions: OpenCode 1.18.25 confirmed in `opencode-version.txt` there, OpenCode 2.0.18, Codex 0.155.1, Claude Code 2.1.286. Pacing: one row per run, 60 seconds between rows.
+
+Changed files per harness (intersection with `git diff --name-only 703a0e2..HEAD`): codex: `hooks/fx-codex.js`, `lib/preamble.js`, `tests/conformance/*` (runner, rows 02 to 18, events, openrouter). opencode 1.18.25: `lib/preamble.js`, `tests/conformance/*`. opencode-v2: `plugins/fx-opencode-v2.js`, `lib/preamble.js`, `references/harnesses/opencode-v2.md`, `tests/conformance/*`. claude-code: `lib/preamble.js`, `tests/conformance/*`.
+
+The free-model daily quota was spent: every model row's first attempt on `qwen/qwen3.8-27b:free` returned 429 and was inconclusive; each ran again on `deepseek/deepseek-v4-flash`. A row counts only from its clean run.
+
+| Harness | Pass | Fail | GAP | Inconclusive attempts | Fallback passes |
+|---|---|---|---|---|---|
+| codex | 16 | 2 (12, 17) | 0 | 16 | 12 |
+| opencode 1.18.25 | 18 | 0 | 0 | 16 | 12 |
+| opencode-v2 2.0.18 | 18 | 0 | 0 | 12 | 12 |
+| claude-code (6 rows) | 6 | 0 | 0 | 0 | 0 |
+
+- Free rows (no model call): codex 03, 09, 10, 11; opencode and opencode-v2 03, 09, 10, 11, 13, 14. Codex 13 and 14 are live rows and passed on the fallback.
+- opencode 1.18.25 rows 07 (`fx-guard-probe was deleted: nothing refused git branch -D`) and 18 (`a default agent could not dispatch a child either (depth 0)`) failed or gapped once on the fallback and passed on a second run (`rerun1/`).
+- Codex 12 and 17: FAIL on the fallback twice. Log excerpts: row 12 `the control agent could not write with its editing tool either`, row 17 `the lane check never ran on a file write (no .fx/.lane-design marker)`; the logs show `unsupported call: apply_patch`. Per the ledger ruling this is the fallback model calling a function Codex does not provide, not an fx result. Open: re-run on the primary after the free quota resets; they passed twice cleanly on the primary in task 11.
+- No GAP outside `tests/conformance/expected-gaps` (empty of live rows).
+
+| Row | codex | opencode 1.18.25 | opencode-v2 | claude-code |
+|---|---|---|---|---|
+| 01 | PASS (fb) | PASS (fb) | PASS (fb) | PASS |
+| 02 | PASS (fb) | PASS (fb) | PASS (fb) | PASS |
+| 03, 09, 10, 11 | PASS (free) | PASS (free) | PASS (free) | - |
+| 04, 05 | PASS (fb) | PASS (fb) | PASS (fb) | - |
+| 06 | PASS (fb) | PASS (fb) | PASS (fb) | PASS |
+| 07 | PASS (fb) | PASS (fb, 2nd run) | PASS (fb) | PASS |
+| 08 | PASS (fb) | PASS (fb) | PASS (fb) | PASS |
+| 12 | FAIL (fb) | PASS (fb) | PASS (fb) | - |
+| 13, 14 | PASS (fb) | PASS (free) | PASS (free) | - |
+| 15 | PASS (fb) | PASS (fb) | PASS (fb) | - |
+| 16 | PASS (fb) | PASS (fb) | PASS (fb) | PASS |
+| 17 | FAIL (fb) | PASS (fb) | PASS (fb) | - |
+| 18 | PASS (fb) | PASS (fb, 2nd run) | PASS (fb) | - |
+
+(fb = passed on `deepseek/deepseek-v4-flash`; Claude Code on `anthropic/claude-haiku-4.5`.)
