@@ -205,6 +205,30 @@ withScratch((scratch) => {
     'the reason names the Move-to path');
 });
 
+// A model with no apply_patch function tool (any provider Codex reaches over
+// chat completions) edits through `apply_patch <<'PATCH'` in a shell call, and
+// Codex runs the patch itself. The hook sees tool_name Bash, so the patch in
+// that command must reach the lane check too (live, row 17).
+withScratch((scratch) => {
+  const command = "apply_patch <<'PATCH'\n*** Begin Patch\n*** Add File: src/duration.js\n+x\n*** End Patch\nPATCH";
+  const result = fire({
+    hook_event_name: 'PreToolUse', cwd: scratch,
+    tool_name: 'Bash', tool_input: { command },
+  });
+  assert.strictEqual(result.status, 2, 'a shell apply_patch on source code with no design doc is refused');
+  assert.ok(result.stderr.includes('src/duration.js'), 'the reason names the path');
+  assert.ok(fs.existsSync(path.join(scratch, '.fx', '.lane-design')), 'and the check leaves its marker');
+});
+// Text that only mentions a patch header is no patch: echo, cat and grep pass.
+withScratch((scratch) => {
+  const command = "echo '*** Add File: src/duration.js' > notes.txt";
+  const result = fire({
+    hook_event_name: 'PreToolUse', cwd: scratch,
+    tool_name: 'Bash', tool_input: { command },
+  });
+  assert.strictEqual(result.status, 0, 'a shell command that is not apply_patch is not lane-checked');
+});
+
 // Unparseable patch text: fail open, exactly as a laneCheck throw already
 // does. A parsing bug must never wedge a Codex session.
 withScratch((scratch) => {

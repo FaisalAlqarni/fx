@@ -98,6 +98,31 @@ function deny(reason) {
   process.exit(2);
 }
 
+// The lane check on every path a patch names; refuses on the first offender.
+function checkPatchPaths(patchText, cwd) {
+  let paths;
+  try {
+    paths = extractPatchPaths(patchText);
+  } catch {
+    paths = [];                    // unparseable: fail open, same as a laneCheck throw
+  }
+  for (const p of paths) {
+    let reason = null;
+    try {
+      reason = laneCheck(path.resolve(cwd, p), cwd);
+    } catch {
+      reason = null;                 // advice: a bug here must not block an edit
+    }
+    if (reason) deny(reason);        // refuse on the FIRST offending path; its own
+  }                                   // reason already names which one
+}
+
+// A model with no apply_patch function tool edits through a shell call,
+// `apply_patch <<'PATCH' ...`, which Codex runs as a patch itself. Only a
+// command that starts a statement with apply_patch counts: a command that
+// merely mentions a patch header (echo, cat, grep) is not an edit.
+const SHELL_APPLY_PATCH = /(?:^|[\n;&|])\s*apply_patch\b/;
+
 function handlePreToolUse(input) {
   process.on('uncaughtException', (e) =>
     deny(`hook crashed (${e.message}). Denying rather than assuming this is safe.`));
@@ -158,25 +183,12 @@ function handlePreToolUse(input) {
       verdict = { allow: false, reason: `git guard failed to evaluate this command (${e.message}). Denying rather than assuming it is safe.` };
     }
     if (!verdict.allow) deny(verdict.reason);
+    if (SHELL_APPLY_PATCH.test(command)) checkPatchPaths(command, cwd);
     process.exit(0);
   }
 
   if (tool === 'apply_patch') {
-    let paths;
-    try {
-      paths = extractPatchPaths(ti.command);
-    } catch {
-      paths = [];                    // unparseable: fail open, same as a laneCheck throw
-    }
-    for (const p of paths) {
-      let reason = null;
-      try {
-        reason = laneCheck(path.resolve(cwd, p), cwd);
-      } catch {
-        reason = null;                 // advice: a bug here must not block an edit
-      }
-      if (reason) deny(reason);        // refuse on the FIRST offending path; its own
-    }                                   // reason already names which one
+    checkPatchPaths(ti.command, cwd);
     process.exit(0);
   }
 
