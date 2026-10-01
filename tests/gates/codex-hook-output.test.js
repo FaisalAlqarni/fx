@@ -44,7 +44,7 @@ const PATCH = '*** Begin Patch\n*** Add File: x.txt\n+hi\n*** End Patch\n';
 
 let r = run({ ...base, hook_event_name: 'SessionStart', source: 'startup' });
 assert.strictEqual(r.code, 0); keysOk(r.out, 'SessionStart', TOP_SESSION);
-assert.ok(JSON.parse(r.out).hookSpecificOutput.additionalContext.includes('$fx-tdd'), 'Codex addressing');
+assert.ok(JSON.parse(r.out).hookSpecificOutput.additionalContext.includes('$fx:fx-tdd'), 'Codex addressing');
 
 r = run({ ...base, hook_event_name: 'SubagentStart', agent_id: 'a1', agent_type: 'default' });
 assert.strictEqual(r.code, 0); keysOk(r.out, 'SubagentStart');
@@ -259,7 +259,7 @@ console.log('preamble load failure: passed');
   const empty = raw('');
   assert.strictEqual(empty.code, 0, 'empty stdin still starts a session');
   keysOk(empty.out, 'empty stdin');
-  assert.ok(JSON.parse(empty.out).hookSpecificOutput.additionalContext.includes('$fx-tdd'), 'with the preamble');
+  assert.ok(JSON.parse(empty.out).hookSpecificOutput.additionalContext.includes('$fx:fx-tdd'), 'with the preamble');
 }
 console.log('malformed stdin: passed');
 

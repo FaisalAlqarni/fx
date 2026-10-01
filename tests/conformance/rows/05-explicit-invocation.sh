@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 05: a lane invoked explicitly, by this runtime's own addressing, loads.
 #
-# Claude Code addresses a plugin skill as /fx:fx-tdd, Codex as $fx-tdd, and
+# Claude Code addresses a plugin skill as /fx:fx-tdd, Codex as $fx:fx-tdd, and
 # opencode (1.x and 2.x) by its bare name through the skill tool. The row passes when the
 # lane's body reached the session.
 set -uo pipefail
@@ -11,7 +11,7 @@ live_workdir
 TASK='then reply with the one-line announcement that lane tells you to make, and stop. Do not write any code.'
 case "$HARNESS" in
   claude-code) PROMPT="/fx:fx-tdd Load this lane, $TASK" ;;
-  codex)       PROMPT="\$fx-tdd Load this lane, $TASK" ;;
+  codex)       PROMPT="\$fx:fx-tdd Load this lane, $TASK" ;;
   opencode|opencode-v2) PROMPT="Load the fx-tdd skill with the skill tool, $TASK" ;;
 esac
 

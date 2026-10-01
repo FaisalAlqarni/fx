@@ -4,7 +4,7 @@
 // fx ships one set of skill files to Claude Code, opencode and Codex. Only
 // PREAMBLE.md is rendered per runtime (ADR 0020), and the rendered bootstrap
 // already tells each runtime how to address a lane (ADR 0021): `fx:fx-tdd` on
-// Claude Code, bare `fx-tdd` on opencode, `$fx-tdd` on Codex. A skill or
+// Claude Code, bare `fx-tdd` on opencode, `$fx:fx-tdd` on Codex. A skill or
 // reference file that says "invoke `fx:fx-tdd`" is right on one runtime and
 // contradicts the bootstrap on the other two. So shared text names the lane
 // ("invoke the fx-tdd lane") and never a runtime form, and never claims how a
@@ -80,7 +80,8 @@ assert.deepStrictEqual(errors, [],
 
 // The gate bites.
 assert.strictEqual(offences('x', '**Invoke `fx:fx-tdd` before writing any code.**').length, 1, 'the Claude Code form fails');
-assert.strictEqual(offences('x', 'Invoke `$fx-tdd` first.').length, 1, 'the Codex form fails');
+assert.strictEqual(offences('x', 'Invoke `$fx:fx-tdd` first.').length, 1, 'the Codex form fails');
+assert.strictEqual(offences('x', 'Invoke `$fx-tdd` first.').length, 1, 'the bare Codex form fails too');
 assert.strictEqual(offences('x', 'Use the addressable name,\nsince a bare `fx-tdd` may\nnot resolve at all.').length, 1,
   'a resolution claim fails across a line break');
 // And it spares what it should.

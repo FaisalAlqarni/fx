@@ -87,7 +87,7 @@ order:
    planted during a session can be dispatched only from the next one.
 4. From now on a lane can dispatch a review agent.
 
-If you have not trusted the hooks yet, run `$fx-setup` in a repository instead.
+If you have not trusted the hooks yet, run `$fx:fx-setup` in a repository instead.
 It plants the same roles without any hook, reports what it planted, and tells
 you to restart Codex once and to trust the hooks in `/hooks`.
 
@@ -454,7 +454,7 @@ after a pull that changes `agents/`, and restart opencode.
 ```
 /fx:fx-setup     # Claude Code
 /fx-setup        # opencode
-$fx-setup        # Codex
+$fx:fx-setup     # Codex
 ```
 
 Writes `.fx.json` (test commands, `stacks`) and generates `repo.md` (this

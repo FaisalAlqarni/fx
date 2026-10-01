@@ -69,7 +69,7 @@ surface and reaches them only as skills.
 
 | Skill | Typed as | Does |
 |---|---|---|
-| `fx-audit` | `/fx:fx-audit`, `/fx-audit` on opencode, `$fx-audit` on Codex | Audits an existing system in four gated phases, ending in a `design.md` for `fx-plan` |
+| `fx-audit` | `/fx:fx-audit`, `/fx-audit` on opencode, `$fx:fx-audit` on Codex | Audits an existing system in four gated phases, ending in a `design.md` for `fx-plan` |
 | `fx-setup`, `fx-critique`, `fx-grill`, `fx-handoff` | as the commands below | The same text as the command of the same name |
 
 ## Agents: 6 (performance lens cut, `docs/adr/0008`; pipeline lens added, `docs/adr/0014`)
@@ -217,7 +217,7 @@ files, which no priority order resolves honestly.
 
 Typed as shown on Claude Code. On opencode, drop the plugin prefix: `/fx-setup`.
 
-On Codex each command ships as a skill, typed `$fx-setup`.
+On Codex each command ships as a skill, typed `$fx:fx-setup`.
 
 `/fx:fx-audit`, or `/fx-audit` on opencode, is typed like a command but is a user-invoked skill, counted under
 "User-invoked skills" above, not here.

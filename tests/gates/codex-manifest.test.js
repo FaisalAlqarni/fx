@@ -87,9 +87,9 @@ const out = execFileSync('node', [path.join(root, 'hooks/fx-codex.js')], {
 });
 const parsed = JSON.parse(out);
 const ctx = parsed.hookSpecificOutput.additionalContext;
-assert.ok(ctx.includes('$fx-tdd'), 'Codex addressing must be rendered');
+assert.ok(ctx.includes('$fx:fx-tdd'), 'Codex addressing must be rendered');
 assert.ok(!ctx.includes('{{'), 'no placeholder may survive');
-assert.ok(!ctx.includes('fx:fx-tdd'), 'the plugin prefix is Claude Code only');
+assert.ok(!/(^|[^$])fx:fx-tdd/.test(ctx), 'the Claude Code form without its leading $ is not Codex addressing');
 
 const { spawnSync } = require('child_process');
 
@@ -399,7 +399,7 @@ withScratch((scratch) => {
   });
   assert.strictEqual(result.status, 0, 'a planting failure must not stop the session');
   const parsedBad = JSON.parse(result.stdout);
-  assert.ok(parsedBad.hookSpecificOutput.additionalContext.includes('$fx-tdd'),
+  assert.ok(parsedBad.hookSpecificOutput.additionalContext.includes('$fx:fx-tdd'),
     'the preamble still renders even when planting threw');
   fs.rmSync(badHomeParent, { recursive: true, force: true });
 }

@@ -218,7 +218,7 @@ the next section shows.
 ## The commands
 
 Every command is typed with its `fx-` name: `/fx:fx-<name>` on Claude Code,
-which adds the plugin prefix, `/fx-<name>` on opencode, and `$fx-<name>` on
+which adds the plugin prefix, `/fx-<name>` on opencode, and `$fx:fx-<name>` on
 Codex, where each command ships as a skill generated from `commands/`. The
 table shows the Claude Code form.
 
@@ -270,7 +270,7 @@ Then, in each repository you work in:
 ```
 /fx:fx-setup     # Claude Code
 /fx-setup        # opencode (1.x and 2.x)
-$fx-setup        # Codex
+$fx:fx-setup     # Codex
 ```
 
 which reads the machine facts, then asks two short rounds about what the code

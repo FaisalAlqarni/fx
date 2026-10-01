@@ -60,12 +60,12 @@ if (text.includes("{{")) {
   process.exit(1);
 }
 // The addressing must be this runtime s own, not another s.
-const want = { "claude-code": "fx:fx-tdd", opencode: "fx-tdd", "opencode-v2": "fx-tdd", codex: "$fx-tdd" };
+const want = { "claude-code": "fx:fx-tdd", opencode: "fx-tdd", "opencode-v2": "fx-tdd", codex: "$fx:fx-tdd" };
 if (!text.includes(want[harness])) {
   console.error(harness + " preamble does not carry " + want[harness]);
   process.exit(1);
 }
-if (harness !== "claude-code" && text.includes("fx:fx-tdd")) {
+if (harness !== "claude-code" && text.replaceAll("$fx:", "").includes("fx:fx-tdd")) {
   console.error(harness + " carries the Claude Code plugin prefix");
   process.exit(1);
 }
