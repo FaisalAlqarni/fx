@@ -493,9 +493,12 @@ The installer has no uninstall flag. To remove fx by hand from the config
 directory (`~/.config/opencode`, or the `--dest` you used):
 
 1. Read `.fx-opencode-owned.json`. It lists the guard policies and the
-   `experimental.subagent_depth` value the installer wrote into `opencode.json`.
+   subagent depth the installer wrote into `opencode.json` (top-level
+   `subagent_depth` on 1.x, `experimental.subagent_depth` on 2.x).
 2. In `opencode.json`, delete the listed entries from `experimental.policies`,
-   and `experimental.subagent_depth` if the record lists it. Leave any entry
+   and the depth key if the record lists it (`subagent_depth` on 1.x, recorded as
+   `subagent_depth`; `experimental.subagent_depth` on 2.x, recorded as
+   `experimental_subagent_depth`). Leave any entry
    you wrote yourself. These are the installer's guard policies; a command one
    of them refuses is answered with "Blocked by configuration policy", which is
    how to tell a policy denial from fx's own `[fx] ` reason.
@@ -591,7 +594,7 @@ were made on 2026-10-01 on the branch that adds OpenCode 2.x. Logs are in
 | OpenCode | 1.18.25 | 18 | 0 | 0 | 14 | 12 |
 | OpenCode | 2.0.18 | 18 | 0 | 0 | 12 | 12 |
 
-Claude Code's other twelve rows were proven 18 of 18 in `78ff5b3`; this branch
+Claude Code's other twelve rows were proven across the task 21 run (16 pass) and `78ff5b3` (rows 13 and 14); this branch
 re-ran only the six it changed.
 
 - **Models.** Claude Code ran `anthropic/claude-haiku-4.5`. Every other model

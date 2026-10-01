@@ -19,7 +19,7 @@ AS=""
 # levels is the only path. fx grants no nested dispatch on 2.x (ADR-0026); the
 # grant that lets general dispatch comes from the runner's scratch config
 # (lib/openrouter.js, ruling 199), the user's own rule. A PASS here proves that
-# config and the runtime's nesting, not fx. A FAIL is still a finding about fx
+# config and the runtime's nesting, not fx's plugin. A FAIL is still a finding about fx
 # only if that config was in place.
 [ "$HARNESS" = opencode-v2 ] && AS=" as agent type general"
 
