@@ -393,7 +393,12 @@ Full detail and the limits are in `docs/adr/0037`.
    deletion. The patterns are tight and cover plain spellings only (no `-C` or
    `-c`, no `HEAD:refs/heads/main`). Each has allowed samples in its test, such
    as `git commit -m "explain --no-verify flag"`. A policy cannot be overridden
-   and its message is generic: "Blocked by configuration policy".
+   and its message is generic: "Blocked by configuration policy". So a plain
+   `git branch -D` (and every other form a pattern can express) is refused by
+   the installed policy with that generic text, never fx's reason. Other
+   spellings, such as `git -C . branch -D`, `sh -c '...'` or a command after a
+   heredoc, skip the policies, reach fx's guard and get fx's reason, which
+   starts with `[fx] `.
 3. **A throwing `tool.execute.before`.** The fallback when layer 1 could not
    register.
 

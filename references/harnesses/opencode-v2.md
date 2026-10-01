@@ -84,6 +84,13 @@ agent, which then still sees every skill (probe Q11).
 - Run every `opencode run`, `api` and `session` call with `</dev/null`, or
   it blocks without output (probe, changes 1).
 
+## Session export shape
+
+`opencode session export` keeps a tool part as `{ type: 'tool', name, state }`
+where `state.content` (a list of text parts) holds the output that `run
+--format json` shows as `state.output`, and a refused call's `state.error` is
+`{ type, message }`, not a string. The conformance reader handles both.
+
 ## Headless runs and the question tool
 
 `opencode run` has no one to answer the `question` tool. A session that calls
