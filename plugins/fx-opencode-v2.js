@@ -99,63 +99,63 @@ export default {
     await attempt('permission.evaluate', async () => {
       try {
         await ctx.permission.hook('evaluate', (ev) => {
-      // fx's read-only agents: anything but a read, or a read of fx's own
-      // references, is denied whatever the session's rules said. Fails closed
-      // like the shell guard: not inside attempt(), any throw denies.
-      if (READ_ONLY.includes(ev.agent) && !READ_ACTIONS.includes(ev.action)) {
-        try {
-          if (!readsOnlyReferences(ev)) return deny(ev, `${ev.agent} is read-only: ${ev.action} is refused.`);
-        } catch (e) {
-          return deny(ev, `${ev.agent} is read-only and its check failed, so ${ev.action} is refused: ${messageOf(e)}`);
-        }
-      }
-      if (ev.action === 'shell') {
-        // The git guard fails closed: any error below denies the call.
-        try {
-          if (guardError) throw guardError;
-          const key = ev.source ? callKey(ev.sessionID, ev.source.messageID, ev.source.id) : undefined;
-          const command = key === undefined ? undefined : commands.get(key);
-          if (command === undefined) {
-            deny(ev, "fx could not see this command's full text, so the git guard cannot check it.");
-            return;
-          }
-          const verdict = inspect(command, ctx.location.directory);
-          if (!verdict.allow) return deny(ev, verdict.reason);
-          // The pieces as they stand now, after any other plugin's rewrite.
-          for (const piece of [].concat(ev.resources || [])) {
-            const v = inspect(String(piece), ctx.location.directory);
-            if (!v.allow) return deny(ev, v.reason);
-          }
-        } catch (e) {
-          deny(ev, `the fx git guard failed, so the command is refused: ${messageOf(e)}`);
-        }
-        return;
-      }
-      try {
-        if (ev.action === 'edit') {
-          // Advice only: a failed load or a throw leaves the edit alone.
-          const { laneCheck } = require('../lib/lane-check.js');
-          for (const r of ev.resources || []) {
-            const reason = laneCheck(path.resolve(ctx.location.directory, r), ctx.location.directory);
-            if (reason) {
-              ev.effect = 'deny';
-              ev.message = `[fx] ${reason}`;
-              return;
+          // fx's read-only agents: anything but a read, or a read of fx's own
+          // references, is denied whatever the session's rules said. Fails closed
+          // like the shell guard: not inside attempt(), any throw denies.
+          if (READ_ONLY.includes(ev.agent) && !READ_ACTIONS.includes(ev.action)) {
+            try {
+              if (!readsOnlyReferences(ev)) return deny(ev, `${ev.agent} is read-only: ${ev.action} is refused.`);
+            } catch (e) {
+              return deny(ev, `${ev.agent} is read-only and its check failed, so ${ev.action} is refused: ${messageOf(e)}`);
             }
           }
-          return;
-        }
-        if (ev.action !== 'skill') return;
-        const lane = (ev.resources || []).find((r) => HIDDEN.includes(r));
-        if (!lane) return;
-        deny(ev, `${lane} is typed by the user, not picked by the model: ask them to run /${lane}.`);
-      } catch (e) {
-        failures.push(`fx: evaluate failed: ${messageOf(e)}`);
-        console.error(`[fx] evaluate failed: ${messageOf(e)}`);
-        // Fail closed for the hidden lanes; an edit is advice and stays open.
-        const lane = ev.action === 'skill' && [].concat(ev.resources || []).find((r) => HIDDEN.includes(r));
-        if (lane) deny(ev, `${lane} is typed by the user: ask them to run /${lane}.`);
-      }
+          if (ev.action === 'shell') {
+            // The git guard fails closed: any error below denies the call.
+            try {
+              if (guardError) throw guardError;
+              const key = ev.source ? callKey(ev.sessionID, ev.source.messageID, ev.source.id) : undefined;
+              const command = key === undefined ? undefined : commands.get(key);
+              if (command === undefined) {
+                deny(ev, "fx could not see this command's full text, so the git guard cannot check it.");
+                return;
+              }
+              const verdict = inspect(command, ctx.location.directory);
+              if (!verdict.allow) return deny(ev, verdict.reason);
+              // The pieces as they stand now, after any other plugin's rewrite.
+              for (const piece of [].concat(ev.resources || [])) {
+                const v = inspect(String(piece), ctx.location.directory);
+                if (!v.allow) return deny(ev, v.reason);
+              }
+            } catch (e) {
+              deny(ev, `the fx git guard failed, so the command is refused: ${messageOf(e)}`);
+            }
+            return;
+          }
+          try {
+            if (ev.action === 'edit') {
+              // Advice only: a failed load or a throw leaves the edit alone.
+              const { laneCheck } = require('../lib/lane-check.js');
+              for (const r of ev.resources || []) {
+                const reason = laneCheck(path.resolve(ctx.location.directory, r), ctx.location.directory);
+                if (reason) {
+                  ev.effect = 'deny';
+                  ev.message = `[fx] ${reason}`;
+                  return;
+                }
+              }
+              return;
+            }
+            if (ev.action !== 'skill') return;
+            const lane = (ev.resources || []).find((r) => HIDDEN.includes(r));
+            if (!lane) return;
+            deny(ev, `${lane} is typed by the user, not picked by the model: ask them to run /${lane}.`);
+          } catch (e) {
+            failures.push(`fx: evaluate failed: ${messageOf(e)}`);
+            console.error(`[fx] evaluate failed: ${messageOf(e)}`);
+            // Fail closed for the hidden lanes; an edit is advice and stays open.
+            const lane = ev.action === 'skill' && [].concat(ev.resources || []).find((r) => HIDDEN.includes(r));
+            if (lane) deny(ev, `${lane} is typed by the user: ask them to run /${lane}.`);
+          }
         });
       } catch (e) { evaluateError = e; throw e; }
     });
