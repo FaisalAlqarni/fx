@@ -5,8 +5,7 @@ imperative names the lanes concretely, invoke `fx:fx-tdd`, and warns that a
 bare `fx-tdd` may not resolve at all.
 
 On opencode that advice is exactly backwards: `fx-tdd` is the right name and
-`fx:fx-tdd` is the wrong one. On Codex neither is right; the form is `$fx:fx-tdd`, which Codex 0.155.1 expands
-and the bare `$fx-tdd` it does not.
+`fx:fx-tdd` is the wrong one. On Codex neither is right; it has a form of its own (see ADR-0039).
 The installer rewrites the plugin prefix in generated commands and agents, and
 has never touched the preamble, because `plugins/fx-opencode-v1.js` reads the file directly.
 
@@ -34,9 +33,9 @@ injecting, so every session sees a concrete, correct, self-sufficient
 imperative, with no indirection and no read.
 
 ```
-PREAMBLE.md ──> lib/preamble.js ──┬─> hooks/fx-context.js   Skill · fx:fx-tdd
-   {{LANE:fx-tdd}}                ├─> plugins/fx-opencode-v1.js         Skill · fx-tdd
-                                  └─> hooks/fx-codex.js     $fx:fx-tdd
+PREAMBLE.md ──> lib/preamble.js ──┬─> hooks/fx-context.js            Skill · fx:fx-tdd
+   {{LANE:fx-tdd}}                ├─> plugins/fx-opencode-v1.js      Skill · fx-tdd
+                                  └─> hooks/fx-codex.js              $fx:fx-tdd
 ```
 
 `references/harnesses/<name>.md` still exists and still carries the tool
