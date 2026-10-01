@@ -323,6 +323,19 @@ async function evaluate(rec, ev) {
       assert.strictEqual((await evaluate(fc.rec, { action, resources, agent, effect: 'allow' })).effect, 'allow', `${agent}: ${action} stays allowed`);
     }
   }
+  // The read-only check fails closed: nothing in it can leave a call allowed.
+  const ro = { agent: 'fx-lens-security', effect: 'allow' };
+  assert.strictEqual((await evaluate(fc.rec, { ...ro, action: 'external_directory', resources: [] })).effect, 'deny', 'an empty resource list is denied');
+  assert.strictEqual((await evaluate(fc.rec, { ...ro, action: 'external_directory', resources: undefined })).effect, 'deny', 'a missing resource list is denied');
+  assert.strictEqual((await evaluate(fc.rec, { ...ro, action: 'external_directory', resources: [`${refsDir}/../README.md`] })).effect, 'deny', '<refs>/../x escapes references and is denied');
+  assert.strictEqual((await evaluate(fc.rec, { ...ro, action: 'external_directory', resources: [`${refsDir}/harnesses/opencode-v2.md`] })).effect, 'allow', 'a file under references stays readable');
+  const realRealpath = fs.realpathSync;
+  fs.realpathSync = () => { throw new Error('EIO'); };
+  try {
+    const t = await evaluate(fc.rec, { ...ro, action: 'external_directory', resources: [`${refsDir}/*`] });
+    assert.strictEqual(t.effect, 'deny', 'a realpath that throws denies instead of leaving the call open');
+    assert.ok(/EIO/.test(t.message), 'the denial carries the reason');
+  } finally { fs.realpathSync = realRealpath; }
   assert.strictEqual((await evaluate(fc.rec, { action: 'edit', resources: ['README.md'], agent: 'build', effect: 'allow' })).effect, 'allow', 'a non-fx agent is untouched by the read-only rule');
 
   fs.rmSync(dir, { recursive: true, force: true });

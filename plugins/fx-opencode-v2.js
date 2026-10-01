@@ -62,6 +62,17 @@ try {
   ({ READ_ONLY_AGENTS: READ_ONLY } = require('../lib/plant-roles.js'));
 } catch { /* the agent step reports the same failure */ }
 
+// True only for an external_directory request whose every resource, resolved
+// (so `references/../x` is not one), lies under fx's references directory.
+function readsOnlyReferences(ev) {
+  if (ev.action !== 'external_directory') return false;
+  const resources = ev.resources;
+  if (!Array.isArray(resources) || resources.length === 0) return false;
+  const refs = path.join(ROOT, 'references');
+  const dirs = [refs, fs.realpathSync(refs)];
+  return resources.every((r) => { const p = path.resolve(String(r)); return dirs.some((d) => p.startsWith(`${d}/`)); });
+}
+
 export default {
   id: 'fx',
   async setup(ctx) {
@@ -89,17 +100,15 @@ export default {
       try {
         await ctx.permission.hook('evaluate', (ev) => {
       // fx's read-only agents: anything but a read, or a read of fx's own
-      // references, is denied whatever the session's rules said.
-      if (attempt('read-only check', () => {
-        if (!READ_ONLY.includes(ev.agent) || READ_ACTIONS.includes(ev.action)) return false;
-        if (ev.action === 'external_directory') {
-          const refs = path.join(ROOT, 'references');
-          const dirs = [refs, fs.realpathSync(refs)];
-          if ((ev.resources || []).every((r) => dirs.some((d) => String(r).startsWith(`${d}/`)))) return false;
+      // references, is denied whatever the session's rules said. Fails closed
+      // like the shell guard: not inside attempt(), any throw denies.
+      if (READ_ONLY.includes(ev.agent) && !READ_ACTIONS.includes(ev.action)) {
+        try {
+          if (!readsOnlyReferences(ev)) return deny(ev, `${ev.agent} is read-only: ${ev.action} is refused.`);
+        } catch (e) {
+          return deny(ev, `${ev.agent} is read-only and its check failed, so ${ev.action} is refused: ${messageOf(e)}`);
         }
-        deny(ev, `${ev.agent} is read-only: ${ev.action} is refused.`);
-        return true;
-      })) return;
+      }
       if (ev.action === 'shell') {
         // The git guard fails closed: any error below denies the call.
         try {
