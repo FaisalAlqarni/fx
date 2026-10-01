@@ -223,3 +223,10 @@ Gate: first check-all stopped at check-prose: AGENTS.md dashes (pre-existing, re
 Gate at 3836dbb (keep-going, 64 steps): all OK except check-prose (AGENTS.md 15 dashes) and check-prose-explicit-path.sh (nested worktree walk); both fail identically at merge base 2c0e8d2, so pre-existing. v1 free rows printed SKIP (2.0.18 on PATH) per W7. Blocked on: scoped re-review.
 Scoped re-review: findings/final-rereview.md, C/I/M 0/3/7. W4 sound. I1 v2 detector reads 1.x shape; I2 loose ses_ scrape fails real row 04; I3 claude-code status-less API errors. Ruling: fix I1-I3 and M1-M5, M7 in one more round (Important before merge); M6 note only (needs a broken checkout). Fixer dispatched (sonnet). Controller then verifies I2 against the real row 04 log and re-runs touched gates. Blocked on: fixer.
 Re-review fixes: d6dee09 (I1-I3, M1, M7), f1aecaf (M2-M5). Controller verified: touched tests green; anchored scrape over every /tmp/fxlogs-opencode-v2-final log yields only 30-char ids (no ses_valueerror); child detector returns 429 on the real 1.x baseline row 18 log and nothing on every counted final log. Final gate re-run at HEAD next.
+
+## Review
+
+Final gate at HEAD (keep-going copy of check-all, 64 steps): every step OK except check-prose (AGENTS.md, 15 dashes) and check-prose-explicit-path.sh (nested worktree walk); both fail identically at merge base 2c0e8d2. v1 free rows print SKIP on this machine (2.0.18 on PATH), by design (W7).
+Final branch review: six passes, one fix wave (W1-W16), one scoped re-review (0/3/7), one fix round for its Important items and minors (d6dee09, f1aecaf), controller-verified on the real logs.
+Known limits carried to the report: `echo ... | sh` guard gap (all runtimes, pre-existing); Codex max_depth 2 is test config only; v2 user-defined agents see the hidden lanes (Q11); v2 nested dispatch needs a user rule; v2 guard policies never run against a live binary; v2 command execute never exercised live; v2 export error shape inferred; M6 load-time widening needs a broken checkout; plan_opencode_json duplication deferred.
+Status: awaiting the owner's integration choice.
