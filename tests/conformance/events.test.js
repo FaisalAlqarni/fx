@@ -159,6 +159,20 @@ assert.match(slice('sub_output', 'opencode-v2', v2Log), /NESTED-OK/);
 assert.match(slice('sub_tool_output', 'opencode-v2', v2Log), /KIDSHELL/);
 assert.strictEqual(slice('skills', 'opencode-v2', v2Log).trim(), 'fx-tdd', 'a denied skill call is not a load');
 assert.deepStrictEqual(slice('skill_attempts', 'opencode-v2', v2Log).trim().split('\n'), ['fx-tdd', 'fx-audit']);
+// The export as 2.0.18 writes it (task 13, row 07): a completed dispatch holds its
+// answer in state.content and no metadata, a refused call holds its reason in
+// state.error as {type, message}.
+const v2Real = [
+  { type: 'tool_use', sessionID: 'ses_r', part: { type: 'tool', tool: 'subagent', state: { status: 'completed', input: { agent: 'general', prompt: 'p' },
+    output: '<subagent sessionID="ses_rk" state="completed">\nok\n</subagent>' } } },
+  { fx_export: { info: { id: 'ses_rk', parentID: 'ses_r' }, messages: [{ content: [
+    { type: 'tool', id: 'c1', name: 'shell', state: { status: 'error', input: { command: 'x' }, error: { type: 'permission.rejected', message: 'REFUSED-REASON' } } },
+    { type: 'tool', id: 'c2', name: 'subagent', state: { status: 'completed', input: { agent: 'general', prompt: 'q' },
+      content: [{ type: 'text', text: '<subagent sessionID="ses_rk2" state="completed">\nok\n</subagent>' }] } },
+  ] }] } },
+];
+assert.match(slice('sub_tool_output', 'opencode-v2', v2Real), /REFUSED-REASON/, 'a child export\'s error object is read as its message');
+assert.strictEqual(slice('max_depth', 'opencode-v2', v2Real).trim(), '2', 'a dispatch whose answer sits in state.content still names its child');
 const v2Refused = [
   { type: 'tool_use', sessionID: v2Root, part: { type: 'tool', tool: 'subagent', state: { status: 'error', input: { agent: 'general', prompt: 'p' }, error: 'Subagent depth limit reached (1)' } } },
 ];

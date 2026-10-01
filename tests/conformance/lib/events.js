@@ -51,7 +51,7 @@ const text = (c) => {
   if (c == null) return '';
   if (typeof c === 'string') return c;
   if (Array.isArray(c)) return c.map(text).join('\n');
-  if (typeof c === 'object') return text(c.text ?? c.content ?? c.output ?? '');
+  if (typeof c === 'object') return text(c.text ?? c.content ?? c.output ?? c.message ?? '');
   return String(c);
 };
 
@@ -245,7 +245,7 @@ function opencodeV2() {
   // Pass one: the parent map. A dispatch counts only when it completed and
   // named a child; the depth-limit error names none.
   const childOf = (st) => ((st.metadata || {}).metadata || {}).sessionID
-    || (text(st.output).match(/<subagent sessionID="(ses_[A-Za-z0-9]+)"/) || [])[1];
+    || (text(st.output ?? st.content).match(/<subagent sessionID="(ses_[A-Za-z0-9]+)"/) || [])[1];
   for (const [sid, parts] of Object.entries(sessions)) {
     for (const p of parts) {
       const st = p.state || {};
@@ -259,13 +259,13 @@ function opencodeV2() {
     const d = depth(sid);
     for (const p of parts) {
       const st = p.state || {};
-      const t = [text(st.output), text(st.error)].filter(Boolean).join('\n');
+      const t = [text(st.output ?? st.content), text(st.error)].filter(Boolean).join('\n');
       out.tool_output.push(t);
       if (d > 0) out.sub_tool_output.push(t);
       if (p.tool === 'subagent' && d === 0) {
         out.sub_input.push(text((st.input || {}).prompt));
         out.sub_type.push(text((st.input || {}).agent));
-        out.sub_output.push(text(st.output));
+        out.sub_output.push(text(st.output ?? st.content));
       }
       if (p.tool === 'skill') {
         const n = text((st.input || {}).name);
