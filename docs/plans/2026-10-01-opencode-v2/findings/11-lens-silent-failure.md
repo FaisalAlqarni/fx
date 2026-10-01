@@ -19,7 +19,7 @@ Lens: silent-failure, 5 findings
    - There is no check that any rollout was actually appended before reading.
 
 4. [Important] `/development/fx/.worktrees/opencode-v2/hooks/fx-codex.js:124` and `:186`: the shell lane check is gated on `SHELL_APPLY_PATCH`, which only matches `apply_patch` at the start of a statement. These forms get no check and no message:
-   - `bash -c "apply_patch ..."`, `sh -c`, `(apply_patch`, `$(`, `{ apply_patch`, `env`/`time`/`xargs apply_patch`.
+   - `bash -c "apply_patch ..."`, `sh -c`, a subshell opening on `apply_patch`, command substitution, `{ apply_patch`, `env`/`time`/`xargs apply_patch`.
    - A source file written through any of them skips the lane check.
    - The regex's own comment calls this a deliberate choice, but only for the case where a command "merely mentions" a header.
    - What a human loses: the check reports nothing, so a lane-check bypass looks the same as a clean pass.
@@ -32,3 +32,5 @@ Lens: silent-failure, 5 findings
    - What a human loses: no trace that a patch was applied and not lane-checked.
 
 The `laneCheck` try/catch at `hooks/fx-codex.js:119-125` and the fallback to a no-op `laneCheck` at `:89-94` are commented advice-only swallows. I did not count them.
+
+<!-- controller: two shell fragments in finding 4 reworded in words so the prose gate balances parentheses; meaning unchanged -->
