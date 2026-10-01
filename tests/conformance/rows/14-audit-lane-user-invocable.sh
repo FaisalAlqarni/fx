@@ -18,11 +18,9 @@
 #                (a single markdown block) is cheap to produce in full. PASS
 #                needs both the load and the block, so a session that merely
 #                mentions the lane's name without running it cannot pass.
-#   codex:       GAP. A live check is possible here in principle too, the
-#                same way as claude-code, but this task built only the
-#                claude-code one; deferred to task 22 part B.
+#   codex:       the same live session, addressed as $fx-handoff.
 set -uo pipefail
-[ "${1:-}" = "--describe" ] && { k=live; [ "${HARNESS:-}" = claude-code ] || k=free; echo "14|audit lane user-invocable|$k"; exit 0; }
+[ "${1:-}" = "--describe" ] && { k=free; case "${HARNESS:-}" in claude-code|codex) k=live ;; esac; echo "14|audit lane user-invocable|$k"; exit 0; }
 : "${FX_REAL_HOME:?run rows through tests/conformance/run.sh, which isolates HOME}"
 cd "$FX"
 HIDDEN="fx-audit fx-critique fx-grill fx-handoff fx-setup"
@@ -52,10 +50,11 @@ case "$HARNESS" in
     # No generated command files: the plugin is the one route to them.
     if ls "$OC2_DEST"/commands/fx-*.md >/dev/null 2>&1; then
       echo "opencode-v2: command files exist beside the plugin's commands" >&2; exit 1; fi ;;
-  claude-code)
+  claude-code|codex)
     . "$FX/tests/conformance/lib/live.sh"
     live_workdir
-    PROMPT="/fx:fx-handoff continue this later, in a new session on this same machine, same repo. Reply with the handoff block only, then stop."
+    addr='/fx:fx-handoff'; [ "$HARNESS" = codex ] && addr='$fx-handoff'
+    PROMPT="$addr continue this later, in a new session on this same machine, same repo. Reply with the handoff block only, then stop."
 
     live_run "$PROMPT"
 
@@ -64,7 +63,4 @@ case "$HARNESS" in
     events answer | grep -qE '^# Handoff:' \
       || fail "fx-handoff loaded but never produced its handoff block (answer: $(events answer | tail -c 300))"
     exit 0 ;;
-  codex)
-    echo "codex: a live check is possible here in principle, the same way as claude-code; deferred to task 22 part B, not attempted in this task" >&2
-    exit 77 ;;
 esac

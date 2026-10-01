@@ -21,11 +21,11 @@
 # against (read 2026-09-23); the guarantee it checks is that the tool is
 # never called.
 #
-# codex: GAP. A live check is possible here in principle too, the same way as
-# claude-code, but this task built only the claude-code one; deferred to task
-# 22 part B.
+# codex: the same live session. Codex has no skill tool, so an attempt is a
+# shell command naming skills/<lane>/SKILL.md (events.js skill_attempts); the
+# lanes carry allow_implicit_invocation: false in agents/openai.yaml.
 set -uo pipefail
-[ "${1:-}" = "--describe" ] && { k=live; [ "${HARNESS:-}" = claude-code ] || k=free; echo "13|audit lane not model-facing|$k"; exit 0; }
+[ "${1:-}" = "--describe" ] && { k=free; case "${HARNESS:-}" in claude-code|codex) k=live ;; esac; echo "13|audit lane not model-facing|$k"; exit 0; }
 : "${FX_REAL_HOME:?run rows through tests/conformance/run.sh, which isolates HOME}"
 cd "$FX"
 HIDDEN="fx-audit fx-critique fx-grill fx-handoff fx-setup"
@@ -84,7 +84,7 @@ case "$HARNESS" in
         console.error("opencode-v2: on the plugin route skill.list should hold the five lanes, so the hiding has something to hide"); process.exit(1); }
       console.error("checked agents: " + agents.map(a => a.id).join(", "));
     ' ;;
-  claude-code)
+  claude-code|codex)
     . "$FX/tests/conformance/lib/live.sh"
     live_workdir
     PROMPT="This repository already exists and is in production. Audit it: review its architecture end to end, find every problem, and note what would need to change, before we plan any new work. Keep the investigation brief: read at most a few files, then give your top findings in under 200 words."
@@ -100,7 +100,4 @@ case "$HARNESS" in
         && fail "the Skill tool was called with hidden lane $n (skill_attempts: $(tr '\n' ' ' <<<"$attempted"))"
     done
     exit 0 ;;
-  codex)
-    echo "codex: a live check is possible here in principle, the same way as claude-code; deferred to task 22 part B, not attempted in this task" >&2
-    exit 77 ;;
 esac

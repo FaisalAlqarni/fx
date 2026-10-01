@@ -187,4 +187,11 @@ assert.strictEqual(slice('sub_output', 'codex', wait({ status: 'completed', mess
 assert.strictEqual(slice('sub_output', 'codex', wait({ status: 'errored', message: 'oops' })).trim(), '', 'an errored child returned nothing');
 assert.strictEqual(slice('sub_output', 'codex', wait({ status: 'pending_init', message: null })).trim(), '');
 
+// Codex has no skill tool: an attempt is a shell command naming skills/<n>/SKILL.md,
+// whether or not the read succeeds.
+const read = (cmd) => [{ type: 'session_meta', payload: { id: 't0' } },
+  { type: 'response_item', payload: { type: 'function_call', name: 'exec_command', call_id: 'c1', arguments: JSON.stringify({ cmd }) } }];
+assert.deepStrictEqual(slice('skill_attempts', 'codex', read('cat /x/skills/fx-audit/SKILL.md; ls')).trim().split('\n'), ['fx-audit']);
+assert.strictEqual(slice('skill_attempts', 'codex', read('ls /x/skills')).trim(), '', 'no SKILL.md read, no attempt');
+
 console.log('events: all passed');

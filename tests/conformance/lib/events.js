@@ -161,7 +161,7 @@ function codex() {
       // attempt is not the load: it counts only if the read's output below
       // carries that skill's own frontmatter name.
       const names = [...String(p.arguments || p.input || '').matchAll(/skills\/([a-z0-9-]+)\/SKILL\.md/g)].map((m) => m[1]);
-      if (names.length) reads[p.call_id] = names;
+      if (names.length) { reads[p.call_id] = names; out.skill_attempts.push(...names); }
     }
     if (p.type === 'function_call_output' || p.type === 'custom_tool_call_output') {
       const t = text(p.output);
