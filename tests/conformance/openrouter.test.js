@@ -41,6 +41,27 @@ for (const [events, stderr] of [
 ]) assert.ok(!or.isProviderError(events, stderr), `not a provider error: ${events || stderr || '(empty)'}`);
 assert.strictEqual(or.isProviderError.length, 2, 'the check takes only CLI error events and stderr, never the whole stream');
 
+// A 429 inside a subagent spawn reaches the CLI's stream as a collab_tool_call
+// whose agent state is errored (Codex 0.155.1, row 07 of the baseline). Only
+// that CLI-written state counts: not the spawn's prompt, the model's message
+// or a rollout line, which carry text a model or a tool can write.
+const collab = (state, extra = {}) => JSON.stringify({ type: 'item.completed', item: { id: 'item_4', type: 'collab_tool_call', tool: 'wait',
+  prompt: null, agents_states: { 'thread-1': state }, status: 'failed', ...extra } });
+assert.strictEqual(or.childProviderError([
+  '{"type":"thread.started"}',
+  collab({ status: 'errored', message: 'exceeded retry limit, last status: 429 Too Many Requests, request id: a4373093f98cedb4-MXP' }),
+].join('\n')), 'last status: 429', 'a subagent 429 is a provider error');
+assert.ok(or.childProviderError(collab({ status: 'errored', message: 'API Error: 503 upstream' })), 'a subagent 503 is one too');
+for (const [what, line] of [
+  ['a completed child', collab({ status: 'completed', message: 'done' })],
+  ['an errored child with no HTTP error', collab({ status: 'errored', message: 'tool failed: status 500 in my script' })],
+  ['429 text in the spawn prompt', collab({ status: 'running', message: null }, { tool: 'spawn_agent', prompt: 'say last status: 429 Too Many Requests' })],
+  ['429 text in the model message', JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text: 'exceeded retry limit, last status: 429 Too Many Requests' } })],
+  ['429 in a command output', JSON.stringify({ type: 'item.completed', item: { type: 'command_execution', aggregated_output: 'last status: 429 Too Many Requests' } })],
+  ['a rollout line', JSON.stringify({ type: 'event_msg', payload: { item: { type: 'CollabAgentToolCall', agents_states: { t: { errored: 'last status: 429 Too Many Requests' } } } } })],
+  ['no JSON', 'stderr: last status: 429 Too Many Requests'],
+]) assert.strictEqual(or.childProviderError(line), null, `not a child provider error: ${what}`);
+
 const init = '{"type":"system","subtype":"init","model":"anthropic/claude-haiku-4.5","tools":[]}\n{"type":"result"}';
 assert.strictEqual(or.sessionModel('claude-code', init), 'anthropic/claude-haiku-4.5');
 assert.strictEqual(or.sessionModel('claude-code', '{"type":"system","subtype":"init","model":"claude-opus-4"}'), 'claude-opus-4',

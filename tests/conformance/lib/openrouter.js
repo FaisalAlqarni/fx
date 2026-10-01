@@ -5,6 +5,7 @@
 //   openrouter.js env <harness> <model>            NAME=value lines
 //   openrouter.js setup <harness> <model> <home>   write the config fragments under <home>
 //   openrouter.js model <harness> <logfile>        the session's own model, or nothing
+//   openrouter.js child  LOG  print the match for a subagent provider error, exit 0 on one
 //   openrouter.js error   (env E = CLI error events, S = stderr)  print the match, exit 0 on a provider error
 //   openrouter.js leaks <file> [keyfile]           exit 10 when the file holds a key (or the keyfile's value),
 //                                                  0 when clean; any other exit is a scan failure, never "clean"
@@ -93,6 +94,21 @@ function providerErrorReason(cliErrors, stderr) {
 }
 const isProviderError = (cliErrors, stderr) => providerErrorReason(cliErrors, stderr) !== null;
 
+// A provider error inside a subagent spawn: the CLI's own stream line for a
+// collab tool call, whose agent state is errored with the child's last error
+// (Codex). Only that state's message is matched, with the same HTTP shapes as
+// above; the spawn's prompt, a model's text and tool output are never read.
+function childProviderError(logText) {
+  for (const j of lines(logText)) {
+    if (j.type !== 'item.completed' || !j.item || j.item.type !== 'collab_tool_call') continue;
+    for (const st of Object.values(j.item.agents_states || {})) {
+      const m = st && st.status === 'errored' && typeof st.message === 'string' ? PROVIDER_ERROR.exec(st.message) : null;
+      if (m) return m[0];
+    }
+  }
+  return null;
+}
+
 function lines(text) {
   const out = [];
   for (const l of String(text).split('\n')) { try { out.push(JSON.parse(l)); } catch { /* not JSON */ } }
@@ -135,7 +151,7 @@ function applySetup(setup, home) {
   }
 }
 
-module.exports = { MODELS, providerSetup, isProviderError, sessionModel, leaksKey, applySetup };
+module.exports = { MODELS, providerSetup, isProviderError, childProviderError, sessionModel, leaksKey, applySetup };
 
 if (require.main === module) {
   const [cmd, a, b, c] = process.argv.slice(2);
@@ -143,11 +159,12 @@ if (require.main === module) {
   else if (cmd === 'setup') applySetup(providerSetup(a, b), c);
   else if (cmd === 'model') { const m = sessionModel(a, fs.readFileSync(b, 'utf8')); if (m) console.log(m); }
   else if (cmd === 'error') { const r = providerErrorReason(process.env.E || '', process.env.S || ''); if (r) console.log(r); process.exit(r ? 0 : 1); }
+  else if (cmd === 'child') { const r = childProviderError(fs.readFileSync(a, 'utf8')); if (r) console.log(r); process.exit(r ? 0 : 1); }
   else if (cmd === 'leaks') {
     try {
       const key = b ? fs.readFileSync(b, 'utf8').trim() : (process.env.OPENROUTER_API_KEY || '');
       process.exit(leaksKey(fs.readFileSync(a, 'utf8'), key) ? 10 : 0);
     } catch (e) { console.error(`leak scan failed: ${e.message}`); process.exit(3); }
   }
-  else { console.error('usage: openrouter.js env|setup|model|error|leaks ...'); process.exit(2); }
+  else { console.error('usage: openrouter.js env|setup|model|error|child|leaks ...'); process.exit(2); }
 }

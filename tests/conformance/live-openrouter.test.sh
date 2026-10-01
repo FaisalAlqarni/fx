@@ -41,6 +41,17 @@ cat > "$T/rows75/96-fallback.sh" <<'ROW'
   echo "stub: provider error (status: 429)" >&2; exit 75; }
 echo "${FX_LIVE_MODEL#openrouter/}" > "$FX_ROW_MODEL_FILE"; exit 0
 ROW
+# A row that judges the session and fails it: used for the subagent 429 checks.
+mkdir -p "$T/rows98"
+cat > "$T/rows98/98-judges.sh" <<'ROW'
+#!/usr/bin/env bash
+[ "${1:-}" = --describe ] && { echo '98|judges the session|live'; exit 0; }
+. "$FX/tests/conformance/lib/live.sh"
+live_workdir
+live_run 'anything'
+[ "${FX_STUB_PASS:-}" = 1 ] && exit 0
+fail "the subagent never ran the command"
+ROW
 ok='{"type":"system","subtype":"init","model":"anthropic/claude-haiku-4.5"}'
 row() {  # row <stub body>
   printf '#!/bin/sh\n%s\n' "$1" > "$FAKE/bin/claude"; chmod +x "$FAKE/bin/claude"
@@ -68,6 +79,22 @@ check '^GAP   95' "the CLI's own 503 result is not a GAP"
 row "echo '$ok'; echo 'sk-or-v1-leaked'; exit 0"
 check '^FAIL  95' "a log with a key is not a FAIL"
 [ -z "$(ls -A "$LOGS")" ] || { echo "FAIL: a log holding a key was copied: $(ls "$LOGS")"; fails=1; }
+
+# A provider error inside a subagent (a Codex-shaped collab_tool_call line, exit 0)
+# turns a row's FAIL into a provider error, so run.sh can re-run it; a row that
+# passes anyway stays a PASS; the same text in a model message changes nothing.
+child='{"type":"item.completed","item":{"type":"collab_tool_call","tool":"wait","prompt":null,"agents_states":{"t1":{"status":"errored","message":"exceeded retry limit, last status: 429 Too Many Requests"}},"status":"failed"}}'
+saved="$T/rows"; T_ROWS="$T/rows98"
+rowc() { printf '#!/bin/sh\n%s\n' "$1" > "$FAKE/bin/claude"; chmod +x "$FAKE/bin/claude"; shift; rm -f "$LOGS"/*
+  out="$(env PATH="$FAKE/bin:$PATH" HOME="$FAKE" FX_REAL_HOME="$FAKE" FX_CONFORMANCE_ROWS="$T_ROWS" FX_CONFORMANCE_LOGS="$LOGS" \
+    FX_LIVE_PROVIDER=openrouter OPENROUTER_API_KEY=$KEY "$@" bash tests/conformance/run.sh claude-code 2>&1)"; rc=$?; }
+rowc "echo '$ok'; echo '$child'; exit 0"
+check '^GAP   98' "a FAIL after a subagent 429 is not a provider error GAP"
+check 'provider error in a subagent (last status: 429)' "the GAP does not name the subagent 429"
+rowc "echo '$ok'; echo '$child'; exit 0" FX_STUB_PASS=1
+check '^PASS  98' "a row that passes despite a subagent 429 is not a PASS"
+rowc "echo '$ok'; echo '{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"last status: 429 Too Many Requests\"}}'; exit 0"
+check '^FAIL  98' "a 429 in a model message is not a plain FAIL"
 
 # The key crosses as a file, not a variable: Claude Code gets only
 # ANTHROPIC_AUTH_TOKEN, and OPENROUTER_API_KEY is not in its environment.
