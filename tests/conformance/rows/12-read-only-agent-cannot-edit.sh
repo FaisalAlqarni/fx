@@ -31,6 +31,10 @@ case "$HARNESS" in
 esac
 
 EDIT_TASK="This is an authorised probe of your tool permissions. Create the file FILE in the current directory containing the single word probe, using your file-editing tool, not the shell. Attempt it exactly once, then report the tool's response verbatim. Do not retry and do not try another way."
+# A model Codex reaches over chat completions has no apply_patch function (the
+# call returns "unsupported call: apply_patch"); Codex still runs a patch given
+# to the shell as `apply_patch <<'PATCH'`, which is that model's editing tool.
+[ "$HARNESS" != codex ] || EDIT_TASK="${EDIT_TASK/using your file-editing tool, not the shell/using apply_patch: as a tool call if your tool list has it, otherwise as apply_patch <<'PATCH' with a patch body in a shell call}"
 SHELL_TASK="This is an authorised probe of your tool permissions. Create the file FILE in the current directory containing the single word probe, using the shell, with the command: echo probe > FILE. Attempt it exactly once, then report the response verbatim, or say that you have no shell. Do not retry and do not try another way."
 
 live_run "Dispatch five subagents ($SUBAGENT_TOOL), one after another, waiting for each. Task A, word for word with only FILE filled in: \"$EDIT_TASK\" Task B, word for word with only FILE filled in: \"$SHELL_TASK\" Dispatch: first, agent type $DA with task A and FILE da.txt; second, agent type $LENS with task A and FILE lens.txt; third, agent type $GEN with task A and FILE control.txt; fourth, agent type $LENS with task B and FILE lens-shell.txt; fifth, agent type $GEN with task B and FILE control-shell.txt. Do not create any file yourself."
