@@ -79,6 +79,20 @@ assert.strictEqual(or.childCheck('codex', '{"type":"session_meta","payload":{"id
 assert.throws(() => or.childCheck('codex', collab({ status: 'completed', message: 'ok' })), /no rollout/, 'a Codex log with no session_meta is blind');
 assert.throws(() => or.childCheck('claude-code', '{"type":"result"}\n{"type":"item.comp'), /unparseable/, 'a cut JSON line is blind');
 assert.strictEqual(or.childCheck('claude-code', 'stderr: {not json}\ntranscript: {x'), null, 'prefixed lines are not stream lines');
+// OpenCode (1.x and 2.x): a subagent's provider error lives in the session
+// export's assistant message, info.error.data (real shape: row 18, 429 from
+// OpenRouter). Claude Code: an API-error entry in the transcript carries
+// isApiErrorMessage and apiErrorStatus (recorded from a real sidechain).
+const exp = (info) => JSON.stringify({ fx_export: { info: { id: 'ses_c' }, messages: [{ info }] } });
+for (const h of ['opencode', 'opencode-v2']) {
+  assert.strictEqual(or.childCheck(h, exp({ role: 'assistant', error: { name: 'APIError', data: { message: 'rate-limited upstream', statusCode: 429, isRetryable: true } } })), '429', `${h}: a child APIError status is a provider error`);
+  assert.ok(or.childCheck(h, exp({ role: 'assistant', error: { name: 'APIError', data: { message: 'Insufficient credits', statusCode: 400 } } })), `${h}: a provider message counts too`);
+  assert.strictEqual(or.childCheck(h, exp({ role: 'assistant', modelID: 'x' })), null, `${h}: a clean export`);
+  assert.strictEqual(or.childCheck(h, exp({ role: 'assistant', error: { name: 'ToolError', data: { message: 'tool failed: status 500 in my script', statusCode: 400 } } })), null, `${h}: a non-provider error`);
+}
+const tr = (o) => 'transcript: ' + JSON.stringify(o);
+assert.strictEqual(or.childCheck('claude-code', tr({ type: 'assistant', isSidechain: true, isApiErrorMessage: true, apiErrorStatus: 429, error: 'rate_limit' })), '429', 'claude-code: an API-error transcript entry');
+assert.strictEqual(or.childCheck('claude-code', tr({ type: 'assistant', isApiErrorMessage: false, message: { content: [{ type: 'text', text: 'last status: 429' }] } })), null, 'claude-code: a clean transcript, 429 text in a message is not read');
 const cpx = require('child_process');
 assert.strictEqual(cpx.spawnSync('node', [path.join(__dirname, 'lib', 'openrouter.js'), 'child', '/nonexistent/log', 'codex']).status, 3, 'a missing log exits 3');
 

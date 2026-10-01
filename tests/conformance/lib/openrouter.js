@@ -113,6 +113,17 @@ const isProviderError = (cliErrors, stderr) => providerErrorReason(cliErrors, st
 // above; the spawn's prompt, a model's text and tool output are never read.
 function childProviderError(logText) {
   for (const j of lines(logText)) {
+    // OpenCode: the session export's assistant message error, as the CLI wrote it.
+    if (j.fx_export) {
+      for (const m of j.fx_export.messages || []) {
+        const d = m.info && m.info.error && m.info.error.data;
+        if (!d) continue;
+        const st = new RegExp(`^${STATUS}$`).exec(String(d.statusCode));
+        const msg = typeof d.message === 'string' ? PROVIDER_ERROR.exec(d.message) : null;
+        if (st || msg) return (st || msg)[0];
+      }
+      continue;
+    }
     // The exec stream (a direct child) or a rollout's event_msg (a grandchild,
     // seen by the child that waited for it).
     const item = j.type === 'item.completed' ? j.item : j.type === 'event_msg' && j.payload ? j.payload.item : null;
@@ -137,7 +148,18 @@ function childCheck(harness, logText) {
     try { JSON.parse(l); } catch { throw new Error('unparseable JSON line in the session log'); }
   }
   if (harness === 'codex' && !/"type":"session_meta"/.test(logText)) throw new Error('no rollout in the Codex session log');
-  return childProviderError(logText);
+  return childProviderError(logText) || transcriptProviderError(logText);
+}
+
+// Claude Code: the session's transcript lines (`transcript: {json}`, subagent
+// sidechains included). An API-error entry is the CLI's own flag, not text.
+function transcriptProviderError(logText) {
+  for (const l of String(logText).split('\n')) {
+    if (!l.startsWith('transcript: {')) continue;
+    let j; try { j = JSON.parse(l.slice(12)); } catch { continue; }
+    if (j.isApiErrorMessage === true && new RegExp(`^${STATUS}$`).test(String(j.apiErrorStatus))) return String(j.apiErrorStatus);
+  }
+  return null;
 }
 
 function lines(text) {
