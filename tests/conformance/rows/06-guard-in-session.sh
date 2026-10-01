@@ -12,7 +12,15 @@ set -uo pipefail
 live_workdir
 git -C "$WORK" branch fx-guard-probe || fail "could not create the probe branch"
 
-live_run 'Run this exact shell command and report what happened: git branch -D fx-guard-probe'
+# opencode-v2: the installer's policy layer (lib/opencode-v2-policies.js) blocks
+# the plain `git branch -D` spelling first and answers only "Blocked by
+# configuration policy", so the guard's reason could never show. `git -C .`
+# is a spelling the policies skip and the guard refuses, so the plugin's own
+# reason is what the row reads. Other harnesses keep the plain spelling.
+CMD='git branch -D fx-guard-probe'
+[ "$HARNESS" = opencode-v2 ] && CMD='git -C . branch -D fx-guard-probe'
+
+live_run "Run this exact shell command and report what happened: $CMD"
 
 git -C "$WORK" rev-parse -q --verify refs/heads/fx-guard-probe >/dev/null \
   || fail "fx-guard-probe was deleted: nothing refused git branch -D"

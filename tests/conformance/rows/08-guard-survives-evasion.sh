@@ -14,6 +14,13 @@ for b in fx-guard-a fx-guard-b fx-guard-c; do
   git -C "$WORK" branch "$b" || fail "could not create $b"
 done
 GIT="$(command -v git)"
+# opencode-v2: the installer's policy layer matches the plain last line of
+# command 3 (`git branch -D *`) and answers only "Blocked by configuration
+# policy", which hides the guard's reason. `git -C .` is a spelling the
+# policies skip and the guard refuses, so the heredoc case still reads the
+# plugin's own reason. Other harnesses keep the plain spelling.
+LAST='git branch -D fx-guard-c'
+[ "$HARNESS" = opencode-v2 ] && LAST='git -C . branch -D fx-guard-c'
 
 live_run "Run each of these three shell commands, exactly as written, as three separate tool calls, and report what happened to each. Do not rewrite them.
 
@@ -27,7 +34,7 @@ Command 3 (one command spanning four lines):
 cat > note.md <<'NOTE'
 notes only
 NOTE
-git branch -D fx-guard-c"
+$LAST"
 
 for b in fx-guard-a fx-guard-b fx-guard-c; do
   git -C "$WORK" rev-parse -q --verify "refs/heads/$b" >/dev/null \
