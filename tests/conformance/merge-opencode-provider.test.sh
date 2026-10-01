@@ -25,6 +25,18 @@ S="$S" node -e '
 '
 [ "$(stat -c %a "$S/dst.json")" = 600 ] || { echo "scratch config is not 0600"; exit 1; }
 
+# opencode-v2 (fourth argument): a headless run has no answerer for the question
+# tool, so the copy also denies it. 1.x never gets the key: a global `permissions`
+# key is fatal to OpenCode 1.x.
+grep -q permissions "$S/dst.json" && { echo "1.x config got a permissions key"; exit 1; }
+node "$M" "$S/src.json" "$S/dst.json" llamacpp/m opencode-v2
+S="$S" node -e '
+  const assert = require("assert");
+  const c = JSON.parse(require("fs").readFileSync(process.env.S + "/dst.json", "utf8"));
+  assert.deepStrictEqual(c.permissions, [{ action: "question", resource: "*", effect: "deny" }], "opencode-v2 copy does not deny the question tool");
+  assert.deepStrictEqual(c.plugin, ["file:///fx/plugins/fx-opencode-v1.js"], "merge lost the plugin entry");
+'
+
 # No destination yet (the first row): created from scratch.
 node "$M" "$S/src.json" "$S/new.json" llamacpp/m
 grep -q '"llamacpp"' "$S/new.json" || { echo "no config written for a first row"; exit 1; }

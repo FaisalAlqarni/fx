@@ -160,7 +160,7 @@ case "$HARNESS" in
     # it MERGES into the scratch config: rewriting it dropped the plugin-route
     # entry and the installer's subagent_depth from every row after the first
     # (task 23, PD1).
-    node "$FX/tests/conformance/lib/merge-opencode-provider.js" "$src" "$XDG_CONFIG_HOME/opencode/opencode.json" "$OPENCODE_MODEL"
+    node "$FX/tests/conformance/lib/merge-opencode-provider.js" "$src" "$XDG_CONFIG_HOME/opencode/opencode.json" "$OPENCODE_MODEL" "$HARNESS"
     case $? in 0) ;; 3) gap "not run: no provider.llamacpp entry in $src" ;; *) fail "provider copy failed" ;; esac
     code="$(curl -s -o /dev/null -m 5 -w '%{http_code}' "$OPENCODE_URL/models")"
     [ "$code" != 000 ] || gap "not run: the local llama-server at $OPENCODE_URL is unreachable" ;;
