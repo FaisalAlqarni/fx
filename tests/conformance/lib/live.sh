@@ -272,8 +272,13 @@ live_regular() { [ -f "$1" ] && [ ! -L "$1" ]; }
 export_session() {
   local id="$1" rc=0; shift
   "$@" </dev/null >"$WORK.export" 2>/dev/null || rc=$?
-  F="$WORK.export" ID="$id" RC="$rc" node -e 'const s=require("fs").readFileSync(process.env.F,"utf8");const i=s.indexOf("{");try{if(process.env.RC!=="0")throw new Error("exit "+process.env.RC);console.log(JSON.stringify({fx_export:JSON.parse(s.slice(i))}))}catch(e){console.log("export failed: "+process.env.ID+": "+e.message)}' >> "$LOG"
+  F="$WORK.export" ID="$id" RC="$rc" node -e 'const s=require("fs").readFileSync(process.env.F,"utf8");const i=s.indexOf("{");try{if(process.env.RC!=="0")throw new Error("exit "+process.env.RC);console.log(JSON.stringify({fx_export:JSON.parse(s.slice(i))}))}catch(e){console.log("export failed: "+process.env.ID+": "+e.message)}' >> "$LOG" \
+    || echo "export failed: $id: parser exited $?" >> "$LOG"
 }
+
+# session_ids: ids in $LOG, as whole tokens of real length (26 chars after
+# ses_). A word like raises_valueerror holds "ses_valueerror" and is no id.
+session_ids() { grep -oP '(?<![A-Za-z0-9_])ses_[A-Za-z0-9]{20,}' "$LOG" | sort -u; }
 
 # --- one headless session ------------------------------------------------------
 # Every runtime writes a machine-readable event stream to $LOG. Not everything
@@ -432,7 +437,7 @@ live_run() {
       local seen_ids2="" id2 more2=1
       while [ "$more2" = 1 ]; do
         more2=0
-        for id2 in $(grep -oE 'ses_[A-Za-z0-9]+' "$LOG" | sort -u); do
+        for id2 in $(session_ids); do
           case " $seen_ids2 " in *" $id2 "*) continue ;; esac
           seen_ids2="$seen_ids2 $id2"; more2=1
           export_session "$id2" "${JAIL[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" opencode session export "$id2" --standalone
@@ -445,7 +450,7 @@ live_run() {
       local seen_ids="" id more=1
       while [ "$more" = 1 ]; do
         more=0
-        for id in $(grep -oE 'ses_[A-Za-z0-9]+' "$LOG" | sort -u); do
+        for id in $(session_ids); do
           case " $seen_ids " in *" $id "*) continue ;; esac
           seen_ids="$seen_ids $id"; more=1
           export_session "$id" "${JAIL[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" opencode export "$id"

@@ -84,15 +84,26 @@ assert.strictEqual(or.childCheck('claude-code', 'stderr: {not json}\ntranscript:
 // OpenRouter). Claude Code: an API-error entry in the transcript carries
 // isApiErrorMessage and apiErrorStatus (recorded from a real sidechain).
 const exp = (info) => JSON.stringify({ fx_export: { info: { id: 'ses_c' }, messages: [{ info }] } });
-for (const h of ['opencode', 'opencode-v2']) {
+for (const h of ['opencode']) {
   assert.strictEqual(or.childCheck(h, exp({ role: 'assistant', error: { name: 'APIError', data: { message: 'rate-limited upstream', statusCode: 429, isRetryable: true } } })), '429', `${h}: a child APIError status is a provider error`);
   assert.ok(or.childCheck(h, exp({ role: 'assistant', error: { name: 'APIError', data: { message: 'Insufficient credits', statusCode: 400 } } })), `${h}: a provider message counts too`);
   assert.strictEqual(or.childCheck(h, exp({ role: 'assistant', modelID: 'x' })), null, `${h}: a clean export`);
   assert.strictEqual(or.childCheck(h, exp({ role: 'assistant', error: { name: 'ToolError', data: { message: 'tool failed: status 500 in my script', statusCode: 400 } } })), null, `${h}: a non-provider error`);
 }
+// 2.x exports flat messages (no info key; recorded from 2.0.18). No real 2.x
+// export with an error exists, so this error shape is INFERRED from the stream
+// line {"type":"error","error":{"type":"provider.rate-limit","status":429}}:
+// an error object with status or statusCode and a message.
+const expv2 = (m) => JSON.stringify({ fx_export: { info: { id: 'ses_c' }, messages: [m] } });
+assert.strictEqual(or.childCheck('opencode-v2', expv2({ type: 'assistant', error: { type: 'provider.rate-limit', status: 429, message: 'rate-limited upstream' } })), '429', 'opencode-v2: a flat message error status');
+assert.strictEqual(or.childCheck('opencode-v2', expv2({ type: 'assistant', error: { statusCode: 503 } })), '503', 'opencode-v2: statusCode works too');
+assert.ok(or.childCheck('opencode-v2', expv2({ type: 'assistant', error: { message: 'Insufficient credits' } })), 'opencode-v2: a provider message counts');
+assert.strictEqual(or.childCheck('opencode-v2', expv2({ type: 'assistant', model: { id: 'x' } })), null, 'opencode-v2: a clean flat message');
+assert.strictEqual(or.childCheck('opencode-v2', expv2({ type: 'assistant', error: { message: 'tool failed: status 500 in my script', status: 400 } })), null, 'opencode-v2: a non-provider error');
 const tr = (o) => 'transcript: ' + JSON.stringify(o);
 assert.strictEqual(or.childCheck('claude-code', tr({ type: 'assistant', isSidechain: true, isApiErrorMessage: true, apiErrorStatus: 429, error: 'rate_limit' })), '429', 'claude-code: an API-error transcript entry');
 assert.strictEqual(or.childCheck('claude-code', tr({ type: 'assistant', isApiErrorMessage: false, message: { content: [{ type: 'text', text: 'last status: 429' }] } })), null, 'claude-code: a clean transcript, 429 text in a message is not read');
+assert.strictEqual(or.childCheck('claude-code', tr({ type: 'assistant', isSidechain: true, isApiErrorMessage: true, error: 'authentication_failed' })), 'authentication_failed', 'claude-code: an API error with no status still counts');
 const cpx = require('child_process');
 assert.strictEqual(cpx.spawnSync('node', [path.join(__dirname, 'lib', 'openrouter.js'), 'child', '/nonexistent/log', 'codex']).status, 3, 'a missing log exits 3');
 

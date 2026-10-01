@@ -177,12 +177,16 @@ oc_run run2 opencode-v2 2.0.18; rc=$?
 check "major: opencode-v2 on a 2.x binary runs its rows (rc=$rc)" '[ -s "$OUT/run2" ] && grep -q "PASS  90  probe" "$OUT/run2.log"'
 oc_run run1 opencode 1.18.25; rc=$?
 check "major: opencode on a 1.x binary runs its rows (rc=$rc)" '[ -s "$OUT/run1" ] && grep -q "PASS  90  probe" "$OUT/run1.log"'
+# Only the other supported major skips. A reading that is neither (a 3.x
+# binary) is not this runner's to hide: the rows run and report it.
+oc_run run3 opencode-v2 3.0.1; rc=$?
+check "major: an unsupported 3.x binary is not skipped (rc=$rc)" '[ -s "$OUT/run3" ] && ! grep -q "^SKIP" "$OUT/run3.log"'
 
 if [ "$failures" -ne 0 ]; then
   echo "--- normal.log" >&2; cat "$OUT/normal.log" >&2
   echo "--- sigint.log" >&2; cat "$OUT/sigint.log" >&2
   echo "--- noguard.log" >&2; cat "$OUT/noguard.log" >&2
-  for f in typo extra gap ugap skip1 skip2 run1 run2; do echo "--- $f.log" >&2; cat "$OUT/$f.log" >&2; done
+  for f in typo extra gap ugap skip1 skip2 run1 run2 run3; do echo "--- $f.log" >&2; cat "$OUT/$f.log" >&2; done
   echo "runner-isolation: $failures failed" >&2
   exit 1
 fi

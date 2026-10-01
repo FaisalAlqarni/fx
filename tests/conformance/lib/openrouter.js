@@ -116,9 +116,12 @@ function childProviderError(logText) {
     // OpenCode: the session export's assistant message error, as the CLI wrote it.
     if (j.fx_export) {
       for (const m of j.fx_export.messages || []) {
-        const d = m.info && m.info.error && m.info.error.data;
+        // 1.x: info.error.data. 2.x: a flat message with error.status/message
+        // (inferred, no real sample; see the test).
+        const e = (m.info || m).error;
+        const d = e && (e.data || e);
         if (!d) continue;
-        const st = new RegExp(`^${STATUS}$`).exec(String(d.statusCode));
+        const st = new RegExp(`^${STATUS}$`).exec(String(d.statusCode || d.status));
         const msg = typeof d.message === 'string' ? PROVIDER_ERROR.exec(d.message) : null;
         if (st || msg) return (st || msg)[0];
       }
@@ -157,7 +160,7 @@ function transcriptProviderError(logText) {
   for (const l of String(logText).split('\n')) {
     if (!l.startsWith('transcript: {')) continue;
     let j; try { j = JSON.parse(l.slice(12)); } catch { continue; }
-    if (j.isApiErrorMessage === true && new RegExp(`^${STATUS}$`).test(String(j.apiErrorStatus))) return String(j.apiErrorStatus);
+    if (j.isApiErrorMessage === true) return String(j.apiErrorStatus || j.error || 'api error');
   }
   return null;
 }

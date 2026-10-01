@@ -110,7 +110,7 @@ ocstub() {  # ocstub <export body>
 #!/bin/sh
 case "\$1" in
   --version) echo 2.0.18 ;;
-  run) echo '{"type":"text","part":{"text":"child ses_child1 done"}}' ;;
+  run) echo '{"type":"text","part":{"text":"child ses_child1abcdefghijklmnopqrs done, test_invalid_raises_valueerror passed"}}' ;;
   session) $1 ;;
 esac
 exit 0
@@ -120,14 +120,28 @@ STUB
   out="$(env PATH="$FAKE/bin:$PATH" HOME="$FAKE" FX_REAL_HOME="$FAKE" FX_CONFORMANCE_ROWS="$T_ROWS" FX_CONFORMANCE_LOGS="$LOGS" \
     FX_LIVE_PROVIDER=openrouter OPENROUTER_API_KEY=$KEY FX_STUB_PASS=1 bash tests/conformance/run.sh opencode-v2 2>&1)"; rc=$?
 }
-okexp='echo "{\"info\":{\"id\":\"ses_child1\"},\"messages\":[{\"type\":\"assistant\",\"model\":{\"id\":\"qwen/qwen3.8-27b:free\"}}]}"'
+okexp='echo "{\"info\":{\"id\":\"ses_child1abcdefghijklmnopqrs\"},\"messages\":[{\"type\":\"assistant\",\"model\":{\"id\":\"qwen/qwen3.8-27b:free\"}}]}"'
 ocstub "$okexp"
 check '^PASS  98' "a clean opencode-v2 stub session is not a PASS (the stub harness is broken)"
 ocstub 'echo "no session here"; exit 3'
 check '^FAIL  98' "a child session whose export failed is not a FAIL"
-check 'child session export failed: ses_child1' "the failed export does not name the child"
-ocstub 'echo "{\"info\":{\"id\":\"ses_child1\"},\"messages\":[]}"; exit 3'
-check 'child session export failed: ses_child1' "a nonzero export exit with parseable output is not a FAIL"
+check 'child session export failed: ses_child1abcdefghijklmnopqrs' "the failed export does not name the child"
+ocstub 'echo "{\"info\":{\"id\":\"ses_child1abcdefghijklmnopqrs\"},\"messages\":[]}"; exit 3'
+check 'child session export failed: ses_child1abcdefghijklmnopqrs' "a nonzero export exit with parseable output is not a FAIL"
+
+# The id scrape reads ids, not words: `raises_valueerror` in the model's text
+# is not a session (its export would fail and turn a PASS into a FAIL). The
+# ocstub run text carries it, so the PASS above is the check; this one names it.
+ocstub 'case "$3" in ses_valueerror) echo "no session"; exit 3 ;; esac; '"$okexp"
+check '^PASS  98' "a model word like raises_valueerror was scraped as a session id"
+
+# A crash of the export parser itself leaves a line, so the lost export is seen.
+ocstub "$okexp"
+printf '#!/bin/sh\n[ -n "$F" ] && { echo "boom" >&2; exit 9; }\nPATH="${PATH#*%s/bin:}"; exec node "$@"\n' "$FAKE" > "$FAKE/bin/node"; chmod +x "$FAKE/bin/node"
+out="$(env PATH="$FAKE/bin:$PATH" HOME="$FAKE" FX_REAL_HOME="$FAKE" FX_CONFORMANCE_ROWS="$T_ROWS" FX_CONFORMANCE_LOGS="$LOGS" \
+  FX_LIVE_PROVIDER=openrouter OPENROUTER_API_KEY=$KEY FX_STUB_PASS=1 bash tests/conformance/run.sh opencode-v2 2>&1)"; rc=$?
+rm -f "$FAKE/bin/node"
+check 'child session export failed: ses_child1abcdefghijklmnopqrs' "a crashed export parser leaves no export failed line"
 
 # A crash of the session-model lookup is a FAIL with the node error, not an
 # empty model that skips the model check. The wrapper fails only that call.

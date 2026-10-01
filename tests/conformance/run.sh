@@ -35,7 +35,7 @@ if [ -n "$FREE" ]; then
     want=1; [ "$HARNESS" = opencode-v2 ] && want=2
     ocver="$(opencode --version 2>/dev/null | head -n1)"
     have="$(grep -oE '[0-9]+' <<<"$ocver" | head -n1)"
-    if [ -n "$have" ] && [ "$have" != "$want" ]; then
+    if [ "$have" = "$((3 - want))" ]; then
       echo "SKIP $HARNESS: opencode $(grep -oE '[0-9]+(\.[0-9]+)*' <<<"$ocver" | head -n1) on PATH is not this harness's major"
       exit 0
     fi ;;
