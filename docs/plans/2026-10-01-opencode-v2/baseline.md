@@ -78,23 +78,23 @@ Rows 02 and 07 passed only on the fallback; the first attempts are kept as `02-p
 
 ## opencode-v2 2.0.18: 10 pass, 7 fail, 1 gap
 
-| Row | Verdict | Model | Attempts |
-|---|---|---|---|
-| 01 | PASS | qwen/qwen3.8-27b:free | 1 |
-| 02 | FAIL | qwen/qwen3.8-27b:free | 1 |
-| 03 | PASS | none (free) | 1 |
-| 04 | FAIL | qwen/qwen3.8-27b:free (config) | 1 |
-| 05 | PASS | qwen/qwen3.8-27b:free | 1 |
-| 06 | FAIL | qwen/qwen3.8-27b:free | 1 |
-| 07 | FAIL | qwen/qwen3.8-27b:free | 1 |
-| 08 | FAIL | qwen/qwen3.8-27b:free | 1 |
-| 09, 10, 11 | PASS | none (free) | 1 |
-| 12 | PASS | qwen/qwen3.8-27b:free | 1 |
-| 13, 14 | PASS | none (free) | 1 |
-| 15 | FAIL | qwen/qwen3.8-27b:free (config) | 1 |
-| 16 | PASS | qwen/qwen3.8-27b:free | 1 |
-| 17 | FAIL | qwen/qwen3.8-27b:free (config) | 1 |
-| 18 | GAP | qwen/qwen3.8-27b:free | 1 |
+| Row | Verdict | Model | Attempts | Resolved |
+|---|---|---|---|---|
+| 01 | PASS | qwen/qwen3.8-27b:free | 1 | - |
+| 02 | FAIL | qwen/qwen3.8-27b:free | 1 | fixed 8492f1c (events.js read a `subagent` result from `state.output`, but the 2.0.18 session export keeps it in `state.content`, so the exported root replaced the run's parts with empty text; no product change): clean passes on qwen/qwen3.8-27b:free (02-a) and deepseek/deepseek-v4-flash (02-ds3, 02-ds4). One deepseek run answered `N=UNKNOWN P=UNKNOWN` (02-ds2) and the next two passed with identical code: model variance, not fx. The free-model daily quota (1000) ran out mid-task, so later runs use `FX_LIVE_MODEL=openrouter/deepseek/deepseek-v4-flash`. Logs: `logs13/02-a`, `logs13/02-ds2`, `logs13/02-ds3`, `logs13/02-ds4` under the task scratchpad. |
+| 03 | PASS | none (free) | 1 | - |
+| 04 | FAIL | qwen/qwen3.8-27b:free (config) | 1 | fixed 7728b92 (runner cause, not fx: a headless `opencode run` has no answerer for the `question` tool, so the session ended `Session interrupted: shutdown`; the scratch config now denies `question`): clean passes on qwen/qwen3.8-27b:free (04-a) and deepseek/deepseek-v4-flash (04-ds3). One deepseek run hung after loading fx-tdd until the 1500 s timeout (04-ds2), a provider stall, not re-judged. Logs: `logs13/04-a`, `logs13/04-ds2`, `logs13/04-ds3` under the task scratchpad. |
+| 05 | PASS | qwen/qwen3.8-27b:free | 1 | - |
+| 06 | FAIL | qwen/qwen3.8-27b:free | 1 | fixed 03ed2a7 (the v2 plugin's denials lacked the `[fx] ` prefix every other harness and the row read), 8492f1c (events.js read the exported refusal's error object as empty) and 71dd947 (the installer's policies block plain `git branch -D` first and answer only `Blocked by configuration policy`, so the row uses `git -C . branch -D`, which the guard refuses and the policies skip; assertion unchanged): clean passes on qwen/qwen3.8-27b:free (06-e) and deepseek/deepseek-v4-flash (06-ds2). Logs: `logs13/06-d`, `logs13/06-e`, `logs13/06-ds2` under the task scratchpad. |
+| 07 | FAIL | qwen/qwen3.8-27b:free | 1 | fixed 03ed2a7, 8492f1c (a child session never got a parent, so its refusal was not read as the subagent's) and 71dd947: 2 of 2 clean passes on qwen/qwen3.8-27b:free (07-d, 07-e). Logs: `logs13/07-d`, `logs13/07-e` under the task scratchpad. |
+| 08 | FAIL | qwen/qwen3.8-27b:free | 1 | fixed 03ed2a7, 8492f1c and 71dd947 (command 3's last line uses `git -C .`; commands 1 and 2 are unchanged): 2 of 2 clean passes on qwen/qwen3.8-27b:free (08-d, 08-e). Logs: `logs13/08-d`, `logs13/08-e` under the task scratchpad. |
+| 09, 10, 11 | PASS | none (free) | 1 | - |
+| 12 | PASS | qwen/qwen3.8-27b:free | 1 | - |
+| 13, 14 | PASS | none (free) | 1 | - |
+| 15 | FAIL | qwen/qwen3.8-27b:free (config) | 1 | fixed 035feb3 (plugin) and bbfe961 (row) and 7728b92: the dispatcher the row assumed does not exist, `build` is primary only (`Agent build cannot run as a subagent`) and the built-in `general` denies `subagent`, so nothing could nest; the plugin now lets `general` dispatch, as the 1.x plugin does for `task`. 2 of 2 clean passes on deepseek/deepseek-v4-flash (15-ds1, 15-ds2; the qwen quota was spent). Logs: `logs13/15-a`, `logs13/15-ds1`, `logs13/15-ds2` under the task scratchpad. |
+| 16 | PASS | qwen/qwen3.8-27b:free | 1 | - |
+| 17 | FAIL | qwen/qwen3.8-27b:free (config) | 1 | fixed 7728b92 (runner cause: the `question` tool, as row 04): 2 of 2 clean passes on deepseek/deepseek-v4-flash (17-ds1, 17-ds2); the qwen attempt hit the free daily quota (17-a). Logs: `logs13/17-a`, `logs13/17-ds1`, `logs13/17-ds2` under the task scratchpad. |
+| 18 | GAP | qwen/qwen3.8-27b:free | 1 | fixed 035feb3 and bbfe961 (same cause as row 15: the control is `general`, which can now dispatch `general`; the lens stays read-only): 2 of 2 clean passes on deepseek/deepseek-v4-flash (18-ds2, 18-ds3). One earlier run was a GAP because the model dispatched only the lens (18-ds1), a model slip, not re-judged. Logs: `logs13/18-ds1`, `logs13/18-ds2`, `logs13/18-ds3` under the task scratchpad. |
 
 Non-PASS excerpts (logs `<row>-opencode-v2.log` in `/tmp/fxlogs-opencode-v2/`):
 
