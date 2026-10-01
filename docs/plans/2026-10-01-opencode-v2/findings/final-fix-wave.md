@@ -18,7 +18,7 @@ In `tests/conformance/lib/live.sh`, an `export failed:` line for any child sessi
 
 **W4. The read-only check fails closed.** (silent-failure 3, security 2, broad M1)
 `plugins/fx-opencode-v2.js` evaluate hook, read-only branch: take it out of `attempt()`. Any throw denies with the reason, like the shell guard. For `external_directory`: require a non-empty resource list, and `path.resolve` each resource before the prefix test against `references/` and its realpath. Gate cases in `tests/gates/opencode-v2-plugin.test.js`: realpath throws, empty list, `<refs>/../x`, and a `subagent` action from a read-only agent is denied (security lens, earlier finding 2).
-While there, reindent the evaluate callback body under `ctx.permission.hook(` (standards 4). Indentation only, in its own commit.
+While there, reindent the evaluate callback body under the `ctx.permission.hook` call (standards 4). Indentation only, in its own commit.
 
 **W5. `plantRoles` failure leaves a stderr line.** (silent-failure 5)
 `hooks/fx-codex.js` catch around `plantRoles()`: one `console.error` line with the reason. Keep the session starting.

@@ -16,7 +16,7 @@ Review of `2c0e8d2..0208fad`, Standards axis. Hard violations come first. I read
 
 3. [Minor] ADR 0020's diagram column alignment broke after the rename. The `plugins/fx-opencode-v1.js` arrow no longer lines up with its siblings.
 
-4. [Minor] The `evaluate` callback body in `plugins/fx-opencode-v2.js` is not indented under `ctx.permission.hook(`. This departs from the indentation in `plugins/*.js` and `hooks/*.js`.
+4. [Minor] The `evaluate` callback body in `plugins/fx-opencode-v2.js` is not indented under the `ctx.permission.hook` call. This departs from the indentation in `plugins/*.js` and `hooks/*.js`.
 
 5. [Minor] ADRs 0036 and 0037 hold harness facts: `Wildcard.match` turning `*` into `.*`, the 2.0.18 source paths, and the `permission.evaluate` shape. ADR 0016 puts these in `references/harnesses/opencode-v2.md`. The ADRs should cite that file rather than restate the facts, but this is a judgement call. The reference file itself conforms: `# opencode-v2`, an ADR 0016 header, a "What fx cannot observe" section (0024).
 
@@ -45,3 +45,5 @@ Review of `2c0e8d2..0208fad`, Standards axis. Hard violations come first. I read
 - ADR 0028: one converter per dialect, `toOpencodeV2Agent`, used by both the plugin and the installer.
 - ADR 0020: `render()` handles the `opencode-v2` harness.
 - ADR 0024: failed registrations show up in the preamble and in denial messages.
+
+<!-- controller: one code fragment reworded so the prose gate balances parentheses; meaning unchanged -->
