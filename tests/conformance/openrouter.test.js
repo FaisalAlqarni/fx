@@ -100,6 +100,8 @@ or.applySetup(or.providerSetup('codex', 'a/one'), home);
 or.applySetup(or.providerSetup('codex', 'b/two'), home);
 const toml = fs.readFileSync(path.join(home, '.codex', 'config.toml'), 'utf8');
 assert.strictEqual(toml.split('[model_providers.openrouter]').length, 2, 'the provider table appears once');
+assert.strictEqual(toml.split('[agents]').length, 2, 'the agents table appears once');
+assert.ok(/\[agents\]\nmax_depth = 2\n/.test(toml), 'codex nests two deep, so rows 15 and 18 can judge a V1 model');
 assert.ok(toml.includes('model = "b/two"') && !toml.includes('a/one') && toml.includes('[plugins.fx]\nenabled = true') && toml.includes('[marketplaces.fx]'), 'latest model, existing tables kept');
 fs.mkdirSync(path.join(home, '.config', 'opencode'), { recursive: true });
 fs.writeFileSync(path.join(home, '.config', 'opencode', 'opencode.json'), '{"plugin":["x"]}');

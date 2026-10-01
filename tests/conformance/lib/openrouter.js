@@ -24,7 +24,7 @@ const MODELS = {
 // `plugin add` (comments move), so the old fragment is found by its keys and
 // tables, never by a fence, and the plugin tables after it stay.
 const OLD_KEYS = /^model(?:_provider)? = .*\n/gm;
-const OLD_TABLES = /^\[model_providers\.openrouter(?:\.auth)?\]\n(?:(?!\[)[^\n]*\n)*/gm;
+const OLD_TABLES = /^\[(?:model_providers\.openrouter(?:\.auth)?|agents)\]\n(?:(?!\[)[^\n]*\n)*/gm;
 // Top-level keys only: a `model` key inside another table is not ours.
 function stripOld(toml) {
   const i = toml.search(/^\[/m);
@@ -47,6 +47,12 @@ function providerSetup(harness, model) {
         '[model_providers.openrouter.auth]',
         'command = "sh"',
         'args = ["-c", "echo $OPENROUTER_API_KEY"]',
+        '',
+        // A V1 model nests one level by default and no plugin can raise it
+        // (references/harnesses/codex.md); a user can, and rows 15 and 18 need
+        // a child that can dispatch. V2 models ignore the key.
+        '[agents]',
+        'max_depth = 2',
         '',
       ].join('\n') } };
     case 'opencode':
