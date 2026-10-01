@@ -23,26 +23,26 @@ The whole run stayed under the 1000/day limit. Counter figures include requests 
 
 ## codex: 10 pass (1 on fallback), 5 fail, 3 gap
 
-| Row | Verdict | Model | Attempts |
-|---|---|---|---|
-| 01 preamble in a session | PASS | deepseek/deepseek-v4-flash | 2 (fallback; 429 on primary) |
-| 02 preamble in a subagent | FAIL | qwen/qwen3.8-27b:free | 1 |
-| 03 no placeholder survives | PASS | none (free) | 1 |
-| 04 naive prompt invokes a lane | PASS | qwen/qwen3.8-27b:free | 1 |
-| 05 explicit invocation | PASS | qwen/qwen3.8-27b:free | 1 |
-| 06 guard in session | PASS | qwen/qwen3.8-27b:free | 1 |
-| 07 guard in a subagent | FAIL | qwen/qwen3.8-27b:free | 1 |
-| 08 guard survives evasion | PASS | qwen/qwen3.8-27b:free | 1 |
-| 09 every skill discovered | PASS | none (free) | 1 |
-| 10 reference paths resolve | PASS | none (free) | 1 |
-| 11 read-only roles registered | PASS | none (free) | 1 |
-| 12 read-only agent cannot edit | FAIL | deepseek/deepseek-v4-flash | 2 (fallback; 429 on primary) |
-| 13 audit lane not model-facing | GAP | none | 1 |
-| 14 audit lane user-invocable | GAP | none | 1 |
-| 15 subagent dispatches a subagent | FAIL | qwen/qwen3.8-27b:free | 1 |
-| 16 project note and plan state | PASS | qwen/qwen3.8-27b:free | 1 |
-| 17 lane check reaches runtime | FAIL | qwen/qwen3.8-27b:free | 1 |
-| 18 read-only agent cannot delegate a write | GAP | qwen/qwen3.8-27b:free | 1 |
+| Row | Verdict | Model | Attempts | Resolved |
+|---|---|---|---|---|
+| 01 preamble in a session | PASS | deepseek/deepseek-v4-flash | 2 (fallback; 429 on primary) | - |
+| 02 preamble in a subagent | FAIL | qwen/qwen3.8-27b:free | 1 | fixed e205162 (row judged fork by the V2 parameter and ignored a V1 child answer): 2 of 2 live on qwen/qwen3.8-27b:free; one more on deepseek/deepseek-v4-flash after a primary 429 |
+| 03 no placeholder survives | PASS | none (free) | 1 | - |
+| 04 naive prompt invokes a lane | PASS | qwen/qwen3.8-27b:free | 1 | - |
+| 05 explicit invocation | PASS | qwen/qwen3.8-27b:free | 1 | - |
+| 06 guard in session | PASS | qwen/qwen3.8-27b:free | 1 | - |
+| 07 guard in a subagent | FAIL | qwen/qwen3.8-27b:free | 1 | fixed f8210d8 (runner: a subagent 429 now falls back; no product change): 2 of 2 live on qwen/qwen3.8-27b:free |
+| 08 guard survives evasion | PASS | qwen/qwen3.8-27b:free | 1 | - |
+| 09 every skill discovered | PASS | none (free) | 1 | - |
+| 10 reference paths resolve | PASS | none (free) | 1 | - |
+| 11 read-only roles registered | PASS | none (free) | 1 | - |
+| 12 read-only agent cannot edit | FAIL | deepseek/deepseek-v4-flash | 2 (fallback; 429 on primary) | fixed 2b9419a (a chat-completions model has no apply_patch function, so the control could not write; the row now allows the shell form, assertions unchanged): 2 of 2 live on qwen/qwen3.8-27b:free |
+| 13 audit lane not model-facing | GAP | none | 1 | fixed 5f12321 (live row, no hidden lane read): 2 of 2 live on qwen/qwen3.8-27b:free |
+| 14 audit lane user-invocable | GAP | none | 1 | fixed 5f12321 and 1ec2f14 (live row addressing `$fx:fx-handoff`; bare `$fx-handoff` is never expanded by Codex 0.155.1): 2 of 2 live on qwen/qwen3.8-27b:free |
+| 15 subagent dispatches a subagent | FAIL | qwen/qwen3.8-27b:free | 1 | fixed a3ed03c (a V1 model nests one level unless the user sets `[agents] max_depth`; no plugin can, so the runner config does): 2 of 2 live on deepseek/deepseek-v4-flash (fallback after a primary 429 each time) |
+| 16 project note and plan state | PASS | qwen/qwen3.8-27b:free | 1 | - |
+| 17 lane check reaches runtime | FAIL | qwen/qwen3.8-27b:free | 1 | fixed 223eddd (hook: a patch applied through `apply_patch <<` in a shell call is lane-checked) and 2b9419a (row prompt): 3 live passes on qwen/qwen3.8-27b:free after the fix (one run under the old prompt declined the shell form); deepseek/deepseek-v4-flash calls the missing apply_patch function and stops, which is a runtime limit of that model, not fx |
+| 18 read-only agent cannot delegate a write | GAP | qwen/qwen3.8-27b:free | 1 | fixed a3ed03c and 1ec2f14 (max_depth config; a grandchild 429 now falls back): 3 live passes, qwen/qwen3.8-27b:free twice and deepseek/deepseek-v4-flash once |
 
 Non-PASS excerpts (runner stderr; logs in `/tmp/fxlogs-opencode-v2/`):
 
