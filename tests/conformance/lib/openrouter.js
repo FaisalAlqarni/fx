@@ -64,6 +64,10 @@ function providerSetup(harness, model) {
       return { env: {}, files: { '.config/opencode/opencode.json': JSON.stringify({
         model: ref, autoupdate: false, share: 'disabled',
         providers: { openrouter: { apiKey: '{env:OPENROUTER_API_KEY}' } },
+        // A headless run has no one to answer the question tool: a session that
+        // calls it ends "Session interrupted: shutdown". The runner denies it,
+        // as a non-interactive user would.
+        permissions: [{ action: 'question', resource: '*', effect: 'deny' }],
       }, null, 2) } };
     case 'claude-code':
       return { files: {}, env: {

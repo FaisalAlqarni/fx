@@ -19,6 +19,10 @@ for (const h of ['codex', 'opencode', 'opencode-v2', 'claude-code']) {
 assert.ok(JSON.stringify(or.providerSetup('codex', or.MODELS.primary).files).includes('OPENROUTER_API_KEY'),
   'codex reads the key from the environment');
 assert.strictEqual(or.providerSetup('claude-code', or.MODELS.claude).env.ANTHROPIC_BASE_URL, 'https://openrouter.ai/api');
+// A headless `opencode run` has no one to answer the question tool, and a session
+// that calls it ends "Session interrupted: shutdown" (task 13, rows 04 and 15).
+const v2cfg = JSON.parse(or.providerSetup('opencode-v2', or.MODELS.primary).files['.config/opencode/opencode.json']);
+assert.deepStrictEqual(v2cfg.permissions, [{ action: 'question', resource: '*', effect: 'deny' }], 'opencode-v2 runs deny the question tool');
 assert.throws(() => or.providerSetup('unknown', or.MODELS.primary), /unknown harness/);
 
 for (const [events, stderr] of [
