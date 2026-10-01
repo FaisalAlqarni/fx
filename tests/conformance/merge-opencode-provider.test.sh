@@ -28,12 +28,13 @@ S="$S" node -e '
 # opencode-v2 (fourth argument): a headless run has no answerer for the question
 # tool, so the copy also denies it. 1.x never gets the key: a global `permissions`
 # key is fatal to OpenCode 1.x.
-grep -q permissions "$S/dst.json" && { echo "1.x config got a permissions key"; exit 1; }
+grep -qE '"(permissions|agents)"' "$S/dst.json" && { echo "1.x config got a v2 key"; exit 1; }
 node "$M" "$S/src.json" "$S/dst.json" llamacpp/m opencode-v2
 S="$S" node -e '
   const assert = require("assert");
   const c = JSON.parse(require("fs").readFileSync(process.env.S + "/dst.json", "utf8"));
   assert.deepStrictEqual(c.permissions, [{ action: "question", resource: "*", effect: "deny" }], "opencode-v2 copy does not deny the question tool");
+  assert.deepStrictEqual(c.agents, { general: { permissions: [{ action: "subagent", resource: "*", effect: "allow" }] } }, "opencode-v2 copy lacks the rule that lets general dispatch");
   assert.deepStrictEqual(c.plugin, ["file:///fx/plugins/fx-opencode-v1.js"], "merge lost the plugin entry");
 '
 

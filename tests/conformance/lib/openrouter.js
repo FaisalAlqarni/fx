@@ -68,6 +68,9 @@ function providerSetup(harness, model) {
         // calls it ends "Session interrupted: shutdown". The runner denies it,
         // as a non-interactive user would.
         permissions: [{ action: 'question', resource: '*', effect: 'deny' }],
+        // The user's own answer, see INSTALL.md: fx does not grant nested dispatch on
+        // 2.x, so the scratch config adds the rule a user adds to let general dispatch.
+        agents: { general: { permissions: [{ action: 'subagent', resource: '*', effect: 'allow' }] } },
       }, null, 2) } };
     case 'claude-code':
       return { files: {}, env: {

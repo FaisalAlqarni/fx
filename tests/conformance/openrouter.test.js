@@ -23,6 +23,7 @@ assert.strictEqual(or.providerSetup('claude-code', or.MODELS.claude).env.ANTHROP
 // that calls it ends "Session interrupted: shutdown" (task 13, rows 04 and 15).
 const v2cfg = JSON.parse(or.providerSetup('opencode-v2', or.MODELS.primary).files['.config/opencode/opencode.json']);
 assert.deepStrictEqual(v2cfg.permissions, [{ action: 'question', resource: '*', effect: 'deny' }], 'opencode-v2 runs deny the question tool');
+assert.deepStrictEqual(v2cfg.agents, { general: { permissions: [{ action: 'subagent', resource: '*', effect: 'allow' }] } }, "opencode-v2 runs carry the user's own rule that lets general dispatch");
 assert.throws(() => or.providerSetup('unknown', or.MODELS.primary), /unknown harness/);
 
 for (const [events, stderr] of [

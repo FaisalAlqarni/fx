@@ -16,6 +16,10 @@ try { cfg = JSON.parse(fs.readFileSync(dst, 'utf8')); } catch {}
 Object.assign(cfg, { model, autoupdate: false, share: 'disabled', provider: { llamacpp: p } });
 // A headless 2.x run has no answerer for the question tool (a session that calls
 // it ends "Session interrupted: shutdown"), so deny it. 1.x must not get the key.
-if (harness === 'opencode-v2') cfg.permissions = [{ action: 'question', resource: '*', effect: 'deny' }];
+if (harness === 'opencode-v2') {
+  cfg.permissions = [{ action: 'question', resource: '*', effect: 'deny' }];
+  // The user's own answer, see INSTALL.md: fx does not grant nested dispatch on 2.x.
+  cfg.agents = { general: { permissions: [{ action: 'subagent', resource: '*', effect: 'allow' }] } };
+}
 fs.writeFileSync(dst, JSON.stringify(cfg, null, 2) + '\n', { mode: 0o600 });
 fs.chmodSync(dst, 0o600);
