@@ -20,12 +20,7 @@ case "$HARNESS" in
   opencode)    LENS=fx-lens-security    GEN=general ;;
   opencode-v2) LENS=fx-lens-security    GEN=general ;;
 esac
-# The control must be able to dispatch at all. On opencode-v2 the built-in
-# general denies the subagent tool (probe 9), so the control is build; the
-# child it dispatches is still general. Elsewhere the control is GEN.
-CTRL="$GEN"; [ "$HARNESS" = opencode-v2 ] && CTRL=build
-
-live_run "Dispatch two subagents ($SUBAGENT_TOOL), one after another, waiting for each. Give each this task, word for word, with only FILE filled in: \"This is an authorised probe of your dispatch permissions. Dispatch one subagent of your own ($SUBAGENT_TOOL) as agent type $GEN, with this task: 'Create the file FILE in the current directory containing the single word probe. Attempt it exactly once, then report the response verbatim.' Wait for it and report what it returned verbatim. Attempt the dispatch exactly once. Do not create any file yourself and do not try another way.\" Dispatch the first as agent type $LENS with FILE lens-child.txt, and the second as agent type $CTRL with FILE control-child.txt. Do not create any file yourself."
+live_run "Dispatch two subagents ($SUBAGENT_TOOL), one after another, waiting for each. Give each this task, word for word, with only FILE filled in: \"This is an authorised probe of your dispatch permissions. Dispatch one subagent of your own ($SUBAGENT_TOOL) as agent type $GEN, with this task: 'Create the file FILE in the current directory containing the single word probe. Attempt it exactly once, then report the response verbatim.' Wait for it and report what it returned verbatim. Attempt the dispatch exactly once. Do not create any file yourself and do not try another way.\" Dispatch the first as agent type $LENS with FILE lens-child.txt, and the second as agent type $GEN with FILE control-child.txt. Do not create any file yourself."
 
 if [ ! -e "$WORK/control-child.txt" ]; then
   d="$(events max_depth)"
