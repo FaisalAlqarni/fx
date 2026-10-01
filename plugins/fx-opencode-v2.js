@@ -79,7 +79,7 @@ export default {
       } catch (e) { report(e); }
     };
     const notice = () => (failures.length ? ` [${failures.join('; ')}]` : '');
-    const deny = (ev, message) => { ev.effect = 'deny'; ev.message = message + notice(); };
+    const deny = (ev, message) => { ev.effect = 'deny'; ev.message = `[fx] ${message}${notice()}`; };
 
     // Registered first: nothing before the git guard waits on the runtime.
     // The guard lives in this hook. If it never registers, execute.before below
@@ -130,7 +130,7 @@ export default {
             const reason = laneCheck(path.resolve(ctx.location.directory, r), ctx.location.directory);
             if (reason) {
               ev.effect = 'deny';
-              ev.message = reason;
+              ev.message = `[fx] ${reason}`;
               return;
             }
           }

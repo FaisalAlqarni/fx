@@ -151,6 +151,7 @@ async function evaluate(rec, ev) {
     const e = await shell(cmd, pieces);
     assert.strictEqual(e.effect, 'deny', `the guard refuses the full command: ${cmd}`);
     assert.ok(e.message, `the refusal carries the guard's reason: ${cmd}`);
+    assert.ok(e.message.startsWith('[fx] '), `the reason is marked as fx's, as on every other harness: ${cmd}`);
   }
   for (const cmd of ['git status', 'ls']) assert.strictEqual((await shell(cmd)).effect, 'allow', `${cmd} is untouched`);
 
