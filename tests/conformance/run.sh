@@ -26,6 +26,22 @@ case "$#:${2:-}" in
   *) echo "usage: run.sh <claude-code|opencode|opencode-v2|codex> [--free]" >&2; exit 2 ;;
 esac
 
+# Free mode on a machine whose `opencode` is the other major: the rows would
+# measure the wrong binary, so skip the harness. The major is read the way the
+# installer reads it: the first integer of `opencode --version`. No `opencode`
+# at all is not a skip; the rows report it as they always have.
+if [ -n "$FREE" ]; then
+  case "$HARNESS" in opencode|opencode-v2)
+    want=1; [ "$HARNESS" = opencode-v2 ] && want=2
+    ocver="$(opencode --version 2>/dev/null | head -n1)"
+    have="$(grep -oE '[0-9]+' <<<"$ocver" | head -n1)"
+    if [ -n "$have" ] && [ "$have" != "$want" ]; then
+      echo "SKIP $HARNESS: opencode $(grep -oE '[0-9]+(\.[0-9]+)*' <<<"$ocver" | head -n1) on PATH is not this harness's major"
+      exit 0
+    fi ;;
+  esac
+fi
+
 # FX_CONFORMANCE_ROWS points the runner at another rows directory; the
 # isolation test uses it to run a probe row. Unset, the real rows run.
 ROWS_DIR="${FX_CONFORMANCE_ROWS:-$FX/tests/conformance/rows}"

@@ -156,11 +156,33 @@ check "unexpected gap: runner exits non-zero (rc=$rc)" '[ "$rc" -ne 0 ]'
 check "unexpected gap: reported as FAIL" 'grep -q "^FAIL  93  reasoned gap" "$OUT/ugap.log"'
 check "unexpected gap: says it is not an expected gap" 'grep -q "not an expected gap" "$OUT/ugap.log"'
 
+# 7. Free mode on a machine whose `opencode` is the other major skips the
+# harness with one SKIP line and exit 0: the rows would measure the wrong
+# binary. The matching major runs its rows, and live mode is not skipped.
+OCB="$T/ocbin"; mkdir -p "$OCB"
+oc_version() { printf '#!/bin/sh\necho %s\n' "$1" > "$OCB/opencode"; chmod +x "$OCB/opencode"; }
+oc_run() {  # oc_run <tag> <harness> <opencode version>
+  oc_version "$3"; rm -f "$OUT/$1"
+  env PATH="$OCB:$PATH" HOME="$FAKE" FX_CONFORMANCE_ROWS="$ROWS" PROBE_OUT="$OUT/$1" \
+      bash "$RUNNER" "$2" --free > "$OUT/$1.log" 2>&1
+}
+oc_run skip1 opencode-v2 1.18.25; rc=$?
+check "major: opencode-v2 on a 1.x binary exits 0 (rc=$rc)" '[ "$rc" -eq 0 ]'
+check "major: opencode-v2 on a 1.x binary prints one SKIP line" '[ "$(cat "$OUT/skip1.log")" = "SKIP opencode-v2: opencode 1.18.25 on PATH is not this harness'"'"'s major" ]'
+check "major: no row ran on the wrong major" '[ ! -e "$OUT/skip1" ]'
+oc_run skip2 opencode 2.0.18; rc=$?
+check "major: opencode on a 2.x binary exits 0 (rc=$rc)" '[ "$rc" -eq 0 ]'
+check "major: opencode on a 2.x binary prints the SKIP" 'grep -q "^SKIP opencode: opencode 2.0.18 on PATH" "$OUT/skip2.log"'
+oc_run run2 opencode-v2 2.0.18; rc=$?
+check "major: opencode-v2 on a 2.x binary runs its rows (rc=$rc)" '[ -s "$OUT/run2" ] && grep -q "PASS  90  probe" "$OUT/run2.log"'
+oc_run run1 opencode 1.18.25; rc=$?
+check "major: opencode on a 1.x binary runs its rows (rc=$rc)" '[ -s "$OUT/run1" ] && grep -q "PASS  90  probe" "$OUT/run1.log"'
+
 if [ "$failures" -ne 0 ]; then
   echo "--- normal.log" >&2; cat "$OUT/normal.log" >&2
   echo "--- sigint.log" >&2; cat "$OUT/sigint.log" >&2
   echo "--- noguard.log" >&2; cat "$OUT/noguard.log" >&2
-  for f in typo extra gap ugap; do echo "--- $f.log" >&2; cat "$OUT/$f.log" >&2; done
+  for f in typo extra gap ugap skip1 skip2 run1 run2; do echo "--- $f.log" >&2; cat "$OUT/$f.log" >&2; done
   echo "runner-isolation: $failures failed" >&2
   exit 1
 fi
