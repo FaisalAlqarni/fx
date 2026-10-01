@@ -68,6 +68,10 @@ async function evaluate(rec, ev) {
 }
 
 (async () => {
+  // The plugin reads the user's opencode.json to honor their own subagent rules;
+  // keep the developer's real config out of the gate.
+  const globalCfg = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-v2-global-'));
+  process.env.OPENCODE_CONFIG_DIR = globalCfg;
   const mod = await import(pathToFileURL(path.join(root, 'plugins', 'fx-opencode-v2.js')).href);
   assert.strictEqual(mod.default.id, 'fx', 'default export carries the id');
   assert.strictEqual(typeof mod.default.setup, 'function', 'default export carries setup');
@@ -133,6 +137,30 @@ async function evaluate(rec, ev) {
   assert.strictEqual((await evaluate(mine.rec, { action: 'skill', resources: ['fx-audit'], effect: 'allow' })).effect, 'deny',
     "a user's explicit skill rule does not survive the backstop: the lane is listed to the model but refused at call time (the hook's effect is final)");
   assert.ok(mine.rec.commands.some((c) => c.name === 'fx-audit'), 'setup never reads the command list: the runtime merges same-named commands itself');
+
+
+  // ADR-0026: fx grants general the subagent tool only when the user wrote no
+  // `subagent` rule and no `*` rule, in the global or the project opencode.json,
+  // globally or on general. A user's config is applied after plugins on 2.0.18, so
+  // the plugin reads the files itself.
+  const generalDispatch = async (writeCfg) => {
+    const proj = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-v2-proj-'));
+    fs.writeFileSync(path.join(globalCfg, 'opencode.json'), '{}');
+    writeCfg(proj);
+    const u = stub(proj);
+    await mod.default.setup(u.ctx);
+    fs.rmSync(path.join(globalCfg, 'opencode.json'), { force: true });
+    fs.rmSync(proj, { recursive: true, force: true });
+    return effect(u.rec.agents.get('general').permissions, 'subagent', 'general');
+  };
+  const proj = (cfg) => (d) => fs.writeFileSync(path.join(d, 'opencode.json'), typeof cfg === 'string' ? cfg : JSON.stringify(cfg));
+  const glob = (cfg) => () => fs.writeFileSync(path.join(globalCfg, 'opencode.json'), JSON.stringify(cfg));
+  assert.strictEqual(await generalDispatch(() => {}), 'allow', 'no user rule: general gets the grant');
+  assert.strictEqual(await generalDispatch(proj({ permissions: [{ action: 'subagent', resource: 'explore', effect: 'allow' }] })), 'deny', 'a narrow project subagent rule is the whole answer: no grant');
+  assert.strictEqual(await generalDispatch(glob({ permissions: [{ action: '*', resource: '*', effect: 'ask' }] })), 'deny', 'a global * rule: no grant');
+  assert.strictEqual(await generalDispatch(proj({ agents: { general: { permissions: [{ action: 'subagent', resource: '*', effect: 'ask' }] } } })), 'deny', 'a subagent rule on general: no grant');
+  assert.strictEqual(await generalDispatch(proj('{ not json')), 'deny', 'a config fx cannot read: no grant');
+  assert.strictEqual(await generalDispatch(proj({ permissions: [{ action: 'question', resource: '*', effect: 'deny' }] })), 'allow', 'an unrelated user rule leaves the grant');
 
   // --- guard: the full command, looked up by call id ------------------------
   const g = stub(dir);
@@ -307,7 +335,7 @@ async function evaluate(rec, ev) {
 
   const refsDir = path.join(root, 'references');
   for (const agent of ['fx-lens-security', 'fx-devils-advocate']) {
-    for (const [action, resources] of [['shell', ['ls']], ['edit', ['src/x.js']], ['external_directory', ['/etc/*']], ['skill', ['fx-tdd']]]) {
+    for (const [action, resources] of [['shell', ['ls']], ['edit', ['src/x.js']], ['subagent', ['general']], ['external_directory', ['/etc/*']], ['skill', ['fx-tdd']]]) {
       const e = await evaluate(fc.rec, { action, resources, agent, effect: 'allow' });
       assert.strictEqual(e.effect, 'deny', `${agent}: ${action} is denied over an incoming allow (session rules cannot widen it)`);
       assert.ok(e.message, `${agent}: ${action} denial has a message`);

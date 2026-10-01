@@ -62,6 +62,27 @@ try {
   ({ READ_ONLY_AGENTS: READ_ONLY } = require('../lib/plant-roles.js'));
 } catch { /* the agent step reports the same failure */ }
 
+// ADR-0026: fx never overrides an answer the user already gave. A user's config
+// rules are applied after plugin transforms on 2.0.18, so the plugin cannot see
+// them in the agent editor; it reads the user's opencode.json files itself. True
+// when any of them holds a `subagent` or `*` rule, globally or on `general`, and
+// also when one exists but cannot be read (no way to tell, so no grant).
+// ponytail: plain opencode.json only (no .jsonc, no OPENCODE_CONFIG file); add when seen.
+const userHasSubagentRule = (directory) => {
+  const home = process.env.OPENCODE_CONFIG_DIR
+    || path.join(process.env.XDG_CONFIG_HOME || path.join(process.env.HOME || '', '.config'), 'opencode');
+  const answers = (rules) => Array.isArray(rules) && rules.some((r) => r && (r.action === 'subagent' || r.action === '*'));
+  return [path.join(home, 'opencode.json'), path.join(directory, 'opencode.json'), path.join(directory, '.opencode', 'opencode.json')].some((file) => {
+    let text;
+    try { text = fs.readFileSync(file, 'utf8'); } catch (e) { return e.code !== 'ENOENT' && e.code !== 'ENOTDIR'; }
+    try {
+      const cfg = JSON.parse(text);
+      const general = (cfg.agents || {}).general || (cfg.agent || {}).general || {};
+      return answers(cfg.permissions) || answers(general.permissions);
+    } catch { return true; }
+  });
+};
+
 export default {
   id: 'fx',
   async setup(ctx) {
@@ -198,13 +219,12 @@ export default {
       });
       // Nested dispatch, as the 1.x plugin grants `task` to general: the built-in
       // general denies the subagent tool, so an implementer could never dispatch a
-      // reviewer (probe Q9; row 15). A user's own general definition is applied
-      // after this transform and wins. Depth itself is the installer's
-      // experimental.subagent_depth.
+      // reviewer (probe Q9; row 15). Only when the user wrote no subagent or *
+      // rule (ADR-0026); no rule is stripped, the later allow wins over the built-in deny. Depth itself is the
+      // installer's experimental.subagent_depth.
       attempt('general may dispatch', () => {
-        if (!editor.list().some((a) => a.id === 'general')) return;
+        if (!editor.list().some((a) => a.id === 'general') || userHasSubagentRule(ctx.location.directory)) return;
         editor.update('general', (a) => {
-          a.permissions = a.permissions.filter((r) => r.action !== 'subagent');
           a.permissions.push({ action: 'subagent', resource: '*', effect: 'allow' });
         });
       });
