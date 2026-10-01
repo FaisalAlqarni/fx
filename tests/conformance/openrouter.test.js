@@ -44,7 +44,9 @@ assert.strictEqual(or.isProviderError.length, 2, 'the check takes only CLI error
 // A 429 inside a subagent spawn reaches the CLI's stream as a collab_tool_call
 // whose agent state is errored (Codex 0.155.1, row 07 of the baseline). Only
 // that CLI-written state counts: not the spawn's prompt, the model's message
-// or a rollout line, which carry text a model or a tool can write.
+// or a tool's output, which carry text a model or a tool can write. A grandchild's
+// error is not in the exec stream; it is in the rollout of the child that waited
+// for it, as an event_msg CollabAgentToolCall (row 18, qwen run 2026-10-01).
 const collab = (state, extra = {}) => JSON.stringify({ type: 'item.completed', item: { id: 'item_4', type: 'collab_tool_call', tool: 'wait',
   prompt: null, agents_states: { 'thread-1': state }, status: 'failed', ...extra } });
 assert.strictEqual(or.childProviderError([
@@ -52,13 +54,17 @@ assert.strictEqual(or.childProviderError([
   collab({ status: 'errored', message: 'exceeded retry limit, last status: 429 Too Many Requests, request id: a4373093f98cedb4-MXP' }),
 ].join('\n')), 'last status: 429', 'a subagent 429 is a provider error');
 assert.ok(or.childProviderError(collab({ status: 'errored', message: 'API Error: 503 upstream' })), 'a subagent 503 is one too');
+assert.strictEqual(or.childProviderError(JSON.stringify({ type: 'event_msg', payload: { type: 'item_completed', item: { type: 'CollabAgentToolCall',
+  agents_states: { t: { errored: 'exceeded retry limit, last status: 429 Too Many Requests' } } } } })), 'last status: 429', 'a grandchild 429, from the child\'s rollout');
 for (const [what, line] of [
   ['a completed child', collab({ status: 'completed', message: 'done' })],
   ['an errored child with no HTTP error', collab({ status: 'errored', message: 'tool failed: status 500 in my script' })],
   ['429 text in the spawn prompt', collab({ status: 'running', message: null }, { tool: 'spawn_agent', prompt: 'say last status: 429 Too Many Requests' })],
   ['429 text in the model message', JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text: 'exceeded retry limit, last status: 429 Too Many Requests' } })],
   ['429 in a command output', JSON.stringify({ type: 'item.completed', item: { type: 'command_execution', aggregated_output: 'last status: 429 Too Many Requests' } })],
-  ['a rollout line', JSON.stringify({ type: 'event_msg', payload: { item: { type: 'CollabAgentToolCall', agents_states: { t: { errored: 'last status: 429 Too Many Requests' } } } } })],
+  ['a rollout function output', JSON.stringify({ type: 'response_item', payload: { type: 'function_call_output', output: '{"status":{"t":{"errored":"last status: 429 Too Many Requests"}}}' } })],
+  ['a rollout message', JSON.stringify({ type: 'response_item', payload: { type: 'message', content: [{ text: 'last status: 429 Too Many Requests' }] } })],
+  ['a rollout call whose state is not errored', JSON.stringify({ type: 'event_msg', payload: { item: { type: 'CollabAgentToolCall', agents_states: { t: { completed: 'last status: 429 Too Many Requests' } } } } })],
   ['no JSON', 'stderr: last status: 429 Too Many Requests'],
 ]) assert.strictEqual(or.childProviderError(line), null, `not a child provider error: ${what}`);
 

@@ -388,8 +388,6 @@ live_run() {
       echo "$HARNESS: provider error ($hit2)" >&2; exit 75
     fi
   fi
-  CHILD_PROVIDER_ERROR=""
-  [ -z "$OPENROUTER" ] || CHILD_PROVIDER_ERROR="$(node "$OR_JS" child "$LOG")" || CHILD_PROVIDER_ERROR=""
   [ "$rc" -eq 124 ] && [ -n "$OPENROUTER" ] && [ "$out_empty" = 1 ] && fail "no output before timeout"
   [ "$rc" -eq 124 ] && fail "session timed out"
   # A CLI that exited non-zero did not finish its session: a row that checks
@@ -452,6 +450,9 @@ live_run() {
         done
       done ;;
   esac
+  # After the rollouts are appended: a grandchild's error is only in its parent's.
+  CHILD_PROVIDER_ERROR=""
+  [ -z "$OPENROUTER" ] || CHILD_PROVIDER_ERROR="$(node "$OR_JS" child "$LOG")" || CHILD_PROVIDER_ERROR=""
   if [ -n "$OPENROUTER" ]; then
     local sm; sm="$(node "$OR_JS" model "$HARNESS" "$LOG")"
     [ -z "$sm" ] || { [ -z "${FX_ROW_MODEL_FILE:-}" ] || echo "$sm" > "$FX_ROW_MODEL_FILE"; }

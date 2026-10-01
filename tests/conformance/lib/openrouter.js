@@ -106,9 +106,13 @@ const isProviderError = (cliErrors, stderr) => providerErrorReason(cliErrors, st
 // above; the spawn's prompt, a model's text and tool output are never read.
 function childProviderError(logText) {
   for (const j of lines(logText)) {
-    if (j.type !== 'item.completed' || !j.item || j.item.type !== 'collab_tool_call') continue;
-    for (const st of Object.values(j.item.agents_states || {})) {
-      const m = st && st.status === 'errored' && typeof st.message === 'string' ? PROVIDER_ERROR.exec(st.message) : null;
+    // The exec stream (a direct child) or a rollout's event_msg (a grandchild,
+    // seen by the child that waited for it).
+    const item = j.type === 'item.completed' ? j.item : j.type === 'event_msg' && j.payload ? j.payload.item : null;
+    if (!item || (item.type !== 'collab_tool_call' && item.type !== 'CollabAgentToolCall')) continue;
+    for (const st of Object.values(item.agents_states || {})) {
+      const msg = st && (st.status === 'errored' ? st.message : st.errored);
+      const m = typeof msg === 'string' ? PROVIDER_ERROR.exec(msg) : null;
       if (m) return m[0];
     }
   }

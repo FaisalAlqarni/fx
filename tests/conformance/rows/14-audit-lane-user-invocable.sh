@@ -18,7 +18,7 @@
 #                (a single markdown block) is cheap to produce in full. PASS
 #                needs both the load and the block, so a session that merely
 #                mentions the lane's name without running it cannot pass.
-#   codex:       the same live session, addressed as $fx-handoff.
+#   codex:       the same live session, addressed as $fx:fx-handoff (the plugin-qualified name Codex lists).
 set -uo pipefail
 [ "${1:-}" = "--describe" ] && { k=free; case "${HARNESS:-}" in claude-code|codex) k=live ;; esac; echo "14|audit lane user-invocable|$k"; exit 0; }
 : "${FX_REAL_HOME:?run rows through tests/conformance/run.sh, which isolates HOME}"
@@ -53,7 +53,7 @@ case "$HARNESS" in
   claude-code|codex)
     . "$FX/tests/conformance/lib/live.sh"
     live_workdir
-    addr='/fx:fx-handoff'; [ "$HARNESS" = codex ] && addr='$fx-handoff'
+    addr='/fx:fx-handoff'; [ "$HARNESS" = codex ] && addr='$fx:fx-handoff'
     PROMPT="$addr continue this later, in a new session on this same machine, same repo. Reply with the handoff block only, then stop."
 
     live_run "$PROMPT"
