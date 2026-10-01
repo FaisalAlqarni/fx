@@ -185,6 +185,21 @@ for (const tool of ['memory_tool', 'request_permissions_tool']) {
   fs.rmSync(fresh, { recursive: true, force: true });
 }
 
+// A plantRoles that throws leaves one stderr line with the reason, and the
+// session still starts with its preamble.
+{
+  const stub = path.join(home, 'throwing-plant.js');
+  fs.writeFileSync(stub, `require(${JSON.stringify(path.join(root, 'lib', 'plant-roles'))})`
+    + '.plantRoles = () => { throw new Error("disk full"); };\n');
+  const t = spawnSync('node', ['--require', stub, hook], {
+    input: JSON.stringify({ ...base, hook_event_name: 'SessionStart', source: 'startup' }), env, encoding: 'utf8' });
+  assert.strictEqual(t.status, 0, 'the session still starts when planting throws');
+  keysOk(t.stdout.trim(), 'SessionStart with a planting failure', TOP_SESSION);
+  assert.ok(JSON.parse(t.stdout).hookSpecificOutput.additionalContext.length > 0, 'and carries the preamble');
+  assert.match(t.stderr, /\[fx\].*plant.*disk full/i, 'one stderr line names the failure and its reason');
+  assert.strictEqual(t.stderr.trim().split('\n').length, 1, 'exactly one line');
+}
+
 // Final review I3: if lib/plant-roles fails to load, a subagent's call must
 // not slip past the read-only check. A copy of the plugin whose plant-roles
 // throws on require stands in for a broken install.

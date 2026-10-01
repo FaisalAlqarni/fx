@@ -241,7 +241,7 @@ process.stdin.on('end', () => {
         notice = `fx installed or updated its review roles (${names.join(', ')}). `
                + 'Codex reads roles when a session starts, so restart Codex once before dispatching an fx review agent.';
       }
-    } catch { /* the session must start regardless */ }
+    } catch (e) { console.error(`[fx] planting the review roles failed: ${(e && e.message) || e}`); /* the session starts regardless */ }
   }
 
   // Record which role this subagent is, at the event where agent_type is
