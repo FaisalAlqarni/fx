@@ -37,6 +37,8 @@ function effect(rules, action, resource) {
 function stub(directory, existingAgents = {}, existingCommands = []) {
   const rec = { hooks: {}, agents: new Map(), commands: [], prompts: [] };
   for (const id of ['build', 'plan', 'general']) rec.agents.set(id, defaults(id));
+  // The built-in general agent denies the subagent tool (probe Q9).
+  rec.agents.get('general').permissions.push({ action: 'subagent', resource: '*', effect: 'deny' });
   for (const [id, a] of Object.entries(existingAgents)) rec.agents.set(id, { ...defaults(id), ...JSON.parse(JSON.stringify(a)) });
   const reg = { dispose() {} };
   const hook = (domain) => async (name, cb) => { (rec.hooks[`${domain}.${name}`] ||= []).push(cb); return reg; };
@@ -94,6 +96,9 @@ async function evaluate(rec, ev) {
     }
   }
   assert.strictEqual(effect(rec.agents.get('build').permissions, 'skill', 'fx-tdd'), 'allow', 'a model-facing lane stays listed');
+  assert.strictEqual(effect(rec.agents.get('general').permissions, 'subagent', 'general'), 'allow', 'general may dispatch, so an implementer can dispatch a reviewer');
+  assert.strictEqual(effect(rec.agents.get('general').permissions, 'edit', 'src/x.js'), 'allow', 'only the subagent action changes on general');
+  assert.notStrictEqual(effect(rec.agents.get('fx-lens-security').permissions, 'subagent', 'general'), 'allow', 'a read-only lens still cannot dispatch');
 
   const expected = Object.keys(opencodeCommands(root, root)).sort();
   assert.deepStrictEqual(rec.commands.map((c) => c.name).sort(), expected, 'every fx command is registered once');

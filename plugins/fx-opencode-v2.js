@@ -196,6 +196,18 @@ export default {
           });
         }
       });
+      // Nested dispatch, as the 1.x plugin grants `task` to general: the built-in
+      // general denies the subagent tool, so an implementer could never dispatch a
+      // reviewer (probe Q9; row 15). A user's own general definition is applied
+      // after this transform and wins. Depth itself is the installer's
+      // experimental.subagent_depth.
+      attempt('general may dispatch', () => {
+        if (!editor.list().some((a) => a.id === 'general')) return;
+        editor.update('general', (a) => {
+          a.permissions = a.permissions.filter((r) => r.action !== 'subagent');
+          a.permissions.push({ action: 'subagent', resource: '*', effect: 'allow' });
+        });
+      });
       attempt('hide lanes', () => {
         for (const agent of editor.list()) {
           attempt(`hide lanes for ${agent.id}`, () => editor.update(agent.id, (a) => {
