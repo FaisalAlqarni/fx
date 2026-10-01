@@ -101,6 +101,44 @@ rowc "echo '$ok'; echo '{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_
 check '^GAP   98.*inconclusive=1' "a log with a cut JSON line is not inconclusive"
 check 'could not read' "the unreadable-log GAP does not say so"
 
+# opencode-v2 with a stub `opencode`: a child session whose export fails is a
+# FAIL whatever the parent did (the child's error would be invisible), and a
+# crash of the model lookup is a FAIL carrying the node error, not a silent
+# empty model. run.sh opencode-v2 reads no real credential under openrouter.
+ocstub() {  # ocstub <export body>
+  cat > "$FAKE/bin/opencode" <<STUB
+#!/bin/sh
+case "\$1" in
+  --version) echo 2.0.18 ;;
+  run) echo '{"type":"text","part":{"text":"child ses_child1 done"}}' ;;
+  session) $1 ;;
+esac
+exit 0
+STUB
+  chmod +x "$FAKE/bin/opencode"
+  rm -f "$LOGS"/*
+  out="$(env PATH="$FAKE/bin:$PATH" HOME="$FAKE" FX_REAL_HOME="$FAKE" FX_CONFORMANCE_ROWS="$T_ROWS" FX_CONFORMANCE_LOGS="$LOGS" \
+    FX_LIVE_PROVIDER=openrouter OPENROUTER_API_KEY=$KEY FX_STUB_PASS=1 bash tests/conformance/run.sh opencode-v2 2>&1)"; rc=$?
+}
+okexp='echo "{\"info\":{\"id\":\"ses_child1\"},\"messages\":[{\"type\":\"assistant\",\"model\":{\"id\":\"qwen/qwen3.8-27b:free\"}}]}"'
+ocstub "$okexp"
+check '^PASS  98' "a clean opencode-v2 stub session is not a PASS (the stub harness is broken)"
+ocstub 'echo "no session here"; exit 3'
+check '^FAIL  98' "a child session whose export failed is not a FAIL"
+check 'child session export failed: ses_child1' "the failed export does not name the child"
+ocstub 'echo "{\"info\":{\"id\":\"ses_child1\"},\"messages\":[]}"; exit 3'
+check 'child session export failed: ses_child1' "a nonzero export exit with parseable output is not a FAIL"
+
+# A crash of the session-model lookup is a FAIL with the node error, not an
+# empty model that skips the model check. The wrapper fails only that call.
+ocstub "$okexp"
+printf '#!/bin/sh\n[ "$2" = model ] && { echo "boom: lookup crashed" >&2; exit 1; }\nPATH="${PATH#*%s/bin:}"; exec node "$@"\n' "$FAKE" > "$FAKE/bin/node"; chmod +x "$FAKE/bin/node"
+out="$(env PATH="$FAKE/bin:$PATH" HOME="$FAKE" FX_REAL_HOME="$FAKE" FX_CONFORMANCE_ROWS="$T_ROWS" FX_CONFORMANCE_LOGS="$LOGS" \
+  FX_LIVE_PROVIDER=openrouter OPENROUTER_API_KEY=$KEY FX_STUB_PASS=1 bash tests/conformance/run.sh opencode-v2 2>&1)"; rc=$?
+rm -f "$FAKE/bin/node"
+check '^FAIL  98' "a crashed model lookup is not a FAIL"
+check 'boom: lookup crashed' "the crashed model lookup does not show the node error"
+
 # The key crosses as a file, not a variable: Claude Code gets only
 # ANTHROPIC_AUTH_TOKEN, and OPENROUTER_API_KEY is not in its environment.
 row "m=anthropic/claude-haiku-4.5; [ \"\$ANTHROPIC_AUTH_TOKEN\" = $KEY ] && [ -z \"\${OPENROUTER_API_KEY:-}\" ] || m=ENV-WRONG; echo '{\"type\":\"system\",\"subtype\":\"init\",\"model\":\"'\$m'\"}'; exit 0"

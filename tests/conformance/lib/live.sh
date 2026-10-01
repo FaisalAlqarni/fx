@@ -264,6 +264,17 @@ live_workdir() {
 # credentials, or a FIFO that blocks the row (final review, security 1 and 5).
 live_regular() { [ -f "$1" ] && [ ! -L "$1" ]; }
 
+# export_session <id> <command...>: run an export command and append the session
+# as one fx_export line, or an "export failed:" line for a nonzero exit or a
+# parse error. Output goes to a file, not a pipe: into a pipe, opencode export
+# exits before its stdout drains and cuts the JSON at 64KB, which dropped a
+# whole child session from row 07 (task 21).
+export_session() {
+  local id="$1" rc=0; shift
+  "$@" </dev/null >"$WORK.export" 2>/dev/null || rc=$?
+  F="$WORK.export" ID="$id" RC="$rc" node -e 'const s=require("fs").readFileSync(process.env.F,"utf8");const i=s.indexOf("{");try{if(process.env.RC!=="0")throw new Error("exit "+process.env.RC);console.log(JSON.stringify({fx_export:JSON.parse(s.slice(i))}))}catch(e){console.log("export failed: "+process.env.ID+": "+e.message)}' >> "$LOG"
+}
+
 # --- one headless session ------------------------------------------------------
 # Every runtime writes a machine-readable event stream to $LOG. Not everything
 # is in that stream, so after the session the transcripts of every session it
@@ -424,8 +435,7 @@ live_run() {
         for id2 in $(grep -oE 'ses_[A-Za-z0-9]+' "$LOG" | sort -u); do
           case " $seen_ids2 " in *" $id2 "*) continue ;; esac
           seen_ids2="$seen_ids2 $id2"; more2=1
-          "${JAIL[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" opencode session export "$id2" --standalone </dev/null >"$WORK.export" 2>/dev/null
-          F="$WORK.export" ID="$id2" node -e 'const s=require("fs").readFileSync(process.env.F,"utf8");const i=s.indexOf("{");try{console.log(JSON.stringify({fx_export:JSON.parse(s.slice(i))}))}catch(e){console.log("export failed: "+process.env.ID+": "+e.message)}' >> "$LOG"
+          export_session "$id2" "${JAIL[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" opencode session export "$id2" --standalone
         done
       done ;;
     opencode)
@@ -438,14 +448,14 @@ live_run() {
         for id in $(grep -oE 'ses_[A-Za-z0-9]+' "$LOG" | sort -u); do
           case " $seen_ids " in *" $id "*) continue ;; esac
           seen_ids="$seen_ids $id"; more=1
-          # To a file, not a pipe: into a pipe, opencode export exits before
-          # its stdout drains and cuts the JSON at 64KB, which dropped a whole
-          # child session from row 07 (task 21).
-          "${JAIL[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" opencode export "$id" >"$WORK.export" 2>/dev/null
-          F="$WORK.export" ID="$id" node -e 'const s=require("fs").readFileSync(process.env.F,"utf8");const i=s.indexOf("{");try{console.log(JSON.stringify({fx_export:JSON.parse(s.slice(i))}))}catch(e){console.log("export failed: "+process.env.ID+": "+e.message)}' >> "$LOG"
+          export_session "$id" "${JAIL[@]}" env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data" opencode export "$id"
         done
       done ;;
   esac
+  # A session whose export failed cannot be judged: a child's error or its
+  # writes would be invisible, whatever the parent did.
+  local xf; xf="$(grep -m1 '^export failed: ' "$LOG" | cut -d: -f2 | tr -d ' ')"
+  [ -z "$xf" ] || fail "child session export failed: $xf"
   # A provider error anywhere in the session, in a child or a grandchild, makes
   # the run inconclusive whatever its assertions say: a pass may never have
   # exercised the rule (the subagent that should have broken it died), and a
@@ -462,11 +472,8 @@ live_run() {
     esac
   fi
   if [ -n "$OPENROUTER" ]; then
-    local sm; sm="$(node "$OR_JS" model "$HARNESS" "$LOG")"
+    local sm; sm="$(node "$OR_JS" model "$HARNESS" "$LOG")" || fail "the session-model lookup crashed (the node error is above)"
     [ -z "$sm" ] || { [ -z "${FX_ROW_MODEL_FILE:-}" ] || echo "$sm" > "$FX_ROW_MODEL_FILE"; }
-    # OpenCode names its model only in the session export; a failed export
-    # would leave the row labelled (config) with nothing checked.
-    [ -n "$sm" ] || { case "$HARNESS" in opencode|opencode-v2) ! grep -q '^export failed: ' "$LOG" || fail "the session export failed, so the session's model is unverified" ;; esac; }
     [ -z "$sm" ] || [ "$sm" = "$OR_MODEL" ] || fail "the session reported model $sm, not the requested $OR_MODEL"
   fi
   keep_log
