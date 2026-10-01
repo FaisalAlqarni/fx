@@ -78,13 +78,15 @@ const AGENTS_DIR = path.join(ROOT, 'agents');
 const SKILLS_DIR = path.join(ROOT, 'skills');
 const REFERENCES = path.join(ROOT, 'references');
 
-// The five lanes a person must type, never a model auto-selection.
-// tests/gates/user-invoked.test.js pins the same set for Claude Code
-// (`disable-model-invocation: true`) and Codex (`allow_implicit_invocation:
-// false`). A lane hidden on one runtime and exposed on another is the
-// failure task 07's fix round closed; this is opencode's mechanism for the
-// same guarantee.
-const HIDDEN_SKILLS = ['fx-audit', 'fx-critique', 'fx-grill', 'fx-handoff', 'fx-setup'];
+// The lanes a person must type, never a model auto-selection: one list for
+// both opencode plugins (lib/user-invoked-lanes.js, pinned to the skills'
+// frontmatter by tests/gates/user-invoked.test.js).
+let HIDDEN_SKILLS = [], hiddenLoadError;
+try {
+  ({ USER_INVOKED_LANES: HIDDEN_SKILLS } = require('../lib/user-invoked-lanes.js'));
+} catch (e) {
+  hiddenLoadError = e;
+}
 
 // apply_patch's own V4A envelope (opencode's LOCAL tool, confirmed against
 // the binary: `patchText` field, `Vo.parsePatch`, same header vocabulary as
@@ -126,6 +128,7 @@ function applyConfig(config) {
   config.permission = asRules(config.permission);
   config.permission.skill = asRules(config.permission.skill);
   if (!('*' in config.permission.skill)) config.permission.skill['*'] = config.permission['*'] || 'allow';
+  if (hiddenLoadError) throw hiddenLoadError;   // reported by the config step's catch: the lanes cannot be hidden
   for (const name of HIDDEN_SKILLS) config.permission.skill[name] = 'deny';
 
   const { READ_ONLY_AGENTS } = require('../lib/plant-roles.js');

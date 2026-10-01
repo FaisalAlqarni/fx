@@ -387,7 +387,7 @@ assert.ok(fs.existsSync(path.join(root, 'plugins', 'fx-opencode-v1.js')), 'plugi
   // throws on require, a read-only agent's .md is missing, and the references
   // directory is missing. Each must still leave every hidden lane denied.
   {
-    const HIDDEN = ['fx-audit', 'fx-critique', 'fx-grill', 'fx-handoff', 'fx-setup'];
+    const { USER_INVOKED_LANES: HIDDEN } = require(path.join(root, 'lib', 'user-invoked-lanes'));
     const breaks = {
       'plant-roles throws': (d) => fs.writeFileSync(path.join(d, 'lib', 'plant-roles.js'), "throw new Error('stubbed');\n"),
       'an agent file is missing': (d) => fs.rmSync(path.join(d, 'agents', 'fx-lens-security.md')),
@@ -434,7 +434,7 @@ assert.ok(fs.existsSync(path.join(root, 'plugins', 'fx-opencode-v1.js')), 'plugi
       try { await ph.config(config); } finally { console.error = realError; }
       assert.deepStrictEqual(errs, [], `${label}: the config step does not fail`);
       assert.strictEqual(config.permission.skill['*'], star, `${label}: the user's rule is kept as "*"`);
-      for (const name of ['fx-audit', 'fx-critique', 'fx-grill', 'fx-handoff', 'fx-setup']) {
+      for (const name of require(path.join(root, 'lib', 'user-invoked-lanes')).USER_INVOKED_LANES) {
         assert.strictEqual(config.permission.skill[name], 'deny', `${label}: ${name} is hidden`);
       }
       if (label === '{"permission":"allow"}') assert.strictEqual(config.permission['*'], 'allow', 'the whole-block rule is kept as "*"');

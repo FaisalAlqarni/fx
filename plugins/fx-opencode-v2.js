@@ -49,7 +49,13 @@ const callKey = (sessionID, messageID, id) => {
   return parts.every((p) => typeof p === 'string' && p) ? parts.join('\u0000') : undefined;
 };
 
-const HIDDEN = ['fx-audit', 'fx-critique', 'fx-grill', 'fx-handoff', 'fx-setup'];
+// One list for both opencode plugins (lib/user-invoked-lanes.js).
+let HIDDEN = [], hiddenError;
+try {
+  ({ USER_INVOKED_LANES: HIDDEN } = require('../lib/user-invoked-lanes.js'));
+} catch (e) {
+  hiddenError = e;
+}
 const hideRule = (lane) => ({ action: 'skill', resource: lane, effect: 'deny' });
 const messageOf = (e) => String((e && e.message) || e);
 
@@ -89,6 +95,7 @@ export default {
         return r && typeof r.then === 'function' ? r.catch(report) : r;
       } catch (e) { report(e); }
     };
+    if (hiddenError) { failures.push(`fx: the hidden-lane list failed to load: ${messageOf(hiddenError)}`); console.error(`[fx] the hidden-lane list failed to load: ${messageOf(hiddenError)}`); }
     const notice = () => (failures.length ? ` [${failures.join('; ')}]` : '');
     const deny = (ev, message) => { ev.effect = 'deny'; ev.message = `[fx] ${message}${notice()}`; };
 

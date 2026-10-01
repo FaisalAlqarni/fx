@@ -11,7 +11,7 @@ const root = path.join(__dirname, '..', '..');
 const { render } = require(path.join(root, 'lib', 'preamble'));
 const { opencodeCommands } = require(path.join(root, 'lib', 'opencode-commands'));
 
-const HIDDEN = ['fx-audit', 'fx-critique', 'fx-grill', 'fx-handoff', 'fx-setup'];
+const { USER_INVOKED_LANES: HIDDEN } = require(path.join(root, 'lib', 'user-invoked-lanes'));
 
 function defaults(id) {
   return {

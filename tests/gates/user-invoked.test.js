@@ -4,7 +4,6 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.join(__dirname, '..', '..');
-const HIDDEN = ['fx-audit', 'fx-critique', 'fx-grill', 'fx-handoff', 'fx-setup'];
 
 const frontmatter = (p) => {
   const t = fs.readFileSync(p, 'utf8');
@@ -12,6 +11,20 @@ const frontmatter = (p) => {
   assert.ok(m, `${p} has no frontmatter`);
   return { head: m[1], body: m[2] };
 };
+
+// The hidden set is whatever the skills' frontmatter says. lib/user-invoked-lanes.js
+// carries the one copy the opencode plugins use; it must equal that set, and
+// neither plugin may keep a list of its own.
+const HIDDEN = fs.readdirSync(path.join(root, 'skills'))
+  .filter((d) => fs.existsSync(path.join(root, 'skills', d, 'SKILL.md'))
+    && /^disable-model-invocation:\s*true$/m.test(frontmatter(path.join(root, 'skills', d, 'SKILL.md')).head))
+  .sort();
+assert.deepStrictEqual(HIDDEN, ['fx-audit', 'fx-critique', 'fx-grill', 'fx-handoff', 'fx-setup'], 'five lanes are user-invoked');
+assert.deepStrictEqual([...require(path.join(root, 'lib', 'user-invoked-lanes')).USER_INVOKED_LANES].sort(), HIDDEN,
+  'the opencode plugins hide exactly the lanes whose frontmatter says disable-model-invocation');
+for (const plugin of ['fx-opencode-v1.js', 'fx-opencode-v2.js']) {
+  assert.ok(!/fx-critique/.test(fs.readFileSync(path.join(root, 'plugins', plugin), 'utf8')), `${plugin} imports the lane list, it keeps no copy`);
+}
 
 for (const name of HIDDEN) {
   const skill = path.join(root, 'skills', name, 'SKILL.md');
