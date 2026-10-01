@@ -68,10 +68,6 @@ async function evaluate(rec, ev) {
 }
 
 (async () => {
-  // The plugin reads the user's opencode.json to honor their own subagent rules;
-  // keep the developer's real config out of the gate.
-  const globalCfg = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-v2-global-'));
-  process.env.OPENCODE_CONFIG_DIR = globalCfg;
   const mod = await import(pathToFileURL(path.join(root, 'plugins', 'fx-opencode-v2.js')).href);
   assert.strictEqual(mod.default.id, 'fx', 'default export carries the id');
   assert.strictEqual(typeof mod.default.setup, 'function', 'default export carries setup');
@@ -100,8 +96,14 @@ async function evaluate(rec, ev) {
     }
   }
   assert.strictEqual(effect(rec.agents.get('build').permissions, 'skill', 'fx-tdd'), 'allow', 'a model-facing lane stays listed');
-  assert.strictEqual(effect(rec.agents.get('general').permissions, 'subagent', 'general'), 'allow', 'general may dispatch, so an implementer can dispatch a reviewer');
-  assert.strictEqual(effect(rec.agents.get('general').permissions, 'edit', 'src/x.js'), 'allow', 'only the subagent action changes on general');
+  // ADR-0026: fx never grants nested dispatch on 2.x. Detecting a user's own
+  // subagent rule cannot be made complete (2.0.18 merges .jsonc, ancestor dirs,
+  // OPENCODE_CONFIG, 1.x keys and agent markdown), so the user adds the rule
+  // (INSTALL.md). No agent ends with a subagent allow from fx.
+  for (const a of rec.agents.values()) {
+    assert.ok(!a.permissions.some((r) => r.action === 'subagent' && r.effect === 'allow'), `${a.id}: fx adds no subagent allow`);
+  }
+  assert.strictEqual(effect(rec.agents.get('general').permissions, 'subagent', 'general'), 'deny', "general keeps the built-in subagent deny");
   assert.notStrictEqual(effect(rec.agents.get('fx-lens-security').permissions, 'subagent', 'general'), 'allow', 'a read-only lens still cannot dispatch');
 
   const expected = Object.keys(opencodeCommands(root, root)).sort();
@@ -138,29 +140,6 @@ async function evaluate(rec, ev) {
     "a user's explicit skill rule does not survive the backstop: the lane is listed to the model but refused at call time (the hook's effect is final)");
   assert.ok(mine.rec.commands.some((c) => c.name === 'fx-audit'), 'setup never reads the command list: the runtime merges same-named commands itself');
 
-
-  // ADR-0026: fx grants general the subagent tool only when the user wrote no
-  // `subagent` rule and no `*` rule, in the global or the project opencode.json,
-  // globally or on general. A user's config is applied after plugins on 2.0.18, so
-  // the plugin reads the files itself.
-  const generalDispatch = async (writeCfg) => {
-    const proj = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-v2-proj-'));
-    fs.writeFileSync(path.join(globalCfg, 'opencode.json'), '{}');
-    writeCfg(proj);
-    const u = stub(proj);
-    await mod.default.setup(u.ctx);
-    fs.rmSync(path.join(globalCfg, 'opencode.json'), { force: true });
-    fs.rmSync(proj, { recursive: true, force: true });
-    return effect(u.rec.agents.get('general').permissions, 'subagent', 'general');
-  };
-  const proj = (cfg) => (d) => fs.writeFileSync(path.join(d, 'opencode.json'), typeof cfg === 'string' ? cfg : JSON.stringify(cfg));
-  const glob = (cfg) => () => fs.writeFileSync(path.join(globalCfg, 'opencode.json'), JSON.stringify(cfg));
-  assert.strictEqual(await generalDispatch(() => {}), 'allow', 'no user rule: general gets the grant');
-  assert.strictEqual(await generalDispatch(proj({ permissions: [{ action: 'subagent', resource: 'explore', effect: 'allow' }] })), 'deny', 'a narrow project subagent rule is the whole answer: no grant');
-  assert.strictEqual(await generalDispatch(glob({ permissions: [{ action: '*', resource: '*', effect: 'ask' }] })), 'deny', 'a global * rule: no grant');
-  assert.strictEqual(await generalDispatch(proj({ agents: { general: { permissions: [{ action: 'subagent', resource: '*', effect: 'ask' }] } } })), 'deny', 'a subagent rule on general: no grant');
-  assert.strictEqual(await generalDispatch(proj('{ not json')), 'deny', 'a config fx cannot read: no grant');
-  assert.strictEqual(await generalDispatch(proj({ permissions: [{ action: 'question', resource: '*', effect: 'deny' }] })), 'allow', 'an unrelated user rule leaves the grant');
 
   // --- guard: the full command, looked up by call id ------------------------
   const g = stub(dir);
