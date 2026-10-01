@@ -148,3 +148,14 @@ Task 08: minor (deferred): provider-error regex accepts JSON "code": 5xx on any 
 Task 08: minor (deferred): run.sh passes OPENROUTER_API_KEY in the environment to free rows, which run opencode unjailed.
 Task 08: complete (commits 717b35b..1a4b0f5, fix 56dbe40..f0c5948, 1 fix round, minors deferred)
 Task 10: dispatched (BASE after ledger commit).
+Task 10: interim: codex live run in progress (tracked by the implementer), logs /tmp/fxlogs-opencode-v2; opencode, opencode-v2, claude-code follow. Waiting on it: every later task blocks on the baseline.
+Task 10: implemented dba6528..703a0e2 (DONE_WITH_CONCERNS). Baseline: codex 10 pass (1 fallback), 5 fail (02, 07, 12, 15, 17), 3 gap (13, 14, 18); opencode 1.18.25 18 pass (2 fallback); opencode-v2 2.0.18 10 pass, 7 fail (02, 04, 06, 07, 08, 15, 17), 1 gap (18); claude-code rows 01, 02, 06, 07, 08, 16: 6 pass. Logs /tmp/fxlogs-opencode-v2. Reviewer dispatched.
+Task 10: minor (deferred): `(config)` model label on v2 rows 04, 15, 17 not explained in the baseline header.
+Task 10: minor (deferred): codex 13/14 GAP reason cites stale "task 22 part B" text.
+Task 10: minor (deferred): baseline records exact total_credits balance, spec needs yes/no.
+Task 10: review spec ❌ (2 Important): codex 07, 15, 18 were stopped by 429s inside subagent spawns, which baseline.md's excerpts omit; v2 rows 15 (FAIL) and 18 (GAP) are inconclusive and not marked. Fix round 1/5 dispatched (resumes a3f5b2be0f6d9da10): baseline.md annotations only.
+Ruling: the runner does not classify a provider error raised inside a subagent spawn (the 429 shows in the child, not the CLI's top-level error stream), so such rows FAIL instead of falling back. That is a runner bug: task 11 fixes it in tests/conformance (shared by every harness, so it is the one shared change task 11 is allowed, and it must keep every harness's free rows green), before re-running Codex's rows. Cost if wrong: rate-limit noise read as product failures, caught by the 2-of-2 pass rule in tasks 11 to 14.
+Task 10: fix round 1/5: controller re-review (0 production lines, 18 doc lines): 2 addressed, 0 open
+Task 10: complete (commits dba6528..703a0e2, fix 703a0e2..5869cc5, controller re-review)
+Ruling: v2 rows that end in "Session interrupted: shutdown" after the model calls the question tool are a headless-runner cause (opencode run has no answerer), routed to task 13 with the build-dispatch question. Cost if wrong: a real v2 plugin failure hides behind it, caught by task 13's 2-of-2 rule.
+Task 11: dispatched (BASE after ledger commit).
