@@ -23,7 +23,7 @@ section shows.
 
 What each runtime has been proven to do in live sessions is at the end, under
 [What is verified](#what-is-verified). Read it before relying on a guarantee:
-Codex rows 12 and 17 are open there.
+Every row on every runtime passes there.
 
 ---
 
@@ -115,7 +115,7 @@ state today, so it always tells you to check `/hooks`.
 
 ### Limits on Codex
 
-- **Live verification** is in [What is verified](#what-is-verified): rows 12 and 17 are open there.
+- **Live verification** is in [What is verified](#what-is-verified).
 - **The bundled validator reports five failures, and they are expected.**
   Codex's plugin lint rejects `disable-model-invocation: true`, and fx sets it
   on each of its five user-invoked lanes (`fx-audit`, `fx-critique`,
@@ -548,8 +548,8 @@ were made on 2026-10-01 on the branch that adds OpenCode 2.x. Logs are in
 | Runtime | Version | Pass | Fail | GAP | Inconclusive attempts | Passes on the fallback model |
 |---|---|---|---|---|---|---|
 | Claude Code (rows 01, 02, 06, 07, 08, 16) | 2.1.286 | 6 | 0 | 0 | 0 | 0 |
-| Codex | 0.155.1 | 16 | 2 (12, 17) | 0 | 16 | 12 |
-| OpenCode | 1.18.25 | 18 | 0 | 0 | 16 | 12 |
+| Codex | 0.155.1 | 18 | 0 | 0 | 16 | 12 (rows 12 and 17 passed on the paid primary) |
+| OpenCode | 1.18.25 | 18 | 0 | 0 | 14 | 12 |
 | OpenCode | 2.0.18 | 18 | 0 | 0 | 12 | 12 |
 
 - **Models.** Claude Code ran `anthropic/claude-haiku-4.5`. Every other model
@@ -564,15 +564,16 @@ were made on 2026-10-01 on the branch that adds OpenCode 2.x. Logs are in
   18 failed once on the fallback (07: `nothing refused git branch -D`; 18: the
   control agent did not dispatch) and passed on a second run; both runs are in
   the logs.
-- **Codex rows 12 and 17 are open.** Both fail on the fallback, because
+- **Codex rows 12 and 17** failed on the fallback in the Final run, because
   DeepSeek calls an `apply_patch` function that Codex does not provide for a
   chat-completions model (`unsupported call: apply_patch`). That is a limit of
-  the fallback model, not a result for fx. On the primary model both passed
-  twice, clean, earlier on 2026-10-01 (task 11, before later edits to the shared
-  runner and `lib/preamble.js`), but the primary was rate
-  limited for this whole run, so no clean primary run exists for the final tree.
-  Re-run both on the primary after the free quota resets (00:00 UTC) and read
-  that result.
+  the fallback model, not a result for fx. The primary `qwen/qwen3.8-27b:free`
+  was rate limited for the whole run, so both rows were decided on the paid
+  listing of the same primary model, `qwen/qwen3.8-27b`, which has no free-tier
+  limit: two runs, both rows PASS each time, `model=qwen/qwen3.8-27b`, no
+  inconclusive attempt (logs in `/tmp/fxlogs-opencode-v2-final/logs15c/`). The
+  caveat: the paid listing is a different OpenRouter listing from the free one,
+  and nothing here checks that it serves the same weights.
 - **Codex nesting.** Rows 15 and 18 on Codex run with `[agents] max_depth = 2`
   in the runner's `config.toml`. That is test configuration. fx cannot ship
   user config, so on default Codex config a model that uses the V1 subagent
@@ -596,10 +597,8 @@ no fallback. See `tests/conformance/README.md`.
 
 ### Stated limitations
 
-- **Codex rows 12 and 17**, as above: not proven on the final tree until a
-  clean primary-model run.
-- **Rows that passed on the fallback only.** Every model row on Codex,
-  OpenCode 1.18.25 and OpenCode 2.0.18 passed on `deepseek/deepseek-v4-flash`
+- **Rows that passed on the fallback only.** Every model row on Codex
+  (except 12 and 17), OpenCode 1.18.25 and OpenCode 2.0.18 passed on `deepseek/deepseek-v4-flash`
   in this run. The same rows passed on the primary in earlier runs of this
   branch (`docs/plans/2026-10-01-opencode-v2/baseline.md`), which was not
   available for the final run.

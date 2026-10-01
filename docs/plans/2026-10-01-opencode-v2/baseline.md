@@ -130,14 +130,14 @@ The free-model daily quota was spent: every model row's first attempt on `qwen/q
 
 | Harness | Pass | Fail | GAP | Inconclusive attempts | Fallback passes |
 |---|---|---|---|---|---|
-| codex | 16 | 2 (12, 17) | 0 | 16 | 12 |
-| opencode 1.18.25 | 18 | 0 | 0 | 16 | 12 |
+| codex | 18 | 0 | 0 | 16 | 12 (rows 12 and 17 passed on the paid primary `qwen/qwen3.8-27b`) |
+| opencode 1.18.25 | 18 | 0 | 0 | 14 | 12 |
 | opencode-v2 2.0.18 | 18 | 0 | 0 | 12 | 12 |
 | claude-code (6 rows) | 6 | 0 | 0 | 0 | 0 |
 
 - Free rows (no model call): codex 03, 09, 10, 11; opencode and opencode-v2 03, 09, 10, 11, 13, 14. Codex 13 and 14 are live rows and passed on the fallback.
 - opencode 1.18.25 rows 07 (`fx-guard-probe was deleted: nothing refused git branch -D`) and 18 (`a default agent could not dispatch a child either (depth 0)`) failed or gapped once on the fallback and passed on a second run (`rerun1/`).
-- Codex 12 and 17: FAIL on the fallback twice. Log excerpts: row 12 `the control agent could not write with its editing tool either`, row 17 `the lane check never ran on a file write (no .fx/.lane-design marker)`; the logs show `unsupported call: apply_patch`. Per the ledger ruling this is the fallback model calling a function Codex does not provide, not an fx result. Open: re-run on the primary after the free quota resets; they passed twice cleanly on the primary in task 11.
+- Codex 12 and 17: FAIL on the fallback twice in the Final run (row 12 `the control agent could not write with its editing tool either`, row 17 `the lane check never ran on a file write (no .fx/.lane-design marker)`; the logs show `unsupported call: apply_patch`, the fallback calling a function Codex does not provide). The free primary was rate limited all day, so both rows were decided on the paid listing of the same primary, `qwen/qwen3.8-27b`: 2 runs, both rows PASS each time, no inconclusive attempt (`logs15c/` in the log directory). Caveat: the paid listing is a different OpenRouter listing from the free one; nothing here checks that the weights are the same.
 - No GAP outside `tests/conformance/expected-gaps` (empty of live rows).
 
 | Row | codex | opencode 1.18.25 | opencode-v2 | claude-code |
@@ -149,11 +149,11 @@ The free-model daily quota was spent: every model row's first attempt on `qwen/q
 | 06 | PASS (fb) | PASS (fb) | PASS (fb) | PASS |
 | 07 | PASS (fb) | PASS (fb, 2nd run) | PASS (fb) | PASS |
 | 08 | PASS (fb) | PASS (fb) | PASS (fb) | PASS |
-| 12 | FAIL (fb) | PASS (fb) | PASS (fb) | - |
+| 12 | PASS (qwen paid, 2 of 2) | PASS (fb) | PASS (fb) | - |
 | 13, 14 | PASS (fb) | PASS (free) | PASS (free) | - |
 | 15 | PASS (fb) | PASS (fb) | PASS (fb) | - |
 | 16 | PASS (fb) | PASS (fb) | PASS (fb) | PASS |
-| 17 | FAIL (fb) | PASS (fb) | PASS (fb) | - |
+| 17 | PASS (qwen paid, 2 of 2) | PASS (fb) | PASS (fb) | - |
 | 18 | PASS (fb) | PASS (fb, 2nd run) | PASS (fb) | - |
 
 (fb = passed on `deepseek/deepseek-v4-flash`; Claude Code on `anthropic/claude-haiku-4.5`.)
