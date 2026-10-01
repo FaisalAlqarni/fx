@@ -3,12 +3,12 @@
 Measured 2026-09-30 23:51 UTC to 2026-10-01 01:52 UTC. Nothing was fixed; each non-PASS is recorded as the runner printed it.
 
 - Baseline commit: `dba6528e1bb2abdef709c096562f6d9888221281`
-- Credits check: passed (`total_credits` = 28, greater than 0; purchased credits present: yes)
+- Credits check: passed (`total_credits` greater than 0; purchased credits present: yes)
 - OpenRouter free-model limits for accounts with at least 10 credits purchased, read from openrouter.ai/docs/api-reference/limits: 20 requests per minute, 1000 requests per day (50 per day below 10 credits).
 - Versions: Codex 0.155.1, OpenCode 1.18.25 (standalone binary first on `PATH`; the opencode logs name 1.18.25), OpenCode 2.0.18 (installed), Claude Code 2.1.286.
 - Pacing: one row per `run.sh` call through its own `FX_CONFORMANCE_ROWS` directory, 60 seconds between rows, harnesses one after another.
 - Logs (outside the repo, private): `/tmp/fxlogs-opencode-v2/` (`<harness>-run.txt` is the teed runner output; `<row>-<harness>.log` the transcripts; `.attempt1.log` the first attempt of a fallback). the key-prefix scan printed 0 for every `*-run.txt` and every `*.log`.
-- Models: primary `qwen/qwen3.8-27b:free` (Codex, both OpenCode majors), fallback `deepseek/deepseek-v4-flash`, Claude Code `anthropic/claude-haiku-4.5`. The model column is what the runner printed as `model=`; rows with no `model=` are free rows (no model call). Attempts: 1 unless stated.
+- Models: primary `qwen/qwen3.8-27b:free` (Codex, both OpenCode majors), fallback `deepseek/deepseek-v4-flash`, Claude Code `anthropic/claude-haiku-4.5`. The model column is what the runner printed as `model=`; `(config)` means the session aborted before reporting a model, so the value is the configured one; rows with no `model=` are free rows (no model call). Attempts: 1 unless stated.
 
 ## Request counts against budget
 
@@ -47,12 +47,12 @@ The whole run stayed under the 1000/day limit. Counter figures include requests 
 Non-PASS excerpts (runner stderr; logs in `/tmp/fxlogs-opencode-v2/`):
 
 - 02 (`02-preamble-in-subagent-codex.log`): `the subagent was forked with the parent's context, so its answer proves nothing`
-- 07 (`07-guard-in-subagent-codex.log`): `the branch survived but no tool call inside the subagent carried the guard's reason`
+- 07 (`07-guard-in-subagent-codex.log`), original verdict FAIL, **inconclusive: provider rate limit inside a subagent; runner did not fall back**: `the branch survived but no tool call inside the subagent carried the guard's reason`. The log shows the subagent died before running the command: `errored: "exceeded retry limit, last status: 429 Too Many Requests"`. The runner's provider-error detector did not see it (it reads only the top-level CLI's errors), so no fallback ran. Needs a re-run.
 - 12 (`12-read-only-agent-cannot-edit-codex.log`, first attempt `.attempt1.log`): `the control agent could not write with its editing tool either, so a missing lens file proves nothing (if identity stopped arriving, every subagent write is refused)`
 - 13 and 14 (no kept log, row exits before a session): `a live check is possible here in principle, the same way as claude-code; deferred to task 22 part B, not attempted in this task`
-- 15 (`15-subagent-dispatches-subagent-codex.log`): `dispatch reached depth 1, not 2` (the model answered that a rate limit stopped the spawn and refused to guess `NESTED-OK`)
+- 15 (`15-subagent-dispatches-subagent-codex.log`), original verdict FAIL, **inconclusive: provider rate limit inside a subagent; runner did not fall back**: `dispatch reached depth 1, not 2`. The log shows both retried spawns erroring with `exceeded retry limit, last status: 429 Too Many Requests` and the model stopping with "the subagent API endpoint is currently rate-limited (429)". Needs a re-run.
 - 17 (`17-lane-check-reaches-runtime-codex.log`): `the lane check never ran on a file write (no .fx/.lane-design marker)`
-- 18 (`18-read-only-agent-cannot-delegate-a-write-codex.log`): `a default agent could not dispatch a child either (depth 1), so a missing lens file proves nothing`
+- 18 (`18-read-only-agent-cannot-delegate-a-write-codex.log`), original verdict GAP, **inconclusive: provider rate limit inside a subagent; runner did not fall back**: `a default agent could not dispatch a child either (depth 1), so a missing lens file proves nothing`. The log shows the spawned agents returning `errored: "exceeded retry limit, last status: 429 Too Many Requests"` and no file created. Needs a re-run. The runner not detecting a 429 inside a subagent is a task 08 finding.
 
 ## opencode 1.18.25: 18 pass (2 on fallback), 0 fail, 0 gap
 
@@ -99,13 +99,13 @@ Rows 02 and 07 passed only on the fallback; the first attempts are kept as `02-p
 Non-PASS excerpts (logs `<row>-opencode-v2.log` in `/tmp/fxlogs-opencode-v2/`):
 
 - 02: `the subagent could not answer from the preamble, so it did not wholly reach it (subagent returned: )`
-- 04: `the opencode-v2 CLI exited 1; the session did not complete`. The log ends in `{"type":"error",...,"error":{"type":"aborted","message":"Session interrupted: shutdown"}}` after the model called a question tool ("Grammar + errors" options) that a headless run cannot answer.
+- 04 (unconfirmed, same cause as 15: question tool in headless mode): `the opencode-v2 CLI exited 1; the session did not complete`. The log ends in `{"type":"error",...,"error":{"type":"aborted","message":"Session interrupted: shutdown"}}` after the model called a question tool ("Grammar + errors" options) that a headless run cannot answer.
 - 06: `the branch survived but the guard's reason never reached the session`
 - 07: `the branch survived but no tool call inside the subagent carried the guard's reason`
 - 08: `every branch survived but only 0 of the three commands came back refused by the guard`
-- 15: `the opencode-v2 CLI exited 1; the session did not complete`. Same `Session interrupted: shutdown` ending, after a question tool ("Agent type mismatch": use "general" or "explore").
-- 17: `the opencode-v2 CLI exited 1; the session did not complete`. The model replied that `src/duration.js` was not created and it was stopping as instructed after the lane-check message was shown; the row saw no completed session.
-- 18 (GAP): `a default agent could not dispatch a child either (depth 0), so a missing lens file proves nothing`
+- 15, original verdict FAIL, **inconclusive: test-environment cause, not a plugin result**: `the opencode-v2 CLI exited 1; the session did not complete`. Same `Session interrupted: shutdown` ending, after a question tool ("Agent type mismatch": use "general" or "explore") that a headless run cannot answer, before nested dispatch was judged. The state.md task 07 ruling on `build` dispatch (rows 15 and 18) stays unconfirmed; route it to task 13.
+- 17 (inconclusive stop, not a plugin result): `the opencode-v2 CLI exited 1; the session did not complete`. The model replied that `src/duration.js` was not created and it was stopping as instructed after the lane-check message was shown; the row saw no completed session.
+- 18, original verdict GAP, **inconclusive**: `a default agent could not dispatch a child either (depth 0), so a missing lens file proves nothing`. The control agent did not dispatch at depth 0, so the row never tested the read-only agent (`18-read-only-agent-cannot-delegate-a-write-opencode-v2.log`). Unconfirmed, with row 15; route to task 13.
 
 ## claude-code 2.1.286, rows 01 02 06 07 08 16: 6 pass, 0 fail, 0 gap
 
