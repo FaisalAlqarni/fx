@@ -219,6 +219,39 @@ withScratch((scratch) => {
   assert.ok(result.stderr.includes('src/duration.js'), 'the reason names the path');
   assert.ok(fs.existsSync(path.join(scratch, '.fx', '.lane-design')), 'and the check leaves its marker');
 });
+// apply_patch anywhere in the shell command counts, not only at the start of a
+// statement: inside bash -c, a subshell, a group, or after env/time/xargs; and a
+// heredoc body indented by the model still names its paths.
+const body = (indent) => ['*** Begin Patch', '*** Add File: src/duration.js', '+x', '*** End Patch'].map((l) => indent + l).join('\n');
+for (const [what, command] of [
+  ['bash -c', `bash -c "apply_patch <<'P'\n${body('')}\nP"`],
+  ['sh -lc', `sh -lc 'apply_patch <<P\n${body('')}\nP'`],
+  ['a subshell', `(apply_patch <<'P'\n${body('')}\nP\n)`],
+  ['a group', `{ apply_patch <<'P'\n${body('')}\nP\n}`],
+  ['a command substitution', `echo $(apply_patch <<'P'\n${body('')}\nP\n)`],
+  ['env', `env X=1 apply_patch <<'P'\n${body('')}\nP`],
+  ['time', `time apply_patch <<'P'\n${body('')}\nP`],
+  ['xargs', `printf x | xargs apply_patch <<'P'\n${body('')}\nP`],
+  ['an indented heredoc body', `apply_patch <<-'P'\n${body('    ')}\nP`],
+]) withScratch((scratch) => {
+  const result = fire({ hook_event_name: 'PreToolUse', cwd: scratch, tool_name: 'Bash', tool_input: { command } });
+  assert.strictEqual(result.status, 2, `apply_patch through ${what} is lane-checked`);
+  assert.ok(result.stderr.includes('src/duration.js'), `${what}: the reason names the path`);
+});
+// Detected but no path readable (a patch from a file, a variable): the edit is
+// allowed, and one line says the lane check could not read it.
+withScratch((scratch) => {
+  const result = fire({ hook_event_name: 'PreToolUse', cwd: scratch, tool_name: 'Bash',
+    tool_input: { command: 'apply_patch < /tmp/change.patch' } });
+  assert.strictEqual(result.status, 0, 'advice only: an unreadable patch is allowed');
+  assert.match(result.stderr, /lane check could not read the paths of this apply_patch/, 'and says so');
+});
+// A command that only names the word is no patch and stays quiet.
+withScratch((scratch) => {
+  const result = fire({ hook_event_name: 'PreToolUse', cwd: scratch, tool_name: 'Bash', tool_input: { command: 'grep apply_patch README.md' } });
+  assert.strictEqual(result.status, 0);
+  assert.strictEqual(result.stderr.trim(), '', 'no notice for a grep');
+});
 // Text that only mentions a patch header is no patch: echo, cat and grep pass.
 withScratch((scratch) => {
   const command = "echo '*** Add File: src/duration.js' > notes.txt";

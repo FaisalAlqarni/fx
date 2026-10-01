@@ -72,8 +72,8 @@ function extractPatchPaths(command) {
   if (typeof command !== 'string') return [];
   const paths = [];
   for (const line of command.split('\n')) {
-    const m = line.match(/^\*\*\* (?:Update|Add|Delete) File: (.+)$/)
-      || line.match(/^\*\*\* Move to: (.+)$/);
+    const m = line.match(/^\s*\*\*\* (?:Update|Add|Delete) File: (.+)$/)   // \s*: an indented heredoc body
+      || line.match(/^\s*\*\*\* Move to: (.+)$/);
     if (m) paths.push(m[1].trim());
   }
   return paths;
@@ -99,12 +99,13 @@ function deny(reason) {
 }
 
 // The lane check on every path a patch names; refuses on the first offender.
-function checkPatchPaths(patchText, cwd) {
-  let paths;
-  try {
-    paths = extractPatchPaths(patchText);
-  } catch {
-    paths = [];                    // unparseable: fail open, same as a laneCheck throw
+// extractPatchPaths never throws. A shell call known to be an apply_patch
+// whose paths cannot be read (a patch from a file or a variable) is allowed,
+// and one stderr line says the lane check could not read it.
+function checkPatchPaths(patchText, cwd, fromShell) {
+  const paths = extractPatchPaths(patchText);
+  if (fromShell && paths.length === 0) {
+    process.stderr.write('[fx] the lane check could not read the paths of this apply_patch, so it did not check them.\n');
   }
   for (const p of paths) {
     let reason = null;
@@ -118,10 +119,12 @@ function checkPatchPaths(patchText, cwd) {
 }
 
 // A model with no apply_patch function tool edits through a shell call,
-// `apply_patch <<'PATCH' ...`, which Codex runs as a patch itself. Only a
-// command that starts a statement with apply_patch counts: a command that
-// merely mentions a patch header (echo, cat, grep) is not an edit.
-const SHELL_APPLY_PATCH = /(?:^|[\n;&|])\s*apply_patch\b/;
+// `apply_patch <<'PATCH' ...`, which Codex runs as a patch itself. The word
+// counts as a command wherever a command can start: at the start, after a
+// separator, a subshell, a group or `$(`, inside `bash -c "`, or after
+// env/time/xargs and their words. `grep apply_patch` and `echo apply_patch`
+// are not edits.
+const SHELL_APPLY_PATCH = /(?:^|[\n;&|({`]|\$\(|\b(?:ba|z|da)?sh\s+-\w*c\s+["']|\b(?:env|time|xargs|exec|command|nohup|sudo)\b[^\n;&|]*?)\s*apply_patch\b/;
 
 function handlePreToolUse(input) {
   process.on('uncaughtException', (e) =>
@@ -183,7 +186,7 @@ function handlePreToolUse(input) {
       verdict = { allow: false, reason: `git guard failed to evaluate this command (${e.message}). Denying rather than assuming it is safe.` };
     }
     if (!verdict.allow) deny(verdict.reason);
-    if (SHELL_APPLY_PATCH.test(command)) checkPatchPaths(command, cwd);
+    if (SHELL_APPLY_PATCH.test(command)) checkPatchPaths(command, cwd, true);
     process.exit(0);
   }
 
