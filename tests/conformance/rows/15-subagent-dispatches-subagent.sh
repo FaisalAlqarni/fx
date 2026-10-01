@@ -16,8 +16,11 @@ AS=""
 [ "$HARNESS" = opencode ] && AS=" as agent type general"
 # opencode-v2: the built-in general denies the subagent tool (probe 9) and build
 # is primary only ("Agent build cannot run as a subagent"), so general at both
-# levels passes only when the plugin let general dispatch and the installer's
-# experimental.subagent_depth: 2 reached the subagent tool.
+# levels is the only path. fx grants no nested dispatch on 2.x (ADR-0026); the
+# grant that lets general dispatch comes from the runner's scratch config
+# (lib/openrouter.js, ruling 199), the user's own rule. A PASS here proves that
+# config and the runtime's nesting, not fx. A FAIL is still a finding about fx
+# only if that config was in place.
 [ "$HARNESS" = opencode-v2 ] && AS=" as agent type general"
 
 live_run "Dispatch one subagent ($SUBAGENT_TOOL)$AS. Its task, word for word: \"Dispatch one subagent of your own ($SUBAGENT_TOOL)$AS. Its task, word for word: 'Reply with the word NESTED-OK.' Wait for it, then reply with exactly what it returned.\" Wait for it, then reply with exactly what it returned."
