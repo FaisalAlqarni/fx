@@ -86,35 +86,89 @@ Five more skills are typed by you and never picked by the model.
 How you type them: `/fx:fx-<name>` on Claude Code, `/fx-<name>` on opencode,
 `$fx:fx-<name>` on Codex.
 
-## Review agents
+## What the lenses are, and when they fire
 
-Six read-only agents: five lenses and a devil's advocate. They cannot write on
-any harness.
+Six read-only agents: five lenses and a devil's advocate. None can write, on
+any harness. Each costs a full subagent, so per task only three lenses fire,
+and only on a narrow tripwire. At the branch review every lens fires on its
+broad trigger, alongside `fx-devils-advocate`. `/fx:fx-audit` also runs
+`fx-lens-pipeline`.
 
-| Agent | Looks for |
-|---|---|
-| `fx-lens-database` | migrations, schema and index changes, query shape |
-| `fx-lens-security` | auth, credentials, new endpoints, string-built SQL or shell |
-| `fx-lens-a11y` | templates, styles, user-facing strings |
-| `fx-lens-silent-failure` | swallowed errors, retries, jobs and consumers |
-| `fx-lens-pipeline` | work that is enqueued or fanned out with no backpressure |
-| `fx-devils-advocate` | anything a directed review would not think to ask |
+| Lens | Per task (tripwire) | Branch review: fires when the diff touches |
+|---|---|---|
+| `fx-lens-database` | a migration, schema change, index or constraint change, backfill | migrations, `*.sql`, models, query chains |
+| `fx-lens-security` | auth code, credentials, a new endpoint, a user-supplied URL, string-built SQL or shell | auth paths, params, credentials, any new endpoint |
+| `fx-lens-a11y` | no | `.erb`, `.css`, view partials, user-facing strings |
+| `fx-lens-silent-failure` | a swallowing handler, `retry_on`, a job, consumer or webhook receiver, a loop past a failed record | `rescue`, `catch`, workers, retry paths |
+| `fx-lens-pipeline` | no | code that enqueues, publishes, schedules or fans out work; code that governs queue depth, admission or producer flow control |
 
-## What runs underneath
+## Always on, underneath all of it
 
-- **A bootstrap in every session and every subagent.** `PREAMBLE.md`, about
-  3K characters, tells the model to invoke a skill before it acts. Subagents
-  read neither `CLAUDE.md` nor memory, so this is the one channel that reaches
-  them.
-- **A git guard.** Refuses force push, pushing the base branch, a bare `push`,
-  deleting a remote branch, `--no-verify`, `reset --hard`, `clean -f`,
-  `branch -D`, `stash drop`, `checkout .`, `tag -d`, and any commit with an
-  attribution trailer. A `sh -c` wrapper does not get past it.
-- **A lane check.** Refuses the first source-file write in a repository that
-  has no design, and says why.
-- **A companions line.** Tells the agent to use repowise, ponytail, caveman and
-  `fx-humanize` when they are installed. Set `companions` in `.fx.json` to
-  change it, or to `""` to turn it off.
+```
+                 lib/preamble.js renders PREAMBLE.md for each runtime
+                        |                 |                  |
+Claude Code   hooks/fx-context.js   Codex   hooks/fx-codex.js   opencode 1.x   plugins/fx-opencode-v1.js
+              SessionStart                  SessionStart                   system transform
+              SubagentStart                 SubagentStart                  (sessions and child
+                                                                            sessions alike)
+                                                                opencode 2.x   plugins/fx-opencode-v2.js
+                                                                               session.hook('context')
+                 (subagents read neither CLAUDE.md nor memory:
+                  this is the only channel that reaches them)
+
+guard and lane check, one shared lib on every runtime:
+   hooks/fx-pretooluse.js    Claude Code, PreToolUse, every tool
+   hooks/fx-codex.js         Codex, PreToolUse, every tool, plus read-only enforcement
+   plugins/fx-opencode-v1.js opencode 1.x, tool.execute.before
+   plugins/fx-opencode-v2.js opencode 2.x, permission.evaluate, plus installed policies
+      + lib/git-guard.js     shell: the absolutes, fail closed
+      + lib/lane-check.js    file writes: one nudge per session when no design exists, fail open
+
+dispatch routing, Claude Code only:
+   hooks/fx-pretooluse.js    Agent calls: no model on a general dispatch -> sonnet;
+      + lib/dispatch-route.js    opus without "Capable because:" -> sonnet; never refuses
+```
+
+`PREAMBLE.md` is a small bootstrap, about 3K characters, that makes the model
+invoke a skill before it acts. Routing lives in each skill's own description.
+
+After the bootstrap, `lib/preamble.js` appends one companions line to every
+session and subagent. It names repowise, ponytail and caveman at full, and
+`fx-humanize` for prose, and tells the agent to skip any tool its runtime
+lacks. Set `companions` in `.fx.json` to replace the line, or to `""` to turn
+it off.
+
+**The guard does not police where you are.** Which branch you commit on is the
+workflow's business: work happens in a worktree because `fx-implement` sets one
+up, and integration is a question you get asked rather than a wall you hit.
+
+What it does refuse, anywhere, because each is irreversible or leaves the
+machine: force push, pushing the base branch, a bare `push` that names no
+target, deleting a remote branch, `--no-verify`, `reset --hard`, `clean -f`,
+`branch -D`, `stash drop`, `checkout .`, `tag -d`, and any commit carrying an
+attribution trailer. A `sh -c` wrapper does not get you past it; a `grep` for
+one of those strings is data and does.
+
+## Layout
+
+```
+skills/       17: 10 lanes, prototype and research, and 5 you invoke yourself:
+              fx-audit, plus fx-setup, fx-critique, fx-grill and fx-handoff,
+              generated from commands/
+agents/       6: 5 review lenses plus the devil's advocate, all read-only
+codex/agents/ the same 6 as Codex role files, generated
+commands/     4: fx-setup, fx-critique, fx-grill, fx-handoff
+references/   loaded on demand by a lane, never selectable
+hooks/        Claude Code: hooks.json, fx-context.js, fx-pretooluse.js
+              Codex: fx-codex.js, wired by the root hooks.json
+plugins/      opencode: fx-opencode-v1.js (1.x), fx-opencode-v2.js (2.x)
+lib/          shared by all four harnesses: preamble.js (the renderer),
+              git-guard.js, lane-check.js, plan-state.js, plant-roles.js,
+              agent-dialects.js, opencode-commands.js, user-invoked-lanes.js
+scripts/      fx-opencode-install, check-all and the gates it runs
+tests/        conformance, install, gates, lane-triggering, lens-pipeline
+PREAMBLE.md   the bootstrap, injected into every session AND every subagent
+```
 
 ## Install
 
