@@ -1,364 +1,139 @@
 # fx
 
-One engineering plugin. Replaces superpowers, mattpocock-skills, ecc and
-humanizer with a set that does not overlap. It does not replace `ponytail`,
-which is a separate plugin fx absorbed nothing from.
+One engineering plugin for coding agents. It takes a piece of work from an
+idea to a reviewed branch through one pipeline: design, plan, build test-first,
+review. Exactly one skill claims each intent, so the model never has to choose
+between two skills that both say "TDD".
 
-**Exactly one claimant per intent.** Four skills claiming "TDD" is why skill
-selection was effectively random; the fix is that only one ever claims it.
+fx runs on four harnesses: Claude Code, Codex, opencode 1.x and opencode 2.x.
 
 ## How the pipeline runs
 
-One path, two hard gates. Nothing skips a gate because the work looks small:
-what scales with simplicity is the artifact, never the approval.
+One path, two approval gates. Nothing skips a gate because the work looks
+small: the artifact scales with the work, the approval does not.
 
 ```
   you: "let's build X"
         |
         v
   fx-brainstorm ........ classify (spike | bounded | architectural)
-        |                clustered question rounds + open-questions ledger
-        |                confidence check: what made it 95% sure, 2-line plan, wait for go
-        |                approaches, 2 or 3, recommendation first
-        |                seams sketched and CONFIRMED
+        |                question rounds, then a confidence check:
+        |                what made it 95% sure, a 2-line plan, wait for go
+        |                2 or 3 approaches, recommendation first
         |                design doc -> docs/plans/YYYY-MM-DD-slug/design.md
-        |                self-review: placeholders, consistency, scope, ambiguity
         |
      [ GATE ] you approve the design
         |
         v
   fx-plan .............. vertical slice tasks, one file each
-        |                Consumes / Produces with exact signatures
-        |                blocking edges -> the frontier fx-implement works
-        |                Global Constraints copied verbatim from the design
-        |                self-review: spec coverage, placeholders, type consistency
-        |                offers fx-devils-advocate (plan mode)
+        |                exact interfaces, blocking edges, global constraints
+        |                offers a red-team pass (fx-devils-advocate)
         |
-     [ GATE ] four ways out: implement | red-team | keep discussing | park
+     [ GATE ] implement | red-team | keep discussing | park
         |
         v
-  fx-implement ......... worktree (controller creates it, stays outside)
-        |                ledger at docs/plans/slug/state.md, survives compaction
-        |                pre-flight conflict scan, written down as a table
+  fx-implement ......... a worktree, and a ledger that survives compaction
         |
-        +--> per task, serial, fresh subagent each time
-        |      |
-        |      +--> fx-tdd .......... Iron Law, RED verified, GREEN, commit
-        |      |                      test_scope on the touched paths only
-        |      +--> task review ..... spec compliance + code quality
-        |      +--> tripwires ....... security, database, silent-failure,
-        |      |                      each only when its narrow trigger matches
-        |      |
-        |      +--> fix loop ........ Important+ only, max 5 rounds; a fix of
-        |                             20 production lines or fewer is re-read
-        |                             by the controller, larger ones re-reviewed
+        +--> per task: a fresh subagent
+        |      fx-tdd ........... failing test first, then the code
+        |      task review ...... spec compliance and code quality
+        |      tripwire lenses .. security, database, silent-failure,
+        |                         only when the diff matches their trigger
+        |      fix loop ......... at most 5 rounds
         |
-        +--> final: fx-review (branch mode)
-        |      all axes, every lens on its broad trigger, reviewer-prompt.md
-        |      plus fx-devils-advocate (code mode), unprimed, once per branch
+        +--> branch review: every axis, every lens, plus an unprimed
+        |      adversarial pass
         |
-        +--> exit gate: test_all once; each failure run alone on the
-        |      branch and the merge base: pre-existing, introduced, order-dependent
+        +--> the full test suite, once
         |
         v
-  verification before any completion claim, then four options and a stop:
-  merge | push and open a PR | leave it | discard. The base branch moves
-  when you say which, and not before.
-```
-
-### What the lenses are, and when they fire
-
-Read-only agents. Each costs a full subagent, so per task only three of them
-fire, and only on a narrow tripwire.
-
-| Lens | Per task (tripwire) | Branch pass: fires when the diff touches |
-|---|---|---|
-| `fx-lens-database` | a migration, schema change, index or constraint change, backfill | migrations, `*.sql`, models, query chains |
-| `fx-lens-security` | auth code, credentials, a new endpoint, a user-supplied URL, string-built SQL or shell | auth paths, params, credentials, any new endpoint |
-| `fx-lens-a11y` | no | `.erb`, `.css`, view partials, user-facing strings |
-| `fx-lens-silent-failure` | a swallowing handler, `retry_on`, a job, consumer or webhook receiver, a loop past a failed record | `rescue`, `catch`, workers, retry paths |
-| `fx-lens-pipeline` | no | code that enqueues, publishes, schedules or fans out work; code that governs queue depth, admission or producer flow control |
-
-Per task, only security, database and silent-failure fire, and only on their
-tripwire. At the branch review every lens fires on its broad trigger,
-alongside devil's advocate. `/fx:fx-audit` also runs `fx-lens-pipeline`.
-
-## What a build costs
-
-The numbers come from the owner's build on advantage-backend, 2026-09-21 to
-2026-09-28: 728 subagent transcripts from two steering sessions, classified by
-`docs/plans/2026-09-29-lean-review/measure/fx-cost.py`.
-
-| Role | Agents | Agent-minutes | Share of minutes | Share of output tokens |
-|---|---|---|---|---|
-| implementer | 146 | 7079 | 57.5% | 37.6% |
-| fix round | 74 | 1639 | 13.3% | 12.7% |
-| task review | 155 | 1058 | 8.6% | 13.5% |
-| re-review | 76 | 365 | 3.0% | 5.4% |
-| all five lenses | 121 | 402 | 3.3% | 6.1% |
-| devil's advocate | 21 | 133 | 1.1% | 2.5% |
-| other (plan, audit, fork) | 135 | 1639 | 13.3% | 22.3% |
-
-Agent-minutes run first to last timestamp, so idle waits count and parallel
-agents overlap: these are upper bounds, not wall-clock. Roles are classified by
-dispatch description. Of the 620 agents with an explicit model, about half of
-implementers, fixes and reviews ran on Opus. Test scoping held: 6 full-suite
-runs against about 3,300 targeted or directory runs. One session's `/usage`
-report showed $383.95, of which Opus $374.94, with `general-purpose` subagents
-at 54% of usage.
-
-In response, per-task review is the reviewer plus tripwire lenses, small fixes
-are re-read by the controller, dispatch routing is held by a hook, and
-standing rulings carry across plans (`docs/adr/0029` to `0032`).
-
-These are the numbers before the change. The new defaults have not been
-measured on a build yet; this section will carry that measurement when it
-exists.
-
-### Always on, underneath all of it
-
-```
-                 lib/preamble.js renders PREAMBLE.md for each runtime
-                        |                 |                  |
-Claude Code   hooks/fx-context.js   Codex   hooks/fx-codex.js   opencode 1.x   plugins/fx-opencode-v1.js
-              SessionStart                  SessionStart                   system transform
-              SubagentStart                 SubagentStart                  (sessions and child
-                                                                            sessions alike)
-                                                                opencode 2.x   plugins/fx-opencode-v2.js
-                                                                               session.hook('context')
-                 (subagents read neither CLAUDE.md nor memory:
-                  this is the only channel that reaches them)
-
-guard and lane check, one shared lib on every runtime:
-   hooks/fx-pretooluse.js   Claude Code, PreToolUse, every tool
-   hooks/fx-codex.js        Codex, PreToolUse, every tool, plus read-only enforcement
-   plugins/fx-opencode-v1.js opencode 1.x, tool.execute.before
-   plugins/fx-opencode-v2.js opencode 2.x, permission.evaluate, in layers (docs/adr/0037)
-      + lib/git-guard.js    shell: the absolutes, fail closed
-      + lib/lane-check.js   file writes: one nudge per session, fail open
-
-dispatch routing, Claude Code only:
-   hooks/fx-pretooluse.js   Agent calls: no model on a general dispatch -> sonnet;
-      + lib/dispatch-route.js   opus without "Capable because:" -> sonnet; never refuses
-   Codex and opencode: deferred (docs/adr/0031)
-```
-
-The routing was probed live from an Opus session: the subagents ran on
-`one=claude-sonnet-5-5, two=claude-sonnet-5-5, three=claude-opus-5-5`. Probe one
-set no model, two asked for opus with no reason, and three asked for opus with
-`Capable because:` as its first line.
-
-`PREAMBLE.md` is a small bootstrap, about 2.9K characters. Routing lives in
-each skill's own description (`docs/adr/0021`).
-
-After the bootstrap, `lib/preamble.js` appends one companions line to every
-session and subagent (`docs/adr/0032`). It names repowise, ponytail and caveman
-at full, and `fx-humanize` for prose, and tells the agent to skip any tool its
-runtime lacks. Set `companions` in `.fx.json` to replace the line, or to `""`
-to turn it off. The line sits outside the bootstrap's size budget.
-
-**The guard does not police where you are.** Which branch you commit on is the
-workflow's business: work happens in a worktree because `fx-implement` sets one
-up, and integration is a question you get asked rather than a wall you hit.
-
-What it does refuse, anywhere, because each is irreversible or leaves the
-machine: force push, pushing the base branch, a bare `push` that names no
-target, deleting a remote branch, `--no-verify`, `reset --hard`, `clean -f`,
-`branch -D`, `stash drop`, `checkout .`, `tag -d`, and any commit carrying an
-attribution trailer. A `sh -c` wrapper does not get you past it; a `grep` for
-one of those strings is data and does.
-
-## Layout
-
-```markdown
-skills/       17: 10 lanes, prototype and research, and 5 you invoke yourself:
-              fx-audit, plus fx-setup, fx-critique, fx-grill and fx-handoff,
-              generated from commands/
-agents/       6: 5 review lenses plus the devil's advocate, all read-only
-codex/agents/ the same 6 as Codex role files, generated
-commands/     4: /fx:fx-setup, /fx:fx-critique, /fx:fx-grill, /fx:fx-handoff
-references/   loaded on demand by a lane, never selectable
-hooks/        Claude Code: hooks.json, fx-context.js, fx-pretooluse.js
-              Codex: fx-codex.js, wired by the root hooks.json
-plugins/      opencode: fx-opencode-v1.js (1.x), fx-opencode-v2.js (2.x)
-lib/          shared by all four harnesses: preamble.js (the renderer), git-guard.js,
-              lane-check.js, plan-state.js, plant-roles.js, agent-dialects.js,
-              opencode-commands.js
-tests/        conformance: the live and free rows, per runtime
-              install: the install test for all four harnesses
-              gates: the node gate tests check-all runs
-              lane-triggering: does a naive prompt reach the lane
-              lens-pipeline: the fixture fx-lens-pipeline is run against
-PREAMBLE.md   the bootstrap, injected into every session AND every subagent
+  four options: merge | push and open a PR | leave it | discard.
+  Nothing merges or leaves the machine until you choose.
 ```
 
 ## The skills
 
-Model-selectable. Ten lanes own an intent; two are procedures a lane calls.
-**Ten of the twelve work standalone**, with no plan and no pipeline: only
-`fx-plan` and `fx-implement` need an artifact to start from. The other five
-skills are not model-selectable and are not in this table: you type them, as
-the next section shows.
+Ten of the twelve work on their own, with no plan: only `fx-plan` and
+`fx-implement` need an artifact to start from.
 
 | Skill | Use when |
 |---|---|
-| `fx-brainstorm` | any new work. Classify, interview, design, gate |
+| `fx-brainstorm` | any new work: classify, interview, design, gate |
 | `fx-plan` | a design is approved and needs breaking into tasks |
 | `fx-implement` | `docs/plans/<slug>/tasks/` exists and needs building |
 | `fx-tdd` | writing or changing code with logic, in any language |
 | `fx-review` | a diff, branch or PR needs checking |
 | `fx-architecture` | the structure of existing code is the problem |
-| `fx-design` | a screen or component, and how it looks. Any template language |
+| `fx-design` | a screen or component, and how it looks |
 | `fx-debug` | a bug, a test failure, anything unexpected |
-| `fx-humanize` | prose reads like a brochure. 35 patterns, upstream verbatim |
+| `fx-humanize` | prose reads like a brochure |
 | `fx-authoring` | editing a SKILL.md, CLAUDE.md, or a dispatch prompt |
 | `prototype` | a question needs something runnable to settle it |
 | `research` | the answer lives outside this repository |
 
 ## The commands
 
-Every command is typed with its `fx-` name: `/fx:fx-<name>` on Claude Code,
-which adds the plugin prefix, `/fx-<name>` on opencode, and `$fx:fx-<name>` on
-Codex, where each command ships as a skill generated from `commands/`. The
-table shows the Claude Code form.
+Five more skills are typed by you and never picked by the model.
 
 | Command | Does |
 |---|---|
-| `/fx:fx-setup` | per repository: reads the machine facts, asks what the repo cannot tell it, writes `.fx.json`, `repo.md`, and `CONTEXT.md` if terms resolved |
-| `/fx:fx-critique` | red-teams a design or plan through `fx-devils-advocate` |
-| `/fx:fx-grill` | the stress-test interview alone, for a decision not heading to code |
-| `/fx:fx-handoff` | prints a block you paste into another session, on this machine or any other |
+| `fx-setup` | per repository: writes `.fx.json`, `repo.md` and `CONTEXT.md` for your review |
+| `fx-audit` | audits an existing system in four gated phases, ending in a design for `fx-plan` |
+| `fx-critique` | red-teams a design or plan |
+| `fx-grill` | a stress-test interview for a decision not heading to code |
+| `fx-handoff` | prints a block to paste into another session |
 
-`/fx:fx-audit` is typed the same way but is a user-invoked skill, not a
-command: `skills/fx-audit/`, with `disable-model-invocation: true`, so the
-model never selects it. It audits an existing system in four gated phases,
-ending in a `design.md` for `fx-plan`.
+How you type them: `/fx:fx-<name>` on Claude Code, `/fx-<name>` on opencode,
+`$fx:fx-<name>` on Codex.
 
-All five are hidden from the model on every runtime and stay typeable: by
-`disable-model-invocation` on Claude Code, by `agents/openai.yaml` on Codex,
-and on opencode 1.x by a `deny` in `permission.skill` plus a generated command; on 2.x by per-agent skill deny rules plus commands the plugin registers.
-The Codex hiding has a known fragility, described in `INSTALL.md`. On Claude
-Code, conformance rows 13 and 14 check both halves inside a live session. On
-Codex no live row checks it yet (`INSTALL.md`, "Stated limitations"); there
-the frontmatter flags are pinned by a gate test instead.
+## Review agents
+
+Six read-only agents: five lenses and a devil's advocate. They cannot write on
+any harness.
+
+| Agent | Looks for |
+|---|---|
+| `fx-lens-database` | migrations, schema and index changes, query shape |
+| `fx-lens-security` | auth, credentials, new endpoints, string-built SQL or shell |
+| `fx-lens-a11y` | templates, styles, user-facing strings |
+| `fx-lens-silent-failure` | swallowed errors, retries, jobs and consumers |
+| `fx-lens-pipeline` | work that is enqueued or fanned out with no backpressure |
+| `fx-devils-advocate` | anything a directed review would not think to ask |
+
+## What runs underneath
+
+- **A bootstrap in every session and every subagent.** `PREAMBLE.md`, about
+  3K characters, tells the model to invoke a skill before it acts. Subagents
+  read neither `CLAUDE.md` nor memory, so this is the one channel that reaches
+  them.
+- **A git guard.** Refuses force push, pushing the base branch, a bare `push`,
+  deleting a remote branch, `--no-verify`, `reset --hard`, `clean -f`,
+  `branch -D`, `stash drop`, `checkout .`, `tag -d`, and any commit with an
+  attribution trailer. A `sh -c` wrapper does not get past it.
+- **A lane check.** Refuses the first source-file write in a repository that
+  has no design, and says why.
+- **A companions line.** Tells the agent to use repowise, ponytail, caveman and
+  `fx-humanize` when they are installed. Set `companions` in `.fx.json` to
+  change it, or to `""` to turn it off.
 
 ## Install
 
-The four installs are **independent**: no harness requires another.
+Each harness installs on its own. Short form:
 
-**Claude Code**: `/plugin marketplace add FaisalAlqarni/fx` then
-`/plugin install fx@fx`.
+| Harness | Install |
+|---|---|
+| Claude Code | `/plugin marketplace add FaisalAlqarni/fx`, then `/plugin install fx@fx` |
+| Codex | `codex plugin marketplace add FaisalAlqarni/fx`, then `codex plugin add fx@fx`, trust the hooks in `/hooks`, restart once |
+| opencode 1.x | clone, then `./scripts/fx-opencode-install --major 1` |
+| opencode 2.x | clone, then `./scripts/fx-opencode-install --major 2` |
 
-**Codex**: `codex plugin marketplace add FaisalAlqarni/fx` then
-`codex plugin add fx@fx`, then trust fx's hooks in `/hooks` and restart Codex
-once after the first session.
+Then run `fx-setup` once in each repository you work in.
 
-**opencode 1.x**: add `plugins/fx-opencode-v1.js` from a clone to your `opencode.json`, or run
-`./scripts/fx-opencode-install --major 1`. Nothing reads `~/.claude`.
+Full steps, updating, removing and per-harness limits:
+[`INSTALL.md`](INSTALL.md).
 
-**opencode 2.x**: run `./scripts/fx-opencode-install --major 2` from a clone. It
-installs `plugins/fx-opencode-v2.js`. `INSTALL.md` has the 2.x guard and its limits.
+## Development
 
-Which opencode versions fx is measured on, and with what result: `INSTALL.md`,
-"What is verified".
-
-Full steps, refreshing an install, and what each runtime has been proven to
-do: [`INSTALL.md`](INSTALL.md).
-
-Then, in each repository you work in:
-
-```
-/fx:fx-setup     # Claude Code
-/fx-setup        # opencode (1.x and 2.x)
-$fx:fx-setup     # Codex
-```
-
-which reads the machine facts, then asks two short rounds about what the code
-cannot tell it (the domain vocabulary, what "done" means here), and writes
-`.fx.json`, `repo.md` and `CONTEXT.md` for your review before any of it lands.
-
-## Tests
-
-Three of the suites need a main checkout and a linked worktree to run against.
-Build them first. `make-git-fixture` writes the worktree metadata directly,
-because the obvious route (init, commit, add a worktree) is blocked at the
-commit by fx's own guard: a scratch fixture repo is a main checkout like any
-other, and the guard is right not to try to tell them apart.
-
-```
-FIX=$(scripts/make-git-fixture /tmp/fx-fixture)
-
-node lib/git-guard.test.js   $FIX      # 85 assertions
-node lib/base-branch.test.js $FIX      # 27
-node lib/heredoc.test.js     $FIX      # 25
-node lib/plan-state.test.js            # 17
-```
-
-And the one test that measures behaviour rather than files: does a naive
-prompt actually make the model invoke the lane? It runs `claude -p` against
-`--plugin-dir`, so it tests the working tree and not the installed copy, which
-is the distinction that cost this project two false conclusions.
-
-```
-tests/lane-triggering/run-all.sh              # 7 lanes, 9 prompts, one run each
-tests/lane-triggering/run-reps.sh fx-tdd prompts/fx-tdd.txt 5
-```
-
-The one behavioural check on `fx-lens-pipeline` is the fixture under
-`tests/lens-pipeline/`. It is not a script: an agent reads the lens through a
-brief and reviews the fixture. What counts as a regression is stated in
-`tests/lens-pipeline/README.md`.
-
-Gates, all of which exit non-zero on a problem. `scripts/check-all` runs all
-of these except `check-collisions`, which is run by hand because it reads
-skill directories on this machine, not this repository:
-
-```
-scripts/check-manifest                     manifest keys, declared paths, and convention-discovered directories
-scripts/check-paths                        every reference citation resolves
-scripts/check-reference-leaves             no reference links to another reference
-scripts/check-prose                        no dashes, no stock vocabulary, parens balanced
-scripts/check-tool-names                   no skill body names a runtime's tool
-scripts/check-interpreters                 every script invocation in a skill names its interpreter
-tests/gates/check-prose-explicit-path.sh   check-prose reads a path named explicitly even under .worktrees/
-scripts/check-artifacts                    nothing in skills/, agents/ or commands/ names the OS temp directory
-tests/gates/check-artifacts-remote.sh      the remote-asset rule in check-artifacts, proven against scratch trees
-scripts/check-generated                    generated files match their sources
-tests/gates/agent-model.test.js            every agent pins a model
-scripts/check-collisions                   other installed skills contesting an fx lane
-```
-
-After the four node suites above, `scripts/check-all` also runs:
-
-```
-lib/preamble.test.js                         the bootstrap renders per runtime, within its size budgets
-tests/gates/codex-manifest.test.js           the Codex manifest and hook wiring
-tests/gates/codex-hook-output.test.js        Codex hook output uses only keys Codex accepts
-tests/gates/user-invoked.test.js             the five user-invoked lanes stay hidden from the model
-tests/gates/fx-setup-root-check.test.js      fx-setup loads code only from a verified fx root
-lib/plant-roles.test.js                      Codex role planting and the read-only classifier
-tests/gates/opencode-plugin.test.js          the opencode plugin's config, guard and lane check
-tests/gates/description-overlap.test.js      two lanes claiming one trigger name each other
-tests/install/run.sh                         the install test, once per runtime
-tests/install/home-untouched.test.sh         the gates write nothing into HOME
-tests/conformance/runner-isolation.test.sh   the conformance runner never writes to a real home
-tests/conformance/plant-codex-roles.test.sh  the runner plants Codex roles into its scratch home
-tests/conformance/merge-opencode-provider.test.sh  the runner's opencode provider merge
-tests/conformance/run.sh <runtime> --free    the free conformance rows, once per runtime
-tests/gates/ci-pins.test.js                  the nightly workflow's pins and permissions
-```
-
-`tests/companion/ignore-guarantees.sh`, the visual companion's ignore
-guarantees, is run by hand instead: it starts real servers. The live
-conformance rows are run by hand too, because they spend model quota:
-`tests/conformance/README.md` says how.
-
-`fx-plan` and `fx-implement` are absent from the lane suite on purpose: their
-triggers need repository state a scratch directory cannot supply.
-
-A lane with two intents keeps a prompt for each: `<lane>.txt` and
-`<lane>__<variant>.txt`, both required to pass. That is the regression net for
-widening a description, which can add one trigger and silently cost another.
-A lane needing a subject on disk gets `fixtures/<lane>.sh`.
-
-The decisions behind fx's shape are in `docs/adr/`.
+`scripts/check-all` runs every gate and test suite. The live conformance rows
+spend model calls and run by hand: see `tests/conformance/README.md`. The
+decisions behind fx's shape are in `docs/adr/`.
