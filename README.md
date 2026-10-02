@@ -9,8 +9,8 @@ fx runs on four harnesses: Claude Code, Codex, opencode 1.x and opencode 2.x.
 
 ## How the pipeline runs
 
-One path, two approval gates. Nothing skips a gate because the work looks
-small: the artifact scales with the work, the approval does not.
+One path, two approval gates. Small work still passes both gates; only the
+documents get shorter.
 
 ```
   you: "let's build X"
@@ -73,7 +73,7 @@ Ten of the twelve work on their own, with no plan: only `fx-plan` and
 
 ## The commands
 
-Five more skills are typed by you and never picked by the model.
+You type five more skills yourself. The model never picks them.
 
 | Command | Does |
 |---|---|
@@ -88,9 +88,9 @@ How you type them: `/fx:fx-<name>` on Claude Code, `/fx-<name>` on opencode,
 
 ## What the lenses are, and when they fire
 
-Six read-only agents: five lenses and a devil's advocate. None can write, on
-any harness. Each costs a full subagent, so per task only three lenses fire,
-and only on a narrow tripwire. At the branch review every lens fires on its
+fx has six read-only agents: five lenses and a devil's advocate. None of them
+can write, on any harness. Each one costs a full subagent, so per task only
+three lenses fire, and only on a narrow tripwire. At the branch review every lens fires on its
 broad trigger, alongside `fx-devils-advocate`. `/fx:fx-audit` also runs
 `fx-lens-pipeline`.
 
@@ -102,7 +102,7 @@ broad trigger, alongside `fx-devils-advocate`. `/fx:fx-audit` also runs
 | `fx-lens-silent-failure` | a swallowing handler, `retry_on`, a job, consumer or webhook receiver, a loop past a failed record | `rescue`, `catch`, workers, retry paths |
 | `fx-lens-pipeline` | no | code that enqueues, publishes, schedules or fans out work; code that governs queue depth, admission or producer flow control |
 
-## Always on, underneath all of it
+## What runs in every session
 
 ```
                  lib/preamble.js renders PREAMBLE.md for each runtime
@@ -129,8 +129,9 @@ dispatch routing, Claude Code only:
       + lib/dispatch-route.js    opus without "Capable because:" -> sonnet; never refuses
 ```
 
-`PREAMBLE.md` is a small bootstrap, about 3K characters, that makes the model
-invoke a skill before it acts. Routing lives in each skill's own description.
+`PREAMBLE.md` is a small bootstrap, about 3K characters, that tells the model
+to invoke a skill before it acts. Each skill's own description tells the model
+when to use it.
 
 After the bootstrap, `lib/preamble.js` appends one companions line to every
 session and subagent. It names repowise, ponytail and caveman at full, and
@@ -138,16 +139,15 @@ session and subagent. It names repowise, ponytail and caveman at full, and
 lacks. Set `companions` in `.fx.json` to replace the line, or to `""` to turn
 it off.
 
-**The guard does not police where you are.** Which branch you commit on is the
-workflow's business: work happens in a worktree because `fx-implement` sets one
-up, and integration is a question you get asked rather than a wall you hit.
+The guard does not check which branch you are on. `fx-implement` does its
+work in a worktree, and at the end it asks you how to integrate.
 
-What it does refuse, anywhere, because each is irreversible or leaves the
-machine: force push, pushing the base branch, a bare `push` that names no
+The guard refuses these anywhere, because each one is irreversible or leaves
+the machine: force push, pushing the base branch, a bare `push` that names no
 target, deleting a remote branch, `--no-verify`, `reset --hard`, `clean -f`,
 `branch -D`, `stash drop`, `checkout .`, `tag -d`, and any commit carrying an
-attribution trailer. A `sh -c` wrapper does not get you past it; a `grep` for
-one of those strings is data and does.
+attribution trailer. Wrapping a command in `sh -c` does not get it past the
+guard. A `grep` for one of those strings is treated as data and runs.
 
 ## Layout
 
