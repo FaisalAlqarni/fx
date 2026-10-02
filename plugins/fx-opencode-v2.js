@@ -96,6 +96,10 @@ export default {
       } catch (e) { report(e); }
     };
     if (hiddenError) { failures.push(`fx: the hidden-lane list failed to load: ${messageOf(hiddenError)}`); console.error(`[fx] the hidden-lane list failed to load: ${messageOf(hiddenError)}`); }
+    // Agents the hide-lanes step finished. Their incoming skill allow can only be
+    // the user's rule (it beat fx's deny); for any other agent it is the runtime
+    // default. A missing record must never read as permission, so it denies.
+    const hidden = new Set();
     const notice = () => (failures.length ? ` [${failures.join('; ')}]` : '');
     const deny = (ev, message) => { ev.effect = 'deny'; ev.message = `[fx] ${message}${notice()}`; };
 
@@ -155,6 +159,7 @@ export default {
             if (ev.action !== 'skill') return;
             const lane = (ev.resources || []).find((r) => HIDDEN.includes(r));
             if (!lane) return;
+            if (ev.effect === 'allow' && hidden.has(ev.agent)) return;
             deny(ev, `${lane} is typed by the user, not picked by the model: ask them to run /${lane}.`);
           } catch (e) {
             failures.push(`fx: evaluate failed: ${messageOf(e)}`);
@@ -220,6 +225,7 @@ export default {
             for (const lane of HIDDEN) {
               if (!a.permissions.some((r) => r.action === 'skill' && r.resource === lane)) a.permissions.push(hideRule(lane));
             }
+            hidden.add(agent.id);
           }));
         }
       });

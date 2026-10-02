@@ -449,7 +449,9 @@ hit, by throwing, and fails open when the check itself breaks.
 
 fx hides `fx-audit`, `fx-setup`, `fx-critique`, `fx-grill` and `fx-handoff`
 from the model by adding a `skill` deny rule for each to the built-in agents
-and to fx's own, and the evaluate hook refuses a call to one at run time. You
+and to fx's own, and the evaluate hook refuses a call to one at run time. If
+your own rule allows one on an agent fx configured (such as `build`), the hook
+honours it and the model may load that lane. You
 reach them as commands: the plugin registers `/fx-<name>`. On 2.0.18,
 `opencode run` has no command flag and treats `/fx-audit` as plain text, so
 type the command in the TUI, or call `opencode api session.command`. Live row
@@ -460,14 +462,15 @@ Limits:
 
 - An agent you define in `opencode.json` is applied after fx's transforms, so
   fx's deny rules do not reach it. It lists the five lanes; a call to one is
-  still refused at run time.
+  still refused at run time, even if your rule allows it, because fx cannot
+  tell that allow from the runtime default.
 - Hiding steers the model. A direct read of a `SKILL.md` file is not blocked.
 - `opencode api skill.list` lists every skill whatever the rules say. Read
   `opencode debug agents` for what an agent is denied.
 - If your host sets session-level permissions, they cannot widen fx's six
   read-only agents: the evaluate hook allows them read, grep, glob and list,
   and `external_directory` only under fx's own `references` directory, and
-  denies everything else. This is read from the 2.0.18 source, not probed.
+  denies everything else. This read-only rule has no user override. This is read from the 2.0.18 source, not probed.
 
 ### What fx cannot observe on 2.x
 

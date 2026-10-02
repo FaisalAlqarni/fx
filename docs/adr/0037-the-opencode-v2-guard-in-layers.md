@@ -29,7 +29,9 @@ The lane check runs in `permission.evaluate` on the `edit` action, resolves each
 
 ## An exception to ADR-0026
 
-ADR-0026 lets the user's own permission answer win over fx's grant. Two checks here deliberately do not: the hidden-lane backstop and the read-only re-deny override an incoming `allow`. Why: neither is a grant. They enforce what the lane's author meant. The five user-invoked lanes are typed by a person, and the six review agents cannot write. A host or session rule that widens either would remove the property. A user who wants a reviewer that writes defines an agent under another name; nothing lets the model pick a hidden lane.
+ADR-0026 lets the user's own permission answer win over fx's grant. One check here deliberately does not: the read-only re-deny overrides an incoming `allow`. Why: it is not a grant. It enforces what the agents' author meant, that the six review agents cannot write. A host or session rule that widens them would remove the property. A user who wants a reviewer that writes defines an agent under another name.
+
+The hidden-lane backstop used to be a second exception. It now yields to the user's explicit allow (owner decision 2026-10-02). The evaluate hook sees only the incoming effect, not the rule behind it. The `hide lanes` transform records each agent it finished. Rules are last-match-wins and the user's config lands after fx's deny, so on a recorded agent an incoming `allow` can only be the user's rule, and the call goes through. On an agent fx never processed, such as one defined in `opencode.json` (probe Q11), an incoming `allow` is the runtime default, not an answer, so the call is still refused. If the transform failed, nothing is recorded and every agent is refused. fx blocks the model from picking a hidden lane only when the user said nothing.
 
 ## What the 2.x guard does not catch
 
@@ -39,7 +41,7 @@ ADR-0026 lets the user's own permission answer win over fx's grant. Two checks h
 
 ## Limits on hiding the lanes and on read-only agents
 
-- An agent the user defines in `opencode.json` is applied after fx's transforms, so fx's skill-deny rules do not reach it. It lists the five hidden lanes. A call to one is still refused at run time by the `permission.evaluate` backstop. Probe question 11 disproved the plan to hide them there.
+- An agent the user defines in `opencode.json` is applied after fx's transforms, so fx's skill-deny rules do not reach it. It lists the five hidden lanes. A call to one is still refused at run time by the `permission.evaluate` backstop, because the runtime default allow on an unrecorded agent is not the user's answer. Probe question 11 disproved the plan to hide them there.
 - Hiding steers the model. A direct read of a `SKILL.md` file is not blocked.
 - `opencode api skill.list` is unfiltered. Hiding is in each agent's `skill` deny rules, shown by `opencode debug agents`.
 - A host that sets session-level permissions cannot widen fx's six read-only agents: the evaluate hook allows them read, grep, glob and list, allows `external_directory` only when every resource is under fx's own `references` directory, and denies every other action. This is read from the 2.0.18 source; the gate test uses a stub.

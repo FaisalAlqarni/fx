@@ -120,9 +120,17 @@ async function evaluate(rec, ev) {
   assert.ok(sent.includes('src/') && !sent.includes('$ARGUMENTS'), 'the arguments replace $ARGUMENTS');
 
   for (const lane of HIDDEN) {
-    const e = await evaluate(rec, { action: 'skill', resources: [lane], effect: 'allow' });
-    assert.strictEqual(e.effect, 'deny', `${lane} is refused by the backstop`);
+    // fx's rule won (incoming deny) on an agent the transform processed: stays denied.
+    const e = await evaluate(rec, { action: 'skill', resources: [lane], agent: 'build', effect: 'deny' });
+    assert.strictEqual(e.effect, 'deny', `${lane} stays denied when fx's own rule won`);
     assert.ok(e.message && e.message.includes(lane), `${lane}'s refusal names it`);
+    // An incoming allow on a processed agent can only be the user's rule: honoured.
+    const yes = await evaluate(rec, { action: 'skill', resources: [lane], agent: 'build', effect: 'allow' });
+    assert.strictEqual(yes.effect, 'allow', `${lane}: the user's allow on an agent fx configured is honoured`);
+    // An agent the transform never saw (user-defined, probe Q11): allow is the runtime default.
+    const ghost = await evaluate(rec, { action: 'skill', resources: [lane], agent: 'ghost', effect: 'allow' });
+    assert.strictEqual(ghost.effect, 'deny', `${lane} is refused for an agent fx never processed`);
+    assert.ok(ghost.message && ghost.message.includes(lane), `${lane}'s backstop refusal names it`);
   }
   const open = await evaluate(rec, { action: 'skill', resources: ['fx-tdd'], effect: 'allow' });
   assert.strictEqual(open.effect, 'allow', 'a model-facing lane stays allowed');
@@ -136,8 +144,8 @@ async function evaluate(rec, ev) {
   await mod.default.setup(mine.ctx);
   assert.strictEqual(mine.rec.agents.get('fx-lens-security').system, 'user owned', "a user's own agent definition wins");
   assert.strictEqual(effect(mine.rec.agents.get('keeps-audit').permissions, 'skill', 'fx-audit'), 'allow', "a user's explicit skill rule keeps the lane listed to the model");
-  assert.strictEqual((await evaluate(mine.rec, { action: 'skill', resources: ['fx-audit'], effect: 'allow' })).effect, 'deny',
-    "a user's explicit skill rule does not survive the backstop: the lane is listed to the model but refused at call time (the hook's effect is final)");
+  assert.strictEqual((await evaluate(mine.rec, { action: 'skill', resources: ['fx-audit'], agent: 'keeps-audit', effect: 'allow' })).effect, 'allow',
+    "a user's explicit skill rule on an agent fx configured is honoured at call time");
   assert.ok(mine.rec.commands.some((c) => c.name === 'fx-audit'), 'setup never reads the command list: the runtime merges same-named commands itself');
 
 
@@ -289,6 +297,20 @@ async function evaluate(rec, ev) {
   assert.strictEqual(broken.rec.commands.length, 0, 'no commands when registration fails');
   const refused = await evaluate(broken.rec, { action: 'skill', resources: ['fx-audit'], effect: 'allow' });
   assert.ok(refused.message.includes('boom'), 'a denied evaluation carries the failure list');
+
+  // A failed hide-lanes step records nothing, so no agent's allow reads as permission.
+  const nolist = stub(dir);
+  nolist.ctx.agent.transform = async (cb) => { await cb({ list: () => { throw new Error('list down'); }, get() {}, update() {} }); return { dispose() {} }; };
+  await mod.default.setup(nolist.ctx);
+  for (const agent of ['build', 'plan', 'general', 'keeps-audit']) {
+    assert.strictEqual((await evaluate(nolist.rec, { action: 'skill', resources: ['fx-audit'], agent, effect: 'allow' })).effect, 'deny', `${agent}: denied when the hide-lanes step failed`);
+  }
+  const throwing = stub(dir);
+  const realUpdate = throwing.ctx.agent.transform;
+  throwing.ctx.agent.transform = (cb) => realUpdate((ed) => cb({ ...ed, update: (id, fn) => { if (id === 'plan') throw new Error('update down'); return ed.update(id, fn); } }));
+  await mod.default.setup(throwing.ctx);
+  assert.strictEqual((await evaluate(throwing.rec, { action: 'skill', resources: ['fx-audit'], agent: 'plan', effect: 'allow' })).effect, 'deny', 'an agent whose update failed is not recorded, so it is denied');
+  assert.strictEqual((await evaluate(throwing.rec, { action: 'skill', resources: ['fx-audit'], agent: 'build', effect: 'allow' })).effect, 'allow', 'an agent whose update succeeded is recorded');
 
   const nohook = stub(dir);
   nohook.ctx.session.hook = async () => { throw new Error('no ctx hook'); };

@@ -83,6 +83,13 @@ model's own skill list honors a global `permissions` rule such as
 defined in `opencode.json`, and a rule added there does not reach such an
 agent, which then still sees every skill (probe Q11).
 
+The `permission.evaluate` backstop for the five hidden lanes yields to the
+user's explicit allow on agents fx configured: the transform records them, and
+an incoming `allow` there can only come from a user rule. For an agent fx never
+processed (one defined in `opencode.json`) the incoming `allow` is the runtime
+default, so the backstop still refuses. If the transform failed, every agent is
+refused. The read-only re-deny of fx's six review agents is unchanged.
+
 ## What fx cannot observe on v2
 
 - A subagent's own tool calls do not appear in the parent's
