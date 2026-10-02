@@ -99,6 +99,7 @@ const expv2 = (m) => JSON.stringify({ fx_export: { info: { id: 'ses_c' }, messag
 const real = (error) => ({ id: 'msg_0fa1d6381001yAkr5hIXXi4Jj6', time: { created: 1790902625167, completed: 1790902625357 }, type: 'assistant', agent: 'badchild', model: { id: 'q', providerID: 'orbad', variant: 'default' }, content: [], snapshot: { files: [] }, finish: 'error', error });
 assert.strictEqual(or.childCheck('opencode-v2', expv2(real({ type: 'provider.auth', message: 'Missing Authentication header', status: 401 }))), '401', 'opencode-v2: the real 401 export message');
 assert.strictEqual(or.childCheck('opencode-v2', expv2(real({ type: 'provider.invalid-request', message: 'qwen/qwen3.8-27b-nope is not a valid model ID', status: 400 }))), null, 'opencode-v2: the real 400 is the row\'s own bad request, not a provider outage');
+// The 429 and 503 cases below are synthetic: no real 429 or 503 was captured.
 assert.strictEqual(or.childCheck('opencode-v2', expv2({ type: 'assistant', error: { type: 'provider.rate-limit', status: 429, message: 'rate-limited upstream' } })), '429', 'opencode-v2: a flat message error status');
 assert.strictEqual(or.childCheck('opencode-v2', expv2({ type: 'assistant', error: { statusCode: 503 } })), '503', 'opencode-v2: statusCode works too');
 assert.ok(or.childCheck('opencode-v2', expv2({ type: 'assistant', error: { message: 'Insufficient credits' } })), 'opencode-v2: a provider message counts');

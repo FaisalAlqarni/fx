@@ -597,7 +597,7 @@ were made on 2026-10-01 on the branch that adds OpenCode 2.x. Logs are in
 | Codex | 0.155.1 | 18 | 0 | 0 | 16 | 12 (rows 12 and 17 passed on the paid primary) |
 | OpenCode | 1.18.25 | 18 | 0 | 0 | 14 | 12 |
 | OpenCode | 2.0.18 | 18 | 0 | 0 | 12 | 12 |
-| OpenCode | 2.0.18, rows 19 and 20 only (task 16, 2026-10-02) | 2 | 0 | 0 | 0 | 0 (both rows ran on the paid `qwen/qwen3.8-27b`) |
+| OpenCode | 2.0.18, rows 19 and 20 only (task 16, 2026-10-02) | 2 | 0 | 0 | 1 (row 19, first run: the model spelled the command `git -C <dir> push`; a prompt-spelling failure, fixed in the prompt) | 0 (both rows ran on the paid `qwen/qwen3.8-27b`) |
 
 Claude Code's other twelve rows were proven across the task 21 run (16 pass) and `78ff5b3` (rows 13 and 14); this branch
 re-ran only the six it changed.

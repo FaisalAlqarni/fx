@@ -30,7 +30,7 @@ ENVV=(env TMPDIR="$tmp" XDG_DATA_HOME="$WORK.data")
 ( cd "$WORK" && exec timeout 600 "${SJ[@]}" "${KW[@]}" "${ENVV[@]}" opencode serve --hostname 127.0.0.1 --port "$PORT" ) \
   </dev/null >"$LOGDIR/serve.out" 2>&1 &
 SRV=$!
-trap 'kill "$SRV" 2>/dev/null; rm -rf -- "$WORK" "$LOGDIR" "$WORK.start" "$WORK.data" "$WORK.export" "${KEYDIR:-}"' EXIT
+trap 'kill "$SRV" 2>/dev/null; wait "$SRV" 2>/dev/null; rm -rf -- "$WORK" "$LOGDIR" "$WORK.start" "$WORK.data" "$WORK.export" "${KEYDIR:-}"' EXIT
 
 # The server prints a one-off password for its own port; the client reads it
 # from OPENCODE_PASSWORD. It guards a throwaway local server, nothing else.
@@ -42,7 +42,7 @@ for _ in $(seq 60); do
   api command.list | grep -q '"fx-handoff"' && { ok=1; break; }
   sleep 1
 done
-[ -n "$ok" ] || fail "the server never listed fx-handoff in command.list (serve: $(head -c 300 "$LOGDIR/serve.out"))"
+[ -n "$ok" ] || fail "the server never listed fx-handoff in command.list (serve: $(head -c 300 "$LOGDIR/serve.out" | sed 's/password .*/password [redacted]/'))"
 
 SID="$(api session.create -d "{\"location\":{\"directory\":\"$WORK\"},\"agent\":\"build\"}" \
   | node -e 'try{console.log(JSON.parse(require("fs").readFileSync(0,"utf8")).data.id)}catch{}')"
