@@ -393,3 +393,48 @@ transforms, so `ctx.agent.transform` neither lists it nor adds the deny rule
 to it, and it still sees `fx-audit`. Task 04's hiding covers the built-ins and
 fx's own agents only; the `evaluate` backstop rejects a call but hides
 nothing, and ADR-0026 must state the gap.
+
+## 12. Real child provider errors (task 16, 2026-10-02)
+
+Scratch config with an agent `badchild` (`mode: subagent`, a pinned `model`),
+dispatched once by `qwen/qwen3.8-27b` through OpenRouter. The failed call is in
+the child's session export (`opencode session export <id> --standalone`), as an
+assistant message with `finish: "error"` and a flat `error` object. The parent
+session shows a clean `tool-calls` then `stop`: only the export names the error.
+
+- A provider entry (`providers.orbad`, package
+  `@opencode/ai/providers/openai-compatible`, OpenRouter's base URL, a bad key)
+  gives a real 401:
+  `{"id":"msg_0fa1d6381001yAkr5hIXXi4Jj6","type":"assistant","agent":"badchild","model":{"id":"q","providerID":"orbad","variant":"default"},"content":[],"finish":"error","error":{"type":"provider.auth","message":"Missing Authentication header","status":401}}`
+- A model id added to `providers.openrouter.models` that OpenRouter does not
+  know gives a real 400:
+  `{"type":"assistant","agent":"badchild","model":{"id":"qwen/qwen3.8-27b-nope","providerID":"openrouter","variant":"default"},"finish":"error","error":{"type":"provider.invalid-request","message":"qwen/qwen3.8-27b-nope is not a valid model ID","status":400}}`
+  and the child's session ends `{"type":"idle","outcome":"failed"}`.
+- A model id not in the provider's list never reaches OpenRouter: the parent's
+  subagent tool call fails with `error: {"type":"tool.execution","message":
+  "Subagent failed (sessionID: ses_...): Model unavailable: openrouter/qwen/qwen3.8-27b-nope"}`.
+  That is a local lookup failure, not a provider error.
+- Not captured: a 429. The free listing answered a single dispatch.
+- The error is `{ type, message, status }` with no `data` wrapper, and the
+  message has `type: "assistant"`, no `role`. `childCheck` already read that
+  shape: the live 401 run exited 75 through it. A 400 is not a provider outage
+  (`STATUS` is 401, 429 and 5xx), so it does not make a run inconclusive.
+
+Verdict: proven: the 2.x export error shape is the flat one the fixture
+assumed; the fixture now holds the real lines.
+
+## 13. Row 19 and row 20 on the real binary (task 16)
+
+- Policy denial, plain `git push --force origin main` with the plugin removed
+  from the scratch config: the shell tool part is `status: "error"`, `error:
+  "Blocked by configuration policy"`, and the fake remote has no ref.
+  Without the exact spelling the model rewrites it to `git -C <dir> push ...`,
+  which no policy matches and which pushed (first run, FAIL), so the prompt
+  pins the plain form.
+- Command invocation: `opencode serve --hostname 127.0.0.1 --port <p>` prints a
+  one-off `server password`; `opencode api --server http://127.0.0.1:<p>`
+  needs it in `OPENCODE_PASSWORD`. `session.create`, then `session.command
+  --param sessionID=<id> -d '{"name":"fx-handoff","text":"<token>"}'`; the export
+  holds a user message with the lane text ending `Arguments, if any: <token>`,
+  then the model's turns and `idle` `succeeded`.
+

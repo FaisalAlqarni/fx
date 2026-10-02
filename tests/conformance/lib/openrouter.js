@@ -116,8 +116,8 @@ function childProviderError(logText) {
     // OpenCode: the session export's assistant message error, as the CLI wrote it.
     if (j.fx_export) {
       for (const m of j.fx_export.messages || []) {
-        // 1.x: info.error.data. 2.x: a flat message with error.status/message
-        // (inferred, no real sample; see the test).
+        // 1.x: info.error.data. 2.x: a flat message whose error is
+        // {type, message, status} (a real 401 and 400, probe-findings.md section 12).
         const e = (m.info || m).error;
         const d = e && (e.data || e);
         if (!d) continue;

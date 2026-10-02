@@ -67,7 +67,9 @@ Every denial the plugin makes starts with `[fx] `. The installer's policies
 (`experimental.policies`) apply after the plugin and answer only `Blocked by
 configuration policy`, so a plain `git branch -D` shows that text, not the
 guard's reason; spellings the policies skip (`git -C . branch -D`) show the
-guard's.
+guard's. Live row 19 shows the policy layer alone (plugin removed from the
+scratch config): a plain `git push --force origin main` is refused with that
+generic text and the remote receives nothing.
 
 ## Skill hiding
 
@@ -101,6 +103,12 @@ agent, which then still sees every skill (probe Q11).
 where `state.content` (a list of text parts) holds the output that `run
 --format json` shows as `state.output`, and a refused call's `state.error` is
 `{ type, message }`, not a string. The conformance reader handles both.
+
+A subagent whose provider call failed shows up only in its own export: an
+assistant message with `finish: "error"` and `error: { type, message, status }`
+(real 2.0.18 lines: `provider.auth` 401 "Missing Authentication header",
+`provider.invalid-request` 400). The parent session reads as clean (probe
+section 12).
 
 ## Headless runs and the question tool
 

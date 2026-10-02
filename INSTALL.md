@@ -417,7 +417,9 @@ Full detail and the limits are in `docs/adr/0037`.
    the installed policy with that generic text, never fx's reason. Other
    spellings, such as `git -C . branch -D`, `sh -c '...'` or a command after a
    heredoc, skip the policies, reach fx's guard and get fx's reason, which
-   starts with `[fx] `.
+   starts with `[fx] `. Live row 19 runs the policy layer alone (the plugin
+   removed from the scratch config) and sees a plain `git push --force origin
+   main` refused with that text.
 3. **A throwing `tool.execute.before`.** The fallback when layer 1 could not
    register.
 
@@ -450,7 +452,9 @@ from the model by adding a `skill` deny rule for each to the built-in agents
 and to fx's own, and the evaluate hook refuses a call to one at run time. You
 reach them as commands: the plugin registers `/fx-<name>`. On 2.0.18,
 `opencode run` has no command flag and treats `/fx-audit` as plain text, so
-type the command in the TUI, or call `opencode api session.command`.
+type the command in the TUI, or call `opencode api session.command`. Live row
+20 does the latter against its own `opencode serve` and sees `/fx-handoff` deliver
+its lane prompt with the argument substituted.
 
 Limits:
 
@@ -593,6 +597,7 @@ were made on 2026-10-01 on the branch that adds OpenCode 2.x. Logs are in
 | Codex | 0.155.1 | 18 | 0 | 0 | 16 | 12 (rows 12 and 17 passed on the paid primary) |
 | OpenCode | 1.18.25 | 18 | 0 | 0 | 14 | 12 |
 | OpenCode | 2.0.18 | 18 | 0 | 0 | 12 | 12 |
+| OpenCode | 2.0.18, rows 19 and 20 only (task 16, 2026-10-02) | 2 | 0 | 0 | 0 | 0 (both rows ran on the paid `qwen/qwen3.8-27b`) |
 
 Claude Code's other twelve rows were proven across the task 21 run (16 pass) and `78ff5b3` (rows 13 and 14); this branch
 re-ran only the six it changed.

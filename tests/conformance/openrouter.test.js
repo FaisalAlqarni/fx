@@ -90,11 +90,15 @@ for (const h of ['opencode']) {
   assert.strictEqual(or.childCheck(h, exp({ role: 'assistant', modelID: 'x' })), null, `${h}: a clean export`);
   assert.strictEqual(or.childCheck(h, exp({ role: 'assistant', error: { name: 'ToolError', data: { message: 'tool failed: status 500 in my script', statusCode: 400 } } })), null, `${h}: a non-provider error`);
 }
-// 2.x exports flat messages (no info key; recorded from 2.0.18). No real 2.x
-// export with an error exists, so this error shape is INFERRED from the stream
-// line {"type":"error","error":{"type":"provider.rate-limit","status":429}}:
-// an error object with status or statusCode and a message.
+// 2.x exports flat messages (no info key). The two assistant messages below
+// are the real 2.0.18 export lines of a subagent whose provider call failed
+// (probe-findings.md, section 12): `finish: "error"` and an `error` of
+// {type, message, status}, no wrapper. A 401 came from a provider entry with a
+// bad key; a 400 from a model id OpenRouter does not know.
 const expv2 = (m) => JSON.stringify({ fx_export: { info: { id: 'ses_c' }, messages: [m] } });
+const real = (error) => ({ id: 'msg_0fa1d6381001yAkr5hIXXi4Jj6', time: { created: 1790902625167, completed: 1790902625357 }, type: 'assistant', agent: 'badchild', model: { id: 'q', providerID: 'orbad', variant: 'default' }, content: [], snapshot: { files: [] }, finish: 'error', error });
+assert.strictEqual(or.childCheck('opencode-v2', expv2(real({ type: 'provider.auth', message: 'Missing Authentication header', status: 401 }))), '401', 'opencode-v2: the real 401 export message');
+assert.strictEqual(or.childCheck('opencode-v2', expv2(real({ type: 'provider.invalid-request', message: 'qwen/qwen3.8-27b-nope is not a valid model ID', status: 400 }))), null, 'opencode-v2: the real 400 is the row\'s own bad request, not a provider outage');
 assert.strictEqual(or.childCheck('opencode-v2', expv2({ type: 'assistant', error: { type: 'provider.rate-limit', status: 429, message: 'rate-limited upstream' } })), '429', 'opencode-v2: a flat message error status');
 assert.strictEqual(or.childCheck('opencode-v2', expv2({ type: 'assistant', error: { statusCode: 503 } })), '503', 'opencode-v2: statusCode works too');
 assert.ok(or.childCheck('opencode-v2', expv2({ type: 'assistant', error: { message: 'Insufficient credits' } })), 'opencode-v2: a provider message counts');

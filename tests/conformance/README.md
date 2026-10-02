@@ -88,7 +88,7 @@ exactly like success.
 
 ## Live rows
 
-Rows 01, 02, 04 to 08, 12 and 15 to 17 drive the real CLI headlessly. Each
+Rows 01, 02, 04 to 08, 12, 15 to 17, 19 and 20 drive the real CLI headlessly. Each
 sources `lib/live.sh` after its `--describe` guard, so describing a row never
 spends anything. That file does four things, in one place:
 
