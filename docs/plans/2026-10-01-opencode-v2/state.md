@@ -238,3 +238,4 @@ Task 16: fix round 1 committed 6e2af8d (I1 password redaction, M2 wait, M3 denia
 Task 16: complete
 Known limits now (supersedes the Review section list): `echo ... | sh` guard gap (all runtimes, pre-existing); Codex max_depth 2 is test config only; v2 user-defined agents see the hidden lanes (Q11); v2 nested dispatch needs a user rule; v2 policies are spelling-sensitive (plugin guard covers); no real v2 429 sample (401 and 400 real); M6 load-time widening needs a broken checkout; plan_opencode_json duplication deferred. Closed by task 16: policies on the real binary (row 19), v2 command execute (row 20), real v2 child error shape.
 Open owner question: honour an explicit user allow for a hidden lane on v2. Status: awaiting the owner's integration choice.
+Owner (2026-10-02): hidden lanes on v2 honour an explicit user allow (task 17); integrate by merging into main locally after task 17. Task 17 BASE=4faf449, implementer dispatched (sonnet).
