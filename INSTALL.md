@@ -123,6 +123,29 @@ directory, generates the six read-only agents and fx's commands, and sets
 
 The plugin registers the skills, agents and commands itself.
 
+**From git, without keeping a clone:** add the git package spec instead:
+
+```json
+{ "plugin": ["fx@git+https://github.com/FaisalAlqarni/fx.git"] }
+```
+
+opencode's plugin manager clones the repository itself and keeps that copy,
+so there is nothing to pull. The root `package.json` points `main` at
+`index.js`, which loads this 1.x plugin; the plugin registers the skills,
+agents and commands itself, exactly as the file route above.
+
+To track a release, pin a tag:
+
+```json
+{ "plugin": ["fx@git+https://github.com/FaisalAlqarni/fx.git#v0.2.5"] }
+```
+
+Some opencode and bun versions pin a resolved git dependency in a lockfile
+or cache, so a restart may keep an older commit: clear opencode's package
+cache, or reinstall the plugin, to force the newest. A host that has both
+opencode majors on PATH can force the entry with `FX_OPENCODE_MAJOR=1`
+(or `2`) in the environment.
+
 ### Nested dispatch
 
 fx lets the built-in `general` agent dispatch subagents, unless your
@@ -186,6 +209,17 @@ The installer:
   only fx's entries and never yours.
 
 The plugin registers fx's commands itself.
+
+The git spec works on 2.x under the `plugins` key:
+
+```json
+{ "plugins": ["fx@git+https://github.com/FaisalAlqarni/fx.git"] }
+```
+
+There `index.js` loads the 2.x plugin, and the plugin side is fully
+git-sourced. The installer is still needed for what only it writes: the
+skills symlinked into the config directory, and fx's guard policies plus
+`experimental.subagent_depth` in `opencode.json`.
 
 ### Nested dispatch is yours to allow
 
