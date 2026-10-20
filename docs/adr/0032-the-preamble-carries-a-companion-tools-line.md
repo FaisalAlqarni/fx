@@ -8,7 +8,7 @@ Subagents read neither `CLAUDE.md` nor memory. The owner asked for the same thin
 
 `render()` in `lib/preamble.js` appends one line after the `repo.md` note and before the plans block, for sessions and subagents on all three runtimes. The default text, with the lane named the way the runtime addresses it:
 
-> Companion tools. Use each one this runtime has, and skip silently any it lacks: repowise for codebase questions before reading or searching files; the ponytail skill at full; the caveman skill at full; `fx:fx-humanize` on prose written for people.
+> Companion tools. Use each one this runtime has, and skip silently any it lacks: semble for codebase search before reading or grepping files, falling back to repowise, or to any other code-search tool present, when semble is missing or comes up empty; the ponytail skill at full; the caveman skill at full; `fx:fx-humanize` on prose written for people.
 
 The wording is conditional so a runtime without a tool skips it instead of failing.
 

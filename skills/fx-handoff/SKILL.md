@@ -85,7 +85,7 @@ it.
 - <what was decided>. Cost if wrong: <what it costs>.
 
 ## Invoke
-- `fx:<lane>` <why>
+- `<lane>` <why>
 
 ## Not written down anywhere
 <the thing you would say in person, or "nothing">

@@ -18,7 +18,7 @@ Announce: "Using fx-review (<task|branch> mode)."
 ## Two modes
 
 - **task**: called by `fx-implement` after each task. Correctness + Spec,
-  scoped to that task. Mid-tier model. A lens fires only on its tripwire in
+  scoped to that task. Standard-tier model. A lens fires only on its tripwire in
   §2's "Per task" column.
 - **branch**: called at the end of a run, or by you on a branch or PR. All
   axes plus every triggered lens, most capable model.
@@ -171,7 +171,7 @@ access to it) · the brief:
 > smell you spot: name it and quote the hunk. Distinguish hard violations from
 > judgement calls: documented-standard breaches can be hard, baseline smells
 > are always judgement calls, and a documented repo standard overrides the
-> baseline. Skip anything tooling enforces. Under 400 words."
+> baseline. Skip anything tooling enforces. Keep to findings the diff supports."
 
 **Spec brief**: the diff file path · the spec path or contents ·
 the brief:
@@ -179,7 +179,7 @@ the brief:
 > "Report: (a) requirements the spec asked for that are missing or partial;
 > (b) behaviour in the diff that wasn't asked for (scope creep);
 > (c) requirements that look implemented but where the implementation looks
-> wrong. Quote the spec line for each finding. Under 400 words."
+> wrong. Quote the spec line for each finding."
 
 **Lens briefs**: the `fx-lens-*` agents, each given the diff file path and
 the paths that triggered it, and this line: "Cite each finding as the source
@@ -187,7 +187,7 @@ file and its line number at HEAD, never a line number inside the diff file." Per
 A diff line number points into a file the reader never opens. Read-only by
 construction.
 
-Lenses have no Write tool (Ruling, task 08): each returns its full findings
+Lenses have no Write tool: each returns its full findings
 as its reply, as it did before the five-line contract existed. The
 controller records that reply to a findings file itself, without reasoning
 over it: see `fx-implement` §3's Lens dispatch for the exact command.

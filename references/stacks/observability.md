@@ -2,11 +2,6 @@
 
 Wide events (canonical log lines), plus this project's tracing topology.
 
-Absorbed from a Rails project's logging skill
-that sat in the wrong directory and **never loaded once** between Feb and Sep
-2026. Its examples used checkout/cart domains with a note apologising for them;
-they are rewritten here.
-
 Sources: [Stripe: Canonical Log Lines](https://stripe.com/blog/canonical-log-lines) ·
 [Observability Wide Events 101](https://boristane.com/blog/observability-wide-events-101/) ·
 [loggingsucks.com](https://loggingsucks.com)

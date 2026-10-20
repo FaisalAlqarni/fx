@@ -1,7 +1,8 @@
 provider: claude_cli
-model: claude_cli/claude-haiku-4-5
-embedder: mock
-commit_limit: 10000
+model: claude_cli/claude-haiku-5-5
+embedder: ollama
+embedding_model: qwen3-embedding:4b
+commit_limit: 1000
 reasoning: auto
 distill:
   commands:
@@ -10,4 +11,5 @@ hooks:
   read_skeleton: true
   search_digest: true
 editor_files:
-  agents_md: true
+  claude_md: false
+  agents_md: false

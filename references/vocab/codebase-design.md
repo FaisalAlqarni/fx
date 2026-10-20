@@ -303,7 +303,6 @@ elements from different designs would combine well, propose a hybrid.
 
 ## Companion references
 
-None. Deepening and design-it-twice used to be peer files and are now sections
-of this one: a lane pulls this single file and has the whole topic. References
-are leaves: no reference links to another reference, because nested references
+None. A lane pulls this single file and has the whole topic. References are
+leaves: no reference links to another reference, because nested references
 get partially read.

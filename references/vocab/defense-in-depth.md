@@ -114,8 +114,8 @@ missed:
 
 ## Interaction with the ladder
 
-The always-on preamble says never to add speculative layers. This is not that:
-these layers are added **after a real bug proved the path is reachable**, and
-each one guards a checkpoint the bad value actually passed through. That's
-evidence, not speculation. Adding all four *before* any bug exists would be the
-over-building the ladder forbids.
+`fx-tdd`'s ladder says to skip speculative need. This is not that: these
+layers are added **after a real bug proved the path is reachable**, and each
+one guards a checkpoint the bad value actually passed through. That's evidence,
+not speculation. Adding all four *before* any bug exists would be the
+over-building the ladder rules out.

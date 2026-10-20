@@ -269,7 +269,7 @@ and it is not step-bound: "every rule applied" binds flat reference just as
    running the document, not by debate. When a sentence fails, **delete the
    whole sentence** rather than trim words. The test also grades leading words:
    a word too weak to beat the default (*be thorough*) is a no-op, and the fix
-   is a stronger word (*relentless*), not a different technique.
+   is a checkable completion criterion (see above) or deleting it.
 
 ## Degrees of freedom
 

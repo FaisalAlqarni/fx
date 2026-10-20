@@ -268,8 +268,9 @@ Subagent (general-purpose):
 
     **Put it in the report under a heading `## For the controller: outside this
     task`,** with the file and line, what is wrong, and which task owns it. Then
-    say the same thing in the first three lines of your final return message,
-    where the controller reads it while deciding what to dispatch next. A
+    count it in the **Concerns** number of your reply: the controller reads
+    the report for any non-zero count, so the finding reaches it while it
+    decides what to dispatch next. A
     finding that arrives after its owning task has shipped arrived too late.
 
     Measured: an implementer found that two documents gave contradicting

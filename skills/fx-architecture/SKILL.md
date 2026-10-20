@@ -26,7 +26,7 @@ vocabulary:
   hypothetical seam, two = a real one". **Use these terms exactly in every
   suggestion. Do not drift into "component", "service", "API", or "boundary".**
 - **The domain language in `CONTEXT.md` gives names to good seams.** ADRs in
-  `docs/adr/` record decisions **this command should not re-litigate.**
+  `docs/adr/` record decisions **this skill should not re-litigate.**
 
 ## 1. Explore: scope before you scan
 

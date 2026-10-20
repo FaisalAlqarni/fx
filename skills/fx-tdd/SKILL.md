@@ -260,8 +260,8 @@ it is noise that rots the moment the code moves. Write the reason, the
 constraint, or the thing that bit someone, or write nothing. Comments are the
 highest-volume prose you write, and every prose rule covers them.
 
-**Reporting the change:** code first, then at most three short lines: what was
-skipped, when to add it. If the explanation is longer than the code, delete the
+**Reporting the change:** code first, then a short note: what was skipped and
+when to add it. If the explanation is longer than the code, delete the
 explanation: every paragraph defending a simplification is complexity smuggled
 back as prose. Explanation the user asked for is not debt; give it in full.
 

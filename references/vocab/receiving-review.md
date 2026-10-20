@@ -20,13 +20,9 @@ technical correctness over social comfort.**
 
 ## Forbidden responses
 
-**Never:**
-
-- "You're absolutely right!"
-- "Great point!" / "Excellent feedback!"
-- "Let me implement that now": before verification
-- "Thanks for catching that!"
-- "Thanks for [anything]": **any gratitude expression**
+Open with substance, not agreement or gratitude ("You're absolutely right!",
+"Great point!", "Thanks for catching that!"), and do not announce "Let me
+implement that now" before verifying.
 
 **Instead:** restate the technical requirement · ask a clarifying question ·
 push back with technical reasoning if it's wrong · or just start working.

@@ -72,8 +72,8 @@ find the cause: bisection, hypothesis testing and instrumentation all just
 consume it. **If you don't have one, no amount of staring at code will save
 you.**
 
-**Spend disproportionate effort here. Be aggressive. Be creative. Refuse to
-give up.**
+Spend most of the effort here: a loop that goes red on this bug is what makes
+every later phase mechanical.
 
 ### Inputs that shape the loop
 

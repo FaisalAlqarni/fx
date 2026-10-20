@@ -44,10 +44,10 @@ reason to trust the task, never a reason to skip the lane.
 Treat the two names as the same thing everywhere below, and rename the
 directory to `tasks/` on your first commit so the old name drains out.
 
-**Narration:** at most one short line between tool calls. The ledger is the
-record, the chat is not: every entry, ruling and completion line this skill
+**Narration:** the ledger is the record, the chat is not: every entry, ruling and completion line this skill
 asks you to write belongs in the ledger. Writing it again in chat is the
-progress summary the next section forbids.
+progress summary the next section forbids. Chat text between tool calls says
+what the user needs to follow along.
 
 ## Rulings, not stalls
 
@@ -217,8 +217,8 @@ when the mistake was its own location. Pass the absolute worktree path to each
 implementer, which is what the dispatch template already does, and reach it
 yourself with `git -C <path>` or `cd <path> && …`.
 
-The "#1 mistake" warning above is written for an implementer. For a controller
-it inverts: entering is the mistake.
+The "#1 mistake" warning in `worktree-setup.md` (bypassing the native tool) is
+written for an implementer. For a controller it inverts: entering is the mistake.
 
 **An uncommitted plan is not a blocker.** `git worktree add` works fine
 against a dirty tree. The only real consequence: a worktree checked out from a
@@ -404,7 +404,8 @@ shrinks your context if you read the rest the same way.
 - **The five-line reply decides the next move.** Read a findings or report
   file only to rule on a ⚠️ item, a plan-mandated finding (`C/I/M` names one:
   `grep -n plan-mandated <findings>`), or a non-zero **Concerns** count (read
-  the report's Concerns section), and then read only that part:
+  the report's Concerns section and its `## For the controller: outside this
+  task` section), and then read only that part:
   `grep -n <term> <file>`, `sed -n '<a>,<b>p' <file>`.
 - **A reply longer than five lines: do not act on the extra text**, with one
   exception. Status BLOCKED or NEEDS_CONTEXT puts its specifics past the
@@ -542,7 +543,7 @@ findings enter the fix loop below like any other; its `[Minor]` findings
 never do (see below).
 
 **A lens has no Write tool and replies with its full findings**, not a
-five-line contract (Ruling, task 08). Save that reply verbatim with
+five-line contract. Save that reply verbatim with
 your Write tool to `docs/plans/<slug>/findings/<NN>-lens-<name>.md`, the
 reply text as the file content, without reasoning over it. The Write tool
 takes the text as it is, so no line inside the reply can end the file early
@@ -890,7 +891,7 @@ committed, durable, the record. Sibling directories belong to other work.
 | "I remember finishing that task" | Trust the ledger, not your memory. |
 | "This task is blocked, I'll stop" | Skip it, ledger it, take the next unblocked one. |
 | "I'll run these in parallel to save time" | Implementers never run in parallel: the test environment is shared. |
-| "I'm obviously not in a worktree: no need to check" | Run the Step 0 detection. Harness-created isolation and submodules both fool eyeballing; the commands settle it. |
+| "I'm obviously not in a worktree: no need to check" | Run the detection commands in `worktree-setup.md` §1. Harness-created isolation and submodules both fool eyeballing; the commands settle it. |
 | "`git worktree add` is quicker than hunting for a native tool" | A native tool owns placement, branching and cleanup. Bypassing it is the #1 mistake: it creates phantom state the harness can't see or manage. |
 | "The worktree directory is surely ignored already" | Run `git check-ignore`. An unignored worktree directory commits the whole tree into the repo. |
 | "Any directory name works" | Explicit instructions beat an existing project-local directory, which beats the `.worktrees/` default. |

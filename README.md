@@ -134,7 +134,8 @@ to invoke a skill before it acts. Each skill's own description tells the model
 when to use it.
 
 After the bootstrap, `lib/preamble.js` appends one companions line to every
-session and subagent. It names repowise, ponytail and caveman at full, and
+session and subagent. It names semble for code search (repowise or another
+search tool as the fallback), ponytail and caveman at full, and
 `fx-humanize` for prose, and tells the agent to skip any tool its runtime
 lacks. Set `companions` in `.fx.json` to replace the line, or to `""` to turn
 it off.
