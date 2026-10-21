@@ -113,3 +113,46 @@ A claim with no verdict is a build error.
 - `docs/plans/<slug>/` as a directory, always
 - Local files only; nothing published to GitHub
 - Commits per task with **no attribution trailers**
+
+## Incident record
+
+Incidents moved out of the lane files that every session loads. Each is filed under the rule it supports, which stays in the lane file with one line of why. Text is as it was in the lane file.
+
+**Rule:** Name the task that owns the second half of a changed requirement (`skills/fx-plan/SKILL.md`)
+
+Measured: a finding moved a marker "to the CSV **and** to the claim page".
+The model method existed, the CSV column was written, both were tested, and
+**nothing rendered it in any view**. No task's acceptance criteria carried the
+second half. Every task passed its own review, the story was half met, and it
+surfaced only because an implementer on an unrelated task happened to notice,
+nine tasks later. The coverage walk in §6 would have caught it; it had already
+run.
+
+**Rule:** A criterion that says a thing exists must assert that it can be reached (`skills/fx-plan/SKILL.md`)
+
+Measured: a claimant's rejected claim showed the
+rejection reason and the resubmit control, both tested, both reviewed, and the
+list those claims appeared in linked no row. The feature was unreachable for its
+entire audience and every criterion passed.
+
+**Rule:** Reachability has two halves: assert the form's own action and method (`skills/fx-plan/SKILL.md`)
+
+Measured on the very next task, after the rule above was already in
+force: a test correctly followed the edit link out of a list, then hand-built
+the `PATCH` it expected the form to send. Repointing that form at the wrong
+route left **the whole suite green** while the real button posted to `create`,
+failed on a missing field, and rendered a different page.
+
+**Rule:** Write criteria for the successful path, not only its guards (`skills/fx-plan/SKILL.md`)
+
+Measured:
+an admin task carried "demoting the last manager is refused" and "deactivating
+the last manager is refused" and never "an admin deactivates a user through the
+screen". A correct model method with no control anywhere would have passed the
+whole file.
+
+**Rule:** Task commits stage explicit paths, never -A (`skills/fx-plan/SKILL.md`)
+
+Measured: every task commit in one build carried the ledger, because the
+generated tasks used `-A` while this template used explicit paths. The
+implementer noticed and reported it as expected behaviour, which it had become.

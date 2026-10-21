@@ -191,12 +191,6 @@ Subagent (general-purpose):
     you ran everything, and you did, and the document is still broken for the
     person who has none of that.
 
-    Measured: a guide put `bin/rails secret` at step 4 and `bundle install` at
-    step 5. Every command was executed and reported with real output. On a fresh
-    host step 4 fails, because booting the app needs the gems step 5 installs.
-    The implementer's own summary listed the order it had actually used, and it
-    was the reverse of the printed one.
-
     A scratch run from an empty directory, top to bottom, is the only thing that
     catches this. Say in your report that you did it that way.
 
@@ -221,19 +215,6 @@ Subagent (general-purpose):
     takes a params hash. The finding tells you the shape; the source of truth
     tells you the set.
 
-    Measured on one twelve-task build, all three found by the final review after
-    every task had passed its own: a visibility gate applied to five routes and
-    missing from a sixth, with the test's own comment naming "the fifth
-    per-record route" so the enumeration had never been done; a parameter shape
-    guard added in two controllers and absent from the third and busiest; and a
-    privilege wrapper present in five runbook blocks and missing from the sixth.
-    **Each was declared general in the round that added it.**
-
-    Measured: a round hardened a refusal flash so a failed action could not
-    render as success, and added, in the same commit, a second action whose
-    return value was dropped exactly the way the first one's had been. The
-    reviewer found it and named it as the mirror of the fix beside it.
-
     ### An instruction you were given that is wrong
 
     A fix round arrives as a numbered list from the controller, and it carries
@@ -247,14 +228,6 @@ Subagent (general-purpose):
     not do as written, what defect you found in it, and what you did instead.
     An item you cannot satisfy any other way is the one case for stopping and
     saying so.
-
-    Measured: a fix round specified a root route whose redirect would have made
-    a manager's own claims list unreachable, and would have bounced a manager who
-    had just filed a claim away from the claim they filed. The implementer
-    satisfied the underlying ruling a different way and said so. **The evidence
-    it was right is a test that went away:** the specified version required
-    amending an unrelated task's test to follow an extra redirect, and the
-    alternative made that amendment unnecessary.
 
     That is the tell worth carrying. A change that stops needing to touch
     another task's tests usually fits the design; one that needs a new
@@ -271,16 +244,7 @@ Subagent (general-purpose):
     count it in the **Concerns** number of your reply: the controller reads
     the report for any non-zero count, so the finding reaches it while it
     decides what to dispatch next. A
-    finding that arrives after its owning task has shipped arrived too late.
-
-    Measured: an implementer found that two documents gave contradicting
-    restore procedures, one of which deleted the SQLite `-wal` file and
-    destroyed committed transactions. It correctly declined to edit another
-    task's file, then had nowhere to put the finding: it tried to message the
-    controller, could not resolve an address, and fell back to the top-level
-    session. Three other subagents in the same run did exactly the same thing.
-    **Four agents independently reaching for a channel the template never gave
-    them is what says the channel was missing.**
+    finding that arrives after its owning task has shipped arrived too late.**
 
     ## When you are in over your head
 

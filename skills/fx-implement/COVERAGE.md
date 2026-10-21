@@ -116,3 +116,146 @@ A claim with no verdict is a build error.
 | Superseded by an explicit decision | 71 |
 | Dropped | 37 (all of them the Example Workflow, claims 253 to 289) |
 | **Unaccounted** | **0** |
+
+## Incident record
+
+Incidents moved out of the lane files that every session loads. Each is filed under the rule it supports, which stays in the lane file with one line of why. Text is as it was in the lane file.
+
+**Rule:** A task file that looks complete still needs the worktree, ledger, per-task review and lenses (`skills/fx-implement/SKILL.md`)
+
+Measured: a 13-task
+plan handed to a capable agent produced a working, well-tested build with no
+worktree, no ledger, no per-task review and no lens dispatch.
+
+**Rule:** A ruling whose cost lands on a later task names the checkpoint that catches it (`skills/fx-implement/SKILL.md`)
+
+Measured on a twelve-task build: a task 02 ruling recorded
+"a dead controller survives until 09, which the task review would catch". It
+did survive, and **that review caught it, eight tasks later**, because the
+ruling had told it to look.
+
+**Rule:** Check a ledger claim the way you check an implementer claim (`skills/fx-implement/SKILL.md`)
+
+Measured: a controller verified about forty implementer claims by executing
+something, several found wanting, and made four false claims of its own, every
+one self-generated. It ran the forty expensive checks and skipped the cheap
+ones on itself. Its own summary: "none of them went through the check I applied
+to everyone else's work." Of five bad verification probes in the same run, the
+probe was wrong every time and the code was right.
+
+**Rule:** Wait only on a process the harness tracks (`skills/fx-implement/SKILL.md`)
+
+Measured on one build: an implementer launched its suite this way and stopped
+seven times in a row, each time reporting that it was waiting. Nothing was ever
+going to wake it. The controller spent the afternoon force-resuming it.
+
+**Rule:** Fill the implementer template rather than composing a dispatch from memory (`skills/fx-implement/SKILL.md`)
+
+Measured over one
+twelve-task build: 26 of 26 dispatches were written in the tool call, and each
+dropped whichever clause was not in mind that minute. The fx-tdd lane was never
+invoked once across 111 subagents.
+
+**Rule:** Tell the plan reviewer to look for a story that must land in two places (`skills/fx-implement/SKILL.md`)
+
+Measured: a marker written
+  to a CSV, tested at two seams, rendered in no view. Found nine tasks late, by
+  an implementer working on something else.
+
+**Rule:** Tell the plan reviewer to look for a criterion satisfied by requesting a URL directly (`skills/fx-implement/SKILL.md`)
+
+Measured: a rejected claim's reason and resubmit
+  control, both tested, on a page nothing linked to.
+
+**Rule:** Tell the plan reviewer to look for criteria that are all refusals (`skills/fx-implement/SKILL.md`)
+
+Measured on a task caught *before* dispatch: every criterion refused
+  something, none said the successful action happens through the screen.
+
+**Rule:** Run every command the CI configuration runs before declaring the branch ready (`skills/fx-implement/SKILL.md`)
+
+Measured: a twelve-task build ran its suite after every task and every fix
+round, green each time. **Nobody opened `.github/workflows/ci.yml` once.** The
+final review found the linter exiting 1 on four offences that had been reported
+as pre-existing at task 09 and owned by nobody, and the scanner exiting 3. Both
+had been red the entire build, and the item that made them visible was a
+reviewer running the file rather than the tests.
+
+The offences themselves were two spaces. The cost was that a branch reported
+ready for twelve tasks was not.
+
+**Rule:** Run a procedure in the order the document prints it (`skills/fx-implement/implementer-prompt.md`)
+
+Measured: a guide put `bin/rails secret` at step 4 and `bundle install` at
+step 5. Every command was executed and reported with real output. On a fresh
+host step 4 fails, because booting the app needs the gems step 5 installs.
+The implementer's own summary listed the order it had actually used, and it
+was the reverse of the printed one.
+
+**Rule:** Enumerate a rule from the source of truth, and fix the mirror of a fix (`skills/fx-implement/implementer-prompt.md`)
+
+Measured on one twelve-task build, all three found by the final review after
+every task had passed its own: a visibility gate applied to five routes and
+missing from a sixth, with the test's own comment naming "the fifth
+per-record route" so the enumeration had never been done; a parameter shape
+guard added in two controllers and absent from the third and busiest; and a
+privilege wrapper present in five runbook blocks and missing from the sixth.
+**Each was declared general in the round that added it.**
+
+Measured: a round hardened a refusal flash so a failed action could not
+render as success, and added, in the same commit, a second action whose
+return value was dropped exactly the way the first one's had been. The
+reviewer found it and named it as the mirror of the fix beside it.
+
+**Rule:** An instruction from the controller that is wrong is satisfied by its intent (`skills/fx-implement/implementer-prompt.md`)
+
+Measured: a fix round specified a root route whose redirect would have made
+a manager's own claims list unreachable, and would have bounced a manager who
+had just filed a claim away from the claim they filed. The implementer
+satisfied the underlying ruling a different way and said so. **The evidence
+it was right is a test that went away:** the specified version required
+amending an unrelated task's test to follow an extra redirect, and the
+alternative made that amendment unnecessary.
+
+**Rule:** Put a finding about another task's files under a heading in the report (`skills/fx-implement/implementer-prompt.md`)
+
+Measured: an implementer found that two documents gave contradicting
+restore procedures, one of which deleted the SQLite `-wal` file and
+destroyed committed transactions. It correctly declined to edit another
+task's file, then had nowhere to put the finding: it tried to message the
+controller, could not resolve an address, and fell back to the top-level
+session. Three other subagents in the same run did exactly the same thing.
+**Four agents independently reaching for a channel the template never gave
+them is what says the channel was missing.
+
+**Rule:** A ruling in the ledger is inherited by the reviewer (`skills/fx-implement/task-reviewer-prompt.md`)
+
+Measured: a ruling recorded at task 02 said a placeholder
+controller "survives until 09, which the task review would catch". It did
+survive, and the task 09 review caught it, because it had read the ledger.
+Nothing in the task file mentioned it.
+
+**Rule:** Never write "walked it" about something you read (`skills/fx-implement/task-reviewer-prompt.md`)
+
+Measured: a review reported walking an install guide "as an installer",
+specifically hunting for steps that would fail, and passed it. Five steps
+were broken. **Every miss was in a shell command and the prose was reviewed
+well.** Three of the five needed no `sudo` to catch.
+
+**Rule:** Running the commands is not running the document (`skills/fx-implement/task-reviewer-prompt.md`)
+
+Measured: an implementer ran every privilege-free command in an install
+guide and reported real output for each. The guide still failed at step 4 on
+a fresh host, because step 4 booted the app and step 5 installed the gems.
+Its own disclosure listed the executed order as install-then-secret, the
+reverse of the printed order, and it passed on a machine where the gems were
+already present. **The command was honestly run and the document was still
+broken.**
+
+**Rule:** Write the findings file first, then send the message (`skills/fx-implement/task-reviewer-prompt.md`)
+
+Measured: a whole-branch review ran twenty minutes across a hundred tool
+calls, then used its final message to correct one of its own claims. The
+correction was right and worth making. **The findings never reached the
+controller at all**, and two further exchanges asking for them produced two
+more messages that were not them.

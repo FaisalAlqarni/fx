@@ -37,10 +37,7 @@ Subagent (general-purpose):
 
     That is the point of the ledger. A ruling whose cost lands on a later task
     is made by a session that will not be there to check it, so the check has
-    to be inherited. Measured: a ruling recorded at task 02 said a placeholder
-    controller "survives until 09, which the task review would catch". It did
-    survive, and the task 09 review caught it, because it had read the ledger.
-    Nothing in the task file mentioned it.
+    to be inherited.
 
     Report a violated ruling as **Important**, quoting the ledger line.
 
@@ -103,11 +100,6 @@ Subagent (general-purpose):
     most expensive kind of false pass, because the reader of that document is an
     operator following it at 3am.
 
-    Measured: a review reported walking an install guide "as an installer",
-    specifically hunting for steps that would fail, and passed it. Five steps
-    were broken. **Every miss was in a shell command and the prose was reviewed
-    well.** Three of the five needed no `sudo` to catch.
-
     **Never write "walked it", "followed it" or "tried it" about something you
     read.** Say read, or say ran, and say which lines.
 
@@ -115,14 +107,6 @@ Subagent (general-purpose):
     sequence, and a step that works out of order proves nothing about the step
     as printed. Execute it top to bottom in the order the page gives, in a
     scratch directory, and say that you did.
-
-    Measured: an implementer ran every privilege-free command in an install
-    guide and reported real output for each. The guide still failed at step 4 on
-    a fresh host, because step 4 booted the app and step 5 installed the gems.
-    Its own disclosure listed the executed order as install-then-secret, the
-    reverse of the printed order, and it passed on a machine where the gems were
-    already present. **The command was honestly run and the document was still
-    broken.**
 
     So check the order as a claim of its own: does step N depend on anything
     only step N+1 provides? A fresh scratch run answers it and nothing else
@@ -254,12 +238,6 @@ Subagent (general-purpose):
     implementer's work survives in the commit; a review's exists in one message
     and nowhere else. Spend that message on a correction, a clarification, or an
     answer to a follow-up, and the findings go with it.
-
-    Measured: a whole-branch review ran twenty minutes across a hundred tool
-    calls, then used its final message to correct one of its own claims. The
-    correction was right and worth making. **The findings never reached the
-    controller at all**, and two further exchanges asking for them produced two
-    more messages that were not them.
 
     So the file is written first and the message points at it. Then a follow-up
     can be answered freely, because the findings are already safe.

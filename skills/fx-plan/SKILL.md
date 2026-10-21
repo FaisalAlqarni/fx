@@ -199,14 +199,6 @@ already does: never a bare "tell me when to start."
   the task that owned its first half. For each resolved finding, name the task
   that now owns the changed requirement, and if the change added a place the
   behaviour must appear, say which task owns **that** place.
-
-  Measured: a finding moved a marker "to the CSV **and** to the claim page".
-  The model method existed, the CSV column was written, both were tested, and
-  **nothing rendered it in any view**. No task's acceptance criteria carried the
-  second half. Every task passed its own review, the story was half met, and it
-  surfaced only because an implementer on an unrelated task happened to notice,
-  nine tasks later. The coverage walk in §6 would have caught it; it had already
-  run.
 - **Keep discussing** → return to §1. The plan document stays on disk; treat
   the unresolved point as an open question and re-run the interview around it.
 - **Save for later** → **fx has no representation for this anywhere else.**
@@ -326,29 +318,18 @@ broken feature.
 **A criterion that says a thing exists is satisfied by a test that asks for it
 directly, and that does not prove anyone can get to it.** Per-record tests fetch
 the record's path, which is right for testing the page and silently assumes a
-route in that nothing checks. Measured: a claimant's rejected claim showed the
-rejection reason and the resubmit control, both tested, both reviewed, and the
-list those claims appeared in linked no row. The feature was unreachable for its
-entire audience and every criterion passed. When a story depends on someone
+route in that nothing checks. When a story depends on someone
 arriving somewhere, say so in the criterion and assert it by **following the
 link**, not by fetching the path.
 
 **Reachability has two halves, and following the link only proves the first.**
 Getting to the control is one; the control pointing at the right thing is the
-other. Measured on the very next task, after the rule above was already in
-force: a test correctly followed the edit link out of a list, then hand-built
-the `PATCH` it expected the form to send. Repointing that form at the wrong
-route left **the whole suite green** while the real button posted to `create`,
-failed on a missing field, and rendered a different page. Assert against what
+other. Assert against what
 the page actually contains, the form's own `action` and `method`, not against
 the route you believe it uses.
 
 **Write criteria for the successful path, not only its guards.** Refusals are
-easy to state and easy to test, so a task drifts into a list of them. Measured:
-an admin task carried "demoting the last manager is refused" and "deactivating
-the last manager is refused" and never "an admin deactivates a user through the
-screen". A correct model method with no control anywhere would have passed the
-whole file. The refusals are the fence; the story is the field.
+easy to state and easy to test, so a task drifts into a list of them. The refusals are the fence; the story is the field.
 -->
 
 
@@ -400,10 +381,6 @@ task holds things the task did not write: the controller's ledger edits land
 there continuously, and a second writer's half-finished work lands there if two
 tasks ever overlap. `-A` sweeps all of it into the task's commit, which is how a
 task diff stops being the thing its review was scoped to.
-
-Measured: every task commit in one build carried the ledger, because the
-generated tasks used `-A` while this template used explicit paths. The
-implementer noticed and reported it as expected behaviour, which it had become.
 The **Files** section already lists exactly what to stage.
 
 **Test code is written out; implementation code is not.** The test is the

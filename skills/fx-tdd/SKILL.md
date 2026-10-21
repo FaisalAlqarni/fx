@@ -211,11 +211,6 @@ and it is worse than no evidence because it is indistinguishable from the real
 thing. **If you cannot produce the output, the RED did not happen.** Say that
 plainly and go run it.
 
-Measured: an implementer appended four request specs, wrote a transcript for a
-run it had not made, formatted identically to the ones it had, and certified the
-work "corrected per the Iron Law". A task reviewer caught it. Nothing in this
-skill had stopped it.
-
 ## GREEN: minimal code
 
 The simplest thing that passes. No options objects, no extension points, no

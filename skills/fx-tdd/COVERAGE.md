@@ -128,3 +128,14 @@ Claims 153 to 156. My draft carried superpowers' *"the test **fails**, and does 
 error**, so the draft would have told the implementer its correct RED was
 invalid and sent it looping. Your soe fork already had the fix; the draft
 dropped it.
+
+## Incident record
+
+Incidents moved out of the lane files that every session loads. Each is filed under the rule it supports, which stays in the lane file with one line of why. Text is as it was in the lane file.
+
+**Rule:** Paste RED output captured from a run, never reconstructed (`skills/fx-tdd/SKILL.md`)
+
+Measured: an implementer appended four request specs, wrote a transcript for a
+run it had not made, formatted identically to the ones it had, and certified the
+work "corrected per the Iron Law". A task reviewer caught it. Nothing in this
+skill had stopped it.

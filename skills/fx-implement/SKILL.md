@@ -22,9 +22,7 @@ session's history, which also keeps your own context clean for coordination.
 **If the task files look complete enough to just execute, read this.** They
 usually are, and that is the trap. A good task file names the files, the seam
 and the acceptance criteria, so an agent opening one has everything it needs to
-start typing and nothing visibly missing to go looking for. Measured: a 13-task
-plan handed to a capable agent produced a working, well-tested build with no
-worktree, no ledger, no per-task review and no lens dispatch. What is absent
+start typing and nothing visibly missing to go looking for. What is absent
 from a task file is exactly what this skill supplies:
 
 - **A worktree**, so the main checkout is never written to.
@@ -73,10 +71,7 @@ parked on a question costs their whole day and buys nothing.
 
 **Name the checkpoint that would catch it.** A cost with no catcher is a
 prediction; a cost with one is an assignment, and the reviewer who reads the
-ledger inherits it. Measured on a twelve-task build: a task 02 ruling recorded
-"a dead controller survives until 09, which the task review would catch". It
-did survive, and **that review caught it, eight tasks later**, because the
-ruling had told it to look. Rulings whose cost lands on a later task are the
+ledger inherits it. Rulings whose cost lands on a later task are the
 ones worth this, and they are exactly the ones the session that made them will
 not be around to check.
 
@@ -106,12 +101,7 @@ every controller error measured so far, and each is cheap to catch:
 Before a ledger line asserts what a file contains, read that file. Before it
 asserts what the codebase does, search the codebase and not the diff.
 
-Measured: a controller verified about forty implementer claims by executing
-something, several found wanting, and made four false claims of its own, every
-one self-generated. It ran the forty expensive checks and skipped the cheap
-ones on itself. Its own summary: "none of them went through the check I applied
-to everyone else's work." Of five bad verification probes in the same run, the
-probe was wrong every time and the code was right.
+Why: checks applied only to other agents' work leave your own claims unverified.
 
 **Four things stop you, and only these:**
 
@@ -164,10 +154,6 @@ launched in the background. **A background command wakes you only if the
 harness is tracking it.** A process you started some other way, a container
 left running, a shell that detached, is invisible: it finishes and nothing
 happens, and the turn already ended.
-
-Measured on one build: an implementer launched its suite this way and stopped
-seven times in a row, each time reporting that it was waiting. Nothing was ever
-going to wake it. The controller spent the afternoon force-resuming it.
 
 **So make the thing you wait on the thing the harness tracks.** Launch the run
 as a tracked background command and end the turn on it. When you can only reach
@@ -485,10 +471,7 @@ rounds 1 to 3 resume this agent.
 
 Template: [implementer-prompt.md](./implementer-prompt.md)
 
-**Fill the template rather than composing from memory.** Measured over one
-twelve-task build: 26 of 26 dispatches were written in the tool call, and each
-dropped whichever clause was not in mind that minute. The fx-tdd lane was never
-invoked once across 111 subagents. Tailoring is still wanted, and the briefs
+**Fill the template rather than composing from memory.** A dispatch written from memory drops whichever clause was not in mind. Tailoring is still wanted, and the briefs
 carrying ledger rulings and named risks are why several defects were caught.
 Reconstruction is the part that fails: open the template, fill it, then add the
 task's own context.
@@ -727,15 +710,11 @@ where the plan picked up one, passes every gate in the build.
 Tell it to look for these shapes, which is where the misses actually were:
 
 - **A story that must land in two places** (a file *and* a screen, a model rule
-  *and* its surfacing) where one half has an owner. Measured: a marker written
-  to a CSV, tested at two seams, rendered in no view. Found nine tasks late, by
-  an implementer working on something else.
+  *and* its surfacing) where one half has an owner.
 - **A criterion satisfied by requesting a URL directly**, which never asserts
-  anyone can reach the page. Measured: a rejected claim's reason and resubmit
-  control, both tested, on a page nothing linked to.
+  anyone can reach the page.
 - **Criteria that are all refusals.** The guards get stated and the story does
-  not. Measured on a task caught *before* dispatch: every criterion refused
-  something, none said the successful action happens through the screen.
+  not.
 - **The reverse direction:** what the tasks assume that no story states. That is
   where undocumented load-bearing rules live, and they are invisible to a review
   that reads the task file.
@@ -818,15 +797,7 @@ A repository that gates on a linter and a security scanner has told you what
 passing means there, and a suite that passes while two of four jobs fail is a
 branch that cannot merge.
 
-Measured: a twelve-task build ran its suite after every task and every fix
-round, green each time. **Nobody opened `.github/workflows/ci.yml` once.** The
-final review found the linter exiting 1 on four offences that had been reported
-as pre-existing at task 09 and owned by nobody, and the scanner exiting 3. Both
-had been red the entire build, and the item that made them visible was a
-reviewer running the file rather than the tests.
-
-The offences themselves were two spaces. The cost was that a branch reported
-ready for twelve tasks was not.
+Why: a suite can pass while the CI linter and scanner fail; only running the CI commands shows it.
 
 ### Classify every failing test
 
