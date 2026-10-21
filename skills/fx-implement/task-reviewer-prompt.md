@@ -19,27 +19,25 @@ Subagent (general-purpose):
 
     ## What was requested
 
-    Read the task: [TASK_FILE]
+    Read the brief: [BRIEF_FILE]
 
-    Global constraints from the design/plan that bind this task:
-    [GLOBAL_CONSTRAINTS]
+    It is the same file the implementer worked from, recompiled just before
+    this review: the task, the global constraints that bind it, the
+    controller's context, every live ruling, the design passages the task
+    names, and the stack text that applies.
 
-    ## Rulings the ledger assigned to this task
+    ## Rulings in the brief
 
-    Read the ledger: [LEDGER_FILE]
+    Read its `## Rulings` section, including rulings made many tasks ago. A
+    ruling that says a later task owns something, or that names the task
+    review as what would catch a cost, **is a requirement this review must
+    check**, exactly like an acceptance criterion. The implementer may not
+    have been told about a ruling made after its dispatch.
 
-    Search it for `Ruling:` lines naming this task, including ones made many
-    tasks ago. A ruling that says a later task owns something, or that names
-    the task review as what would catch a cost, **is a requirement this review
-    must check**, exactly like an acceptance criterion. The implementer was
-    usually never told about it: rulings are made by the controller, and a
-    fresh subagent gets the task file, not the session history.
+    A ruling whose cost lands on a later task is made by a session that will
+    not be there to check it, so the check has to be inherited.
 
-    That is the point of the ledger. A ruling whose cost lands on a later task
-    is made by a session that will not be there to check it, so the check has
-    to be inherited.
-
-    Report a violated ruling as **Important**, quoting the ledger line.
+    Report a violated ruling as **Important**, quoting the ruling line.
 
     ## What the implementer claims they built
 
@@ -278,7 +276,7 @@ Subagent (general-purpose):
 
     Task <NN>: minor (deferred): <one-liner>
 
-    Use the task number named in [TASK_FILE]'s filename. The controller
+    Use the task number in the brief's `## Task` heading. The controller
     greps these lines and checks their count against the Minor number in
     your `C/I/M`; write exactly one line per Minor finding, no more, no
     fewer, never by reading your findings.
@@ -297,14 +295,10 @@ Subagent (general-purpose):
 
 **Placeholders:**
 - `[MODEL]`: REQUIRED, per Model Selection
-- `[TASK_FILE]`: REQUIRED, the same file the implementer worked from
-- `[GLOBAL_CONSTRAINTS]`: the binding requirements copied **verbatim** from
-  `plan.md` or `design.md`: exact values, formats, and stated relationships
-  between components. Not process rules: those are already in this template
-- `[LEDGER_FILE]`: REQUIRED, the path to `state.md`. Pass the path, never a
-  copied extract: rulings that bind this task are often many tasks old, and the
-  controller deciding which ones matter is the controller doing the review's job
-  for it and getting it wrong
+- `[BRIEF_FILE]`: REQUIRED, the path `scripts/compile-brief` wrote just
+  before this dispatch. It carries the task, the global constraints and every
+  live ruling, so the controller passes no extract and picks no rulings for
+  the review
 - `[FINDINGS_FILE]`: REQUIRED, where you write your own findings before
   summarising. Not the implementer's report
 - `[REPORT_FILE]`: REQUIRED

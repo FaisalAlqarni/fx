@@ -6,7 +6,7 @@
 # this row through the conformance runner once per case per rep.
 #
 # The reviewer sees only what fx's own task-reviewer-prompt.md gives a real
-# task review: the task file, the plan's Global Constraints, the ledger, a
+# task review: the brief (task, Global Constraints, rulings, design excerpt), a
 # one-line report and the diff. Never add a hint about the planted defect
 # anywhere in this row.
 set -uo pipefail
@@ -29,23 +29,6 @@ TASK_FILE="$(ls "$FX/tests/fixture-build/repo/docs/plans/2026-01-01-notes/tasks/
 [ -n "$TASK_FILE" ] || fail "no fixture task file for task $TASK_NUM"
 MATCH="$(cat "$CASE_DIR/match")"
 
-# [GLOBAL_CONSTRAINTS] carries plan.md's Global Constraints plus the fixture
-# design's "Storage and search rules" (review finding I3, ledger Ruling P):
-# the exact rules six of the nine planted defects violate live in the
-# design's body, not the plan, since Ruling K moved them there so the
-# coverage audit and branch review (and now this bench) read them.
-PLAN="$FX/tests/fixture-build/repo/docs/plans/2026-01-01-notes/plan.md"
-DESIGN="$FX/tests/fixture-build/repo/docs/plans/2026-01-01-notes/design.md"
-GLOBAL_CONSTRAINTS="$(P="$PLAN" D="$DESIGN" node -e '
-  const fs = require("fs");
-  const plan = fs.readFileSync(process.env.P, "utf8");
-  const design = fs.readFileSync(process.env.D, "utf8");
-  const gc = plan.match(/^## Global Constraints\n([\s\S]*?)\n## /m);
-  const rules = design.match(/^## Storage and search rules\n([\s\S]*?)\n## /m);
-  if (!gc || !rules) process.exit(1);
-  process.stdout.write(gc[1].trim() + "\n\nStorage and search rules (design.md):\n" + rules[1].trim());
-')" || fail "could not read Global Constraints from $PLAN and $DESIGN"
-
 # 2. base and head. Base carries the seed plus the good reference of every
 # fixture module except this case's own task file(s); head replaces just
 # that file with the case's version, so the diff a reviewer reads touches
@@ -64,15 +47,23 @@ cp -a "$CASE_DIR/files/." "$WORK/" || fail "could not copy the case's own files"
 git -C "$WORK" add -A && git -C "$WORK" commit -q -m "task $TASK_NUM" || fail "could not commit the case"
 HEAD_SHA="$(git -C "$WORK" rev-parse HEAD)" || fail "could not read the head commit"
 
-# 3. the review package, an empty ledger, and a one-line report: exactly what
+# 3. the review package, the compiled brief, and a one-line report: exactly what
 # a real task review reads, nothing that hints at the planted defect.
 DIFF_FILE="$WORK/.review-bench-diff.md"
 ( cd "$WORK" && "$FX/skills/fx-implement/scripts/review-package" review-bench "$BASE" "$HEAD_SHA" "$DIFF_FILE" >/dev/null ) \
   || fail "review-package failed"
 
-LEDGER_FILE="$WORK/.review-bench-ledger.md"
-printf '# fx ledger: plan: docs/plans/2026-01-01-notes/plan.md\n\nNo entries yet.\n' > "$LEDGER_FILE" \
-  || fail "could not write $LEDGER_FILE"
+# [BRIEF_FILE] is what scripts/compile-brief writes for a real task review:
+# the task, plan.md's Global Constraints and no rulings. The fixture design's
+# "Storage and search rules" ride in as the task's Design line (review finding
+# I3, ledger Ruling P): the exact rules six of the nine planted defects violate
+# live in the design's body, not the plan (Ruling K).
+BRIEF_TASK="$WORK/.review-bench-task.md"
+{ cat "$TASK_FILE"; printf '\n**Design:** Storage and search rules\n'; } > "$BRIEF_TASK" \
+  || fail "could not write $BRIEF_TASK"
+BRIEF_FILE="$WORK/.review-bench-brief.md"
+"$FX/skills/fx-implement/scripts/compile-brief" --worktree "$FX/tests/fixture-build/repo" \
+  2026-01-01-notes "$BRIEF_TASK" "$BRIEF_FILE" >/dev/null || fail "compile-brief failed"
 
 # [REPORT_FILE] states the truth: the case's own task file (added alongside
 # its implementation at head, review Ruling S) is run for real, and its real
@@ -96,7 +87,7 @@ FINDINGS_FILE="$WORK/.review-bench-findings.md"
 
 # 4. fill the live template's fenced prompt from the working tree, so a later
 # change to it (task 08's, for instance) is what this bench measures.
-PROMPT="$(TASK_FILE="$TASK_FILE" GLOBAL_CONSTRAINTS="$GLOBAL_CONSTRAINTS" LEDGER_FILE="$LEDGER_FILE" \
+PROMPT="$(BRIEF_FILE="$BRIEF_FILE" \
   REPORT_FILE="$REPORT_FILE" BASE_SHA="$BASE" HEAD_SHA="$HEAD_SHA" DIFF_FILE="$DIFF_FILE" FINDINGS_FILE="$FINDINGS_FILE" \
   node "$FX/tests/review-bench/fill-template.js" "$FX/skills/fx-implement/task-reviewer-prompt.md")" \
   || fail "could not fill the reviewer template"

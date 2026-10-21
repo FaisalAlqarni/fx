@@ -432,27 +432,30 @@ line to the ledger, with the ISO-8601 time you will pass to `--since` in step 5:
 (Write the line without the backticks.) The line is what a resumed controller
 checks against `git log`, and what the cost step measures from.
 
-**The task file is the brief.** Pass its path. Never make a subagent read the
-whole plan file.
+**Compile one brief.** Write the controller's context for this task to a file
+(`.fx/<slug>/context/<NN>.md`): one line on where the task fits, interfaces and
+decisions from earlier tasks the task file cannot know, your resolution of any
+ambiguity, and a pointer to any ledger entry where an earlier task parked a
+finding in this area. Then run, from the controller's own directory,
+`node <skill base directory>/scripts/compile-brief --worktree <worktree> --context <file> <SLUG> <TASK_FILE> <BRIEF_FILE>`
+and pass `<BRIEF_FILE>` (`.fx/<slug>/briefs/<NN>.md`). The brief holds the task
+file, the plan's Global Constraints, your context, every live ruling, the
+design passages the task's `**Design:**` line names and the stack text its
+`**Stack:**` line names (the whole stack files `.fx.json` names when it has
+none). Never make a subagent read the whole plan file.
 
-The dispatch contains exactly five things:
-
-1. One line on where this task fits in the project.
-2. The task path, introduced as *"read this first: it is your requirements,
-   with the exact values to use verbatim."*
-3. Interfaces and decisions from earlier tasks that the task file cannot
-   know.
-4. Your resolution of any ambiguity you noticed in the task.
-5. The report-file path and the report contract.
+The dispatch contains exactly three things: the brief path, introduced as
+*"read this first: it is your requirements, with the exact values to use
+verbatim"*; the report-file path and the report contract; and the worktree
+path.
 
 **Exact values (numbers, magic strings, signatures, test cases) appear only
 in the task file**, never restated in the dispatch, so there is one source of
 truth.
 
-**A dispatch describes one task, not the session's history.** Do not paste
-accumulated prior-task summaries: *a real session's dispatch hit 42k
-characters, 99% of it pasted history.* A fresh subagent needs its task, the
-interfaces it touches, and the Global Constraints. Nothing else.
+**A brief describes one task, not the session's history.** Do not paste
+accumulated prior-task summaries into the context file. A fresh subagent needs
+its task, the interfaces it touches, and the Global Constraints. Nothing else.
 
 **Report file:** name it after the task (`tasks/03-foo.md` →
 `.fx/<slug>/reports/03-foo-report.md`) and put the path in the dispatch. The implementer
@@ -471,10 +474,7 @@ rounds 1 to 3 resume this agent.
 
 Template: [implementer-prompt.md](./implementer-prompt.md)
 
-**Fill the template rather than composing from memory.** A dispatch written from memory drops whichever clause was not in mind. Tailoring is still wanted, and the briefs
-carrying ledger rulings and named risks are why several defects were caught.
-Reconstruction is the part that fails: open the template, fill it, then add the
-task's own context.
+**Fill the template rather than composing from memory.** A dispatch written from memory drops whichever clause was not in mind. Open the template, fill it, and put the task's own context in the context file.
 
 ### 2. Handle the report
 
@@ -550,6 +550,10 @@ Use the **BASE you recorded before dispatching**: never `HEAD~1`, which
 silently drops all but the last commit of a multi-commit task.
 **Never dispatch a task reviewer without a diff file.**
 
+**Recompile the brief before the reviewer dispatch**, with the same
+`compile-brief --worktree <worktree> --context <file> <SLUG> <TASK_FILE> <BRIEF_FILE>`
+command as step 1, so rulings made since dispatch are carried.
+
 **Lens dispatch.** Read the `Tripwires:` line of the implementer's report
 (`grep -n '^Tripwires:' <report>`), not the diff, and match it against the
 "Per task (tripwire)" column of the lens table in `../fx-review/SKILL.md` (§2).
@@ -581,8 +585,9 @@ ledger its `[Minor]` lines yourself, right here, one line each:
 is false: every lens tags each finding, and you already hold the full reply
 in context from dispatching it, so this costs no extra read.
 
-The reviewer gets three paths (the task file, the report file, the review
-package) plus the Global Constraints that bind the task.
+The reviewer gets four paths: the brief, the report file, the review package
+and the findings file. The brief carries the Global Constraints that bind the
+task.
 
 **Verify a constraint before you copy it.** This block carries the authority
 of a requirement into an agent with no context to doubt it, so a false belief
@@ -595,12 +600,12 @@ false, and two agents refused to comply rather than obey them.
 **An agent that pushes back on an impossible instruction is working
 correctly.** Treat it as a signal about your dispatch, not as insubordination.
 
-**The Global Constraints block is the reviewer's attention lens.** Copy the
-binding requirements **verbatim** from the plan or design: exact values,
-formats, and stated relationships between components ("same layout as X",
-"matches Y"). The reviewer's template already carries process rules (YAGNI,
-test hygiene, review method); this block is for what THIS project's design
-demands.
+**The brief's Global Constraints are the reviewer's attention lens.** They are
+copied verbatim from the plan by `compile-brief`: exact values, formats, and
+stated relationships between components. The reviewer's template already
+carries process rules (YAGNI, test hygiene, review method); the brief is for
+what THIS project's design demands. Add task-specific review directives to the
+context file, not to the dispatch.
 
 - Do not add open-ended directives ("check all uses", "run race tests if
   useful") without a concrete, task-specific reason.
@@ -627,11 +632,9 @@ twice. A review's findings exist in one message and nowhere else; put them on
 disk before that message is spent. Beside the ledger, never under `.fx/`, which
 is git-ignored.
 
-**Pass the reviewer the ledger path.** It fills `[LEDGER_FILE]`, and it is how
-a ruling made many tasks ago gets checked: the implementer was never told about
-it, because rulings are yours and a fresh subagent gets the task file only. Pass
-the path, not an extract. Choosing which old rulings are relevant is the
-review's job, and doing it for them looks like help and works like a filter.
+**Pass the reviewer the brief path.** It fills `[BRIEF_FILE]`, and it is how a
+ruling made many tasks ago gets checked: `compile-brief` carries every live
+ruling, so you choose none and the reviewer reads the ledger no more.
 
 Template: [task-reviewer-prompt.md](./task-reviewer-prompt.md)
 

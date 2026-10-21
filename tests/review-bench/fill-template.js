@@ -8,7 +8,7 @@
 //   node fill-template.js <template.md>
 //
 // Placeholder values come from environment variables named exactly like the
-// placeholder (TASK_FILE, GLOBAL_CONSTRAINTS, ...); an unset one is left
+// placeholder (BRIEF_FILE, REPORT_FILE, ...); an unset one is left
 // untouched. Also usable as a module: extractPromptBody, fillPlaceholders.
 const fs = require('fs');
 
@@ -51,7 +51,7 @@ if (require.main === module) {
     process.stderr.write('usage: fill-template.js <template.md>\n');
     process.exit(2);
   }
-  const KEYS = ['TASK_FILE', 'GLOBAL_CONSTRAINTS', 'LEDGER_FILE', 'REPORT_FILE', 'BASE_SHA', 'HEAD_SHA', 'DIFF_FILE', 'FINDINGS_FILE'];
+  const KEYS = ['BRIEF_FILE', 'REPORT_FILE', 'BASE_SHA', 'HEAD_SHA', 'DIFF_FILE', 'FINDINGS_FILE'];
   const values = {};
   for (const k of KEYS) if (process.env[k] !== undefined) values[k] = process.env[k];
   const body = extractPromptBody(fs.readFileSync(templatePath, 'utf8'));

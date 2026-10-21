@@ -29,7 +29,7 @@ assert.ok(!review.includes('auth, payment, or a migration'), 'the old task-mode 
 
 const impl = read('skills/fx-implement/SKILL.md');
 const start = impl.indexOf('**Lens dispatch.**');
-const end = impl.indexOf('The reviewer gets three paths');
+const end = impl.indexOf('The reviewer gets four paths');
 assert.ok(start >= 0 && end > start, 'the lens dispatch span is intact');
 const span = impl.slice(start, end);
 assert.ok(span.includes('tripwire'), 'lens dispatch uses the tripwire column');

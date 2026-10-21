@@ -101,8 +101,8 @@ application's own checkout writable.
 The check is cheap and mechanical: read the claim, then ask what would have to
 break for it to fail. If nothing would, narrow the words until something would.
 
-Full rules, mocking guidance and worked examples:
-`../../references/vocab/good-tests.md`.
+Full rules and mocking guidance: `../../references/vocab/good-tests.md`.
+Worked examples: `../../references/vocab/good-tests-examples.md`.
 
 ## Seams: confirm before writing anything
 
