@@ -259,3 +259,11 @@ calls, then used its final message to correct one of its own claims. The
 correction was right and worth making. **The findings never reached the
 controller at all**, and two further exchanges asking for them produced two
 more messages that were not them.
+
+**Rule:** Write the findings file first, then send the message (`skills/fx-implement/re-review-prompt.md`)
+
+Measured: a whole-branch review ran twenty minutes across a hundred tool
+calls, then used its final message to correct one of its own claims. The
+correction was right and worth making. **The findings never reached the
+controller at all**, and two further exchanges asking for them produced two
+more messages that were not them.

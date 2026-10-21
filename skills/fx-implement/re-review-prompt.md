@@ -101,12 +101,6 @@ Subagent (general-purpose):
     and nowhere else. Spend that message on a correction, a clarification, or an
     answer to a follow-up, and the findings go with it.
 
-    Measured: a whole-branch review ran twenty minutes across a hundred tool
-    calls, then used its final message to correct one of its own claims. The
-    correction was right and worth making. **The findings never reached the
-    controller at all**, and two further exchanges asking for them produced two
-    more messages that were not them.
-
     So the file is written first and the message points at it. Then a follow-up
     can be answered freely, because the findings are already safe.
 
