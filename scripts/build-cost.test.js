@@ -292,5 +292,46 @@ for (const [label, file] of [['missing', path.join(root, 'nope.jsonl')], ['empty
   assert.strictEqual(gone.stdout, `Task 04: cost unavailable (transcript not found: ${path.join(dir, 'gone.jsonl')})\n`);
 }
 
+// --task never prints a normal-looking line from partial data, and always exits 0 with one line.
+{
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bc-fail-'));
+  const at = (s) => `2026-10-21T10:${s}:00.000Z`;
+  const rec = (id, ts, n) => ({ type: 'assistant', timestamp: ts, message: { id, usage: { input_tokens: n, output_tokens: 0 }, content: [] } });
+  const task = (ctlFile) => spawnSync(process.execPath, [BIN, '--task', '05', '--since', at('00'), ctlFile], { encoding: 'utf8' });
+
+  // an unreadable subagent file (a directory named *.jsonl)
+  const c1 = path.join(dir, 'a.jsonl');
+  write(c1, [rec('m', at('01'), 10)]);
+  fs.mkdirSync(path.join(dir, 'a', 'subagents', 'x.jsonl'), { recursive: true });
+  const r1 = task(c1);
+  assert.strictEqual(r1.status, 0, r1.stderr);
+  assert.strictEqual(r1.stdout, `Task 05: cost unavailable (cannot read subagent file: ${path.join(dir, 'a', 'subagents', 'x.jsonl')})\n`);
+
+  // an unlistable subagents directory (a file where the directory should be)
+  const c2 = path.join(dir, 'b.jsonl');
+  write(c2, [rec('m', at('01'), 10)]);
+  fs.mkdirSync(path.join(dir, 'b'));
+  fs.writeFileSync(path.join(dir, 'b', 'subagents'), 'x');
+  const r2 = task(c2);
+  assert.strictEqual(r2.status, 0, r2.stderr);
+  assert.strictEqual(r2.stdout, `Task 05: cost unavailable (cannot read subagents directory ${path.join(dir, 'b', 'subagents')}: ENOTDIR)\n`);
+
+  // a controller transcript with no timestamps
+  const c3 = path.join(dir, 'c.jsonl');
+  write(c3, [{ type: 'assistant', message: { id: 'm', usage: { input_tokens: 10, output_tokens: 0 }, content: [] } }]);
+  const r3 = task(c3);
+  assert.strictEqual(r3.status, 0, r3.stderr);
+  assert.strictEqual(r3.stdout, `Task 05: cost unavailable (no timestamps in transcript: ${c3})\n`);
+
+  // a malformed subagent file
+  const c4 = path.join(dir, 'd.jsonl');
+  write(c4, [rec('m', at('01'), 10)]);
+  fs.mkdirSync(path.join(dir, 'd', 'subagents'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'd', 'subagents', 'bad.jsonl'), '{not json\n');
+  const r4 = task(c4);
+  assert.strictEqual(r4.status, 0, r4.stderr);
+  assert.strictEqual(r4.stdout, `Task 05: cost unavailable (malformed JSON: ${path.join(dir, 'd', 'subagents', 'bad.jsonl')}:1)\n`);
+}
+
 fs.rmSync(root, { recursive: true, force: true });
 console.log('build-cost: ok');

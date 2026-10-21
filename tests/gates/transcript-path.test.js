@@ -38,4 +38,25 @@ fs.writeFileSync(path.join(d, '.gitignore'), '.fx/\n');
 run(d, { hook_event_name: 'SessionStart', transcript_path: '/x/s3.jsonl' });
 assert.strictEqual(fs.readFileSync(file(d), 'utf8'), '/x/s3.jsonl\n');
 
+// A stale path from an earlier session is cleared when this session writes nothing,
+// so build-cost reports "no transcript recorded" instead of an old session's cost.
+const stale = (cwd) => { fs.mkdirSync(path.join(cwd, '.fx')); fs.writeFileSync(file(cwd), '/old/session.jsonl\n'); };
+const e = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-tp-'));
+stale(e);
+const n = run(e, { hook_event_name: 'SessionStart' });
+assert.strictEqual(n.status, 0, n.stderr);
+assert.ok(!fs.existsSync(file(e)), 'a session with no transcript_path clears the stale file');
+
+const f = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-tp-'));
+stale(f);
+const noGit = spawnSync(process.execPath, [hook], { input: JSON.stringify({ cwd: f, hook_event_name: 'SessionStart', transcript_path: '/x/s4.jsonl' }), encoding: 'utf8', env: { ...process.env, PATH: '/nonexistent' } });
+assert.strictEqual(noGit.status, 0, noGit.stderr);
+assert.ok(!fs.existsSync(file(f)), 'a git failure clears the stale file instead of leaving it');
+assert.ok(JSON.parse(noGit.stdout).hookSpecificOutput.additionalContext.length > 0, 'the preamble is still emitted');
+
+const h = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-tp-'));
+spawnSync('git', ['init', '-q'], { cwd: h });
+run(h, { hook_event_name: 'SessionStart', transcript_path: '/x/s5.jsonl' });
+assert.ok(!fs.existsSync(path.join(h, '.fx')), 'clearing never creates .fx/');
+
 console.log('transcript-path: OK');

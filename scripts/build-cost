@@ -10,9 +10,12 @@
 const fs = require('fs');
 const path = require('path');
 
+class CliError extends Error {}
+
+// Throws; the top level exits 2 with the reason. --task catches it instead,
+// because its contract is one line and exit 0.
 function fail(reason) {
-  process.stderr.write(reason + '\n');
-  process.exit(2);
+  throw new CliError(reason);
 }
 
 // Returns parsed records with a `__line` (1-based) on each, or null if the
@@ -251,6 +254,15 @@ function timestamps(records) {
 // subagent whose first user message names the task. Always exits 0.
 function taskLine(nn, since, argFile) {
   const head = `Task ${nn}:`;
+  try {
+    return taskCost(nn, since, argFile, head);
+  } catch (e) {
+    if (!(e instanceof CliError)) throw e;
+    return `${head} cost unavailable (${e.message})`;
+  }
+}
+
+function taskCost(nn, since, argFile, head) {
   let file = argFile;
   if (!file) {
     try {
@@ -263,27 +275,34 @@ function taskLine(nn, since, argFile) {
   if (records === null) return `${head} cost unavailable (transcript not found: ${file})`;
   const sinceMs = new Date(since).getTime();
   if (Number.isNaN(sinceMs)) fail(`--since is not an ISO-8601 time: ${since}`);
+  const stamps = timestamps(records);
+  if (stamps.length === 0) fail(`no timestamps in transcript: ${file}`);
   const sum = (calls) => calls.reduce((n, c) => n + (c.usage ? c.usage.tokens : 0), 0);
   let tokens = sum(dedupCalls(records, file).filter((c) => new Date(c.timestamp).getTime() >= sinceMs));
   const mine = new RegExp(`\\btask:? ${nn}\\b`, 'i');
   const subDir = path.join(path.dirname(file), path.basename(file, '.jsonl'), 'subagents');
   let subFiles = [];
-  try { subFiles = fs.readdirSync(subDir).filter((f) => f.endsWith('.jsonl')).sort(); } catch (e) { /* no subagents */ }
+  try {
+    subFiles = fs.readdirSync(subDir).filter((f) => f.endsWith('.jsonl')).sort();
+  } catch (e) {
+    if (e.code !== 'ENOENT') fail(`cannot read subagents directory ${subDir}: ${e.code}`);
+  }
   let dispatches = 0, impl = 0, tdd = 0;
   for (const f of subFiles) {
-    const sub = readRecords(path.join(subDir, f));
-    const first = sub && sub.find((r) => r.type === 'user');
+    const subFile = path.join(subDir, f);
+    const sub = readRecords(subFile);
+    if (sub === null) fail(`cannot read subagent file: ${subFile}`);
+    const first = sub.find((r) => r.type === 'user');
     if (!first || !mine.test(textOf(first))) continue;
     dispatches++;
-    const calls = dedupCalls(sub, f);
+    const calls = dedupCalls(sub, subFile);
     tokens += sum(calls);
-    if (classify(sub, readMeta(path.join(subDir, f))) === 'implementer') {
+    if (classify(sub, readMeta(subFile)) === 'implementer') {
       impl++;
       if (calls.some((c) => c.content.some((b) => b.type === 'tool_use' && b.name === 'Skill' && /fx-tdd$/.test((b.input || {}).skill || '')))) tdd++;
     }
   }
-  const last = Math.max(...timestamps(records));
-  const minutes = Math.round((last - sinceMs) / 60000);
+  const minutes = Math.round((Math.max(...stamps) - sinceMs) / 60000);
   return `${head} cost ${tokens} tokens, ${minutes} min, ${dispatches} dispatches, fx-tdd ${tdd}/${impl}`;
 }
 
@@ -380,4 +399,10 @@ function main() {
   }
 }
 
-main();
+try {
+  main();
+} catch (e) {
+  if (!(e instanceof CliError)) throw e;
+  process.stderr.write(e.message + '\n');
+  process.exit(2);
+}

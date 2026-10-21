@@ -554,9 +554,14 @@ prints. Without bash: `git log --oneline`, `git diff --stat`, and
 output never enters your own context**, and the reviewer sees commit list, stat
 summary and full diff in a single Read.
 
-When the task's ledger cost line (step 5) shows `fx-tdd 0/<i>` with `i` above
-0, no implementer invoked `fx-tdd`. Tell the task reviewer, and a report with no
-captured RED run is then an Important finding.
+**Measure the task before you dispatch the task reviewer.** From the
+controller's own directory, run
+`node <skill base directory>/../../scripts/build-cost --task <NN> --since <time from the dispatch line>`
+(the script is `../../scripts/build-cost` from this skill's base directory) and
+read the line it prints. When it shows `fx-tdd 0/<i>` with `i` above 0, no
+implementer invoked `fx-tdd`: pass that line to the task reviewer, and a report
+with no captured RED run is then an Important finding. The reviewer cannot be
+told this later, because the line does not exist until you run the script.
 
 Use the **BASE you recorded before dispatching**: never `HEAD~1`, which
 silently drops all but the last commit of a multi-commit task.
@@ -667,10 +672,10 @@ Full procedure, the three adjudication categories, and the round formats:
 ### 5. Complete the task
 
 When the review is clean, or every open finding is parked with a ruling at the
-cap: first measure the task. From the controller's own directory, run
-`node <skill base directory>/../../scripts/build-cost --task <NN> --since <time from the dispatch line>`
-(the script is `../../scripts/build-cost` from this skill's base directory) and
-append the one line it prints, before the completion line:
+cap: run `build-cost --task <NN> --since <time from the dispatch line>` again
+(the step 3 command), since fix rounds and the review itself have
+added cost since then, and append the one line it prints, before the completion
+line:
 
 ```
 `Task <NN>: cost <tokens> tokens, <minutes> min, <dispatches> dispatches, fx-tdd <k>/<i>`
