@@ -1,0 +1,238 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>fx lean pipeline design</title>
+<script src="../_assets/tailwindcss-play-3.4.17.js"></script>
+<script src="../_assets/mermaid-11.17.2.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });</script>
+<style>body{font:15px/1.6 system-ui,sans-serif}h1{font-size:1.8rem;font-weight:700;margin:1rem 0}h2{font-size:1.3rem;font-weight:600;margin:2rem 0 .5rem;border-bottom:1px solid #ddd}table{border-collapse:collapse;width:100%;font-size:13px;display:block;overflow-x:auto}th,td{border:1px solid #ddd;padding:6px 8px;vertical-align:top;text-align:left}th{background:#f4f4f4}ul,ol{padding-left:1.4rem;list-style:revert}li{margin:.2rem 0}pre{background:#f6f6f6;padding:12px;overflow-x:auto;font-size:12.5px}code{font-size:12.5px}</style></head>
+<body class="bg-white text-slate-900"><main class="max-w-5xl mx-auto px-4 py-6"><h1>fx lean pipeline: fewer reads, fewer stops, fewer chains</h1>
+<p><strong>Date:</strong> 2026-10-21
+<strong>Status:</strong> ready-for-agent
+<strong>Glossary:</strong> no CONTEXT.md exists; terms are those of <code>01-current.md</code>'s glossary. One term is added: <strong>brief</strong>, the single file a controller compiles for one implementer dispatch.</p>
+<h2>Problem Statement</h2>
+<p>The owner runs brainstorm, then plan, then implement, and it takes far too long and spends far too many tokens. Measured: a six-task fixture build takes 33 to 56 minutes and 18 to 29M tokens; real 5 to 13-task plans span 25 to 70 hours of git time; subagents spend 75% of all tokens and 89% of all turns, almost all of it re-reading context (99.4% cache reads). Before any code is written, the owner answers about R+11 stops, and sees the design twice (<code>03-gaps.md</code> rows "Target", 45, 46, 48, 13, 20).</p>
+<h2>Solution</h2>
+<p>The owner keeps the same lanes and the same quality floor, but each step reads less and stops less:</p>
+<ul>
+<li>An implementer gets one compiled brief instead of assembling 55 to 70 KB from five places.</li>
+<li>Lane files carry rules, not incident stories.</li>
+<li>A plan has fewer, deeper tasks that describe behaviour and name their tests, so there are fewer implement-review-fix chains.</li>
+<li>Brainstorm writes design.md once and asks for one approval; plan does not re-confirm it.</li>
+<li>The final branch review covers only what per-task review did not, on models chosen by one router.</li>
+<li>Every task ends with a measured cost line, so each of these changes is proved on a real build.</li>
+</ul>
+<h2>User Stories</h2>
+<ol>
+<li>As the owner, I want a brainstorm to reach an approved design.md in R+3 stops, so that I spend my time answering real questions, not approving the same content twice.</li>
+<li>As the owner, I want the confidence check and the approaches in one message, so that one reply moves the design forward.</li>
+<li>As the owner, I want to review the design once, as the file, so that what I approve is what the planner reads.</li>
+<li>As the owner, I want fx-plan to skip restating requirements when I approved the design in this session, so that I am not asked the same thing again.</li>
+<li>As the owner, I want a plan to have as few tasks as its seams need, so that the build runs fewer agent chains.</li>
+<li>As the owner, I want task files that state behaviour and name tests, so that plans are smaller and no unrun test code is copied into them.</li>
+<li>As the owner, I want the red-team offered on risk, not on task count, so that it runs when it can change the outcome.</li>
+<li>As a controller, I want to compile one brief per task from the task, the rulings that apply, the design excerpt it cites and the stack slice, so that the implementer reads one file.</li>
+<li>As an implementer, I want TDD rules in exactly one place (fx-tdd), so that I read them once.</li>
+<li>As an implementer, I want my prompt to carry my role and reply contract only, so that my context starts small.</li>
+<li>As a maintainer, I want each lane's incident stories kept in that lane's COVERAGE.md, so that the evidence survives without being loaded.</li>
+<li>As a task reviewer, I want the rulings for my task handed to me, so that I never read the whole ledger.</li>
+<li>As the owner, I want the branch pass capped and limited to lenses that did not run per task plus cross-task seams, so that the end of a build does not re-review the whole branch.</li>
+<li>As the owner, I want every model choice to go through one router, so that no agent definition silently runs on the most capable tier.</li>
+<li>As the owner, I want a cost line per task (tokens, minutes, dispatches), so that I can see where a build's time went.</li>
+<li>As a controller resuming after compaction, I want a dispatch line per task in the ledger, so that I never re-dispatch work already committed.</li>
+<li>As a controller, I want a cap on reviews outstanding while implementers advance, so that a Critical finding lands while its task is still current.</li>
+<li>As a controller, I want a cap on NEEDS_CONTEXT and BLOCKED re-dispatches, so that an impossible task stops the line once, not forever.</li>
+<li>As a maintainer, I want gate tests to pin the brief's size ceiling and the stop order, so that the savings cannot creep back.</li>
+</ol>
+<h2>Implementation Decisions</h2>
+<p><strong>1. Compile one brief per implementer dispatch</strong> (candidate 1; rows 29, 46, 48).
+- fx-implement's controller writes a brief per task into the ephemeral <code>.fx/&lt;slug&gt;/</code> area: the task file's behaviour and test names, the <code>Ruling:</code> lines that name the task or the whole plan, the design.md passages the task cites (not the whole design), and the stack section the task's files touch.
+- The implementer template shrinks to role, workspace, the brief path, the reply contract and the status vocabulary. Its TDD summary is deleted; fx-tdd is the sole owner of TDD rules.
+- good-tests.md stays a reference fx-tdd loads, but only its rules, not its worked examples (those move with candidate 2).
+- A gate test pins a byte ceiling on the template and on a fixture brief.</p>
+<p><strong>2. Move case histories out of the loaded lane text</strong> (candidate 2; row 29, 01-current "Incident prose").
+- Each "Measured:" story in fx-implement's templates, fx-implement SKILL, fx-plan SKILL and fx-tdd becomes one line of rule plus at most one line of why. The story moves to that lane's COVERAGE.md, which no session loads.
+- Applies first to the files every build loads: implementer template, task-reviewer template, fx-implement, fx-plan, fx-tdd.</p>
+<p><strong>3. Plan fewer, deeper tasks</strong> (candidate 3; rows 21, 22, 23, 24, 49, 50).
+- A task states behaviour, the confirmed seam, and the names and assertions of its tests in prose. Test code is written by the implementer through fx-tdd against real code. Verbatim snippets stay only for decision-rich shapes (schemas, state machines), as today's exception allows.
+- Right-sizing: a task is one seam. Docs, ADR, rename and config work fold into the task that needs them. Tasks that edit the same files merge.
+- Task template fields Idempotency, Risks and Interfaces become optional, present only when not the default.
+- "Similar to task N: repeat it" is replaced by "name the shared rule once in plan.md"; the brief (decision 1) carries it into each task.
+- Red-team triggers drop "10+ tasks"; the risk triggers stay.</p>
+<p><strong>4. Merge the brainstorm and plan gates into one design checkpoint</strong> (candidate 4; rows 12, 13, 14, 15, 20). Supersedes ADR 0033 (pre-production: edit in place, new ADR records the change).
+- Architectural path: interview rounds, then one message with the confidence statement and the 2 to 3 approaches, then brainstorm writes design.md section by section in the file and asks for one approval of the file, seams included.
+- The user-story list is "complete for the feature's behaviour", not "extremely extensive".
+- The checklist no longer creates one task-tool item per step.
+- fx-plan skips its restate step when the design's Status shows it was approved in this session, and keeps its handoff menu.
+- Bounded and spike paths are unchanged.</p>
+<p><strong>5. Let the branch pass review only what per-task review did not</strong> (candidate 5; rows 32, 35, 39, 40). Supersedes ADR 0029's "every lens at the branch pass".
+- <code>route()</code> owns every model choice, <code>fx:</code> agents included; the two frontmatter opus pins are removed and the security lens and devil's advocate get the most capable tier only through a <code>Capable because:</code> line the controller writes.
+- The branch pass dispatches: lenses whose tripwire never fired in any task, one pass over cross-task seams, and the unprimed devil's advocate. A hard cap on agents per branch pass lives in the lane and is checked by a gate test.
+- The task reviewer receives the applicable <code>Ruling:</code> lines in its dispatch (the same extraction the brief uses) and is no longer given the ledger path.</p>
+<p><strong>6. Write a cost line to the ledger for every task</strong> (candidate 6; row 44), plus the three pipeline-lens findings that share the ledger.
+- At each task's end the controller runs build-cost over the session transcript and appends <code>Task NN: cost &lt;tokens&gt; &lt;minutes&gt; &lt;dispatches&gt;</code>.
+- At dispatch the controller appends <code>Task NN: dispatched &lt;BASE&gt;</code>; resume checks for that line and the task's commits before re-dispatching (lens finding 3).
+- At most one task review outstanding while the next implementer runs; the next dispatch waits for it (lens finding 1).
+- NEEDS_CONTEXT and BLOCKED: two re-dispatches per task, then the task is parked with a ruling and the owner is told (lens finding 2).</p>
+<p>Order of landing: 6 first (so every later change is measured), then 2, 1, 3, 5, 4.</p>
+<h2>Testing Decisions</h2>
+<ul>
+<li><strong>Seams:</strong> the lane files and templates are tested where fx already tests them: the gates suite (<code>tests/gates/*.test.js</code>), the lane-triggering prompts, the review bench, and the six-task fixture build measured by build-cost. route() is tested at <code>lib/dispatch-route.js</code>'s own test.</li>
+<li><strong>Good tests here</strong> assert observable output: a gate fails if a template or fixture brief exceeds its byte ceiling, if the brainstorm stop order changes, if the branch pass names more agents than its cap, if an <code>fx:</code> agent dispatch without <code>Capable because:</code> is not routed to the standard tier.</li>
+<li><strong>Quality floor:</strong> the review bench must still catch at least 23 of 24 planted defects, and lane-triggering must stay 17 of 17 (today's results).</li>
+<li><strong>Speed proof:</strong> three fixture builds before and after each landed candidate, read by build-cost; report the median against today's medians (41.5 minutes, 23.3M tokens, the shipped "combined" configuration).</li>
+<li><strong>Prior art:</strong> docs/plans/2026-09-23-lean-build/measurements.md (fixture builds and bench), tests/review-bench/, tests/lane-triggering/.</li>
+</ul>
+<h2>Global Constraints</h2>
+<ul>
+<li>No em dashes or en dashes in any lane text.</li>
+<li>Pre-production: no compatibility shims; edit in place and supersede ADRs.</li>
+<li>Every decision above gets an ADR, numbered from 0040 on.</li>
+<li>Review bench at least 23 of 24; lane-triggering 17 of 17; conformance 0 fail.</li>
+<li>Preamble stays under 3,000 characters.</li>
+<li>Model routing default stays the standard tier.</li>
+</ul>
+<h2>Out of Scope</h2>
+<ul>
+<li>Parallel implementers (measured at 6% gain and dropped; shared test database).</li>
+<li>The preamble's 1% rule and the hook layer (about 800 tokens and 18 ms; not where the cost is).</li>
+<li>The four harness front ends' duplication (change cost, not run cost).</li>
+<li>fx's own maintainer gates (check-all, test-scope).</li>
+<li>fx-design's missing handoff (row 19) and the brainstorm-to-design ordering (row 17): real, low impact, a later design.</li>
+</ul>
+<h2>Open Questions</h2>
+<p>None. The owner chose all six candidates at the Phase 3 gate.</p>
+<h2>Further Notes</h2>
+<p>The size of the brief and the R+3 stop count are targets, not measurements; decision 6 lands first so both are measured on real builds.</p>
+<h2>Proposed folder tree</h2>
+<pre><code>fx/
+  skills/fx-implement/   brief compilation step; implementer template cut to role + contract; cost and dispatch ledger lines; review and re-dispatch caps
+  skills/fx-tdd/         sole owner of TDD rules; incident stories move to COVERAGE.md
+  skills/fx-plan/        deeper-task template, optional fields, risk-only red-team trigger, restate skip
+  skills/fx-brainstorm/  merged confidence + approaches message, one design.md approval
+  skills/fx-review/      branch pass limited and capped
+  skills/*/COVERAGE.md   receive the moved incident stories
+  agents/                frontmatter model pins removed
+  codex/                 regenerated from agents/
+  references/            design-template user-story wording; good-tests rules only
+  lib/                   dispatch-route covers fx: agents; plan-state exports ruling extraction for briefs
+  scripts/               build-cost gains a per-task mode
+  tests/gates/           size ceilings, stop order, branch cap, routing of fx: agents
+  docs/adr/              0040 onward for each decision; 0029 and 0033 superseded
+</code></pre>
+<h2>Core interface signatures</h2>
+<ul>
+<li><code>lib/plan-state.js</code>: <code>rulingsFor(planDir, taskId) -&gt; string[]</code> returns the <code>Ruling:</code> lines naming that task or the whole plan, from the plan ledger and <code>docs/plans/rulings.md</code>.</li>
+<li><code>lib/dispatch-route.js</code>: <code>route(toolInput) -&gt; toolInput | null</code>, now also applied to <code>fx:</code> subagent types.</li>
+<li><code>scripts/build-cost</code>: <code>build-cost --task &lt;NN&gt; --since &lt;ISO time&gt; &lt;transcript&gt; -&gt; "Task NN: cost &lt;tokens&gt; &lt;minutes&gt; &lt;dispatches&gt;"</code>.</li>
+<li>fx-implement brief (file contract): <code>brief.md</code> with sections <code>Task</code>, <code>Rulings</code>, <code>Design excerpt</code>, <code>Stack</code>, <code>Reply contract</code>.</li>
+<li>fx-review branch pass (lane contract): <code>branch(passes: lensesNotRunPerTask ∪ {crossTaskSeams, unprimed}, cap: N)</code>.</li>
+</ul>
+<h2>Lifecycle diagram</h2>
+<pre class="mermaid">flowchart TB
+  U[owner request] --&gt; B[fx-brainstorm: interview rounds]
+  B --&gt; C[one message: confidence + approaches]
+  C --&gt; D[design.md written once, one approval]
+  D --&gt; P[fx-plan: few deep tasks, no restate]
+  P --&gt;|risk trigger only| RT[red-team]
+  P --&gt; I0[fx-implement setup]
+  RT --&gt; I0
+  I0 --&gt; L1[ledger: Task NN dispatched BASE]
+  L1 --&gt; BR[controller compiles brief.md]
+  BR --&gt; IM[implementer: brief + fx-tdd]
+  IM --&gt; TR[task reviewer + tripwire lenses, with rulings]
+  TR --&gt;|findings| FX[fix round, capped]
+  FX --&gt; TR
+  TR --&gt;|clean| CL[ledger: Task NN cost, complete]
+  CL --&gt;|next task, at most one review outstanding| L1
+  CL --&gt;|last task| BP[branch pass: unrun lenses + cross-task seams + unprimed, capped]
+  BP --&gt; EG[exit gate: test_all once]
+</pre>
+<h2>Per-module verdict</h2>
+<p><strong>Module count:</strong> 13 modules listed in the <strong>Modules</strong> field of <code>01-current.md</code>'s patterns and file structure section. <strong>Row count:</strong> 13 rows below.</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Verdict</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>skills/</td>
+<td>refactor</td>
+<td>Lane text is where the tokens are read: implementer template, fx-tdd, fx-plan, fx-brainstorm, fx-review change (skills/fx-implement/implementer-prompt.md:47)</td>
+</tr>
+<tr>
+<td>agents/</td>
+<td>refactor</td>
+<td>Remove the two opus pins so route() decides (agents/fx-lens-security.md:15)</td>
+</tr>
+<tr>
+<td>codex/</td>
+<td>keep</td>
+<td>Regenerated from agents/ by its generator, no hand edits (scripts/gen-codex-agents:13)</td>
+</tr>
+<tr>
+<td>commands/</td>
+<td>keep</td>
+<td>User-invoked lanes, not on the slow path (commands/fx-grill.md:3)</td>
+</tr>
+<tr>
+<td>references/</td>
+<td>refactor</td>
+<td>User-story wording and good-tests trimmed to rules (references/design-template.md:35)</td>
+</tr>
+<tr>
+<td>hooks/</td>
+<td>keep</td>
+<td>About 18 ms per call, not the cost (hooks/hooks.json:30)</td>
+</tr>
+<tr>
+<td>lib/</td>
+<td>refactor</td>
+<td>route() covers fx: agents; plan-state gains ruling extraction (lib/dispatch-route.js:20)</td>
+</tr>
+<tr>
+<td>plugins/</td>
+<td>keep</td>
+<td>opencode front ends follow the lane text (plugins/fx-opencode-v2.js:192)</td>
+</tr>
+<tr>
+<td>scripts/</td>
+<td>refactor</td>
+<td>build-cost gains its first caller and a per-task mode (scripts/build-cost:5)</td>
+</tr>
+<tr>
+<td>tests/</td>
+<td>refactor</td>
+<td>New gates for size ceilings, stop order, branch cap (scripts/test-scope:45)</td>
+</tr>
+<tr>
+<td>docs/</td>
+<td>refactor</td>
+<td>ADRs 0040 onward; 0029 and 0033 superseded (docs/plans/2026-09-29-lean-review/design.md:22)</td>
+</tr>
+<tr>
+<td>tasks/</td>
+<td>keep</td>
+<td>Maintainer notes, never loaded (tasks/lessons.md:3)</td>
+</tr>
+<tr>
+<td>root files</td>
+<td>keep</td>
+<td>Preamble already small and capped (PREAMBLE.md:15)</td>
+</tr>
+</tbody>
+</table>
+<h2>Add-a-new-provider walkthrough</h2>
+<p>In fx the extension point on the slow path is a new stack or harness feeding the brief. Adding a stack (say <code>go</code>) after this design:</p>
+<ol>
+<li><code>references/stacks/go.md</code>: write the stack file with one section per file kind; the brief compiler takes only the section the task's files touch.</li>
+<li>The repo's <code>.fx.json</code>: add <code>go</code> to <code>stacks</code>.</li>
+<li>fx-implement's brief step: no change; it selects stack sections by the task's file list.</li>
+<li><code>tests/gates/</code>: the brief size gate runs on a fixture brief that includes a <code>go</code> slice.</li>
+</ol>
+<p>No lane template, no route() and no hook changes. A new harness adds its <code>references/harnesses/&lt;name&gt;.md</code> and an ADDRESSING entry in <code>lib/preamble.js</code>, as today.</p>
+<h2>Recommendation</h2>
+<p>Incremental refactor. Every high-impact row in <code>03-gaps.md</code> (29, 21, 22, 24, 13, 32, 35, 49, 50) sits in lane text, templates and two small library functions; the hooks, the preamble, the routing default and the reply contracts are rated correct and stay. The six candidates change what each agent reads and how many agents and stops a run has, without changing the lane structure fx already tests. Land the cost line first, then measure each change on the fixture build.</p>
+<h2>Defeater</h2>
+<p>A rewrite of the pipeline (for example one long-running implementer per plan instead of a chain per task) wins if, after decisions 6, 2, 1 and 3 have landed, three six-task fixture builds measured by build-cost do not cut median total tokens by at least 30% from today's 23.3M median, or median wall clock by at least 25% from 41.5 minutes. Then the cost lives in the per-task chain shape itself, not in what each agent reads, and trimming text cannot reach the target.</p></main></body></html>

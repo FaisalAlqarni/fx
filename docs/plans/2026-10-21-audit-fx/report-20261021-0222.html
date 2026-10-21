@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Architecture review for fx</title>
+    <script src="../_assets/tailwindcss-play-3.4.17.js"></script>
+    <script src="../_assets/mermaid-11.17.2.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });</script>
+    <style>
+      .seam { stroke-dasharray: 4 4; }
+      .leak { stroke: #dc2626; }
+      .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+      .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+      .diagram { min-height: 320px; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans">
+    <main class="max-w-5xl mx-auto px-6 py-12 space-y-12">
+
+      <header class="space-y-4">
+        <p class="text-xs uppercase tracking-wider text-slate-500">fx plugin · 2026-10-21 · run 2026-10-21-audit-fx</p>
+        <h1 class="font-serif text-4xl">Architecture review for fx</h1>
+        <div class="rounded-lg border border-slate-200 bg-white p-4 text-sm space-y-2">
+          <p><span class="font-semibold">Requirement:</span> "to increase the speed and reduce the token usage. whenever i use brainstormin&gt;desing&gt;plan&gt;impelemnt it takes soooooooo looooong to fininsh"</p>
+          <p><span class="font-semibold">Scale it runs at:</span> one owner, plans of 5 to 28 tasks; subagents carry 75% of tokens and 89% of turns; 99.4% of tokens are cache reads, so context per turn and turn count are the levers (01-current.md, explore/01-real-cost.md).</p>
+          <p><span class="font-semibold">Assumed:</span> review quality per task stays at today's bar; no <code>CONTEXT.md</code> exists, so terms are the code's own (lane, controller, implementer, ledger, lens, tripwire).</p>
+        </div>
+        <div class="flex flex-wrap gap-6 text-xs text-slate-600 items-center">
+          <span class="flex items-center gap-2"><span class="inline-block w-6 h-4 border-2 border-slate-400 bg-white"></span>module</span>
+          <span class="flex items-center gap-2"><svg width="30" height="8"><line x1="0" y1="4" x2="30" y2="4" stroke="#64748b" stroke-width="2" class="seam"/></svg>seam</span>
+          <span class="flex items-center gap-2"><svg width="30" height="8"><line x1="0" y1="4" x2="30" y2="4" stroke-width="2" class="leak"/></svg>leakage</span>
+          <span class="flex items-center gap-2"><span class="inline-block w-6 h-4 deep border-4 border-slate-900"></span>deep module</span>
+        </div>
+      </header>
+
+      <section id="candidates" class="space-y-10">
+
+        <!-- 1 -->
+        <article id="c1" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <h2 class="font-serif text-2xl">1. Compile one brief per implementer dispatch</h2>
+          <div class="flex gap-2 text-xs">
+            <span class="rounded-full bg-emerald-100 text-emerald-800 px-3 py-1">Strong</span>
+            <span class="rounded-full bg-slate-100 text-slate-700 px-3 py-1">in-process</span>
+          </div>
+          <p class="font-mono text-sm text-slate-600">skills/fx-implement/implementer-prompt.md · skills/fx-implement/SKILL.md:470-476 · skills/fx-tdd/SKILL.md · references/vocab/good-tests.md · references/stacks/*.md · PREAMBLE.md:31-35 · docs/plans/&lt;slug&gt;/design.md</p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="diagram rounded-lg border border-slate-200 p-4 space-y-2">
+              <p class="lbl text-slate-500">Before: what one implementer reads (KB)</p>
+              <div class="space-y-1 text-xs">
+                <div class="flex items-center gap-2"><div class="h-6 bg-slate-300" style="width:37%"></div>template 18.6</div>
+                <div class="flex items-center gap-2"><div class="h-6 bg-slate-300" style="width:38%"></div>fx-tdd 18.9</div>
+                <div class="flex items-center gap-2"><div class="h-6 bg-slate-300" style="width:32%"></div>good-tests 16</div>
+                <div class="flex items-center gap-2"><div class="h-6 bg-slate-300" style="width:17%"></div>task file 8.5 avg</div>
+                <div class="flex items-center gap-2"><div class="h-6 bg-slate-300" style="width:60%"></div>design.md 17 to 48</div>
+                <div class="flex items-center gap-2"><div class="h-6 bg-slate-300" style="width:12%"></div>stack files</div>
+              </div>
+              <svg width="100%" height="40"><line x1="0" y1="20" x2="100%" y2="20" stroke-width="2" class="leak"/><text x="4" y="14" font-size="10" fill="#dc2626">TDD rules in 3 modules: template, fx-tdd, preamble</text></svg>
+              <p class="text-xs text-slate-500">about 1.0M tokens, 42.7 turns per subagent</p>
+            </div>
+            <div class="diagram rounded-lg border border-slate-200 p-4 space-y-3">
+              <p class="lbl text-slate-500">After</p>
+              <div class="border-2 border-slate-400 rounded p-2 text-xs">controller writes <b>brief.md</b>: task, applicable rulings, design excerpt it cites, stack slice</div>
+              <svg width="100%" height="20"><line x1="50%" y1="0" x2="50%" y2="20" stroke="#64748b" stroke-width="2" class="seam"/></svg>
+              <div class="deep border-4 border-slate-900 rounded p-4 text-slate-100 text-xs space-y-1">
+                <p class="lbl text-slate-300">implementer</p>
+                <p>reads brief.md + fx-tdd (sole owner of TDD rules)</p>
+                <p class="text-slate-400">template keeps role and reply contract only</p>
+              </div>
+            </div>
+          </div>
+          <p><span class="font-semibold">Problem:</span> each implementer assembles 55 to 70 KB from separate modules that restate TDD three times and re-read the whole design.</p>
+          <p><span class="font-semibold">Solution:</span> the controller compiles one brief per task and the implementer reads that plus fx-tdd, nothing else.</p>
+          <ul class="list-disc pl-6 text-sm">
+            <li>leverage: one brief, every dispatch</li>
+            <li>locality: TDD rules in fx-tdd</li>
+            <li>design.md read once, by the controller</li>
+            <li>gate test pins brief size ceiling</li>
+          </ul>
+        </article>
+
+        <!-- 2 -->
+        <article id="c2" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <h2 class="font-serif text-2xl">2. Move case histories out of the loaded lane text</h2>
+          <div class="flex gap-2 text-xs">
+            <span class="rounded-full bg-emerald-100 text-emerald-800 px-3 py-1">Strong</span>
+            <span class="rounded-full bg-slate-100 text-slate-700 px-3 py-1">in-process</span>
+          </div>
+          <p class="font-mono text-sm text-slate-600">skills/fx-implement/implementer-prompt.md:170-283 · skills/fx-plan/SKILL.md:203-209,322-352,404-421 · skills/*/COVERAGE.md</p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="diagram rounded-lg border border-slate-200 p-4 space-y-1">
+              <p class="lbl text-slate-500">Before: cross-section of a loaded lane file</p>
+              <div class="h-12 border-l-4 border-slate-500 bg-slate-100 px-3 flex items-center text-xs">rules</div>
+              <div class="h-12 border-l-4 border-red-500 bg-red-50 px-3 flex items-center text-xs">"Measured:" incident</div>
+              <div class="h-12 border-l-4 border-slate-500 bg-slate-100 px-3 flex items-center text-xs">template</div>
+              <div class="h-12 border-l-4 border-red-500 bg-red-50 px-3 flex items-center text-xs">"Measured:" incident</div>
+              <div class="h-12 border-l-4 border-slate-500 bg-slate-100 px-3 flex items-center text-xs">rules</div>
+              <p class="text-xs text-slate-500">about 30% of each file, loaded on every call</p>
+            </div>
+            <div class="diagram rounded-lg border border-slate-200 p-4 space-y-1">
+              <p class="lbl text-slate-500">After</p>
+              <div class="h-24 deep border-4 border-slate-900 px-3 flex items-center text-xs text-slate-100">rules + template, one line of why per rule</div>
+              <svg width="100%" height="40"><line x1="50%" y1="0" x2="50%" y2="40" stroke="#64748b" stroke-width="2" class="seam"/><text x="52%" y="24" font-size="10" fill="#64748b">not loaded</text></svg>
+              <div class="h-24 border-2 border-slate-300 bg-stone-50 px-3 flex items-center text-xs text-slate-500">COVERAGE.md: the incidents, kept for maintainers</div>
+            </div>
+          </div>
+          <p><span class="font-semibold">Problem:</span> post-mortem stories sit in the interface of the two most-loaded lane files, so every call pays for history.</p>
+          <p><span class="font-semibold">Solution:</span> keep each rule as one line in the lane and move its story to that lane's COVERAGE.md, which no session loads.</p>
+          <ul class="list-disc pl-6 text-sm">
+            <li>interface shrinks about 30%</li>
+            <li>deletion test: rule survives, story moves</li>
+            <li>locality: incidents in COVERAGE.md</li>
+            <li>gates pin rule lines only</li>
+          </ul>
+        </article>
+
+        <!-- 3 -->
+        <article id="c3" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <h2 class="font-serif text-2xl">3. Plan fewer, deeper tasks</h2>
+          <div class="flex gap-2 text-xs">
+            <span class="rounded-full bg-emerald-100 text-emerald-800 px-3 py-1">Strong</span>
+            <span class="rounded-full bg-slate-100 text-slate-700 px-3 py-1">in-process</span>
+          </div>
+          <p class="font-mono text-sm text-slate-600">skills/fx-plan/SKILL.md:126-135,161-170,285-391,409-421 · references/design-template.md · skills/fx-implement/SKILL.md:386-390</p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="diagram rounded-lg border border-slate-200 p-4">
+              <p class="lbl text-slate-500 mb-2">Before: 11 to 28 tasks, each a chain</p>
+              <pre class="mermaid">
+flowchart TB
+  P[plan: 18 task files, 7 to 24 KB, test code in full] --> T1[task 01] & T2[task 02] & TN[... task 18]
+  T1 --> I1[implementer] --> R1[reviewer + lenses] --> F1[fix x2.8] --> RR1[re-review]
+  TN --> IN[implementer] --> RN[reviewer + lenses] --> FN[fix x2.8] --> RRN[re-review]
+  P -.10+ tasks.-> DA[red-team, opus]
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class DA,F1,FN leak
+              </pre>
+            </div>
+            <div class="diagram rounded-lg border border-slate-200 p-4">
+              <p class="lbl text-slate-500 mb-2">After: slices sized to a seam</p>
+              <pre class="mermaid">
+flowchart TB
+  P[plan: few task files; behaviour + named tests, no code] --> T1[slice A] & T2[slice B]
+  T1 --> I1[implementer] --> R1[reviewer]
+  T2 --> I2[implementer] --> R2[reviewer]
+  P -.risk trigger, not count.-> DA[red-team]
+  classDef deep fill:#0f172a,color:#f1f5f9,stroke:#0f172a,stroke-width:4px;
+  class T1,T2 deep
+              </pre>
+            </div>
+          </div>
+          <p><span class="font-semibold">Problem:</span> every task spawns a 3 to 5 agent chain, and task files run 4 to 5 times the design because test code is written out in full.</p>
+          <p><span class="font-semibold">Solution:</span> a task states behaviour and names its tests, related slices merge until each task sits on one seam, and red-team fires on risk instead of task count.</p>
+          <ul class="list-disc pl-6 text-sm">
+            <li>leverage: fewer chains per plan</li>
+            <li>task file shrinks to behaviour</li>
+            <li>tests written at the interface</li>
+            <li>red-team stops firing on every plan</li>
+          </ul>
+        </article>
+
+        <!-- 4 -->
+        <article id="c4" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <h2 class="font-serif text-2xl">4. Merge the brainstorm and plan gates into one design checkpoint</h2>
+          <div class="flex gap-2 text-xs">
+            <span class="rounded-full bg-amber-100 text-amber-800 px-3 py-1">Worth exploring</span>
+            <span class="rounded-full bg-slate-100 text-slate-700 px-3 py-1">in-process</span>
+          </div>
+          <p class="font-mono text-sm text-slate-600">skills/fx-brainstorm/SKILL.md:163-174,239-254,290-337 · references/design-template.md:28-36 · skills/fx-plan/SKILL.md:33-41,172-186</p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="diagram rounded-lg border border-slate-200 p-4">
+              <p class="lbl text-slate-500 mb-2">Before: R + 9 stops, then 2 more in plan</p>
+              <pre class="mermaid">
+sequenceDiagram
+  participant U as owner
+  participant B as brainstorm
+  participant P as plan
+  B->>U: interview rounds (R)
+  B->>U: confidence check
+  B->>U: approaches
+  B->>U: 5 design sections, one stop each
+  B->>U: seams
+  B->>U: design.md review (design shown twice)
+  P->>U: restate requirements
+  P->>U: four-way handoff menu
+              </pre>
+            </div>
+            <div class="diagram rounded-lg border border-slate-200 p-4">
+              <p class="lbl text-slate-500 mb-2">After</p>
+              <pre class="mermaid">
+sequenceDiagram
+  participant U as owner
+  participant B as brainstorm
+  participant P as plan
+  B->>U: interview rounds (R)
+  B->>U: confidence + approaches, one message
+  B->>U: design.md, one approval
+  P->>U: plan written, default handoff
+              </pre>
+            </div>
+          </div>
+          <p><span class="font-semibold">Problem:</span> the design passes through the owner piece by piece in chat and then again as a file, and fx-plan re-confirms what was just approved.</p>
+          <p><span class="font-semibold">Solution:</span> brainstorm writes design.md once and gets one approval on the file; fx-plan skips the restate when the design was approved in this session.</p>
+          <ul class="list-disc pl-6 text-sm">
+            <li>owner stops drop from R+11 to R+3</li>
+            <li>design.md is the single interface</li>
+            <li>locality: approval lives in one place</li>
+            <li>gate tests pin the stop order</li>
+          </ul>
+          <div class="rounded border border-amber-300 bg-amber-50 px-4 py-2 text-sm">Contradicts ADR 0033 (the confidence check is its own stopping message), but worth reopening because it is one of the stops the requirement names, and the approaches can ride in the same message.</div>
+        </article>
+
+        <!-- 5 -->
+        <article id="c5" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <h2 class="font-serif text-2xl">5. Let the branch pass review only what per-task review did not</h2>
+          <div class="flex gap-2 text-xs">
+            <span class="rounded-full bg-amber-100 text-amber-800 px-3 py-1">Worth exploring</span>
+            <span class="rounded-full bg-slate-100 text-slate-700 px-3 py-1">in-process</span>
+          </div>
+          <p class="font-mono text-sm text-slate-600">skills/fx-review/SKILL.md:72-108 · agents/fx-lens-security.md:15 · agents/fx-devils-advocate.md:14 · lib/dispatch-route.js:17-25 · skills/fx-implement/task-reviewer-prompt.md:29-31 · lib/plan-state.js:81-95</p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="diagram rounded-lg border border-slate-200 p-4">
+              <p class="lbl text-slate-500 mb-2">Before</p>
+              <pre class="mermaid">
+flowchart LR
+  BR[branch pass] --> L1[security, opus pin] & L2[database] & L3[silent-failure] & L4[a11y] & L5[pipeline] & DA[devil's advocate, opus pin] & CR[code-review] & X[... up to 10]
+  RT[route] -.bypassed.-> L1
+  TR[task reviewer] -.reads 20 to 100 KB ledger.-> LG[(state.md)]
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class L1,DA,LG leak
+              </pre>
+            </div>
+            <div class="diagram rounded-lg border border-slate-200 p-4">
+              <p class="lbl text-slate-500 mb-2">After</p>
+              <pre class="mermaid">
+flowchart LR
+  BR[branch pass, capped] --> NR[lenses that never ran per task] & SX[cross-task seams] & DA[devil's advocate]
+  RT[route: every model choice] --> NR & DA
+  TR[task reviewer] --> RU[(rulings.md lines)]
+  classDef deep fill:#0f172a,color:#f1f5f9,stroke:#0f172a,stroke-width:4px;
+  class RT deep
+              </pre>
+            </div>
+          </div>
+          <p><span class="font-semibold">Problem:</span> the branch pass re-reads code the tripwire lenses already reviewed, frontmatter model pins leak past route(), and the task reviewer reads the whole ledger for a few Ruling lines.</p>
+          <p><span class="font-semibold">Solution:</span> route() owns every model choice, the branch pass has a hard agent cap and skips lenses that already ran per task, and the task reviewer receives the rulings instead of the ledger.</p>
+          <ul class="list-disc pl-6 text-sm">
+            <li>locality: model choice in route()</li>
+            <li>delete two frontmatter pins</li>
+            <li>reviewer context drops by the ledger</li>
+            <li>dispatch-route tests cover fx: agents</li>
+          </ul>
+          <div class="rounded border border-amber-300 bg-amber-50 px-4 py-2 text-sm">Contradicts ADR 0029 (every lens runs at the branch pass), but worth reopening because a lens that fired on its tripwire per task reads the same diff again at the end.</div>
+        </article>
+
+        <!-- 6 -->
+        <article id="c6" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <h2 class="font-serif text-2xl">6. Write a cost line to the ledger for every task</h2>
+          <div class="flex gap-2 text-xs">
+            <span class="rounded-full bg-amber-100 text-amber-800 px-3 py-1">Worth exploring</span>
+            <span class="rounded-full bg-slate-100 text-slate-700 px-3 py-1">local-substitutable</span>
+          </div>
+          <p class="font-mono text-sm text-slate-600">scripts/build-cost · scripts/build-cost.test.js · skills/fx-implement/SKILL.md:287-319 · lib/plan-state.js</p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="diagram rounded-lg border border-slate-200 p-4 space-y-3">
+              <p class="lbl text-slate-500">Before</p>
+              <div class="flex gap-3 items-center">
+                <div class="border-2 border-slate-400 rounded p-3 text-xs w-1/2">ledger: free text, no tokens, no times, 1 in 12 dispatches</div>
+                <div class="border-2 border-dashed border-slate-300 rounded p-3 text-xs w-1/2 text-slate-400">build-cost: no caller</div>
+              </div>
+              <svg width="100%" height="40"><line x1="0" y1="20" x2="100%" y2="20" stroke-width="2" class="leak"/><text x="4" y="14" font-size="10" fill="#dc2626">cost found only by transcript forensics</text></svg>
+            </div>
+            <div class="diagram rounded-lg border border-slate-200 p-4 space-y-3">
+              <p class="lbl text-slate-500">After</p>
+              <div class="deep border-4 border-slate-900 rounded p-4 text-xs text-slate-100">build-cost runs at each task's end, writes <code>Task NN: cost &lt;tokens&gt; &lt;minutes&gt; &lt;dispatches&gt;</code></div>
+              <svg width="100%" height="20"><line x1="50%" y1="0" x2="50%" y2="20" stroke="#64748b" stroke-width="2" class="seam"/></svg>
+              <div class="flex gap-3 text-xs">
+                <div class="border-2 border-slate-400 rounded p-2 w-1/2">adapter: real ~/.claude transcripts</div>
+                <div class="border-2 border-slate-400 rounded p-2 w-1/2">adapter: fixture jsonl in tests</div>
+              </div>
+            </div>
+          </div>
+          <p><span class="font-semibold">Problem:</span> nothing records what a task or a phase costs, so no speed change in candidates 1 to 5 can be proved on a real build.</p>
+          <p><span class="font-semibold">Solution:</span> fx-implement calls build-cost at each task's end and ledgers one cost line.</p>
+          <ul class="list-disc pl-6 text-sm">
+            <li>build-cost gains its first caller</li>
+            <li>two adapters justify the seam</li>
+            <li>each speed change gets a number</li>
+          </ul>
+        </article>
+      </section>
+
+      <section id="top-recommendation" class="rounded-xl deep text-slate-100 p-8 space-y-3">
+        <p class="lbl text-slate-400">Top recommendation</p>
+        <h2 class="font-serif text-3xl"><a href="#c1" class="underline decoration-emerald-400">Compile one brief per implementer dispatch</a></h2>
+        <p>Implementers are the largest share of the 75% of tokens that subagents spend, and a smaller brief cuts the cost of every dispatch on every plan, whatever the task count.</p>
+      </section>
+    </main>
+  </body>
+</html>
