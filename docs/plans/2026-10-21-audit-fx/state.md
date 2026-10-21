@@ -83,3 +83,11 @@ Task 03: fix round 1/5 dispatched (resume implementer). FIX_BASE=fd56761.
 Task 03: fix round 1 result: no commits; real RED captured against faf7822 for all three new tests (runtime failures: rulingsFor null, MODULE_NOT_FOUND, template 16,313 B > 11,000), report states fx-tdd was not invoked. Controller re-review of the report's TDD evidence section: passes, Important resolved.
 Task 03: cost 13055754 tokens, 283 min, 3 dispatches, fx-tdd 0/1
 Task 03: complete
+Task 04: dispatched 5ee58e6 2026-10-21T12:19:35Z (implementer, sonnet)
+Task 04: waiting on the implementer; task 05 is blocked by 04, so the frontier is empty.
+Task 04: implemented 5ee58e6..568a2fe (DONE, concerns 0, Tripwires: none). Task 04: cost 4074019 tokens, 4 min, 2 dispatches, fx-tdd 1/1 (pre-review).
+Task 04: review dispatched (sonnet). Waiting on it; task 05 is blocked by 04.
+Task 04: review approved, C/I/M 0/0/3; minors deferred to the branch review (COVERAGE.md old wording, gate pins fewer lines, Stack field means two things).
+Ruling: keep both unrequested additions. Why: the Tests red flag enforces the task's own Risks mitigation; 'more than 10 tasks' matches the Phasing section body, which already says 'More than 10 tasks'. Cost if wrong: an 11-task boundary one off; caught by the branch review.
+Task 04: cost 5490508 tokens, 5 min, 3 dispatches, fx-tdd 1/1
+Task 04: complete
