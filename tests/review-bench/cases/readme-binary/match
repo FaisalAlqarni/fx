@@ -1,1 +1,1 @@
-no binary|not installed|command not found|node cli\.js instead|instead of.{0,20}node cli\.js|the example fails|no (installed |package )?binary|never installed|(binary|command|executable)\b.{0,30}(does not|doesn.t) exist
+no binary|not installed|command not found|node cli\.js instead|instead of.{0,20}node cli\.js|the example fails|no (installed |package )?binary|never installed|(binary|command|executable)\b.{0,30}(does not|doesn.t) exist|non-?existent .{0,20}(binary|command)

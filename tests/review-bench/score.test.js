@@ -302,6 +302,8 @@ const caught = (name, match, line) => {
     '- README.md:3 - uses a `notes` command that does not exist; it should be `node cli.js add`',
     '- README.md:3 - the task says there is no installed binary',
     '- README.md:3 - notes: command not found',
+    '- README.md:6-7 · the example calls a nonexistent `notes` binary, so it fails when pasted',
+    '- README.md:5-6 · The example uses a non-existent `notes` command.',
   ];
   positives.forEach((p, i) => assert.strictEqual(caught(`readme-pos-${i}.md`, m, p), true, `must catch: ${p}`));
   assert.strictEqual(
