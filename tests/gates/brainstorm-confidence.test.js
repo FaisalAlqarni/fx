@@ -33,4 +33,9 @@ const fxPlan = fs.readFileSync(path.join(__dirname, '..', '..', 'skills', 'fx-pl
 assert.ok(fxPlan.slice(fxPlan.indexOf('## 1.'), fxPlan.indexOf('## 2.')).includes('**Approved:**'), 'fx-plan skips the restate on an approved design');
 assert.ok(fs.existsSync(path.join(__dirname, '..', '..', 'docs', 'adr', '0045-one-design-checkpoint.md')), 'ADR 0045 exists');
 
+assert.ok(/write `\*\*Approved:\*\* YYYY-MM-DD` under the\s+Status line/.test(skill.slice(skill.indexOf('## 8.'), skill.indexOf('## 9.'))), 'section 8 writes the Approved line on approval');
+assert.ok(!/^\*\*Approved:\*\*/m.test(tpl.slice(tpl.indexOf('```markdown'))), 'the template block carries no Approved line');
+const fxPlan1 = fxPlan.slice(fxPlan.indexOf('## 1.'), fxPlan.indexOf('## 2.'));
+assert.ok(fxPlan1.includes('followed by a real date') && fxPlan1.includes('placeholder'), 'fx-plan skips the restate only on a real date');
+
 console.log('brainstorm-confidence.test.js: OK');

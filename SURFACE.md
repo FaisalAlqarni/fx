@@ -27,7 +27,7 @@ recreate DEBT #20.
 
 | Skill | Owns | Status |
 |---|---|---|
-| `fx-brainstorm` | Entry point. Classify → clustered rounds + ledger → sectioned design → gate | ✅ |
+| `fx-brainstorm` | Entry point. Classify → clustered rounds + ledger → confidence check with approaches → design.md written in the file → one file review → gate | ✅ |
 | `fx-plan` | Vertical tracer tasks, blocking edges, Consumes/Produces | ✅ |
 | `fx-implement` | Works the frontier, worktree, fresh subagent per task, rulings not stalls | ✅ |
 | `fx-tdd` | Iron Law, verify-RED (runtime **and** compile-time), confirmed seams | ✅ |

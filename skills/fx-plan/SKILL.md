@@ -32,8 +32,10 @@ DRY. YAGNI. TDD.
 
 ## 1. Restate the requirements: before writing anything
 
-When design.md carries an `**Approved:**` line, skip the restate and say so in
-one line; the line survives compaction. Otherwise restate and wait:
+When design.md carries an `**Approved:**` line followed by a real date, such as
+`**Approved:** 2026-10-21`, skip the restate and say so in one line; the line
+survives compaction. A placeholder (`YYYY-MM-DD`) or a missing date means
+restate and wait:
 
 **Requirements as I understand them:**
 - <requirement, in your own words>
