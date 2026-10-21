@@ -38,4 +38,11 @@ assert.ok(impl.includes('A task with a `Task <NN>: parked:` line is never re-dis
 assert.ok(impl.includes('Each re-dispatch appends its own `dispatched` line, so the count is the number of those lines.'),
   'the re-dispatch count is the number of dispatched lines');
 
+// Fix round 1: a compile-brief failure stops the dispatch; pass `unavailable` when no cost line exists.
+assert.ok(impl.includes('If `compile-brief` exits non-zero, do not dispatch: fix the task file\'s `**Design:**` or `**Stack:**` entry, or record a ruling, and run it again.'),
+  'a compile-brief failure stops the dispatch');
+assert.ok(s3.includes('pass `unavailable` when it prints no line'), 'section 3 says what to pass when build-cost prints nothing');
+const plan = fs.readFileSync(path.join(root, 'skills', 'fx-plan', 'SKILL.md'), 'utf8').replace(/\s+/g, ' ');
+assert.ok(plan.includes('Every heading a task\'s `**Design:**` line names exists in `design.md`'), 'fx-plan self-review resolves Design headings');
+
 console.log('ledger-lines: OK');

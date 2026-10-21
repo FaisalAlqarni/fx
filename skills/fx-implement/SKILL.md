@@ -442,7 +442,7 @@ decisions from earlier tasks the task file cannot know, your resolution of any
 ambiguity, and a pointer to any ledger entry where an earlier task parked a
 finding in this area. Then run, from the controller's own directory,
 `node <skill base directory>/scripts/compile-brief --worktree <worktree> --context <file> <SLUG> <TASK_FILE> <BRIEF_FILE>`
-and pass `<BRIEF_FILE>` (`.fx/<slug>/briefs/<NN>.md`). The brief holds the task
+If `compile-brief` exits non-zero, do not dispatch: fix the task file's `**Design:**` or `**Stack:**` entry, or record a ruling, and run it again. Pass `<BRIEF_FILE>` (`.fx/<slug>/briefs/<NN>.md`). The brief holds the task
 file, the plan's Global Constraints, your context, every live ruling, the
 design passages the task's `**Design:**` line names and the stack text its
 `**Stack:**` line names (the whole stack files `.fx.json` names when it has
@@ -549,7 +549,7 @@ controller's own directory, run
 (the script is `../../scripts/build-cost` from this skill's base directory) and
 read the line it prints. When it shows `fx-tdd 0/<i>` with `i` above 0, no
 implementer invoked `fx-tdd`. Pass the line to the task reviewer as
-`[COST_LINE]` in every case; the template turns `fx-tdd 0/<i>` into an
+`[COST_LINE]` in every case (pass `unavailable` when it prints no line); the template turns `fx-tdd 0/<i>` into an
 Important finding for a report with no captured RED run. The reviewer cannot be
 told this later, because the line does not exist until you run the script.
 
