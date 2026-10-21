@@ -70,3 +70,16 @@ Task 02: minor (deferred): gate misses lower-case "measured" stories (fx-impleme
 Task 02: review 0/0/3, spec ✅. ⚠️ cleared: controller ran test_scope over the task's paths, exit 0.
 Task 02: cost 6753235 tokens, 7 min, 2 dispatches, fx-tdd 1/1
 Task 02: complete (commits 3462150..63f67d0, review clean). Files: six loaded lane files, three COVERAGE.md, gate, check-all, ADR 0041.
+Task 03: dispatched faf7822 2026-10-21T07:35:59Z (implementer, sonnet)
+Task 03: implemented faf7822..fd56761 (DONE). Template 10,909 B; good-tests 8,996 B; review-bench row uses compile-brief, not run live (task 05 runs it).
+Task 03: pre-review cost: 8311841 tokens, 7 min, 2 dispatches, fx-tdd 0/1. The implementer made no fx-tdd Skill call; passed to the reviewer per the §3 rule.
+Task 03: minor (deferred): rulingsFor skips lettered rulings (`Ruling A:`), so Ruling A/B never reach a brief.
+Task 03: minor (deferred): SKILL.md "Verify a constraint before you copy it" paragraph is stale now that compile-brief copies the constraints.
+Task 03: minor (deferred): good-tests-examples.md carries 3 em dashes moved verbatim; no gate covers references/.
+Task 03: minor (deferred): compile-brief.test.js lacks cases for a missing `Heading > N` paragraph and a stack name with no file.
+Task 03: review 0/1/4 (findings/03-review.md), spec ✅; ⚠️ (bench row not run live) owned by task 05.
+Ruling: task 03's missing TDD evidence is fixed by capturing real RED output now: the implementer runs the three new tests against faf7822's implementation files in a throwaway worktree and pastes command and output, and the report states plainly that fx-tdd was not invoked. Why: the tests cannot be re-driven after the fact; a captured failure against the old code proves they bite, and saying so keeps the record honest. Cost if wrong: tests that never drove the code; caught by the task 05 review bench and the branch review.
+Task 03: fix round 1/5 dispatched (resume implementer). FIX_BASE=fd56761.
+Task 03: fix round 1 result: no commits; real RED captured against faf7822 for all three new tests (runtime failures: rulingsFor null, MODULE_NOT_FOUND, template 16,313 B > 11,000), report states fx-tdd was not invoked. Controller re-review of the report's TDD evidence section: passes, Important resolved.
+Task 03: cost 13055754 tokens, 283 min, 3 dispatches, fx-tdd 0/1
+Task 03: complete
