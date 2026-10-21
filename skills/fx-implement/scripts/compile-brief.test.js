@@ -50,4 +50,27 @@ assert.ok(!brief.includes('## Engines'), 'other stack sections left out');
 const whole = run('# 01: a\n');
 assert.ok(whole.includes('## Engines'), 'no Stack line: the whole stack file, as today');
 
+const fx = path.join(wt, '.fx.json');
+const failsNaming = (r, name, label) => assert.ok(r.status !== 0 && r.stderr.includes(name), `${label}: exit non-zero naming ${name}; got ${r.status} ${r.stderr}`);
+const withFile = (file, text, fn) => {
+  const keep = fs.readFileSync(file, 'utf8');
+  fs.writeFileSync(file, text);
+  try { return fn(); } finally { fs.writeFileSync(file, keep); }
+};
+failsNaming(runRaw('# 01: a\n\n**Design:** Implementation Decisions > 9\n').r, 'Implementation Decisions > 9', 'a numbered paragraph that does not exist');
+withFile(fx, JSON.stringify({ stacks: ['nosuchstack'] }), () => failsNaming(runRaw('# 01: a\n').r, 'nosuchstack', 'a .fx.json stack with no file'));
+withFile(fx, '{ not json', () => failsNaming(runRaw('# 01: a\n').r, '.fx.json', 'an unparseable .fx.json'));
+{
+  const task = path.join(plan, 'tasks', '01-a.md');
+  const r = spawnSync(process.execPath, [BIN, '--worktree', wt, 'no-such-slug', task, path.join(wt, 'o.md')], { encoding: 'utf8', cwd: os.tmpdir() }); // artifact-gate: ok
+  failsNaming(r, 'plan.md', 'a plan.md that cannot be read');
+}
+const designMd = path.join(plan, 'design.md');
+const keepDesign = fs.readFileSync(designMd, 'utf8');
+fs.unlinkSync(designMd);
+try {
+  failsNaming(runRaw('# 01: a\n\n**Design:** Implementation Decisions > 2\n').r, 'design.md', 'design.md missing while the task names a Design entry');
+  assert.ok(runRaw('# 01: a\n').r.status === 0, 'design.md missing is fine when the task names no Design entry');
+} finally { fs.writeFileSync(designMd, keepDesign); }
+
 console.log('compile-brief: OK');

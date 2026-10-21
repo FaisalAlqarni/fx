@@ -270,7 +270,8 @@ for (const [label, file] of [['missing', path.join(root, 'nope.jsonl')], ['empty
   const at = (s) => `2026-10-21T10:${s}:00.000Z`;
   const rec = (id, ts, n, content = []) => ({ type: 'assistant', timestamp: ts, message: { id, usage: { input_tokens: n, output_tokens: 0 }, content } });
   const user = (ts, text) => ({ type: 'user', timestamp: ts, message: { content: text } });
-  write(ctlT, [rec('m0', at('00'), 1000), rec('m1', at('10'), 150), rec('m2', at('20'), 50)]);
+  const ledger = (line) => [{ type: 'tool_use', name: 'Bash', input: { command: `echo '${line}' >> state.md` } }];
+  write(ctlT, [rec('m0', at('00'), 1000), rec('m1', at('10'), 150, ledger('Task 03: dispatched abc1234')), rec('m2', at('20'), 50)]);
   write(path.join(dir, 't1', 'subagents', 'impl.jsonl'), [
     user(at('11'), 'You are implementing task 03: brief'),
     rec('s1', at('12'), 300, [{ type: 'tool_use', name: 'Skill', input: { skill: 'fx:fx-tdd' } }]),
@@ -296,7 +297,7 @@ for (const [label, file] of [['missing', path.join(root, 'nope.jsonl')], ['empty
 {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bc-fail-'));
   const at = (s) => `2026-10-21T10:${s}:00.000Z`;
-  const rec = (id, ts, n) => ({ type: 'assistant', timestamp: ts, message: { id, usage: { input_tokens: n, output_tokens: 0 }, content: [] } });
+  const rec = (id, ts, n) => ({ type: 'assistant', timestamp: ts, message: { id, usage: { input_tokens: n, output_tokens: 0 }, content: [{ type: 'tool_use', name: 'Bash', input: { command: "echo 'Task 05: dispatched abc1234' >> state.md" } }] } });
   const task = (ctlFile) => spawnSync(process.execPath, [BIN, '--task', '05', '--since', at('00'), ctlFile], { encoding: 'utf8' });
 
   // an unreadable subagent file (a directory named *.jsonl)
@@ -331,6 +332,43 @@ for (const [label, file] of [['missing', path.join(root, 'nope.jsonl')], ['empty
   const r4 = task(c4);
   assert.strictEqual(r4.status, 0, r4.stderr);
   assert.strictEqual(r4.stdout, `Task 05: cost unavailable (malformed JSON: ${path.join(dir, 'd', 'subagents', 'bad.jsonl')}:1)\n`);
+}
+
+// I4: a transcript without this task's own dispatch write belongs to another session.
+{
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bc-own-'));
+  const at = (s) => `2026-10-21T10:${s}:00.000Z`;
+  const ctlO = path.join(dir, 'o.jsonl');
+  write(ctlO, [{ type: 'assistant', timestamp: at('01'), message: { id: 'm', usage: { input_tokens: 10, output_tokens: 0 },
+    content: [{ type: 'tool_use', name: 'Bash', input: { command: "echo 'Task 03: dispatched abc1234' >> state.md" } }] } }]);
+  const r = spawnSync(process.execPath, [BIN, '--task', '07', '--since', at('00'), ctlO], { encoding: 'utf8' });
+  assert.strictEqual(r.status, 0, r.stderr);
+  assert.strictEqual(r.stdout, "Task 07: cost unavailable (transcript is another session's)\n");
+}
+
+// I5: the window ends at the task's own completion write, or at the next
+// task's dispatch write, whichever comes first; subagents get the same window.
+{
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bc-win-'));
+  const at = (s) => `2026-10-21T10:${s}:00.000Z`;
+  const ledger = (line) => [{ type: 'tool_use', name: 'Bash', input: { command: `echo '${line}' >> state.md` } }];
+  const rec = (id, ts, n, content = []) => ({ type: 'assistant', timestamp: ts, message: { id, usage: { input_tokens: n, output_tokens: 0 }, content } });
+  const user = (ts, text) => ({ type: 'user', timestamp: ts, message: { content: text } });
+  const run = (name, endLine, tailLine) => {
+    const f = path.join(dir, `${name}.jsonl`);
+    write(f, [
+      rec('m1', at('10'), 100, ledger('Task 03: dispatched abc1234')), rec('m2', at('12'), 100),
+      rec('m3', at('14'), 100, ledger(endLine)), rec('m4', at('30'), 5000, tailLine ? ledger(tailLine) : []),
+    ]);
+    write(path.join(dir, name, 'subagents', 'in.jsonl'), [user(at('11'), 'You are implementing task 03'), rec('s1', at('11'), 300)]);
+    write(path.join(dir, name, 'subagents', 'late.jsonl'), [user(at('20'), 'You are reviewing one task: 03'), rec('s2', at('21'), 7000)]);
+    const r = spawnSync(process.execPath, [BIN, '--task', '03', '--since', at('10'), f], { encoding: 'utf8' });
+    assert.strictEqual(r.status, 0, r.stderr);
+    return r.stdout;
+  };
+  const want = 'Task 03: cost 600 tokens, 4 min, 1 dispatches, fx-tdd 0/1\n';
+  assert.strictEqual(run('next', 'Task 04: dispatched def5678', null), want, 'the next task dispatch cuts the window');
+  assert.strictEqual(run('done', 'Task 03: complete (commits a..b, review clean)', 'Task 04: dispatched def5678'), want, 'the task completion write cuts the window');
 }
 
 fs.rmSync(root, { recursive: true, force: true });

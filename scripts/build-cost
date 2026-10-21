@@ -278,7 +278,25 @@ function taskCost(nn, since, argFile, head) {
   const stamps = timestamps(records);
   if (stamps.length === 0) fail(`no timestamps in transcript: ${file}`);
   const sum = (calls) => calls.reduce((n, c) => n + (c.usage ? c.usage.tokens : 0), 0);
-  let tokens = sum(dedupCalls(records, file).filter((c) => new Date(c.timestamp).getTime() >= sinceMs));
+  const controllerCalls = dedupCalls(records, file);
+  const diffMap = buildLedgerDiffMap(records);
+  const ledgerOf = (call) => call.content.filter((b) => isLedgerWrite(b, diffMap)).map((b) => ledgerText(b, diffMap)).join('\n');
+  const ledgerHas = (call, re) => re.test(ledgerOf(call));
+  // The path slot is shared per directory, so the last session to start wins.
+  if (!controllerCalls.some((c) => ledgerHas(c, new RegExp(`Task ${nn}: dispatched`)))) {
+    return `${head} cost unavailable (transcript is another session's)`;
+  }
+  // The window runs from `since` to this task's completion write, or to the
+  // next task's dispatch write if that comes first, else to the transcript's end.
+  let endMs = Infinity;
+  for (const c of controllerCalls) {
+    const t = new Date(c.timestamp).getTime();
+    if (t < sinceMs) continue;
+    const text = ledgerOf(c);
+    if (text.includes(`Task ${nn}: complete`) || [...text.matchAll(/Task (\d\d): dispatched/g)].some((m) => m[1] !== nn)) { endMs = t; break; }
+  }
+  const inWindow = (c) => { const t = new Date(c.timestamp).getTime(); return t >= sinceMs && t <= endMs; };
+  let tokens = sum(controllerCalls.filter(inWindow));
   const mine = new RegExp(`\\btask:? ${nn}\\b`, 'i');
   const subDir = path.join(path.dirname(file), path.basename(file, '.jsonl'), 'subagents');
   let subFiles = [];
@@ -294,15 +312,17 @@ function taskCost(nn, since, argFile, head) {
     if (sub === null) fail(`cannot read subagent file: ${subFile}`);
     const first = sub.find((r) => r.type === 'user');
     if (!first || !mine.test(textOf(first))) continue;
+    const startMs = new Date(first.timestamp).getTime();
+    if (startMs < sinceMs || startMs > endMs) continue;
     dispatches++;
-    const calls = dedupCalls(sub, subFile);
+    const calls = dedupCalls(sub, subFile).filter(inWindow);
     tokens += sum(calls);
     if (classify(sub, readMeta(subFile)) === 'implementer') {
       impl++;
       if (calls.some((c) => c.content.some((b) => b.type === 'tool_use' && b.name === 'Skill' && /fx-tdd$/.test((b.input || {}).skill || '')))) tdd++;
     }
   }
-  const minutes = Math.round((Math.max(...stamps) - sinceMs) / 60000);
+  const minutes = Math.round(((Number.isFinite(endMs) ? endMs : Math.max(...stamps)) - sinceMs) / 60000);
   return `${head} cost ${tokens} tokens, ${minutes} min, ${dispatches} dispatches, fx-tdd ${tdd}/${impl}`;
 }
 

@@ -53,7 +53,8 @@ const entries = (md, label) => {
   return m ? m[1].split(';').map((s) => s.trim()).filter(Boolean) : null;
 };
 
-const plan = read(path.join(planDir, 'plan.md')) || '';
+const plan = read(path.join(planDir, 'plan.md'));
+if (plan === null) die(`cannot read ${path.join(planDir, 'plan.md')}`);
 const gc = section(plan, 'Global Constraints');
 const gcBody = gc && gc.split('\n').slice(1).join('\n').trim();
 
@@ -66,8 +67,9 @@ if (opt.context) {
 
 const rulings = rulingsFor(opt.worktree, planDir, (path.basename(taskFile).match(/^(\d+)-/) || [])[1]);
 
-const design = read(path.join(planDir, 'design.md')) || '';
 const dEntries = entries(task, 'Design');
+const design = dEntries ? read(path.join(planDir, 'design.md')) : '';
+if (design === null) die(`cannot read ${path.join(planDir, 'design.md')}, which the task's Design entry needs`);
 const designOut = !dEntries ? 'None.' : dEntries.map((e) => {
   const [head, n] = e.split('>').map((s) => s.trim());
   const sec = section(design, head);
@@ -89,8 +91,12 @@ if (sEntries) {
   }).join('\n\n');
 } else {
   let names = [];
-  try { names = JSON.parse(read(path.join(opt.worktree, '.fx.json')) || '{}').stacks || []; } catch { /* no stacks */ }
-  stackOut = names.map(stackFile).filter((s) => s !== null).map((s) => s.trim()).join('\n\n') || 'None.';
+  try { names = JSON.parse(read(path.join(opt.worktree, '.fx.json')) || '{}').stacks || []; } catch (e) { die(`cannot parse .fx.json: ${e.message}`); }
+  stackOut = names.map((n) => {
+    const md = stackFile(n);
+    if (md === null) die(`.fx.json names stack ${n}, which has no file`);
+    return md.trim();
+  }).join('\n\n') || 'None.';
 }
 
 fs.mkdirSync(path.dirname(path.resolve(outFile)), { recursive: true });

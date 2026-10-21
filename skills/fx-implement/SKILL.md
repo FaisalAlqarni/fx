@@ -677,9 +677,13 @@ line:
 (Write the line without the backticks.) It reads the transcript path the
 SessionStart hook recorded in `.fx/transcript-path`. When it cannot find a
 transcript it prints `cost unavailable` and the reason: ledger that line as it
-is, and do not look for the file yourself. Subagents count toward a task by the
-task number in their dispatch text, so a review running beside the next
-implementer is not counted twice.
+is, and do not look for the file yourself. It also prints `cost unavailable`
+when the transcript has no `Task <NN>: dispatched` write of its own, which
+means the recorded path is another session's. The count is a time window: from
+`--since` to the task's `Task <NN>: complete` write, or to the next task's
+`dispatched` write if that comes first, or to the transcript's end. Controller
+calls and subagents are both cut to that window, and a subagent counts toward a
+task by the task number in its dispatch text.
 
 Then append the completion line in the same message as your other bookkeeping:
 
