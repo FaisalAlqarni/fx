@@ -20,8 +20,15 @@ assert.ok(read('skills/fx-implement/SKILL.md').includes('never fired on any task
 for (const a of ['fx-lens-security', 'fx-devils-advocate']) {
   assert.ok(/^model:\s*sonnet\s*$/m.test(fs.readFileSync(path.join(root, 'agents', `${a}.md`), 'utf8')), `${a} pins sonnet`);
 }
-for (const site of ['skills/fx-plan/SKILL.md', 'commands/fx-critique.md', 'skills/fx-review/SKILL.md', 'skills/fx-implement/SKILL.md']) {
-  assert.ok(read(site).includes('Capable because:'), `${site} writes a reason for the top tier`);
+// Each phrase is the call site's own reason line, so deleting one site fails here.
+const sites = {
+  'skills/fx-plan/SKILL.md': 'Capable because: plan red-team',
+  'commands/fx-critique.md': 'Capable because: critique of a design or plan',
+  'skills/fx-review/SKILL.md': 'Capable because: standalone branch review',
+  'skills/fx-implement/SKILL.md': 'Capable because: final branch review, auth change',
+};
+for (const [site, line] of Object.entries(sites)) {
+  assert.ok(read(site).includes(line), `${site} writes its reason for the top tier`);
 }
 assert.ok(fs.existsSync(path.join(root, 'docs', 'adr', '0044-the-branch-pass-reviews-what-per-task-review-missed.md')), 'ADR 0044 exists');
 

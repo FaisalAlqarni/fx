@@ -21,7 +21,8 @@ Announce: "Using fx-review (<task|branch> mode)."
   scoped to that task. Standard-tier model. A lens fires only on its tripwire in
   §2's "Per task" column.
 - **branch**: called at the end of a run, or by you on a branch or PR. All
-  axes plus every triggered lens, most capable model.
+  axes plus the lenses the branch pass selects: with a ledger, the limited pass
+  (§2); with no ledger, every triggered lens. Most capable model.
 
 **Mandatory:** after each task in `fx-implement` · after a major feature ·
 before a merge.

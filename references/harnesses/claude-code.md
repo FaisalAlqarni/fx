@@ -36,7 +36,7 @@ a general dispatch (`general-purpose`, `claude`, `Plan`, or no type at all,
 which the Agent tool starts as general-purpose) with no `model` runs on
 `sonnet`, and any `model` other than `sonnet` or `haiku` without a
 `Capable because:` line in the prompt runs on `sonnet`. A fork (the explicit
-type `fork`) keeps the parent's model, and any `fx:` agent is left alone. It
+type `fork`) keeps the parent's model, and an `fx:` agent with no `model` keeps its frontmatter pin, while one given a `model` other than `sonnet` or `haiku` without a `Capable because:` line runs on `sonnet`. It
 never refuses a call. When routing itself fails, the hook prints a
 `systemMessage` saying routing is off. Codex and opencode
 have no equivalent yet (ADR-0031).

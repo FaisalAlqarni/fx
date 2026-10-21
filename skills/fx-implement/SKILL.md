@@ -562,7 +562,7 @@ Dispatch each lens it names (`fx-lens-security`, `-database`,
 line `mode: task` and the text of that lens's tripwire cell. The task reviewer
 flags a tripwire the report missed; dispatch that lens then.
 A lens whose column says `no`, and any lens whose tripwire does not match,
-waits for the branch pass, where every lens runs on its broad trigger.
+waits for the branch pass, which runs it only under the limited rule in Final review.
 Reference the table, don't copy it. A lens's `[Critical]` and `[Important]`
 findings enter the fix loop below like any other; its `[Minor]` findings
 never do (see below).
@@ -755,7 +755,8 @@ brief as named checks, in the lens table's order (`fx-review` step 2). When
 the branch touches authentication or authorization, dispatch `fx-lens-security`
 and `fx-devils-advocate` on the most capable available model, with
 `Capable because: final branch review, auth change` as the prompt's first line
-and `model` set.
+and `model` set. Otherwise the with-ledger pass dispatches devil's advocate on
+the standard tier.
 
 If it returns findings: **ONE fix subagent with the complete findings list: not one fixer per finding.** *Per-finding fixers rebuild context and re-run
 suites each time; a real session's final-review fix wave cost more than all
