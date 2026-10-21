@@ -59,3 +59,14 @@ Task 01: fix round 1/5 (3 addressed, 0 open: none; commits ffd5ce2..294c4cc)
 Task 01: minor (deferred): build-cost --task spreads all controller timestamps into Math.max; a very large transcript throws RangeError, breaking the one-line exit-0 contract.
 Task 01: cost unavailable (no transcript recorded)
 Task 01: complete (commits d6881a3..294c4cc, review clean after fix round 1). Files: hooks/fx-context.js, scripts/build-cost(+test), skills/fx-implement/SKILL.md, tests/gates/{ledger-lines,transcript-path}.test.js, scripts/check-all, ADR 0040, four version fields.
+Task 01: cost 13455046 tokens, 8 min, 4 dispatches, fx-tdd 1/1 (transcript passed explicitly: installed fx 0.2.5 hook does not record it)
+Task 02: dispatched 3462150 2026-10-21T07:27:35Z (implementer, sonnet)
+Task 02: implemented 3462150..55751ed (DONE_WITH_CONCERNS, 1: re-review-prompt.md still carries one story).
+Ruling: skills/fx-implement/re-review-prompt.md joins task 02's loaded set and its gate list. Why: it loads on every scoped re-review, the same reason the five files were chosen. Cost if wrong: one more file in the gate; none.
+Task 02: follow-up 55751ed..63f67d0 (DONE): re-review-prompt.md story moved, gate covers six files.
+Task 02: minor (deferred): stray `**` after "arrived too late." at skills/fx-implement/implementer-prompt.md:247
+Task 02: minor (deferred): moved stories in fx-implement/COVERAGE.md have inconsistent indentation, so not strictly word for word
+Task 02: minor (deferred): gate misses lower-case "measured" stories (fx-implement/SKILL.md:592, 857, 889; fx-tdd/SKILL.md:94) and does not check a story was filed
+Task 02: review 0/0/3, spec ✅. ⚠️ cleared: controller ran test_scope over the task's paths, exit 0.
+Task 02: cost 6753235 tokens, 7 min, 2 dispatches, fx-tdd 1/1
+Task 02: complete (commits 3462150..63f67d0, review clean). Files: six loaded lane files, three COVERAGE.md, gate, check-all, ADR 0041.
