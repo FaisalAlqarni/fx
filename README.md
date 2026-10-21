@@ -62,6 +62,7 @@ of the pipeline above.
 | Design: design.md written and approved | 0.24M to 0.32M | 0.9 to 1.3 min | the same 2 runs |
 | Plan: plan.md and the task files | 0.50M to 0.98M | 3.6 to 4.5 min | the same 2 runs, 6 and 7 tasks |
 | Implement and review: every task built and reviewed, then the branch review | 11.3M | 18.7 min | median of 3 builds of a 6-task plan |
+| **Total: idea to reviewed branch** | **12.5M to 13.2M** | **26.8 to 27.9 min** | the rows above added |
 
 - **Brainstorm, design and plan** were measured on one feature: invoice
   approval in a small Rails app, with 13 requirements, a migration with a
