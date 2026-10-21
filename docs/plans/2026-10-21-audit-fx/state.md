@@ -135,3 +135,9 @@ Task 07: cost 3346560 tokens, 4 min, 2 dispatches, fx-tdd 1/1
 Task 07: complete
 Ruling: the controller runs task 08's harnesses itself, as for task 05. Bench (FX_BENCH_KEEP set) and lane-triggering run in parallel; fixture run 1 runs alone afterwards, so its wall-clock number is not inflated by concurrent sessions. Cost if wrong: a slower total; none on the numbers.
 Task 08: started 2026-10-21T18:36:47Z at 78a85c3.
+Task 08: lane-triggering at d98ad7d: 17 passed, 0 failed, 0 skipped (holds). Waiting on the bench.
+Task 08: bench audit-b at d98ad7d: 24/24 (bar 23/24: holds), false positives 15 (base 17). Fixture run 1 launched 2026-10-21T18:46:45Z, alone.
+Task 08: fixture run 1 at d98ad7d: 6/6 tasks, caughtAtEnd 6/6, fix rounds 0, tokens 7,817,049 (baseline median 23.3M: -66%), wall 16.0 min (baseline median 41.5: -61%), controller calls 53. Early-abort rule allows runs 2 and 3; launched 2026-10-21T19:03:16Z as run.sh 2 audit-final-more.
+Task 08: fixture run 2 (audit-final-more-1): tokens 11,722,352 (-50%), wall 23.9 min (-42%), caughtAtEnd 6/6, fix rounds 1, tasksCompleted 7 on a six-task fixture (to check before Checkpoint B). Run 3 running.
+Task 08: fixture run 3 (audit-final-more-2): tokens 11,278,813, wall 18.7 min, 6/6, fix rounds 0. Medians 11,278,813 tokens (-52%) and 18.7 min (-55%) against 23.3M and 41.5 min. Defeater not triggered. Checkpoint B recorded.
+Task 08: complete
