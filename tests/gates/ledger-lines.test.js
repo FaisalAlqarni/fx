@@ -26,4 +26,16 @@ assert.ok(s3.indexOf('fx-tdd 0/') > s3.indexOf('build-cost --task'), 'section 3 
 assert.ok(s5.includes('build-cost --task') && s5.includes('`Task <NN>: cost'), 'section 5 runs the cost step again and ledgers the line');
 assert.ok(fs.existsSync(path.join(root, 'docs', 'adr', '0040-every-task-ledgers-its-dispatch-and-cost.md')), 'ADR 0040 exists');
 
+// Coverage-audit G1: the cost line must reach the task reviewer.
+const rev = fs.readFileSync(path.join(root, 'skills', 'fx-implement', 'task-reviewer-prompt.md'), 'utf8').replace(/\s+/g, ' ');
+assert.ok(rev.includes('[COST_LINE]'), 'the reviewer template has a slot for the cost line');
+assert.ok(rev.includes('When the controller cost line reads `fx-tdd 0/<i>`, a report with no captured RED run is an Important finding.'),
+  'the reviewer template states what fx-tdd 0/<i> means');
+assert.ok(s3.includes('[COST_LINE]'), 'section 3 passes the cost line into the reviewer dispatch');
+// Coverage-audit G2: resume and the re-dispatch cap meet.
+assert.ok(impl.includes('A task with a `Task <NN>: parked:` line is never re-dispatched, and the tasks it blocks are skipped and named in the completion report.'),
+  'resume never re-dispatches a parked task');
+assert.ok(impl.includes('Each re-dispatch appends its own `dispatched` line, so the count is the number of those lines.'),
+  'the re-dispatch count is the number of dispatched lines');
+
 console.log('ledger-lines: OK');

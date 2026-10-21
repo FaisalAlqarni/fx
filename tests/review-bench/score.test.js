@@ -130,7 +130,7 @@ const TEMPLATE = path.join(__dirname, '..', '..', 'skills', 'fx-implement', 'tas
   assert.ok(body.includes('## Part 1: spec compliance'), 'extracted body must be the prompt, not the whole template');
   assert.ok(!body.includes('Subagent (general-purpose):'), 'extracted body must exclude the dispatch header');
 
-  const KEYS = ['BRIEF_FILE', 'REPORT_FILE', 'BASE_SHA', 'HEAD_SHA', 'DIFF_FILE', 'FINDINGS_FILE'];
+  const KEYS = ['BRIEF_FILE', 'REPORT_FILE', 'BASE_SHA', 'HEAD_SHA', 'DIFF_FILE', 'FINDINGS_FILE', 'COST_LINE'];
   const values = {};
   for (const k of KEYS) values[k] = `SENTINEL_${k}_VALUE`;
   const filled = fillPlaceholders(body, values);

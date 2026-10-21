@@ -32,4 +32,11 @@ for (const [site, line] of Object.entries(sites)) {
 }
 assert.ok(fs.existsSync(path.join(root, 'docs', 'adr', '0044-the-branch-pass-reviews-what-per-task-review-missed.md')), 'ADR 0044 exists');
 
+// Coverage-audit G5: one sentence states the cap in both lanes, and no rule
+// adds agents outside it.
+const cap = 'The branch pass is limited, not full: the broad pass, the unprimed devil\'s advocate, and at most four lenses, with `fx-lens-security` on an auth change counted inside the four. Devil\'s advocate always runs; an auth change only moves it to the top tier.';
+const implText = read('skills/fx-implement/SKILL.md');
+assert.ok(review.includes(cap) && implText.includes(cap), 'both lanes state the branch-pass cap in the same sentence');
+assert.ok(!implText.includes('dispatch `fx-lens-security` and `fx-devils-advocate`'), 'no rule dispatches security outside the four lenses');
+
 console.log('branch-pass: OK');

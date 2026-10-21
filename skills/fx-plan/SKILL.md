@@ -162,6 +162,9 @@ Fresh eyes on the design, then check the plan against it.
 3. **Type consistency.** Do the signatures and property names used in later
    tasks match what earlier tasks declared? `clearLayers()` in task 03
    and `clearFullLayers()` in task 07 is a bug.
+4. **Design headings resolve.** Every heading a task's `**Design:**` line
+   names exists in `design.md`, spelled the same. `compile-brief` fails on a
+   heading it cannot find.
 
 Fix inline. No need to re-review: fix and move on.
 

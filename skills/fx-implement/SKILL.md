@@ -300,6 +300,10 @@ so those rulings hold without the owner repeating them.
   commit on the dispatch line, **before any re-dispatch**. Commits there mean
   the work was done: it goes to review, not to a new implementer. A second
   implementer on committed work repeats the task at full price.
+- A task with a `Task <NN>: parked:` line is never re-dispatched, and the
+  tasks it blocks are skipped and named in the completion report. A parked
+  task has dispatched with no `complete` line, and re-dispatching it is the
+  loop the cap exists to stop.
 - A ledger whose first line names a **different** plan is another plan's
   progress. Leave it alone and start your own.
 - **After compaction, trust the ledger and `git log` over your own
@@ -494,7 +498,9 @@ the rule in that implementer's next dispatch or resume.
 
 **NEEDS_CONTEXT**: provide the missing context and re-dispatch.
 
-**NEEDS_CONTEXT and BLOCKED re-dispatch at most twice per task.** A third
+**NEEDS_CONTEXT and BLOCKED re-dispatch at most twice per task.** Each
+re-dispatch appends its own `dispatched` line, so the count is the number of
+those lines. A third
 return means the task or its brief is wrong, and more attempts only spend
 tokens. Append the parked line, tell the owner, and take the next unblocked
 task:
@@ -542,8 +548,9 @@ controller's own directory, run
 `node <skill base directory>/../../scripts/build-cost --task <NN> --since <time from the dispatch line>`
 (the script is `../../scripts/build-cost` from this skill's base directory) and
 read the line it prints. When it shows `fx-tdd 0/<i>` with `i` above 0, no
-implementer invoked `fx-tdd`: pass that line to the task reviewer, and a report
-with no captured RED run is then an Important finding. The reviewer cannot be
+implementer invoked `fx-tdd`. Pass the line to the task reviewer as
+`[COST_LINE]` in every case; the template turns `fx-tdd 0/<i>` into an
+Important finding for a report with no captured RED run. The reviewer cannot be
 told this later, because the line does not exist until you run the script.
 
 Use the **BASE you recorded before dispatching**: never `HEAD~1`, which
@@ -747,13 +754,13 @@ Invoke the fx-review lane in branch mode on the **most capable available model**
 Point it at the ledger's **deferred-minor and parked lines** so it can triage
 which must be fixed before merge.
 
-The branch pass is limited, not full: the broad pass over the cross-task
-seams, the unprimed devil's advocate, and at most four lenses. A lens runs
+The branch pass is limited, not full: the broad pass, the unprimed devil's advocate, and at most four lenses, with `fx-lens-security` on an auth change counted inside the four. Devil's advocate always runs; an auth change only moves it to the top tier.
+The broad pass covers the cross-task seams. A lens runs
 only if it never fired on any task, or its branch trigger matches files
 outside the tasks where it fired; lenses past four fold into the broad pass's
 brief as named checks, in the lens table's order (`fx-review` step 2). When
-the branch touches authentication or authorization, dispatch `fx-lens-security`
-and `fx-devils-advocate` on the most capable available model, with
+the branch touches authentication or authorization, dispatch
+`fx-devils-advocate` on the most capable available model, with
 `Capable because: final branch review, auth change` as the prompt's first line
 and `model` set. Otherwise the with-ledger pass dispatches devil's advocate on
 the standard tier.

@@ -109,11 +109,10 @@ broad triggers in the last column apply at the branch pass. Devil's advocate
 never runs per task.
 
 **Branch pass with a ledger** (called from `fx-implement`): per-task review
-already ran, so the branch pass covers what it missed. It runs the broad
-reviewer, whose brief names the cross-task seams (interfaces one task
+already ran, so the branch pass covers what it missed. The branch pass is limited, not full: the broad pass, the unprimed devil's advocate, and at most four lenses, with `fx-lens-security` on an auth change counted inside the four. Devil's advocate always runs; an auth change only moves it to the top tier. The broad
+reviewer's brief names the cross-task seams (interfaces one task
 produces and another consumes, shared files edited by several tasks, ordering
-between tasks), the unprimed adversarial pass, and at most four lenses. A
-lens runs when its branch trigger matches the branch diff and it either
+between tasks). A lens runs when its branch trigger matches the branch diff and it either
 never fired on any task, or its branch trigger matches files outside the tasks
 where they fired (read the ledger's lens lines and
 `findings/<NN>-lens-<name>.md`). When more than four qualify, take four in

@@ -26,6 +26,13 @@ Subagent (general-purpose):
     controller's context, every live ruling, the design passages the task
     names, and the stack text that applies.
 
+    ## Controller cost line
+
+    [COST_LINE]
+
+    When the controller cost line reads `fx-tdd 0/<i>`, a report with no
+    captured RED run is an Important finding.
+
     ## Rulings in the brief
 
     Read its `## Rulings` section, including rulings made many tasks ago. A
@@ -301,6 +308,8 @@ Subagent (general-purpose):
   the review
 - `[FINDINGS_FILE]`: REQUIRED, where you write your own findings before
   summarising. Not the implementer's report
+- `[COST_LINE]`: REQUIRED, the line `scripts/build-cost --task` printed for
+  this task, or `unavailable` when the script printed none
 - `[REPORT_FILE]`: REQUIRED
 - `[BASE_SHA]`: the commit recorded before dispatching. **Never `HEAD~1`**
 - `[HEAD_SHA]`

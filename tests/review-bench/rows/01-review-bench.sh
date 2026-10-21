@@ -88,7 +88,7 @@ FINDINGS_FILE="$WORK/.review-bench-findings.md"
 # 4. fill the live template's fenced prompt from the working tree, so a later
 # change to it (task 08's, for instance) is what this bench measures.
 PROMPT="$(BRIEF_FILE="$BRIEF_FILE" \
-  REPORT_FILE="$REPORT_FILE" BASE_SHA="$BASE" HEAD_SHA="$HEAD_SHA" DIFF_FILE="$DIFF_FILE" FINDINGS_FILE="$FINDINGS_FILE" \
+  REPORT_FILE="$REPORT_FILE" BASE_SHA="$BASE" HEAD_SHA="$HEAD_SHA" DIFF_FILE="$DIFF_FILE" FINDINGS_FILE="$FINDINGS_FILE" COST_LINE="unavailable" \
   node "$FX/tests/review-bench/fill-template.js" "$FX/skills/fx-implement/task-reviewer-prompt.md")" \
   || fail "could not fill the reviewer template"
 PROMPT_FILE="$WORK/.review-bench-prompt.md"

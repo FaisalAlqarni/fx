@@ -51,7 +51,7 @@ if (require.main === module) {
     process.stderr.write('usage: fill-template.js <template.md>\n');
     process.exit(2);
   }
-  const KEYS = ['BRIEF_FILE', 'REPORT_FILE', 'BASE_SHA', 'HEAD_SHA', 'DIFF_FILE', 'FINDINGS_FILE'];
+  const KEYS = ['BRIEF_FILE', 'REPORT_FILE', 'BASE_SHA', 'HEAD_SHA', 'DIFF_FILE', 'FINDINGS_FILE', 'COST_LINE'];
   const values = {};
   for (const k of KEYS) if (process.env[k] !== undefined) values[k] = process.env[k];
   const body = extractPromptBody(fs.readFileSync(templatePath, 'utf8'));

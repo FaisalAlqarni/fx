@@ -6,7 +6,7 @@ the incident behind it. Each section is moved verbatim from there.
 ## Derive expectations independently
 
 ```ruby
-# ❌ Mirror assertion: the same builder computes both sides — always true
+# ❌ Mirror assertion: the same builder computes both sides: always true
 expected = build_search_query(tag: "urgent")
 expect(build_search_query(tag: "urgent")).to eq(expected)
 
@@ -70,12 +70,12 @@ hardcoded `Thread.new`. The test substitutes one it controls and asserts the
 work was scheduled, with no polling and no deadline:
 
 ```ruby
-# Hard to test — the seam is buried inside the method
+# Hard to test: the seam is buried inside the method
 def notify_subscribers(event)
   Thread.new { SubscriberMailer.broadcast(event) }
 end
 
-# Testable — the collaborator is a seam
+# Testable: the collaborator is a seam
 def notify_subscribers(event, executor: Concurrent::SingleThreadExecutor.new)
   executor.post { SubscriberMailer.broadcast(event) }
 end

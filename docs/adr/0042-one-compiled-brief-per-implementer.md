@@ -7,7 +7,7 @@ An implementer was dispatched with a template that restated the TDD cycle (which
 ## Decision
 
 - **`skills/fx-implement/scripts/compile-brief` writes one `brief.md` per task.** Sections in order: `## Task`, `## Global constraints`, `## Context`, `## Rulings`, `## Design excerpt`, `## Stack`. The controller runs it before the implementer dispatch and again before the task review, so rulings made since dispatch are carried.
-- **`rulingsFor(cwd, planDir)` in `lib/plan-state.js` supplies the rulings:** every live `Ruling:` from `docs/plans/rulings.md`, then from the ledger outside its `## Standing rulings` copy. Wrapped lines are joined, results are deduplicated, nothing is capped or filtered by task, because a ruling about a later task may name only the earlier one.
+- **`rulingsFor(cwd, planDir, taskId)` in `lib/plan-state.js` supplies the rulings:** every live `Ruling:` from `docs/plans/rulings.md`, then from the ledger outside its `## Standing rulings` copy. Wrapped lines are joined, results are deduplicated, nothing is capped. A ruling that names only other tasks (`task NN`, `task: NN`, `tasks NN to MM`) is dropped for this task; one that names this task or no task stays. Lettered rulings (`Ruling A:`) count.
 - **The implementer template reads `[BRIEF_FILE]` and drops its `## TDD` summary,** which duplicated `fx-tdd`. It keeps every contract other parts of the pipeline read, and is capped at 11,000 bytes by `tests/gates/brief-size.test.js`.
 - **The task reviewer template reads `[BRIEF_FILE]` instead of `[LEDGER_FILE]`.** The review bench fills the same placeholder.
 - **`references/vocab/good-tests.md` keeps its rules** (cap 9,000 bytes) and its worked examples move to `good-tests-examples.md`, which `fx-tdd` points at. References stay leaves.
