@@ -91,3 +91,7 @@ Task 04: review approved, C/I/M 0/0/3; minors deferred to the branch review (COV
 Ruling: keep both unrequested additions. Why: the Tests red flag enforces the task's own Risks mitigation; 'more than 10 tasks' matches the Phasing section body, which already says 'More than 10 tasks'. Cost if wrong: an 11-task boundary one off; caught by the branch review.
 Task 04: cost 5490508 tokens, 5 min, 3 dispatches, fx-tdd 1/1
 Task 04: complete
+Ruling: the controller runs task 05's two harnesses itself as tracked background commands, in parallel, instead of dispatching an implementer. Why: the task is two harness runs and a results file, no code; each harness uses its own scratch HOME, so they do not share state. Cost if wrong: a contended run errors, which the task treats as BLOCKED with the error, not a failed bar. Task 05: started 2026-10-21T12:25:14Z at 90ee21f.
+Task 05: lane-triggering 17 passed, 0 failed, 0 skipped (bar 17/17: holds). Waiting on the review bench.
+Task 05: review bench caught 20/24 (bar 23/24: fails); misses path-dotdot-only 1/3, readme-binary 1/3. Lane-triggering 17/17 holds.
+Task 05: BLOCKED. By the standing ruling the build stops here; tasks 06 to 08 are not dispatched. Reported to the owner.
