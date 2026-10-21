@@ -18,13 +18,13 @@ conversation alone.
 
 ## Who you are writing for
 
-Write the plan assuming the implementer has **zero context for this codebase
-and questionable taste**. Document what they need: which files to touch, the
-code and interfaces involved, the tests, the docs to check, how to verify.
-Give them the whole plan as **bite-sized tasks**.
+Write the plan assuming the implementer has **no context for this codebase**.
+Document what they need: which files to touch, the interfaces involved, the
+behaviour to build, the tests to write, the docs to check, how to verify.
+Give them the whole plan as **seam-sized tasks**.
 
 Assume they are a **skilled developer** who knows **almost nothing about our
-toolset or problem domain**, and **does not know good test design well**. That
+toolset or problem domain**, and who **invokes `fx-tdd` for test design**. That
 assumption sets the detail level for everything below. Write less and you are
 guessing on their behalf.
 
@@ -85,11 +85,13 @@ sequence them first.
 Task titles and descriptions use the domain vocabulary from `CONTEXT.md`, and
 respect the ADRs in the area you are touching.
 
-**Right-sizing.** A task is the smallest unit that carries its own test cycle
-and is worth a fresh reviewer's gate. Fold setup, configuration, scaffolding
-and documentation into the task whose deliverable needs them. Split only
-where a reviewer could meaningfully reject one task while approving its
-neighbor. Every task ends with an independently testable deliverable.
+**Right-sizing.** A task is **one seam**: the smallest unit that carries its
+own test cycle and is worth a fresh reviewer's gate. Docs, ADR, rename and
+config work fold into the task that needs them. Tasks that edit the same files
+merge. Split only where a reviewer could meaningfully reject one task while
+approving its neighbor. Every task ends with an independently testable
+deliverable. Fewer, deeper tasks beat many shallow ones: every task costs a
+fresh implementer and a fresh reviewer.
 
 **Blocking edges.** Give each task the tasks that must complete before it
 can start. A task with no blockers can start immediately. Number from `01` in
@@ -100,8 +102,8 @@ blockers are all done. For a purely linear chain that means top to bottom. Get
 them right: an edge that isn't a real dependency serialises work for nothing,
 and a missing one lets a task start against code that doesn't exist yet.
 
-**Each step within a task is one action**: write the failing test, run it,
-implement, run it, run the suite, commit. Two actions in one step means the
+**Each step within a task is one action**: invoke `fx-tdd`, write the tests,
+run them, implement, run them, run the scope, commit. Two actions in one step means the
 implementer can half-finish it and still tick the box.
 
 ### Wide refactors are the exception
@@ -164,8 +166,8 @@ Decide the recommendation now; it is offered as one option in §8, not as a
 separate prompt. `fx-devils-advocate` costs a full subagent pass.
 
 **Recommend YES when any of:** `Complexity: High` · any `HIGH` risk in the
-header · a wide refactor · a data migration or anything irreversible · 10+
-tasks · auth, payment, or security-critical paths.
+header · a wide refactor · a data migration or anything irreversible · auth,
+payment, or security-critical paths.
 
 **Recommend SKIP otherwise.** Most plans do not need it.
 
@@ -281,6 +283,13 @@ attention lens.>
 **What to build:** the end-to-end behavior this makes work, from the user's
 perspective. Not a layer-by-layer implementation list.
 
+**Design:** Data model; Request flow > 2   (headings of `design.md`, `Heading`
+or `Heading > N`, separated by `;`. `compile-brief` copies these passages into
+the implementer's brief.)
+
+**Stack:** rails/Testing; rails/Migrations   (`stack/Heading`, separated by
+`;`. Omit the line to give the implementer every stack file.)
+
 **Files:**
 - Create: `engines/core/app/domain/foo.rb`
 - Modify: `engines/core/app/models/bar.rb`
@@ -289,7 +298,7 @@ perspective. Not a layer-by-layer implementation list.
   No line-number ranges: they rot within a day. File paths are stable enough
   to be worth naming; `existing.rb:123-145` is not.
 
-**Interfaces:**
+**Interfaces:** (required when a neighbour task consumes or produces a symbol)
 - Consumes: `Bar#baz(id:) -> Baz`  (from task 01)
 - Produces: `Foo.call(bar:, at:) -> Result<Foo, Error>`
 
@@ -298,12 +307,24 @@ perspective. Not a layer-by-layer implementation list.
 
 **Seam:** <the confirmed seam this is tested at, from design.md>
 
+**Tests:**
+- `Foo.call` on an archived bar: input `bar: archived_bar, at: now`; returns a
+  failure whose error is `:bar_archived`.
+- `Foo.call` on an active bar: input `bar: active_bar, at: now`; returns a
+  success holding a `Foo` with `bar_id` equal to the bar's id.
+
+  One entry per test: its name, its input, and the **exact expected value or
+  error contract** (exact message, key or status). No test code: the
+  implementer writes each test through `fx-tdd` against real code. An entry
+  with no exact expected value is a placeholder.
+
 **Risks:** <what could go wrong here and how to avoid it: omit if none>
 
 **Idempotency:** <why re-running this is safe: existence guards,
-`IF NOT EXISTS`, upserts, commit-only-if-dirty. **Required for any task that
-mutates state or commits**, because a resumed run re-executes tasks and a
-non-idempotent one corrupts state or double-writes.>
+`IF NOT EXISTS`, upserts. **Required for any task that mutates state outside
+git** (a database, a file outside the repository, an external service),
+because a resumed run re-executes tasks and a non-idempotent one corrupts
+state or double-writes. Omit for a text edit.>
 
 **Testing:** <how this deliverable is verified: unit / integration / system>
 
@@ -335,36 +356,29 @@ easy to state and easy to test, so a task drifts into a list of them. The refusa
 
 ## Steps
 
-- [ ] **1. Write the failing test**
+- [ ] **1. Invoke `fx-tdd`**
 
-```ruby
-RSpec.describe Foo do
-  it "returns a failure when bar is archived" do
-    expect(Foo.call(bar: archived_bar, at: now)).to be_failure
-  end
-end
-```
+- [ ] **2. Write each test the Tests field names**
 
-- [ ] **2. Run it: verify RED**
+- [ ] **3. Run them: verify RED**
 
 Run: `docker compose exec shared bundle exec rspec engines/core/spec/domain/foo_spec.rb`
-Expected: FAIL, `uninitialized constant Foo`
-(Compile-time RED is equally valid on C#/Kotlin/Swift.)
+Expected: each test fails because the behavior is missing, not because of a
+typo. (Compile-time RED is equally valid on C#/Kotlin/Swift.)
 
-- [ ] **3. Implement the minimum that passes**
+- [ ] **4. Implement the minimum that passes**
 
-No code here: `fx-tdd` drives it from the failing test. Pre-writing the
-implementation defeats TDD and goes stale.
+No code here: `fx-tdd` drives it from the failing tests.
 
-- [ ] **4. Run it: verify GREEN**
+- [ ] **5. Run them: verify GREEN**
 
 Run: same command. Expected: PASS, output pristine.
 
-- [ ] **5. Run the engine suite**
+- [ ] **6. Run the scope**
 
 Run: `make test-core`
 
-- [ ] **6. Commit**
+- [ ] **7. Commit by path**
 
 ```
 git add engines/core/app/domain/foo.rb engines/core/spec/domain/foo_spec.rb
@@ -383,19 +397,15 @@ tasks ever overlap. `-A` sweeps all of it into the task's commit, which is how a
 task diff stops being the thing its review was scoped to.
 The **Files** section already lists exactly what to stage.
 
-**Test code is written out; implementation code is not.** The test is the
-behavioral spec and it makes verify-RED possible. The implementation is
-`fx-tdd`'s job, doubles the plan's size, and is the part most likely to rot.
+**Tests are specified in the Tests field and written by the implementer
+through `fx-tdd` against real code.** Neither test code nor implementation code
+goes in the task: code nobody has run goes stale and wrong, and the implementer
+sees the real code you cannot. The Tests field's exact-expected-value rule is
+what keeps a prose spec as precise as code.
 
-**Exception:** a snippet that encodes a decision more precisely than prose can: a state machine, a schema, a type shape: is inlined in the relevant task,
-trimmed to the decision-rich part. Note that it came from a prototype.
-
-**Test code in a task is code nobody has run.** You write it out in full and
-`fx-implement` uses it exactly, but neither of you compiles or executes it: the only check it gets before RED is your own read-through, and a spec that
-omits `type: :request` or asserts an error body through a regex that happens
-to match still looks correct on the page. When the implementer reports "the
-given test does not run," that is not the plan failing: it is the intended
-defence catching what a read-through couldn't, working as designed. Expect it.
+**Exception:** a snippet that encodes a decision more precisely than prose can
+(a schema, a state machine, a type shape) may still be inlined in the relevant
+task, trimmed to the decision-rich part. Note its source, such as a prototype.
 
 ---
 
@@ -405,19 +415,19 @@ Every step contains the actual content the implementer needs. Never write:
 
 - "TBD", "TODO", "implement later", "fill in details"
 - "Add appropriate error handling" / "add validation" / "handle edge cases"
-- "Write tests for the above": without the actual test code
-- "Similar to task N": repeat it; tasks get read out of order
-- A step describing *what* to do without showing *how*
+- A Tests entry without an exact expected value
+- A rule repeated in several tasks: state it once in plan.md's Global Constraints
 - References to types, functions or methods that no task defines
 
 ## Quality red flags: check before presenting
 
 - [ ] Every task names its files (no line-number ranges)
-- [ ] Every task has `Interfaces: Consumes / Produces` with exact signatures
+- [ ] `Interfaces: Consumes / Produces` with exact signatures is present when a neighbour task consumes or produces a symbol
+- [ ] Every Tests entry names an input and an exact expected value
 - [ ] Blocking edges are real dependencies, not just ordering preferences
-- [ ] Every mutating or committing task declares its idempotency
+- [ ] Every task that mutates state outside git declares its idempotency
 - [ ] Testing strategy present at both header and task level
-- [ ] Each phase ships independently (10+ tasks)
+- [ ] Each phase ships independently (more than 10 tasks)
 - [ ] No step says "add validation"
 - [ ] No step instructs a push, a merge, or an attribution trailer
 - [ ] A wide refactor is sequenced expand:contract, not forced into a slice
