@@ -147,3 +147,9 @@ Ruling: all seven go to one fix subagent before the branch review (task 09, sonn
 Task 09: dispatched 0608500 2026-10-21T19:51:32Z (implementer, sonnet)
 Task 09: implemented 0608500..00857b2 (DONE_WITH_CONCERNS, 1: findings/coverage-audit.md failed check-prose; controller reworded two lines, check-prose OK). [COST_LINE] filled with 'unavailable' when no line exists. Task 09: cost 4751331 tokens, 5 min, 1 dispatches, fx-tdd 1/1 (pre-review)
 Task 09: review dispatched (sonnet).
+Task 09: review C/I/M 0/2/4. I1: SKILL gives no step when compile-brief exits non-zero. I2: rulingsFor list forms ('tasks 03 and 05', 'tasks 03, 04, 05') read only the first number; a bold '**Ruling A:**' after another ruling is joined to it. Reviewer reproduced both on a scratch rulings.md. Only caller is compile-brief (whole-repo check).
+Ruling: fix both Important and M2, M3; M1 and M4 deferred to the branch review. Why: M1 and M4 are gate strength on behaviour now covered by count and template assertions. Cost if wrong: a later edit weakens a gate unseen; caught by the branch review.
+Task 09: fix round 1/5 dispatched (resume implementer). FIX_BASE=00857b2.
+Task 09: fix round 1 result 00857b2..7839221. Controller re-review (plan-state.js 18 lines, read in full): ENTRY_RE starts a new entry on a bold lettered ruling; TASK_REF takes a run of numbers joined by comma, and, to or dash; names() matches a listed number or a range; SKILL step for a compile-brief failure and the 'unavailable' rule pinned in ledger-lines; fx-plan Design-heading step pinned. Approved. M1, M4 deferred.
+Task 09: cost 7786272 tokens, 9 min, 2 dispatches, fx-tdd 1/1
+Task 09: complete
