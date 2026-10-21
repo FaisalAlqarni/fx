@@ -95,3 +95,12 @@ Ruling: the controller runs task 05's two harnesses itself as tracked background
 Task 05: lane-triggering 17 passed, 0 failed, 0 skipped (bar 17/17: holds). Waiting on the review bench.
 Task 05: review bench caught 20/24 (bar 23/24: fails); misses path-dotdot-only 1/3, readme-binary 1/3. Lane-triggering 17/17 holds.
 Task 05: BLOCKED. By the standing ruling the build stops here; tasks 06 to 08 are not dispatched. Reported to the owner.
+Owner chose option 1: diagnose the checkpoint A bench drop before any re-run. Per-rep findings were not kept (FX_BENCH_KEEP unset), so the diagnosis is static: the four review-side files changed since 72f180c against the two missed cases. Dispatched (opus). Capable because: root-cause judgment across prompt wording and case design, no code to write.
+Owner approved (2026-10-21) the three-step response to checkpoint A: (1) widen the path-dotdot-only and readme-binary match regexes with score.test.js rows; (2) bench with FX_BENCH_KEEP at base 72f180c and at HEAD, both re-scored with the widened regexes; (3) the bar becomes the base run's score instead of 23/24.
+Ruling: checkpoint A's 23/24 bar is replaced by 'HEAD catches at least what base 72f180c catches, same widened regexes, 3 reps'. Why: every earlier bench run predates 1f749e2, which hid the answer keys and the case name from the reviewer; the old bar was set on leaked runs. Owner approved. Cost if wrong: a real drop hidden inside run noise; caught by checkpoint B and by the kept findings, which are now read.
+Ruling: the regex fix runs as task 05a (implementer, sonnet), reviewed like any task, before the two bench runs.
+Task 05a: dispatched aece9db 2026-10-21T18:12:45Z (implementer, sonnet)
+Task 05: base bench launched at 72f180c in .worktrees/bench-base, FX_BENCH_KEEP=.fx/2026-10-21-audit-fx/keep-base, in parallel with 05a (no shared state: the bench runs in a scratch HOME and only reads its own worktree).
+Task 05a: implemented aece9db..a65335f (DONE, concerns 0). Controller review in place of a reviewer dispatch: 2 one-line data files and 40 test lines; read in full. Regexes add absolute name, leading slash, /etc/passwd, resolves outside; and no installed/package binary, never installed, command does not exist. One positive and one negative block per case, exact expected values. Approved. Noted: only the first new positive was watched failing (assert stops at first failure).
+Task 05a: complete
+Task 05: head bench launched at a65335f, FX_BENCH_KEEP=.fx/2026-10-21-audit-fx/keep-head.
