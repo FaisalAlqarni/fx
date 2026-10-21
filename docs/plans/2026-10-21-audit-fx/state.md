@@ -113,3 +113,14 @@ Task 05a: fix round 1/5 dispatched (resume implementer). FIX_BASE=f3f4227.
 Task 05a: fix round 1 result fb51756 (non-?existent binary|command). Controller review: one alternative appended, two positive rows from real findings, negative row still false. Approved. Task 05a: complete
 Task 05: final re-score with the fb51756 regexes: base 24/24, head 24/24; false positives base 17, head 16. Bar holds. Checkpoint A recorded in checkpoints.md.
 Task 05: complete
+Ruling: task 08 keeps the 23/24 bench bar, scored with the fb51756 regexes. Why: the branch base scores 24/24 under that scorer, so 23/24 allows one miss of noise. Cost if wrong: a one-miss drop passes; caught by the kept findings, which task 08 also reads.
+Task 06: dispatched b0a1544 2026-10-21T18:26:51Z (implementer, sonnet)
+Task 06: waiting on the implementer; 07 is blocked by 06.
+Task 06: implemented b0a1544..e025d68 (DONE, concerns 0). Task 06: cost 1321379 tokens, 3 min, 1 dispatches, fx-tdd 1/1 (pre-review)
+Task 06: review dispatched (sonnet).
+Task 06: review C/I/M 0/3/1 (plan-mandated 1). Citations opened: fx-review/SKILL.md:24 'axes plus every triggered lens, most capable model.'; fx-implement/SKILL.md:565 'where every lens runs on its broad trigger.'; references/harnesses/claude-code.md:39 'and any `fx:` agent is left alone'; 72f180c already had 'Capable because:' in fx-review (1) and fx-implement (3), so the gate's file-level check is vacuous there.
+Ruling: fix all three Important and the Minor; the gate asserts each call site's own line, overriding the task's file-level test. Why: the task's Risks says the gate must catch a lost line, and a file-level check cannot. references/harnesses/claude-code.md joins the files. Cost if wrong: a stricter gate pins wording; caught by none needed.
+Task 06: fix round 1/5 dispatched (resume implementer). FIX_BASE=e025d68.
+Task 06: fix round 1 result e025d68..6d70572. Controller re-review (15 lines, read in full): both stale sentences reworded to the limited rule; harness doc now says an fx: agent with no model keeps its frontmatter pin and an unexplained top tier runs on sonnet, which matches lib/dispatch-route.js:21-25; the gate asserts each site's own 'Capable because:' line; RED shown with the fx-plan line deleted. Minor added. Approved.
+Task 06: cost 3885259 tokens, 5 min, 2 dispatches, fx-tdd 1/1
+Task 06: complete
