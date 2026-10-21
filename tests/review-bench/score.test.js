@@ -271,5 +271,45 @@ const sections = (importantLines) => [
   assert.strictEqual(out.important, 2);
 }
 
+// 12. Task 05a: the path-dotdot-only and readme-binary matches accept the
+// correct-catch phrasings the bench diagnosis lists, and still reject a
+// finding about the same file that does not name the planted defect.
+const caseMatch = (c) => fs.readFileSync(path.join(__dirname, 'cases', c, 'match'), 'utf8').trim();
+const caught = (name, match, line) => {
+  const r = run(write(name, sections([line])), match);
+  assert.strictEqual(r.status, 0, `expected exit 0, got ${r.status}: ${r.stderr}`);
+  return JSON.parse(r.stdout).caught;
+};
+{
+  const m = caseMatch('path-dotdot-only');
+  const positives = [
+    '- lib/store.js:6 - only rejects names containing `..`; a name like `/etc/passwd` resolves outside NOTES_DIR',
+    "- lib/store.js:6 - checks name.includes('..'), but an absolute name escapes NOTES_DIR",
+    '- lib/store.js:6 - a leading slash bypasses the guard',
+    '- lib/store.js:6 - an absolute path is not rejected',
+  ];
+  positives.forEach((p, i) => assert.strictEqual(caught(`dotdot-pos-${i}.md`, m, p), true, `must catch: ${p}`));
+  assert.strictEqual(
+    caught('dotdot-neg.md', m, '- lib/store.js:5 - the error message "bad name" does not say which name was rejected'),
+    false,
+    'a finding about store.js that does not name the escape must not be caught',
+  );
+}
+{
+  const m = caseMatch('readme-binary');
+  const positives = [
+    '- README.md:3 - runs `notes add`, but the design says there is no package binary; use `node cli.js add`',
+    '- README.md:3 - uses a `notes` command that does not exist; it should be `node cli.js add`',
+    '- README.md:3 - the task says there is no installed binary',
+    '- README.md:3 - notes: command not found',
+  ];
+  positives.forEach((p, i) => assert.strictEqual(caught(`readme-pos-${i}.md`, m, p), true, `must catch: ${p}`));
+  assert.strictEqual(
+    caught('readme-neg.md', m, '- README.md:3 - the Usage heading has no sentence saying what `show` prints for a missing note'),
+    false,
+    'a finding about the README that does not name the missing binary must not be caught',
+  );
+}
+
 fs.rmSync(root, { recursive: true, force: true });
 console.log('score.test.js: ok');

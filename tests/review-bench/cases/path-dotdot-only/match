@@ -1,1 +1,1 @@
-absolute path
+absolute (path|name)|leading (/|slash)|/etc/passwd|resolves? outside
