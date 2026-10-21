@@ -104,8 +104,23 @@ multi-commit task.
 | `fx-lens-pipeline` | no | code that enqueues, publishes, schedules or fans out work; code that governs queue depth, admission or producer flow control |
 
 Per task, a lens fires only when the task's diff matches its tripwire; the
-broad triggers in the last column apply at the branch pass, where every lens
-runs. Devil's advocate never runs per task.
+broad triggers in the last column apply at the branch pass. Devil's advocate
+never runs per task.
+
+**Branch pass with a ledger** (called from `fx-implement`): per-task review
+already ran, so the branch pass covers what it missed. It runs the broad
+reviewer, whose brief names the cross-task seams (interfaces one task
+produces and another consumes, shared files edited by several tasks, ordering
+between tasks), the unprimed adversarial pass, and at most four lenses. A
+lens runs when its branch trigger matches the branch diff and it either
+never fired on any task, or its branch trigger matches files outside the tasks
+where they fired (read the ledger's lens lines and
+`findings/<NN>-lens-<name>.md`). When more than four qualify, take four in
+this table's order and fold into the broad pass's brief the rest as named
+checks, one line each, in the same order.
+
+**Branch pass with no ledger** (a standalone run on a branch or PR): there is
+nothing to subtract, so every lens whose branch trigger matches the diff runs.
 
 There is deliberately **no performance lens** as a standalone axis: query
 shape (N+1, missing indexes, `SELECT *`, unbounded result sets) is
@@ -195,6 +210,12 @@ over it: see `fx-implement` §3's Lens dispatch for the exact command.
 **Branch mode also dispatches the broad reviewer**: [reviewer-prompt.md](./reviewer-prompt.md),
 on the most capable available model, with `Capable because: final branch review` as the prompt's first line, pointed at the ledger's deferred-minor and
 parked lines so it can triage what must be fixed before merge.
+
+With no ledger, `fx-devils-advocate` and, when the diff touches authentication
+or authorization, `fx-lens-security` run on the most capable available model,
+each with `model` set and `Capable because: standalone branch review` as the
+prompt's first line. Without that line `route()` runs them on the standard
+tier.
 
 **Branch mode also dispatches the unprimed adversarial pass**: `fx-devils-
 advocate`, code mode, given the diff file path and the task file, **with no

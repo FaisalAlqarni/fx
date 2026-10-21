@@ -15,8 +15,10 @@ No path given? Ask for one. **Do not guess** which document was meant.
 
 ## What this does
 
-Dispatches `../agents/fx-devils-advocate.md` at that file. That is the whole
-command. The agent owns the review: the lens, the modes, the output format and
+Dispatches `../agents/fx-devils-advocate.md` at that file, on the most capable
+available model: set `model` and make the prompt's first line
+`Capable because: critique of a design or plan`, or `route()` runs it on the
+standard tier. That is the whole command. The agent owns the review: the lens, the modes, the output format and
 the all/some/continue gate all live there, and this command must not restate or
 second-guess any of it.
 

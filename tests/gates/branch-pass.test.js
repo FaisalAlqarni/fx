@@ -1,0 +1,28 @@
+'use strict';
+// Run: node tests/gates/branch-pass.test.js
+// ADR 0044: after per-task review, the branch pass covers what it missed, and
+// the most capable tier is always a written decision.
+const assert = require('node:assert');
+const fs = require('fs');
+const path = require('path');
+
+const root = path.join(__dirname, '..', '..');
+const read = (p) => fs.readFileSync(path.join(root, p), 'utf8').replace(/\s+/g, ' ');
+const review = read('skills/fx-review/SKILL.md');
+
+assert.ok(review.includes('never fired on any task'), 'lenses that already ran are skipped');
+assert.ok(review.includes('outside the tasks where they fired'), 'a lens whose trigger reaches new files still runs');
+assert.ok(review.includes('at most four lenses'), 'the lens count is capped');
+assert.ok(review.includes('fold into the broad pass'), 'lenses past the cap are not dropped');
+assert.ok(review.includes('cross-task seams'), 'the broad pass covers seams between tasks');
+assert.ok(review.includes('no ledger'), 'a standalone branch run keeps the full pass');
+assert.ok(read('skills/fx-implement/SKILL.md').includes('never fired on any task'), 'fx-implement final review matches');
+for (const a of ['fx-lens-security', 'fx-devils-advocate']) {
+  assert.ok(/^model:\s*sonnet\s*$/m.test(fs.readFileSync(path.join(root, 'agents', `${a}.md`), 'utf8')), `${a} pins sonnet`);
+}
+for (const site of ['skills/fx-plan/SKILL.md', 'commands/fx-critique.md', 'skills/fx-review/SKILL.md', 'skills/fx-implement/SKILL.md']) {
+  assert.ok(read(site).includes('Capable because:'), `${site} writes a reason for the top tier`);
+}
+assert.ok(fs.existsSync(path.join(root, 'docs', 'adr', '0044-the-branch-pass-reviews-what-per-task-review-missed.md')), 'ADR 0044 exists');
+
+console.log('branch-pass: OK');

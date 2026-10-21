@@ -41,8 +41,14 @@ assert.strictEqual(
   null, 'the reason line may sit on any line');
 assert.strictEqual(route({ subagent_type: 'fx:fx-lens-security', prompt: 'p' }), null, 'a typed agent keeps its own pin');
 assert.strictEqual(route({ subagent_type: 'Explore', prompt: 'p' }), null, 'Explore keeps its own default');
-assert.strictEqual(route({ subagent_type: 'fx:fx-lens-security', model: 'opus', prompt: 'p' }), null,
-  'an fx agent pins its own tier, even with an explicit model');
+assert.strictEqual(route({ subagent_type: 'fx:fx-lens-security', model: 'opus', prompt: 'p' }).model, 'sonnet',
+  'an fx agent asked for opus with no reason runs on the standard tier');
+assert.strictEqual(route({ subagent_type: 'fx:fx-lens-security', model: 'opus', prompt: 'Capable because: auth rewrite\np' }), null,
+  'an fx agent with a reason keeps opus');
+assert.strictEqual(route({ subagent_type: 'fx:fx-lens-security', prompt: 'p' }), null,
+  'an fx agent with no model keeps its frontmatter pin');
+assert.strictEqual(route({ subagent_type: 'fx:fx-lens-database', model: 'haiku', prompt: 'p' }), null,
+  'a cheap tier for an fx agent stands');
 assert.strictEqual(route({ subagent_type: 'other-plugin:agent', model: 'opus', prompt: 'p' }).model, 'sonnet',
   'an explicit opus on another type still needs a reason');
 assert.strictEqual(route({ subagent_type: 'other-plugin:agent', prompt: 'p' }), null, 'another typed agent keeps its own pin');

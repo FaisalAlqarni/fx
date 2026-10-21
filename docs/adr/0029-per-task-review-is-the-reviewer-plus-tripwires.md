@@ -1,5 +1,7 @@
 # Per-task review is the reviewer plus tripwires; every lens and devil's advocate run at the branch pass
 
+**Status:** superseded in part by 0044: the branch pass runs a limited set of lenses, not every lens.
+
 ## Context
 
 In a measured build, the five lenses were 3.3% of agent-minutes (121 dispatches) but they trigger fix rounds, and fix rounds cost 13.3% of agent-minutes. The owner has asked for the same cut about seven times: per-task review should be lighter.

@@ -11,7 +11,7 @@ description: >
   the design", "find the holes", "adversarial review", "unprimed review",
   "what am I missing".
 tools: Read, Grep, Glob
-model: opus
+model: sonnet
 ---
 
 # fx-devils-advocate

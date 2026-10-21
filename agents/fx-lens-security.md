@@ -12,7 +12,7 @@ description: >
   `render inline`, `html_safe`/`raw` in `.erb`, or any string-built SQL or
   shell command. Read-only: reports vulnerabilities, never patches them.
 tools: Read, Grep, Glob
-model: opus
+model: sonnet
 ---
 
 # fx-lens-security
