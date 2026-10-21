@@ -124,3 +124,14 @@ Task 06: fix round 1/5 dispatched (resume implementer). FIX_BASE=e025d68.
 Task 06: fix round 1 result e025d68..6d70572. Controller re-review (15 lines, read in full): both stale sentences reworded to the limited rule; harness doc now says an fx: agent with no model keeps its frontmatter pin and an unexplained top tier runs on sonnet, which matches lib/dispatch-route.js:21-25; the gate asserts each site's own 'Capable because:' line; RED shown with the fx-plan line deleted. Minor added. Approved.
 Task 06: cost 3885259 tokens, 5 min, 2 dispatches, fx-tdd 1/1
 Task 06: complete
+Task 07: dispatched b4a11ca 2026-10-21T18:32:16Z (implementer, sonnet)
+Task 07: implemented b4a11ca..8067824 (DONE, concerns 0; also edited README.md and fx-brainstorm COVERAGE.md for stale old-flow text). Task 07: cost 1127193 tokens, 2 min, 1 dispatches, fx-tdd 1/1 (pre-review)
+Task 07: review dispatched (sonnet).
+Task 07: review C/I/M 0/1/2. Citation opened: references/design-template.md:17 '**Approved:** YYYY-MM-DD' sits inside the template block, and fx-plan/SKILL.md:35 skips the restate when design.md 'carries an **Approved:** line'. SURFACE.md:30 '→ sectioned design →' confirmed.
+Ruling: fix the Important by removing the line from the template block and having fx-plan skip only on an **Approved:** line followed by a real date; fix both Minors. Why: a draft that copies the template must not pass as approved. Cost if wrong: none found.
+Task 07: fix round 1/5 dispatched (resume implementer). FIX_BASE=8067824.
+Task 07: fix round 1 result 8067824..78a85c3. Controller re-review (12 lines, read in full): template block no longer holds the Approved line; fx-plan skips only on a real date, placeholder means restate; SURFACE row updated; gate pins all three, each deletion shown failing. Approved.
+Task 07: cost 3346560 tokens, 4 min, 2 dispatches, fx-tdd 1/1
+Task 07: complete
+Ruling: the controller runs task 08's harnesses itself, as for task 05. Bench (FX_BENCH_KEEP set) and lane-triggering run in parallel; fixture run 1 runs alone afterwards, so its wall-clock number is not inflated by concurrent sessions. Cost if wrong: a slower total; none on the numbers.
+Task 08: started 2026-10-21T18:36:47Z at 78a85c3.
