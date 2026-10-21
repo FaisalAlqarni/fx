@@ -9,8 +9,8 @@ fx runs on four harnesses: Claude Code, Codex, opencode 1.x and opencode 2.x.
 
 ## How the pipeline runs
 
-Architectural work runs one path with two approval gates. A bounded change
-gets one approval in chat and goes straight to code; a spike ends in a
+Architectural work takes the path below, with two approval gates. A bounded
+change gets one approval in chat and goes straight to code. A spike ends in a
 recommendation.
 
 ```
@@ -19,7 +19,8 @@ recommendation.
         v
   fx-brainstorm ........ classify (spike | bounded | architectural)
         |                question rounds, then one message: what made it
-        |                95% sure, a 2-line plan, 2 or 3 approaches
+        |                95% sure, a 2-line plan, every output the design
+        |                names with its answer, 2 or 3 approaches
         |                (recommendation first); wait for go
         |                design doc -> docs/plans/YYYY-MM-DD-slug/design.md
         |
@@ -56,8 +57,8 @@ recommendation.
 
 ## What a build costs
 
-Measured on fx 0.2.9 with Opus sessions on 2026-10-22. Each row is one phase
-of the pipeline above.
+Measured on fx 0.2.9 with Opus sessions on 2026-10-22, one row per phase of
+the pipeline above.
 
 | Phase | Tokens | Wall clock | Measured on |
 |---|---|---|---|
@@ -67,16 +68,16 @@ of the pipeline above.
 | Implement and review: every task built and reviewed, then the branch review | 11.3M | 18.7 min | median of 3 builds of a 6-task plan |
 | **Total: idea to reviewed branch** | **12.5M to 13.1M** | **26.8 to 27.9 min** | each of the 2 runs' phases plus the build median |
 
-- **Brainstorm, design and plan** were measured on one feature: invoice
-  approval in a small Rails app, with 13 requirements, a migration with a
-  backfill and an authorization rule. A Haiku model played the user and
-  answered from a fixed brief. Both plans carried all 13 requirements, and both
-  designs carried 12 and 13 of them. The times include the simulated user's
-  replies; a person answering takes longer.
-- **Implement and review** is the median of three fixture builds
-  (`tests/fixture-build/`). Its tokens split as 8.1M for the controller
-  (dispatch, ledger and coordination), 1.3M for the implementers, 1.3M for the
-  task reviews, lenses and coverage audit, and 0.6M for other agents. The wall
+- Brainstorm, design and plan ran on one feature: invoice approval in a small
+  Rails app, with 13 requirements, a migration with a backfill and an
+  authorization rule. A Haiku model played the user from a fixed brief. Both
+  plans carried all 13 requirements; the two designs carried 12 and 13. The
+  times include the simulated user's replies, so a person answering takes
+  longer.
+- Implement and review is the median of three fixture builds
+  (`tests/fixture-build/`). Its tokens split into 8.1M for the controller
+  (dispatch, ledger, coordination), 1.3M for the implementers, 1.3M for task
+  reviews, lenses and the coverage audit, and 0.6M for other agents. The wall
   clock is not split between implementing and reviewing.
 - Run files: `docs/plans/2026-10-21-audit-fx/checkpoints.md` and
   `docs/plans/2026-10-21-audit-fx/plan-phase-runs.md`.
@@ -120,13 +121,13 @@ How you type them: `/fx:fx-<name>` on Claude Code, `/fx-<name>` on opencode,
 ## What the lenses are, and when they fire
 
 fx has six read-only agents: five lenses and a devil's advocate. None of them
-can write, on any harness. Each one costs a full subagent, so per task only
-three lenses fire, and only on a narrow tripwire. At the branch review at most
-four lenses fire, each on its broad trigger and only if it has not already
-covered those files per task, alongside `fx-devils-advocate`. A standalone
-review of a branch or PR runs every lens whose trigger matches.
-`/fx:fx-audit` also runs `fx-lens-pipeline`. The full trigger table is in
-`skills/fx-review/SKILL.md`; the cells below are shortened.
+can write, on any harness. Each costs a full subagent, so per task only three
+lenses fire, each on a narrow tripwire. At the branch review, at most four
+lenses fire alongside `fx-devils-advocate`: each on its broad trigger, and only
+if it did not already cover those files per task. A standalone review of a
+branch or PR runs every lens whose trigger matches. `/fx:fx-audit` also runs
+`fx-lens-pipeline`. The cells below are shortened; the full trigger table is in
+`skills/fx-review/SKILL.md`.
 
 | Lens | Per task (tripwire) | Branch review: fires when the diff touches |
 |---|---|---|
@@ -165,9 +166,8 @@ dispatch routing, Claude Code only:
                              "Capable because:" line -> sonnet; forks untouched; never refuses
 ```
 
-`PREAMBLE.md` is a small bootstrap, about 2.6K characters, that tells the model
-to invoke a skill before it acts. Each skill's own description tells the model
-when to use it.
+`PREAMBLE.md` is a bootstrap of about 2.6K characters that tells the model to
+invoke a skill before it acts. Each skill's description says when to use it.
 
 After the bootstrap, `lib/preamble.js` appends one companions line to every
 session and subagent. It names semble for code search (repowise or another
@@ -177,9 +177,9 @@ lacks. Set `companions` in `.fx.json` to replace the line (300 characters at
 most, shown as "This repository's .fx.json adds: ..."), or to `""` to turn it
 off. An unreadable `.fx.json` adds a note that the default applied.
 
-If `repo.md` exists, the preamble also points the model to it. Sessions, not
-subagents, also get a block listing the plans in `docs/plans` with open work
-and up to 10 carried rulings, 160 characters each.
+If `repo.md` exists, the preamble points the model to it. Sessions (not
+subagents) also get a block listing the plans in `docs/plans` with open work,
+and up to 10 carried rulings of at most 160 characters each.
 
 The guard does not check which branch you are on. `fx-implement` does its
 work in a worktree, and at the end it asks you how to integrate.
