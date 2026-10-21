@@ -9,8 +9,9 @@ fx runs on four harnesses: Claude Code, Codex, opencode 1.x and opencode 2.x.
 
 ## How the pipeline runs
 
-One path, two approval gates. Small work still passes both gates; only the
-documents get shorter.
+Architectural work runs one path with two approval gates. A bounded change
+gets one approval in chat and goes straight to code; a spike ends in a
+recommendation.
 
 ```
   you: "let's build X"
@@ -29,7 +30,7 @@ documents get shorter.
         |                exact interfaces, blocking edges, global constraints
         |                offers a red-team pass (fx-devils-advocate)
         |
-     [ GATE ] implement | red-team | keep discussing | park
+     [ GATE ] implement | red-team | keep discussing | save for later
         |
         v
   fx-implement ......... a worktree, and a ledger that survives compaction
@@ -41,10 +42,12 @@ documents get shorter.
         |                         only when the diff matches their trigger
         |      fix loop ......... at most 5 rounds
         |
-        +--> branch review: what per-task review missed, at most
-        |      four lenses, plus an unprimed adversarial pass
+        +--> coverage audit, then branch review: a broad pass on
+        |      cross-task seams, at most four lenses, and an unprimed
+        |      adversarial pass
         |
-        +--> the full test suite, once
+        +--> the full test suite, once, and the repository's own CI
+        |      commands, each exit code read
         |
         v
   four options: merge | push and open a PR | leave it | discard.
@@ -62,7 +65,7 @@ of the pipeline above.
 | Design: design.md written and approved | 0.24M to 0.32M | 0.9 to 1.3 min | the same 2 runs |
 | Plan: plan.md and the task files | 0.50M to 0.98M | 3.6 to 4.5 min | the same 2 runs, 6 and 7 tasks |
 | Implement and review: every task built and reviewed, then the branch review | 11.3M | 18.7 min | median of 3 builds of a 6-task plan |
-| **Total: idea to reviewed branch** | **12.5M to 13.2M** | **26.8 to 27.9 min** | the rows above added |
+| **Total: idea to reviewed branch** | **12.5M to 13.1M** | **26.8 to 27.9 min** | each of the 2 runs' phases plus the build median |
 
 - **Brainstorm, design and plan** were measured on one feature: invoice
   approval in a small Rails app, with 13 requirements, a migration with a
@@ -100,7 +103,8 @@ Ten of the twelve work on their own, with no plan: only `fx-plan` and
 
 ## The commands
 
-You type five more skills yourself. The model never picks them.
+You type five more skills yourself: four are generated from `commands/`,
+`fx-audit` is its own skill. The model never picks them.
 
 | Command | Does |
 |---|---|
@@ -117,16 +121,19 @@ How you type them: `/fx:fx-<name>` on Claude Code, `/fx-<name>` on opencode,
 
 fx has six read-only agents: five lenses and a devil's advocate. None of them
 can write, on any harness. Each one costs a full subagent, so per task only
-three lenses fire, and only on a narrow tripwire. At the branch review every lens fires on its
-broad trigger, alongside `fx-devils-advocate`. `/fx:fx-audit` also runs
-`fx-lens-pipeline`.
+three lenses fire, and only on a narrow tripwire. At the branch review at most
+four lenses fire, each on its broad trigger and only if it has not already
+covered those files per task, alongside `fx-devils-advocate`. A standalone
+review of a branch or PR runs every lens whose trigger matches.
+`/fx:fx-audit` also runs `fx-lens-pipeline`. The full trigger table is in
+`skills/fx-review/SKILL.md`; the cells below are shortened.
 
 | Lens | Per task (tripwire) | Branch review: fires when the diff touches |
 |---|---|---|
-| `fx-lens-database` | a migration, schema change, index or constraint change, backfill | migrations, `*.sql`, models, query chains |
-| `fx-lens-security` | auth code, credentials, a new endpoint, a user-supplied URL, string-built SQL or shell | auth paths, params, credentials, any new endpoint |
-| `fx-lens-a11y` | no | `.erb`, `.css`, view partials, user-facing strings |
-| `fx-lens-silent-failure` | a swallowing handler, `retry_on`, a job, consumer or webhook receiver, a loop past a failed record | `rescue`, `catch`, workers, retry paths |
+| `fx-lens-database` | a migration, schema change, index or constraint change, backfill | migrations, `*.sql`, `structure.sql`, models, ClickHouse queries, EF migrations |
+| `fx-lens-security` | auth code (`[Authorize]`, token issue or verify), credentials, a new endpoint, a record fetched by a request parameter, a user-supplied URL, string-built SQL or shell | auth paths, params, credentials, any new endpoint |
+| `fx-lens-a11y` | no | `.erb`, `.css`, view partials, Compose `.kt`, SwiftUI `.swift`, user-facing strings |
+| `fx-lens-silent-failure` | a swallowing handler, `retry_on`, `discard_on`, a job, consumer or webhook receiver, a loop past a failed record | `rescue`, `catch`, `except`, Sidekiq workers, broker consumers, attribution code, retry paths |
 | `fx-lens-pipeline` | no | code that enqueues, publishes, schedules or fans out work; code that governs queue depth, admission or producer flow control |
 
 ## What runs in every session
@@ -149,14 +156,16 @@ guard and lane check, one shared lib on every runtime:
    plugins/fx-opencode-v1.js opencode 1.x, tool.execute.before
    plugins/fx-opencode-v2.js opencode 2.x, permission.evaluate, plus installed policies
       + lib/git-guard.js     shell: the absolutes, fail closed
-      + lib/lane-check.js    file writes: one nudge per session when no design exists, fail open
+      + lib/lane-check.js    file writes: two once-per-session nudges, source with no design.md and a test
+                             written after its implementation, fail open
 
 dispatch routing, Claude Code only:
-   hooks/fx-pretooluse.js    Agent calls: no model on a general dispatch -> sonnet;
-      + lib/dispatch-route.js    opus without "Capable because:" -> sonnet; never refuses
+   hooks/fx-pretooluse.js    Agent calls: no model on a general-purpose, claude or Plan
+      + lib/dispatch-route.js    dispatch -> sonnet; any model above sonnet without a leading
+                             "Capable because:" line -> sonnet; forks untouched; never refuses
 ```
 
-`PREAMBLE.md` is a small bootstrap, about 3K characters, that tells the model
+`PREAMBLE.md` is a small bootstrap, about 2.6K characters, that tells the model
 to invoke a skill before it acts. Each skill's own description tells the model
 when to use it.
 
@@ -164,8 +173,13 @@ After the bootstrap, `lib/preamble.js` appends one companions line to every
 session and subagent. It names semble for code search (repowise or another
 search tool as the fallback), ponytail and caveman at full, and
 `fx-humanize` for prose, and tells the agent to skip any tool its runtime
-lacks. Set `companions` in `.fx.json` to replace the line, or to `""` to turn
-it off.
+lacks. Set `companions` in `.fx.json` to replace the line (300 characters at
+most, shown as "This repository's .fx.json adds: ..."), or to `""` to turn it
+off. An unreadable `.fx.json` adds a note that the default applied.
+
+If `repo.md` exists, the preamble also points the model to it. Sessions, not
+subagents, also get a block listing the plans in `docs/plans` with open work
+and up to 10 carried rulings, 160 characters each.
 
 The guard does not check which branch you are on. `fx-implement` does its
 work in a worktree, and at the end it asks you how to integrate.
@@ -192,9 +206,13 @@ hooks/        Claude Code: hooks.json, fx-context.js, fx-pretooluse.js
 plugins/      opencode: fx-opencode-v1.js (1.x), fx-opencode-v2.js (2.x)
 lib/          shared by all four harnesses: preamble.js (the renderer),
               git-guard.js, lane-check.js, plan-state.js, plant-roles.js,
-              agent-dialects.js, opencode-commands.js, user-invoked-lanes.js
+              agent-dialects.js, opencode-commands.js, user-invoked-lanes.js,
+              opencode-v2-policies.js; dispatch-route.js is Claude Code only
 scripts/      fx-opencode-install, check-all and the gates it runs
-tests/        conformance, install, gates, lane-triggering, lens-pipeline
+tests/        conformance, install, gates, lane-triggering, lens-pipeline,
+              companion, fixture-build, review-bench
+docs/         adr/ (decisions) and plans/ (designs and plans)
+INSTALL.md    full install steps; SURFACE.md lists what fx exposes
 PREAMBLE.md   the bootstrap, injected into every session AND every subagent
 ```
 
