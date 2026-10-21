@@ -41,8 +41,8 @@ documents get shorter.
         |                         only when the diff matches their trigger
         |      fix loop ......... at most 5 rounds
         |
-        +--> branch review: every axis, every lens, plus an unprimed
-        |      adversarial pass
+        +--> branch review: what per-task review missed, at most
+        |      four lenses, plus an unprimed adversarial pass
         |
         +--> the full test suite, once
         |
@@ -50,6 +50,32 @@ documents get shorter.
   four options: merge | push and open a PR | leave it | discard.
   Nothing merges or leaves the machine until you choose.
 ```
+
+## What a build costs
+
+Measured on fx 0.2.8 with Opus sessions on 2026-10-22. Each row is one phase
+of the pipeline above.
+
+| Phase | Tokens | Wall clock | Measured on |
+|---|---|---|---|
+| Brainstorm: the interview, up to the confidence check | 0.50M to 0.56M | 3.4 to 3.6 min | 2 runs, below |
+| Design: design.md written and approved | 0.24M to 0.32M | 0.9 to 1.3 min | the same 2 runs |
+| Plan: plan.md and the task files | 0.50M to 0.98M | 3.6 to 4.5 min | the same 2 runs, 6 and 7 tasks |
+| Implement and review: every task built and reviewed, then the branch review | 11.3M | 18.7 min | median of 3 builds of a 6-task plan |
+
+- **Brainstorm, design and plan** were measured on one feature: invoice
+  approval in a small Rails app, with 13 requirements, a migration with a
+  backfill and an authorization rule. A Haiku model played the user and
+  answered from a fixed brief. Both plans carried all 13 requirements, and both
+  designs carried 12 and 13 of them. The times include the simulated user's
+  replies; a person answering takes longer.
+- **Implement and review** is the median of three fixture builds
+  (`tests/fixture-build/`). Its tokens split as 8.1M for the controller
+  (dispatch, ledger and coordination), 1.3M for the implementers, 1.3M for the
+  task reviews, lenses and coverage audit, and 0.6M for other agents. The wall
+  clock is not split between implementing and reviewing.
+- Run files: `docs/plans/2026-10-21-audit-fx/checkpoints.md` and
+  `docs/plans/2026-10-21-audit-fx/plan-phase-runs.md`.
 
 ## The skills
 

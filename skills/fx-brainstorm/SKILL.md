@@ -167,6 +167,10 @@ Then, in one message:
 1. **What made you confident**: the answers and looked-up facts that settled
    it, each tied to the decision it settled. Name any assumption still standing.
 2. **What you will do**, in two lines.
+3. **Every output the design names, each with its answer**: every stored
+   field, column, migration and backfill, export, screen and message, and the
+   answer that settled it. An output with no answer is a question for another
+   round, not a guess to carry into the design.
 
 On the architectural path, the same message then carries **2 to 3 approaches**
 with trade-offs and your recommendation (§5). The bounded path has no
