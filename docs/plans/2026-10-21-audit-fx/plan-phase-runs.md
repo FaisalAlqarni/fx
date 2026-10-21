@@ -1,6 +1,6 @@
 # Brainstorm, design and plan: measured runs
 
-fx 0.2.8 (the `brainstorm-outputs` branch, main plus the confidence check's outputs item), 2026-10-22.
+fx 0.2.9 (main plus the confidence check's outputs item), 2026-10-22.
 
 ## Method
 

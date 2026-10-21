@@ -53,7 +53,7 @@ documents get shorter.
 
 ## What a build costs
 
-Measured on fx 0.2.8 with Opus sessions on 2026-10-22. Each row is one phase
+Measured on fx 0.2.9 with Opus sessions on 2026-10-22. Each row is one phase
 of the pipeline above.
 
 | Phase | Tokens | Wall clock | Measured on |
