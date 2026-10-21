@@ -7,11 +7,15 @@ ADRs in the area being touched.
 
 ---
 
+Brainstorm writes the `**Approved:**` line only when the user approves the
+file; leave it out of a draft.
+
 ```markdown
 # <Feature>
 
 **Date:** YYYY-MM-DD
 **Status:** ready-for-agent
+**Approved:** YYYY-MM-DD
 **Glossary:** <path to the relevant CONTEXT.md: note if terms were added or
 sharpened during this session>
 
@@ -25,15 +29,15 @@ The solution to that problem, from the user's perspective.
 
 ## User Stories
 
-A LONG, numbered list. Each in the form:
+A numbered list. Each in the form:
 
 1. As a <actor>, I want <feature>, so that <benefit>
 
 Example: "As a mobile bank customer, I want to see the balance on my accounts,
 so that I can make better-informed decisions about my spending."
 
-**This list should be extremely extensive and cover all aspects of the
-feature.**
+**This list should be complete for the feature's behaviour: every behaviour
+the feature has appears in a story, and no story is padding.**
 
 ## Implementation Decisions
 

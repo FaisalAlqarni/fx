@@ -19,10 +19,18 @@ assert.ok(/\n3\. \*\*Confidence check/.test(bounded), 'bounded step 3 is the con
 assert.ok(bounded.indexOf('Confidence check') < bounded.indexOf('short design'), 'the check comes before the design');
 
 const arch = skill.slice(skill.indexOf('### Architectural checklist'), skill.indexOf('**Terminal states are path-bound.**'));
-assert.ok(/\n4\. \*\*Confidence check/.test(arch), 'architectural step 4 is the confidence check');
-assert.ok(arch.indexOf('Confidence check') < arch.indexOf('Propose 2 to 3 approaches'), 'the check comes before approaches');
-assert.ok(/\n10\. Hand off to `fx-plan`/.test(arch), 'the later steps are renumbered');
-
-assert.ok(/\| "I'm confident, I'll show approaches in the same message" \|/.test(skill), 'the red flag row exists');
+assert.ok(/\n4\. \*\*Confidence check and approaches, then stop/.test(arch), 'architectural step 4 carries the approaches');
+assert.ok(/\n6\. Self-review it/.test(arch), 'self-review stays');
+assert.ok(/\n2\. Show rather than tell/.test(arch), 'show rather than tell stays');
+assert.ok(/\n8\. Hand off to `fx-plan`/.test(arch), 'the architectural path hands off at step 8');
+assert.ok(!arch.includes('Propose 2 to 3 approaches'), 'approaches are not a separate step');
+assert.ok(!/\| "I'm confident, I'll show approaches in the same message" \|/.test(skill), 'the red-flag row against one message is gone');
+assert.ok(!skill.includes('create a task for each item on your path'), 'no task item per checklist step');
+assert.ok(skill.includes('seams included'), 'design.md is reviewed once, seams included');
+const tpl = fs.readFileSync(path.join(__dirname, '..', '..', 'references', 'design-template.md'), 'utf8');
+assert.ok(tpl.includes('**Approved:**') && !tpl.includes('extremely extensive'), 'template: approval line, complete stories');
+const fxPlan = fs.readFileSync(path.join(__dirname, '..', '..', 'skills', 'fx-plan', 'SKILL.md'), 'utf8');
+assert.ok(fxPlan.slice(fxPlan.indexOf('## 1.'), fxPlan.indexOf('## 2.')).includes('**Approved:**'), 'fx-plan skips the restate on an approved design');
+assert.ok(fs.existsSync(path.join(__dirname, '..', '..', 'docs', 'adr', '0045-one-design-checkpoint.md')), 'ADR 0045 exists');
 
 console.log('brainstorm-confidence.test.js: OK');

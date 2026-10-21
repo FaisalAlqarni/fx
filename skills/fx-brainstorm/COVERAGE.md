@@ -30,10 +30,10 @@ A claim with no verdict is a build error.
 | 20 to 22 | K | In doubt take the heavier; one-way ratchet; nothing downgrades mid-task |
 | 23 to 26 | K | Every path ends with approval; two sentences still need it; simple tasks hide assumptions; **"what scales with simplicity is the artifact, never the approval"** |
 | 27 to 33 | K | **All 7 red-flag rows**, verbatim; 2 more added (facts-are-your-job, tangents-don't-close-questions) |
-| 34 | K | **"Create a task for each item on your path and complete them in order."** Restored |
+| 34 | S | **"Create a task for each item on your path"** dropped: one task-tool item per checklist step cost turns for no gain (ADR 0045); the path is still completed in order |
 | 35 to 39 | K | Spike checklist, all 5 |
 | 40 to 44 | K | Bounded checklist, all 5, incl. "presenting and starting in the same breath is skipping the gate" |
-| 45 to 55 | K | Architectural checklist, all 9: steps 3 and 5 rewritten for clustered rounds and the ledger |
+| 45 to 55 | S | Architectural checklist is now 8 steps (ADR 0045): approaches ride with the confidence check, the design is written into the file, one review replaces the sectioned chat and the separate doc review |
 | 52 | S | `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` and "commit it" → `docs/plans/YYYY-MM-DD-<slug>/design.md`, **not committed** (the user runs git) |
 | 56 to 59 | K | Terminal states path-bound; **only `fx-plan` follows**; bounded goes to the normal workflow; spike ends in a recommendation |
 | 60 to 61 | K | Which subsections serve which path |
@@ -43,7 +43,7 @@ A claim with no verdict is a build error.
 | 69 | K | "Prefer multiple choice when possible, but open-ended is fine" |
 | 71 | K | Focus on purpose, constraints, success criteria |
 | 72 to 75 | K | 2 to 3 approaches with trade-offs; conversational; lead with the recommendation; **YAGNI ruthlessly** |
-| 76 to 80 | K | **Present the design in sections**, scaled to complexity (a few sentences to 200 to 300 words), **approval after each**, covering architecture/components/data flow/error handling/testing, ready to go back and clarify. **Restored: the draft had no sectioned-design stage at all** |
+| 76 to 80 | S | **Present the design in sections, approval after each** replaced by writing each section into design.md and one review of the file, seams included (ADR 0045). Sections still scale to complexity and cover architecture/components/data flow/error handling/testing |
 | 81 to 85 | K | **"Design for isolation and clarity"** entire: one clear purpose, well-defined interfaces, independently testable; the three questions per unit; the two boundary tests; the context/focus reason; large file = doing too much. **Restored** |
 | 86 to 88 | K | **"Working in existing codebases"** entire: explore structure first, follow patterns, include targeted improvements for problems that affect the work, **don't propose unrelated refactoring**. **Restored** |
 | 89 to 90 | S | Spec path → `docs/plans/<slug>/design.md`; the user-preference-overrides clause is satisfied by that |

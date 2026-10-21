@@ -46,7 +46,7 @@ I'll present a short design here rather than write a spec."*
 hidden complexity discovered mid-task **upgrades** the path: stop, say so, and
 step up. **Nothing downgrades mid-task.**
 
-Then **create a task for each item on your path** and complete them in order.
+Then complete the items on your path in order.
 
 ### Spike checklist
 1. Explore project context: enough to frame the probe
@@ -69,13 +69,11 @@ Then **create a task for each item on your path** and complete them in order.
 2. Show rather than tell when a question warrants it: visual companion, or
    `prototype` when the question needs something runnable (§4)
 3. Interview in clustered rounds, maintaining the open-questions ledger (§3)
-4. **Confidence check, then stop until the user says go** (§3)
-5. Propose 2 to 3 approaches with trade-offs and your recommendation (§5)
-6. Present the design **in sections**, approval after each (§6)
-7. Write the design doc (§7)
-8. Self-review it (§8)
-9. User reviews the written doc (§8)
-10. Hand off to `fx-plan` (§9)
+4. **Confidence check and approaches, then stop until the user says go** (§3, §5)
+5. Write design.md section by section (§6, §7)
+6. Self-review it (§8)
+7. One review of the file, seams included; on approval write `**Approved:** YYYY-MM-DD` under the Status line (§8)
+8. Hand off to `fx-plan` (§9)
 
 **Terminal states are path-bound.** Architectural: **the only skill you invoke
 after this is `fx-plan`**: never `fx-tdd`, never `fx-implement`, never a
@@ -170,8 +168,12 @@ Then, in one message:
    it, each tied to the decision it settled. Name any assumption still standing.
 2. **What you will do**, in two lines.
 
+On the architectural path, the same message then carries **2 to 3 approaches**
+with trade-offs and your recommendation (§5). The bounded path has no
+approaches step.
+
 Then stop. Nothing happens until the user gives an explicit go: no file
-written, no approach proposed, no lane invoked.
+written, no lane invoked.
 
 ## 4. Show, don't tell: visual companion, or a prototype
 
@@ -236,18 +238,18 @@ part of the design: `prototype` says where it goes, and it is not main.
 
 ## 5. Explore approaches (architectural)
 
-Propose **2 to 3 approaches with trade-offs.** Present them conversationally.
+Propose **2 to 3 approaches with trade-offs** in the confidence-check message
+(§3). Present them conversationally.
 **Lead with your recommendation and explain why.**
 
 **YAGNI ruthlessly**: remove unnecessary features from every approach and from
 the design.
 
-## 6. Present the design in sections
+## 6. Write the design section by section
 
-Once you believe you understand what you're building, present it: **in
-sections, scaled to their complexity.** A few sentences if straightforward, a
-short paragraph if nuanced. **Ask after each section whether it looks right so
-far.**
+After the go, write the design into design.md **one section at a time, in the
+file, scaled to its complexity.** A few sentences if straightforward, a
+short paragraph if nuanced. Do not present sections in chat or ask after each.
 
 Cover: **architecture · components · data flow · error handling · testing.**
 
@@ -289,12 +291,12 @@ current goal.
 
 ### Sketch the seams, and confirm them
 
-Before writing the design, sketch **where this will be tested.** Prefer
+While writing the design, sketch **where this will be tested.** Prefer
 existing seams to new ones. Use the **highest** seam possible; if new ones are
 needed, propose them at the highest point you can. **The fewer seams across the
 codebase the better: the ideal number is one.**
 
-**Check with the user that the seams match their expectations.** `fx-tdd` will
+The user confirms the seams in the one review of the file (§8). `fx-tdd` will
 refuse to write a test at an unconfirmed seam.
 
 ## 7. Write the design document
@@ -308,7 +310,7 @@ area you're touching.
 **Never `.scratch/`. Never `docs/superpowers/`.** Do not commit it: the user
 runs git.
 
-## 8. Self-review, then the user's review
+## 8. Self-review, then one review of the file
 
 Fresh eyes on what you wrote:
 
@@ -329,11 +331,13 @@ Fix inline. No need to re-review: fix and move on.
 
 Then:
 
-> "Design written to `<path>`. Please review it and let me know if you want any
-> changes before we break it into tasks."
+> "Design written to `<path>`. Please review the file, seams included, and let
+> me know if you want any changes before we break it into tasks."
 
 **Wait for the response.** Changes requested → make them and re-run the
-self-review. Proceed only once approved.
+self-review. Once the user approves, write `**Approved:** YYYY-MM-DD` under the
+Status line of design.md. Only brainstorm writes that line, and only on the
+user's approval.
 
 ## 9. Handoff
 
@@ -346,7 +350,6 @@ Approved → **`fx-plan`. Do not invoke any other skill.**
 | "This is too simple to need a design" | Simple means a short design, not no design. Two sentences in chat, then approval. |
 | "I'll call it bounded and skip the design doc" | Reaching for a label to skip work IS the doubt: take the heavier path. |
 | "It's bounded and the design is obvious: I'll start while they read it" | The gate is the approval, not the design's length. Present, then stop until you hear yes. |
-| "I'm confident, I'll show approaches in the same message" | The check is its own message. Approaches wait for the user's go. |
 | "I understand this kind of app, so it's bounded" | Bounded measures the repo, not your familiarity. A new project has no existing flow: it is architectural. |
 | "The spike works, so I'll keep the code" | A spike's output is an answer. Keeping the code is a new request: classify it. |
 | "It grew, but I'm almost done: no need to re-classify" | Hidden complexity upgrades the path mid-task. Stop and say so. |

@@ -17,12 +17,12 @@ documents get shorter.
         |
         v
   fx-brainstorm ........ classify (spike | bounded | architectural)
-        |                question rounds, then a confidence check:
-        |                what made it 95% sure, a 2-line plan, wait for go
-        |                2 or 3 approaches, recommendation first
+        |                question rounds, then one message: what made it
+        |                95% sure, a 2-line plan, 2 or 3 approaches
+        |                (recommendation first); wait for go
         |                design doc -> docs/plans/YYYY-MM-DD-slug/design.md
         |
-     [ GATE ] you approve the design
+     [ GATE ] you review the file once and approve it
         |
         v
   fx-plan .............. vertical slice tasks, one file each

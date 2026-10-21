@@ -1,5 +1,7 @@
 # fx-brainstorm ends its interview with a confidence check
 
+Status: superseded by 0045 for the architectural checklist order, the approaches rule and the red-flag row. The 95% bar, the evidence part, the two-line plan and the explicit stop stand.
+
 ## Context
 
 The owner asked that `fx-brainstorm` keep interviewing until the agent is 95% confident it understands the request. The agent then sends one message saying what made it confident and, in two lines, what it will do, and waits. Before this, the interview ended when the open-questions ledger was empty, and approaches or a design could follow in the same breath.
