@@ -13,7 +13,22 @@
 // Code runs them in unstable order and a later part can land above the
 // opening imperative.
 
+const fs = require('fs');
+const path = require('path');
+const { spawnSync } = require('child_process');
 const { render } = require('../lib/preamble');
+
+// build-cost reads the session transcript from <cwd>/.fx/transcript-path
+// (ADR 0040). Writes only where it cannot dirty a work tree: outside git
+// (check-ignore exits 128) or where .fx is ignored (0). Any failure writes nothing.
+function recordTranscriptPath(cwd, transcript) {
+  try {
+    const g = spawnSync('git', ['check-ignore', '-q', '.fx/transcript-path'], { cwd, timeout: 2000 });
+    if (g.status !== 0 && g.status !== 128) return;
+    fs.mkdirSync(path.join(cwd, '.fx'), { recursive: true });
+    fs.writeFileSync(path.join(cwd, '.fx', 'transcript-path'), transcript + '\n');
+  } catch { /* never block the preamble */ }
+}
 
 let raw = '';
 process.stdin.on('data', (c) => { raw += c; });
@@ -22,6 +37,10 @@ process.stdin.on('end', () => {
   try { input = JSON.parse(raw); } catch { /* fall through — emit anyway */ }
 
   const cwd = input.cwd || process.cwd();
+
+  if (input.hook_event_name === 'SessionStart' && typeof input.transcript_path === 'string') {
+    recordTranscriptPath(cwd, input.transcript_path);
+  }
 
   let text;
   try {

@@ -309,6 +309,11 @@ so those rulings hold without the owner repeating them.
   the first task without one.
 - A task whose last line is a fix round is mid-loop: resume at the next
   round.
+- A task with a `Task <NN>: dispatched` line and no `complete` line may have
+  finished while you were gone. Run `git log <BASE>..HEAD`, with `<BASE>` the
+  commit on the dispatch line, **before any re-dispatch**. Commits there mean
+  the work was done: it goes to review, not to a new implementer. A second
+  implementer on committed work repeats the task at full price.
 - A ledger whose first line names a **different** plan is another plan's
   progress. Leave it alone and start your own.
 - **After compaction, trust the ledger and `git log` over your own
@@ -389,6 +394,11 @@ Concurrent test runs produce false RED and false GREEN, poisoning every
 verification downstream. Relax only if `.fx.json` sets
 `isolated_test_execution: true`. Parallelism belongs to reviews and batched work.
 
+**At most one task review is outstanding while the next implementer runs.** The
+next dispatch waits for it: a second review in flight would hold another diff
+and another report in your context, and a fix round for the first would collide
+with the next implementer's commits.
+
 ### Controller reading rules
 
 Every subagent above replies in five lines, not a pasted report. That only
@@ -426,7 +436,15 @@ shrinks your context if you read the rest the same way.
 ### 1. Dispatch the implementer
 
 Record `BASE=$(git rev-parse HEAD)` **before** dispatching: the review package
-and every fix-round diff need it.
+and every fix-round diff need it. Right after recording it, append the dispatch
+line to the ledger, with the ISO-8601 time you will pass to `--since` in step 5:
+
+```
+`Task <NN>: dispatched <BASE7> <ISO-8601>`
+```
+
+(Write the line without the backticks.) The line is what a resumed controller
+checks against `git log`, and what the cost step measures from.
 
 **The task file is the brief.** Pass its path. Never make a subagent read the
 whole plan file.
@@ -493,6 +511,17 @@ the rule in that implementer's next dispatch or resume.
 
 **NEEDS_CONTEXT**: provide the missing context and re-dispatch.
 
+**NEEDS_CONTEXT and BLOCKED re-dispatch at most twice per task.** A third
+return means the task or its brief is wrong, and more attempts only spend
+tokens. Append the parked line, tell the owner, and take the next unblocked
+task:
+
+```
+`Task <NN>: parked: <one-line reason>`
+```
+
+(Write the line without the backticks.)
+
 **BLOCKED**: assess the blocker:
 1. Context problem → more context, re-dispatch, same model.
 2. Needs more reasoning → re-dispatch on a more capable model.
@@ -524,6 +553,10 @@ prints. Without bash: `git log --oneline`, `git diff --stat`, and
 `git diff -U10` over the range, redirected to one uniquely named file. **The
 output never enters your own context**, and the reviewer sees commit list, stat
 summary and full diff in a single Read.
+
+When the task's ledger cost line (step 5) shows `fx-tdd 0/<i>` with `i` above
+0, no implementer invoked `fx-tdd`. Tell the task reviewer, and a report with no
+captured RED run is then an Important finding.
 
 Use the **BASE you recorded before dispatching**: never `HEAD~1`, which
 silently drops all but the last commit of a multi-commit task.
@@ -634,7 +667,23 @@ Full procedure, the three adjudication categories, and the round formats:
 ### 5. Complete the task
 
 When the review is clean, or every open finding is parked with a ruling at the
-cap: append the completion line in the same message as your other bookkeeping:
+cap: first measure the task. From the controller's own directory, run
+`node <skill base directory>/../../scripts/build-cost --task <NN> --since <time from the dispatch line>`
+(the script is `../../scripts/build-cost` from this skill's base directory) and
+append the one line it prints, before the completion line:
+
+```
+`Task <NN>: cost <tokens> tokens, <minutes> min, <dispatches> dispatches, fx-tdd <k>/<i>`
+```
+
+(Write the line without the backticks.) It reads the transcript path the
+SessionStart hook recorded in `.fx/transcript-path`. When it cannot find a
+transcript it prints `cost unavailable` and the reason: ledger that line as it
+is, and do not look for the file yourself. Subagents count toward a task by the
+task number in their dispatch text, so a review running beside the next
+implementer is not counted twice.
+
+Then append the completion line in the same message as your other bookkeeping:
 
 ```
 Task <NN>: complete (commits <base7>..<head7>, review clean)

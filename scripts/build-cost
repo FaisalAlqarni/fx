@@ -247,8 +247,56 @@ function timestamps(records) {
   return records.map((r) => new Date(r.timestamp).getTime()).filter((t) => !Number.isNaN(t));
 }
 
+// One ledger line for one task: controller calls from `since` on, plus every
+// subagent whose first user message names the task. Always exits 0.
+function taskLine(nn, since, argFile) {
+  const head = `Task ${nn}:`;
+  let file = argFile;
+  if (!file) {
+    try {
+      file = fs.readFileSync(path.join(process.cwd(), '.fx', 'transcript-path'), 'utf8').trim();
+    } catch (e) {
+      return `${head} cost unavailable (no transcript recorded)`;
+    }
+  }
+  const records = readRecords(file);
+  if (records === null) return `${head} cost unavailable (transcript not found: ${file})`;
+  const sinceMs = new Date(since).getTime();
+  if (Number.isNaN(sinceMs)) fail(`--since is not an ISO-8601 time: ${since}`);
+  const sum = (calls) => calls.reduce((n, c) => n + (c.usage ? c.usage.tokens : 0), 0);
+  let tokens = sum(dedupCalls(records, file).filter((c) => new Date(c.timestamp).getTime() >= sinceMs));
+  const mine = new RegExp(`\\btask:? ${nn}\\b`, 'i');
+  const subDir = path.join(path.dirname(file), path.basename(file, '.jsonl'), 'subagents');
+  let subFiles = [];
+  try { subFiles = fs.readdirSync(subDir).filter((f) => f.endsWith('.jsonl')).sort(); } catch (e) { /* no subagents */ }
+  let dispatches = 0, impl = 0, tdd = 0;
+  for (const f of subFiles) {
+    const sub = readRecords(path.join(subDir, f));
+    const first = sub && sub.find((r) => r.type === 'user');
+    if (!first || !mine.test(textOf(first))) continue;
+    dispatches++;
+    const calls = dedupCalls(sub, f);
+    tokens += sum(calls);
+    if (classify(sub, readMeta(path.join(subDir, f))) === 'implementer') {
+      impl++;
+      if (calls.some((c) => c.content.some((b) => b.type === 'tool_use' && b.name === 'Skill' && /fx-tdd$/.test((b.input || {}).skill || '')))) tdd++;
+    }
+  }
+  const last = Math.max(...timestamps(records));
+  const minutes = Math.round((last - sinceMs) / 60000);
+  return `${head} cost ${tokens} tokens, ${minutes} min, ${dispatches} dispatches, fx-tdd ${tdd}/${impl}`;
+}
+
 function main() {
   const args = process.argv.slice(2);
+  const opt = (name) => { const i = args.indexOf(name); return i < 0 ? null : args.splice(i, 2)[1]; };
+  const task = opt('--task');
+  if (task !== null) {
+    const since = opt('--since');
+    if (!since) fail('usage: build-cost --task <NN> --since <ISO-8601> [<controller.jsonl>]');
+    process.stdout.write(taskLine(task, since, args[0]) + '\n');
+    return;
+  }
   const jsonOut = args.includes('--json');
   const file = args.find((a) => a !== '--json');
   if (!file) fail('usage: build-cost <controller.jsonl> [--json]');

@@ -263,5 +263,34 @@ for (const [label, file] of [['missing', path.join(root, 'nope.jsonl')], ['empty
   assert.strictEqual(r10.subagents.other.count, 1, 'a non-lens agentType never falls into lens on prose alone');
 }
 
+// --task: subagents attributed by their dispatch text, controller by time.
+{
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bc-task-'));
+  const ctlT = path.join(dir, 't1.jsonl');
+  const at = (s) => `2026-10-21T10:${s}:00.000Z`;
+  const rec = (id, ts, n, content = []) => ({ type: 'assistant', timestamp: ts, message: { id, usage: { input_tokens: n, output_tokens: 0 }, content } });
+  const user = (ts, text) => ({ type: 'user', timestamp: ts, message: { content: text } });
+  write(ctlT, [rec('m0', at('00'), 1000), rec('m1', at('10'), 150), rec('m2', at('20'), 50)]);
+  write(path.join(dir, 't1', 'subagents', 'impl.jsonl'), [
+    user(at('11'), 'You are implementing task 03: brief'),
+    rec('s1', at('12'), 300, [{ type: 'tool_use', name: 'Skill', input: { skill: 'fx:fx-tdd' } }]),
+  ]);
+  write(path.join(dir, 't1', 'subagents', 'rev.jsonl'), [user(at('13'), 'You are reviewing one task: 03'), rec('s2', at('14'), 200)]);
+  write(path.join(dir, 't1', 'subagents', 'next.jsonl'), [user(at('15'), 'You are implementing task 04: next'), rec('s3', at('16'), 9999)]);
+
+  const r = spawnSync(process.execPath, [BIN, '--task', '03', '--since', at('10'), ctlT], { encoding: 'utf8' });
+  assert.strictEqual(r.status, 0, r.stderr);
+  assert.strictEqual(r.stdout, 'Task 03: cost 700 tokens, 10 min, 2 dispatches, fx-tdd 1/1\n');
+
+  const none = spawnSync(process.execPath, [BIN, '--task', '04', '--since', at('10')], { encoding: 'utf8', cwd: dir });
+  assert.strictEqual(none.status, 0, none.stderr);
+  assert.strictEqual(none.stdout, 'Task 04: cost unavailable (no transcript recorded)\n');
+
+  fs.mkdirSync(path.join(dir, '.fx'));
+  fs.writeFileSync(path.join(dir, '.fx', 'transcript-path'), path.join(dir, 'gone.jsonl') + '\n');
+  const gone = spawnSync(process.execPath, [BIN, '--task', '04', '--since', at('10')], { encoding: 'utf8', cwd: dir });
+  assert.strictEqual(gone.stdout, `Task 04: cost unavailable (transcript not found: ${path.join(dir, 'gone.jsonl')})\n`);
+}
+
 fs.rmSync(root, { recursive: true, force: true });
 console.log('build-cost: ok');
