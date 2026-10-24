@@ -1,0 +1,19 @@
+Adversarial review (code mode): aa4da82..41f85f0, fx-judge-hooks. Repo: /development/fx/.worktrees/fx-judge-hooks
+
+1. **Important. On Codex, padding a command still gets past the judge.** At src/lib/shell-guard.ts:127-128, any command whose redacted text is longer than 2,000 characters returns `warn` on Codex, and `warn` runs. On Codex the judge blocks only one thing: a confident deny. An agent that pads a command it expects to be denied (for example a long `echo` followed by `; git clean -fdx`) gets it run with a warning and no judge call. The over-long case also writes no journal event (the append is at :149), so the loop guard never sees it either. Lens: integrity. The task 03 lens I6 fix made this case an `ask`, which assumed an ask blocks. The design table turns ask into warn on Codex, so that fix does nothing there. I am not re-opening the table itself. The fix is narrow: on Codex the over-long case should deny. Not raised in any finding file.
+
+2. **Important. opencode write tools have no fx-state refusal.** Claude Code (src/hooks/fx-pretooluse.ts:207) and Codex (src/hooks/fx-codex.ts:209-213) refuse a Write, Edit or apply_patch into fx's state directory. opencode does not:
+   - src/plugins/fx-opencode-v1.ts:532-556 sends `edit`, `write` and `apply_patch` paths only to the lane check.
+   - src/plugins/fx-opencode-v2.ts:337-351 does the same for `edit`.
+
+   On opencode 1.x the judge still reads `lastUserPrompt(sessionId)` (shell-guard.ts:125). So a forged `{"kind":"prompt","text":"..."}` line written through the `write` tool reaches the judge as `user_request`, and an edit to the journal can delete the `deny` lines the loop guard reads. That is the same lens I8 hole closed on the other two harnesses. Lens: integrity, plus "two equivalent paths that disagree on validation". The MCP-write deferral in state.md:149 covers only MCP tools, not opencode's own write tools.
+
+3. **Minor. The Codex loop-guard text leads nowhere.** shell-guard.ts:118 tells the agent "Ask the user in a new message before trying it again". Only a `# fx-ok:` stamp skips the loop guard (:114-115), and this text never mentions it. An agent that follows it, gets the user's yes and retries the plain command is denied again by the same rule for 10 minutes. Lens: integrity and human-debuggability.
+
+4. **Minor. The journal line cap in the design is not implemented.** Design decision 3 (design.md:78) says each journal line is capped at 2 KB and commands are cut to 500 characters. src/lib/journal.ts:24-27 caps commands at CAP_COMMAND, which is 2,000, and appendEvent (:36-47) never caps the line. findings/02-review.md:37 judged concurrent appends "sound for lines under the 2 KB cap", a cap that does not exist. This is design drift with no ruling, and the reviewer's soundness claim rests on it. Lens: integrity.
+
+5. **Minor. The Stop check counts edits outside the repository.** `editedPaths` resolves any path (src/lib/tool-events.ts:68-80), and `turnNeedsEvidence` (src/lib/stop-check.ts:24-25) excludes only doc extensions. A turn that writes only a scratch script under /tmp or the scratchpad is blocked once and told to run the project's tests. Design decision 7 does not say whether paths outside the repo count, so this should be decided rather than left to chance. Lens: simplicity and integrity of the signal.
+
+I was not told what the primed broad review found, so I can't mark overlaps. Each item above was checked against state.md and the findings files, and none of them appears there as a ruling or a deferred item.
+
+Not checked: judge-cli.ts, redact.ts, guard-calibrate.ts and most of the opencode tracker paths, which the security and pipeline lenses already covered heavily. Nothing was run (no shell), so findings 1 and 2 come from reading the code, not from a reproduction.

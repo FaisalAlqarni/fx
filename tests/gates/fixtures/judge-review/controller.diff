@@ -1,0 +1,22 @@
+# Review package: aaaaaaa..bbbbbbb
+
+## Commits
+bbbbbbb feat: show a user
+
+## Files changed
+ app/controllers/a.rb | 1 +
+ 1 file changed, 1 insertion(+)
+
+## Diff
+diff --git a/app/controllers/a.rb b/app/controllers/a.rb
+index 2222222..3333333 100644
+--- a/app/controllers/a.rb
++++ b/app/controllers/a.rb
+@@ -1,6 +1,7 @@
+ class A
+   before_action :authenticate
+   def show
++    @user = User.find(params[:id])
+     render json: @user
+   end
+ end

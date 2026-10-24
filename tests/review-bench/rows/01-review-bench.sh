@@ -75,7 +75,7 @@ BRIEF_FILE="$WORK/.review-bench-brief.md"
 # hint by omission. Neither outcome names the planted defect.
 TEST_PATH="$(printf '%s\n' "$OWNED" | grep '^test/' | head -1)"
 [ -n "$TEST_PATH" ] || fail "no test file recorded as owned for case $CASE"
-TEST_OUTPUT="$(cd "$WORK" && node --test "$TEST_PATH" 2>&1)"
+TEST_OUTPUT="$(cd "$WORK" && node --test --test-reporter=tap "$TEST_PATH" 2>&1)"
 TEST_SUMMARY="$(printf '%s\n' "$TEST_OUTPUT" | grep -E '^# (pass|fail) ' | tr '\n' ' ')"
 [ -n "$TEST_SUMMARY" ] || fail "could not read a test summary line from node --test $TEST_PATH"
 

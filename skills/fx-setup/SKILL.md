@@ -43,6 +43,7 @@ has no profile, so **it is not optional**.
 | `setup` | From a clean checkout to a runnable state |
 | `lint` | Empty if the repo has no linter: **do not invent one** |
 | `coverage` / `coverage_floor` | `null` when the repo has no coverage tooling. `fx-tdd` enforces a floor only when both are set |
+| `hooks` | Optional. `{ "stop_check": false, "loop_nudge": false, "edit_rules": false }`. `stop_check` and `loop_nudge` turn off the Stop check and the nudges; `edit_rules` turns off the three built-in edit rules. Each defaults to on. Read from the repository's top level. The git guard, the shell guard's hard rules and the lane check cannot be switched off |
 
 **`test_scope` needs a fact only the user has: what a change can safely not
 run.** Suites partition along a seam the repo knows and you do not: an engine, a

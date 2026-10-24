@@ -29,3 +29,5 @@ The hook therefore omits `permissionDecision`. Claude Code applied `updatedInput
 ## Codex and OpenCode deferred
 
 Neither runtime takes a model per dispatch. A Codex role's `model` overrides the `spawn_agent` argument (`multi_agents_v2/spawn.rs:128-143` at `rust-v0.155.1`). OpenCode's `task` tool has no model argument, and a subagent inherits the parent's (`tool/task.ts:43-60,181-184` at `v1.18.25`). Routing there needs tier-pinned roles per runtime. Most OpenCode setups run one hosted model, so the gain is small. Deferred.
+
+ADR 0048 added a judged sizing step that could lower a general sonnet dispatch to haiku; ADR 0049 removed it. Routing is as above.

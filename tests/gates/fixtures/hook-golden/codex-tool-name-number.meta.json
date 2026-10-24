@@ -1,0 +1,6 @@
+{
+  "hook": "fx-codex.js",
+  "cwd": "main",
+  "exit": 2,
+  "stderr": "[fx] subagent lens1 was never recorded at SubagentStart, so its role cannot be verified; refusing the write rather than assuming it is safe.\n"
+}

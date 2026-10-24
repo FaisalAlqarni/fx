@@ -157,8 +157,17 @@ guard and lane check, one shared lib on every runtime:
    plugins/fx-opencode-v1.js opencode 1.x, tool.execute.before
    plugins/fx-opencode-v2.js opencode 2.x, permission.evaluate, plus installed policies
       + lib/git-guard.js     shell: the absolutes, fail closed
+      + lib/shell-guard.js   shell: hard rules and a read-only allowlist; the rest runs and is logged
       + lib/lane-check.js    file writes: two once-per-session nudges, source with no design.md and a test
                              written after its implementation, fail open
+      + lib/edit-rules.js    file writes: three built-in rules, refuse on a breach
+
+turn hooks:
+   hooks/fx-turn.js          Claude Code: prompts, tool results, Stop and SubagentStop
+   hooks/fx-codex.js         Codex: the same checks
+   plugins/fx-opencode-v1.js, plugins/fx-opencode-v2.js   opencode: the same checks
+      + lib/stop-check.js    Stop: blocks once when edits went unverified (a reminder on opencode)
+      + lib/loop-tracker.js  a nudge when a command fails repeatedly, edits pile up unchecked, or the turn stalls
 
 dispatch routing, Claude Code only:
    hooks/fx-pretooluse.js    Agent calls: no model on a general-purpose, claude or Plan
@@ -166,7 +175,7 @@ dispatch routing, Claude Code only:
                              "Capable because:" line -> sonnet; forks untouched; never refuses
 ```
 
-`PREAMBLE.md` is a bootstrap of about 2.6K characters that tells the model to
+`PREAMBLE.md` is a bootstrap of about 3.2K characters (the budget is 3,400) that tells the model to
 invoke a skill before it acts. Each skill's description says when to use it.
 
 After the bootstrap, `lib/preamble.js` appends one companions line to every
@@ -191,6 +200,32 @@ target, deleting a remote branch, `--no-verify`, `reset --hard`, `clean -f`,
 attribution trailer. Wrapping a command in `sh -c` does not get it past the
 guard. A `grep` for one of those strings is treated as data and runs.
 
+### Hooks
+
+The shell guard refuses a short list of destructive commands (recursive `rm`
+on `/` or a home directory, `mkfs`, `curl` piped into a shell, `shutdown` and
+similar) with no override, allows a fixed set of read-only commands and the
+repository's own `.fx.json` commands silently (the latter are logged), and runs
+the rest, logging each one. The Stop check blocks once on Claude Code and Codex
+when a turn edited code and no check passed afterwards; on opencode it is a
+reminder at the next request. The nudges tell the agent when the same command
+keeps failing, after 10 edits since the last passing check, or when 12 reads in a
+row bring no edit.
+
+Each file edit through the harness's edit tools, inside the repository, is
+checked against three built-in edit rules: no em or en dash in Markdown, no
+secret, no merge-conflict marker. A breach refuses the write.
+
+`hooks` in `.fx.json` has three switches for one repository: `stop_check`,
+`loop_nudge` and `edit_rules`. `edit_rules: false` turns off all three
+built-in rules, `no-secrets` included. The git guard and the shell guard's hard
+rules stay on. An agent can edit `.fx.json`; fx shows a notice when its hook
+switches change during a session and does not stop the change. Claude Code
+shows the notice at session start and at the next Stop. opencode 1.x prints it
+on stderr and also queues it for the model. On Codex the notice is shown at
+session start and goes to stderr at Stop; whether Codex shows a Stop hook's stderr to the user is not measured.
+opencode 2.x shows no notice.
+
 ## Layout
 
 ```
@@ -201,14 +236,17 @@ agents/       6: 5 review lenses plus the devil's advocate, all read-only
 codex/agents/ the same 6 as Codex role files, generated
 commands/     4: fx-setup, fx-critique, fx-grill, fx-handoff
 references/   loaded on demand by a lane, never selectable
-hooks/        Claude Code: hooks.json, fx-context.js, fx-pretooluse.js
+hooks/        Claude Code: hooks.json, fx-context.js, fx-pretooluse.js, fx-turn.js
               Codex: fx-codex.js, wired by the root hooks.json
 plugins/      opencode: fx-opencode-v1.js (1.x), fx-opencode-v2.js (2.x)
-lib/          shared by all four harnesses: preamble.js (the renderer),
-              git-guard.js, lane-check.js, plan-state.js, plant-roles.js,
-              agent-dialects.js, opencode-commands.js, user-invoked-lanes.js,
-              opencode-v2-policies.js; dispatch-route.js is Claude Code only
-scripts/      fx-opencode-install, check-all and the gates it runs
+lib/          generated from src/lib, shared by all four harnesses: the preamble
+              renderer, the git and shell guards, edit rules, Stop check, loop
+              tracker, journal and decision log, lane check, plan state, role
+              planting and the opencode helpers; dispatch-route.js is Claude
+              Code only
+src/          TypeScript sources; scripts/build writes the committed hooks/,
+              plugins/, lib/, index.js and the node scripts from them
+scripts/      fx-opencode-install, build, check-all and the gates it runs
 tests/        conformance, install, gates, lane-triggering, lens-pipeline,
               companion, fixture-build, review-bench
 docs/         adr/ (decisions) and plans/ (designs and plans)
@@ -234,6 +272,7 @@ Full steps, updating, removing and per-harness limits:
 
 ## Development
 
-`scripts/check-all` runs every gate and test suite. The live conformance rows
+Run `npm ci` once; edit `src/`, then `scripts/build` (see INSTALL.md,
+"Changing fx itself"). `scripts/check-all` runs every gate and test suite. The live conformance rows
 spend model calls and run by hand: see `tests/conformance/README.md`. The
 decisions behind fx's shape are in `docs/adr/`.

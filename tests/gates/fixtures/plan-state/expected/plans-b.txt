@@ -1,0 +1,7 @@
+## Unfinished plans in this repository
+
+- `docs/plans/demo/tasks/`: 2 task files, a `state.md` ledger exists, so a build is underway.
+
+`fx-implement` owns this. Invoke it before writing code against these tasks: it supplies the worktree, a ledger that survives compaction, and a fresh subagent and a review per task. Where a ledger exists, read it first and resume at the first unfinished task. A task file detailed enough to execute is not a reason to skip the lane: that specificity is what makes the lane feel redundant.
+
+**If you were dispatched with one specific task**, you are already inside that lane. Do that task, record it in the ledger, and return. Do not re-enter `fx-implement`, and do not pick up the other tasks.

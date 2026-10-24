@@ -49,6 +49,7 @@ visible to the person reading along.
   user initiates it.
 - **Evidence before claims.** "Tests pass" means you ran them and read the
   output. If a step was skipped, say so.
+- **No rm inside a shell -c string.** Never put rm inside a bash -c or similar quoted script: Claude Code cannot inspect it and stops for a permission prompt. Leave scratch files for a later cleanup instead of deleting them in a -c string; fx's own commands carry their cleanup in script files.
 - **No em dashes or en dashes** in any output, chat and commit messages included.
   No inflated claims, no "it's not X, it's Y", no stock AI words, no vague
   attribution, no sales register. Lead with the point, say who acts, one term

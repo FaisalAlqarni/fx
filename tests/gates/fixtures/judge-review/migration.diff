@@ -1,0 +1,22 @@
+# Review package: aaaaaaa..bbbbbbb
+
+## Commits
+bbbbbbb feat: add user
+
+## Files changed
+ db/migrate/1_add_user.rb | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+## Diff
+diff --git a/db/migrate/1_add_user.rb b/db/migrate/1_add_user.rb
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/db/migrate/1_add_user.rb
+@@ -0,0 +1,6 @@
++# frozen_string_literal: true
++class AddUser < ActiveRecord::Migration[7.1]
++  def change
++    add_column :users, :name, :string
++  end
++end

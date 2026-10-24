@@ -345,7 +345,7 @@ Rules live in lanes, and routing lives in the skill descriptions. So:
   what the first one already produced.
 
 Only the fixed intro sits above the opening imperative; nothing else is added
-there (`docs/adr/0002`). The bootstrap alone stays under 3,000 characters, and
+there (`docs/adr/0002`). The bootstrap alone stays under 3,400 characters, and
 the render with its repo.md note and plan-state block under 9,000
 (`lib/preamble.test.js`).
 

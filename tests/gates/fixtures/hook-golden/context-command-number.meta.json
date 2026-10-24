@@ -1,0 +1,6 @@
+{
+  "hook": "fx-context.js",
+  "cwd": "main",
+  "exit": 0,
+  "stderr": ""
+}

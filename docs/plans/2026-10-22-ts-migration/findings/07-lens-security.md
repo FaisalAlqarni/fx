@@ -1,0 +1,9 @@
+Lens: security, task 07. 5 findings, all Minor. No change found that lets either plugin allow a tool call the old plugin refused for the event shape opencode sends. v1 keeps its typeof inspect check; v2 denies when the guard lacks its export; a missing or export-less parser makes both plugins refuse.
+
+1. [Minor] src/plugins/fx-opencode-v2.ts lines 200 to 205: a null or non-object event used to throw (refuse) and now returns (proceeds) before the evaluateError throw; matters only when permission.evaluate failed to register. Fix: treat not-ok parse as a refusal in v2.
+2. [Minor] src/plugins/fx-opencode-v1.ts line 197: a truthy non-object agent.general used to throw and grant nothing; now replaced by an empty object and granted permission.task allow. Fix: leave a non-object general alone and skip the grant.
+3. [Minor] src/plugins/fx-opencode-v2.ts line 116: attempt now catches only native Promise rejections (instanceof Promise) where the old code caught any thenable. Fix: restore the thenable check.
+4. [Minor] src/plugins/fx-opencode-v2.ts lines 47 to 48 versus 199: comment says a missing parser makes evaluate deny the shell call; line 199 throws on every tool event (v1 lines 263 to 265 the same); execute.after skips cleanup. Fails safe. Fix: correct the comment.
+5. [Minor, pre-existing] src/plugins/fx-opencode-v2.ts lines 89 and 137, 181 and 189: if lib/plant-roles.js loads without READ_ONLY_AGENTS (or the hidden list), the evaluate hook throws outside every try before the shell guard; opencode's handling of a throwing evaluate hook is unverified. Fix: typeof-check each export at load, as the v1 guard does.
+
+Implementer items 2 (non-string v1 filePath) and 4 (v2 resource coercion) are safe: lane check is advice and failed open before too; resource handling gives the same pieces and handles string resources correctly.

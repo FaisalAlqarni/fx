@@ -1,6 +1,6 @@
 {
   "name": "fx",
-  "version": "0.2.9",
+  "version": "0.5.0",
   "description": "One opinionated engineering plugin: brainstorm, plan, implement, TDD, review, debug, architecture, prose and skill authoring. Exactly one claimant per intent.",
   "author": "Faisal Alqarni",
   "license": "MIT",
@@ -12,5 +12,10 @@
     "rails",
     "dotnet"
   ],
-  "main": "index.js"
+  "main": "index.js",
+  "devDependencies": {
+    "@types/node": "20.19.43",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2"
+  }
 }

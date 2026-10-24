@@ -1,0 +1,162 @@
+[
+ {
+  "path": "app/services/invoice_mailer_service.rb",
+  "head": "class InvoiceMailerService\n  def initialize(invoice)\n    @invoice = invoice\n  end\n\n  def call\n    return if @invoice.sent_at\n    InvoiceMailer.with(invoice: @invoice).due.deliver_later\n    @invoice.update!(sent_at: Time.current)\n  end\nend",
+  "label": "authored"
+ },
+ {
+  "path": "src/hooks/useDebounce.ts",
+  "head": "import { useEffect, useState } from 'react';\n\n// Waits for the user to stop typing before the search runs.\nexport function useDebounce<T>(value: T, ms = 300): T {\n  const [v, setV] = useState(value);\n  useEffect(() => {\n    const t = setTimeout(() => setV(value), ms);\n    return () => clearTimeout(t);\n  }, [value, ms]);\n  return v;\n}",
+  "label": "authored"
+ },
+ {
+  "path": "Services/DiscountPolicy.cs",
+  "head": "namespace Shop.Services;\n\npublic sealed class DiscountPolicy\n{\n    // Loyalty discount caps at 15% so it never stacks past the margin floor.\n    public decimal For(Customer c) => Math.Min(0.15m, c.YearsActive * 0.03m);\n}",
+  "label": "authored"
+ },
+ {
+  "path": "app/models/subscription.rb",
+  "head": "class Subscription < ApplicationRecord\n  belongs_to :account\n  enum :status, { trialing: 0, active: 1, past_due: 2, canceled: 3 }\n\n  def renew!\n    update!(renews_at: renews_at + 1.month, status: :active)\n  end\nend",
+  "label": "authored"
+ },
+ {
+  "path": "src/pages/Checkout.jsx",
+  "head": "import { useCart } from '../cart';\n\nexport default function Checkout() {\n  const { lines, total } = useCart();\n  if (lines.length === 0) return <EmptyCart />;\n  return (\n    <form onSubmit={pay}>\n      <Summary lines={lines} total={total} />\n    </form>\n  );\n}",
+  "label": "authored"
+ },
+ {
+  "path": "scripts/rotate_logs.sh",
+  "head": "#!/usr/bin/env bash\n# Keeps the last 14 days of app logs; older ones are gzipped then moved to cold storage.\nset -euo pipefail\nfind /var/log/app -name '*.log' -mtime +14 -exec gzip {} +",
+  "label": "authored"
+ },
+ {
+  "path": "lib/tasks/reports.rake",
+  "head": "namespace :reports do\n  desc 'Weekly revenue summary for finance'\n  task weekly: :environment do\n    puts Reports::Weekly.new(Date.current.beginning_of_week).to_csv\n  end\nend",
+  "label": "authored"
+ },
+ {
+  "path": "src/api/client.py",
+  "head": "import httpx\n\nclass BillingClient:\n    def __init__(self, base_url: str, token: str):\n        self._http = httpx.Client(base_url=base_url, headers={'Authorization': f'Bearer {token}'}, timeout=5)\n\n    def invoices(self, account_id: int):\n        return self._http.get(f'/accounts/{account_id}/invoices').json()",
+  "label": "authored"
+ },
+ {
+  "path": "app/javascript/controllers/clipboard_controller.js",
+  "head": "import { Controller } from '@hotwired/stimulus'\n\nexport default class extends Controller {\n  static targets = ['source', 'button']\n\n  copy() {\n    navigator.clipboard.writeText(this.sourceTarget.value)\n    this.buttonTarget.textContent = 'Copied'\n  }\n}",
+  "label": "authored"
+ },
+ {
+  "path": "Controllers/OrdersController.cs",
+  "head": "[ApiController]\n[Route(\"api/orders\")]\npublic class OrdersController : ControllerBase\n{\n    private readonly IOrderService _orders;\n    public OrdersController(IOrderService orders) => _orders = orders;\n\n    [HttpGet(\"{id}\")]\n    public async Task<ActionResult<OrderDto>> Get(int id) => await _orders.FindAsync(id) is { } o ? o : NotFound();\n}",
+  "label": "authored"
+ },
+ {
+  "path": "spec/services/refund_spec.rb",
+  "head": "require 'rails_helper'\n\nRSpec.describe Refund do\n  it 'refuses a refund larger than the charge' do\n    charge = create(:charge, amount_cents: 500)\n    expect { described_class.new(charge, 600).call }.to raise_error(Refund::TooLarge)\n  end\nend",
+  "label": "authored"
+ },
+ {
+  "path": "src/components/PriceTag.tsx",
+  "head": "type Props = { cents: number; currency: string };\n\nexport function PriceTag({ cents, currency }: Props) {\n  const fmt = new Intl.NumberFormat(undefined, { style: 'currency', currency });\n  return <span className=\"price\">{fmt.format(cents / 100)}</span>;\n}",
+  "label": "authored"
+ },
+ {
+  "path": "docs/runbook.md",
+  "head": "# On-call runbook\n\n## Queue backlog\n\nIf the default queue passes 10k jobs, check the Sidekiq dashboard first, then scale workers with `bin/scale worker 6`.",
+  "label": "authored"
+ },
+ {
+  "path": "db/migrate/20261020101500_add_status_to_orders.rb",
+  "head": "class AddStatusToOrders < ActiveRecord::Migration[7.1]\n  def change\n    add_column :orders, :status, :string, null: false, default: 'pending'\n    add_index :orders, :status\n  end\nend",
+  "label": "authored"
+ },
+ {
+  "path": "config/initializers/rack_attack.rb",
+  "head": "# Login brute force: 5 tries per email per minute.\nRack::Attack.throttle('logins/email', limit: 5, period: 60) do |req|\n  req.params['email'].to_s.downcase.presence if req.path == '/login' && req.post?\nend",
+  "label": "authored"
+ },
+ {
+  "path": "internal/queue/drain.go",
+  "head": "package queue\n\n// Drain stops intake and waits for in-flight jobs, up to the deadline.\nfunc (q *Queue) Drain(ctx context.Context) error {\n\tq.closed.Store(true)\n\tselect {\n\tcase <-q.idle:\n\t\treturn nil\n\tcase <-ctx.Done():\n\t\treturn ctx.Err()\n\t}\n}",
+  "label": "authored"
+ },
+ {
+  "path": "config/boot.rb",
+  "head": "ENV[\"BUNDLE_GEMFILE\"] ||= File.expand_path(\"../Gemfile\", __dir__)\n\nrequire \"bundler/setup\" # Set up gems listed in the Gemfile.\nrequire \"bootsnap/setup\" # Speed up boot time by caching expensive operations.",
+  "label": "generated"
+ },
+ {
+  "path": "bin/rails",
+  "head": "#!/usr/bin/env ruby\nAPP_PATH = File.expand_path(\"../config/application\", __dir__)\nrequire_relative \"../config/boot\"\nrequire \"rails/commands\"",
+  "label": "generated"
+ },
+ {
+  "path": "db/schema.rb",
+  "head": "# This file is auto-generated from the current state of the database. Instead\n# of editing this file, please use the migrations feature of Active Record to\n# incrementally modify your database, and then regenerate this schema definition.\n#\nActiveRecord::Schema[7.1].define(version: 2026_10_20_101500) do\n  enable_extension \"plpgsql\"\n\n  create_table \"orders\", force: :cascade do |t|\n    t.string \"status\", default: \"pending\", null: false",
+  "label": "generated"
+ },
+ {
+  "path": "config/environments/test.rb",
+  "head": "require \"active_support/core_ext/integer/time\"\n\n# The test environment is used exclusively to run your application's\n# test suite. You never need to work with it otherwise. Remember that\n# your test database is \"scratch space\" for the test suite and is wiped\n# and recreated between test runs. Don't rely on the data there!\n\nRails.application.configure do\n  # Settings specified here will take precedence over those in config/application.rb.",
+  "label": "generated"
+ },
+ {
+  "path": "src/reportWebVitals.js",
+  "head": "const reportWebVitals = onPerfEntry => {\n  if (onPerfEntry && onPerfEntry instanceof Function) {\n    import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {\n      getCLS(onPerfEntry);\n      getFID(onPerfEntry);\n      getFCP(onPerfEntry);\n      getLCP(onPerfEntry);\n      getTTFB(onPerfEntry);\n    });\n  }\n};\n\nexport default reportWebVitals;",
+  "label": "generated"
+ },
+ {
+  "path": "src/setupTests.js",
+  "head": "// jest-dom adds custom jest matchers for asserting on DOM nodes.\n// allows you to do things like:\n// expect(element).toHaveTextContent(/react/i)\n// learn more: https://github.com/testing-library/jest-dom\nimport '@testing-library/jest-dom';",
+  "label": "generated"
+ },
+ {
+  "path": "public/manifest.json",
+  "head": "{\n  \"short_name\": \"React App\",\n  \"name\": \"Create React App Sample\",\n  \"icons\": [\n    {\n      \"src\": \"favicon.ico\",\n      \"sizes\": \"64x64 32x32 24x24 16x16\",\n      \"type\": \"image/x-icon\"\n    }\n  ],\n  \"start_url\": \".\",\n  \"display\": \"standalone\"",
+  "label": "generated"
+ },
+ {
+  "path": "Program.cs",
+  "head": "var builder = WebApplication.CreateBuilder(args);\n\n// Add services to the container.\n\nbuilder.Services.AddControllers();\n// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle\nbuilder.Services.AddEndpointsApiExplorer();\nbuilder.Services.AddSwaggerGen();\n\nvar app = builder.Build();",
+  "label": "generated"
+ },
+ {
+  "path": "WeatherForecast.cs",
+  "head": "namespace WebApi;\n\npublic class WeatherForecast\n{\n    public DateOnly Date { get; set; }\n\n    public int TemperatureC { get; set; }\n\n    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);\n\n    public string? Summary { get; set; }\n}",
+  "label": "generated"
+ },
+ {
+  "path": "obj/project.assets.json",
+  "head": "{\n  \"version\": 3,\n  \"targets\": {\n    \"net8.0\": {\n      \"Microsoft.OpenApi/1.4.3\": {\n        \"type\": \"package\",\n        \"compile\": {\n          \"lib/netstandard2.0/Microsoft.OpenApi.dll\": {}",
+  "label": "generated"
+ },
+ {
+  "path": "package-lock.json",
+  "head": "{\n  \"name\": \"web\",\n  \"version\": \"0.1.0\",\n  \"lockfileVersion\": 3,\n  \"requires\": true,\n  \"packages\": {\n    \"\": {\n      \"name\": \"web\",\n      \"version\": \"0.1.0\",\n      \"dependencies\": {\n        \"react\": \"^18.3.1\"",
+  "label": "generated"
+ },
+ {
+  "path": "Gemfile.lock",
+  "head": "GEM\n  remote: https://rubygems.org/\n  specs:\n    actioncable (7.1.3)\n      actionpack (= 7.1.3)\n      activesupport (= 7.1.3)\n      nio4r (~> 2.0)\n      websocket-driver (>= 0.6.1)",
+  "label": "generated"
+ },
+ {
+  "path": "yarn.lock",
+  "head": "# THIS IS AN AUTOGENERATED FILE. DO NOT EDIT THIS FILE DIRECTLY.\n# yarn lockfile v1\n\n\n\"@babel/code-frame@^7.0.0\":\n  version \"7.24.2\"\n  resolved \"https://registry.yarnpkg.com/@babel/code-frame/-/code-frame-7.24.2.tgz\"",
+  "label": "generated"
+ },
+ {
+  "path": "dist/main.3f9a1c.js",
+  "head": "(()=>{\"use strict\";var e,t={512:(e,t,r)=>{r.d(t,{Z:()=>o});var n=r(294);const o=function(e){return n.createElement(\"div\",{className:\"app\"},e.children)}}},r={};function n(e){var o=r[e];if(void 0!==o)return o.exports;",
+  "label": "generated"
+ },
+ {
+  "path": "lib/judge.js",
+  "head": "\"use strict\";\nObject.defineProperty(exports, \"__esModule\", { value: true });\nexports.askJudge = askJudge;\nconst redact_js_1 = require(\"./redact.js\");\nconst judge_input_js_1 = require(\"./judge-input.js\");",
+  "label": "generated"
+ },
+ {
+  "path": "src/components/__snapshots__/Button.test.tsx.snap",
+  "head": "// Jest Snapshot v1, https://goo.gl/fbAEQP\n\nexports[`Button renders the primary variant 1`] = `\n<button\n  class=\"btn btn-primary\"\n  type=\"button\"\n>\n  Save\n</button>\n`;",
+  "label": "generated"
+ }
+]

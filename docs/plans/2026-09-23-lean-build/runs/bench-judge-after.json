@@ -1,0 +1,52 @@
+{
+  "label": "judge-after",
+  "fxCommit": "ce17c2a",
+  "reps": 3,
+  "cases": {
+    "cli-inline-search": {
+      "caught": 2,
+      "of": 3,
+      "falsePositive": 0
+    },
+    "control": {
+      "caught": 0,
+      "of": 3,
+      "falsePositive": 0
+    },
+    "empty-throws": {
+      "caught": 3,
+      "of": 3,
+      "falsePositive": 0
+    },
+    "missing-returns-empty": {
+      "caught": 2,
+      "of": 3,
+      "falsePositive": 0
+    },
+    "path-dotdot-only": {
+      "caught": 2,
+      "of": 3,
+      "falsePositive": 0
+    },
+    "path-no-check": {
+      "caught": 3,
+      "of": 3,
+      "falsePositive": 0
+    },
+    "readme-binary": {
+      "caught": 1,
+      "of": 3,
+      "falsePositive": 1
+    },
+    "search-case-sensitive": {
+      "caught": 2,
+      "of": 3,
+      "falsePositive": 0
+    },
+    "search-query-only": {
+      "caught": 3,
+      "of": 3,
+      "falsePositive": 0
+    }
+  }
+}

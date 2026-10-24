@@ -1,0 +1,20 @@
+# Paths or globs the hand-written JavaScript gate accepts. Each entry is an
+# eval fixture or a vendored file (docs/adr/0046-fx-sources-are-typescript.md).
+# Do not add an entry to make the gate pass.
+
+# review-bench: the reference tree and the seeded cases are inputs to a measurement
+tests/review-bench/good/**
+tests/review-bench/cases/**
+
+# fixture-build: the trap scripts are inputs to a measurement
+tests/fixture-build/hidden/traps.test.js
+tests/fixture-build/hidden/traps.self-test.js
+
+# lens-pipeline: the worker fixture
+tests/lens-pipeline/fixture/**
+
+# vendored third-party bundles
+references/vendor/mermaid-*.min.js
+docs/plans/_assets/mermaid-*.min.js
+references/vendor/tailwindcss-play-*.js
+docs/plans/_assets/tailwindcss-play-*.js

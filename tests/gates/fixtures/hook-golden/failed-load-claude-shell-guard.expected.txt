@@ -1,0 +1,1 @@
+{"systemMessage":"[fx] shell guard off: load","hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"[fx] shell guard off: load"}}

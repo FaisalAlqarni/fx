@@ -34,7 +34,7 @@ cat > "$ROWS/90-probe.sh" <<'ROW'
 [ "${1:-}" = --describe ] && { echo '90|probe|free'; exit 0; }
 mkdir -p "$HOME/.claude" && echo probe > "$HOME/.claude/probe" || exit 1
 printf '%s\n' "$HOME" "${CODEX_HOME:-}" "${XDG_CONFIG_HOME:-}" \
-  "${CLAUDE_CONFIG_DIR:-}" "${FX_REAL_HOME:-}" > "$PROBE_OUT.tmp"
+  "${CLAUDE_CONFIG_DIR:-}" "${FX_REAL_HOME:-}" "${XDG_STATE_HOME:-}" > "$PROBE_OUT.tmp"
 mv "$PROBE_OUT.tmp" "$PROBE_OUT"
 [ -n "${PROBE_SLEEP:-}" ] && sleep "$PROBE_SLEEP"
 exit 0
@@ -51,15 +51,16 @@ check() { if eval "$2"; then echo "ok   $1"; else echo "FAIL $1" >&2; failures=$
 
 # Assertions shared by both runs. $1 names the run, $2 is the probe's record.
 assert_isolated() {
-  local run="$1" rec="$2" home codex xdg claude real scratch
+  local run="$1" rec="$2" home codex xdg claude real state scratch
   check "$run: probe row ran" '[ -s "$rec" ]'
   [ -s "$rec" ] || return
-  { read -r home; read -r codex; read -r xdg; read -r claude; read -r real; } < "$rec"
+  { read -r home; read -r codex; read -r xdg; read -r claude; read -r real; read -r state; } < "$rec"
   scratch="$(dirname "$home")"
   check "$run: row HOME is not the fake home"        '[ "$home" != "$FAKE" ]'
   check "$run: CODEX_HOME is under the row HOME"      '[ "$codex" = "$home/.codex" ]'
   check "$run: XDG_CONFIG_HOME is under the row HOME" '[ "$xdg" = "$home/.config" ]'
   check "$run: CLAUDE_CONFIG_DIR is under the row HOME" '[ "$claude" = "$home/.claude" ]'
+  check "$run: XDG_STATE_HOME is under the row HOME"  '[ "$state" = "$home/.local/state" ]'
   check "$run: FX_REAL_HOME is the home it was started from" '[ "$real" = "$FAKE" ]'
   check "$run: probe never landed in the fake home"   '[ ! -e "$FAKE/.claude/probe" ]'
   check "$run: fake home is byte-identical"           '[ "$(fingerprint "$FAKE")" = "$BEFORE" ]'
@@ -67,7 +68,7 @@ assert_isolated() {
 }
 
 # 1. A normal run.
-env -u FX_REAL_HOME HOME="$FAKE" CODEX_HOME="$FAKE/.codex" XDG_CONFIG_HOME="$FAKE/.config" \
+env -u FX_REAL_HOME HOME="$FAKE" CODEX_HOME="$FAKE/.codex" XDG_CONFIG_HOME="$FAKE/.config" XDG_STATE_HOME="$FAKE/.local/state" \
     CLAUDE_CONFIG_DIR="$FAKE/.claude" FX_CONFORMANCE_ROWS="$ROWS" \
     PROBE_OUT="$OUT/normal" \
     bash "$RUNNER" codex --free > "$OUT/normal.log" 2>&1
@@ -80,7 +81,7 @@ assert_isolated normal "$OUT/normal"
 # signal reaches it the way a terminal ^C would, and a background job does not
 # ignore SIGINT.
 set -m
-env -u FX_REAL_HOME HOME="$FAKE" CODEX_HOME="$FAKE/.codex" XDG_CONFIG_HOME="$FAKE/.config" \
+env -u FX_REAL_HOME HOME="$FAKE" CODEX_HOME="$FAKE/.codex" XDG_CONFIG_HOME="$FAKE/.config" XDG_STATE_HOME="$FAKE/.local/state" \
     CLAUDE_CONFIG_DIR="$FAKE/.claude" FX_CONFORMANCE_ROWS="$ROWS" \
     PROBE_OUT="$OUT/sigint" PROBE_SLEEP=30 \
     bash "$RUNNER" codex --free > "$OUT/sigint.log" 2>&1 &

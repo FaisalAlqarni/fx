@@ -1,111 +1,149 @@
 #!/usr/bin/env node
-'use strict';
-// compile-brief --worktree <dir> [--context <file>] <SLUG> <TASK_FILE> <OUTFILE>
-// Writes the one brief an implementer or task reviewer reads (ADR 0042) and
-// prints OUTFILE's path. Plan files come from <dir>/docs/plans/<SLUG>/, .fx.json
-// from <dir>, stack files from this plugin's references/stacks/.
-const fs = require('fs');
-const path = require('path');
-
-const PLUGIN = path.join(__dirname, '..', '..', '..');
-const { rulingsFor } = require(path.join(PLUGIN, 'lib', 'plan-state.js'));
-
-function die(msg) { process.stderr.write(`compile-brief: ${msg}\n`); process.exit(2); }
-
+// generated from src/skills/fx-implement/scripts/compile-brief.ts by scripts/build: edit there, not here
+"use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var fs = __toESM(require("fs"));
+var path = __toESM(require("path"));
+var import_plan_state = require("../../../lib/plan-state.js");
+var import_json = require("../../../lib/json.js");
+const PLUGIN = path.join(__dirname, "..", "..", "..");
+function die(msg) {
+  process.stderr.write(`compile-brief: ${msg}
+`);
+  process.exit(2);
+}
 const args = process.argv.slice(2);
 const opt = {};
 const pos = [];
 for (let i = 0; i < args.length; i++) {
-  if (args[i] === '--worktree' || args[i] === '--context') opt[args[i].slice(2)] = args[++i];
-  else pos.push(args[i]);
+  const a = args[i] ?? "";
+  if (a === "--worktree") opt.worktree = args[++i];
+  else if (a === "--context") opt.context = args[++i];
+  else pos.push(a);
 }
-const [slug, taskFile, outFile] = pos;
-if (!opt.worktree || pos.length !== 3) die('usage: compile-brief --worktree <dir> [--context <file>] <SLUG> <TASK_FILE> <OUTFILE>');
-
-const read = (p) => { try { return fs.readFileSync(p, 'utf8'); } catch { return null; } };
-const planDir = path.join(opt.worktree, 'docs', 'plans', slug);
+const [slug = "", taskFile = "", outFile = ""] = pos;
+const worktree = opt.worktree;
+if (!worktree || pos.length !== 3) die("usage: compile-brief --worktree <dir> [--context <file>] <SLUG> <TASK_FILE> <OUTFILE>");
+const read = (p) => {
+  try {
+    return fs.readFileSync(p, "utf8");
+  } catch {
+    return null;
+  }
+};
+const planDir = path.join(worktree, "docs", "plans", slug);
 const task = read(taskFile);
 if (task === null) die(`cannot read task file ${taskFile}`);
-
-// The `## Heading` section of md, heading line included, up to the next `## `
-// or `# ` heading; null when absent.
 function section(md, heading) {
-  const lines = md.split('\n');
+  const lines = md.split("\n");
   const start = lines.findIndex((l) => /^##\s/.test(l) && l.slice(2).trim().toLowerCase() === heading.toLowerCase());
   if (start === -1) return null;
   let end = lines.length;
-  for (let i = start + 1; i < lines.length; i++) if (/^#{1,2}\s/.test(lines[i])) { end = i; break; }
-  return lines.slice(start, end).join('\n').trim();
+  for (let i = start + 1; i < lines.length; i++) if (/^#{1,2}\s/.test(lines[i] ?? "")) {
+    end = i;
+    break;
+  }
+  return lines.slice(start, end).join("\n").trim();
 }
-
-// Only the bold numbered paragraph `**N.` of a section body.
 function numbered(sec, n) {
-  const lines = sec.split('\n').slice(1);
+  const lines = sec.split("\n").slice(1);
   const start = lines.findIndex((l) => l.startsWith(`**${n}.`));
   if (start === -1) return null;
   let end = lines.length;
-  for (let i = start + 1; i < lines.length; i++) if (/^\*\*\d+\./.test(lines[i]) || /^#/.test(lines[i])) { end = i; break; }
-  return lines.slice(start, end).join('\n').trim();
+  for (let i = start + 1; i < lines.length; i++) if (/^\*\*\d+\./.test(lines[i] ?? "") || /^#/.test(lines[i] ?? "")) {
+    end = i;
+    break;
+  }
+  return lines.slice(start, end).join("\n").trim();
 }
-
 const entries = (md, label) => {
-  const m = md.match(new RegExp(`^\\*\\*${label}:\\*\\*[ \\t]*(.*)$`, 'm'));
-  return m ? m[1].split(';').map((s) => s.trim()).filter(Boolean) : null;
+  const m = md.match(new RegExp(`^\\*\\*${label}:\\*\\*[ \\t]*(.*)$`, "m"));
+  return m ? (m[1] ?? "").split(";").map((s) => s.trim()).filter(Boolean) : null;
 };
-
-const plan = read(path.join(planDir, 'plan.md'));
-if (plan === null) die(`cannot read ${path.join(planDir, 'plan.md')}`);
-const gc = section(plan, 'Global Constraints');
-const gcBody = gc && gc.split('\n').slice(1).join('\n').trim();
-
-let context = 'None.';
+const plan = read(path.join(planDir, "plan.md"));
+if (plan === null) die(`cannot read ${path.join(planDir, "plan.md")}`);
+const gc = section(plan, "Global Constraints");
+const gcBody = gc && gc.split("\n").slice(1).join("\n").trim();
+let context = "None.";
 if (opt.context) {
   const c = read(opt.context);
   if (c === null) die(`cannot read context file ${opt.context}`);
-  context = c.trim() || 'None.';
+  context = c.trim() || "None.";
 }
-
-const rulings = rulingsFor(opt.worktree, planDir, (path.basename(taskFile).match(/^(\d+)-/) || [])[1]);
-
-const dEntries = entries(task, 'Design');
-const design = dEntries ? read(path.join(planDir, 'design.md')) : '';
-if (design === null) die(`cannot read ${path.join(planDir, 'design.md')}, which the task's Design entry needs`);
-const designOut = !dEntries ? 'None.' : dEntries.map((e) => {
-  const [head, n] = e.split('>').map((s) => s.trim());
-  const sec = section(design, head);
+const rulings = (0, import_plan_state.rulingsFor)(worktree, planDir, (path.basename(taskFile).match(/^(\d+)-/) || [])[1]);
+const dEntries = entries(task, "Design");
+const design = dEntries ? read(path.join(planDir, "design.md")) : "";
+if (design === null) die(`cannot read ${path.join(planDir, "design.md")}, which the task's Design entry needs`);
+const designOut = !dEntries ? "None." : dEntries.map((e) => {
+  const [head, n] = e.split(">").map((s) => s.trim());
+  const sec = section(design, head ?? "");
   const got = sec && n ? numbered(sec, n) : sec;
   if (!got) die(`Design entry resolves to nothing: ${e}`);
   return got;
-}).join('\n\n');
-
-const stackFile = (name) => read(path.join(PLUGIN, 'references', 'stacks', `${name}.md`));
-const sEntries = entries(task, 'Stack');
+}).join("\n\n");
+const stackFile = (name) => read(path.join(PLUGIN, "references", "stacks", `${name}.md`));
+const sEntries = entries(task, "Stack");
 let stackOut;
 if (sEntries) {
   stackOut = sEntries.map((e) => {
-    const i = e.indexOf('/');
+    const i = e.indexOf("/");
     const md = i > 0 ? stackFile(e.slice(0, i)) : null;
     const got = md && section(md, e.slice(i + 1).trim());
     if (!got) die(`Stack entry resolves to nothing: ${e}`);
     return got;
-  }).join('\n\n');
+  }).join("\n\n");
 } else {
-  let names = [];
-  try { names = JSON.parse(read(path.join(opt.worktree, '.fx.json')) || '{}').stacks || []; } catch (e) { die(`cannot parse .fx.json: ${e.message}`); }
+  let stacks;
+  try {
+    const fx = (0, import_json.parseJson)(read(path.join(worktree, ".fx.json")) || "{}");
+    if (fx === null) throw new TypeError("Cannot read properties of null (reading 'stacks')");
+    stacks = typeof fx === "object" && "stacks" in fx ? fx.stacks : void 0;
+  } catch (e) {
+    die(`cannot parse .fx.json: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  const names = stacks || [];
+  if (!Array.isArray(names)) throw new TypeError("names.map is not a function");
   stackOut = names.map((n) => {
-    const md = stackFile(n);
+    const md = stackFile(String(n));
     if (md === null) die(`.fx.json names stack ${n}, which has no file`);
     return md.trim();
-  }).join('\n\n') || 'None.';
+  }).join("\n\n") || "None.";
 }
-
 fs.mkdirSync(path.dirname(path.resolve(outFile)), { recursive: true });
 fs.writeFileSync(outFile, [
-  '## Task', task.trim(),
-  '## Global constraints', gcBody || 'None.',
-  '## Context', context,
-  '## Rulings', rulings.length ? rulings.map((r) => `- ${r}`).join('\n') : 'None.',
-  '## Design excerpt', designOut,
-  '## Stack', stackOut,
-].join('\n\n') + '\n');
-process.stdout.write(`${outFile}\n`);
+  "## Task",
+  task.trim(),
+  "## Global constraints",
+  gcBody || "None.",
+  "## Context",
+  context,
+  "## Rulings",
+  rulings.length ? rulings.map((r) => `- ${r}`).join("\n") : "None.",
+  "## Design excerpt",
+  designOut,
+  "## Stack",
+  stackOut
+].join("\n\n") + "\n");
+process.stdout.write(`${outFile}
+`);

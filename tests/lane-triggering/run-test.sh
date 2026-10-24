@@ -79,6 +79,9 @@ case "$LIVE_SCRATCH" in
 esac
 trap 'case "$LIVE_SCRATCH" in /tmp/?*|"${TMPDIR:-/tmp}"/?*) rm -rf -- "$LIVE_SCRATCH" ;; esac' EXIT
 HOME="$LIVE_SCRATCH/home"
+# fx writes its state under these, never the owner's.
+XDG_CONFIG_HOME="$HOME/.config"
+XDG_STATE_HOME="$HOME/.local/state"
 CLAUDE_CONFIG_DIR="$HOME/.claude"
 FX_REAL_HOME="$REAL_HOME"
 FX="$PLUGIN_DIR"

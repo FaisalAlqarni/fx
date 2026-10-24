@@ -1,0 +1,7 @@
+{
+  "hook": "fx-pretooluse.js",
+  "cwd": "main",
+  "broken": "lib/dispatch-route.js",
+  "exit": 0,
+  "stderr": "[fx] dispatch routing off: load\n"
+}
