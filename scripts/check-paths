@@ -14,6 +14,17 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+if "--root" in sys.argv:
+    ROOT = pathlib.Path(sys.argv[sys.argv.index("--root") + 1]).resolve()
+
+LINK = re.compile(r'\[[^\]]*\]\(([^)\s]+)\)')
+# Unreachable today; the named task adds the link and deletes the entry.
+PENDING_ORPHANS = {
+    'skills/fx-authoring/anthropic-best-practices.md': '04',
+    'skills/fx-implement/re-review-prompt.md': '16',
+}
+# Its links are examples, carried verbatim.
+NOT_A_SOURCE = {'skills/fx-authoring/anthropic-best-practices.md'}
 BARE = re.compile(r'`references/[A-Za-z0-9/._-]+`')
 ANCHORED = re.compile(r'`((?:\.\./)+references/[A-Za-z0-9/._-]+)`')
 
@@ -35,6 +46,29 @@ for area in ("skills", "agents", "commands", "references"):
             if not (path.parent / ref).resolve().exists():
                 failures.append(f"{rel}: cites {ref} -> no such file")
 
+# Markdown links inside each lane: they resolve, and every file is named by one.
+for lane in sorted(p for p in (ROOT / "skills").glob("*") if p.is_dir()):
+    named = set()
+    for path in sorted(lane.rglob("*.md")):
+        rel = path.relative_to(ROOT).as_posix()
+        if rel in NOT_A_SOURCE:
+            continue
+        for target in LINK.findall(path.read_text()):
+            if re.match(r'[A-Za-z][A-Za-z0-9+.-]*:', target) or target.startswith('#'):
+                continue
+            resolved = (path.parent / target.split('#')[0]).resolve()
+            checked += 1
+            if not resolved.is_file():
+                failures.append(f"{rel}: link {target} -> no such file")
+            elif path.name != "COVERAGE.md" and resolved != path.resolve():
+                named.add(resolved)
+    for path in sorted(lane.rglob("*.md")):
+        rel = path.relative_to(ROOT).as_posix()
+        if path.name in ("SKILL.md", "COVERAGE.md") or path.resolve() in named:
+            continue
+        if rel in PENDING_ORPHANS:
+            continue
+        failures.append(f"{rel}: no link from another file in skills/{lane.name}/ reaches it")
 if failures:
     print(f"FAIL: {len(failures)} problem(s)")
     for f in failures:
