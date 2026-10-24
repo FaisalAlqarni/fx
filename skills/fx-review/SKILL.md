@@ -262,7 +262,7 @@ Read `../../references/vocab/receiving-review.md` before implementing anything; 
 
 **Never:** skip review because "it's simple" · ignore a Critical · proceed with an unfixed Important · argue with valid technical feedback.
 
-**Never write** "You're absolutely right!", "Great point!", "Thanks for catching that", or any gratitude expression. State the fix.
+**Never write** "You're absolutely right!", "Great point!", "Thanks for catching that", or any gratitude expression. State the fix. The code shows you heard it.
 
 ## 8. Flags
 
