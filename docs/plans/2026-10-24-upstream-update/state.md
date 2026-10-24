@@ -64,3 +64,12 @@ Task 04: minor (deferred): moved files discovery.md and preamble.md open with a 
 Task 04: confirmed ⚠️ resolved: the live lane-triggering run is on request only (design Testing Decisions); not run, budget mode.
 Task 04: cost unavailable (no transcript recorded)
 Task 04: complete (commits 1ebcf07..14d7490, review clean)
+Ruling: tasks 06 and 07 batched into one implementer and one review (budget mode). Why: owner budget instruction; both are small and touch different files. Cost if wrong: a larger review unit, caught by the reviewer.
+Task 06: dispatched ea37a4a 2026-10-24T23:11:24Z
+Task 07: dispatched ea37a4a 2026-10-24T23:11:24Z
+Task 05: minor (deferred): fx-review section 7 dropped the sentence "The code shows you heard it." from the forbidden-phrase rule.
+Ruling: task 08 restores the sentence "The code shows you heard it." after "State the fix." in skills/fx-review/SKILL.md section 7 (task 05 dropped it; base 3229906 line 297). Why: the design allows no dropped rule text, and a fix round now would put a second writer beside the 06/07 batch. Cost if wrong: one sentence missing until task 08, caught by the task 08 review.
+Task 05: confirmed ⚠️ resolved: check-prose and the four gates are rerun by the task 08 phase gate (check-all).
+Task 05: cost unavailable (no transcript recorded)
+Task 05: complete (commits 3229906..41527a4, 1 deferred to task 08 by ruling)
+Ruling: any later task that adds to references/vocab/good-tests.md (8,998 bytes against its 9,000-byte gate) moves an equal or larger whole section out first, as a pure move behind a pointer. Why: tasks 06/07 batch report. Cost if wrong: a red leaf-size gate, caught by test_scope.
