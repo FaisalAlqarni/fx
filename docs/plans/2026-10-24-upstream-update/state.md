@@ -73,3 +73,13 @@ Task 05: confirmed ⚠️ resolved: check-prose and the four gates are rerun by 
 Task 05: cost unavailable (no transcript recorded)
 Task 05: complete (commits 3229906..41527a4, 1 deferred to task 08 by ruling)
 Ruling: any later task that adds to references/vocab/good-tests.md (8,998 bytes against its 9,000-byte gate) moves an equal or larger whole section out first, as a pure move behind a pointer. Why: tasks 06/07 batch report. Cost if wrong: a red leaf-size gate, caught by test_scope.
+Task 08: dispatched 97563a1 2026-10-24T23:14:39Z
+Task 06: minor (deferred): server.cts:402 uses string replace for the helper injection, the same class as the fixed bug; use a replacer function.
+Task 07: minor (deferred): good-tests.md sits at 8998 of 9000 bytes; the next edit must move a whole section out first.
+Task 07: minor (deferred): good-tests.md trim dropped "describe what, not how" and the receive(:process) example that illustrated the internal-collaborator rule.
+Tasks 06, 07: confirmed ⚠️ resolved: gate results are rerun by the task 08 phase gate (check-all).
+Task 06: cost unavailable (no transcript recorded)
+Task 06: complete (commits ea37a4a..1e46bf7, review clean)
+Task 07: cost unavailable (no transcript recorded)
+Task 07: complete (commits 1e46bf7..e0c81ed, review clean)
+Task 08: ran test_all (plan-mandated phase gate): ALL GREEN per report.
