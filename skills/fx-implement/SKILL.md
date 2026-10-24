@@ -268,6 +268,8 @@ prints. Without bash: `git log --oneline`, `git diff --stat`, and
 output never enters your own context**, and the reviewer sees commit list, stat
 summary and full diff in a single Read.
 
+Rule every `Declined to judge` line the reviewer returns: read [review-inputs.md](./references/review-inputs.md).
+
 **Before you dispatch the task reviewer**: read [cost.md](./references/cost.md), every time.
 
 Use the **BASE you recorded before dispatching**: never `HEAD~1`, which

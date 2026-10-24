@@ -48,4 +48,13 @@ assert.ok(cost.includes('pass `unavailable` when it prints no line'), 'section 3
 const plan = fs.readFileSync(path.join(root, 'skills', 'fx-plan', 'SKILL.md'), 'utf8').replace(/\s+/g, ' ');
 assert.ok(plan.includes('Every heading a task\'s `**Design:**` line names exists in `design.md`'), 'fx-plan self-review resolves Design headings');
 
+// Task 12: a declined item is ledgered, counted and ruled on.
+assert.ok(ref('reading-rules.md').includes("must equal the reply's Minor count plus its `declined: <n>` count"), 'the ledger-copy check counts declined lines');
+assert.ok(rev.includes('Task <NN>: declined: <behaviour>: <reason>'), 'the task reviewer defines the declined ledger line');
+const inputs = ref('review-inputs.md');
+assert.ok(inputs.includes('Task <NN>: declined: <behaviour>: <reason>. Ruling: <stands | fix | parked>: <why>'), 'review-inputs defines the ruling line');
+for (const o of ['stands', 'fix', 'parked']) assert.ok(inputs.includes(`**${o}**`), `review-inputs defines the ${o} outcome`);
+assert.ok(inputs.includes('Task <NN>: needs you: declined: <item text>'), 'a parked declined item writes a needs-you line');
+assert.ok(ref('final-review.md').includes('Final review: declined: <behaviour>: <reason>. Ruling: <stands | fix | parked>: <why>'), 'the branch pass declined line is defined');
+
 console.log('ledger-lines: OK');

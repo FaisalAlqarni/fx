@@ -34,3 +34,17 @@ the fix loop like any other. **Ledger it with the finding's exact text**:
 `Task <NN>: confirmed ⚠️: <exact finding text>`. The reviewer's own file has
 no confirmed/unconfirmed marker, so this ledger line, not the findings file,
 is what the fixer and re-reviewer read for it.
+
+**Rule every declined item.** The reviewer's `### Declined to judge` list
+holds behaviours it set aside, and its `## Ledger lines` carries one
+`Task <NN>: declined: <behaviour>: <reason>` line per item. Append them with
+the Minor lines, then add one ruling line per item:
+`Task <NN>: declined: <behaviour>: <reason>. Ruling: <stands | fix | parked>: <why>`.
+
+- **stands**: the reviewer was right to set it aside. The ruling is kept as
+  named input for the final branch review.
+- **fix**: a reasonable user would expect it. It enters the fix loop as an
+  Important finding.
+- **parked**: the item touches one of the four stop conditions. Write
+  `Task <NN>: needs you: declined: <item text>`; the task still completes.
+  A declined item never adds a stop condition.

@@ -161,6 +161,16 @@ Subagent (general-purpose):
     unchanged code, or spans tasks), report it as a **⚠️ item** instead of
     broadening your search.
 
+    **Read the brief as a vision, not a checklist.** Where it is silent, a
+    reasonable user's expectation is the requirement: an input the task never
+    named (an empty list, a missing record, a repeated request) that crashes or
+    corrupts is graded by its effect on a user, never deferred as Minor because
+    nobody asked. Unrequested behaviour is still an Extra finding.
+
+    **Declined to judge.** Every behaviour you considered and set aside goes
+    in the findings file under `### Declined to judge`, one line each, with the
+    reason. Nothing you set aside may disappear silently.
+
     ## Part 2: code quality
 
     **Ask this before you ask whether the code is correct: should this code
@@ -268,6 +278,11 @@ Subagent (general-purpose):
 
     Each: file:line · what is wrong · why it matters · how to fix if not obvious.
 
+    ### Declined to judge
+
+    One line per item: `- <behaviour>: <reason>`. If you set nothing aside,
+    write the single line `None`.
+
     ### Assessment
 
     **Task quality:** [Approved | Needs fixes]
@@ -283,10 +298,15 @@ Subagent (general-purpose):
 
     Task <NN>: minor (deferred): <one-liner>
 
+    and one line per `Declined to judge` item:
+
+    Task <NN>: declined: <behaviour>: <reason>
+
     Use the task number in the brief's `## Task` heading. The controller
-    greps these lines and checks their count against the Minor number in
-    your `C/I/M`; write exactly one line per Minor finding, no more, no
-    fewer, never by reading your findings.
+    greps these lines and checks their count against the Minor number plus
+    the declined number in your reply; write exactly one line per Minor
+    finding and one per declined item, no more, no fewer, never by reading
+    your findings.
 
     ### Reply
 
@@ -295,7 +315,8 @@ Subagent (general-purpose):
     - **Spec:** ✅ | ❌ | ⚠️ (count)
     - **Quality:** approved | changes requested
     - **C/I/M:** `<critical>/<important>/<minor>`; if any Important finding
-      is plan-mandated, append `, plan-mandated: <n>`
+      is plan-mandated, append `, plan-mandated: <n>`; always end with
+      `, declined: <n>` (`0` when none)
     - **Findings:** [FINDINGS_FILE]
     - **Ready:** yes | no | with fixes
 ```

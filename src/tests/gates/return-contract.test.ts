@@ -21,10 +21,13 @@ function contract(file: string, fields: string[], from = 0) {
 // and keep returning their full findings as their reply, as before task 08.
 // So 'plan-mandated' below is required of the two reviewer reply contracts
 // only, and the lens contract check that used to sit here is gone.
-const REVIEWER = ['Spec', 'Quality', 'C/I/M', 'Findings', 'Ready', 'plan-mandated'];
+const REVIEWER = ['Spec', 'Quality', 'C/I/M', 'Findings', 'Ready', 'plan-mandated', ', declined: <n>'];
 contract('skills/fx-implement/implementer-prompt.md', ['Status', 'Commits', 'Tests', 'Report', 'Concerns']);
 contract('skills/fx-implement/task-reviewer-prompt.md', REVIEWER);
 contract('skills/fx-review/reviewer-prompt.md', REVIEWER);
+for (const f of ['skills/fx-implement/task-reviewer-prompt.md', 'skills/fx-review/reviewer-prompt.md']) {
+  assert.ok(read(f).includes('### Declined to judge'), `${f}: the findings template has a Declined to judge section`);
+}
 const rr = contract('skills/fx-implement/re-review-prompt.md', ['Verdict', 'Open', 'Fixed', 'Findings', 'New breakage']);
 const skill = read('skills/fx-implement/SKILL.md');
 contract('skills/fx-implement/references/coverage-audit.md', ['Gaps', 'Findings', 'Tasks affected', 'Verdict', 'Next'], 0);

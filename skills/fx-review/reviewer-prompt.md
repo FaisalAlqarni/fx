@@ -31,6 +31,13 @@ Subagent (general-purpose):
     [Copied verbatim from plan.md: exact values, formats, and stated
     relationships between components.]
 
+    **Read the plan or spec as a vision, not a checklist.** Where it is
+    silent, a reasonable user's expectation is the requirement: an input it
+    never named that crashes or corrupts is graded by its effect on a user,
+    never deferred as Minor because nobody asked. Unrequested behaviour is
+    still an Extra finding. Every behaviour you considered and set aside goes
+    under `### Declined to judge`, with the reason.
+
     ## Range under review
 
     **Base:** [BASE_SHA]  (the merge-base with the base branch)
@@ -47,7 +54,8 @@ Subagent (general-purpose):
     before merge:
 
     [DEFERRED_MINORS_AND_PARKED: the ledger's `minor (deferred)` and `parked`
-    lines, each with its ruling.]
+    lines, each with its ruling, and every ruled `declined:` line (task
+    reviewers' items the controller ruled on).]
 
     ## Read-only review
 
@@ -177,6 +185,9 @@ Subagent (general-purpose):
     ### Recommendations
     [Improvements to code quality, architecture, or process.]
 
+    ### Declined to judge
+    One line per item: `- <behaviour>: <reason>`, or the single line `None`.
+
     ### Assessment
 
     **Ready to merge?** [Yes | No | With fixes]
@@ -192,9 +203,13 @@ Subagent (general-purpose):
 
     Task <NN>: minor (deferred): <one-liner>
 
+    and one line per `Declined to judge` item:
+
+    Task <NN>: declined: <behaviour>: <reason>
+
     Name the task each finding belongs to. The controller greps these lines
-    and checks their count against the Minor number in your `C/I/M`, never by
-    reading your findings.
+    and checks their count against the Minor number plus the declined number
+    in your reply, never by reading your findings.
 
     ### Reply
 
@@ -203,7 +218,8 @@ Subagent (general-purpose):
     - **Spec:** ✅ | ❌ | ⚠️ (count)
     - **Quality:** approved | changes requested
     - **C/I/M:** `<critical>/<important>/<minor>`; if any Important finding
-      is plan-mandated, append `, plan-mandated: <n>`
+      is plan-mandated, append `, plan-mandated: <n>`; always end with
+      `, declined: <n>` (`0` when none)
     - **Findings:** [FINDINGS_FILE]
     - **Ready:** yes | no | with fixes
 

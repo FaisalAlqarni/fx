@@ -142,8 +142,10 @@ rather than guessing where specs live.
 
 ## 4. Find the standards
 
-Whatever the repo documents (`CONTRIBUTING.md`, `docs/DESIGN/*`,
-`.rubocop.yml`, `.editorconfig`) **plus** the smell baseline in
+Search the repo for standards files. Always include `repo.md`,
+`CODING_STANDARDS.md`, `CONTRIBUTING.md` and the rule sections of `AGENTS.md`
+and `CLAUDE.md`, plus whatever else it documents (`docs/DESIGN/*`,
+`.rubocop.yml`, `.editorconfig`), **plus** the smell baseline in
 `../../references/vocab/fowler-smells.md`, which applies even when a repo documents
 nothing.
 
@@ -164,6 +166,9 @@ Two rules bind the baseline:
 format`, ktlint, SwiftLint. Never spend a reviewer on what a linter catches.
 
 ## 5. Dispatch in parallel
+
+Send every pass in one message, and aggregate only after every reply has
+arrived; name any pass that has not.
 
 Every pass is read-only and independent, so they run concurrently: **and in
 separate subagents, so they don't pollute each other's context.** A Standards

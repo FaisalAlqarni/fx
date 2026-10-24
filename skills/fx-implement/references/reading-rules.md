@@ -9,7 +9,7 @@
   read only what the next move needs.
 - **Check the ledger copy against the reply's own counts.** After appending
   a `## Ledger lines` section with `grep '^Task '`, the appended line count
-  must equal the reply's Minor count (a reviewer) or 1 plus the ledger number
+  must equal the reply's Minor count plus its `declined: <n>` count (a reviewer) or 1 plus the ledger number
   in its `Fixed` field (a re-reviewer). A mismatch: read that section
   directly (`sed -n '/^## Ledger lines/,/^## /p' <findings>`) instead of
   trusting the grep.

@@ -30,6 +30,9 @@ confirmed as a real gap.
   it, and do not dispatch a fix that contradicts the plan without a recorded
   ruling.
 
+- **A declined item ruled `fix` enters the loop** as an Important finding
+  (see [review-inputs.md](./references/review-inputs.md)).
+
 Everything else enters the loop.
 
 A **fix round** is one fix dispatch plus one scoped re-review. **Five rounds

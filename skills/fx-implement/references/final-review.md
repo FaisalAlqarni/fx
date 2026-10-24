@@ -5,7 +5,9 @@ re-deriving the branch diff with git commands.**
 
 Invoke the fx-review lane in branch mode on the **most capable available model** (`Capable because: final branch review`).
 Point it at the ledger's **deferred-minor and parked lines** so it can triage
-which must be fixed before merge.
+which must be fixed before merge, and name **every ruled `declined:` line** in
+its brief as input. The branch reviewer's own declined items get a ledger line
+each: `Final review: declined: <behaviour>: <reason>. Ruling: <stands | fix | parked>: <why>`.
 
 The branch pass is limited, not full: the broad pass, the unprimed devil's advocate, and at most four lenses, with `fx-lens-security` on an auth change counted inside the four. Devil's advocate always runs; an auth change only moves it to the top tier.
 The broad pass covers the cross-task seams. A lens runs

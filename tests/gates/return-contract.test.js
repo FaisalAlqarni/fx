@@ -36,10 +36,13 @@ function contract(file, fields, from = 0) {
   for (const f of fields) assert.ok(tail.includes(f), `${file}: five-line reply names ${f}`);
   return text;
 }
-const REVIEWER = ["Spec", "Quality", "C/I/M", "Findings", "Ready", "plan-mandated"];
+const REVIEWER = ["Spec", "Quality", "C/I/M", "Findings", "Ready", "plan-mandated", ", declined: <n>"];
 contract("skills/fx-implement/implementer-prompt.md", ["Status", "Commits", "Tests", "Report", "Concerns"]);
 contract("skills/fx-implement/task-reviewer-prompt.md", REVIEWER);
 contract("skills/fx-review/reviewer-prompt.md", REVIEWER);
+for (const f of ["skills/fx-implement/task-reviewer-prompt.md", "skills/fx-review/reviewer-prompt.md"]) {
+  assert.ok(read(f).includes("### Declined to judge"), `${f}: the findings template has a Declined to judge section`);
+}
 const rr = contract("skills/fx-implement/re-review-prompt.md", ["Verdict", "Open", "Fixed", "Findings", "New breakage"]);
 const skill = read("skills/fx-implement/SKILL.md");
 contract("skills/fx-implement/references/coverage-audit.md", ["Gaps", "Findings", "Tasks affected", "Verdict", "Next"], 0);
