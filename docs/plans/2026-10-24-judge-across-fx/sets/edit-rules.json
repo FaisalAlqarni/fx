@@ -1,0 +1,2628 @@
+[
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100000_add_user_id_to_orders.rb",
+  "added": "    add_column :orders, :user_id, :bigint",
+  "file": "class AddUserIdToOrders < ActiveRecord::Migration[7.1]\n  def change\n    add_column :orders, :user_id, :bigint\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100001_add_account_id_to_invoices.rb",
+  "added": "    add_column :invoices, :account_id, :bigint, null: false",
+  "file": "class AddAccountIdToInvoices < ActiveRecord::Migration[7.1]\n  def change\n    add_column :invoices, :account_id, :bigint, null: false\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100002_add_customer_id_to_payments.rb",
+  "added": "    add_column :payments, :customer_id, :integer",
+  "file": "class AddCustomerIdToPayments < ActiveRecord::Migration[7.1]\n  def change\n    add_column :payments, :customer_id, :integer\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100003_add_author_to_posts.rb",
+  "added": "    add_reference :posts, :author, index: false",
+  "file": "class AddAuthorToPosts < ActiveRecord::Migration[7.1]\n  def change\n    add_reference :posts, :author, index: false\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100004_add_company_to_users.rb",
+  "added": "    add_reference :users, :company, foreign_key: true, index: false",
+  "file": "class AddCompanyToUsers < ActiveRecord::Migration[7.1]\n  def change\n    add_reference :users, :company, foreign_key: true, index: false\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100005_create_comments.rb",
+  "added": "      t.bigint :post_id\n      t.bigint :user_id",
+  "file": "class CreateComments < ActiveRecord::Migration[7.1]\n  def change\n    create_table :comments do |t|\n      t.text :body\n      t.bigint :post_id\n      t.bigint :user_id\n      t.timestamps\n    end\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100006_create_line_items.rb",
+  "added": "      t.integer :order_id, null: false\n      t.integer :product_id, null: false\n      t.integer :quantity",
+  "file": "class CreateLineItems < ActiveRecord::Migration[7.1]\n  def change\n    create_table :line_items do |t|\n      t.integer :order_id, null: false\n      t.integer :product_id, null: false\n      t.integer :quantity\n      t.timestamps\n    end\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100007_create_memberships.rb",
+  "added": "      t.references :team, index: false\n      t.references :user, index: false",
+  "file": "class CreateMemberships < ActiveRecord::Migration[7.1]\n  def change\n    create_table :memberships do |t|\n      t.references :team, index: false\n      t.references :user, index: false\n      t.string :role\n    end\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100008_add_owner_id_to_projects.rb",
+  "added": "    add_column :projects, :owner_id, :bigint\n    add_foreign_key :projects, :users, column: :owner_id",
+  "file": "class AddOwnerIdToProjects < ActiveRecord::Migration[7.1]\n  def change\n    add_column :projects, :owner_id, :bigint\n    add_foreign_key :projects, :users, column: :owner_id\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100009_add_tenant_id_to_events.rb",
+  "added": "    add_column :events, :tenant_id, :uuid",
+  "file": "class AddTenantIdToEvents < ActiveRecord::Migration[7.1]\n  def change\n    add_column :events, :tenant_id, :uuid\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100010_create_attachments.rb",
+  "added": "      t.bigint :uploaded_by_id",
+  "file": "class CreateAttachments < ActiveRecord::Migration[7.1]\n  def change\n    create_table :attachments do |t|\n      t.string :filename\n      t.bigint :uploaded_by_id\n      t.timestamps\n    end\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100011_add_parent_id_to_categories.rb",
+  "added": "    add_column :categories, :parent_id, :bigint",
+  "file": "class AddParentIdToCategories < ActiveRecord::Migration[7.1]\n  def change\n    add_column :categories, :parent_id, :bigint\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100012_add_manager_id_to_employees.rb",
+  "added": "    add_column :employees, :manager_id, :integer\n    add_foreign_key :employees, :employees, column: :manager_id",
+  "file": "class AddManagerIdToEmployees < ActiveRecord::Migration[7.1]\n  def change\n    add_column :employees, :manager_id, :integer\n    add_foreign_key :employees, :employees, column: :manager_id\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100013_create_votes.rb",
+  "added": "      t.belongs_to :poll, index: false\n      t.belongs_to :voter, index: false",
+  "file": "class CreateVotes < ActiveRecord::Migration[7.1]\n  def change\n    create_table :votes do |t|\n      t.belongs_to :poll, index: false\n      t.belongs_to :voter, index: false\n      t.integer :choice\n    end\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100014_add_shop_id_to_products.rb",
+  "added": "    change_table :products do |t|\n      t.bigint :shop_id\n    end",
+  "file": "class AddShopIdToProducts < ActiveRecord::Migration[7.1]\n  def change\n    change_table :products do |t|\n      t.bigint :shop_id\n    end\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100015_add_campaign_id_to_clicks.rb",
+  "added": "    add_column :clicks, :campaign_id, :bigint, null: false, default: 0",
+  "file": "class AddCampaignIdToClicks < ActiveRecord::Migration[7.1]\n  def change\n    add_column :clicks, :campaign_id, :bigint, null: false, default: 0\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100016_add_warehouse_to_shipments.rb",
+  "added": "    add_reference :shipments, :warehouse, index: false, null: false",
+  "file": "class AddWarehouseToShipments < ActiveRecord::Migration[7.1]\n  def change\n    add_reference :shipments, :warehouse, index: false, null: false\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100017_create_subscriptions.rb",
+  "added": "      t.uuid :plan_id, null: false\n      t.uuid :account_id, null: false",
+  "file": "class CreateSubscriptions < ActiveRecord::Migration[7.1]\n  def change\n    create_table :subscriptions do |t|\n      t.uuid :plan_id, null: false\n      t.uuid :account_id, null: false\n      t.datetime :renews_at\n    end\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100018_add_assignee_id_to_tickets.rb",
+  "added": "    add_column :tickets, :assignee_id, :bigint",
+  "file": "class AddAssigneeIdToTickets < ActiveRecord::Migration[7.1]\n  def change\n    add_column :tickets, :assignee_id, :bigint\n    add_column :tickets, :priority, :integer\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100019_add_region_id_to_stores.rb",
+  "added": "    add_column :stores, :region_id, :integer",
+  "file": "class AddRegionIdToStores < ActiveRecord::Migration[7.1]\n  def change\n    add_column :stores, :name, :string\n    add_column :stores, :region_id, :integer\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100020_create_reviews.rb",
+  "added": "      t.references :product, index: false, foreign_key: true",
+  "file": "class CreateReviews < ActiveRecord::Migration[7.1]\n  def change\n    create_table :reviews do |t|\n      t.references :product, index: false, foreign_key: true\n      t.integer :stars\n    end\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100021_add_invited_by_id_to_users.rb",
+  "added": "    add_column :users, :invited_by_id, :bigint",
+  "file": "class AddInvitedByIdToUsers < ActiveRecord::Migration[7.1]\n  def change\n    add_column :users, :invited_by_id, :bigint\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100022_add_location_id_to_devices.rb",
+  "added": "    add_column :devices, :location_id, :bigint\n    add_column :devices, :serial, :string",
+  "file": "class AddLocationIdToDevices < ActiveRecord::Migration[7.1]\n  def change\n    add_column :devices, :location_id, :bigint\n    add_column :devices, :serial, :string\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100023_create_notifications.rb",
+  "added": "      t.bigint :recipient_id, null: false\n      t.string :kind",
+  "file": "class CreateNotifications < ActiveRecord::Migration[7.1]\n  def change\n    create_table :notifications do |t|\n      t.bigint :recipient_id, null: false\n      t.string :kind\n      t.timestamps\n    end\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100024_add_supplier_id_to_parts.rb",
+  "added": "    add_column :parts, :supplier_id, :integer, null: true",
+  "file": "class AddSupplierIdToParts < ActiveRecord::Migration[7.1]\n  def change\n    add_column :parts, :supplier_id, :integer, null: true\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100025_add_course_id_to_lessons.rb",
+  "added": "    add_column :lessons, :course_id, :bigint\n    add_index :lessons, :position",
+  "file": "class AddCourseIdToLessons < ActiveRecord::Migration[7.1]\n  def change\n    add_column :lessons, :course_id, :bigint\n    add_index :lessons, :position\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100026_add_branch_id_to_accounts.rb",
+  "added": "    add_column :accounts, :branch_id, :bigint",
+  "file": "class AddBranchIdToAccounts < ActiveRecord::Migration[7.1]\n  def change\n    add_column :accounts, :branch_id, :bigint\n    add_index :accounts, :email, unique: true\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100027_create_order_notes.rb",
+  "added": "      t.bigint :order_id\n      t.bigint :author_id\n      t.text :body",
+  "file": "class CreateOrderNotes < ActiveRecord::Migration[7.1]\n  def change\n    create_table :order_notes do |t|\n      t.bigint :order_id\n      t.bigint :author_id\n      t.text :body\n    end\n    add_index :order_notes, :order_id\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100028_add_referee_id_to_matches.rb",
+  "added": "    add_column :matches, :referee_id, :bigint\n    add_foreign_key :matches, :users, column: :referee_id, on_delete: :nullify",
+  "file": "class AddRefereeIdToMatches < ActiveRecord::Migration[7.1]\n  def change\n    add_column :matches, :referee_id, :bigint\n    add_foreign_key :matches, :users, column: :referee_id, on_delete: :nullify\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100029_add_department_to_staff.rb",
+  "added": "    add_reference :staff, :department, foreign_key: true, index: false",
+  "file": "class AddDepartmentToStaff < ActiveRecord::Migration[7.1]\n  def change\n    add_reference :staff, :department, foreign_key: true, index: false\n  end\nend\n",
+  "breach": true
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100030_add_user_id_to_orders.rb",
+  "added": "    add_column :orders, :user_id, :bigint\n    add_index :orders, :user_id",
+  "file": "class AddUserIdToOrders < ActiveRecord::Migration[7.1]\n  def change\n    add_column :orders, :user_id, :bigint\n    add_index :orders, :user_id\n  end\nend\n",
+  "breach": false
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100031_add_author_to_posts.rb",
+  "added": "    add_reference :posts, :author, foreign_key: { to_table: :users }",
+  "file": "class AddAuthorToPosts < ActiveRecord::Migration[7.1]\n  def change\n    add_reference :posts, :author, foreign_key: { to_table: :users }\n  end\nend\n",
+  "breach": false
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100032_create_comments.rb",
+  "added": "      t.references :post, null: false, foreign_key: true\n      t.text :body",
+  "file": "class CreateComments < ActiveRecord::Migration[7.1]\n  def change\n    create_table :comments do |t|\n      t.references :post, null: false, foreign_key: true\n      t.text :body\n      t.timestamps\n    end\n  end\nend\n",
+  "breach": false
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100033_add_title_to_posts.rb",
+  "added": "    add_column :posts, :title, :string, null: false, default: \"\"",
+  "file": "class AddTitleToPosts < ActiveRecord::Migration[7.1]\n  def change\n    add_column :posts, :title, :string, null: false, default: \"\"\n  end\nend\n",
+  "breach": false
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100034_create_tags.rb",
+  "added": "      t.string :name, null: false\n      t.integer :usage_count, default: 0",
+  "file": "class CreateTags < ActiveRecord::Migration[7.1]\n  def change\n    create_table :tags do |t|\n      t.string :name, null: false\n      t.integer :usage_count, default: 0\n    end\n  end\nend\n",
+  "breach": false
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100035_create_line_items.rb",
+  "added": "      t.belongs_to :order\n      t.belongs_to :product",
+  "file": "class CreateLineItems < ActiveRecord::Migration[7.1]\n  def change\n    create_table :line_items do |t|\n      t.belongs_to :order\n      t.belongs_to :product\n      t.integer :quantity\n    end\n  end\nend\n",
+  "breach": false
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100036_add_customer_id_to_payments.rb",
+  "added": "    add_column :payments, :customer_id, :bigint",
+  "file": "class AddCustomerIdToPayments < ActiveRecord::Migration[7.1]\n  def change\n    add_column :payments, :customer_id, :bigint\n    add_index :payments, :customer_id\n  end\nend\n",
+  "breach": false
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100037_create_attachments.rb",
+  "added": "      t.bigint :uploaded_by_id",
+  "file": "class CreateAttachments < ActiveRecord::Migration[7.1]\n  def change\n    create_table :attachments do |t|\n      t.bigint :uploaded_by_id\n    end\n    add_index :attachments, :uploaded_by_id\n  end\nend\n",
+  "breach": false
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100038_add_tenant_id_to_events.rb",
+  "added": "    add_column :events, :tenant_id, :uuid",
+  "file": "class AddTenantIdToEvents < ActiveRecord::Migration[7.1]\n  def change\n    add_index :events, [:tenant_id, :created_at]\n    add_column :events, :tenant_id, :uuid\n  end\nend\n",
+  "breach": false
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100039_add_manager_id_to_employees.rb",
+  "added": "    add_column :employees, :manager_id, :bigint\n    add_index :employees, :manager_id\n    add_foreign_key :employees, :employees, column: :manager_id",
+  "file": "class AddManagerIdToEmployees < ActiveRecord::Migration[7.1]\n  def change\n    add_column :employees, :manager_id, :bigint\n    add_index :employees, :manager_id\n    add_foreign_key :employees, :employees, column: :manager_id\n  end\nend\n",
+  "breach": false
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100040_add_archived_at_to_projects.rb",
+  "added": "    add_column :projects, :archived_at, :datetime",
+  "file": "class AddArchivedAtToProjects < ActiveRecord::Migration[7.1]\n  def change\n    add_column :projects, :archived_at, :datetime\n  end\nend\n",
+  "breach": false
+ },
+ {
+  "id": "rails-fk-index",
+  "rule": "Every foreign key column a migration adds also gets an index.",
+  "scope": "file",
+  "path": "db/migrate/20261024100041_create_subscriptions.rb",
+  "added": "      t.references :plan, type: :uuid, null: false\n      t.references :account, type: :uuid, null: false",
+  "file": "class CreateSubscriptions < ActiveRecord::Migration[7.1]\n  def change\n    create_table :subscriptions do |t|\n      t.references :plan, type: :uuid, null: false\n      t.references :account, type: :uuid, null: false\n    end\n  end\nend\n",
+  "breach": false
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/models/order.rb",
+  "added": "total = line_items.sum(&:price) rescue nil",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/services/sync_service.rb",
+  "added": "user = User.find(params[:id]) rescue nil",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/controllers/webhooks_controller.rb",
+  "added": "data = JSON.parse(body) rescue nil",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/jobs/import_job.rb",
+  "added": "begin\n  client.post(payload)\nrescue\nend",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/models/order.rb",
+  "added": "begin\n  record.save!\nrescue ActiveRecord::RecordInvalid\nend",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/services/sync_service.rb",
+  "added": "Integer(params[:page]) rescue nil",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/controllers/webhooks_controller.rb",
+  "added": "def parsed_date\n  Date.parse(raw_date) rescue nil\nend",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/jobs/import_job.rb",
+  "added": "self.slug = name.parameterize rescue nil",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/models/order.rb",
+  "added": "begin\n  Stripe::Charge.create(amount: cents, currency: 'usd')\nrescue Stripe::CardError => e\nend",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/services/sync_service.rb",
+  "added": "avatar_url = profile.dig('image', 'url') rescue nil",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/controllers/webhooks_controller.rb",
+  "added": "begin\n  File.delete(tmp_path)\nrescue Errno::ENOENT\nend",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/jobs/import_job.rb",
+  "added": "def perform(id)\n  Account.find(id).sync!\nrescue StandardError\nend",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/models/order.rb",
+  "added": "@config ||= YAML.load_file(path) rescue nil",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/services/sync_service.rb",
+  "added": "begin\n  mailer.deliver_now\nrescue Net::SMTPError, Timeout::Error\nend",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/controllers/webhooks_controller.rb",
+  "added": "value = Float(cell) rescue nil",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/jobs/import_job.rb",
+  "added": "redis.del(cache_key) rescue nil",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/models/order.rb",
+  "added": "begin\n  webhook.verify!(signature)\nrescue => e\nend",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/services/sync_service.rb",
+  "added": "response = HTTP.get(url).parse rescue nil",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/controllers/webhooks_controller.rb",
+  "added": "def owner_name\n  owner.name\nrescue NoMethodError\nend",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/jobs/import_job.rb",
+  "added": "Rails.cache.write(key, value) rescue nil",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/models/order.rb",
+  "added": "geo = Geocoder.search(address).first rescue nil",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/services/sync_service.rb",
+  "added": "begin\n  order.capture_payment!\nrescue PaymentError\n  # ignore\nend",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/controllers/webhooks_controller.rb",
+  "added": "amount = BigDecimal(params[:amount]) rescue nil",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/jobs/import_job.rb",
+  "added": "begin\n  lock.release\nrescue Redis::BaseError\nend",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/models/order.rb",
+  "added": "tz = ActiveSupport::TimeZone[user.time_zone] rescue nil",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/services/sync_service.rb",
+  "added": "items.each do |item|\n  item.reindex!\nrescue Elasticsearch::Transport::Transport::Error\nend",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/controllers/webhooks_controller.rb",
+  "added": "headers = JSON.parse(request.headers['X-Meta']) rescue nil",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/jobs/import_job.rb",
+  "added": "begin\n  FileUtils.mkdir_p(export_dir)\nrescue SystemCallError\nend",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/models/order.rb",
+  "added": "count = external_api.fetch_count rescue nil",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/services/sync_service.rb",
+  "added": "def cleanup\n  tempfile.unlink\nrescue\nend",
+  "breach": true
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/services/sync_service.rb",
+  "added": "total = line_items.sum(&:price)",
+  "breach": false
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/controllers/webhooks_controller.rb",
+  "added": "user = User.find_by(id: params[:id])",
+  "breach": false
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/jobs/import_job.rb",
+  "added": "begin\n  data = JSON.parse(body)\nrescue JSON::ParserError => e\n  Rails.logger.warn(\"bad payload: #{e.message}\")\n  head :bad_request\nend",
+  "breach": false
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/models/order.rb",
+  "added": "begin\n  client.post(payload)\nrescue Faraday::TimeoutError\n  retry_later!\nend",
+  "breach": false
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/services/sync_service.rb",
+  "added": "def perform(id)\n  Account.find(id).sync!\nrescue Account::SyncError => e\n  ErrorTracker.notify(e)\n  raise\nend",
+  "breach": false
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/controllers/webhooks_controller.rb",
+  "added": "value = Float(cell, exception: false)",
+  "breach": false
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/jobs/import_job.rb",
+  "added": "begin\n  Stripe::Charge.create(amount: cents, currency: 'usd')\nrescue Stripe::CardError => e\n  errors.add(:base, e.message)\n  false\nend",
+  "breach": false
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/models/order.rb",
+  "added": "page = params.fetch(:page, 1).to_i",
+  "breach": false
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/services/sync_service.rb",
+  "added": "begin\n  webhook.verify!(signature)\nrescue Webhook::InvalidSignature\n  return head(:unauthorized)\nend",
+  "breach": false
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/controllers/webhooks_controller.rb",
+  "added": "@config ||= YAML.safe_load_file(path, permitted_classes: [Symbol])",
+  "breach": false
+ },
+ {
+  "id": "rails-no-rescue-nil",
+  "rule": "No rescue nil, and no rescue clause whose body is empty.",
+  "scope": "line",
+  "path": "app/jobs/import_job.rb",
+  "added": "begin\n  mailer.deliver_now\nrescue Net::SMTPError => e\n  self.delivery_error = e.message\n  save!\nend",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Services/OrderService.cs",
+  "added": "public async Task<IActionResult> Get(int id)\n{\n    var order = _repo.GetOrderAsync(id).Result;\n    return Ok(order);\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Controllers/AccountController.cs",
+  "added": "public async Task SyncAsync()\n{\n    _client.PushAsync(batch).Wait();\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Workers/SyncWorker.cs",
+  "added": "var user = await _users.FindAsync(id);\nvar roles = _roles.GetRolesAsync(user).Result;",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Data/Repository.cs",
+  "added": "public async Task<int> CountAsync()\n{\n    return _db.Orders.CountAsync().Result;\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Services/OrderService.cs",
+  "added": "public async Task HandleAsync(Message msg)\n{\n    var body = msg.ReadBodyAsync().Result;\n    await _store.SaveAsync(body);\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Controllers/AccountController.cs",
+  "added": "public async Task<string> TokenAsync()\n{\n    var resp = _http.PostAsync(url, content).Result;\n    return await resp.Content.ReadAsStringAsync();\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Workers/SyncWorker.cs",
+  "added": "public async Task RunAsync(CancellationToken ct)\n{\n    Task.Delay(1000).Wait();\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Data/Repository.cs",
+  "added": "var config = await LoadConfigAsync();\nvar secret = _vault.GetSecretAsync(\"db\").Result.Value;",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Services/OrderService.cs",
+  "added": "public async Task<IActionResult> Upload(IFormFile file)\n{\n    _storage.UploadAsync(file.OpenReadStream()).Wait();\n    return Ok();\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Controllers/AccountController.cs",
+  "added": "public async Task ProcessAsync()\n{\n    var tasks = items.Select(i => _api.SendAsync(i));\n    Task.WhenAll(tasks).Wait();\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Workers/SyncWorker.cs",
+  "added": "public async Task<User> LoginAsync(string email)\n{\n    var hash = _hasher.HashAsync(email).Result;\n    return await _users.ByHashAsync(hash);\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Data/Repository.cs",
+  "added": "protected override async Task ExecuteAsync(CancellationToken stoppingToken)\n{\n    var jobs = _queue.DequeueAsync(stoppingToken).Result;\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Services/OrderService.cs",
+  "added": "public async Task<Invoice> BuildAsync(int id)\n{\n    var lines = _lines.ForInvoiceAsync(id).GetAwaiter().GetResult();\n    var total = _tax.ComputeAsync(lines).Result;\n    return new Invoice(lines, total);\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Controllers/AccountController.cs",
+  "added": "async Task FlushAsync()\n{\n    _writer.FlushAsync().Wait();\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Workers/SyncWorker.cs",
+  "added": "public async Task<bool> ExistsAsync(string key)\n{\n    return _cache.GetAsync(key).Result != null;\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Data/Repository.cs",
+  "added": "public async Task SeedAsync()\n{\n    foreach (var p in products)\n        _db.Products.AddAsync(p).AsTask().Wait();\n    await _db.SaveChangesAsync();\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Services/OrderService.cs",
+  "added": "public async Task<decimal> RateAsync(string from, string to)\n{\n    var rates = _fx.GetRatesAsync().Result;\n    return rates[from] / rates[to];\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Controllers/AccountController.cs",
+  "added": "private async Task NotifyAsync(Order o)\n{\n    _mailer.SendAsync(o.Email, \"Shipped\").Wait();\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Workers/SyncWorker.cs",
+  "added": "public async Task<IActionResult> Index()\n{\n    ViewBag.Count = _service.CountAsync().Result;\n    return View(await _service.ListAsync());\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Data/Repository.cs",
+  "added": "public async Task ImportAsync(Stream csv)\n{\n    var rows = _parser.ParseAsync(csv).Result;\n    await _repo.BulkInsertAsync(rows);\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Services/OrderService.cs",
+  "added": "var lockTaken = _lock.WaitAsync(TimeSpan.FromSeconds(5)).Result;\nawait DoWorkAsync();",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Controllers/AccountController.cs",
+  "added": "public async Task OnGetAsync()\n{\n    Products = _catalog.SearchAsync(Query).Result.ToList();\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Workers/SyncWorker.cs",
+  "added": "public async Task<string> ReadAsync(string path)\n{\n    return File.ReadAllTextAsync(path).Result;\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Data/Repository.cs",
+  "added": "public async Task StopAsync(CancellationToken ct)\n{\n    _consumer.CloseAsync().Wait(ct);\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Services/OrderService.cs",
+  "added": "public async Task<Profile> ProfileAsync(Guid id)\n{\n    var task = _client.GetProfileAsync(id);\n    task.Wait();\n    return task.Result;\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Controllers/AccountController.cs",
+  "added": "public async Task MigrateAsync()\n{\n    _db.Database.MigrateAsync().Wait();\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Workers/SyncWorker.cs",
+  "added": "public async Task<List<Order>> RecentAsync()\n{\n    var since = _clock.NowAsync().Result.AddDays(-7);\n    return await _db.Orders.Where(o => o.Date > since).ToListAsync();\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Data/Repository.cs",
+  "added": "public async Task PublishAsync(Event e)\n{\n    var json = _serializer.SerializeAsync(e).Result;\n    await _bus.PublishAsync(json);\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Services/OrderService.cs",
+  "added": "public async Task<int> RetryAsync(Func<Task<int>> op)\n{\n    try { return op().Result; }\n    catch { await Task.Delay(100); return await op(); }\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Controllers/AccountController.cs",
+  "added": "public async Task WarmAsync()\n{\n    Task.Run(() => _cache.LoadAsync()).Wait();\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Controllers/AccountController.cs",
+  "added": "public async Task<IActionResult> Get(int id)\n{\n    var order = await _repo.GetOrderAsync(id);\n    return Ok(order);\n}",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Workers/SyncWorker.cs",
+  "added": "public async Task SyncAsync()\n{\n    await _client.PushAsync(batch);\n}",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Data/Repository.cs",
+  "added": "var roles = await _roles.GetRolesAsync(user);",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Services/OrderService.cs",
+  "added": "public async Task ProcessAsync()\n{\n    await Task.WhenAll(items.Select(i => _api.SendAsync(i)));\n}",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Controllers/AccountController.cs",
+  "added": "public int Count()\n{\n    return _db.Orders.Count();\n}",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Workers/SyncWorker.cs",
+  "added": "public async Task RunAsync(CancellationToken ct)\n{\n    await Task.Delay(1000, ct);\n}",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Data/Repository.cs",
+  "added": "var result = new Result<Order>(order);\nreturn result;",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Services/OrderService.cs",
+  "added": "public static void Main(string[] args)\n{\n    CreateHostBuilder(args).Build().Run();\n}",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Controllers/AccountController.cs",
+  "added": "public async Task<string> TokenAsync()\n{\n    using var resp = await _http.PostAsync(url, content);\n    return await resp.Content.ReadAsStringAsync();\n}",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-blocking-async",
+  "rule": "No .Result or .Wait() on a Task inside async code.",
+  "scope": "line",
+  "path": "Workers/SyncWorker.cs",
+  "added": "var report = new ReportBuilder().WithTitle(\"Q3\").Build();\nvar summary = report.Result.Summary;",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Services/PaymentService.cs",
+  "added": "try\n{\n    _client.Send(message);\n}\ncatch\n{\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Controllers/ImportController.cs",
+  "added": "try { File.Delete(tempPath); } catch { }",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Infrastructure/FileStore.cs",
+  "added": "try\n{\n    await _bus.PublishAsync(evt);\n}\ncatch (Exception)\n{\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Workers/QueueWorker.cs",
+  "added": "try\n{\n    var cfg = JsonSerializer.Deserialize<Config>(json);\n}\ncatch (JsonException) { }",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Services/PaymentService.cs",
+  "added": "try\n{\n    _db.SaveChanges();\n}\ncatch (DbUpdateException ex)\n{\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Controllers/ImportController.cs",
+  "added": "catch (TaskCanceledException) { }",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Infrastructure/FileStore.cs",
+  "added": "try\n{\n    connection.Close();\n}\ncatch (SqlException)\n{\n    // ignore\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Workers/QueueWorker.cs",
+  "added": "try { _logger.Flush(); } catch (IOException) { }",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Services/PaymentService.cs",
+  "added": "try\n{\n    await _mailer.SendAsync(to, subject, body);\n}\ncatch (SmtpException e)\n{\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Controllers/ImportController.cs",
+  "added": "foreach (var file in files)\n{\n    try { Process(file); }\n    catch { }\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Infrastructure/FileStore.cs",
+  "added": "try\n{\n    _cache.Remove(key);\n}\ncatch (RedisConnectionException)\n{\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Workers/QueueWorker.cs",
+  "added": "try\n{\n    decimal.TryParse(input, out amount);\n    total += amount;\n}\ncatch (FormatException) { }",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Services/PaymentService.cs",
+  "added": "try\n{\n    await _stripe.Refunds.CreateAsync(options);\n}\ncatch (StripeException)\n{\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Controllers/ImportController.cs",
+  "added": "try { Directory.CreateDirectory(dir); }\ncatch (UnauthorizedAccessException) {}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Infrastructure/FileStore.cs",
+  "added": "try\n{\n    var response = await _http.GetAsync(url);\n    response.EnsureSuccessStatusCode();\n}\ncatch (HttpRequestException)\n{\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Workers/QueueWorker.cs",
+  "added": "try\n{\n    _queue.Ack(deliveryTag);\n}\ncatch (Exception ex) when (ex is IOException)\n{\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Services/PaymentService.cs",
+  "added": "try\n{\n    image.Save(thumbPath);\n}\ncatch (ExternalException) { /* best effort */ }",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Controllers/ImportController.cs",
+  "added": "try\n{\n    _metrics.Increment(\"orders.created\");\n}\ncatch\n{\n    // metrics must never break checkout\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Infrastructure/FileStore.cs",
+  "added": "try\n{\n    user.LastSeen = DateTime.UtcNow;\n    await _users.UpdateAsync(user);\n}\ncatch (DbUpdateConcurrencyException) { }",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Workers/QueueWorker.cs",
+  "added": "try\n{\n    stream.Dispose();\n}\ncatch (ObjectDisposedException)\n{\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Services/PaymentService.cs",
+  "added": "try { await _socket.CloseAsync(WebSocketCloseStatus.NormalClosure, \"\", ct); } catch { }",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Controllers/ImportController.cs",
+  "added": "try\n{\n    var token = _jwt.ReadToken(header);\n    claims = token.Claims;\n}\ncatch (SecurityTokenException)\n{\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Infrastructure/FileStore.cs",
+  "added": "try\n{\n    _audit.Write(entry);\n}\ncatch (Exception e)\n{\n}\nfinally\n{\n    _audit.Flush();\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Workers/QueueWorker.cs",
+  "added": "try\n{\n    _scheduler.Schedule(job);\n}\ncatch (SchedulerException) { }",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Services/PaymentService.cs",
+  "added": "try\n{\n    var xml = XDocument.Parse(body);\n    Handle(xml);\n}\ncatch (XmlException)\n{\n\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Controllers/ImportController.cs",
+  "added": "try\n{\n    await _blob.DeleteIfExistsAsync();\n}\ncatch (RequestFailedException)\n{\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Infrastructure/FileStore.cs",
+  "added": "try\n{\n    Thread.Sleep(backoff);\n}\ncatch (ThreadInterruptedException) { }",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Workers/QueueWorker.cs",
+  "added": "try\n{\n    _printer.Print(label);\n}\ncatch (InvalidOperationException ex)\n{\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Services/PaymentService.cs",
+  "added": "try\n{\n    _ws.Send(update);\n}\ncatch (WebSocketException) {}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Controllers/ImportController.cs",
+  "added": "try\n{\n    Registry.SetValue(keyName, \"Installed\", 1);\n}\ncatch (SecurityException)\n{\n}",
+  "breach": true
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Controllers/ImportController.cs",
+  "added": "try\n{\n    _client.Send(message);\n}\ncatch (TimeoutException ex)\n{\n    _logger.LogWarning(ex, \"send timed out, will retry\");\n    throw;\n}",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Infrastructure/FileStore.cs",
+  "added": "try { File.Delete(tempPath); }\ncatch (IOException ex) { _logger.LogDebug(ex, \"temp file {Path} still locked\", tempPath); }",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Workers/QueueWorker.cs",
+  "added": "try\n{\n    _db.SaveChanges();\n}\ncatch (DbUpdateException ex)\n{\n    return Conflict(ex.InnerException?.Message);\n}",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Services/PaymentService.cs",
+  "added": "try\n{\n    await _bus.PublishAsync(evt);\n}\ncatch (Exception ex)\n{\n    await _outbox.StoreAsync(evt);\n    _logger.LogError(ex, \"publish failed, stored in outbox\");\n}",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Controllers/ImportController.cs",
+  "added": "try\n{\n    var cfg = JsonSerializer.Deserialize<Config>(json);\n    return cfg ?? Config.Default;\n}\ncatch (JsonException)\n{\n    return Config.Default;\n}",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Infrastructure/FileStore.cs",
+  "added": "catch (OperationCanceledException) when (ct.IsCancellationRequested)\n{\n    return;\n}",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Workers/QueueWorker.cs",
+  "added": "using var scope = _services.CreateScope();\nvar db = scope.ServiceProvider.GetRequiredService<AppDb>();",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Services/PaymentService.cs",
+  "added": "try\n{\n    await _stripe.Refunds.CreateAsync(options);\n}\ncatch (StripeException ex)\n{\n    throw new RefundFailedException(order.Id, ex);\n}",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Controllers/ImportController.cs",
+  "added": "if (!decimal.TryParse(input, out var amount))\n{\n    ModelState.AddModelError(nameof(input), \"Not a number\");\n}",
+  "breach": false
+ },
+ {
+  "id": "dotnet-no-empty-catch",
+  "rule": "No catch block whose body is empty.",
+  "scope": "line",
+  "path": "Infrastructure/FileStore.cs",
+  "added": "try\n{\n    _queue.Ack(deliveryTag);\n}\ncatch (IOException ex)\n{\n    _queue.Nack(deliveryTag, requeue: true);\n    _logger.LogWarning(ex, \"ack failed\");\n}",
+  "breach": false
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/Comment.tsx",
+  "added": "<div dangerouslySetInnerHTML={{ __html: comment.body }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/pages/Profile.jsx",
+  "added": "<p dangerouslySetInnerHTML={{ __html: user.bio }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/SearchResults.tsx",
+  "added": "const query = new URLSearchParams(location.search).get('q');\nreturn <h2 dangerouslySetInnerHTML={{ __html: `Results for ${query}` }} />;",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "app/javascript/components/Bio.jsx",
+  "added": "<span dangerouslySetInnerHTML={{ __html: props.label }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/Comment.tsx",
+  "added": "<div className=\"preview\" dangerouslySetInnerHTML={{ __html: draft }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/pages/Profile.jsx",
+  "added": "const [message, setMessage] = useState('');\n...\n<div dangerouslySetInnerHTML={{ __html: message }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/SearchResults.tsx",
+  "added": "<td dangerouslySetInnerHTML={{ __html: row.notes.replace(/\\n/g, '<br>') }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "app/javascript/components/Bio.jsx",
+  "added": "<div dangerouslySetInnerHTML={{ __html: marked(post.content) }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/Comment.tsx",
+  "added": "<li key={r.id} dangerouslySetInnerHTML={{ __html: r.title.replace(term, `<mark>${term}</mark>`) }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/pages/Profile.jsx",
+  "added": "const name = searchParams.get('name');\n<h1 dangerouslySetInnerHTML={{ __html: 'Welcome, ' + name }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/SearchResults.tsx",
+  "added": "<div dangerouslySetInnerHTML={{ __html: review.text }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "app/javascript/components/Bio.jsx",
+  "added": "<p className=\"signature\" dangerouslySetInnerHTML={{ __html: profile.signature }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/Comment.tsx",
+  "added": "<div dangerouslySetInnerHTML={{ __html: event.target.value }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/pages/Profile.jsx",
+  "added": "<article dangerouslySetInnerHTML={{ __html: ticket.description }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/SearchResults.tsx",
+  "added": "const html = `<b>${form.title}</b><p>${form.body}</p>`;\nreturn <div dangerouslySetInnerHTML={{ __html: html }} />;",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "app/javascript/components/Bio.jsx",
+  "added": "<div dangerouslySetInnerHTML={{ __html: chatMessage.text }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/Comment.tsx",
+  "added": "<Tooltip><span dangerouslySetInnerHTML={{ __html: hoverText }} /></Tooltip>",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/pages/Profile.jsx",
+  "added": "<blockquote dangerouslySetInnerHTML={{ __html: quote.body }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/SearchResults.tsx",
+  "added": "<div dangerouslySetInnerHTML={{ __html: window.location.hash.slice(1) }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "app/javascript/components/Bio.jsx",
+  "added": "<div dangerouslySetInnerHTML={{ __html: data.customer.address }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/Comment.tsx",
+  "added": "<div className=\"email-preview\" dangerouslySetInnerHTML={{ __html: incoming.htmlBody }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/pages/Profile.jsx",
+  "added": "<p dangerouslySetInnerHTML={{ __html: `Hello ${params.username}` }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/SearchResults.tsx",
+  "added": "<div dangerouslySetInnerHTML={{ __html: answers[questionId] }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "app/javascript/components/Bio.jsx",
+  "added": "<label dangerouslySetInnerHTML={{ __html: field.userLabel }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/Comment.tsx",
+  "added": "<div dangerouslySetInnerHTML={{ __html: localStorage.getItem('note') }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/pages/Profile.jsx",
+  "added": "<div dangerouslySetInnerHTML={{ __html: wiki.pageSource }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/SearchResults.tsx",
+  "added": "<span dangerouslySetInnerHTML={{ __html: tag.name + ' (' + tag.count + ')' }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "app/javascript/components/Bio.jsx",
+  "added": "<div dangerouslySetInnerHTML={{ __html: feedback.comment }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/Comment.tsx",
+  "added": "<section dangerouslySetInnerHTML={{ __html: listing.description }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/pages/Profile.jsx",
+  "added": "<div dangerouslySetInnerHTML={{ __html: document.cookie.split('=')[1] }} />",
+  "breach": true
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/pages/Profile.jsx",
+  "added": "<div>{comment.body}</div>",
+  "breach": false
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/SearchResults.tsx",
+  "added": "<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(comment.body) }} />",
+  "breach": false
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "app/javascript/components/Bio.jsx",
+  "added": "const ICON = '<svg viewBox=\"0 0 16 16\"><path d=\"M8 0L16 16H0z\"/></svg>';\n<span dangerouslySetInnerHTML={{ __html: ICON }} />",
+  "breach": false
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/Comment.tsx",
+  "added": "<p className=\"bio\">{user.bio}</p>",
+  "breach": false
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/pages/Profile.jsx",
+  "added": "<div dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content, { allowedTags: ['b', 'i', 'a'] }) }} />",
+  "breach": false
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/SearchResults.tsx",
+  "added": "<h1>Welcome, {name}</h1>",
+  "breach": false
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "app/javascript/components/Bio.jsx",
+  "added": "<script type=\"application/ld+json\" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaOrg) }} />",
+  "breach": false
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/Comment.tsx",
+  "added": "<style dangerouslySetInnerHTML={{ __html: '.hidden { display: none; }' }} />",
+  "breach": false
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/pages/Profile.jsx",
+  "added": "<mark>{term}</mark>",
+  "breach": false
+ },
+ {
+  "id": "react-no-raw-html",
+  "rule": "No dangerouslySetInnerHTML with a value built from user input.",
+  "scope": "line",
+  "path": "src/components/SearchResults.tsx",
+  "added": "<div dangerouslySetInnerHTML={{ __html: LICENSE_TEXT_HTML }} />",
+  "breach": false
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/TodoList.tsx",
+  "added": "{todos.map((todo, index) => <TodoItem key={index} todo={todo} />)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/pages/Orders.jsx",
+  "added": "{orders.map((o, i) => (\n  <tr key={i}><td>{o.number}</td></tr>\n))}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/Menu.tsx",
+  "added": "{items.map((item, idx) => <li key={idx}>{item.label}</li>)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "app/javascript/components/Gallery.jsx",
+  "added": "{photos.map((p, i) => <img key={`photo-${i}`} src={p.url} alt={p.caption} />)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/TodoList.tsx",
+  "added": "{users.map((u) => <UserRow user={u} />)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/pages/Orders.jsx",
+  "added": "{tabs.map((tab, i) => <Tab key={i.toString()} label={tab.title} />)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/Menu.tsx",
+  "added": "{messages.map((m, index) => (\n  <Message key={index} from={m.author} text={m.text} />\n))}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "app/javascript/components/Gallery.jsx",
+  "added": "{rows.map((row, rowIndex) => <Row key={rowIndex} cells={row} />)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/TodoList.tsx",
+  "added": "{products.map((product) => (\n  <ProductCard product={product} />\n))}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/pages/Orders.jsx",
+  "added": "{steps.map((s, n) => <Step key={n} title={s.title} />)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/Menu.tsx",
+  "added": "{comments.map((c, i) => <Comment key={'c' + i} {...c} />)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "app/javascript/components/Gallery.jsx",
+  "added": "{notifications.map((n, i) => <Toast key={i} message={n.message} />)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/TodoList.tsx",
+  "added": "{columns.map((col, i) => <th key={i}>{col.header}</th>)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/pages/Orders.jsx",
+  "added": "{results.map((r, index) => <SearchHit key={index} hit={r} />)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/Menu.tsx",
+  "added": "{cart.lines.map((line, i) => <CartLine key={i} line={line} onRemove={() => remove(line.id)} />)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "app/javascript/components/Gallery.jsx",
+  "added": "{options.map((opt) => <option value={opt.value}>{opt.label}</option>)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/TodoList.tsx",
+  "added": "{files.map((f, i) => <FileChip key={i} name={f.name} />)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/pages/Orders.jsx",
+  "added": "{events.map((e, i) => (\n  <TimelineEvent key={`${i}`} event={e} />\n))}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/Menu.tsx",
+  "added": "{fields.map((field, index) => <input key={index} name={field.name} />)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "app/javascript/components/Gallery.jsx",
+  "added": "{tags.map((t, i) => <Badge key={i}>{t}</Badge>)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/TodoList.tsx",
+  "added": "{invoices.map((inv) => <InvoiceRow invoice={inv} />)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/pages/Orders.jsx",
+  "added": "{sections.map((s, i) => <Section key={i} heading={s.heading} />)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/Menu.tsx",
+  "added": "{breadcrumbs.map((b, i) => <Crumb key={i} href={b.href}>{b.text}</Crumb>)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "app/javascript/components/Gallery.jsx",
+  "added": "{slides.map((slide, i) => <Slide key={i} image={slide.src} />)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/TodoList.tsx",
+  "added": "{members.map((m, i) => <Avatar key={i} user={m} />)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/pages/Orders.jsx",
+  "added": "{answers.map((a, i) => <Answer key={i} body={a.body} votes={a.votes} />)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/Menu.tsx",
+  "added": "{links.map((l, i) => <a key={i} href={l.url}>{l.title}</a>)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "app/javascript/components/Gallery.jsx",
+  "added": "{entries.map(([k, v], i) => <dt key={i}>{k}: {v}</dt>)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/TodoList.tsx",
+  "added": "{todos.filter((t) => !t.done).map((t, i) => <TodoItem key={i} todo={t} />)}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/pages/Orders.jsx",
+  "added": "{plans.map((plan) => (\n  <PlanCard name={plan.name} price={plan.price} />\n))}",
+  "breach": true
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/pages/Orders.jsx",
+  "added": "{todos.map((todo) => <TodoItem key={todo.id} todo={todo} />)}",
+  "breach": false
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/Menu.tsx",
+  "added": "{orders.map((o) => (\n  <tr key={o.number}><td>{o.number}</td></tr>\n))}",
+  "breach": false
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "app/javascript/components/Gallery.jsx",
+  "added": "{photos.map((p) => <img key={p.url} src={p.url} alt={p.caption} />)}",
+  "breach": false
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/TodoList.tsx",
+  "added": "{users.map((u) => <UserRow key={u.email} user={u} />)}",
+  "breach": false
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/pages/Orders.jsx",
+  "added": "{tabs.map((tab) => <Tab key={tab.slug} label={tab.title} />)}",
+  "breach": false
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/Menu.tsx",
+  "added": "{comments.map((c, i) => <Comment key={c.id} position={i + 1} {...c} />)}",
+  "breach": false
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "app/javascript/components/Gallery.jsx",
+  "added": "{options.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}",
+  "breach": false
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/TodoList.tsx",
+  "added": "const total = prices.map((p) => p * qty).reduce((a, b) => a + b, 0);",
+  "breach": false
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/pages/Orders.jsx",
+  "added": "{Object.entries(groups).map(([name, list]) => <Group key={name} name={name} items={list} />)}",
+  "breach": false
+ },
+ {
+  "id": "react-key-not-index",
+  "rule": "A list rendered with map gives each item a key that is not the array index.",
+  "scope": "line",
+  "path": "src/components/Menu.tsx",
+  "added": "{messages.map((m) => (\n  <Message key={m.id} from={m.author} text={m.text} />\n))}",
+  "breach": false
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile",
+  "added": "FROM node",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "docker/api/Dockerfile",
+  "added": "FROM ruby:latest",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile.worker",
+  "added": "FROM python\nWORKDIR /app",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "services/web/Dockerfile.prod",
+  "added": "FROM ubuntu:latest\nRUN apt-get update && apt-get install -y curl",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile",
+  "added": "FROM mcr.microsoft.com/dotnet/sdk AS build",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "docker/api/Dockerfile",
+  "added": "FROM nginx:latest\nCOPY dist/ /usr/share/nginx/html",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile.worker",
+  "added": "FROM node:20 AS build\nRUN npm ci && npm run build\nFROM nginx\nCOPY --from=build /app/dist /usr/share/nginx/html",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "services/web/Dockerfile.prod",
+  "added": "FROM alpine",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile",
+  "added": "FROM postgres:latest",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "docker/api/Dockerfile",
+  "added": "FROM golang AS builder",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile.worker",
+  "added": "FROM redis",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "services/web/Dockerfile.prod",
+  "added": "FROM debian:latest AS base",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile",
+  "added": "FROM --platform=linux/amd64 node",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "docker/api/Dockerfile",
+  "added": "FROM ruby:3.3-slim AS build\nFROM ruby:latest\nCOPY --from=build /usr/local/bundle /usr/local/bundle",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile.worker",
+  "added": "FROM mcr.microsoft.com/dotnet/aspnet:latest",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "services/web/Dockerfile.prod",
+  "added": "FROM python:latest AS runtime",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile",
+  "added": "FROM eclipse-temurin",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "docker/api/Dockerfile",
+  "added": "FROM gcr.io/distroless/nodejs",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile.worker",
+  "added": "FROM amazonlinux",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "services/web/Dockerfile.prod",
+  "added": "FROM ghcr.io/acme/base-image:latest",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile",
+  "added": "FROM php:apache",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "docker/api/Dockerfile",
+  "added": "from node",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile.worker",
+  "added": "FROM centos\nRUN yum install -y httpd",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "services/web/Dockerfile.prod",
+  "added": "FROM rust AS chef",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile",
+  "added": "FROM elixir:latest",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "docker/api/Dockerfile",
+  "added": "FROM mongo",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile.worker",
+  "added": "FROM busybox\nCMD [\"sh\"]",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "services/web/Dockerfile.prod",
+  "added": "FROM registry.internal:5000/platform/ruby",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile",
+  "added": "FROM node:lts",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "docker/api/Dockerfile",
+  "added": "FROM python:3.12 AS deps\nFROM python AS final",
+  "breach": true
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "docker/api/Dockerfile",
+  "added": "FROM node:20.11.1-alpine3.19",
+  "breach": false
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile.worker",
+  "added": "FROM ruby:3.3.0-slim",
+  "breach": false
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "services/web/Dockerfile.prod",
+  "added": "FROM python:3.12.2-slim-bookworm\nWORKDIR /app",
+  "breach": false
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile",
+  "added": "FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build",
+  "breach": false
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "docker/api/Dockerfile",
+  "added": "FROM nginx@sha256:4c0fdaa8b6341bfdeca5f18f7837462c80cff90527ee35ef185571e1c327beac",
+  "breach": false
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile.worker",
+  "added": "FROM node:20.11.1 AS build\nRUN npm ci && npm run build\nFROM nginx:1.25.4-alpine\nCOPY --from=build /app/dist /usr/share/nginx/html",
+  "breach": false
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "services/web/Dockerfile.prod",
+  "added": "FROM alpine:3.19.1",
+  "breach": false
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile",
+  "added": "FROM postgres:16.2",
+  "breach": false
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "docker/api/Dockerfile",
+  "added": "FROM build AS test\nRUN bundle exec rspec",
+  "breach": false
+ },
+ {
+  "id": "docker-pinned-base",
+  "rule": "Every FROM line pins a version tag or digest, never latest or no tag.",
+  "scope": "line",
+  "path": "Dockerfile.worker",
+  "added": "FROM --platform=linux/amd64 golang:1.22.1 AS builder",
+  "breach": false
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "app/views/products/show.html.erb",
+  "added": "<img src=\"<%= product.image_url %>\">",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Avatar.tsx",
+  "added": "<img src={user.avatarUrl} className=\"avatar\" />",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "public/index.html",
+  "added": "<img src=\"/images/logo.png\" width=\"120\" height=\"40\">",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Hero.vue",
+  "added": "<img class=\"hero\" src=\"hero.jpg\" />",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "app/views/products/show.html.erb",
+  "added": "<%= image_tag product.thumbnail %>\n<img src=\"<%= asset_path('badge.svg') %>\" class=\"badge\">",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Avatar.tsx",
+  "added": "<img :src=\"item.cover\" class=\"cover\">",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "public/index.html",
+  "added": "{photos.map((p) => <img key={p.id} src={p.url} />)}",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Hero.vue",
+  "added": "<a href=\"/\"><img src=\"/logo.svg\"></a>",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "app/views/products/show.html.erb",
+  "added": "<img src=\"spinner.gif\">",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Avatar.tsx",
+  "added": "<img srcset=\"a-1x.png 1x, a-2x.png 2x\" src=\"a-1x.png\">",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "public/index.html",
+  "added": "<img src={chart} style={{ width: '100%' }} />",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Hero.vue",
+  "added": "<picture>\n  <source srcset=\"team.webp\" type=\"image/webp\">\n  <img src=\"team.jpg\">\n</picture>",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "app/views/products/show.html.erb",
+  "added": "<img src=\"<%= @user.gravatar_url %>\" width=\"32\" height=\"32\" loading=\"lazy\">",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Avatar.tsx",
+  "added": "<img v-bind:src=\"profile.photo\" />",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "public/index.html",
+  "added": "<img src=\"https://cdn.example.com/banner.png\" title=\"Summer sale\">",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Hero.vue",
+  "added": "<img className=\"icon\" src={iconFor(type)} />",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "app/views/products/show.html.erb",
+  "added": "<td><img src=\"/flags/<%= country.code %>.png\"></td>",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Avatar.tsx",
+  "added": "<img data-src=\"lazy.jpg\" class=\"lazyload\">",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "public/index.html",
+  "added": "<img src={`/api/qr/${ticket.id}`} />",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Hero.vue",
+  "added": "<img id=\"preview\" src=\"\">",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "app/views/products/show.html.erb",
+  "added": "<figure><img src=\"diagram.png\"><figcaption>Request flow</figcaption></figure>",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Avatar.tsx",
+  "added": "<IMG SRC=\"footer-logo.png\">",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "public/index.html",
+  "added": "<img src=\"<%= rails_blob_path(@post.cover) %>\">",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Hero.vue",
+  "added": "<img :src=\"require('@/assets/empty.svg')\" class=\"empty-state\">",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "app/views/products/show.html.erb",
+  "added": "<img src={product.images[0]} onClick={openGallery} />",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Avatar.tsx",
+  "added": "<img src=\"/pixel.gif\" width=\"1\" height=\"1\">",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "public/index.html",
+  "added": "<div class=\"card\"><img src=\"{{ card.image }}\"><h3>{{ card.title }}</h3></div>",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Hero.vue",
+  "added": "<img src={logo} height={24} />",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "app/views/products/show.html.erb",
+  "added": "<img decoding=\"async\" src=\"screenshot.png\">",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Avatar.tsx",
+  "added": "<img src=\"map.png\" usemap=\"#regions\">",
+  "breach": true
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Avatar.tsx",
+  "added": "<img src=\"<%= product.image_url %>\" alt=\"<%= product.name %>\">",
+  "breach": false
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "public/index.html",
+  "added": "<img src={user.avatarUrl} className=\"avatar\" alt={`${user.name}'s avatar`} />",
+  "breach": false
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Hero.vue",
+  "added": "<img src=\"/images/logo.png\" width=\"120\" height=\"40\" alt=\"Acme\">",
+  "breach": false
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "app/views/products/show.html.erb",
+  "added": "<img src=\"divider.png\" alt=\"\">",
+  "breach": false
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Avatar.tsx",
+  "added": "<%= image_tag product.thumbnail, alt: product.name %>",
+  "breach": false
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "public/index.html",
+  "added": "<img :src=\"item.cover\" :alt=\"item.title\" class=\"cover\">",
+  "breach": false
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Hero.vue",
+  "added": "{photos.map((p) => <img key={p.id} src={p.url} alt={p.caption} />)}",
+  "breach": false
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "app/views/products/show.html.erb",
+  "added": "<picture>\n  <source srcset=\"team.webp\" type=\"image/webp\">\n  <img src=\"team.jpg\" alt=\"The team at the 2025 offsite\">\n</picture>",
+  "breach": false
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "src/components/Avatar.tsx",
+  "added": "<img className=\"icon\" src={iconFor(type)} alt=\"\" aria-hidden=\"true\" />",
+  "breach": false
+ },
+ {
+  "id": "web-img-alt",
+  "rule": "Every img element has an alt attribute.",
+  "scope": "line",
+  "path": "public/index.html",
+  "added": "<svg role=\"img\" aria-label=\"Logo\"><use href=\"#logo\"></use></svg>",
+  "breach": false
+ }
+]

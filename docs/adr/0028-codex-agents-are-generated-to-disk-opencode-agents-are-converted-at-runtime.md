@@ -50,3 +50,7 @@ single generator with a diffed gate exists to prevent.
   own merits, decided by whether that runtime reads agent roles before or
   during the hook that would produce them, not copied from either existing
   choice.
+
+Amended 2026-10-22: the Codex build step now has a sibling. `scripts/build`
+generates committed JavaScript from `src/` and `scripts/check-generated`
+compares a fresh build with it the same way (ADR 0046).

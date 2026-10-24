@@ -1,280 +1,367 @@
-// opencode plugin — parity with Claude Code, corrected against the shipped
-// opencode 1.18.25 binary (strings-read against
-// ~/.opencode/bin/opencode, 2026-09-21; see the task and the
-// commit message for what was measured and how).
-//
-// MEASURED, not assumed:
-//
-//   - `experimental.chat.system.transform` is invoked from TWO call sites in
-//     the shipped binary, both as `trigger("experimental.chat.system.
-//     transform", input, output)` — an (input, output) pair, `system` on
-//     OUTPUT. One call site (Agent.generate, used for agent *authoring*, not
-//     an ordinary chat turn) never sets `input.sessionID` at all. The
-//     previously-shipped form here, `async ({ system }) => {...}`, destructured
-//     a single argument and would have silently pushed nothing at both call
-//     sites: `system` is not a property of `input`.
-//   - `tool.execute.before` is likewise `(input, output)`, with the tool's
-//     wire name at `input.tool` and its raw call arguments at `output.args`
-//     (confirmed at the `i.trigger("tool.execute.before", {tool,...}, {args})`
-//     call sites). Confirmed wire names: `bash` (arg `command`), `edit` and
-//     `write` (arg `filePath`), and the local `apply_patch` tool (arg
-//     `patchText`, the same V4A patch-header format Codex's apply_patch
-//     carries under `command` — see hooks/fx-codex.js's own
-//     `extractPatchPaths`, which this mirrors locally rather than sharing:
-//     that file is Codex's, out of this task's file list, and not exported).
-//   - Refusing a call is done by THROWING. There is no deny return value, and
-//     `permission.ask` is declared in the public type but has zero call sites
-//     in the binary, so nothing here registers a handler for it or depends
-//     on it firing.
-//   - `config.subagent_depth ?? 1` is the shipped default (confirmed:
-//     `subagent_depth??1` appears at the enforcement site), so a plugin that
-//     never raises it caps an implementer at zero nested dispatches — no
-//     reviewer from an implementer. Raised here, never lowered.
-//   - `config.skills.paths` and `config.permission.skill` are the real
-//     fields (confirmed: `skills:t.skills&&[...t.skills.paths??[],...]` and
-//     a `skill:` entry in the permission ruleset struct).
-//
-// Subagents are covered by the SAME transform path: opencode implements them
-// as child sessions (a `task` tool call that creates a session with
-// `parentID` and prompts it), so `experimental.chat.system.transform` runs
-// for them too. Claude Code needs two separate hook events (SessionStart,
-// SubagentStart) for what this does with one.
-
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-
-// No require runs at module load unguarded: a throw here fails the import,
-// and a plugin that fails to import has no guard at all (final review I3).
-// The guard's own require failing makes every bash call refuse; the lane
-// check and the preamble degrade; everything config() needs is required
-// inside config(), behind a catch that reports.
-let inspect, guardLoadError;
+// generated from src/plugins/fx-opencode-v1.ts by scripts/build: edit there, not here
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+const require2 = createRequire(import.meta.url);
+const messageOf = (e) => String(e instanceof Error && e.message || e);
+const fnExport = (fn, name) => {
+  if (typeof fn !== "function") throw new Error(`${name} is not a function`);
+  return fn;
+};
+let inspect;
+let guardLoadError;
 try {
-  ({ inspect } = require('../lib/git-guard.js'));
-  if (typeof inspect !== 'function') throw new Error('inspect is not a function');
+  const guard = require2("../lib/git-guard.js");
+  inspect = fnExport(guard.inspect, "inspect");
 } catch (e) {
   guardLoadError = e;
 }
+let parseCall;
+let parseLoadError;
+try {
+  const input = require2("../lib/opencode-input.js");
+  parseCall = fnExport(input.parseOpencodeV1Call, "parseOpencodeV1Call");
+} catch (e) {
+  parseLoadError = e;
+}
+let classifyShell;
+let namesFxState;
+let hardReason;
+let rulesLoadError;
+try {
+  const rules = require2("../lib/shell-rules.js");
+  classifyShell = fnExport(rules.classifyShell, "classifyShell");
+  namesFxState = fnExport(rules.namesFxState, "namesFxState");
+  hardReason = fnExport(rules.hardReason, "hardReason");
+} catch (e) {
+  rulesLoadError = e;
+}
+let guardShell;
+let shellGuardError;
+try {
+  const shell = require2("../lib/shell-guard.js");
+  guardShell = fnExport(shell.guardShell, "guardShell");
+} catch (e) {
+  shellGuardError = e;
+}
+let parseResult;
+let recordToolResult;
+let decideStop;
+let makeQueue;
+let parseAgent;
+let turnLoadError;
+try {
+  const input = require2("../lib/opencode-input.js");
+  const tracker = require2("../lib/loop-tracker.js");
+  const stop = require2("../lib/stop-check.js");
+  const q = require2("../lib/opencode-queue.js");
+  parseResult = fnExport(input.parseOpencodeV1Result, "parseOpencodeV1Result");
+  parseAgent = fnExport(input.parseOpencodeAgent, "parseOpencodeAgent");
+  makeQueue = fnExport(q.createQueue, "createQueue");
+  recordToolResult = fnExport(tracker.recordToolResult, "recordToolResult");
+  decideStop = fnExport(stop.decideStop, "decideStop");
+} catch (e) {
+  turnLoadError = e;
+}
+let checkEdit;
+let logEditRuleError;
+let editRulesError;
+try {
+  const rules = require2("../lib/edit-rules.js");
+  if (typeof rules.logEditRuleError === "function") logEditRuleError = rules.logEditRuleError;
+  checkEdit = fnExport(rules.checkEdit, "checkEdit");
+} catch (e) {
+  editRulesError = e;
+}
+let fxJsonNotice;
+let fxJsonError;
+try {
+  const watch = require2("../lib/fx-json-watch.js");
+  fxJsonNotice = fnExport(watch.fxJsonNotice, "fxJsonNotice");
+} catch (e) {
+  fxJsonError = e;
+}
+let journal;
+try {
+  const j = require2("../lib/journal.js");
+  journal = { appendEvent: fnExport(j.appendEvent, "appendEvent"), journalKey: fnExport(j.journalKey, "journalKey"), pruneJournals: fnExport(j.pruneJournals, "pruneJournals") };
+} catch (e) {
+  console.error(`[fx] the session journal module failed to load (${e instanceof Error ? e.message : String(e)}), so fx cannot mark turns or remind at Stop on opencode 1.x.`);
+}
+let machinePaths;
+try {
+  const paths = require2("../lib/fx-paths.js");
+  machinePaths = fnExport(paths.machinePaths, "machinePaths");
+} catch {
+}
+function shellGuardOff(e, session, cwd) {
+  const m = `[fx] shell guard off: ${messageOf(e)}`;
+  console.error(m);
+  appendDecision({ ts: (/* @__PURE__ */ new Date()).toISOString(), harness: "opencode", event: "guard", session, cwd, text: "", source: "guard-error", action: "allow", unavailable: m.slice(0, 200) });
+}
+function editRulesOff(e, session, cwd) {
+  const m = messageOf(e);
+  const now = Date.now();
+  if (logEditRuleError) return logEditRuleError({ harness: "opencode", sessionId: session, cwd, now }, m);
+  appendDecision({ ts: new Date(now).toISOString(), harness: "opencode", event: "edit-rule", session, cwd, text: "", source: "error", action: "allow", unavailable: m.slice(0, 200) });
+}
+function appendDecision(entry) {
+  try {
+    if (!machinePaths) throw new Error("no state directory");
+    const dir = machinePaths().stateDir;
+    fs.mkdirSync(dir, { recursive: true, mode: 448 });
+    fs.appendFileSync(path.join(dir, "decisions.jsonl"), `${JSON.stringify(entry)}
+`, { mode: 384 });
+  } catch {
+  }
+}
 let laneCheck;
 try {
-  ({ laneCheck } = require('../lib/lane-check.js'));
+  const lane = require2("../lib/lane-check.js");
+  laneCheck = fnExport(lane.laneCheck, "laneCheck");
 } catch {
-  laneCheck = () => null;            // advice only; never block because it is missing
+  laneCheck = () => null;
 }
 let render;
 try {
-  ({ render } = require('../lib/preamble.js'));
+  const pre = require2("../lib/preamble.js");
+  render = fnExport(pre.render, "render");
 } catch {
-  render = () => { throw new Error('lib/preamble.js failed to load'); };
+  render = () => {
+    throw new Error("lib/preamble.js failed to load");
+  };
 }
-
-const HERE = path.dirname(fileURLToPath(import.meta.url));   // .../plugins
-const ROOT = path.join(HERE, '..');
-const AGENTS_DIR = path.join(ROOT, 'agents');
-const SKILLS_DIR = path.join(ROOT, 'skills');
-const REFERENCES = path.join(ROOT, 'references');
-
-// The lanes a person must type, never a model auto-selection: one list for
-// both opencode plugins (lib/user-invoked-lanes.js, pinned to the skills'
-// frontmatter by tests/gates/user-invoked.test.js).
-let HIDDEN_SKILLS = [], hiddenLoadError;
+const isObj = (v) => typeof v === "object" && v !== null;
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.join(HERE, "..");
+const AGENTS_DIR = path.join(ROOT, "agents");
+const SKILLS_DIR = path.join(ROOT, "skills");
+const REFERENCES = path.join(ROOT, "references");
+let HIDDEN_SKILLS = [];
+let hiddenLoadError;
 try {
-  ({ USER_INVOKED_LANES: HIDDEN_SKILLS } = require('../lib/user-invoked-lanes.js'));
+  const lanes = require2("../lib/user-invoked-lanes.js");
+  HIDDEN_SKILLS = lanes.USER_INVOKED_LANES;
 } catch (e) {
   hiddenLoadError = e;
 }
-
-// apply_patch's own V4A envelope (opencode's LOCAL tool, confirmed against
-// the binary: `patchText` field, `Vo.parsePatch`, same header vocabulary as
-// Codex's). Mirrors hooks/fx-codex.js's `extractPatchPaths` exactly; kept
-// local rather than required from that file, which is Codex's and not in
-// this task's file list.
 function extractPatchPaths(text) {
-  if (typeof text !== 'string') return [];
+  if (typeof text !== "string") return [];
   const paths = [];
-  for (const line of text.split('\n')) {
-    // `Move to:` cannot see live traffic today: the shipped binary refuses
-    // any apply_patch containing a move outright ("apply_patch moves are
-    // not supported yet"). Parsed anyway, for parity with Codex's identical
-    // header vocabulary and in case that restriction lifts; harmless to
-    // keep, and not something a test here can ever exercise against a real
-    // opencode call.
-    const m = line.match(/^\*\*\* (?:Update|Add|Delete) File: (.+)$/)
-      || line.match(/^\*\*\* Move to: (.+)$/);
-    if (m) paths.push(m[1].trim());
+  for (const line of text.split("\n")) {
+    const m = line.match(/^\*\*\* (?:Update|Add|Delete) File: (.+)$/) || line.match(/^\*\*\* Move to: (.+)$/);
+    if (m?.[1]) paths.push(m[1].trim());
   }
   return paths;
 }
-
-// Everything config() does, with its requires inside it: a missing module
-// or a missing references directory throws here, where config() catches and
-// reports it, and never at module load, where it would take the guard down.
 function applyConfig(config) {
-  // Hide the five user-invoked lanes from the model via permission.skill
-  // deny. The last matching rule wins, so the broad allow goes first —
-  // and only once, so a repeat config() call does not reorder it behind
-  // whatever else has since been added. First, before any require or file
-  // read below can throw: a config step that fails partway must still leave
-  // these lanes hidden (security re-review Minor 8).
-  // A bare action string is the user's rule for everything under it, the
-  // same rewrite opencode itself makes (`"ask"` becomes `{"*": "ask"}`), so
-  // it is kept as the "*" rule rather than thrown on (security re-check
-  // Minor 5). A skill block with no "*" of its own inherits the block's.
-  const asRules = (v) => (typeof v === 'string' ? { '*': v } : (v || {}));
-  config.permission = asRules(config.permission);
-  config.permission.skill = asRules(config.permission.skill);
-  if (!('*' in config.permission.skill)) config.permission.skill['*'] = config.permission['*'] || 'allow';
-  if (hiddenLoadError) throw hiddenLoadError;   // reported by the config step's catch: the lanes cannot be hidden
-  for (const name of HIDDEN_SKILLS) config.permission.skill[name] = 'deny';
-
-  const { READ_ONLY_AGENTS } = require('../lib/plant-roles.js');
-  const { toOpencodeAgent } = require('../lib/agent-dialects.js');
-  const { opencodeCommands } = require('../lib/opencode-commands.js');
-  // Both paths a read-only agent may be handed for a reference: through the
-  // path this plugin was loaded from, and the checkout it resolves to.
-  const REFERENCES_DIRS = [...new Set([REFERENCES, fs.realpathSync(REFERENCES)])];
-
-  // Skills: append idempotently. The config hook may run more than
-  // once; appending the same path twice registers every skill twice,
-  // and opencode keeps the first and logs the rest as duplicates.
-  config.skills = config.skills || {};
-  config.skills.paths = config.skills.paths || [];
-  if (!config.skills.paths.includes(SKILLS_DIR)) {
-    config.skills.paths.push(SKILLS_DIR);
+  const asRules = (v) => typeof v === "string" ? { "*": v } : v || {};
+  const permission = asRules(config.permission);
+  config.permission = permission;
+  if (!isObj(permission)) throw new TypeError("config.permission is not an object");
+  const skillRules = asRules(permission.skill);
+  permission.skill = skillRules;
+  if (!isObj(skillRules)) throw new TypeError("config.permission.skill is not an object");
+  if (!("*" in skillRules)) skillRules["*"] = permission["*"] || "allow";
+  if (hiddenLoadError) throw hiddenLoadError;
+  for (const name of HIDDEN_SKILLS) skillRules[name] = "deny";
+  const { READ_ONLY_AGENTS } = require2("../lib/plant-roles.js");
+  const { toOpencodeAgent } = require2("../lib/agent-dialects.js");
+  const { opencodeCommands } = require2("../lib/opencode-commands.js");
+  const REFERENCES_DIRS = [.../* @__PURE__ */ new Set([REFERENCES, fs.realpathSync(REFERENCES)])];
+  const skills = config.skills || (config.skills = {});
+  const skillPaths = skills.paths || (skills.paths = []);
+  if (!skillPaths.includes(SKILLS_DIR)) {
+    skillPaths.push(SKILLS_DIR);
   }
-
-  // Agents: every read-only role, from the same set Codex's roles are
-  // derived from (lib/plant-roles.js) — never a `fx-lens-` prefix match,
-  // which would leave fx-devils-advocate writable here while it is
-  // read-only on Claude Code and Codex.
-  config.agent = config.agent || {};
+  const agents = config.agent || (config.agent = {});
   for (const name of READ_ONLY_AGENTS) {
-    if (config.agent[name]) continue;   // idempotent across repeat config() calls
-    const mdText = fs.readFileSync(path.join(AGENTS_DIR, `${name}.md`), 'utf8');
-    config.agent[name] = toOpencodeAgent(mdText, { referencesDirs: REFERENCES_DIRS });
+    if (agents[name]) continue;
+    const mdText = fs.readFileSync(path.join(AGENTS_DIR, `${name}.md`), "utf8");
+    agents[name] = toOpencodeAgent(mdText, { referencesDirs: REFERENCES_DIRS });
   }
-
-  // Nested dispatch (amendment A6): opencode gives a subagent the task
-  // tool only when its own permission block has a rule keyed exactly
-  // `task`; `"*": "allow"` does not count (subagent-permissions.ts,
-  // canTask). `general` is the built-in subagent's key: opencode 1.18.31
-  // packages/opencode/src/agent/agent.ts:182-195, and `opencode agent
-  // list` on 1.18.25 prints `general (subagent)`. opencode merges this
-  // block over the native agent. Merge only when `task` and `*` are both
-  // absent, so a user's own value and a repeat config() call are both
-  // left alone. A user's `*` key is their answer for task too: 1.18.25
-  // rewrites `permission: "ask"` to `{"*": "ask"}` before this hook, and
-  // a task rule added after it would win. A bare action string is the
-  // user's too.
-  const general = (config.agent.general = config.agent.general || {});
-  general.permission = general.permission || {};
-  if (typeof general.permission === 'object' && !('task' in general.permission)
-      && !('*' in general.permission)) {
-    general.permission.task = 'allow';
+  const general = agents.general || (agents.general = {});
+  if (!isObj(general)) throw new TypeError("config.agent.general is not an object");
+  const generalPermission = general.permission || (general.permission = {});
+  if (isObj(generalPermission) && !("task" in generalPermission) && !("*" in generalPermission)) {
+    generalPermission.task = "allow";
   }
-
-  // Depth: `subagent_depth` defaults to 1, which stops an implementer
-  // dispatching a reviewer. Raise it, but never lower a value already
-  // set higher than what fx needs.
   config.subagent_depth = Math.max(config.subagent_depth || 1, 2);
-
-  // Commands: a hidden lane is typeable only as a command, and with no
-  // installer run nothing else registers one (task 23, PD2). The text is
-  // the installer's, from the one generator both call, with fx's
-  // references cited under the checkout this plugin was loaded from.
-  // A command already present (an installer's file, or the user's own)
-  // is left alone, so neither route registers it twice.
-  config.command = config.command || {};
+  const commands = config.command || (config.command = {});
   for (const [name, cmd] of Object.entries(opencodeCommands(ROOT, ROOT))) {
-    if (!config.command[name]) config.command[name] = cmd;
+    if (!commands[name]) commands[name] = cmd;
   }
 }
-
-export const fx = async ({ directory } = {}) => {
+const fx = async ({ directory } = {}) => {
   const cwd = directory || process.cwd();
-
-  // Computed once, at plugin construction, mirroring the previously-shipped
-  // form: one session's worth of context does not change mid-session.
-  // `render` does the whole assembly — rendered PREAMBLE.md, the repo.md
-  // note, the plan-state block — in one place (docs/adr/0020); this file
-  // never reassembles any of it.
+  journal?.pruneJournals(Date.now());
+  async function shellGuard(command, sessionId) {
+    if (!classifyShell) {
+      throw new Error(`[fx] shell rules failed to load (${messageOf(rulesLoadError)}). Denying every shell command until the plugin is repaired.`);
+    }
+    const posix = process.platform !== "win32";
+    let hardDeny;
+    try {
+      const hard = classifyShell(command, posix);
+      hardDeny = hard.kind === "hard-deny" ? hard.reason : null;
+    } catch (e) {
+      throw new Error(`[fx] shell rules failed to evaluate this command (${messageOf(e)}). Denying rather than assuming it is safe.`);
+    }
+    let d;
+    try {
+      if (!guardShell) throw shellGuardError;
+      d = await guardShell({ command, cwd, harness: "opencode", sessionId, now: Date.now(), posix });
+    } catch (e) {
+      if (hardDeny !== null) throw new Error(hardDeny);
+      shellGuardOff(e, sessionId, cwd);
+      return;
+    }
+    if (hardDeny !== null) throw new Error(hardDeny);
+    if (d.action === "deny") throw new Error(`${d.reason}`);
+    if (d.action === "ask") throw new Error(`${d.reason}`);
+    if (d.action === "warn") console.error(d.reason);
+  }
   let preamble;
   try {
-    preamble = render({ harness: 'opencode', cwd });
+    preamble = render({ harness: "opencode", cwd });
   } catch {
-    preamble = '[fx] PREAMBLE.md could not be read. The fx bootstrap and its always-on '
-             + 'rules are NOT loaded. Do not commit, and tell the '
-             + 'user the plugin is misinstalled.';
+    preamble = "[fx] PREAMBLE.md could not be read. The fx bootstrap and its always-on rules are NOT loaded. Do not commit, and tell the user the plugin is misinstalled.";
   }
-
   let configError = null;
-
+  const warned = /* @__PURE__ */ new Set();
+  const warnOnce = (line) => {
+    if (warned.has(line)) return;
+    warned.add(line);
+    console.error(line);
+  };
+  let guardOffShown = false;
+  const sessionOf = (input) => {
+    const ev = parseCall?.(input, void 0);
+    return ev?.ok ? ev.value.sessionID : void 0;
+  };
+  const queue = makeQueue?.("opencode", cwd);
+  const fxJsonSeen = /* @__PURE__ */ new Map();
+  const markTurn = async (j, session, input) => {
+    const key = j.journalKey(session);
+    if (key === null) {
+      warnOnce("[fx] chat.message carried no session id, so fx did not mark this turn in the session journal.");
+      return;
+    }
+    try {
+      if (!decideStop || !queue) throw turnLoadError;
+      if (session === void 0) throw new Error("the chat.message event carried no session id");
+      queue.startTurn(session);
+      const { text } = await decideStop({ harness: "opencode", sessionId: session, agentId: null, cwd, stopHookActive: false, mode: "reminder" });
+      if (text !== null) queue.enqueue(session, text);
+      const notice = fxJsonNotice?.(session, cwd, Date.now(), "opencode", fxJsonSeen) ?? null;
+      if (notice !== null) {
+        queue.enqueue(session, notice);
+        console.error(notice);
+      }
+    } catch (e) {
+      warnOnce(`[fx] the Stop reminder is off: ${messageOf(e)}`);
+    }
+    if (!fxJsonNotice) warnOnce(`[fx] the .fx.json change notice is off: ${messageOf(fxJsonError)}`);
+    if (!j.appendEvent(key, { t: Date.now(), kind: "prompt", text: null, agentType: parseAgent?.(input) ?? null })) {
+      warnOnce("[fx] the session journal could not be written, so fx did not mark this turn.");
+    }
+  };
   return {
     config: async (config) => {
       try {
         applyConfig(config);
       } catch (e) {
-        // Reported, never thrown: a throw here would stop opencode loading
-        // the plugin, guard included.
         configError = e;
-        console.error(`[fx] the plugin's config step failed (${e.message}); fx's skills, review agents or commands may be missing. The git guard still runs.`);
+        console.error(`[fx] the plugin's config step failed (${messageOf(e)}); fx's skills, review agents or commands may be missing. The git guard still runs.`);
       }
     },
-
-    'experimental.chat.system.transform': async (input, output) => {
-      // `input.sessionID` is undefined at the agent-generation call site;
-      // nothing here reads it, so there is nothing to guard.
+    "experimental.chat.system.transform": async (input, output) => {
       output.system.push(preamble);
       if (configError) {
-        output.system.push(`[fx] The fx plugin failed to configure (${configError.message}). `
-          + 'Its review agents may be missing. Tell the user the plugin is misinstalled.');
+        output.system.push(`[fx] The fx plugin failed to configure (${messageOf(configError)}). Its review agents may be missing. Tell the user the plugin is misinstalled.`);
+      }
+      if (shellGuardError !== void 0 && !guardOffShown) {
+        guardOffShown = true;
+        output.system.push(`[fx] shell guard off: ${messageOf(shellGuardError)}`);
+      }
+      const session = sessionOf(input);
+      if (session !== void 0 && queue !== void 0) output.system.push(...queue.drain(session));
+    },
+    // Records the call and queues the tracker's line, if any. Fail open.
+    "tool.execute.after": async (input, output) => {
+      try {
+        if (!parseResult || !recordToolResult) throw turnLoadError;
+        const r = parseResult(input, output);
+        if (r.sessionID === void 0 || r.tool === void 0) {
+          warnOnce("[fx] a tool.execute.after event carried no session id or tool name, so fx did not record it (the event shape may have changed).");
+          return;
+        }
+        const command = typeof r.args.command === "string" ? r.args.command : null;
+        const line = recordToolResult({
+          harness: "opencode",
+          sessionId: r.sessionID,
+          agentId: null,
+          cwd,
+          toolName: r.tool,
+          toolInput: r.args,
+          command,
+          outcome: r.outcome,
+          output: r.output,
+          interrupted: r.interrupted
+        });
+        if (line !== null) queue?.enqueue(r.sessionID, line);
+      } catch (e) {
+        warnOnce(`[fx] the loop tracker is off: ${messageOf(e)}`);
       }
     },
-
-    'tool.execute.before': async (input, output) => {
-      const tool = input && input.tool;
-      const args = (output && output.args) || {};
-
-      if (tool === 'bash') {
+    // A new user message marks a turn boundary. Its text is never recorded:
+    // fx cannot tell the user's prompt from a parent agent's prompt to a child session (design 6).
+    "chat.message": async (input) => {
+      const session = sessionOf(input);
+      if (journal) await markTurn(journal, session, input);
+    },
+    "tool.execute.before": async (input, output) => {
+      if (!parseCall) {
+        throw new Error(`[fx] opencode input parser failed to load (${messageOf(parseLoadError)}). Denying every tool call until the plugin is repaired.`);
+      }
+      const event = parseCall(input, output);
+      if (!event.ok) return;
+      const { tool, args } = event.value;
+      if (tool === "bash") {
         const command = args.command;
         if (!command) return;
-        if (guardLoadError) {
-          throw new Error(`[fx] git guard failed to load (${guardLoadError.message}). Denying every command until the plugin is repaired.`);
+        if (!inspect) {
+          throw new Error(`[fx] git guard failed to load (${messageOf(guardLoadError)}). Denying every command until the plugin is repaired.`);
         }
         let verdict;
         try {
           verdict = inspect(command, cwd);
         } catch (e) {
-          // Fail CLOSED: a broken guard must refuse, not assume safety.
-          verdict = { allow: false, reason: `git guard failed to evaluate this command (${e.message}). Denying rather than assuming it is safe.` };
+          verdict = { allow: false, reason: `git guard failed to evaluate this command (${messageOf(e)}). Denying rather than assuming it is safe.` };
         }
-        // Throwing is how this API refuses a tool call; there is no deny
-        // return value.
         if (!verdict.allow) throw new Error(`[fx] ${verdict.reason}`);
+        if (typeof command !== "string") {
+          throw new Error(`[fx] the shell command is not a string (${typeof command}), so the guards cannot read it. Denying rather than assuming it is safe.`);
+        }
+        await shellGuard(command, event.value.sessionID ?? null);
         return;
       }
-
-      // Write paths. `edit` and `write` share `filePath`; the local
-      // `apply_patch` carries a multi-file patch under `patchText`. All
-      // three collapse onto opencode's own `edit` permission key, and which
-      // one is live depends on the model (apply_patch replaces edit/write on
-      // GPT-family models).
       let filePaths;
-      if (tool === 'edit' || tool === 'write') {
-        filePaths = args.filePath ? [args.filePath] : [];
-      } else if (tool === 'apply_patch') {
+      if (tool === "edit" || tool === "write") {
+        filePaths = typeof args.filePath === "string" && args.filePath ? [args.filePath] : [];
+      } else if (tool === "apply_patch") {
         filePaths = extractPatchPaths(args.patchText).map((p) => path.resolve(cwd, p));
       } else {
         return;
       }
-
+      if (!namesFxState || !hardReason) {
+        throw new Error(`[fx] shell rules failed to load (${messageOf(rulesLoadError)}). Denying every file write until the plugin is repaired.`);
+      }
       for (const filePath of filePaths) {
-        // Fail OPEN: the lane check is advice, so a broken one must not
-        // wedge a write.
+        if (namesFxState(path.resolve(cwd, filePath))) throw new Error(hardReason("fx-state"));
+      }
+      for (const filePath of filePaths) {
         let reason = null;
         try {
           reason = laneCheck(filePath, cwd);
@@ -283,6 +370,17 @@ export const fx = async ({ directory } = {}) => {
         }
         if (reason) throw new Error(`[fx] ${reason}`);
       }
-    },
+      const sessionId = event.value.sessionID ?? null;
+      if (!checkEdit) {
+        warnOnce(`[fx] edit rules off: ${messageOf(editRulesError)}`);
+        editRulesOff(editRulesError, sessionId, cwd);
+        return;
+      }
+      const d = await checkEdit({ harness: "opencode", sessionId, cwd, toolName: tool, toolInput: args, now: Date.now() });
+      if (d.action === "refuse" && d.reason !== null) throw new Error(d.reason);
+    }
   };
+};
+export {
+  fx
 };

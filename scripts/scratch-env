@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Runs a command with HOME, the XDG and Windows directories and TMPDIR inside
+# one fresh scratch directory, so a test run never reads or writes the
+# owner's home. The directory is left behind for inspection; nothing here
+# deletes anything.
+#
+#     scripts/scratch-env <command> [args...]
+set -euo pipefail
+[ $# -ge 1 ] || { echo "usage: scripts/scratch-env <command> [args...]" >&2; exit 2; }
+D="$(mktemp -d)"
+mkdir "$D/home" "$D/config" "$D/state" "$D/appdata" "$D/localappdata" "$D/tmp"
+echo "scratch-env: $D" >&2
+exec env HOME="$D/home" USERPROFILE="$D/home" XDG_CONFIG_HOME="$D/config" XDG_STATE_HOME="$D/state" \
+  APPDATA="$D/appdata" LOCALAPPDATA="$D/localappdata" TMPDIR="$D/tmp" "$@"

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Installs dependencies and smoke-runs scripts/make-git-fixture once. A script
+# file, not a bash -c string in .fx.json: see scripts/test-one.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+D="$(mktemp -d)"
+trap 'rm -rf "$D"' EXIT
+npm ci
+scripts/make-git-fixture "$D/fixture" > /dev/null

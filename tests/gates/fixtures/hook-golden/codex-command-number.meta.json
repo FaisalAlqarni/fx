@@ -1,0 +1,6 @@
+{
+  "hook": "fx-codex.js",
+  "cwd": "main",
+  "exit": 2,
+  "stderr": "[fx] the shell command is not a string (number), so the guards cannot read it. Denying rather than assuming it is safe.\n"
+}

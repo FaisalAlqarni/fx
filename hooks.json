@@ -1,5 +1,5 @@
 {
-  "description": "fx on Codex: the bootstrap on SessionStart and SubagentStart, and the git guard, lane check and read-only check on PreToolUse. No timeout is set, so Codex's 600s default applies: a Codex hook that times out fails open (see tests/gates/codex-manifest.test.js).",
+  "description": "fx on Codex: the bootstrap on SessionStart and SubagentStart, the journal prune and .fx.json notice on SessionStart, the git guard, lane check, read-only check, fx-state refusal, edit rules and shell guard on PreToolUse, the user prompt record on UserPromptSubmit, the stuck-loop tracker on PostToolUse, and the evidence check on Stop and SubagentStop. No timeout is set, so Codex's 600s default applies: a Codex hook that times out fails open (see tests/gates/codex-manifest.test.js).",
   "hooks": {
     "SessionStart": [
       {
@@ -26,9 +26,50 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-codex.js\""
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-codex.js\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-codex.js\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/fx-codex.js\""
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
         "hooks": [
           {
             "type": "command",

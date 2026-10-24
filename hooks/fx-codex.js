@@ -1,272 +1,491 @@
 #!/usr/bin/env node
-'use strict';
-// Codex: SessionStart, SubagentStart, and PreToolUse.
-//
-// ONE ENTRY POINT, ROUTED ON hook_event_name, THEN ON tool_name
-//
-// The two context events still just emit the rendered preamble, mirroring
-// hooks/fx-context.js addressed for Codex instead of Claude Code. PreToolUse
-// mirrors hooks/fx-pretooluse.js: same fail-closed guard, same fail-open
-// lane check, on the same stdin-JSON/exit-code contract Codex measures as
-// identical to Claude Code's. See fx-pretooluse.js's header for why one
-// entry point routed on tool_name is what lets the same script serve both
-// runtimes.
-//
-// Codex has no Write/Edit tool: it edits through apply_patch. So the lane
-// check here follows apply_patch, where on Claude Code it follows
-// Write/Edit/MultiEdit/NotebookEdit. Routing only the shell would leave the
-// check absent while looking present, which is the failure this plan exists
-// to stop.
-//
-// FAIL CLOSED on the guard, FAIL OPEN on the lane check — same split as
-// fx-pretooluse.js, for the same reason: the guard prevents irreversible
-// damage, so a broken guard must refuse; the lane check is advice, so a
-// broken one must not wedge the session.
-
-// Only builtins load unguarded. Every fx module is required inside a try, so
-// a broken install can never crash the hook at load: a crash exits 1, which
-// Codex treats as a failed, non-blocking run, and that would skip the guard
-// and the read-only check (security re-review I2). lib/preamble, which only
-// the context events need, is required where it is used, below.
-const path = require('path');
-
-// Read-only agents (task 06): identity from SubagentStart, enforcement here.
-// See lib/plant-roles.js's header for the full reasoning; this file only
-// routes to it.
-let plantRoles, recordAgentIdentity, lookupAgentIdentity, isReadOnlyAgent, isWritingToolCall, rolesLoadError;
+// generated from src/hooks/fx-codex.ts by scripts/build: edit there, not here
+"use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var fs = __toESM(require("fs"));
+var path = __toESM(require("path"));
+function message(e) {
+  return typeof e === "object" && e !== null && "message" in e ? e.message : void 0;
+}
+let roles;
+let rolesLoadError;
 try {
-  ({ plantRoles, recordAgentIdentity, lookupAgentIdentity, isReadOnlyAgent, isWritingToolCall } =
-    require('../lib/plant-roles'));
+  roles = require("../lib/plant-roles");
 } catch (e) {
-  // A broken require must not stop SessionStart from rendering the
-  // preamble. It must not open the read-only check either: PreToolUse
-  // refuses every subagent call while this is set (final review I3).
   rolesLoadError = e;
 }
-
-// Codex's apply_patch carries its whole payload as raw text under `command`
-// — the SAME key Bash uses. Measured live against Codex CLI 0.155.1 (fix
-// round 1):
-//
-//   tool_name='apply_patch'  tool_input keys=['command']
-//     command = '*** Begin Patch\n*** Update File: target.js\n@@\n' +
-//                '-const b = 2;\n+const b = 3;\n*** End Patch'
-//
-// This is why routing on tool_name, not on the presence of tool_input.command,
-// is load-bearing: a hook that dispatched on "does tool_input have a command
-// field" would hand raw patch text to the git guard and have it inspected as
-// a shell command. Nothing here does that — tool_name is checked first, and
-// only 'Bash' ever reaches inspect().
-//
-// The header lines this parses (V4A patch format):
-//   *** Update File: <path>
-//   *** Add File: <path>
-//   *** Delete File: <path>
-//   *** Move to: <path>        (rename; follows an Update File line)
-// A patch can touch several files; every path found is checked. Anything
-// that does not parse — a header this regex does not recognise, a string
-// that is not patch text at all — yields no paths, which means no checks
-// and an allow: never a throw. The lane check is advice, so failing to
-// parse must fail open exactly like a laneCheck throw does.
-function extractPatchPaths(command) {
-  if (typeof command !== 'string') return [];
-  const paths = [];
-  for (const line of command.split('\n')) {
-    const m = line.match(/^\s*\*\*\* (?:Update|Add|Delete) File: (.+)$/)   // \s*: an indented heredoc body
-      || line.match(/^\s*\*\*\* Move to: (.+)$/);
-    if (m) paths.push(m[1].trim());
-  }
-  return paths;
-}
-
-let inspect, guardLoadError;
+let extractPatchPaths;
+let patchPathsError;
 try {
-  ({ inspect } = require('../lib/git-guard'));
-  if (typeof inspect !== 'function') throw new Error('inspect is not a function');
+  const patchPaths = require("../lib/patch-paths");
+  if (typeof patchPaths.extractPatchPaths !== "function") throw new Error("extractPatchPaths is not a function");
+  ({ extractPatchPaths } = patchPaths);
 } catch (e) {
-  guardLoadError = e;                // deferred: only PreToolUse needs the guard
+  patchPathsError = e;
+}
+let inspect;
+let guardLoadError;
+try {
+  const guard = require("../lib/git-guard");
+  inspect = guard.inspect;
+  if (typeof inspect !== "function") throw new Error("inspect is not a function");
+} catch (e) {
+  guardLoadError = e;
 }
 let laneCheck;
 try {
-  ({ laneCheck } = require('../lib/lane-check'));
+  const lane = require("../lib/lane-check");
+  ({ laneCheck } = lane);
 } catch {
-  laneCheck = () => null;            // advice only; never block because it is missing
+  laneCheck = () => null;
 }
-
+let parseCodexHookInput;
+let subagentId;
+let parseJson;
+let parserLoadError;
+try {
+  const hookInput = require("../lib/hook-input");
+  const json = require("../lib/json");
+  ({ parseCodexHookInput, subagentId } = hookInput);
+  ({ parseJson } = json);
+  if (typeof parseCodexHookInput !== "function") throw new Error("parseCodexHookInput is not a function");
+  if (typeof subagentId !== "function") throw new Error("subagentId is not a function");
+  if (typeof parseJson !== "function") throw new Error("parseJson is not a function");
+} catch (e) {
+  parserLoadError = e;
+}
 function deny(reason) {
-  process.stderr.write(`[fx] ${reason}\n`);
+  process.stderr.write(`[fx] ${reason}
+`);
   process.exit(2);
 }
-
-// The lane check on every path a patch names; refuses on the first offender.
-// extractPatchPaths never throws. A shell call known to be an apply_patch
-// whose paths cannot be read (a patch from a file or a variable) is allowed,
-// and one stderr line says the lane check could not read it.
+let checkEdit = null;
+let editRulesError = null;
+try {
+  const rules = require("../lib/edit-rules");
+  ({ checkEdit } = rules);
+  if (typeof checkEdit !== "function") throw new Error("checkEdit is not a function");
+} catch (e) {
+  editRulesError = e;
+}
+let classifyShell = null;
+let namesFxState = null;
+let hardReason = null;
+let shellRulesError = null;
+try {
+  const rules = require("../lib/shell-rules");
+  ({ classifyShell, namesFxState, hardReason } = rules);
+  if (typeof classifyShell !== "function" || typeof namesFxState !== "function" || typeof hardReason !== "function") {
+    throw new Error("shell-rules is missing an export");
+  }
+} catch (e) {
+  shellRulesError = e;
+}
+let guardShell = null;
+let codexGuardOutput = null;
+let shellGuardError = null;
+try {
+  const shell = require("../lib/shell-guard");
+  const output = require("../lib/guard-output");
+  ({ guardShell } = shell);
+  ({ codexGuardOutput } = output);
+  if (typeof guardShell !== "function") throw new Error("guardShell is not a function");
+  if (typeof codexGuardOutput !== "function") throw new Error("codexGuardOutput is not a function");
+} catch (e) {
+  shellGuardError = e;
+}
+function emit(stdout, stderr, code) {
+  if (stderr) process.stderr.write(stderr);
+  if (stdout) process.stdout.write(stdout, () => process.exit(code));
+  else process.exit(code);
+}
+let crashLogDir = null;
+try {
+  const paths = require("../lib/fx-paths");
+  crashLogDir = paths.machinePaths().stateDir;
+} catch {
+}
+function describe(e) {
+  try {
+    return String(message(e) ?? e);
+  } catch {
+    return "an error that could not be printed";
+  }
+}
+function shellGuardOff(e, session, cwd) {
+  const m = `[fx] shell guard off: ${describe(e)}`;
+  try {
+    if (crashLogDir === null) throw new Error("no state directory");
+    fs.mkdirSync(crashLogDir, { recursive: true, mode: 448 });
+    const entry = { ts: (/* @__PURE__ */ new Date()).toISOString(), harness: "codex", event: "guard", session, cwd, text: "", source: "guard-error", action: "allow", unavailable: m.slice(0, 200) };
+    fs.appendFileSync(path.join(crashLogDir, "decisions.jsonl"), `${JSON.stringify(entry)}
+`, { mode: 384 });
+  } catch {
+  }
+  emit(JSON.stringify({ systemMessage: m, hookSpecificOutput: { hookEventName: "PreToolUse", additionalContext: m } }), `${m}
+`, 0);
+}
+function editRulesOff(e, session, cwd) {
+  const m = `[fx] edit rules off: ${describe(e)}`;
+  try {
+    if (crashLogDir === null) throw new Error("no state directory");
+    fs.mkdirSync(crashLogDir, { recursive: true, mode: 448 });
+    const entry = { ts: (/* @__PURE__ */ new Date()).toISOString(), harness: "codex", event: "edit-rule", session, cwd, text: "", source: "error", action: "allow", unavailable: m.slice(0, 200) };
+    fs.appendFileSync(path.join(crashLogDir, "decisions.jsonl"), `${JSON.stringify(entry)}
+`, { mode: 384 });
+  } catch {
+  }
+  return m;
+}
+const crashed = (e) => deny(`hook crashed (${describe(e)}). Denying rather than assuming this is safe.`);
 function checkPatchPaths(patchText, cwd, fromShell) {
-  const paths = extractPatchPaths(patchText);
+  let paths;
+  try {
+    if (!extractPatchPaths) throw patchPathsError ?? new Error("extractPatchPaths is not loaded");
+    paths = extractPatchPaths(patchText);
+  } catch (e) {
+    deny(`lib/patch-paths failed (${message(e)}), so the paths of this apply_patch cannot be read. Denying every apply_patch until the plugin is repaired.`);
+  }
+  if (paths.length > 0) {
+    if (shellRulesError !== null || !namesFxState || !hardReason) {
+      deny(`shell rules failed to load (${message(shellRulesError)}). Denying every file write until the plugin is repaired.`);
+    }
+    for (const p of paths) {
+      if (namesFxState(path.resolve(cwd, p))) deny(hardReason("fx-state").slice("[fx] ".length));
+    }
+  }
   if (fromShell && paths.length === 0) {
-    process.stderr.write('[fx] the lane check could not read the paths of this apply_patch, so it did not check them.\n');
+    process.stderr.write("[fx] the lane check could not read the paths of this apply_patch, so it did not check them.\n");
   }
   for (const p of paths) {
     let reason = null;
     try {
       reason = laneCheck(path.resolve(cwd, p), cwd);
     } catch {
-      reason = null;                 // advice: a bug here must not block an edit
+      reason = null;
     }
-    if (reason) deny(reason);        // refuse on the FIRST offending path; its own
-  }                                   // reason already names which one
+    if (reason) deny(reason);
+  }
 }
-
-// A model with no apply_patch function tool edits through a shell call,
-// `apply_patch <<'PATCH' ...`, which Codex runs as a patch itself. The word
-// counts as a command wherever a command can start: at the start, after a
-// separator, a subshell, a group or `$(`, inside `bash -c "`, or after
-// env/time/xargs and their words. `grep apply_patch` and `echo apply_patch`
-// are not edits.
 const SHELL_APPLY_PATCH = /(?:^|[\n;&|({`]|\$\(|\b(?:ba|z|da)?sh\s+-\w*c\s+["']|\b(?:env|time|xargs|exec|command|nohup|sudo)\b[^\n;&|]*?)\s*apply_patch\b/;
-
 function handlePreToolUse(input) {
-  process.on('uncaughtException', (e) =>
-    deny(`hook crashed (${e.message}). Denying rather than assuming this is safe.`));
-
+  process.on("uncaughtException", crashed);
+  process.on("unhandledRejection", crashed);
   const tool = input.tool_name;
-  const ti = input.tool_input || {};
+  const ti = input.tool_input;
   const cwd = input.cwd || process.cwd();
   const agentId = input.agent_id;
-
-  // Read-only agents. A subagent's own tool calls carry agent_id; the
-  // controller's do not (ADR 0019), so no agent_id means this check is not
-  // this call's business at all. `agent_type` on THIS payload is never
-  // consulted: it is undocumented here, so the only identity trusted is
-  // whatever SubagentStart recorded for this agent_id. Unrecorded ==
-  // unclassifiable == refused on a write, same as a classified lens.
-  // Without plant-roles there is no way to tell a lens from an implementer,
-  // or a read from a write, so a subagent's call is refused. Fail closed.
-  if (agentId && rolesLoadError) {
-    deny(`lib/plant-roles failed to load (${rolesLoadError.message}), so subagent ${agentId}'s role cannot be verified; refusing the call. Reinstall the plugin.`);
+  if (agentId && (rolesLoadError || !roles)) {
+    deny(`lib/plant-roles failed to load (${message(rolesLoadError)}), so subagent ${agentId}'s role cannot be verified; refusing the call. Reinstall the plugin.`);
   }
-  if (agentId) {
+  if (agentId && roles) {
     let known = null;
-    try { known = lookupAgentIdentity(agentId); } catch { known = null; }
-    const mustRefuseWrites = known === null ? true : isReadOnlyAgent(known);
-    // Amendment A5, fail closed: an allowlist, not a denylist. A read-only
-    // agent may call exactly one tool, Bash, and only when the read-only
-    // classifier clears the command. Everything else is refused, including
-    // tools this hook has never heard of. research/codex.md section 2
-    // ("PreToolUse stdin") lists the tool names a hook sees: Bash,
-    // apply_patch, spawn_agent, mcp__<server>__<tool>, and any other function
-    // tool by its flat name. Of those, only Bash is gated by a classifier that
-    // can prove a call read-only; apply_patch writes, spawn_agent hands work to
-    // a child, an MCP server's effects are invisible here, and "Making a
-    // subagent read-only" in section 3 names memory_tool, apps and
-    // request_permissions_tool as further tools a role can carry. A lens reads
-    // through the shell (references/harnesses/codex.md), so it needs no other.
+    try {
+      known = roles.lookupAgentIdentity(agentId);
+    } catch {
+      known = null;
+    }
+    const mustRefuseWrites = known === null ? true : roles.isReadOnlyAgent(known);
     let cleared = false;
-    if (tool === 'Bash') {
-      try { cleared = !isWritingToolCall(tool, ti); } catch { cleared = false; } // a crash is a refusal
+    if (tool === "Bash") {
+      try {
+        cleared = !roles.isWritingToolCall(tool, ti);
+      } catch {
+        cleared = false;
+      }
     }
     if (mustRefuseWrites && !cleared) {
-      deny(known
-        ? `${known} is read-only and must not write (blocked: ${tool}).`
-        : `subagent ${agentId} was never recorded at SubagentStart, so its role cannot be verified; refusing the write rather than assuming it is safe.`);
+      deny(known ? `${known} is read-only and must not write (blocked: ${tool}).` : `subagent ${agentId} was never recorded at SubagentStart, so its role cannot be verified; refusing the write rather than assuming it is safe.`);
     }
   }
-
-  if (tool === 'Bash') {
-    const command = ti.command;
-    if (!command) process.exit(0);
-    if (guardLoadError) {
-      deny(`git guard failed to load (${guardLoadError.message}). Denying every command until the plugin is repaired.`);
+  if (tool === "Bash") {
+    const raw2 = ti?.command;
+    if (!raw2) process.exit(0);
+    if (guardLoadError || !inspect) {
+      deny(`git guard failed to load (${message(guardLoadError)}). Denying every command until the plugin is repaired.`);
     }
     let verdict;
     try {
-      verdict = inspect(command, cwd);
+      verdict = inspect(raw2, cwd);
     } catch (e) {
-      verdict = { allow: false, reason: `git guard failed to evaluate this command (${e.message}). Denying rather than assuming it is safe.` };
+      verdict = { allow: false, reason: `git guard failed to evaluate this command (${message(e)}). Denying rather than assuming it is safe.` };
     }
     if (!verdict.allow) deny(verdict.reason);
-    if (SHELL_APPLY_PATCH.test(command)) checkPatchPaths(command, cwd, true);
-    process.exit(0);
+    const command = input.command;
+    if (command === void 0) deny(`the shell command is not a string (${typeof raw2}), so the guards cannot read it. Denying rather than assuming it is safe.`);
+    const patch = SHELL_APPLY_PATCH.test(command);
+    if (patch) checkPatchPaths(command, cwd, true);
+    const hardDeny = shellHardRules(command);
+    if (!patch || hardDeny !== null) return shellGuard(input, command, cwd, hardDeny);
+    const rulesOff = (e) => {
+      process.stderr.write(`${editRulesOff(e, input.session_id ?? null, cwd)}
+`);
+      shellGuard(input, command, cwd, null);
+    };
+    if (!checkEdit) return rulesOff(editRulesError);
+    checkEdit({ harness: "codex", sessionId: input.session_id ?? null, cwd, toolName: "Bash", toolInput: ti, now: Date.now() }).then((d) => d.action === "refuse" ? emit("", `${d.reason}
+`, 2) : shellGuard(input, command, cwd, null), rulesOff);
+    return;
   }
-
-  if (tool === 'apply_patch') {
-    checkPatchPaths(ti.command, cwd);
-    process.exit(0);
+  if (tool === "apply_patch") {
+    checkPatchPaths(ti?.command, cwd);
+    const off = (e) => emit("", `${editRulesOff(e, input.session_id ?? null, cwd)}
+`, 0);
+    process.removeListener("uncaughtException", crashed);
+    process.removeListener("unhandledRejection", crashed);
+    process.on("uncaughtException", off);
+    process.on("unhandledRejection", off);
+    if (!checkEdit) return off(editRulesError);
+    checkEdit({ harness: "codex", sessionId: input.session_id ?? null, cwd, toolName: "apply_patch", toolInput: ti, now: Date.now() }).then((d) => {
+      if (d.action === "refuse") emit("", `${d.reason}
+`, 2);
+      else emit("", "", 0);
+    }, off);
+    return;
   }
-
   process.exit(0);
 }
-
-let raw = '';
-process.stdin.on('data', (c) => { raw += c; });
-process.stdin.on('end', () => {
-  // Empty stdin is a context event with nothing to say. Anything else must
-  // parse to an object: a malformed payload cannot be told apart from a
-  // PreToolUse event, and printing SessionStart output for it would allow the
-  // call (security re-review Minor 5).
-  let input = {};
-  if (raw.trim() !== '') {
-    try { input = JSON.parse(raw); } catch { input = null; }
-    if (input === null || typeof input !== 'object' || Array.isArray(input)) {
-      deny('hook input is not a JSON object. Refusing rather than guessing which event this is.');
+const posix = process.platform !== "win32";
+function shellHardRules(command) {
+  if (shellRulesError !== null || !classifyShell) deny(`shell rules failed to load (${message(shellRulesError)}). Denying every shell command until the plugin is repaired.`);
+  const hard = classifyShell(command, posix);
+  return hard.kind === "hard-deny" ? hard.reason : null;
+}
+function shellGuard(input, command, cwd, hardDeny) {
+  const off = hardDeny === null ? (e) => shellGuardOff(e, input.session_id ?? null, cwd) : () => emit("", `${hardDeny}
+`, 2);
+  process.removeListener("uncaughtException", crashed);
+  process.removeListener("unhandledRejection", crashed);
+  process.on("uncaughtException", off);
+  process.on("unhandledRejection", off);
+  if (!guardShell || !codexGuardOutput) {
+    off(shellGuardError);
+    return;
+  }
+  const render = codexGuardOutput;
+  guardShell({ command, cwd, harness: "codex", sessionId: input.session_id ?? null, now: Date.now(), posix }).then((d) => {
+    const out = render(hardDeny === null ? d : { action: "deny", reason: hardDeny, source: "hard-rule" });
+    emit(out.stdout, out.stderr, out.exitCode);
+  }, off);
+}
+const subagentOf = (id) => subagentId ? subagentId(id) : null;
+function startSubagentTurn(input, agentId, journal) {
+  const key = journal.journalKey(input.session_id, agentId);
+  if (key !== null) journal.appendEvent(key, { t: Date.now(), kind: "prompt", text: null, agentType: input.agent_type ?? null });
+}
+function loadJournal() {
+  const journal = require("../lib/journal");
+  if (![journal.appendEvent, journal.appendPrompt, journal.journalKey].every((f) => typeof f === "function")) throw new Error("journal exports are missing");
+  return journal;
+}
+function recordPrompt(input) {
+  try {
+    const prompt = input.prompt;
+    const { STOP_SENTENCE } = require("../lib/stop-sentence");
+    if (typeof prompt !== "string" || prompt.startsWith("[fx] ") || STOP_SENTENCE.test(prompt)) return;
+    const journal = loadJournal();
+    const agentId = subagentOf(input.agent_id);
+    if (agentId !== null) {
+      startSubagentTurn(input, agentId, journal);
+      return;
+    }
+    const key = journal.journalKey(input.session_id);
+    if (key !== null) journal.appendPrompt(key, prompt, Date.now());
+  } catch (e) {
+    process.stderr.write(`[fx] turn hook: ${String(message(e) ?? e)}
+`);
+  }
+}
+function trackerOff(e, input) {
+  const m = `[fx] loop tracker off: ${describe(e)}`;
+  process.stderr.write(`${m}
+`);
+  try {
+    if (crashLogDir === null) throw new Error("no state directory");
+    fs.mkdirSync(crashLogDir, { recursive: true, mode: 448 });
+    const entry = { ts: (/* @__PURE__ */ new Date()).toISOString(), harness: "codex", event: "nudge", session: input.session_id ?? null, cwd: input.cwd ?? "", text: "", source: "tracker-error", action: "none", unavailable: m.slice(0, 200) };
+    fs.appendFileSync(path.join(crashLogDir, "decisions.jsonl"), `${JSON.stringify(entry)}
+`, { mode: 384 });
+  } catch {
+  }
+}
+function recordToolCall(input) {
+  try {
+    const tracker = require("../lib/loop-tracker");
+    const events = require("../lib/tool-events");
+    if (typeof tracker.recordToolResult !== "function" || typeof events.toolOutcomeAndOutput !== "function") throw new Error("a tracker module is missing an export");
+    if (typeof input.tool_name !== "string") return "";
+    const { outcome, output } = events.toolOutcomeAndOutput("codex", "PostToolUse", input.tool_response);
+    const line = tracker.recordToolResult({
+      harness: "codex",
+      sessionId: input.session_id ?? null,
+      agentId: subagentOf(input.agent_id),
+      cwd: input.cwd || process.cwd(),
+      toolName: input.tool_name,
+      toolInput: input.tool_input,
+      command: input.command ?? null,
+      outcome,
+      output
+    });
+    return line === null ? "" : JSON.stringify({ hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext: line } });
+  } catch (e) {
+    trackerOff(e, input);
+    return "";
+  }
+}
+async function stopCheck(input, event) {
+  const cwd = input.cwd || process.cwd();
+  try {
+    const { decideStop } = require("../lib/stop-check");
+    if (typeof decideStop !== "function") throw new Error("decideStop is not a function");
+    const agentId = event === "SubagentStop" ? subagentOf(input.agent_id) : null;
+    if (event === "SubagentStop" && agentId === null) return "";
+    const { text, notice } = await decideStop({
+      harness: "codex",
+      sessionId: input.session_id ?? null,
+      agentId,
+      cwd,
+      stopHookActive: input.stop_hook_active,
+      mode: "block"
+    });
+    if (notice !== null) process.stderr.write(`${notice}
+`);
+    return text === null ? "" : JSON.stringify({ decision: "block", reason: text });
+  } catch (e) {
+    stopOff(e, input.session_id ?? null, cwd);
+    return "";
+  }
+}
+function stopOff(e, session, cwd) {
+  const m = `stop check off: ${describe(e)}`;
+  process.stderr.write(`[fx] ${m}
+`);
+  try {
+    if (crashLogDir === null) throw new Error("no state directory");
+    fs.mkdirSync(crashLogDir, { recursive: true, mode: 448 });
+    const entry = { ts: (/* @__PURE__ */ new Date()).toISOString(), harness: "codex", event: "stop", session, cwd, text: "", source: "stop-error", action: "allow", unavailable: m.slice(0, 200) };
+    fs.appendFileSync(path.join(crashLogDir, "decisions.jsonl"), `${JSON.stringify(entry)}
+`, { mode: 384 });
+  } catch {
+  }
+}
+let raw = "";
+process.stdin.on("data", (c) => {
+  raw += c;
+});
+process.stdin.on("end", async () => {
+  if (parserLoadError || !parseCodexHookInput || !parseJson) {
+    deny(`hook input parser failed to load (${message(parserLoadError)}). Denying every call until the plugin is repaired.`);
+  }
+  let parsed = {};
+  if (raw.trim() !== "") {
+    try {
+      parsed = parseJson(raw);
+    } catch {
+      parsed = null;
     }
   }
-
-  if (input.hook_event_name === 'PreToolUse') {
+  const r = parseCodexHookInput(parsed);
+  if (!r.ok) deny("hook input is not a JSON object. Refusing rather than guessing which event this is.");
+  const input = r.value;
+  const event = input.hook_event_name;
+  if (event === "PreToolUse") {
     handlePreToolUse(input);
     return;
   }
-
+  if (event === "UserPromptSubmit") {
+    recordPrompt(input);
+    emit("", "", 0);
+    return;
+  }
+  if (event === "PostToolUse") {
+    emit(recordToolCall(input), "", 0);
+    return;
+  }
+  if (event === "Stop" || event === "SubagentStop") {
+    emit(await stopCheck(input, event), "", 0);
+    return;
+  }
+  if (typeof event === "string" && event !== "" && event !== "SessionStart" && event !== "SubagentStart") process.exit(0);
   const cwd = input.cwd || process.cwd();
-
-  // Plant the read-only roles on every session. Never lets a planting
-  // failure stop the session: Codex also skips a plugin's hooks until the
-  // user trusts them, so the setup lane and the installer are the other two
-  // callers of the same plantRoles (design.md: "one function does the
-  // planting and three callers invoke it").
-  //
-  // Codex reads roles once, when a session starts and before any hook runs
-  // (research/codex.md, "Follow-up: role visibility timing"), so a role this
-  // hook writes is dispatchable from the NEXT session only. Say so, once, in
-  // the session that wrote or repaired one: `systemMessage` reaches the user
-  // (ponytail's writeHookOutput shape), and the same line ends the model's
-  // context. A session that wrote nothing is silent.
   let notice = null;
-  if (input.hook_event_name === 'SessionStart' && plantRoles) {
+  if (input.hook_event_name === "SessionStart" && roles) {
     try {
-      const { written, stale } = plantRoles();
-      const names = [...written, ...stale].map((p) => path.basename(p, '.toml'));
+      const { written, stale } = roles.plantRoles();
+      const names = [...written, ...stale].map((p) => path.basename(p, ".toml"));
       if (names.length) {
-        notice = `fx installed or updated its review roles (${names.join(', ')}). `
-               + 'Codex reads roles when a session starts, so restart Codex once before dispatching an fx review agent.';
+        notice = `fx installed or updated its review roles (${names.join(", ")}). Codex reads roles when a session starts, so restart Codex once before dispatching an fx review agent.`;
       }
-    } catch (e) { console.error(`[fx] planting the review roles failed: ${(e && e.message) || e}`); /* the session starts regardless */ }
+    } catch (e) {
+      console.error(`[fx] planting the review roles failed: ${message(e) || e}`);
+    }
   }
-
-  // Record which role this subagent is, at the event where agent_type is
-  // documented, so PreToolUse never has to trust it on its own undocumented
-  // appearance there.
-  if (input.hook_event_name === 'SubagentStart' && recordAgentIdentity) {
-    try { recordAgentIdentity({ agentId: input.agent_id, agentType: input.agent_type }); } catch { /* best effort */ }
+  if (input.hook_event_name === "SubagentStart" && roles) {
+    try {
+      roles.recordAgentIdentity({ agentId: input.agent_id, agentType: input.agent_type });
+    } catch {
+    }
   }
-
+  const startedId = subagentOf(input.agent_id);
+  if (input.hook_event_name === "SubagentStart" && startedId !== null) {
+    try {
+      startSubagentTurn(input, startedId, loadJournal());
+    } catch (e) {
+      process.stderr.write(`[fx] journal: ${String(message(e) ?? e)}
+`);
+    }
+  }
+  let health = null;
+  if (input.hook_event_name === "SessionStart") {
+    try {
+      const { pruneJournals } = require("../lib/journal");
+      const { fxJsonNotice } = require("../lib/fx-json-watch");
+      if (typeof pruneJournals !== "function" || typeof fxJsonNotice !== "function") throw new Error("session start exports are missing");
+      pruneJournals(Date.now());
+      const line = fxJsonNotice(input.session_id ?? null, cwd, Date.now(), "codex");
+      if (line) health = `${line} New fx hook events need trusting once in /hooks.`;
+    } catch (e) {
+      console.error(`[fx] session start: ${message(e) || e}`);
+    }
+  }
   let text;
   try {
-    text = require('../lib/preamble').render({ harness: 'codex', cwd, subagent: input.hook_event_name === 'SubagentStart' });
+    const preamble = require("../lib/preamble");
+    text = preamble.render({ harness: "codex", cwd, subagent: input.hook_event_name === "SubagentStart" });
   } catch {
-    // Say so rather than starting a session that silently has no rules.
-    text = '[fx] PREAMBLE.md could not be read. The fx bootstrap and its always-on '
-         + 'rules are NOT loaded in this session. Do not commit, '
-         + 'and tell the user the plugin is misinstalled.';
+    text = "[fx] PREAMBLE.md could not be read. The fx bootstrap and its always-on rules are NOT loaded in this session. Do not commit, and tell the user the plugin is misinstalled.";
   }
-
+  const lines = [notice, health].filter((l) => l !== null);
   const out = {
     hookSpecificOutput: {
-      hookEventName: input.hook_event_name || 'SessionStart',
-      additionalContext: notice ? `${text.trimEnd()}\n\n${notice}\n` : text,
-    },
+      hookEventName: input.hook_event_name || "SessionStart",
+      additionalContext: lines.length ? `${text.trimEnd()}${lines.map((l) => `
+
+${l}`).join("")}
+` : text
+    }
   };
-  if (notice) out.systemMessage = notice;
+  if (lines.length) out.systemMessage = lines.join("\n");
   process.stdout.write(JSON.stringify(out));
 });

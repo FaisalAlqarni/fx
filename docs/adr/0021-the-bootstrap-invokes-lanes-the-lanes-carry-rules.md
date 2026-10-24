@@ -54,7 +54,7 @@ that table.
 ## Consequences
 
 - Two budgets, both pinned by `lib/preamble.test.js`. The bootstrap alone
-  stays under 3,000 characters: the design target, and the pressure that keeps
+  stays under 3,400 characters (3,000 until the no-rm rule, decision 14 of the fx-judge-hooks design): the design target, and the pressure that keeps
   it a bootstrap. The worst case, with the repo.md note and three plans, stays
   under 9,000: Claude Code's per-hook limit of 10,000, with margin. With one
   part there is no split and no ordering problem.

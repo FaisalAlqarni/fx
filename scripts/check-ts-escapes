@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# Fails on a TypeScript escape hatch that carries no `ts-gate-ok: <reason>` on
+# its line: `any` as a standalone token in code (every type position, and so
+# also a value or key named any), `as any`, @ts-ignore, @ts-expect-error, @ts-nocheck,
+# a JSON.parse call outside lib/json.ts, and any `as` assertion in the
+# trust-boundary parsers (lib/*-input.ts, lib/fx-json.ts, lib/env.ts). An em
+# or en dash anywhere fails, ts-gate-ok or not. Paths
+# are relative to the scanned directory. "any" in a comment or a string is
+# not a finding.
+#
+#     scripts/check-ts-escapes [dir]     (default: src/)
+set -euo pipefail
+DIR="${1:-$(dirname "$0")/../src}"
+DIR="${DIR%/}"
+if [ ! -d "$DIR" ]; then
+  echo "FAIL: $DIR is not a directory"
+  exit 1
+fi
+FILES=()
+while IFS= read -r -d '' f; do FILES+=("$f"); done \
+  < <(find "$DIR" -type f \( -name '*.ts' -o -name '*.cts' -o -name '*.mts' \) -print0 | sort -z)
+if [ "${#FILES[@]}" -eq 0 ]; then
+  echo "FAIL: no TypeScript source found"
+  exit 1
+fi
+
+read -r -d '' PROG <<'AWK' || true
+FNR == 1 {
+  inblock = 0
+  rel = substr(FILENAME, length(dir) + 2)
+  boundary = FILENAME ~ /(^|\/)lib\/([^\/]*-input|fx-json|env)\.ts$/
+  jsonok = FILENAME ~ /(^|\/)lib\/json\.ts$/
+}
+# An em or en dash, as UTF-8 bytes (awk runs under LC_ALL=C); never exempt.
+/\342\200[\223\224]/ { printf "FAIL: %s:%d: em or en dash\n", rel, FNR; bad = 1 }
+/ts-gate-ok: *[^ ]/ { next }
+{
+  tok = ""
+  if ($0 ~ /@ts-ignore/) tok = "@ts-ignore"
+  else if ($0 ~ /@ts-expect-error/) tok = "@ts-expect-error"
+  else if ($0 ~ /@ts-nocheck/) tok = "@ts-nocheck"
+  else {
+    # shortcut: strings and comments are stripped one line at a time (block
+    # comments are tracked across lines), so a multi-line template literal can
+    # still produce a finding; mark it ts-gate-ok.
+    code = $0
+    if (inblock) {
+      if (match(code, /\*\//)) { code = substr(code, RSTART + 2); inblock = 0 } else code = ""
+    }
+    gsub(/"([^"\\]|\\.)*"/, "\"\"", code)
+    gsub(/'([^'\\]|\\.)*'/, "''", code)
+    gsub(/`([^`\\]|\\.)*`/, "``", code)
+    gsub(/\/\*([^*]|\*+[^*\/])*\*+\//, "", code)
+    sub(/\/\/.*/, "", code)
+    if (match(code, /\/\*/)) { code = substr(code, 1, RSTART - 1); inblock = 1 }
+    if (code ~ /^[ \t]*\*/) code = ""
+    if (code ~ /(^|[^A-Za-z0-9_$])as[ \t]+any([^A-Za-z0-9_$]|$)/) tok = "as any"
+    else if (code ~ /(^|[^A-Za-z0-9_$.])any([^A-Za-z0-9_$]|$)/) tok = "any"
+    else if (!jsonok && code ~ /JSON\.parse[ \t]*\(/) tok = "JSON.parse"
+    else if (boundary && code ~ /(^|[^A-Za-z0-9_$])as[ \t]/) tok = "as"
+  }
+  if (tok != "") { printf "FAIL: %s:%d: %s without ts-gate-ok\n", rel, FNR, tok; bad = 1 }
+}
+END { exit bad }
+AWK
+if ! LC_ALL=C awk -v dir="$DIR" "$PROG" ${FILES[@]+"${FILES[@]}"}; then exit 1; fi
+echo "check-ts-escapes: OK (${#FILES[@]} files)"

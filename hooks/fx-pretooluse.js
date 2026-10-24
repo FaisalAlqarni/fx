@@ -1,116 +1,250 @@
 #!/usr/bin/env node
-'use strict';
-// Claude Code: the ONE PreToolUse hook fx registers.
-//
-// ONE ENTRY POINT, ROUTED ON tool_name
-//
-// Matcher `*`, and this file routes on tool_name itself rather than
-// registering a group per tool. Adding a check means adding a branch here,
-// never a second group. Kept for portability, not for a harness limit: this
-// is what lets the same script serve both Claude Code and Codex, which do
-// not share a matcher-group syntax. Per ADR 0018, matcher groups are not
-// capped per plugin on either runtime, so the branch here is a design choice,
-// not a workaround.
-//
-// FAIL CLOSED on the guard, FAIL OPEN on the lane check. They are different
-// kinds of rule: the guard prevents irreversible damage, so a broken guard must
-// refuse; the lane check is advice, so a broken one must not wedge the session.
-// The Agent routing branch is advice-class and fails open, like the lane check.
-
-const path = require('path');
-
+// generated from src/hooks/fx-pretooluse.ts by scripts/build: edit there, not here
+"use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var fs = __toESM(require("fs"));
+var path = __toESM(require("path"));
 function deny(reason) {
-  process.stderr.write(`[fx] ${reason}\n`);
+  process.stderr.write(`[fx] ${reason}
+`);
   process.exit(2);
 }
-
-let inspect, laneCheck;
+function message(e) {
+  return typeof e === "object" && e !== null && "message" in e ? e.message : void 0;
+}
+let inspect;
+let laneCheck;
 try {
-  ({ inspect } = require('../lib/git-guard'));
-  if (typeof inspect !== 'function') throw new Error('inspect is not a function');
+  const guard = require("../lib/git-guard");
+  inspect = guard.inspect;
+  if (typeof inspect !== "function") throw new Error("inspect is not a function");
 } catch (e) {
-  deny(`git guard failed to load (${e.message}). Denying every command until the plugin is repaired.`);
+  deny(`git guard failed to load (${message(e)}). Denying every command until the plugin is repaired.`);
+}
+let parseClaudeHookInput;
+let parseJson;
+try {
+  const hookInput = require("../lib/hook-input");
+  const json = require("../lib/json");
+  ({ parseClaudeHookInput } = hookInput);
+  ({ parseJson } = json);
+  if (typeof parseClaudeHookInput !== "function") throw new Error("parseClaudeHookInput is not a function");
+  if (typeof parseJson !== "function") throw new Error("parseJson is not a function");
+} catch (e) {
+  deny(`hook input parser failed to load (${message(e)}). Denying every call until the plugin is repaired.`);
 }
 try {
-  ({ laneCheck } = require('../lib/lane-check'));
+  const lane = require("../lib/lane-check");
+  ({ laneCheck } = lane);
 } catch {
-  laneCheck = () => null;            // advice only; never block because it is missing
+  laneCheck = () => null;
 }
-
-// Routing is advice and fails open, but the user is told: systemMessage is
-// shown by Claude Code, stderr alone is not.
 let routingOffMsg = null;
 function routingOff(e) {
-  const m = `[fx] dispatch routing off: ${String((e && e.message) || e)}`;
-  process.stderr.write(`${m}\n`);
+  const m = `[fx] dispatch routing off: ${String(message(e) || e)}`;
+  process.stderr.write(`${m}
+`);
   routingOffMsg = m;
 }
-
 let route;
 try {
-  ({ route } = require('../lib/dispatch-route'));
+  const dispatch = require("../lib/dispatch-route");
+  ({ route } = dispatch);
 } catch (e) {
   routingOff(e);
-  route = () => null;                // routing is advice; a broken module passes calls through
+  route = () => null;
 }
-
-process.on('uncaughtException', (e) =>
-  deny(`hook crashed (${e.message}). Denying rather than assuming this is safe.`));
-
-let raw = '';
-process.stdin.on('data', (c) => { raw += c; });
-process.stdin.on('end', () => {
-  let input;
-  try { input = JSON.parse(raw); } catch { process.exit(0); }
-
+let checkEdit = null;
+let editRulesError = null;
+try {
+  const rules = require("../lib/edit-rules");
+  ({ checkEdit } = rules);
+  if (typeof checkEdit !== "function") throw new Error("checkEdit is not a function");
+} catch (e) {
+  editRulesError = e;
+}
+let classifyShell;
+let namesFxState;
+let hardReason;
+let shellRulesError = null;
+try {
+  const rules = require("../lib/shell-rules");
+  ({ classifyShell, namesFxState, hardReason } = rules);
+  if (typeof classifyShell !== "function" || typeof namesFxState !== "function" || typeof hardReason !== "function") {
+    throw new Error("shell-rules is missing an export");
+  }
+} catch (e) {
+  shellRulesError = e;
+}
+let guardShell = null;
+let claudeGuardOutput = null;
+let shellGuardError = null;
+try {
+  const shell = require("../lib/shell-guard");
+  const output = require("../lib/guard-output");
+  ({ guardShell } = shell);
+  ({ claudeGuardOutput } = output);
+  if (typeof guardShell !== "function") throw new Error("guardShell is not a function");
+  if (typeof claudeGuardOutput !== "function") throw new Error("claudeGuardOutput is not a function");
+} catch (e) {
+  shellGuardError = e;
+}
+function emit(stdout, stderr, code) {
+  if (stderr) process.stderr.write(stderr);
+  if (stdout) process.stdout.write(stdout, () => process.exit(code));
+  else process.exit(code);
+}
+let crashLogDir = null;
+try {
+  const paths = require("../lib/fx-paths");
+  crashLogDir = paths.machinePaths().stateDir;
+} catch {
+}
+function describe(e) {
+  try {
+    return String(message(e) ?? e);
+  } catch {
+    return "an error that could not be printed";
+  }
+}
+function shellGuardOff(e, session, cwd) {
+  const m = `[fx] shell guard off: ${describe(e)}`;
+  try {
+    if (crashLogDir === null) throw new Error("no state directory");
+    fs.mkdirSync(crashLogDir, { recursive: true, mode: 448 });
+    const entry = { ts: (/* @__PURE__ */ new Date()).toISOString(), harness: "claude-code", event: "guard", session, cwd, text: "", source: "guard-error", action: "allow", unavailable: m.slice(0, 200) };
+    fs.appendFileSync(path.join(crashLogDir, "decisions.jsonl"), `${JSON.stringify(entry)}
+`, { mode: 384 });
+  } catch {
+  }
+  emit(JSON.stringify({ systemMessage: m, hookSpecificOutput: { hookEventName: "PreToolUse", additionalContext: m } }), `${m}
+`, 0);
+}
+function editRulesOff(e, session, cwd) {
+  const m = `[fx] edit rules off: ${describe(e)}`;
+  try {
+    if (crashLogDir === null) throw new Error("no state directory");
+    fs.mkdirSync(crashLogDir, { recursive: true, mode: 448 });
+    const entry = { ts: (/* @__PURE__ */ new Date()).toISOString(), harness: "claude-code", event: "edit-rule", session, cwd, text: "", source: "error", action: "allow", unavailable: m.slice(0, 200) };
+    fs.appendFileSync(path.join(crashLogDir, "decisions.jsonl"), `${JSON.stringify(entry)}
+`, { mode: 384 });
+  } catch {
+  }
+  return m;
+}
+const crashed = (e) => deny(`hook crashed (${e.message}). Denying rather than assuming this is safe.`);
+process.on("uncaughtException", crashed);
+let raw = "";
+process.stdin.on("data", (c) => {
+  raw += c;
+});
+process.stdin.on("end", () => {
+  let parsed;
+  try {
+    parsed = parseJson(raw);
+  } catch {
+    process.exit(0);
+  }
+  if (parsed === null) deny("hook crashed (Cannot read properties of null (reading 'tool_name')). Denying rather than assuming this is safe.");
+  const r = parseClaudeHookInput(parsed);
+  if (!r.ok) process.exit(0);
+  const input = r.value;
   const tool = input.tool_name;
-  const ti = input.tool_input || {};
+  const ti = input.tool_input;
   const cwd = input.cwd || process.cwd();
-
-  if (tool === 'Bash') {
-    const command = ti.command;
+  if (tool === "Bash") {
+    const command = ti?.command;
     if (!command) process.exit(0);
     let verdict;
     try {
       verdict = inspect(command, cwd);
     } catch (e) {
-      verdict = { allow: false, reason: `git guard failed to evaluate this command (${e.message}). Denying rather than assuming it is safe.` };
+      verdict = { allow: false, reason: `git guard failed to evaluate this command (${message(e)}). Denying rather than assuming it is safe.` };
     }
     if (!verdict.allow) deny(verdict.reason);
-    process.exit(0);
+    if (typeof command !== "string") deny(`the shell command is not a string (${typeof command}), so the guards cannot read it. Denying rather than assuming it is safe.`);
+    if (shellRulesError !== null) deny(`shell rules failed to load (${message(shellRulesError)}). Denying every shell command until the plugin is repaired.`);
+    const hard = classifyShell(command);
+    const hardDeny = hard.kind === "hard-deny" ? hard.reason : null;
+    const off = hardDeny === null ? (e) => shellGuardOff(e, input.session_id ?? null, cwd) : () => emit("", `${hardDeny}
+`, 2);
+    process.removeListener("uncaughtException", crashed);
+    process.on("uncaughtException", off);
+    process.on("unhandledRejection", off);
+    if (!guardShell || !claudeGuardOutput) {
+      off(shellGuardError);
+      return;
+    }
+    const render = claudeGuardOutput;
+    guardShell({ command, cwd, harness: "claude-code", sessionId: input.session_id ?? null, now: Date.now() }).then((d) => {
+      const out = render(hardDeny === null ? d : { action: "deny", reason: hardDeny, source: "hard-rule" });
+      emit(out.stdout, out.stderr, out.exitCode);
+    }, off);
+    return;
   }
-
-  if (tool === 'Write' || tool === 'Edit' || tool === 'MultiEdit' || tool === 'NotebookEdit') {
-    const file = ti.file_path || ti.path || ti.notebook_path;
+  if (tool === "Write" || tool === "Edit" || tool === "MultiEdit" || tool === "NotebookEdit") {
+    const file = ti?.file_path || ti?.path || ti?.notebook_path;
+    if (shellRulesError !== null) deny(`shell rules failed to load (${message(shellRulesError)}). Denying every file write until the plugin is repaired.`);
+    if (typeof file === "string" && namesFxState(path.resolve(cwd, file))) deny(hardReason("fx-state").slice("[fx] ".length));
     let reason = null;
     try {
-      reason = laneCheck(file, cwd);
+      reason = laneCheck(typeof file === "string" ? file : null, cwd);
     } catch {
-      reason = null;                 // advice: a bug here must not block a write
+      reason = null;
     }
     if (reason) deny(reason);
-    process.exit(0);
+    const off = (e) => emit("", `${editRulesOff(e, input.session_id ?? null, cwd)}
+`, 0);
+    process.removeListener("uncaughtException", crashed);
+    process.on("uncaughtException", off);
+    process.on("unhandledRejection", off);
+    if (!checkEdit) {
+      off(editRulesError);
+      return;
+    }
+    checkEdit({ harness: "claude-code", sessionId: input.session_id ?? null, cwd, toolName: tool, toolInput: ti, now: Date.now() }).then((d) => {
+      if (d.action === "refuse") emit("", `${d.reason}
+`, 2);
+      else emit("", "", 0);
+    }, off);
+    return;
   }
-
-  if (tool === 'Agent' || tool === 'Task') {
-    let result = null;
+  if (tool === "Agent" || tool === "Task") {
+    process.removeListener("uncaughtException", crashed);
+    process.on("uncaughtException", () => process.exit(0));
+    let routed = null;
     try {
-      result = route(ti);
+      routed = route(ti);
     } catch (e) {
       routingOff(e);
-      result = null;
     }
-    let payload = '';
-    if (result && typeof result === 'object') {
-      payload = JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', updatedInput: result } });
-    } else if (routingOffMsg) {
-      payload = JSON.stringify({ systemMessage: routingOffMsg });
-    }
-    // exit only after stdout drains: a large prompt can outrun the pipe
-    if (payload) process.stdout.write(payload, () => process.exit(0));
+    let out = null;
+    if (routed) out = { hookSpecificOutput: { hookEventName: "PreToolUse", updatedInput: routed } };
+    else if (routingOffMsg) out = { systemMessage: routingOffMsg };
+    if (out) process.stdout.write(JSON.stringify(out), () => process.exit(0));
     else process.exit(0);
     return;
   }
-
   process.exit(0);
 });

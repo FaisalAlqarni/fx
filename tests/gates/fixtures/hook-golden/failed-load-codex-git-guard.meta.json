@@ -1,0 +1,7 @@
+{
+  "hook": "fx-codex.js",
+  "cwd": "worktree",
+  "broken": "lib/git-guard.js",
+  "exit": 2,
+  "stderr": "[fx] git guard failed to load (load). Denying every command until the plugin is repaired.\n"
+}

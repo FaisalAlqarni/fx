@@ -3,7 +3,8 @@
 fx runs on four harnesses: Claude Code, Codex, opencode 1.x and opencode 2.x.
 Each install is independent: none needs another harness present.
 
-Tested on Claude Code 2.1, Codex CLI 0.155, opencode 1.18 and opencode 2.0.
+Tested on Claude Code 2.1, Codex CLI 0.155 and 0.164, opencode 1.18 and 1.19,
+and opencode 2.0 and 2.1.
 
 - [Claude Code](#claude-code)
 - [Codex](#codex)
@@ -62,7 +63,8 @@ Codex runs a plugin's hooks only after you trust them, so:
 3. Restart Codex once. Roles placed during a session load from the next one.
 
 Until the hooks are trusted, the skills are listed but the bootstrap, the git
-guard and read-only enforcement do not run. If you would rather not trust the
+and shell guards, the edit rules, the Stop check, the nudges and read-only
+enforcement do not run. If you would rather not trust the
 hooks yet, `$fx:fx-setup` in a repository places the same roles without them.
 
 ### Update
@@ -137,7 +139,7 @@ agents and commands itself, exactly as the file route above.
 To track a release, pin a tag:
 
 ```json
-{ "plugin": ["fx@git+https://github.com/FaisalAlqarni/fx.git#v0.2.5"] }
+{ "plugin": ["fx@git+https://github.com/FaisalAlqarni/fx.git#v0.5.0"] }
 ```
 
 Some opencode and bun versions pin a resolved git dependency in a lockfile
@@ -174,10 +176,10 @@ See [Removing fx from opencode](#removing-fx-from-opencode).
 ### If plugins are off
 
 Some opencode setups disable plugins. The installer's files still load
-(skills, agents, commands), but there is no bootstrap, no git guard and no
-lane check. Paste the rendered `PREAMBLE.md` into
-`~/.config/opencode/AGENTS.md` to get the bootstrap back. Nothing replaces the
-guard.
+(skills, agents, commands), but there is no bootstrap, no git or shell guard,
+no edit rules, no Stop reminder, no nudges and no lane check. Paste the
+rendered `PREAMBLE.md` into `~/.config/opencode/AGENTS.md` to get the bootstrap
+back. Nothing replaces the guards.
 
 ---
 
@@ -237,6 +239,10 @@ reason starting `[fx] `. The installed policies are a second layer: they
 refuse the plain spellings of the same commands with opencode's generic
 "Blocked by configuration policy". Either message means fx stopped the
 command.
+
+On 2.x the built-in edit rules run and a breach refuses the edit. The shell
+guard runs in `permission.evaluate`, after the git guard. Details are in the
+Hooks section below.
 
 ### The user-invoked skills
 
@@ -299,10 +305,69 @@ code cannot tell it (domain terms, what "done" means here), and writes
 before any of it lands. On Codex it also places the review roles and reminds
 you to check `/hooks`.
 
+## Hooks (no setup needed)
+
+The git guard, the shell guard, the Stop check, the nudges and the edit rules
+run on code alone and make no network call. The shell guard refuses a short
+list of destructive commands with no override, runs read-only commands and the
+repository's own `.fx.json` commands silently (logging the latter), and runs
+any other command, logging it in the decision log. The built-in edit rules are no em or en dash in
+Markdown, no private key block or vendor-prefixed API key, and no
+merge-conflict marker; each refuses the edit and names the rule and file.
+
+| OS | Decision log and session journals |
+|---|---|
+| Linux, macOS | `$XDG_STATE_HOME/fx`, else `~/.local/state/fx` (`decisions.jsonl`, `sessions/`) |
+| Windows | `%LOCALAPPDATA%\fx` |
+
+The files are mode `0600` on POSIX and stay on the machine.
+
+A repository can turn parts off in `.fx.json`, read from its git top level:
+
+```json
+{ "hooks": { "stop_check": false, "loop_nudge": false, "edit_rules": false } }
+```
+
+`stop_check` and `loop_nudge` turn off the Stop check and the nudges, and
+`edit_rules` the three built-in edit rules. Each defaults to on. The git guard,
+the shell guard's hard rules and the lane check cannot be switched off. A
+`rules` entry in `.fx.json` is ignored.
+
+An agent can edit `.fx.json`, including `hooks.edit_rules`. fx shows a notice
+when its hook switches change during a session and does not stop the change.
+
+On Codex for Windows, the guard is assumed to read the command the PowerShell
+way; that is not yet confirmed.
+
+fx refuses a shell command that names its own state or config directory, and
+a file edit inside it on every harness, because a forged line in a session
+journal would change what the Stop check and the nudges see. This refusal
+fails closed: if fx's rules cannot load, every file edit is refused until the
+plugin is repaired.
+
+**Codex users:** after updating, open `/hooks` and trust fx's hooks again.
+This release added new hook events, and Codex does not run a changed hook
+until you re-trust it.
+
+## Changing fx itself
+
+fx's code is TypeScript under `src/`; the JavaScript next to it is generated
+and committed. Run `npm ci` once, edit `src/`, then run `scripts/build` and
+commit the source and the generated file together. Never edit a file whose
+first line (or second, after a shebang) says `generated from src/...`:
+`scripts/check-generated` fails on it. The `test_one` and `test_scope` commands in
+`.fx.json` do not rebuild for you: they run `scripts/check-generated` first, so
+a test run after editing `src/` without `scripts/build` fails on the drift.
+
 ## Known limits on every harness
 
 - `echo "git reset --hard" | sh` gets past the git guard: it does not read
   text piped into a shell.
+- The built-in edit rules can refuse a harmless edit. In the benchmark
+  (`docs/plans/2026-10-24-judge-across-fx/benchmark.md`, "Offline hooks:
+  decisions") they refused 2 of 14: a CSS class starting `sk-`, which looks
+  like a vendor API key, and a merge-conflict example inside a code fence in a
+  doc.
 - If you also run plugins with overlapping skills, such as superpowers, the
   model may pick theirs. Uninstall them, and check `~/.agents/skills` and
   `~/.claude/skills` for old copies.

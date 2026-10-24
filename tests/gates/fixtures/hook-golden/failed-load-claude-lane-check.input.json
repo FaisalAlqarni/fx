@@ -1,0 +1,1 @@
+{"session_id":"s","cwd":"{{CWD}}","hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"{{CWD}}/src/app.ts","content":"x"}}

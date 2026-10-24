@@ -1,0 +1,118 @@
+// Run: node tests/gates/release-version.test.js [<repo>]
+//
+// A Claude Code plugin update only lands when the version changes (measured in
+// the task 13 review, docs/plans/2026-09-21-multi-harness/). A branch that
+// changes what the plugin ships and keeps the base branch's version merges
+// cleanly and then never reaches an installed copy. This gate fails that
+// branch: shipped files differ from the merge-base with the base branch, and
+// .claude-plugin/plugin.json's version is not greater than the base's.
+//
+// Shipped means every tracked path except the ones no runtime loads: docs/,
+// tests/, tasks/, .github/ and the human-facing root documents. The working
+// tree is compared, not HEAD, so the gate says the same thing before and after
+// the commit. The version sync across the three manifests is
+// tests/gates/codex-manifest.test.js's job, not this one's.
+//
+// No base branch to compare (a shallow CI clone, a fresh repo): skipped, and
+// it says so.
+import * as assert from 'assert';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import { execFileSync, spawnSync } from 'child_process';
+
+const BASES = ['main', 'master', 'origin/main', 'origin/master'];
+const NOT_SHIPPED = ['docs', 'tests', 'tasks', '.github', 'README.md', 'INSTALL.md', 'SURFACE.md'];
+const MANIFEST = '.claude-plugin/plugin.json';
+
+const git = (cwd: string, ...args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
+const ok = (cwd: string, ...args: string[]) => spawnSync('git', args, { cwd }).status === 0;
+
+// ponytail: plain MAJOR.MINOR.PATCH only; a pre-release suffix compares as its numeric part.
+const newer = (a: string, b: string): boolean => {
+  const [x, y] = [a, b].map((v) => v.split(/[.-]/).slice(0, 3).map(Number));
+  if (x === undefined || y === undefined) return false;
+  for (let i = 0; i < 3; i++) {
+    const p = x[i], q = y[i];
+    if (p !== q) return p !== undefined && q !== undefined && p > q;
+  }
+  return false;
+};
+
+// Returns { skipped: reason } or { errors: [...] }.
+interface Check { skipped?: string; errors?: string[] }
+
+function releaseCheck(repo: string): Check {
+  const base = BASES.find((b) => ok(repo, 'rev-parse', '--verify', '--quiet', `${b}^{commit}`));
+  if (!base) return { skipped: 'no base branch to compare' };
+  const mb = git(repo, 'merge-base', base, 'HEAD');
+  const changed = !ok(repo, 'diff', '--quiet', mb, '--', '.', ...NOT_SHIPPED.map((p) => `:!${p}`));
+  if (!changed) return { errors: [] };
+  if (!ok(repo, 'cat-file', '-e', `${mb}:${MANIFEST}`)) return { skipped: `no ${MANIFEST} at the merge-base ${mb.slice(0, 7)}` };
+  const was = JSON.parse(git(repo, 'show', `${mb}:${MANIFEST}`)).version; // ts-gate-ok: the test parses a repository file
+  const now = JSON.parse(fs.readFileSync(path.join(repo, MANIFEST), 'utf8')).version; // ts-gate-ok: the test parses a repository file
+  return { errors: newer(now, was) ? [] : [
+    `shipped files differ from ${base} (merge-base ${mb.slice(0, 7)}) but ${MANIFEST} is ${now}, not greater than ${was}: bump the version or the update never lands`,
+  ] };
+}
+
+// Fixture: a base branch at 0.1.0, a feature branch off it.
+interface Scenario { version: string; file: string }
+
+function fixture(dir: string, { version, file }: Scenario) {
+  const g = (...a: string[]) => git(dir, '-c', 'user.name=fx', '-c', 'user.email=fx@example.invalid', ...a);
+  fs.mkdirSync(path.join(dir, '.claude-plugin'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'skills'));
+  fs.mkdirSync(path.join(dir, 'docs'));
+  const write = (rel: string, text: string) => fs.writeFileSync(path.join(dir, rel), text);
+  write(MANIFEST, JSON.stringify({ version: '0.1.0' }));
+  write('skills/a.md', 'one\n');
+  write('docs/a.md', 'one\n');
+  g('init', '-q', '-b', 'main');
+  g('add', '.');
+  g('commit', '-q', '-m', 'base');
+  g('checkout', '-q', '-b', 'feat');
+  write(file, 'two\n');
+  write(MANIFEST, JSON.stringify({ version }));
+  g('commit', '-q', '-am', 'change');
+}
+
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-release-version-'));
+try {
+  const at = (name: string, opts: Scenario) => { const d = path.join(tmp, name); fs.mkdirSync(d); fixture(d, opts); return releaseCheck(d); };
+
+  const same = at('same', { version: '0.1.0', file: 'skills/a.md' });
+  assert.strictEqual(same.errors?.length, 1, `a shipped change at the base version fails: ${JSON.stringify(same)}`);
+  assert.deepStrictEqual(at('lower', { version: '0.0.9', file: 'skills/a.md' }).errors?.length, 1, 'a lower version fails');
+  assert.deepStrictEqual(at('bumped', { version: '0.1.1', file: 'skills/a.md' }), { errors: [] }, 'a bumped version passes');
+  assert.deepStrictEqual(at('docs', { version: '0.1.0', file: 'docs/a.md' }), { errors: [] }, 'a docs-only change needs no bump');
+  assert.ok(newer('0.10.0', '0.9.0'), 'versions compare numerically');
+
+  const bare = path.join(tmp, 'bare');
+  fs.mkdirSync(bare);
+  git(bare, 'init', '-q', '-b', 'feat');
+  assert.ok(releaseCheck(bare).skipped, 'no base branch skips');
+
+  // A merge-base with no manifest yet (the plugin is new on this branch) has
+  // no version to exceed: skipped with a reason, never an uncaught throw.
+  const fresh = path.join(tmp, 'fresh');
+  fs.mkdirSync(fresh);
+  const g = (...a: string[]) => git(fresh, '-c', 'user.name=fx', '-c', 'user.email=fx@example.invalid', ...a);
+  fs.writeFileSync(path.join(fresh, 'a.md'), 'one\n');
+  g('init', '-q', '-b', 'main'); g('add', '.'); g('commit', '-q', '-m', 'base');
+  g('checkout', '-q', '-b', 'feat');
+  fs.mkdirSync(path.join(fresh, '.claude-plugin'));
+  fs.writeFileSync(path.join(fresh, MANIFEST), JSON.stringify({ version: '0.1.0' }));
+  g('add', '.'); g('commit', '-q', '-m', 'add manifest');
+  assert.match(String(releaseCheck(fresh).skipped), /no .*plugin\.json/, 'a merge-base without a manifest skips, and says why');
+} finally {
+  fs.rmSync(tmp, { recursive: true, force: true });
+}
+
+// This tree, or the repository named on the command line.
+const root = process.argv[2] || path.join(__dirname, '..', '..');
+const here = releaseCheck(root);
+if (here.skipped) console.log(`release-version.test.js: skipped on this tree (${here.skipped})`);
+else assert.deepStrictEqual(here.errors, [], (here.errors ?? []).join('\n'));
+
+console.log('release-version.test.js: OK');

@@ -1,0 +1,15 @@
+Lens: silent-failure, 5 findings
+
+The fail-open swallows are mostly sound. `logDecision` swallows its own errors with a stderr line, so a log failure does not drop the health line. `pruneJournals` never throws. Both hooks read the preamble outside the health `try`, so a crash in the health path cannot drop the preamble or the existing role-planting notice. Four gaps remain. Nothing is Critical.
+
+1. [Important] `/development/fx/.worktrees/fx-judge-hooks/src/hooks/fx-context.ts:553` and `fx-codex.ts:502`: a crash in the health path leaves a trace only on stderr, so a user whose judge is dead sees nothing. The catch covers a failed `require`, an exports guard that throws, and anything else thrown inside `judgeHealth`. It writes one stderr line and returns null. On an exit-0 hook, Claude Code and Codex generally do not show stderr to the user. I did not verify this against either runtime. The user also gets no health line and no decision-log entry. A configured judge that is down therefore looks the same as a healthy one, and the check meant to say so is the thing that failed. The line this task adds is the only channel the user can see, so the failure should leave a record in `decisions.jsonl` (`event: 'health'`, an error action). `judge-health.ts:709` has the same hole: its catch also leaves no decision-log entry.
+
+2. [Minor] `/development/fx/.worktrees/fx-judge-hooks/src/hooks/fx-context.ts:548` and `fx-codex.ts:495`: `journal` and `judge-health` are loaded and run in one `try`, so a broken `lib/journal` skips the probe. A dead judge then goes unreported because of an unrelated module. The brief asks for typed `require` calls inside `try`, but not for one shared `try`. Give each its own `try`, so the prune cannot cost the health line.
+
+3. [Minor] `/development/fx/.worktrees/fx-judge-hooks/src/lib/judge-health.ts:697-705`: the log entry and the line keep only `r.reason` and drop `r.detail`. `bad-response`, `http-500` and `bad-config` then cannot be diagnosed from the log. Add `detail` to the decision-log entry. It is already redacted by `logDecision`.
+
+4. [Minor] `/development/fx/.worktrees/fx-judge-hooks/src/lib/journal.ts:78` and `:80` (task 02 code, called from this diff): both catches are empty with no stderr line. Design section 3 says a read or write failure "goes to stderr". An `EACCES` or read-only state directory means journals never get pruned, and nobody sees why. Only `ENOENT` on the sessions directory is a legitimate silent case. This predates the diff, but task 04 is the first caller on a real path, so flag it for triage.
+
+5. [Minor] `/development/fx/.worktrees/fx-judge-hooks/src/lib/judge-health.ts:685`: the default parameter `judge = loadJudge()` runs outside the `try`, so a throw there (for example from `machinePaths()`) makes the promise reject. That breaks the "never rejects" contract. Both hooks catch it today, so nothing is lost. The contract is still false, and any future caller without a `try` will crash.
+
+The tests do not cover the catch paths: no case breaks a module load, and none asserts the stderr line. Finding 1 would go unnoticed without one.

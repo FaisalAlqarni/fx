@@ -1,25 +1,87 @@
 #!/usr/bin/env bash
-# codex/agents/*.toml is generated from agents/*.md by scripts/gen-codex-agents
-# and committed. This regenerates into a scratch directory and diffs it
-# against what is committed, so a hand-edited or stale TOML is caught before
-# it ships planted into someone's Codex home with content the source no
-# longer says.
+# Two generated trees are committed, and each is regenerated into a scratch
+# directory and compared with what is committed:
+#
+# - codex/agents/*.toml, from agents/*.md by scripts/gen-codex-agents, so a
+#   hand-edited or stale TOML is caught before it ships planted into someone's
+#   Codex home with content the source no longer says.
+# - the JavaScript scripts/build writes from src/, compared by content and by
+#   executable bit (diff -rq ignores modes, and a hook or script that lost its
+#   bit stops running).
 #
 #     scripts/check-generated
+#     scripts/check-generated --compare <built-dir> <committed-root>
 set -euo pipefail
+
+HEADER='^// generated from src/[^ ]* by scripts/build: edit there, not here$'
+
+# Every file under <built> must match <committed> in content and executable
+# bit, and every file tracked in <committed> (a git work tree) that carries
+# the generated header must have been built.
+compare() {
+  local built="$1" root="$2" f n=0 drift="" modes="" orphans="" headed hdr
+  while IFS= read -r -d '' f; do
+    f="${f#./}"
+    n=$((n + 1))
+    cmp -s "$built/$f" "$root/$f" || drift+="  $f"$'\n'
+    [ -e "$root/$f" ] || continue
+    if [ -x "$built/$f" ] && [ ! -x "$root/$f" ]; then modes+="FAIL: $f should be executable"$'\n'; fi
+    if [ ! -x "$built/$f" ] && [ -x "$root/$f" ]; then modes+="FAIL: $f should not be executable"$'\n'; fi
+  done < <(cd "$built" && find . -type f -print0 | sort -z)
+  if [ "$n" -eq 0 ]; then
+    echo "FAIL: scripts/build wrote no files"
+    return 1
+  fi
+  # git grep exits 1 for no match; anything above that is trouble.
+  headed="$(cd "$root" && git grep -l -e "$HEADER")" || [ $? -eq 1 ] || {
+    echo "FAIL: could not list the tracked files in $root"
+    return 1
+  }
+  while IFS= read -r f; do
+    [ -n "$f" ] && [ ! -e "$built/$f" ] || continue
+    hdr="$(head -n1 "$root/$f")"
+    case "$hdr" in '#!'*) hdr="$(sed -n 2p "$root/$f")" ;; esac
+    [[ $hdr =~ $HEADER ]] && orphans+="FAIL: $f carries the generated header but scripts/build does not write it"$'\n'
+  done <<<"$headed"
+  [ -z "$drift$modes$orphans" ] && return 0
+  if [ -n "$drift" ]; then
+    echo "FAIL: generated JavaScript has drifted from src/"
+    printf '%s' "$drift"
+  fi
+  printf '%s%s' "$modes" "$orphans"
+  echo "Edit src/, run scripts/build and commit the result."
+  return 1
+}
+
+if [ "${1:-}" = "--compare" ]; then
+  compare "${2:?--compare needs <built-dir>}" "${3:?--compare needs <committed-root>}"
+  echo "check-generated: OK"
+  exit 0
+fi
+
 cd "$(dirname "$0")/.."
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-scripts/gen-codex-agents "$TMP" > /dev/null
+scripts/gen-codex-agents "$TMP/codex" > /dev/null
 
-DIFF="$(diff -rq codex/agents "$TMP" || true)"
-if [ -n "$DIFF" ]; then
+# diff exits 1 for differences and 2 for trouble (a missing directory).
+rc=0
+DIFF="$(diff -rq codex/agents "$TMP/codex" 2>&1)" || rc=$?
+if [ "$rc" -gt 1 ]; then
+  echo "FAIL: could not compare codex/agents with a fresh generation"
+  echo "$DIFF"
+  exit 1
+fi
+if [ "$rc" -eq 1 ]; then
   echo "FAIL: codex/agents has drifted from a fresh generation of agents/*.md"
   echo "$DIFF"
   echo "Run scripts/gen-codex-agents and commit the result."
   exit 1
 fi
+
+scripts/build --out "$TMP/js"
+compare "$TMP/js" .
 
 echo "check-generated: OK"

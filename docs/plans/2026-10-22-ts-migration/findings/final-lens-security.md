@@ -1,0 +1,8 @@
+Lens: security, branch pass. 4 findings, all Minor.
+
+1. [Minor] src/scripts/test-scope.ts line 114: commands run through spawnSync with shell true, built from path arguments (lines 55, 58, 60); the only check is existsSync (line 53), which accepts ../ and shell metacharacters. Pre-existing (old script used shell true); builtPath (line 37) adds no validation. Fix: argv spawn without a shell, or reject paths leaving ROOT or outside a safe character set.
+2. [Minor] .fx.json line 4: test_one's command substitution for --built-path is unquoted inside bash -c, adding word splitting and globbing to the already raw {file} splice. Fix: quote the substitution; better, pass {file} as a positional argument.
+3. [Minor] scripts/check-handwritten-js lines 194 to 198 with scripts/check-generated lines 110 to 118: a tracked JS file carrying a header naming an existing src/ file passes both gates without its source mapping to its own path, so check-generated never compares it. Fix: require the header's source to map to this file's path by the build rule.
+4. [Minor] src/tests/conformance/lib/mcp-probe-server.ts line 59: write_marker truncates any resolved path, absolute or ../, despite the comment claiming scratch confinement. Pre-existing. Fix: refuse paths outside the scratch root.
+
+Checked, nothing found: openrouter.ts key handling (no file or print; leaks fails closed exit 3); build-cost.ts spawns nothing; compile-brief.ts reads plan-author inputs; scripts/build argv esbuild calls and NUL-delimited find; check-types and check-ts-escapes; package-lock pinned with integrity; fx-pretooluse.ts lines 46 to 56 refuse on a missing parser export.

@@ -1,0 +1,466 @@
+#!/usr/bin/env node
+
+// Reports what a Claude Code build cost from a controller transcript:
+// deduplicated API calls and tokens, subagent cost per dispatch type,
+// controller context growth per completed task, and wall-clock. See
+// docs/plans/2026-09-23-lean-build/tasks/01-build-cost-report.md for the
+// exact definitions this implements.
+
+import * as fs from 'fs';
+import * as path from 'path';
+import { parseJson } from '../lib/json.js';
+
+interface Usage { input_tokens?: number; cache_read_input_tokens?: number; cache_creation_input_tokens?: number; output_tokens?: number }
+interface Input { command?: string; new_string?: string; content?: string; file_path?: string; skill?: string }
+interface Block { type?: string; text?: string; name?: string; id?: string; tool_use_id?: string; input?: Input }
+interface Hunk { lines?: string[] }
+interface DiffFile { filePath?: string; hunks?: Hunk[] }
+interface BashEditDiff { files?: DiffFile[] }
+interface Rec {
+  __line: number;
+  type?: string;
+  requestId?: string;
+  uuid?: string;
+  timestamp?: string | null;
+  message?: { id?: string; usage?: Usage; content?: string | Block[] };
+  toolUseResult?: { bashEditDiff?: BashEditDiff };
+}
+interface Tokens { tokens: number; context: number }
+interface Call { timestamp: string | null | undefined; usage: Tokens | null; content: Block[] }
+interface Meta { agentType?: unknown }
+
+// shortcut: checks that a value is an object, not the shape of its fields; the
+// code below reads them defensively, as it did before the TypeScript port.
+function isObj(v: unknown): v is object {
+  return typeof v === 'object' && v !== null;
+}
+
+// A missing timestamp is NaN; a null one is new Date(null), the epoch, as before the port.
+function toMs(ts: string | null | undefined): number {
+  return ts === undefined ? NaN : new Date(ts ?? 0).getTime();
+}
+
+function errCode(e: unknown): string | undefined {
+  return isObj(e) && 'code' in e && typeof e.code === 'string' ? e.code : undefined;
+}
+
+class CliError extends Error {}
+
+// Throws; the top level exits 2 with the reason. --task catches it instead,
+// because its contract is one line and exit 0.
+function fail(reason: string): never {
+  throw new CliError(reason);
+}
+
+// Returns parsed records with a `__line` (1-based) on each, or null if the
+// file cannot be read at all. A malformed line exits 2 naming the file and
+// line number instead of throwing a raw parse error.
+function readRecords(file: string): Rec[] | null {
+  let raw: string;
+  try {
+    raw = fs.readFileSync(file, 'utf8');
+  } catch {
+    return null;
+  }
+  const lines = raw.split('\n');
+  const records: Rec[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] ?? '';
+    if (line.trim().length === 0) continue;
+    let parsed: unknown;
+    try {
+      parsed = parseJson(line);
+    } catch {
+      fail(`malformed JSON: ${file}:${i + 1}`);
+    }
+    if (!isObj(parsed)) fail(`malformed JSON: ${file}:${i + 1}`);
+    records.push({ ...parsed, __line: i + 1 });
+  }
+  return records;
+}
+
+function callKey(rec: Rec): string | undefined {
+  return rec.requestId || (rec.message && rec.message.id) || rec.uuid;
+}
+
+function usageOf(u: Usage | undefined): Tokens | null {
+  if (!u) return null;
+  const input = u.input_tokens || 0;
+  const cacheRead = u.cache_read_input_tokens || 0;
+  const cacheCreate = u.cache_creation_input_tokens || 0;
+  const output = u.output_tokens || 0;
+  return { tokens: input + cacheRead + cacheCreate + output, context: input + cacheRead + cacheCreate };
+}
+
+// Dedupes assistant records into calls, keyed per the task's fallback order.
+// A call's usage comes from the first record of the call that carries one (a
+// leading content-only record must not zero it out); its content is every
+// tool_use block across all records sharing the key (Claude Code splits one
+// call's blocks across several JSONL lines).
+function dedupCalls(records: Rec[], file: string): Call[] {
+  const calls: Call[] = [];
+  const byKey = new Map<string, Call>();
+  for (const rec of records) {
+    if (rec.type !== 'assistant') continue;
+    const key = callKey(rec);
+    if (key == null) fail(`assistant record has no requestId, message.id, or uuid: ${file}:${rec.__line}`);
+    let call = byKey.get(key);
+    const u = usageOf(rec.message && rec.message.usage);
+    if (!call) {
+      call = { timestamp: rec.timestamp, usage: u, content: [] };
+      byKey.set(key, call);
+      calls.push(call);
+    } else if (!call.usage && u) {
+      call.usage = u;
+    }
+    const blocks = rec.message && rec.message.content;
+    if (Array.isArray(blocks)) for (const block of blocks) call.content.push(block);
+  }
+  return calls;
+}
+
+// Post-task-08 fix-loop dispatches copy ledger lines with
+// `sed ... | grep '^Task ' | tee -a state.md`: no '>>' in the command, and no
+// ledger text in it either, since the text is produced by running it against
+// the findings file, not written in the command string. The harness records
+// what a Bash call actually changed as toolUseResult.bashEditDiff on the
+// sibling tool_result record; this reads the real appended lines from there,
+// covering `tee -a`, a shell loop with variable expansion, or anything else
+// a command could do to the file.
+function stateMdAddedLines(bashEditDiff: BashEditDiff | undefined): string {
+  if (!bashEditDiff || !Array.isArray(bashEditDiff.files)) return '';
+  const file = bashEditDiff.files.find((f) => (f.filePath || '').endsWith('state.md'));
+  if (!file) return '';
+  const added: string[] = [];
+  for (const hunk of file.hunks || []) {
+    for (const line of hunk.lines || []) {
+      if (line.startsWith('+')) added.push(line.slice(1));
+    }
+  }
+  return added.join('\n');
+}
+
+// Maps a Bash tool_use id to the state.md text it actually added, read from
+// the tool_result record's toolUseResult.bashEditDiff.
+function buildLedgerDiffMap(records: Rec[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const rec of records) {
+    if (rec.type !== 'user') continue;
+    const tur = rec.toolUseResult;
+    if (!tur || !tur.bashEditDiff) continue;
+    const text = stateMdAddedLines(tur.bashEditDiff);
+    if (!text) continue;
+    const content = rec.message && rec.message.content;
+    if (!Array.isArray(content)) continue;
+    for (const b of content) {
+      if (b && b.type === 'tool_result' && b.tool_use_id) map.set(b.tool_use_id, text);
+    }
+  }
+  return map;
+}
+
+// A Bash append to a ledger by command shape: `>> state.md` (cat, printf,
+// echo) or `tee -a` / `tee --append state.md`, any directory prefix. Kept
+// beside bashEditDiff, which a harness may not record.
+const LEDGER_APPEND_RE = /(?:>>|\btee\s+(?:-[a-zA-Z]*a[a-zA-Z]*|--append)(?:\s+-\S+)*)\s*["']?[^\s"'|;&<>]*state\.md\b(?!\.)/;
+
+function isLedgerWrite(block: Block | undefined, diffMap: Map<string, string>): boolean {
+  if (!block || block.type !== 'tool_use') return false;
+  const input = block.input || {};
+  if (block.name === 'Bash') {
+    return LEDGER_APPEND_RE.test(input.command || '') || diffMap.has(block.id ?? '');
+  }
+  if (block.name === 'Edit' || block.name === 'Write') {
+    return (input.file_path || '').endsWith('state.md');
+  }
+  return false;
+}
+
+function ledgerText(block: Block, diffMap: Map<string, string>): string {
+  const input = block.input || {};
+  return [input.command, input.new_string, input.content, diffMap.get(block.id ?? '')].filter(Boolean).join('\n');
+}
+
+const COMPLETE_RE = /Task (\d\d): complete \(commits/g;
+const FIX_ROUND_RE = /Task (\d\d): fix round (\d)\/5/g;
+
+// tasksCompleted: distinct task numbers with a completion ledger write.
+// ctxGrowthPerTask: context spread between the first and last completion
+// call, in the order tasks were completed.
+// fixRounds: per task, the highest round seen, summed over tasks.
+function analyzeLedger(calls: Call[], diffMap: Map<string, string>) {
+  const completions: number[] = [];
+  const seen = new Set<string>();
+  const fixMax = new Map<string, number>();
+
+  for (const call of calls) {
+    for (const block of call.content) {
+      if (!isLedgerWrite(block, diffMap)) continue;
+      const text = ledgerText(block, diffMap);
+      let m: RegExpExecArray | null;
+      COMPLETE_RE.lastIndex = 0;
+      while ((m = COMPLETE_RE.exec(text))) {
+        const done = m[1] ?? '';
+        if (!seen.has(done)) {
+          seen.add(done);
+          completions.push(call.usage ? call.usage.context : 0);
+        }
+      }
+      FIX_ROUND_RE.lastIndex = 0;
+      while ((m = FIX_ROUND_RE.exec(text))) {
+        const nn = m[1] ?? '';
+        const round = Number(m[2]);
+        fixMax.set(nn, Math.max(fixMax.get(nn) || 0, round));
+      }
+    }
+  }
+
+  const tasksCompleted = completions.length;
+  const ctxGrowthPerTask = tasksCompleted >= 2
+    ? ((completions[completions.length - 1] ?? 0) - (completions[0] ?? 0)) / (tasksCompleted - 1)
+    : null;
+  let fixRounds = 0;
+  for (const r of fixMax.values()) fixRounds += r;
+  return { tasksCompleted, ctxGrowthPerTask, fixRounds };
+}
+
+function median(nums: number[]): number {
+  if (nums.length === 0) return 0;
+  const s = [...nums].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? (s[mid] ?? 0) : ((s[mid - 1] ?? 0) + (s[mid] ?? 0)) / 2;
+}
+
+function p90(nums: number[]): number {
+  if (nums.length === 0) return 0;
+  const s = [...nums].sort((a, b) => a - b);
+  return s[Math.min(s.length - 1, Math.ceil(0.9 * s.length) - 1)] ?? 0;
+}
+
+function textOf(rec: Rec): string {
+  const content = rec.message && rec.message.content;
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content.filter((b) => b && b.type === 'text' && typeof b.text === 'string').map((b) => b.text).join('\n');
+  }
+  return '';
+}
+
+// Classifies a subagent file by its first user message, using each dispatch
+// template's opening line. Order matters: re-review and the branch reviewer
+// both contain "You are reviewing"-adjacent text, so the narrower matches
+// come first.
+//
+// Claude Code writes agent-<id>.meta.json beside each subagent transcript,
+// naming the agentType it was dispatched as. When present it decides lens
+// outright (fx:fx-lens-*), and a non-lens agent never falls into lens on the
+// prose regex: a fix-wave implementer that quotes lens findings was counted
+// as a lens (final review, broad 2).
+function readMeta(subFile: string): Meta | null {
+  try {
+    const meta = parseJson(fs.readFileSync(subFile.replace(/\.jsonl$/, '.meta.json'), 'utf8'));
+    return isObj(meta) ? meta : null;
+  } catch {
+    return null;
+  }
+}
+
+function classify(records: Rec[], meta: Meta | null): string {
+  const agentType = meta && typeof meta.agentType === 'string' ? meta.agentType : null;
+  if (agentType && agentType.startsWith('fx:fx-lens-')) return 'lens';
+  const firstUser = records.find((r) => r.type === 'user');
+  const text = firstUser ? textOf(firstUser) : '';
+  // Task 08 wraps these dispatches as "your operating rules are the <role>
+  // template at <path>" rather than pasting the template's own opening line,
+  // so the narrower, role-naming forms are checked before the generic ones.
+  if (/You are re-reviewing/.test(text) || /re-review template/i.test(text) || /scoped re-reviewer/i.test(text)) return 're-review';
+  if (/You are reviewing/.test(text) || /You are a senior code reviewer/.test(text)
+    || /task reviewer template/i.test(text) || /branch reviewer template/i.test(text)
+    || /broad whole-branch reviewer/i.test(text)) return 'reviewer';
+  if (/You are implementing task/.test(text) || /You are the implementer for/.test(text)) return 'implementer';
+  if (/coverage audit/i.test(text)) return 'coverage';
+  if (!agentType && /security|database|accessibility|a11y|silent.failure|pipeline/i.test(text)) return 'lens';
+  return 'other';
+}
+
+function timestamps(records: Rec[]): number[] {
+  return records.map((r) => toMs(r.timestamp)).filter((t) => !Number.isNaN(t));
+}
+
+// One ledger line for one task: controller calls from `since` on, plus every
+// subagent whose first user message names the task. Always exits 0.
+function taskLine(nn: string | undefined, since: string, argFile: string | undefined): string {
+  const head = `Task ${nn}:`;
+  try {
+    return taskCost(nn, since, argFile, head);
+  } catch (e) {
+    if (!(e instanceof CliError)) throw e;
+    return `${head} cost unavailable (${e.message})`;
+  }
+}
+
+function taskCost(nn: string | undefined, since: string, argFile: string | undefined, head: string): string {
+  let file = argFile;
+  if (!file) {
+    try {
+      file = fs.readFileSync(path.join(process.cwd(), '.fx', 'transcript-path'), 'utf8').trim();
+    } catch {
+      return `${head} cost unavailable (no transcript recorded)`;
+    }
+  }
+  const records = readRecords(file);
+  if (records === null) return `${head} cost unavailable (transcript not found: ${file})`;
+  const sinceMs = new Date(since).getTime();
+  if (Number.isNaN(sinceMs)) fail(`--since is not an ISO-8601 time: ${since}`);
+  const stamps = timestamps(records);
+  if (stamps.length === 0) fail(`no timestamps in transcript: ${file}`);
+  const sum = (calls: Call[]) => calls.reduce((n, c) => n + (c.usage ? c.usage.tokens : 0), 0);
+  const controllerCalls = dedupCalls(records, file);
+  const diffMap = buildLedgerDiffMap(records);
+  const ledgerOf = (call: Call) => call.content.filter((b) => isLedgerWrite(b, diffMap)).map((b) => ledgerText(b, diffMap)).join('\n');
+  const ledgerHas = (call: Call, re: RegExp) => re.test(ledgerOf(call));
+  // The path slot is shared per directory, so the last session to start wins.
+  if (!controllerCalls.some((c) => ledgerHas(c, new RegExp(`Task ${nn}: dispatched`)))) {
+    return `${head} cost unavailable (transcript is another session's)`;
+  }
+  // The window runs from `since` to this task's completion write, or to the
+  // next task's dispatch write if that comes first, else to the transcript's end.
+  let endMs = Infinity;
+  for (const c of controllerCalls) {
+    const t = toMs(c.timestamp);
+    if (t < sinceMs) continue;
+    const text = ledgerOf(c);
+    if (text.includes(`Task ${nn}: complete`) || [...text.matchAll(/Task (\d\d): dispatched/g)].some((m) => m[1] !== nn)) { endMs = t; break; }
+  }
+  const inWindow = (c: Call) => { const t = toMs(c.timestamp); return t >= sinceMs && t <= endMs; };
+  let tokens = sum(controllerCalls.filter(inWindow));
+  const mine = new RegExp(`\\btask:? ${nn}\\b`, 'i');
+  const subDir = path.join(path.dirname(file), path.basename(file, '.jsonl'), 'subagents');
+  let subFiles: string[] = [];
+  try {
+    subFiles = fs.readdirSync(subDir).filter((f) => f.endsWith('.jsonl')).sort();
+  } catch (e) {
+    if (errCode(e) !== 'ENOENT') fail(`cannot read subagents directory ${subDir}: ${errCode(e)}`);
+  }
+  let dispatches = 0, impl = 0, tdd = 0;
+  for (const f of subFiles) {
+    const subFile = path.join(subDir, f);
+    const sub = readRecords(subFile);
+    if (sub === null) fail(`cannot read subagent file: ${subFile}`);
+    const first = sub.find((r) => r.type === 'user');
+    if (!first || !mine.test(textOf(first))) continue;
+    const startMs = toMs(first.timestamp);
+    if (startMs < sinceMs || startMs > endMs) continue;
+    dispatches++;
+    const calls = dedupCalls(sub, subFile).filter(inWindow);
+    tokens += sum(calls);
+    if (classify(sub, readMeta(subFile)) === 'implementer') {
+      impl++;
+      if (calls.some((c) => c.content.some((b) => b.type === 'tool_use' && b.name === 'Skill' && /fx-tdd$/.test(b.input?.skill || '')))) tdd++;
+    }
+  }
+  const minutes = Math.round(((Number.isFinite(endMs) ? endMs : Math.max(...stamps)) - sinceMs) / 60000);
+  return `${head} cost ${tokens} tokens, ${minutes} min, ${dispatches} dispatches, fx-tdd ${tdd}/${impl}`;
+}
+
+function main(): void {
+  const args = process.argv.slice(2);
+  const opt = (name: string): string | null | undefined => { const i = args.indexOf(name); return i < 0 ? null : args.splice(i, 2)[1]; };
+  const task = opt('--task');
+  if (task !== null) {
+    const since = opt('--since');
+    if (!since) fail('usage: build-cost --task <NN> --since <ISO-8601> [<controller.jsonl>]');
+    process.stdout.write(taskLine(task, since, args[0]) + '\n');
+    return;
+  }
+  const jsonOut = args.includes('--json');
+  const file = args.find((a) => a !== '--json');
+  if (!file) fail('usage: build-cost <controller.jsonl> [--json]');
+
+  const records = readRecords(file);
+  if (records === null) fail(`file not found: ${file}`);
+  const assistantRecords = records.filter((r) => r.type === 'assistant');
+  if (assistantRecords.length === 0) fail(`no assistant records: ${file}`);
+  if (!assistantRecords.some((r) => r.message && r.message.usage)) fail(`no record carries usage: ${file}`);
+
+  const controllerCalls = dedupCalls(records, file);
+  const contexts = controllerCalls.map((c) => (c.usage ? c.usage.context : 0));
+  const ledgerDiffMap = buildLedgerDiffMap(records);
+  const { tasksCompleted, ctxGrowthPerTask, fixRounds } = analyzeLedger(controllerCalls, ledgerDiffMap);
+
+  const callTimestamps = controllerCalls.map((c) => toMs(c.timestamp)).sort((a, b) => a - b);
+  let controllerActiveMs = 0;
+  for (let i = 1; i < callTimestamps.length; i++) {
+    const gap = (callTimestamps[i] ?? 0) - (callTimestamps[i - 1] ?? 0);
+    if (gap < 120000) controllerActiveMs += gap;
+  }
+
+  const controller = {
+    calls: controllerCalls.length,
+    tokens: controllerCalls.reduce((sum, c) => sum + (c.usage ? c.usage.tokens : 0), 0),
+    ctxMedian: median(contexts),
+    ctxP90: p90(contexts),
+    tasksCompleted,
+    ctxGrowthPerTask,
+    fixRounds,
+  };
+
+  const sessionDir = path.join(path.dirname(file), path.basename(file, '.jsonl'), 'subagents');
+  let subFiles: string[] = [];
+  try {
+    subFiles = fs.readdirSync(sessionDir).filter((f) => f.endsWith('.jsonl')).sort().map((f) => path.join(sessionDir, f));
+  } catch (e) {
+    if (errCode(e) !== 'ENOENT') fail(`cannot read subagents directory ${sessionDir}: ${errCode(e)}`);
+    subFiles = [];
+  }
+
+  const byType = new Map<string, { count: number; tokens: number; durations: number[] }>();
+  let allTimestamps = timestamps(records);
+
+  for (const subFile of subFiles) {
+    const subRecords = readRecords(subFile);
+    if (subRecords === null) fail(`cannot read subagent file: ${subFile}`);
+    if (subRecords.length === 0) continue;
+    allTimestamps = allTimestamps.concat(timestamps(subRecords));
+    const type = classify(subRecords, readMeta(subFile));
+    const calls = dedupCalls(subRecords, subFile);
+    const tokens = calls.reduce((sum, c) => sum + (c.usage ? c.usage.tokens : 0), 0);
+    const fileTimestamps = timestamps(subRecords);
+    const durationMs = fileTimestamps.length ? Math.max(...fileTimestamps) - Math.min(...fileTimestamps) : 0;
+    if (!byType.has(type)) byType.set(type, { count: 0, tokens: 0, durations: [] });
+    const agg = byType.get(type);
+    if (!agg) continue;
+    agg.count += 1;
+    agg.tokens += tokens;
+    agg.durations.push(durationMs);
+  }
+
+  const subagents: Record<string, { count: number; tokens: number; medianMs: number }> = {};
+  for (const [type, agg] of byType) {
+    subagents[type] = { count: agg.count, tokens: agg.tokens, medianMs: median(agg.durations) };
+  }
+
+  const wallClockMs = allTimestamps.length ? Math.max(...allTimestamps) - Math.min(...allTimestamps) : 0;
+
+  const report = { controller, subagents, wallClockMs, controllerActiveMs };
+
+  if (jsonOut) {
+    process.stdout.write(JSON.stringify(report) + '\n');
+  } else {
+    process.stdout.write(`controller: ${controller.calls} calls, ${controller.tokens} tokens\n`);
+    process.stdout.write(`  context median ${controller.ctxMedian}, p90 ${controller.ctxP90}\n`);
+    process.stdout.write(`  tasks completed ${controller.tasksCompleted}, ctx growth/task ${controller.ctxGrowthPerTask}, fix rounds ${controller.fixRounds}\n`);
+    for (const [type, agg] of Object.entries(subagents)) {
+      process.stdout.write(`${type}: ${agg.count} dispatches, ${agg.tokens} tokens, median ${agg.medianMs}ms\n`);
+    }
+    process.stdout.write(`wall clock ${wallClockMs}ms, controller active ${controllerActiveMs}ms\n`);
+  }
+}
+
+try {
+  main();
+} catch (e) {
+  if (!(e instanceof CliError)) throw e;
+  process.stderr.write(e.message + '\n');
+  process.exit(2);
+}

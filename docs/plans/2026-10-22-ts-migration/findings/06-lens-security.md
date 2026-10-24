@@ -1,0 +1,8 @@
+Lens: security, task 06. 3 findings.
+
+1. [Important] src/hooks/fx-pretooluse.ts line 85 (hooks/fx-pretooluse.js line 105): if lib/json loads but has no parseJson export, parseJson(raw) throws a TypeError inside a try whose catch exits 0, before the Bash branch, so every Bash command is allowed without the git guard. The old hook used the builtin JSON.parse. The guard load above checks typeof inspect; fx-codex.ts line 226 checks parseJson. Fix: in the load try, throw when parseJson or parseClaudeHookInput is not a function; add a case where lib/json.js exports an empty object.
+2. [Minor] src/hooks/fx-pretooluse.ts lines 87 to 88: Claude PreToolUse stdin exactly null was refused (TypeError, uncaughtException deny, exit 2) and is now allowed (parse not ok, exit 0). Harness-written input, no tool call to inspect, but a refuse-to-allow change with no golden fixture. Fix: deny on not-ok when raw text is non-empty (as Codex does), or record a null fixture as a pinned decision.
+3. [Minor] src/hooks/fx-context.ts lines 18 to 19: lib/hook-input and lib/json load at top level with no try; a load failure exits 1 and the session starts with no preamble and no warning. Fix: runtime require inside try with the warning fallback.
+
+Implementer-flagged items: parser-lib load failure refusing is the safe direction (Codex also loses the preamble on SessionStart, acceptable). Non-string cwd falling back to process.cwd() is not a finding: inspect ignores cwd; lane check is stricter than before.
+Checked, no regression: wrongly typed tool_name, non-object tool_input, numeric command, Codex agent_id, rolesLoadError check, uncaughtException handler placement, Codex output shape and exit codes.

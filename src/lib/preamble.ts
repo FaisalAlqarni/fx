@@ -1,0 +1,153 @@
+// Renders PREAMBLE.md for one runtime, and assembles the full text a session
+// receives: the rendered preamble, the repo.md note, and the describePlans
+// block. One function so all three runtimes agree by construction instead of
+// each hook re-assembling the pieces its own way. docs/adr/0020.
+//
+// WHY PLACEHOLDERS: PREAMBLE.md hardcoded Claude Code's lane addressing
+// (`fx:fx-tdd`, invoked with the `Skill` tool) and shipped that text verbatim
+// to every runtime. On opencode a lane has no plugin prefix; on Codex lanes
+// are addressed with a leading `$` and there is no `Skill` tool at all. Each
+// runtime gets its own addressing substituted in; the opening imperative
+// itself (ADR 0002: position decides whether lanes fire) is never reordered
+// or extended, only its names are substituted. The text is a bootstrap that
+// makes the model invoke a lane; the rules live in the lanes (ADR 0021).
+
+import * as fs from 'fs';
+import * as path from 'path';
+import { describePlans, errCode } from './plan-state';
+import { parseFxJson } from './fx-json';
+import { parseJson } from './json';
+import type { Harness } from './types.js';
+
+// Compiled to lib/, so '..' is the repository root, as for the hand-written file.
+const PREAMBLE_PATH = path.join(__dirname, '..', 'PREAMBLE.md');
+
+export const HARNESSES: Harness[] = ['claude-code', 'opencode', 'codex', 'opencode-v2'];
+
+// Per harness: how a lane name is addressed, what names the invoking action,
+// and the resolution clause naming the form that fails on THAT runtime
+// (PREAMBLE.md's former lines 25-26, which were backwards on every runtime
+// but claude-code).
+const NEVER_READ = 'Never `Read` a `SKILL.md` instead of invoking it: reading gives you the text '
+  + 'without the obligation, which is the failure this section exists to stop.';
+
+interface Addressing {
+  lane: (name: string) => string;
+  skillTool: string;
+  resolution: string;
+  readRule: string;
+  dispatch: string;
+}
+
+const ADDRESSING: Record<Harness, Addressing> = {
+  'claude-code': {
+    lane: (name) => `fx:${name}`,
+    skillTool: 'the `Skill` tool',
+    resolution: 'A plugin skill resolves as `plugin:skill`, so a bare `fx-tdd` may not resolve at all',
+    readRule: NEVER_READ,
+    dispatch: 'Name the agent with the plugin prefix, such as `fx:fx-lens-security`, as the subagent type.',
+  },
+  opencode: {
+    lane: (name) => name,
+    skillTool: 'the `Skill` tool',
+    resolution: 'The name carries no plugin prefix here, so the plugin-prefixed form will not resolve',
+    readRule: NEVER_READ,
+    dispatch: 'Name the agent without a plugin prefix, such as `fx-lens-security`, as the subagent type.',
+  },
+  'opencode-v2': {
+    lane: (name) => name,
+    skillTool: 'the `skill` tool',
+    resolution: 'The name carries no plugin prefix here, so the plugin-prefixed form will not resolve',
+    readRule: NEVER_READ,
+    dispatch: 'Call the `subagent` tool with `agent` set to the agent\'s name without a plugin prefix, '
+            + 'such as `fx-lens-security`.',
+  },
+  codex: {
+    lane: (name) => `$fx:${name}`,
+    // Codex has no Skill tool: its model loads a skill by reading SKILL.md
+    // through the shell, and `$name` is the user's syntax, not the model's
+    // (research/codex.md, section 4, catalog_prompt.rs L1-L40).
+    skillTool: 'your shell to read the lane\'s `SKILL.md` in full',
+    resolution: 'Lanes are addressed as `$fx:fx-tdd`, with the plugin prefix. The runtime lists each lane\'s `SKILL.md` path',
+    readRule: 'Reading that file is how a lane is invoked here: read all of it, and treat it as binding.',
+    dispatch: 'Call `spawn_agent` with `agent_type` set to the role\'s name, such as `fx-lens-security`. '
+            + 'Always pass `agent_type`: without it the role is not applied, and the child runs as a copy of you.',
+  },
+};
+
+// How a lane name is addressed on this harness: fx:fx-debug, $fx:fx-debug or fx-debug.
+export const laneAddress = (harness: Harness, name: string): string => ADDRESSING[harness].lane(name);
+
+// The owner's companion tools, told to every session and subagent because
+// subagents read neither memory nor CLAUDE.md. A `companions` string in the
+// repo's .fx.json replaces the default, framed as repo content and capped; "" turns it off. Anything else, or any
+// read or parse failure, means the default. docs/adr/0032.
+function companions(cwd: string, lane: (name: string) => string): string | null {
+  let unread = '';
+  try {
+    const raw = parseJson(fs.readFileSync(path.join(cwd, '.fx.json'), 'utf8'));
+    const parsed = parseFxJson(raw);
+    if (!parsed.ok) {
+      // Only a JSON null failed here before (destructuring it threw); other
+      // non-object roots were read as having no override.
+      if (raw === null) throw new TypeError(parsed.reason);
+    } else {
+      const custom = parsed.value.companions;
+      if (typeof custom === 'string') {
+        if (!custom) return null;
+        const capped = custom.length > 300 ? `${custom.slice(0, 299)}…` : custom;
+        return `This repository's .fx.json adds: ${capped}`;
+      }
+    }
+  } catch (err) {
+    // A missing file is normal. A file that exists but cannot be honored is a
+    // broken override: say so in the text, the only channel a user sees.
+    if (errCode(err) !== 'ENOENT') {
+      // the class only: a JSON.parse message can quote file content
+      unread = ` (.fx.json could not be read: ${err instanceof SyntaxError ? 'not valid JSON' : errCode(err) || 'error'}; `
+        + 'this is the default companions line, and any override there is not applied.)';
+    }
+  }
+  return 'Companion tools. Use each one this runtime has, and skip silently any it lacks: '
+    + 'semble for codebase search before reading or grepping files, falling back to '
+    + 'repowise, or to any other code-search tool present, when semble is missing or comes up empty; the '
+    + 'ponytail skill at full; the caveman skill at full; '
+    + `\`${lane('fx-humanize')}\` on prose written for people.` + unread;
+}
+
+export function render({ harness, cwd = process.cwd(), subagent = false }: { harness?: string; cwd?: string; subagent?: boolean } = {}): string {
+  const known = HARNESSES.find((h) => h === harness);
+  if (!known) throw new Error(`unknown harness: ${harness}`);
+  const addressing = ADDRESSING[known];
+
+  let text = fs.readFileSync(PREAMBLE_PATH, 'utf8');
+  // Function replacements only: a replacement STRING treats `$` specially
+  // (`$\`` inserts the text before the match), and Codex's wording is full of `$`.
+  text = text.replace(/\{\{SKILL_TOOL\}\}/g, () => addressing.skillTool);
+  text = text.replace(/\{\{LANE:([a-z0-9-]+)\}\}/g, (_: string, name: string) => addressing.lane(name));
+  text = text.replace(/\{\{RESOLUTION\}\}/g, () => addressing.resolution);
+  text = text.replace(/\{\{DISPATCH\}\}/g, () => addressing.dispatch);
+  text = text.replace(/\{\{READ_RULE\}\}/g, () => addressing.readRule);
+
+  // A repo may add its own context; the plugin never writes to it.
+  if (fs.existsSync(path.join(cwd, 'repo.md'))) {
+    text += `\n\nThis repository has a \`repo.md\` describing its structure, `
+          + `patterns and local decisions. Read it before changing code here.\n`;
+  }
+
+  const line = companions(cwd, addressing.lane);
+  if (line) text += `\n\n${line}`;
+
+  // The plans block routes a fresh SESSION into fx-implement. A subagent
+  // already has its task in its dispatch prompt: the block would only add
+  // tokens and a list of other work to be pulled toward.
+  if (!subagent) {
+    // Best effort: a bug here must never stop a session from starting.
+    try {
+      const plans = describePlans(cwd, { lane: addressing.lane });
+      if (plans) text += `\n\n${plans}`;
+    } catch { /* the preamble alone is still worth emitting */ }
+  }
+
+  return text;
+}

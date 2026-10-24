@@ -34,6 +34,11 @@ run check-prose-explicit-path.sh bash tests/gates/check-prose-explicit-path.sh
 run check-artifacts        scripts/check-artifacts
 run check-artifacts-remote.sh bash tests/gates/check-artifacts-remote.sh
 run check-generated        scripts/check-generated
+run check-types            scripts/check-types
+run check-ts-escapes       scripts/check-ts-escapes
+run ts-toolchain.test.sh   bash tests/gates/ts-toolchain.test.sh
+run check-handwritten-js  scripts/check-handwritten-js
+run check-handwritten-js.test.sh bash tests/gates/check-handwritten-js.test.sh
 run agent-model.test.js    node tests/gates/agent-model.test.js
 run build-cost.test.js     node scripts/build-cost.test.js
 run compile-brief.test.js  node skills/fx-implement/scripts/compile-brief.test.js
@@ -51,10 +56,12 @@ run no-stories-in-loaded-lanes.test.js node tests/gates/no-stories-in-loaded-lan
 run transcript-path.test.js node tests/gates/transcript-path.test.js
 run dispatch-route.test.js node tests/gates/dispatch-route.test.js
 run brainstorm-confidence.test.js node tests/gates/brainstorm-confidence.test.js
+run brainstorm-server.test.js node tests/gates/brainstorm-server.test.js
 run review-content.test.js node tests/gates/review-content.test.js
 run branch-pass.test.js    node tests/gates/branch-pass.test.js
 run lens-content.test.js node tests/gates/lens-content.test.js
 run verdict.test.js        node tests/lane-triggering/verdict.test.js
+run tooling-malformed.test.js node tests/conformance/tooling-malformed.test.js
 
 echo "== make-git-fixture =="
 # Path is unique per process ($$ is this script's own PID): a fixed path
@@ -85,21 +92,57 @@ fi
 run git-guard.test.js   node lib/git-guard.test.js   "$MAIN" "$WT"
 run base-branch.test.js node lib/base-branch.test.js "$MAIN" "$WT"
 run heredoc.test.js     node lib/heredoc.test.js     "$MAIN" "$WT"
+run git-guard-symbol.test.js node lib/git-guard-symbol.test.js
+run fx-json.test.js     node lib/fx-json.test.js
+run env.test.js         node lib/env.test.js
+run fx-paths.test.js    node lib/fx-paths.test.js
+run redact.test.js      node lib/redact.test.js
+run decision-log.test.js node lib/decision-log.test.js
+run edit-rules.test.js  node lib/edit-rules.test.js
+run fx-json-watch.test.js node lib/fx-json-watch.test.js
+run scratch-env.test.js node tests/gates/scratch-env.test.js
+run harness-facts.test.js node tests/gates/harness-facts.test.js
+run session-input.test.js node lib/session-input.test.js
+run journal.test.js     node lib/journal.test.js
+run repo-config.test.js node lib/repo-config.test.js
+run turn-journal.test.js node tests/gates/turn-journal.test.js
+run loop-nudge.test.js  node tests/gates/loop-nudge.test.js
+run tool-events.test.js node lib/tool-events.test.js
+run patch-paths.test.js node lib/patch-paths.test.js
+run loop-tracker.test.js node lib/loop-tracker.test.js
+run stop-check.test.js  node lib/stop-check.test.js
+run stop-check-gate.test.js node tests/gates/stop-check.test.js
+run edit-rules-gate.test.js node tests/gates/edit-rules.test.js
+run fx-json-notice.test.js node tests/gates/fx-json-notice.test.js
+run evidence.test.js    node lib/evidence.test.js
+run shell-guard.test.js node lib/shell-guard.test.js
+run shell-guard-claude.test.js node tests/gates/shell-guard-claude.test.js
+run shell-guard-codex.test.js node tests/gates/shell-guard-codex.test.js
 run plan-state.test.js  node lib/plan-state.test.js
 run test-scope.test.js  node scripts/test-scope.test.js
 run preamble.test.js    node lib/preamble.test.js
+run preamble-equivalence.test.js node lib/preamble-equivalence.test.js
 run codex-manifest.test.js  node tests/gates/codex-manifest.test.js
 run codex-hook-output.test.js node tests/gates/codex-hook-output.test.js
+run hook-output-golden.test.js node tests/gates/hook-output-golden.test.js
+run hook-input.test.js node lib/hook-input.test.js
+run opencode-input.test.js node lib/opencode-input.test.js
+run opencode-malformed.test.js node lib/opencode-malformed.test.js
 run user-invoked.test.js    node tests/gates/user-invoked.test.js
 run fx-setup-root-check.test.js node tests/gates/fx-setup-root-check.test.js
 run plant-roles.test.js     node lib/plant-roles.test.js
 run opencode-plugin.test.js  node tests/gates/opencode-plugin.test.js
+run opencode-v1-shell-guard.test.js node tests/gates/opencode-v1-shell-guard.test.js
+run opencode-turn.test.js node tests/gates/opencode-turn.test.js
+run opencode-edit-rules.test.js node tests/gates/opencode-edit-rules.test.js
 run opencode-v2-agent.test.js node tests/gates/opencode-v2-agent.test.js
 run opencode-v2-plugin.test.js node tests/gates/opencode-v2-plugin.test.js
 run opencode-v2-policies.test.js node tests/gates/opencode-v2-policies.test.js
+run opencode-v2-shell-guard.test.js node tests/gates/opencode-v2-shell-guard.test.js
 run description-overlap.test.js node tests/gates/description-overlap.test.js
 run no-runtime-addressing.test.js node tests/gates/no-runtime-addressing.test.js
 run release-version.test.js node tests/gates/release-version.test.js
+run no-rm-in-shell-c.test.js node tests/gates/no-rm-in-shell-c.test.js
 
 run install-opencode        bash tests/install/run.sh opencode
 run install-opencode-v2     bash tests/install/run.sh opencode-v2
