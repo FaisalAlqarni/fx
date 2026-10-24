@@ -151,3 +151,8 @@ Task 15: minor (deferred): fx-debug Phase 6 prevention question lives only as a 
 Task 15: confirmed ⚠️ resolved: gate re-runs are covered by the task 17 phase gate (check-all).
 Task 15: cost unavailable (no transcript recorded)
 Task 15: complete (commits 53e2064..06a694c, review clean)
+Task 17: dispatched cb878e0 2026-10-24T23:51:08Z
+Task 16: confirmed ⚠️ resolved: the reviewer read the touched files directly where the diff elided context.
+Task 16: cost unavailable (no transcript recorded)
+Task 16: complete (commits 69a339c..3b50f35, review clean)
+Task 17: ran test_all (plan-mandated phase gate): ALL GREEN per report.
