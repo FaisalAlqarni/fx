@@ -83,3 +83,18 @@ Task 06: complete (commits ea37a4a..1e46bf7, review clean)
 Task 07: cost unavailable (no transcript recorded)
 Task 07: complete (commits 1e46bf7..e0c81ed, review clean)
 Task 08: ran test_all (plan-mandated phase gate): ALL GREEN per report.
+Task 09: dispatched 22e6d73 2026-10-24T23:19:02Z
+Task 08: minor (deferred): fx-brainstorm COVERAGE "(unnumbered)" row has no stable claim id.
+Task 08: minor (deferred): fx-review COVERAGE "Real Examples" row has no stable claim id.
+Task 08: ran test_all (plan-mandated phase gate)
+Task 08: open Important: COVERAGE Summary count tables (brainstorm, plan, tdd, debug) not recounted after verdict changes (findings/08-review.md).
+Ruling: task 08's fix round 1 resumes its implementer after task 09 commits, not now. Why: one writer at a time in the worktree; task 09 is mid-run. Cost if wrong: a short delay on task 08.
+Task 08: confirmed ⚠️ resolved: check-all ALL GREEN is the implementer's run; the fix round reruns test_scope.
+Task 08: fix round 1 dispatched (resumed implementer) 2026-10-24T23:22:24Z
+Task 09: minor (deferred): no render-level test for the declined .fx.json path through render
+Task 09: minor (deferred): no test for malformed .fx.json with CONTEXT.md still giving the notice
+Task 09: cost unavailable (no transcript recorded)
+Task 09: complete (commits 22e6d73..8436042, review clean)
+Task 08: fix round 1: controller re-review (7 doc lines in 4 COVERAGE files, within the 20-line limit): brainstorm Dropped row now names the dropped file and map format; plan, tdd, debug totals moved by the verdict changes. Accepted; the implementer's count method (apply verdict moves to existing totals) is ruled acceptable since the tables span several sources.
+Task 08: cost unavailable (no transcript recorded)
+Task 08: complete (commits 97563a1..dfa3510, review clean after fix round 1)
