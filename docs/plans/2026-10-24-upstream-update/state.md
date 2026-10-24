@@ -137,3 +137,11 @@ Task 13: confirmed ⚠️ resolved: the [blocks]/[advisory] unattended wording a
 Task 13: cost unavailable (no transcript recorded)
 Task 13: complete (commits 4bc7e34..d983c6d, review clean)
 Task 14: report contract breached (no head hash in reply); range read from git.
+Task 15: dispatched 53e2064 2026-10-24T23:40:42Z
+Task 14: minor (deferred): SKILL.md:40 and :64 new lines are unwrapped long lines.
+Task 14: minor (deferred): test does not assert the `(my call: <reason>)` marker or the owner-questions-in-review-message sentence.
+Ruling: task 22 writes a sixth ADR, "the bounded path writes a short design.md", which amends ADR 0045; 0045 gets only an "Amended by <NNNN>" status-line note, per the owner's ADR rule (never edit an ADR beyond its status line). Why: task 14 review ⚠️; research compare-1 says the change needs an ADR amending 0045. Cost if wrong: an undocumented amendment, caught by task 22's review.
+Task 14: confirmed ⚠️ resolved by the ruling above (owned by task 22).
+Task 14: cost unavailable (no transcript recorded)
+Task 14: complete (commits f471e8b..ea5513c, review clean)
+Ruling: task 15's fx-tdd budget is the task file's 19,800 bytes; the controller's context figure (18,750) was copied from the pre-flight's pre-change size and was wrong. fx-tdd at 19,368 is under the task limit and the 20,000 gate. Cost if wrong: thin headroom for later fx-tdd edits, caught by the size gate.
