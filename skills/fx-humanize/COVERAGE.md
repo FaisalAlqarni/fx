@@ -1,5 +1,7 @@
 # Coverage — humanizer
 
+Renamed to GLOSSARY.md and GLOSSARY-MAP.md following mattpocock-skills 1.3.0.
+
 **Verbatim copy. No adaptation.**
 
 Source: `humanizer@humanizer` v2.11.2 — `SKILL.md`, 456 lines.

@@ -8,6 +8,8 @@ Sources:
 - `mattpocock:domain-modeling` (+ `CONTEXT-FORMAT.md`, `ADR-FORMAT.md`): read
   in full, absorbed as a reference
 
+Renamed to GLOSSARY.md and GLOSSARY-MAP.md following mattpocock-skills 1.3.0.
+
 Verdicts: **K** kept inline · **G** kept in `../../references/vocab/grilling.md` ·
 **D** kept in `../../references/vocab/domain-modeling.md` · **T** kept in
 `../../references/design-template.md` · **V** copied verbatim (visual companion) ·

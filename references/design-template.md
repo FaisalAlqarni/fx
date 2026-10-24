@@ -2,7 +2,7 @@
 
 Written by `fx-brainstorm` to `docs/plans/YYYY-MM-DD-<slug>/design.md`.
 
-Use the project's domain vocabulary (`CONTEXT.md`) throughout, and respect the
+Use the project's domain vocabulary (`GLOSSARY.md`) throughout, and respect the
 ADRs in the area being touched.
 
 ---
@@ -16,7 +16,7 @@ block below: a draft has no such line.
 
 **Date:** YYYY-MM-DD
 **Status:** ready-for-agent
-**Glossary:** <path to the relevant CONTEXT.md: note if terms were added or
+**Glossary:** <path to the relevant GLOSSARY.md: note if terms were added or
 sharpened during this session>
 
 ## Problem Statement

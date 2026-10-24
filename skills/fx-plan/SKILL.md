@@ -87,7 +87,7 @@ a horizontal slice of one layer.**
 Look for prefactoring opportunities that make the implementation easier, and
 sequence them first.
 
-Task titles and descriptions use the domain vocabulary from `CONTEXT.md`, and
+Task titles and descriptions use the domain vocabulary from `GLOSSARY.md` (old name: see domain-modeling), and
 respect the ADRs in the area you are touching.
 
 **Right-sizing.** A task is **one seam**: the smallest unit that carries its

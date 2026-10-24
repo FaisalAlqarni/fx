@@ -109,7 +109,7 @@ You type five more skills yourself: four are generated from `commands/`,
 
 | Command | Does |
 |---|---|
-| `fx-setup` | per repository: writes `.fx.json`, `repo.md` and `CONTEXT.md` for your review |
+| `fx-setup` | per repository: writes `.fx.json`, `repo.md` and `GLOSSARY.md` for your review |
 | `fx-audit` | audits an existing system in four gated phases, ending in a design for `fx-plan` |
 | `fx-critique` | red-teams a design or plan |
 | `fx-grill` | a stress-test interview for a decision not heading to code |

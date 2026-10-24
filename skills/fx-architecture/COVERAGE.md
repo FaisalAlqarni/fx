@@ -5,6 +5,8 @@ Sources (all `mattpocock-skills` @ 1.2.3):
 - `codebase-design`: SKILL.md + `DEEPENING.md` + `DESIGN-IT-TWICE.md`
 - `domain-modeling`: covered in `fx-brainstorm/COVERAGE.md`
 
+Renamed to GLOSSARY.md and GLOSSARY-MAP.md following mattpocock-skills 1.3.0.
+
 Verdicts: **K** kept inline · **R** kept in a reference · **H** kept in
 `HTML-REPORT.md` · **S** superseded · **X** dropped.
 

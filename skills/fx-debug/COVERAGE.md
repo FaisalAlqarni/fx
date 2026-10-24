@@ -8,6 +8,8 @@ Sources:
   (+ `scripts/hitl-loop.template.sh`)
 - `soe:systematic-debugging` (your fork): claims 241 to 389
 
+Renamed to GLOSSARY.md and GLOSSARY-MAP.md following mattpocock-skills 1.3.0.
+
 Verdicts: **K** kept inline · **R** kept in a reference · **C** copy verbatim ·
 **S** superseded · **D** dropped.
 A claim with no verdict is a build error.

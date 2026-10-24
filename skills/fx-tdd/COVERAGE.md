@@ -6,6 +6,8 @@ Sources:
 - `mattpocock:tdd` @ 1.2.3: claims 102 to 128 (+ `tests.md`, `mocking.md`)
 - `soe:test-driven-development` (your fork): claims 129 to 195
 
+Renamed to GLOSSARY.md and GLOSSARY-MAP.md following mattpocock-skills 1.3.0.
+
 Verdicts: **K** kept inline · **R** kept in `../../references/vocab/good-tests.md` ·
 **C** kept in `../../references/vocab/codebase-design.md` · **S** superseded ·
 **D** dropped. A claim with no verdict is a build error.

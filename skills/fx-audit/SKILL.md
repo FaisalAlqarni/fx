@@ -151,12 +151,12 @@ user who wants a phase redone deletes its document and runs the skill again.
    able to create one file**, so dispatch an agent type that has a
    file-writing tool; a read-only agent type, one limited to searching and
    reading, cannot finish this step. Each gets this brief:
-   - **Knowledge:** its area's paths, `CONTEXT.md` and `docs/adr/` when they
+   - **Knowledge:** its area's paths, `GLOSSARY.md` (old name: see domain-modeling) and `docs/adr/` when they
      exist, and the `01-current.md` headings of the audit template.
    - **Instruction:** read the area; write the findings, each claim with a file
      and line, to `.fx/<slug>/explore/01-<area>.md`. That file is its only
      write. Name every term by the code's own identifiers, comments and
-     documentation, or by `CONTEXT.md` when it exists; a term that appears in
+     documentation, or by `GLOSSARY.md` when it exists; a term that appears in
      none of those is not a term of this system.
    - **Output:** the file's path and a summary of five lines or fewer. Never
      the findings themselves.

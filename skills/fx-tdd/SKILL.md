@@ -128,7 +128,7 @@ where the seam belongs, what it should expose) read
 depth · seam · adapter · leverage · locality). **It is a reference to consult,
 not a session to run.**
 
-Test names and interface vocabulary come from `CONTEXT.md`; respect the ADRs in
+Test names and interface vocabulary come from `GLOSSARY.md` (old name: see domain-modeling); respect the ADRs in
 the area you're touching.
 
 Behavior that is non-deterministic (a thread, a job, a timer) makes the seam

@@ -149,12 +149,12 @@ The **decisions** are the user's: put each to them and wait.
 
 ### Keep the domain model sharp as you go
 
-Read `CONTEXT.md` (or `CONTEXT-MAP.md` → the relevant context) so your
+Read `GLOSSARY.md` (old name: see domain-modeling; or `GLOSSARY-MAP.md` → the relevant context) so your
 vocabulary matches the project's, and respect the ADRs in the area.
 
 When a term is fuzzy, conflicts with the glossary, or contradicts the code, use
 `../../references/vocab/domain-modeling.md`: challenge it, sharpen it, and **update
-`CONTEXT.md` inline the moment it resolves.** Never batch those updates.
+`GLOSSARY.md` inline the moment it resolves.** Never batch those updates.
 
 Focus throughout on **purpose, constraints, success criteria.**
 

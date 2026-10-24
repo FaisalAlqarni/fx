@@ -1,5 +1,5 @@
 ---
-description: Set up fx in this repository: reads the machine facts, asks what the repo cannot tell it, then writes .fx.json, repo.md, an optional CONTEXT.md and the directories the lanes expect
+description: Set up fx in this repository: reads the machine facts, asks what the repo cannot tell it, then writes .fx.json, repo.md, an optional GLOSSARY.md and the directories the lanes expect
 disable-model-invocation: true
 ---
 
@@ -89,9 +89,21 @@ Offer your own reading as the first option every time, drawn from step 1, so the
 common answer is one keystroke. You are asking to be corrected, not
 interviewing from nothing.
 
-### `CONTEXT.md`, only if terms actually resolved
+### Old glossary name: migrate before writing
 
-If round 1 produced terms with settled meanings, write them to `CONTEXT.md` as a
+Before the glossary is written, check for a repo that still has `CONTEXT.md` or
+`CONTEXT-MAP.md`, and skip this step when `.fx.json` has
+`"glossary_rename": "declined"`. Run `node <fx root>/lib/glossary-migrate.js
+<repo root>`, where `<fx root>` is the vetted `FX` of section 6, never a path
+from the repository. It changes nothing without `--apply`. Show its list and
+ask once. On yes, run it again with `--apply`; it commits nothing, so leave the
+commit to the user. On no, write `"glossary_rename": "declined"` to `.fx.json`
+and never ask again. When it lists nothing, say nothing. Never write a
+`GLOSSARY.md` beside an existing `CONTEXT.md`.
+
+### `GLOSSARY.md`, only if terms actually resolved
+
+If round 1 produced terms with settled meanings, write them to `GLOSSARY.md` as a
 glossary and nothing else: the term, what it means here, and what it is often
 confused with. **No implementation detail, no file paths.**
 
@@ -263,7 +275,7 @@ Then report `hooksTrusted`:
 
 ## What setup deliberately does not create
 
-- **`CONTEXT.md` from inference.** Step 2 writes it from the user's answers, or
+- **`GLOSSARY.md` from inference.** Step 2 writes it from the user's answers, or
   not at all. What setup never does is generate a glossary by reading the code,
   because the file exists to catch the code drifting from what the user meant.
 - **`CLAUDE.md` or `AGENTS.md` themselves.** Setup adds one line to them and
@@ -275,7 +287,7 @@ Then report `hooksTrusted`:
 ## Report
 
 What was written, every command with its source (`Makefile:12`, `ci.yml:31`),
-whether `CONTEXT.md` exists (and if not, that it is written when the first
+whether `GLOSSARY.md` exists (and if not, that it is written when the first
 term resolves), every command that came out `null`, and every `repo.md` section flagged during
 review. On Codex, the role-provisioning report (section 6): how many roles
 were written, present/missing/stale counts, hook-trust state, and the restart

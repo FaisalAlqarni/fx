@@ -4,7 +4,7 @@ Actively build and sharpen the project's domain model **as you design**.
 
 This is the *active* discipline: challenging terms, inventing edge-case
 scenarios, and writing the glossary and decisions down **the moment they
-crystallise.** Merely *reading* `CONTEXT.md` for vocabulary is not this: that's
+crystallise.** Merely *reading* `GLOSSARY.md` for vocabulary is not this: that's
 a one-line habit any skill can do. This is for when you are **changing** the
 model, not just consuming it.
 
@@ -14,37 +14,49 @@ Most repos have a single context:
 
 ```
 /
-├── CONTEXT.md
+├── GLOSSARY.md
 ├── docs/adr/
 │   ├── 0001-event-sourced-orders.md
 │   └── 0002-postgres-for-write-model.md
 └── src/
 ```
 
-If a **`CONTEXT-MAP.md`** exists at the root, the repo has multiple contexts
+If a **`GLOSSARY-MAP.md`** exists at the root, the repo has multiple contexts
 and the map points to where each lives:
 
 ```
 /
-├── CONTEXT-MAP.md
+├── GLOSSARY-MAP.md
 ├── docs/adr/                     ← system-wide decisions
 └── engines/
     ├── engagement/
-    │   ├── CONTEXT.md
+    │   ├── GLOSSARY.md
     │   └── docs/adr/             ← context-specific decisions
     └── measurement/
-        ├── CONTEXT.md
+        ├── GLOSSARY.md
         └── docs/adr/
 ```
 
-**Create files lazily**: only when you have something to write. No
-`CONTEXT.md`? Create it when the first term resolves. No `docs/adr/`? Create it
+**Create files lazily**: only when you have something to write. No glossary
+file at all? Create `GLOSSARY.md` when the first term resolves. No `docs/adr/`? Create it
 when the first ADR is needed.
+
+## Reading order and the old name
+
+Read `GLOSSARY-MAP.md` or `GLOSSARY.md`; if neither exists, read `CONTEXT-MAP.md`
+or `CONTEXT.md`, the names fx used before. Never create `GLOSSARY.md` beside an
+existing `CONTEXT.md`: write to the old-named file instead.
+
+In the owner's own session, before the first write to an old-named file, show
+the dry-run list from the fx-setup migration and ask once whether to rename.
+On no, `.fx.json` gets `"glossary_rename": "declined"` and nobody asks again;
+a repo with that key is never asked. A dispatched subagent never asks and
+writes to the old-named file.
 
 ## During the session
 
 **Challenge against the glossary.** When a term conflicts with the existing
-language in `CONTEXT.md`, call it out immediately: *"Your glossary defines
+language in `GLOSSARY.md`, call it out immediately: *"Your glossary defines
 'cancellation' as X, but you seem to mean Y. Which is it?"*
 
 **Sharpen fuzzy language.** When a term is vague or overloaded, propose a
@@ -59,14 +71,14 @@ between concepts.
 whether the code agrees. Contradiction → surface it: *"Your code cancels entire
 Orders, but you just said partial cancellation is possible. Which is right?"*
 
-**Update `CONTEXT.md` inline.** The moment a term resolves, write it down.
+**Update `GLOSSARY.md` inline.** The moment a term resolves, write it down.
 **Don't batch these**: capture them as they happen.
 
-`CONTEXT.md` is **a glossary and nothing else.** It must be totally devoid of
+`GLOSSARY.md` is **a glossary and nothing else.** It must be totally devoid of
 implementation details. Never treat it as a spec, a scratch pad, or a home for
 implementation decisions.
 
-## CONTEXT.md format
+## GLOSSARY.md format
 
 ```markdown
 # <Context name>
@@ -96,6 +108,36 @@ Rules:
   programming concept? Only the former belongs.
 - **Group under subheadings** when natural clusters emerge; a flat list is fine
   for a single cohesive area.
+
+## GLOSSARY-MAP.md format
+
+```markdown
+# Glossary map
+
+## Contexts
+
+- [Engagement](engines/engagement/GLOSSARY.md): journeys over SMS and email.
+- [Measurement](engines/measurement/GLOSSARY.md): mobile app measurement.
+
+## Relationships
+
+- **Engagement -> Measurement**: Engagement emits `CampaignSent`; Measurement
+  attributes installs to it.
+- **Engagement <-> Core**: both use the shared `Organization` type.
+```
+
+Each context gets a link and a one-line purpose. Relationships give the
+direction and the events or shared types that cross the boundary.
+
+Inference rules:
+
+- A topic that names a term defined in one context belongs to that context.
+- A topic that names an event or shared type in Relationships belongs to both
+  ends; read both glossaries.
+- A topic that matches no context's purpose belongs to none: say so.
+
+When several contexts exist, infer which one the topic belongs to. If unclear,
+ask.
 
 ## ADRs: offer sparingly
 

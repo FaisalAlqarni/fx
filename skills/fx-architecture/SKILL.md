@@ -25,7 +25,7 @@ vocabulary:
   deletion test, "the interface is the test surface", and "one adapter = a
   hypothetical seam, two = a real one". **Use these terms exactly in every
   suggestion. Do not drift into "component", "service", "API", or "boundary".**
-- **The domain language in `CONTEXT.md` gives names to good seams.** ADRs in
+- **The domain language in `GLOSSARY.md` gives names to good seams.** ADRs in
   `docs/adr/` record decisions **this skill should not re-litigate.**
 
 ## 1. Explore: scope before you scan
@@ -41,7 +41,7 @@ Decide where to look before you look.**
   pull your attention first. **Scattered with no clear hot spot? Widen the
   net.**
 
-Read the domain glossary (`CONTEXT.md`, or `CONTEXT-MAP.md` → the relevant
+Read the domain glossary (`GLOSSARY.md`, old name: see domain-modeling, or `GLOSSARY-MAP.md` → the relevant
 context) and any ADRs **in the area you're touching, first**: before the code.
 
 **Anchor the requirements before you scan.** Who uses this, what it must do, the
@@ -53,7 +53,7 @@ replacement, new hire, scale, resume. Complexity is only excessive relative to a
 requirement, so a scan that skips this step reports taste as though it were a
 finding. **Excess complexity is a deepening opportunity like any other**, and
 often the cheapest: the fix is subtraction, and the diff gets shorter.
-On a multi-engine repo, that means the engine's own `CONTEXT.md`; the root map
+On a multi-engine repo, that means the engine's own `GLOSSARY.md`; the root map
 points the way. Never scan every engine at once.
 
 Then **spawn a sub-agent to walk the codebase.** Don't follow rigid heuristics;
@@ -115,8 +115,8 @@ Each candidate gets a card:
 **The diagrams carry the weight. Prose is sparse.** If a diagram needs a
 paragraph to be understood, **redraw the diagram.**
 
-**Use `CONTEXT.md` vocabulary for the domain and codebase-design vocabulary for
-the architecture.** If `CONTEXT.md` defines "Campaign", write "the Campaign
+**Use `GLOSSARY.md` vocabulary for the domain and codebase-design vocabulary for
+the architecture.** If `GLOSSARY.md` defines "Campaign", write "the Campaign
 intake module": not "the FooBarHandler", and not "the Campaign service".
 
 **ADR conflicts:** only surface a candidate that contradicts an existing ADR
@@ -151,9 +151,9 @@ and give an opinionated recommendation.
 **Side effects happen inline as decisions crystallize.** Use
 `../../references/vocab/domain-modeling.md` to keep the model current as you go:
 
-- **Naming a deepened module after a concept not in `CONTEXT.md`?** Add the
+- **Naming a deepened module after a concept not in `GLOSSARY.md`?** Add the
   term there. Create the file lazily if it doesn't exist.
-- **Sharpening a fuzzy term during the conversation?** Update `CONTEXT.md`
+- **Sharpening a fuzzy term during the conversation?** Update `GLOSSARY.md`
   right there: never batched.
 - **User rejects the candidate with a load-bearing reason?** Offer an ADR:
   *"Want me to record this so future architecture reviews don't re-suggest

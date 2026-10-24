@@ -82,7 +82,7 @@ every later phase mechanical.
   line numbers, file paths, error codes.
 - **Check recent changes.** What changed that could cause this? `git diff`,
   recent commits, new dependencies, config changes, environmental differences.
-- Read `CONTEXT.md` for a mental model of the modules involved, and check the
+- Read `GLOSSARY.md` (old name: see domain-modeling) for a mental model of the modules involved, and check the
   ADRs in the area.
 
 ### Ten ways to build the loop

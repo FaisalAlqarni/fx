@@ -301,7 +301,7 @@ $fx:fx-setup     # Codex
 
 It reads what it can from the repository, asks two short rounds about what the
 code cannot tell it (domain terms, what "done" means here), and writes
-`.fx.json` (test commands, stacks), `repo.md` and `CONTEXT.md` for your review
+`.fx.json` (test commands, stacks), `repo.md` and `GLOSSARY.md` for your review
 before any of it lands. On Codex it also places the review roles and reminds
 you to check `/hooks`.
 

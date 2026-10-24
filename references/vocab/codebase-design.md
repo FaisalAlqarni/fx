@@ -275,7 +275,7 @@ Give each a different design constraint:
 - **Agent 4** *(if applicable)*: "Design around ports & adapters for
   cross-seam dependencies."
 
-**Include both this file's vocabulary and the project's `CONTEXT.md`
+**Include both this file's vocabulary and the project's `GLOSSARY.md`
 vocabulary in every brief**, so each sub-agent names things consistently with
 the architecture language *and* the domain language.
 
