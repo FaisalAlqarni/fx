@@ -198,7 +198,7 @@ function isFullDocument(html) {
   return trimmed.startsWith("<!doctype") || trimmed.startsWith("<html");
 }
 function wrapInFrame(content) {
-  return renderBranding(frameTemplate).replace("<!-- CONTENT -->", content);
+  return renderBranding(frameTemplate).replace("<!-- CONTENT -->", () => content);
 }
 function getNewestScreen() {
   const files = fs.readdirSync(CONTENT_DIR).filter((f) => !f.startsWith(".") && f.endsWith(".html")).map((f) => {

@@ -126,6 +126,16 @@ async function main(): Promise<void> {
   assert.ok(added.includes('first.html'), `screen-added names the file: ${added}`);
   console.log('ok: a new screen file emits screen-added');
 
+  // String.replace expands $&, $' and $` in a string replacement; the served page must not.
+  const literal = "<p id=\"lit\">price $' and match $& and pre $` here</p>";
+  fs.writeFileSync(path.join(session, 'content', 'literal.html'), literal + '\n');
+  const later = new Date(Date.now() + 5000);
+  fs.utimesSync(path.join(session, 'content', 'literal.html'), later, later); // newest screen wins
+  const page = (await get(port, '/', `brainstorm-key-${port}=${token}`)).body;
+  assert.ok(page.includes(literal), 'served page holds the content byte for byte');
+  assert.strictEqual(page.split('<div class="header">').length - 1, 1, 'frame markup appears once');
+  console.log('ok: dollar sequences in a screen are served literally');
+
   owner.kill('SIGKILL');
   const killedAt = Date.now();
   await waitFor('the server to exit', 2000, () => (server.exitCode !== null ? server.exitCode : null));

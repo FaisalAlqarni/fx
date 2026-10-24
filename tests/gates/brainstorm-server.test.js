@@ -136,6 +136,14 @@ ${helper}
   const added = await waitFor("a screen-added line", 3e3, () => lineWith("screen-added"));
   assert.ok(added.includes("first.html"), `screen-added names the file: ${added}`);
   console.log("ok: a new screen file emits screen-added");
+  const literal = '<p id="lit">price $\' and match $& and pre $` here</p>';
+  fs.writeFileSync(path.join(session, "content", "literal.html"), literal + "\n");
+  const later = new Date(Date.now() + 5e3);
+  fs.utimesSync(path.join(session, "content", "literal.html"), later, later);
+  const page = (await get(port, "/", `brainstorm-key-${port}=${token}`)).body;
+  assert.ok(page.includes(literal), "served page holds the content byte for byte");
+  assert.strictEqual(page.split('<div class="header">').length - 1, 1, "frame markup appears once");
+  console.log("ok: dollar sequences in a screen are served literally");
   owner.kill("SIGKILL");
   const killedAt = Date.now();
   await waitFor("the server to exit", 2e3, () => server.exitCode !== null ? server.exitCode : null);

@@ -248,7 +248,7 @@ function isFullDocument(html: string): boolean {
 }
 
 function wrapInFrame(content: string): string {
-  return renderBranding(frameTemplate).replace('<!-- CONTENT -->', content);
+  return renderBranding(frameTemplate).replace('<!-- CONTENT -->', () => content);
 }
 
 function getNewestScreen(): string | null {
