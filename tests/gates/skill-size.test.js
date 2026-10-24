@@ -40,7 +40,7 @@ var os = __toESM(require("os"));
 var path = __toESM(require("path"));
 var import_child_process = require("child_process");
 const LIMIT = 2e4;
-const PENDING = { "fx-authoring": "04", "fx-humanize": "11" };
+const PENDING = { "fx-humanize": "11" };
 function oversize(root, pending) {
   const out = [];
   const dir = path.join(root, "skills");

@@ -73,6 +73,7 @@ line is live and unique. Attention thins across the excess.
 ### Hard limits
 
 - **SKILL.md body under 500 lines.** Approaching it → split.
+- **SKILL.md under 20,000 bytes.** Claude Code re-attaches an invoked skill cut at 20,000 characters after compaction (superpowers 7.0.1), so everything past the cut is lost. Move what only some branches need into a file beside SKILL.md.
 - **References exactly one level deep from SKILL.md.** Agents partially read
   nested files (`head -100`), producing incomplete information. Never
   SKILL.md → a.md → b.md.
@@ -100,59 +101,9 @@ branches that should trigger reaching it.**
 - Every word of an always-loaded pointer costs **every turn**, so it earns
   harder pruning than the body.
 
-### The description field
+A `description` says only when to use the lane, starting "Use when", and never summarizes the workflow, because an agent that reads a workflow summary follows it instead of the body.
 
-This is the highest-leverage text in the whole document.
-
-- **Third person.** It is injected into the system prompt.
-- **Start with "Use when…"**: triggering conditions.
-- **Concrete triggers, symptoms, situations.** Error messages, symptom words,
-  synonyms, tool and file-type names: what an agent would search for.
-- Describe **the problem** ("race conditions, inconsistent behavior"), not
-  language-specific symptoms ("setTimeout, sleep"): unless the skill really is
-  technology-specific, in which case say so explicitly.
-- **Under 500 characters** where possible; frontmatter max 1024.
-- `name`: letters, numbers and hyphens only.
-
-**NEVER summarize the skill's process or workflow.**
-
-This is not style. Testing showed that when a description summarizes the
-workflow, **the agent follows the description instead of reading the skill.** A
-description reading "code review between tasks" caused an agent to run ONE
-review when the skill's body specified TWO. Changing it to "Use when executing
-implementation plans with independent tasks" (no workflow) made the agent
-read the body and run both.
-
-**The trap: a description that summarizes workflow creates a shortcut agents
-take. The body becomes documentation they skip.**
-
-| | |
-|---|---|
-| ❌ | `Use when executing plans - dispatches subagent per task with code review between tasks` |
-| ❌ | `Use for TDD - write test first, watch it fail, write minimal code, refactor` |
-| ✅ | `Use when executing implementation plans with independent tasks in the current session` |
-| ✅ | `Use when implementing any feature or bugfix, before writing implementation code` |
-
-### Widening a description, and when to stop
-
-A lane may legitimately claim a second intent when the two are species of one
-genus. `fx-architecture` owns code that is the wrong shape, and code there is
-simply too much of is a wrong shape, so both belong to it.
-
-**Widening is not free and the cost is invisible.** New triggers compete with
-the existing ones for the same attention, so a lane can gain an intent and
-quietly lose the one it already had. Nothing in the frontmatter shows this.
-
-**So measure it, do not reason about it.** Keep a prompt per intent in
-`tests/lane-triggering/prompts/`, named `<lane>.txt` and
-`<lane>__<variant>.txt`, and require both to pass. When `fx-architecture` took
-on over-engineering, the new prompt went 1/5 to 5/5 and the original held at
-3/3. **The second number is the one that decides whether the widening was
-allowed to stand.**
-
-**Stop at two, and split instead when either is true:** a third intent wants in,
-or the skill's name no longer describes what it claims. A name that has to be
-explained is the tell that the lane became a bucket.
+**When you write or change a `name` or a `description`, widen a lane, choose model- or user-invocation, or point one lane at another**: read [discovery.md](./discovery.md), every time. It holds the description rules and evidence, widening and its measurement, the invocation table and the cross-reference wording.
 
 ## Match the form to the failure
 
@@ -287,86 +238,11 @@ An open field is high freedom (a code review, where context decides).
 **Avoid offering too many options.** Give a default with an escape hatch, not a
 menu.
 
-## Invocation
+**When you write a prompt for a dispatched subagent**: read [dispatch-prompts.md](./dispatch-prompts.md), every time. It holds the five ordered facets and the output contract.
 
-| | Model-invoked | User-invoked |
-|---|---|---|
-| Frontmatter | omit `disable-model-invocation` | `disable-model-invocation: true` |
-| Description | model-facing, carries trigger branches | human-facing one-liner, triggers stripped |
-| Reach | agent fires it; other skills can too; **you can still type its name** | only the human typing its name |
-| Cost | **permanent context load**, every turn | zero context load; spends **cognitive load**: you are the index |
+**When you edit `PREAMBLE.md` or decide whether a rule belongs in the bootstrap or a lane**: read [preamble.md](./preamble.md), every time. It holds where rules and triggers go, the two size budgets, and why the imperative and the dash rule stay absolute.
 
-**Pick model-invocation only when the agent must reach it on its own, or
-another skill must.** If it only ever fires by hand, make it user-invoked and
-pay no context load.
-
-Shared reference that two **user-invoked** skills both need can live in
-neither: with no descriptions, neither can fire the other. Push it to a plain
-file outside the skill system.
-
-When user-invoked skills multiply past what you can remember, that cognitive
-load is cured by a **router skill**: one user-invoked skill naming the others
-and when to reach for each. It can only hint, never fire them.
-
-## Writing a subagent dispatch prompt
-
-Structure as **ordered facets**: more reliable than freeform constraint prose.
-Constraints last, for recency.
-
-1. **Persona**: role, expertise, operating principles.
-2. **Knowledge**: the specific context and references it needs. Nothing more.
-3. **Instruction**: the one concrete task.
-4. **Policy**: split into **rules** (MUST), **prohibitions** (NEVER), and
-   **standards** (quality bars). Splitting one "constraints" blob into these
-   three catches far more.
-5. **Output contract**: the exact return shape: a greppable verdict line, a
-   JSON schema, or a bounded artifact handle (path + summary + confidence).
-   **Never "return your findings": name the format.**
-
-Keep each facet minimal. Add only what the agent lacks.
-
-## PREAMBLE.md
-
-fx injects `PREAMBLE.md` into every session and every dispatched subagent,
-on every runtime, from that one file. It is a bootstrap, not a router
-(`docs/adr/0021`): it makes the model invoke the lane that carries the rules.
-Rules live in lanes, and routing lives in the skill descriptions. So:
-
-- A new rule goes into the lane that is loaded at the moment it applies. It
-  goes into the bootstrap only when it must hold with no lane loaded, and
-  `docs/plans/2026-09-21-multi-harness/bootstrap-no-loss-audit.md` names each
-  such rule and why.
-- A new trigger goes into its lane's description. When another lane claims the
-  same work, both descriptions name each other: the model reads the one it
-  matched, so the redirect must be there. `tests/gates/description-overlap.test.js`
-  holds the pairs.
-- Write order into the descriptions too ("use fx-debug first"). The process
-  lane decides how the work is approached, so invoking it second means redoing
-  what the first one already produced.
-
-Only the fixed intro sits above the opening imperative; nothing else is added
-there (`docs/adr/0002`). The bootstrap alone stays under 3,400 characters, and
-the render with its repo.md note and plan-state block under 9,000
-(`lib/preamble.test.js`).
-
-The imperative is not softened because a model seems capable. Measured: a model
-reviewed a diff competently and invoked nothing. Doing the work from memory gets
-what it thought to look for; the lane gets the rest.
-
-It states the dash rule as an absolute, "none", because the softer version
-("avoid em-dash-heavy rhythm") is unmeasurable, and an unmeasurable rule is
-one nobody checks. `scripts/check-prose` greps for it.
-
-## Cross-references
-
-```
-**REQUIRED SUB-SKILL:** Use fx-tdd
-**REQUIRED BACKGROUND:** You MUST understand fx-debug
-```
-
-Name only, with an explicit requirement marker. **Never `@path/to/file`**: it
-force-loads immediately, burning context before you need it. Never a bare
-"See …", which leaves it unclear whether it's required.
+For Anthropic's own guide (frontmatter fields, progressive disclosure, evaluations), read [anthropic-best-practices.md](./anthropic-best-practices.md).
 
 ## Testing
 
@@ -420,7 +296,7 @@ discipline skills.
 - [ ] Wording micro-tested against a no-guidance control (5+ reps): N/A for
       pure reference
 - [ ] Addresses the **specific** baseline failures, not hypothetical ones
-- [ ] Body under 500 lines; references one level deep
+- [ ] Body under 20,000 bytes and 500 lines; references one level deep
 - [ ] One excellent example
 - [ ] Ran **with** the document: the agent now complies
 
