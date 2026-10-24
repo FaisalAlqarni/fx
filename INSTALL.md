@@ -312,7 +312,7 @@ run on code alone and make no network call. The shell guard refuses a short
 list of destructive commands with no override, runs read-only commands and the
 repository's own `.fx.json` commands silently (logging the latter), and runs
 any other command, logging it in the decision log. The built-in edit rules are no em or en dash in
-Markdown, no private key block or vendor-prefixed API key, and no
+Markdown (`.md` and `.mdx`), no private key block or vendor-prefixed API key, and no
 merge-conflict marker; each refuses the edit and names the rule and file.
 
 | OS | Decision log and session journals |

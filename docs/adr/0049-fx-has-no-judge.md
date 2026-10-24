@@ -25,10 +25,10 @@ What stays, unchanged in what it decides:
 - The shell guard: hard rules that nothing overrides, a read-only allowlist, and the repository's own `.fx.json` commands, which run silently and are logged with source `repo-command`. Any other command is allowed and logged in the decision log with source `grey`. The `# fx-ok` stamp and the loop guard are gone; both acted only on refusals the judge made.
 - The session journal, the Stop check (one block per turn on unverified edits, with no lift) and the loop-tracker nudges.
 - The three built-in edit rules, `no-dashes`, `no-secrets` and `no-conflict-markers`, and the `.fx.json` `hooks.edit_rules` switch. `hooks.stop_check` and `hooks.loop_nudge` stay too.
-- The `.fx.json` change notice, which now fires when `hooks` change: at session start and Stop on Claude Code and Codex, at Stop on opencode 1.x, and not on opencode 2.x.
+- The `.fx.json` change notice, which now fires when `hooks` change: at session start and Stop on Claude Code and Codex, at the next user message on opencode 1.x, and not on opencode 2.x.
 - The decision log, for hard-rule refusals, grey allows, nudges, Stop blocks, edit-rule refusals and errors. A failure that allows an edit is logged with source `error`.
 - Model routing (ADR 0031, `route()`), without sizing.
-- The refusal of writes to fx's state and config directories, fail closed on every harness. The shell guard is hygiene, not a boundary. The decision log stays local, mode 0600 on POSIX, rotated at 5 MB.
+- The refusal of any shell command that names fx's state or config directories, and of any file edit inside them, fail closed on every harness. The shell guard is hygiene, not a boundary. The decision log stays local, mode 0600 on POSIX, rotated at 5 MB.
 
 ## Consequences
 

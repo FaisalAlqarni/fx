@@ -213,7 +213,7 @@ keeps failing, after 10 edits since the last passing check, or when 12 reads in 
 row bring no edit.
 
 Each file edit through the harness's edit tools, inside the repository, is
-checked against three built-in edit rules: no em or en dash in Markdown, no
+checked against three built-in edit rules: no em or en dash in Markdown (`.md` and `.mdx`), no
 secret, no merge-conflict marker. A breach refuses the write.
 
 `hooks` in `.fx.json` has three switches for one repository: `stop_check`,
