@@ -27,6 +27,11 @@ The problem the user is facing, from the user's perspective.
 
 The solution to that problem, from the user's perspective.
 
+## Approaches
+
+The two or three approaches considered, one line of trade-off each, the one
+chosen and why.
+
 ## User Stories
 
 A numbered list. Each in the form:
@@ -77,6 +82,8 @@ line each, exact values. `fx-plan` copies this section **verbatim** into
 ## Out of Scope
 
 What this design deliberately does not cover.
+
+Anti-goals: what would make this a failure even if every test passes.
 
 ## Open Questions
 

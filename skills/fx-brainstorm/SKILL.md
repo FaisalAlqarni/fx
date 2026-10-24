@@ -37,8 +37,7 @@ I'll present a short design here rather than write a spec."*
   already here to read. If there is no existing flow to change, the task is not
   bounded.** Ask the questions that matter, present a short design **in chat**,
   and STOP. Implementation starts only after an explicit yes: **a bounded
-  task's approval is as hard a gate as an architectural one.** No design doc,
-  no plan.
+  task's approval is as hard a gate as an architectural one.** After the yes, a short design.md records it. No plan.
 - **Architectural**: new projects, new subsystems, changes that restructure
   how components fit together or alter interfaces others depend on. Full path.
 
@@ -62,7 +61,8 @@ Then complete the items on your path in order.
 4. Present a short design in chat: approach, files touched, testing
 5. **Get approval: STOP and wait for an explicit yes.** Presenting the design
    and starting in the same breath is skipping the gate
-6. Implement through the normal workflow (`fx-tdd` applies). No plan document
+6. **Write a short design.md**: 5 to 15 lines in docs/plans/YYYY-MM-DD-<slug>/design.md (Problem, Approach, Files, Seams, and the Approved line), no plan
+7. Implement through the normal workflow (`fx-tdd` applies)
 
 ### Architectural checklist
 1. Explore project context: files, docs, recent commits
@@ -71,7 +71,7 @@ Then complete the items on your path in order.
 3. Interview in clustered rounds, maintaining the open-questions ledger (§3)
 4. **Confidence check and approaches, then stop until the user says go** (§3, §5)
 5. Write design.md section by section (§6, §7)
-6. Self-review it (§8)
+6. Self-review it, then the builder check (§8)
 7. One review of the file, seams included; on approval write `**Approved:** YYYY-MM-DD` under the Status line (§8)
 8. Hand off to `fx-plan` (§9)
 
@@ -333,10 +333,24 @@ Fresh eyes on what you wrote:
 
 Fix inline. No need to re-review: fix and move on.
 
+**Builder check.** Then dispatch a fresh subagent with
+[builder-check-prompt.md](./builder-check-prompt.md): it reads design.md as the
+engineer who must build it and lists only the questions where a wrong guess
+would matter. Sort each one:
+
+- **Answered** by the design or the code: put the answer in design.md.
+- **Your own call**: settle it and mark it in design.md as `(my call: <reason>)`.
+- **The owner's**: keep it for the review message below.
+
+No subagent tool: read the design as that builder yourself.
+
 Then:
 
 > "Design written to `<path>`. Please review the file, seams included, and let
 > me know if you want any changes before we break it into tasks."
+
+If any builder questions are the owner's, list them in this same message. It
+is still the one review.
 
 **Wait for the response.** Changes requested → make them and re-run the
 self-review. Once the user approves, write `**Approved:** YYYY-MM-DD` under the

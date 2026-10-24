@@ -19,9 +19,11 @@ assert.ok(bounded.indexOf('Confidence check') < bounded.indexOf('short design'),
 
 const arch = skill.slice(skill.indexOf('### Architectural checklist'), skill.indexOf('**Terminal states are path-bound.**'));
 assert.ok(/\n4\. \*\*Confidence check and approaches, then stop/.test(arch), 'architectural step 4 carries the approaches');
-assert.ok(/\n6\. Self-review it/.test(arch), 'self-review stays');
+assert.ok(/\n6\. Self-review it, then the builder check \(§8\)/.test(arch), 'step 6 adds the builder check');
 assert.ok(/\n2\. Show rather than tell/.test(arch), 'show rather than tell stays');
 assert.ok(/\n8\. Hand off to `fx-plan`/.test(arch), 'the architectural path hands off at step 8');
+assert.ok(/\n6\. \*\*Write a short design\.md\*\*/.test(bounded), 'bounded step 6 writes a short design.md');
+assert.ok(/\n7\. Implement through the normal workflow/.test(bounded), 'bounded step 7 implements');
 assert.ok(!arch.includes('Propose 2 to 3 approaches'), 'approaches are not a separate step');
 assert.ok(!/\| "I'm confident, I'll show approaches in the same message" \|/.test(skill), 'the red-flag row against one message is gone');
 assert.ok(!skill.includes('create a task for each item on your path'), 'no task item per checklist step');
@@ -36,5 +38,9 @@ assert.ok(/write `\*\*Approved:\*\* YYYY-MM-DD` under the\s+Status line/.test(sk
 assert.ok(!/^\*\*Approved:\*\*/m.test(tpl.slice(tpl.indexOf('```markdown'))), 'the template block carries no Approved line');
 const fxPlan1 = fxPlan.slice(fxPlan.indexOf('## 1.'), fxPlan.indexOf('## 2.'));
 assert.ok(fxPlan1.includes('followed by a real date') && fxPlan1.includes('placeholder'), 'fx-plan skips the restate only on a real date');
+
+assert.ok(tpl.includes('## Approaches'), 'template: Approaches section');
+assert.ok(tpl.includes('Anti-goals: what would make this a failure even if every test passes.'), 'template: anti-goals line');
+assert.ok(skill.includes('[builder-check-prompt.md](./builder-check-prompt.md)'), 'section 8 links the builder prompt');
 
 console.log('brainstorm-confidence.test.js: OK');

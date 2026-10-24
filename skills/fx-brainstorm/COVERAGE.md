@@ -111,6 +111,14 @@ A claim with no verdict is a build error.
 
 ---
 
+## superpowers:brainstorming @ 7.0.0, adopted
+
+| File | Verdict | Note |
+|---|---|---|
+| `builder-check-prompt.md` | K | Adopted as `builder-check-prompt.md`: "a software engineer on this repo", design.md path, questions only, "nothing important left" when none |
+
+---
+
 ## Summary
 
 | | Count |
