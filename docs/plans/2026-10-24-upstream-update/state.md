@@ -115,3 +115,8 @@ Task 11: minor (deferred): SKILL.md lists 25 pattern headings; §26 is reachable
 Task 11: confirmed ⚠️ resolved: controller re-ran the old-marker grep (35 patterns|P=35, excluding .fx, node_modules, .worktrees, plans): 0 hits; fx-humanize SKILL.md is 19,247 bytes. check-all is the implementer's phase-gate run.
 Task 11: cost unavailable (no transcript recorded)
 Task 11: complete (commits 1c1bc1f..a1a6a3f, review clean)
+Task 12: dispatched 3897f14 2026-10-24T23:34:08Z
+Task 10: fix round 1/5 (2 addressed, 0 open: none; commits a1a6a3f..6d5ce1e)
+Task 10: minor (deferred): glossary-migrate prints "refused, repo unchanged" even when a git mv or write fails after earlier moves ran
+Task 10: cost unavailable (no transcript recorded)
+Task 10: complete (commits 93db6ab..6d5ce1e, review clean after fix round 1)
