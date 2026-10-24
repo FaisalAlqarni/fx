@@ -324,6 +324,8 @@ With a correct seam:
    is worth more than no test at all, and it can be promoted later.
 2. **Watch it fail.** Invoke the fx-tdd lane for the RED/GREEN mechanics: including
    which RED is valid (runtime vs compile-time) and the anti-tautology rules.
+   Forced the red by changing code or a fixture? `diff` against a clean copy
+   first, to prove the change landed.
 3. Apply the fix.
 4. Watch it pass.
 5. **Re-run the Phase 1 loop against the original, un-minimised scenario.**
@@ -338,8 +340,9 @@ leaves every sibling caller broken. The smallest change in the wrong place is
 not lazy, it is a second bug.
 
 Verify: the test passes · no other tests broken · the issue is actually
-resolved. Apply `fx-implement`'s Iron Law before claiming success: **evidence
-before claims.**
+resolved. Before saying it is fixed, re-run the Phase 1 loop and the test command and
+read the output: **evidence before claims**
+(`../../references/vocab/verification.md`).
 
 ### Defense in depth: optional, after the root cause is found
 
@@ -362,6 +365,9 @@ See `../../references/vocab/defense-in-depth.md`.
 - [ ] Throwaway prototypes deleted, or moved to a clearly-marked debug location
 - [ ] **The hypothesis that turned out correct is stated in the commit message,
       so the next debugger learns**
+- [ ] **Prevention question answered:** name what would have prevented this
+      bug. A missing seam goes to `fx-architecture`, a process or lane gap to
+      `/fx:fx-retro`. Say it in the report and start neither.
 
 ---
 

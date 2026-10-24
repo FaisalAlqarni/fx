@@ -120,7 +120,12 @@ every edge case.
 
 Prefer existing seams to new ones. Use the **highest** seam available. If a new
 seam is needed, propose it at the highest point you can. Fewer seams across the
-codebase is better; the ideal number is one.
+codebase is better; the ideal number is one. Give each proposed seam one line:
+what it catches, what it misses.
+
+Drive the behaviour at the request or service seam, and add the system test
+once it works: never drive RED from a browser or system test. It is slow, and a
+missing feature looks like a broken test.
 
 When the shape of the interface is itself in question (how deep the module is,
 where the seam belongs, what it should expose) read
@@ -263,7 +268,9 @@ back as prose. Explanation the user asked for is not debt; give it in full.
 ## Verify GREEN: MANDATORY
 
 - The test passes
-- **Other tests still pass**
+- **Run `test_scope` once the change is done**, even when the task named one
+  test file. Name every failure it shows in the report, including ones you did
+  not cause: a red you saw and left out falsifies the report.
 - **Output is pristine**: no errors, no warnings, no stray logs
 
 **Test fails? Fix the code, not the test.**
@@ -306,8 +313,11 @@ watch it fail for the right reason, then fix. The test proves the fix and
 prevents the regression.
 
 For a regression test, prove it can actually catch the bug:
-write → run (passes) → **revert the fix → run (MUST FAIL)** → restore → run
-(passes). A regression test never seen failing is not a regression test.
+write → run (passes) → **undo the fix → run (MUST FAIL)** → restore → run
+(passes). To undo: copy the fixed file aside, undo the fix by hand, `diff`
+against the copy to prove the undo landed, run, copy it back, `diff` again, run.
+Never `git checkout`, `git restore` or `git stash` for this. A regression test
+never seen failing is not a regression test.
 
 ## Rationalizations: every one means start over
 

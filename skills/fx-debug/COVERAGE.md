@@ -142,3 +142,13 @@ converts flailing into an architectural conversation), the **11 red flags**, the
 | Dropped | 8 (upstream dev artifacts + the unsourced impact numbers) |
 | Duplicates already verdicted (soe fork) | 144 |
 | **Unaccounted** | **0** |
+
+---
+
+## Evidence rules (task 15)
+
+| Item | Verdict | Note |
+|---|---|---|
+| `diff` against a clean copy to prove a forced red landed | K | `research/compare-4-tdd-debug.md` D2 |
+| Phase 6 prevention question, pointing to `fx-architecture` and `/fx:fx-retro` | K | compare-4 D2 |
+| Re-run loop and tests before claiming fixed; cite `verification.md` | K | compare-4 D2 |

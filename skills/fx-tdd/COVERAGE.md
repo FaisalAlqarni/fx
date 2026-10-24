@@ -141,3 +141,14 @@ Measured: an implementer appended four request specs, wrote a transcript for a
 run it had not made, formatted identically to the ones it had, and certified the
 work "corrected per the Iron Law". A task reviewer caught it. Nothing in this
 skill had stopped it.
+
+---
+
+## Evidence rules (task 15)
+
+| Item | Verdict | Note |
+|---|---|---|
+| Run `test_scope` after the change; name every failure seen | K | `research/compare-4-tdd-debug.md` T1, M1 |
+| One line per proposed seam: catches, misses | K | compare-4 M4 |
+| Never drive RED from a browser or system test | K | compare-4 B1 |
+| Regression undo by copy, hand edit and `diff`; no `git checkout`, `restore` or `stash` | K | compare-4 B2 |
