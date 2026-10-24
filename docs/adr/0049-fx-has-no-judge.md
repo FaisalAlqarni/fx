@@ -2,6 +2,8 @@
 
 Status: accepted, 2026-10-24. Supersedes 0047 and 0048.
 
+The decisions it keeps are recorded in ADR 0050, 0051 and 0052.
+
 ## Context
 
 ADR 0047 added an optional judge, a small model (TypeSafe Jev, over `/v1/systemone`) that answered typed questions for the shell guard and the Stop check. ADR 0048 let it act in more places, each behind a measured bar: a lane hint on each prompt, subagent sizing, judged repository edit rules and review helpers for the lenses. Two benchmarks then measured what the judge adds over the plain-code hooks:
