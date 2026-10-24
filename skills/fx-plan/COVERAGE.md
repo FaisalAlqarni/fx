@@ -100,9 +100,9 @@ A claim with no verdict is a build error.
 
 | | Count |
 |---|---:|
-| Kept inline in `fx-plan` | 131 |
+| Kept inline in `fx-plan` | 123 |
 | Kept in `agents/fx-devils-advocate.md` | 62 |
-| Superseded by an explicit decision | 74 |
+| Superseded by an explicit decision | 82 |
 | Dropped | 0 |
 | **Unaccounted** | **0** |
 

@@ -114,10 +114,10 @@ Verdicts: **K** kept inline · **R** kept in `../../references/vocab/good-tests.
 
 | | Count |
 |---|---:|
-| Kept inline in `fx-tdd` | 118 |
+| Kept inline in `fx-tdd` | 108 |
 | Kept in `../../references/vocab/good-tests.md` | 41 |
 | Kept in `../../references/vocab/codebase-design.md` | 2 |
-| Superseded by an explicit decision | 34 |
+| Superseded by an explicit decision | 44 |
 | Dropped | 0 |
 | **Unaccounted** | **0** |
 

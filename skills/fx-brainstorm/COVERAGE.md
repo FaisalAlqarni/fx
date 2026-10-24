@@ -119,7 +119,7 @@ A claim with no verdict is a build error.
 | Kept in `../../references/vocab/domain-modeling.md` | (whole source) |
 | Copied verbatim (visual companion + scripts) | 1 + 5 files |
 | Superseded by an explicit decision | 20 |
-| Dropped | 0 |
+| Dropped | 1 file (`spec-document-reviewer-prompt.md`) and the `CONTEXT-FORMAT.md` map format |
 | **Unaccounted** | **0** |
 
 ## The two sections the draft lost entirely

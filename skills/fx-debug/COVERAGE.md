@@ -133,10 +133,10 @@ converts flailing into an architectural conversation), the **11 red flags**, the
 
 | | Count |
 |---|---:|
-| Kept inline in `fx-debug` | 178 |
+| Kept inline in `fx-debug` | 177 |
 | Kept in references (`root-cause-tracing`, `defense-in-depth`) | 6 |
 | Copy verbatim (`hitl-loop.template.sh`) | 1 file |
-| Superseded by an explicit decision | 12 |
+| Superseded by an explicit decision | 14 |
 | Dropped | 8 (upstream dev artifacts + the unsourced impact numbers) |
 | Duplicates already verdicted (soe fork) | 144 |
 | **Unaccounted** | **0** |
