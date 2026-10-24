@@ -120,3 +120,13 @@ Task 10: fix round 1/5 (2 addressed, 0 open: none; commits a1a6a3f..6d5ce1e)
 Task 10: minor (deferred): glossary-migrate prints "refused, repo unchanged" even when a git mv or write fails after earlier moves ran
 Task 10: cost unavailable (no transcript recorded)
 Task 10: complete (commits 93db6ab..6d5ce1e, review clean after fix round 1)
+Task 13: dispatched 4bc7e34 2026-10-24T23:36:44Z
+Task 12: minor (deferred): fix-loop.md does not say a `fix` ruling on a branch-pass declined line enters a fix round
+Task 12: minor (deferred): final-review.md does not state that the controller renames the branch reviewer's `Task <NN>: declined:` lines to `Final review: declined:` lines
+Task 12: declined: test strength of includes string assertions: they pin wording, not reviewer behaviour, which is the stated seam for this task
+Task 12: declined: whether the ruled declined lines reach the final brief in practice: needs a real run, outside this diff
+Ruling: task 12 declined 1 (includes-assertion strength) is accepted: text gates are the seam the design names for prompt wording (Testing Decisions); behaviour is measured only by the live bench on request. Cost if wrong: a wording-only check misses a behaviour change, caught by the final review.
+Ruling: task 12 declined 2 (declined lines reaching the final brief in a real run) is accepted: the final review of this build is that real run; the final reviewer is told to check its brief carries the ruled declined lines. Cost if wrong: none beyond that check.
+Task 12: confirmed ⚠️ resolved: controller read task-reviewer-prompt.md: the vision rule is at line 164 and the declined rule at 170, inside Part 1, with the findings heading at 281.
+Task 12: cost unavailable (no transcript recorded)
+Task 12: complete (commits 3897f14..afbafac, review clean)
