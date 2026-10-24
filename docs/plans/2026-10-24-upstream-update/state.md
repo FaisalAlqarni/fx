@@ -33,3 +33,9 @@ Ruling: task 22 runs its ADR shape check (line 1 title, status line, three headi
 Task 01: dispatched dd99986 2026-10-24T22:53:05Z
 Controller: implementer dispatch text saved as .fx/2026-10-24-upstream-update/implementer-dispatch-template.md (placeholders [NN], [NN-slug], [title]); model sonnet unless a Capable because line.
 Waiting: frontier empty until task 01 completes (02, 06, 07 and 09 are blocked by 01; serial implementers).
+Ruling applied: S2 brief tool pinned at bbd241b in <SCRATCH>/fx-brief-tool. Plan directory committed.
+Task 02: dispatched 18b20c9 2026-10-24T22:55:30Z
+Task 01: confirmed ⚠️ resolved: release-version.test.js OK on the branch (controller ran it), and brief 02 compiled by the pinned tool from the real design.md holds "Phase 1: Size gate" (exit 0).
+Task 01: minor (deferred): section() does not skip fenced code, so a `# ` line inside a fence ends the excerpt early
+Task 01: cost unavailable (no transcript recorded)
+Task 01: complete (commits dd99986..bbd241b, review clean)
