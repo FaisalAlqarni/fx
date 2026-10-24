@@ -19,7 +19,7 @@ Subagent (general-purpose):
 
     ## The task
 
-    Read it: [TASK_FILE]
+    Read it: [BRIEF_FILE]
 
     ## The findings under verification
 
@@ -149,7 +149,7 @@ Subagent (general-purpose):
 
     Task <NN>: minor (deferred): <one-liner>
 
-    Use the task number named in [TASK_FILE]'s filename and round [ROUND].
+    Use the task number in the `## Task` heading of [BRIEF_FILE] and round [ROUND].
     The controller greps these lines and checks their count against 1 (the
     round line) plus the ledger count you report in `Fixed`.
 
@@ -173,7 +173,7 @@ Subagent (general-purpose):
   summary
 - `[MODEL]`: REQUIRED; default: standard tier, most capable only with a
   stated reason (see model-selection.md)
-- `[TASK_FILE]`: the same file the implementer worked from
+- `[BRIEF_FILE]`: REQUIRED, the path `compile-brief` wrote just before this re-review dispatch
 - `[PRIOR_FINDINGS_FILES]`: REQUIRED, one or more paths: the previous review's
   (or previous round's) findings file, and any lens findings file from the
   same dispatch. Pass the path(s), never a copied extract

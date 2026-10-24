@@ -7,7 +7,7 @@
 # that is the difference between a clean coordinator context and a poisoned one.
 #
 # Using the recorded per-task BASE (never HEAD~1) keeps multi-commit tasks
-# intact — HEAD~1 silently drops all but the last commit.
+# intact: HEAD~1 silently drops all but the last commit.
 #
 # Usage: review-package SLUG BASE HEAD [OUTFILE]
 # Default OUTFILE: <repo-root>/.fx/<SLUG>/review/<base7>..<head7>.diff
@@ -28,6 +28,12 @@ root=$(git rev-parse --show-toplevel) || { echo "not a git repo" >&2; exit 2; }
 git rev-parse --verify --quiet "$base" >/dev/null || { echo "bad BASE: $base" >&2; exit 2; }
 git rev-parse --verify --quiet "$head" >/dev/null || { echo "bad HEAD: $head" >&2; exit 2; }
 
+# A HEAD that moved off the branch gives a non-empty range of the wrong commits.
+if ! git merge-base --is-ancestor "$base" "$head"; then
+  echo "BASE ${base} is not an ancestor of HEAD ${head}: refusing a range not rooted at BASE" >&2
+  exit 3
+fi
+
 # An empty range means the implementer committed nothing. Fail here rather than
 # dispatching a reviewer against an empty diff.
 if [ -z "$(git rev-list "${base}..${head}")" ]; then
@@ -46,7 +52,7 @@ fi
 
 # .fx/ holds ephemeral artifacts and must never be committed.
 if ! git check-ignore -q "$root/.fx" 2>/dev/null; then
-  echo "warning: .fx/ is not git-ignored — add it to .gitignore" >&2
+  echo "warning: .fx/ is not git-ignored: add it to .gitignore" >&2
 fi
 
 {

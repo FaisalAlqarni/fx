@@ -48,11 +48,11 @@ maximum per task.**
   you already ledgered them yourself, below, when you recorded the reply).
   Minor is never open. Its context is intact: it knows the task, the code,
   and its own choices. If the harness cannot message a live subagent, dispatch
-  a fresh one with the task path, the report-file path and the same
+  a fresh one with the brief path, the report-file path and the same
   findings-file(s) and rule; the report file is the persistent memory either
   way.
 - **Rounds 4 to 5:** dispatch a **fresh** implementer on a **more capable
-  model** (`Capable because: fix round <R>` as the prompt's first line), with the task path, the report-file path, the same findings-file(s)
+  model** (`Capable because: fix round <R>` as the prompt's first line), with the brief path, the report-file path, the same findings-file(s)
   and open-items rule, and this framing: *"A prior implementer attempted this
   task N times; you own it now. Read the report file for what was tried."* A
   loop surviving three resumes usually means the implementer cannot see its
@@ -69,6 +69,12 @@ fix message**: a one-line fix does not need the whole suite.
 
 **Before re-dispatching the reviewer, confirm the fix report contains the
 covering tests, the command run, and the output.** All three, or no re-review.
+
+**Recompile the brief before the re-review dispatch**, as before the task
+review (`compile-brief`, see SKILL.md), so the re-reviewer reads the same
+rulings and Global Constraints. Dispatch it with
+[re-review-prompt.md](./re-review-prompt.md), passing the brief path as
+`[BRIEF_FILE]`.
 
 **The re-review is scoped.** Run
 `bash scripts/review-package <TASK> <FIX_BASE> <HEAD>` where `FIX_BASE` is the head

@@ -20,7 +20,6 @@ if "--root" in sys.argv:
 LINK = re.compile(r'\[[^\]]*\]\(([^)\s]+)\)')
 # Unreachable today; the named task adds the link and deletes the entry.
 PENDING_ORPHANS = {
-    'skills/fx-implement/re-review-prompt.md': '16',
 }
 # Its links are examples, carried verbatim.
 NOT_A_SOURCE = {'skills/fx-authoring/anthropic-best-practices.md'}

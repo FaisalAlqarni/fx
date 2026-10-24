@@ -39,6 +39,7 @@ assert.ok(ref("handling-reports.md").includes("ran test_all (rule)"), "a per-tas
 assert.ok(read("skills/fx-implement/implementer-prompt.md").includes("naming the command it ran"), "the Tests field names the command");
 assert.ok(impl.includes("**Never read a diff yourself**, except"), "the reading rule names its one exception");
 assert.ok(!ref("rationalizations.md").includes('| "The fix was small, skip the re-review" | Unreviewed fixes'), "the old rationalization row is replaced");
+assert.ok(/recompile the brief[^.]*before the re-review dispatch/i.test(loop) && loop.includes("[re-review-prompt.md](./re-review-prompt.md)"), "the controller recompiles the brief before the re-review dispatch and links the prompt");
 assert.ok(loop.includes("**Small fixes: controller re-review.**"), "the controller re-review rule exists");
 assert.ok(loop.includes("20 production lines or fewer"), "the cap counts production lines");
 assert.ok(loop.includes("git diff --numstat"), "the count is a command, not a guess");

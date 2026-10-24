@@ -30,6 +30,7 @@ for (const f of ['skills/fx-implement/task-reviewer-prompt.md', 'skills/fx-revie
 }
 const rr = contract('skills/fx-implement/re-review-prompt.md', ['Verdict', 'Open', 'Fixed', 'Findings', 'New breakage']);
 const skill = read('skills/fx-implement/SKILL.md');
+assert.ok(rr.includes('[BRIEF_FILE]') && !rr.includes('[TASK_FILE]'), 're-review: reads the compiled brief, not the raw task file');
 contract('skills/fx-implement/references/coverage-audit.md', ['Gaps', 'Findings', 'Tasks affected', 'Verdict', 'Next'], 0);
 const lensDispatch = read('skills/fx-implement/references/lens-dispatch.md');
 const readingRules = read('skills/fx-implement/references/reading-rules.md');
