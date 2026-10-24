@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 13: the five user-invoked lanes are hidden from the model on this runtime.
+# 13: the seven user-invoked lanes are hidden from the model on this runtime.
 #
 # opencode: the plugin's config hook, run on a synthetic config, must deny each
 # hidden lane in permission.skill and deny nothing else.
@@ -28,12 +28,12 @@ set -uo pipefail
 [ "${1:-}" = "--describe" ] && { k=free; case "${HARNESS:-}" in claude-code|codex) k=live ;; esac; echo "13|audit lane not model-facing|$k"; exit 0; }
 : "${FX_REAL_HOME:?run rows through tests/conformance/run.sh, which isolates HOME}"
 cd "$FX"
-HIDDEN="fx-audit fx-critique fx-grill fx-handoff fx-setup"
+HIDDEN="fx-audit fx-critique fx-grill fx-handoff fx-pr fx-setup fx-what"
 case "$HARNESS" in
   opencode)
     node --input-type=module -e '
       const fs = await import("node:fs");
-      const HIDDEN = ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-setup"];
+      const HIDDEN = ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-setup", "fx-what"];
       const { fx } = await import(process.cwd() + "/plugins/fx-opencode-v1.js");
       const config = {};
       await (await fx({ directory: process.cwd() })).config(config);
@@ -47,9 +47,9 @@ case "$HARNESS" in
     # The real 2.x binary. skill.list is unfiltered (probe 7), so hiding is
     # proved where v2 applies it: the skill rules on the agents. Two checks.
     # (1) Every agent `opencode debug agents` lists, the built-ins and fx's
-    # own, carries a skill deny for each of the five lanes and for nothing
+    # own, carries a skill deny for each of the seven lanes and for nothing
     # else. (2) The skill list the built-in `build` agent sees, meaning
-    # skill.list minus what build's rules deny, holds none of the five. On the
+    # skill.list minus what build's rules deny, holds none of the seven. On the
     # plugin route skill.list holds all 17, so (2) has something to hide; on
     # the installer route the lanes are never linked and (2) holds trivially.
     # A user-defined agent in opencode.json is applied after plugin
@@ -60,7 +60,7 @@ case "$HARNESS" in
     oc2_agents
     F="$OC2_LAST" AGENTS="$OC2_ROOT/agents.json" ROUTE="$OC2_ROUTE" node -e '
       const fs = require("fs");
-      const HIDDEN = ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-setup"];
+      const HIDDEN = ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-setup", "fx-what"];
       const effect = (rules, resource) => {
         let e = "unset";
         for (const r of rules || []) if (r.action === "skill" && (r.resource === resource || r.resource === "*")) e = r.effect;
@@ -79,9 +79,9 @@ case "$HARNESS" in
       for (const n of HIDDEN) if (seen.includes(n)) {
         console.error("opencode-v2: the build agent still sees " + n + " (" + process.env.ROUTE + " route)"); process.exit(1); }
       if (!seen.includes("fx-tdd")) {
-        console.error("opencode-v2: the build agent lost fx-tdd; the rules hide more than the five lanes"); process.exit(1); }
+        console.error("opencode-v2: the build agent lost fx-tdd; the rules hide more than the seven lanes"); process.exit(1); }
       if (process.env.ROUTE === "plugin" && !HIDDEN.every(n => listed.includes(n))) {
-        console.error("opencode-v2: on the plugin route skill.list should hold the five lanes, so the hiding has something to hide"); process.exit(1); }
+        console.error("opencode-v2: on the plugin route skill.list should hold the seven lanes, so the hiding has something to hide"); process.exit(1); }
       console.error("checked agents: " + agents.map(a => a.id).join(", "));
     ' ;;
   claude-code|codex)

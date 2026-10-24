@@ -34,7 +34,7 @@ const frontmatter = (p) => {
   return { head: m[1] ?? "", body: m[2] ?? "" };
 };
 const HIDDEN = fs.readdirSync(path.join(root, "skills")).filter((d) => fs.existsSync(path.join(root, "skills", d, "SKILL.md")) && /^disable-model-invocation:\s*true$/m.test(frontmatter(path.join(root, "skills", d, "SKILL.md")).head)).sort();
-assert.deepStrictEqual(HIDDEN, ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-setup"], "five lanes are user-invoked");
+assert.deepStrictEqual(HIDDEN, ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-setup", "fx-what"], "seven lanes are user-invoked");
 assert.deepStrictEqual(
   [...import_user_invoked_lanes.USER_INVOKED_LANES].sort(),
   HIDDEN,
@@ -58,7 +58,7 @@ for (const name of HIDDEN) {
   );
 }
 const deepen = (s) => s.replace(/\.\.\/(references|agents)\//g, "../../$1/");
-for (const name of ["fx-critique", "fx-grill", "fx-handoff", "fx-setup"]) {
+for (const name of ["fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-setup", "fx-what"]) {
   const cmd = frontmatter(path.join(root, "commands", `${name}.md`));
   const skill = frontmatter(path.join(root, "skills", name, "SKILL.md"));
   assert.strictEqual(
@@ -80,7 +80,7 @@ for (const dir of fs.readdirSync(path.join(root, "skills"))) {
     `${dir}: only user-invoked lanes are hidden`
   );
 }
-for (const name of ["fx-critique", "fx-grill", "fx-handoff", "fx-setup"]) {
+for (const name of ["fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-setup", "fx-what"]) {
   const cmd = frontmatter(path.join(root, "commands", `${name}.md`));
   const m = cmd.head.match(/^description:[ \t]*(.+)$/m);
   assert.ok(m, `${name}: commands/${name}.md has no single-line description field`);
@@ -91,7 +91,7 @@ for (const name of ["fx-critique", "fx-grill", "fx-handoff", "fx-setup"]) {
     `${name}: description has no unquoted colon-space, so Codex's own command-to-skill auto-migration will not skip it, and the lane ships unhidden as source-command-${name}`
   );
 }
-for (const name of ["fx-critique", "fx-grill", "fx-handoff"]) {
+for (const name of ["fx-critique", "fx-grill", "fx-handoff", "fx-pr"]) {
   const cmd = frontmatter(path.join(root, "commands", `${name}.md`));
   const m = cmd.head.match(/^argument-hint:[ \t]*(.+)$/m);
   assert.ok(m, `${name}: commands/${name}.md has no argument-hint field`);

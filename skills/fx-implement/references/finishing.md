@@ -39,7 +39,7 @@ merged result. If it fails, stop, leave the worktree and branch in place and
 investigate; nothing was pushed. Once it is green, clean up the worktree, then
 `git branch -d <feature-branch>`.
 
-**2. Push and open a pull request.** Push only because the owner chose this.
+**2. Push and open a pull request.** Push only because the owner chose this. Tell the owner to run `/fx:fx-pr` first for the description body: a lane cannot invoke a user-invoked command.
 
 ```bash
 git push -u origin <feature-branch>

@@ -150,7 +150,7 @@ const scratchEnv = (0, import_hook_env.applyScratchEnv)();
       const f = path.join(root, "skills", n, "SKILL.md");
       return fs.existsSync(f) && /^disable-model-invocation:\s*true\s*$/m.test(fs.readFileSync(f, "utf8"));
     }).sort();
-    assert.strictEqual(userInvoked.length, 5, "five user-invoked lanes");
+    assert.strictEqual(userInvoked.length, 7, "seven user-invoked lanes");
     assert.deepStrictEqual(
       Object.keys(config.command || {}).sort(),
       userInvoked,

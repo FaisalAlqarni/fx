@@ -23,7 +23,7 @@ set -uo pipefail
 [ "${1:-}" = "--describe" ] && { k=free; case "${HARNESS:-}" in claude-code|codex) k=live ;; esac; echo "14|audit lane user-invocable|$k"; exit 0; }
 : "${FX_REAL_HOME:?run rows through tests/conformance/run.sh, which isolates HOME}"
 cd "$FX"
-HIDDEN="fx-audit fx-critique fx-grill fx-handoff fx-setup"
+HIDDEN="fx-audit fx-critique fx-grill fx-handoff fx-pr fx-setup fx-what"
 case "$HARNESS" in
   opencode)
     # HOME is the runner's scratch home, so this destination is inside it.
@@ -41,7 +41,7 @@ case "$HARNESS" in
     # (task 10); listing is what a user picks from.
     . "$FX/tests/conformance/lib/opencode-v2.sh"
     oc2_setup
-    oc2_wait command.list '["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-setup"].every((x) => d.some((c) => c.name === x))'
+    oc2_wait command.list '["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-setup", "fx-what"].every((x) => d.some((c) => c.name === x))'
     F="$OC2_LAST" node -e '
       const d = JSON.parse(require("fs").readFileSync(process.env.F, "utf8"));
       const audit = d.find(c => c.name === "fx-audit");

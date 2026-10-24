@@ -93,7 +93,7 @@ case "$HARNESS" in
   opencode-v2)
     # The real 2.x binary, a scratch config, its own service, no model call.
     # Route installer: the installer links the twelve model-facing skills and
-    # never links the five user-invoked lanes (they are commands, row 14).
+    # never links the seven user-invoked lanes (they are commands, row 14).
     # Route plugin: `skills` lists all of skills/, lanes included, and the
     # plugin hides the lanes per agent (row 13). skill.list is unfiltered
     # either way (probe 7), so it says what is discoverable, not what the
@@ -112,7 +112,7 @@ const effect = (rules, action, resource) => {
   return e;
 };
       const fs = require("fs");
-      const HIDDEN = ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-setup"];
+      const HIDDEN = ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-setup", "fx-what"];
       const all = fs.readdirSync("skills", { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name);
       const listed = JSON.parse(fs.readFileSync(process.env.F, "utf8")).map(s => s.name);
       const want = process.env.ROUTE === "plugin" ? all : all.filter(n => !HIDDEN.includes(n));
