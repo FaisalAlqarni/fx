@@ -23,9 +23,9 @@ Verdicts: **K** kept inline · **R** kept in `../../references/vocab/good-tests.
 | 15 | K | "skip TDD just this once" is rationalization |
 | 16 to 22 | K | Iron Law; delete it; all four no-exceptions clauses; implement fresh |
 | 23 | S | DOT cycle diagram → prose RED → verify → GREEN → verify → REFACTOR, every edge covered |
-| 24 to 29 | K | Write one minimal test; the good/bad annotations; one behavior, clear name, real code |
+| 24 to 29 | S | Write one minimal test: one behavior, clear name, real code kept. The good/bad annotated examples are superseded by prose plus `good-tests-examples.md` |
 | 30 to 35 | K | Verify RED MANDATORY; all three confirmations; passes → fix the test; errors → fix and re-run |
-| 36 to 39 | K | GREEN minimal; both annotations; don't add features / refactor / improve beyond the test |
+| 36 to 39 | S | GREEN minimal; don't add features / refactor / improve beyond the test kept. The good/bad annotations are superseded by prose plus `good-tests-examples.md` |
 | 40 to 45 | K | Verify GREEN MANDATORY; all three confirmations; fix code not test; fix other failures now |
 | 46 to 50 | K | Refactor after green only, all three actions, stay green, no new behavior, repeat |
 | 51 to 53 | K | **Good Tests table: Minimal / Clear / Shows intent, with both examples.** Restored |

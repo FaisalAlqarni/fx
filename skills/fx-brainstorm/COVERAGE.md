@@ -55,7 +55,8 @@ A claim with no verdict is a build error.
 | 105 to 107 | K | Visual companion: browser-based, **a tool not a mode**, accepting ≠ every question goes through it |
 | 108 to 114 | K | Offer just-in-time, never upfront; wait for a real visual question; **its own message with nothing else**; wait; `--open` on accept; don't re-offer on decline |
 | 115 to 121 | K | Per-question decision; the see-vs-read test; the browser list; the terminal list; **a UI topic is not automatically a visual question**; both worked examples |
-| 122 | V | The `visual-companion.md` guide and its 5 scripts (`server.cjs`, `helper.js`, `frame-template.html`, `start-server.sh`, `stop-server.sh`) are **copied verbatim**: they are working code, not prose to rewrite. `server.cjs` and `helper.js` are now generated from TypeScript in `src/skills/fx-brainstorm/scripts/` with the same behaviour; the other three stay verbatim. Added: the server is localhost-only and writes into the project; nothing is published |
+| (unnumbered) | X | superpowers 6.3.0 `spec-document-reviewer-prompt.md`: unused by the 6.3.0 SKILL.md and superseded upstream by the builder check; not carried |
+| 122 | V | The `visual-companion.md` guide and its 5 scripts (`server.cjs`, `helper.js`, `frame-template.html`, `start-server.sh`, `stop-server.sh`) are **copied verbatim**: they are working code, not prose to rewrite. `server.cjs` and `helper.js` are now generated from TypeScript in `src/skills/fx-brainstorm/scripts/` with the same behaviour, except one fix (task 06, superpowers 7.0.0): mockup content is inserted literally, so `$&` and `$'` survive; the other three stay verbatim. Added: the server is localhost-only and writes into the project; nothing is published |
 
 ## mattpocock:grilling (123 to 141)
 
@@ -102,7 +103,7 @@ A claim with no verdict is a build error.
 | Challenge against the glossary · sharpen fuzzy language · concrete scenarios · cross-reference with code | D |
 | Update `CONTEXT.md` inline, never batched | D |
 | `CONTEXT.md` is a glossary and nothing else: no implementation details | D |
-| `CONTEXT-FORMAT.md`: the format, be opinionated, `_Avoid_` lists, tight definitions, only context-specific terms, grouping | D |
+| `CONTEXT-FORMAT.md`: the map format, be opinionated, `_Avoid_` lists, tight definitions, only context-specific terms, grouping | X for the map format (dropped; `domain-modeling.md` shows the layout only); D for the rest |
 | `ADR-FORMAT.md`: numbering, the 3-test criteria, the 1 to 3 sentence template, the three optional sections, all seven "what qualifies" categories | D |
 |: | **Added:** "an ADR in the area records a decision not to re-litigate", and where each consumer uses this file |
 

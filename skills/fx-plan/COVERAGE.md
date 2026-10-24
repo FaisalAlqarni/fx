@@ -17,11 +17,11 @@ A claim with no verdict is a build error.
 |---|---|---|
 | 1 to 2 | S | Frontmatter rewritten; triggers point at `docs/plans/<slug>/` |
 | 3 | S | `Gate type: judgment` per `soe-modes`: soe's mode system is not absorbed |
-| 4 to 5 | K | **Audience: zero context, questionable taste**: restored; it sets the detail level |
+| 4 to 5 | S | Audience "zero context, questionable taste" replaced. ADR 0043: reader is skilled and drives tests through fx-tdd; Tests field in prose |
 | 6 to 11 | K | Document files, code, testing, docs to check, how to test; whole plan as bite-sized tasks |
 | 12 to 14 | K | DRY · YAGNI · TDD |
 | 15 | S | "frequent commits" → one commit per task, in the worktree, no trailers |
-| 16 to 18 | K | **Skilled dev, knows nothing of our toolset, doesn't know good test design**: restored |
+| 16 to 18 | S | "Doesn't know good test design" replaced; the skilled-dev and unfamiliar-toolset parts stay. ADR 0043: reader is skilled and drives tests through fx-tdd; Tests field in prose |
 | 19 | K | Announce line |
 | 20 | S | Worktree created "at execution time" → `fx-implement` §Setup owns it |
 | 21 to 22 | S | `docs/superpowers/plans/YYYY-MM-DD-<feature>.md` → `docs/plans/YYYY-MM-DD-<slug>/plan.md`, always a directory |
@@ -30,7 +30,7 @@ A claim with no verdict is a build error.
 | 40 to 43 | K | Right-sizing: smallest unit with its own test cycle worth a reviewer's gate |
 | 44 to 49 | K | Bite-sized steps, one action each |
 | 50 to 54 | K | Requirements Restatement as step 1, the format, wait for confirmation, the reason |
-| 55 to 68 | K | Header template entire: Goal, Architecture, Stack, **Complexity**, **Risks HIGH/MEDIUM + mitigation**, **Testing unit/integration/E2E**, Global Constraints + verbatim rule + implicit-inclusion rule |
+| 55 to 68 | K | Header template (in `templates.md`) entire: Goal, Architecture, Stack, **Complexity**, **Risks HIGH/MEDIUM + mitigation**, **Testing unit/integration/E2E**, Global Constraints + verbatim rule + implicit-inclusion rule |
 | 57 | S | "REQUIRED SUB-SKILL: soe:subagent-driven-development or soe:executing-plans" → `fx-implement`, one path |
 | 69 to 70, 72 | K | Task header; Create / Test file lines |
 | 71 | S | `Modify: path.py:123-145` → **path only, no line-number ranges** (they rot within a day) |
@@ -38,12 +38,12 @@ A claim with no verdict is a build error.
 | 76 | S | `Depends-on:` → `Blocked by:` (one vocabulary, shared with the frontier) |
 | 77 to 78 | K | Per-task Risks and Testing |
 | 79 to 82 | K | **Idempotency required**, the definition, the resume reason, the guard examples |
-| 83 to 84, 86 | K | Steps 1, 2, 4: test code and exact commands with expected output |
+| 83 to 84, 86 | S | Steps 1, 2, 4: exact commands with expected output kept; the test code is not written in the plan. ADR 0043: reader is skilled and drives tests through fx-tdd; Tests field in prose (`templates.md`) |
 | 85 | S | "Step 3: write minimal implementation" **with code** → step kept, code removed. Pre-writing the implementation defeats TDD, doubles the plan, and rots fastest |
 | 87 | K | Commit step: **plus: no attribution trailers, then continue** |
 | 88 to 94 | K | All six No-Placeholders failures |
 | 95 | K | Exact file paths always |
-| 96 | S | "Complete code in every step" → **test code yes, implementation code no** (prototype-snippet exception retained) |
+| 96 | S | "Complete code in every step" → **no test code and no implementation code in the plan** (prototype-snippet exception retained). ADR 0043: reader is skilled and drives tests through fx-tdd; Tests field in prose |
 | 97 | K | Exact commands with expected output |
 | 98 | K | DRY, YAGNI, TDD (commits per task) |
 | 99 to 104 | K | Phasing at 10+: MVP / Core / Hardening / Polish, each mergeable alone |
@@ -70,9 +70,9 @@ A claim with no verdict is a build error.
 | 174 to 178 | S | GitHub/Linear publishing, native blocking links, `ready-for-agent` label on a remote tracker → local files only; **nothing goes to GitHub** |
 | 179 to 180 | K | Work the frontier; linear chain means top to bottom |
 | 181 | K | "Do not close or modify any parent issue" → **never edit `design.md` from here** |
-| 182 to 187 | K | Local task template: title, What to build, Blocked by, Status, acceptance criteria |
+| 182 to 187 | K | Local task template (in `templates.md`): title, What to build, Blocked by, Status, acceptance criteria |
 | 188 to 191 | S | Remote-issue template: no remote tracker |
-| 192 | S | "Avoid specific file paths **or code snippets**" → **paths yes (no line numbers), test code yes, implementation code no.** A path is a stable hypothesis; a path with line numbers rots; a signature is a contract |
+| 192 | S | "Avoid specific file paths **or code snippets**" → **paths yes (no line numbers), code no; tests go in the Tests field in prose (ADR 0043).** A path is a stable hypothesis; a path with line numbers rots; a signature is a contract |
 | 193 to 194 | K | Prototype-snippet exception, trimmed to the decision-rich part |
 
 ## soe:adversarial-review (195 to 267)

@@ -28,7 +28,7 @@ A claim with no verdict is a build error.
 | 17 to 18 | K | Validate the ref resolves and the diff is non-empty **before** spawning, and the reason |
 | 19 to 20 | K | Find the spec, in order |
 | 21 | S | Issue references in commit messages (`#123`, `Closes #45`, GitLab `!67`) fetched from a hosted tracker → local: the task file, then `design.md` |
-| 22 to 25 | K | A path the user passed; a spec file matching the branch; ask; **skip the axis and report "no spec available"** |
+| 22 to 25 | K | A path the user passed; a `docs/plans/<slug>/design.md` matching the branch (only the `docs/plans` form was kept, in SKILL.md "Find the spec"); ask; **skip the axis and report "no spec available"** |
 | 26 to 27 | K | Standards sources: anything documenting how code should be written |
 | 28 | K | The baseline applies even when a repo documents nothing |
 | 29 | K/F | **The repo overrides**; suppress the smell where the repo endorses it |
@@ -38,8 +38,8 @@ A claim with no verdict is a build error.
 | 33 to 44 | F | **All 12 smells**, verbatim, with their fixes |
 | 45 | K | Spawn both subagents in parallel |
 | 46 to 48 | K | Standards brief inputs; **the baseline pasted in full**; the "no other access" reason |
-| 49 to 50 | K | The Standards brief verbatim, incl. the 400-word cap |
-| 51 to 54 | K | The Spec brief inputs and text verbatim, incl. the 400-word cap |
+| 49 to 50 | K | The Standards brief verbatim, except the "Under 400 words" cap: replaced by "Keep to findings the diff supports" in commit ac5a592 (SKILL.md, Standards brief) |
+| 51 to 54 | K | The Spec brief inputs and text verbatim, except the "Under 400 words" cap: replaced by "Keep to findings the diff supports" in commit ac5a592 |
 | 55 | K | Spec missing → skip that subagent and note it in the report |
 | 56 to 57 | K | Aggregate under separate headings, verbatim or lightly cleaned |
 | 58 to 59 | K | **Do not merge or rerank**, and the reason |
@@ -85,7 +85,7 @@ A claim with no verdict is a build error.
 
 | Claims | Verdict | Note |
 |---|---|---|
-| 99 to 100 | S | Frontmatter; becomes a reference, not a selectable skill |
+| 99 to 100 | S | Frontmatter; becomes a reference, not a selectable skill; SKILL.md section 7 points at `receiving-review.md` |
 | 101 to 104 | K/V | Technical evaluation not emotional performance; verify before implementing; ask before assuming; correctness over comfort. **Short form also in the preamble, so subagents inherit it** |
 | 105 to 110 | K/V | The six-step response pattern |
 | 111 to 113 | K/V | The three forbidden responses |
@@ -104,6 +104,7 @@ A claim with no verdict is a build error.
 | 162 to 169 | K/V | The five forbidden phrases incl. **"ANY gratitude expression"**; the actions-speak reason; **"if you catch yourself about to write 'Thanks': DELETE IT"** |
 | 170 to 175 | V | Correcting your own push-back: two allowed forms, three forbidden behaviors, state it factually and move on |
 | 176 to 182 | V | All seven common-mistake rows |
+| Real Examples (the worked good and bad replies near the end) | X | Dropped; the response pattern and forbidden phrases in `receiving-review.md` carry the rule |
 | 183 | S | GitHub inline-thread reply mechanics → **publishing outward; explicit request only.** The thread-not-top-level rule is kept for when it is requested |
 
 ## Killed without absorption
@@ -124,7 +125,7 @@ A claim with no verdict is a build error.
 | Kept in `../../references/vocab/fowler-smells.md` | 16 |
 | Kept in `fx-review/reviewer-prompt.md` | 14 |
 | Superseded by an explicit decision | 17 |
-| Dropped | 1 (the template's Example Output) |
+| Dropped | 2 (the template's Example Output; receiving-code-review "Real Examples") |
 | **Unaccounted** | **0** |
 
 ## Additions not in any source

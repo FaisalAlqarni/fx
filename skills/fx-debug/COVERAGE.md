@@ -52,13 +52,13 @@ A claim with no verdict is a build error.
 | 137 to 142 | K | "No root cause": the condition, all 4 steps, and **"95% of 'no root cause' cases are incomplete investigation"** |
 | 143 | R | `root-cause-tracing.md` → `../../references/vocab/root-cause-tracing.md`, adapted to Ruby/C#/Kotlin |
 | 144 | R | `defense-in-depth.md` → `../../references/vocab/defense-in-depth.md`, adapted; **plus a note reconciling it with the ladder** (layers added after a real bug proved the path reachable is evidence, not speculation) |
-| 145 | C | `condition-based-waiting.md`: **copy verbatim, not yet reviewed.** 115 lines, self-contained technique. Flagged so the provenance ledger records it as unaudited |
+| 145 | S | `condition-based-waiting.md`: reviewed and rewritten stack-neutral in task 07: one rule for when to poll and when to inject the collaborator, consistent with `good-tests.md`. No longer a verbatim copy |
 
 ### Unreferenced files in the upstream skill directory
 
 `CREATION-LOG.md` and the upstream pressure scenarios,
-`condition-based-waiting-example.ts`: **D**, the skill's own development
-artifacts, mentioned nowhere in it.
+`condition-based-waiting-example.ts`: **D**, dropped and deleted (task 07); the
+skill's own development artifacts, mentioned nowhere in it.
 `find-polluter.sh`: **S**, its technique is described inline in
 `root-cause-tracing.md`; the script itself is bash+glob over a JS test runner
 and doesn't fit rspec/dotnet.
@@ -71,7 +71,8 @@ and doesn't fit rspec/dotnet.
 | 148 to 149 | K | A discipline for hard bugs; **skip phases only when explicitly justified** |
 | 150 | K | Read `CONTEXT.md` for a mental model; check ADRs in the area |
 | 151 to 155 | K | **Secret redaction entire**: `<REDACTED>`, build loops against env vars, captured artifacts carry auth headers so quote only the signal lines, and **say so and ask if the redacted output isn't enough.** Plus: nothing goes outward |
-| 156 to 161 | K | **"Build a feedback loop: this is the skill. Everything else is mechanical."** The tight-signal reason, the no-loop-no-salvation reason, disproportionate effort, **"be aggressive, be creative, refuse to give up"** |
+| 156 to 161 | K | **"Build a feedback loop: this is the skill. Everything else is mechanical."** The tight-signal reason, the no-loop-no-salvation reason, disproportionate effort |
+| 156 to 161 ("be aggressive, be creative, refuse to give up") | S | Superseded by the effort line ("Spend most of the effort here") and the explicit stop rule ("Stop and say so explicitly") in `fx-debug` |
 | 162 to 171 | K | **All 10 loop-construction options**, incl. HITL as last resort |
 | 172 | K | "Build the right feedback loop and the bug is 90% fixed" |
 | 173 to 178 | K | Treat the loop as a product; all 3 tightening questions with their parentheticals; **"a 30-second flaky loop is barely better than no loop"** |
@@ -134,7 +135,7 @@ converts flailing into an architectural conversation), the **11 red flags**, the
 |---|---:|
 | Kept inline in `fx-debug` | 178 |
 | Kept in references (`root-cause-tracing`, `defense-in-depth`) | 6 |
-| Copy verbatim (`condition-based-waiting.md`, `hitl-loop.template.sh`) | 2 files |
+| Copy verbatim (`hitl-loop.template.sh`) | 1 file |
 | Superseded by an explicit decision | 12 |
 | Dropped | 8 (upstream dev artifacts + the unsourced impact numbers) |
 | Duplicates already verdicted (soe fork) | 144 |
