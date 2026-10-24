@@ -145,3 +145,9 @@ Task 14: confirmed ⚠️ resolved by the ruling above (owned by task 22).
 Task 14: cost unavailable (no transcript recorded)
 Task 14: complete (commits f471e8b..ea5513c, review clean)
 Ruling: task 15's fx-tdd budget is the task file's 19,800 bytes; the controller's context figure (18,750) was copied from the pre-flight's pre-change size and was wrong. fx-tdd at 19,368 is under the task limit and the 20,000 gate. Cost if wrong: thin headroom for later fx-tdd edits, caught by the size gate.
+Task 16: dispatched 69a339c 2026-10-24T23:43:00Z
+Task 15: minor (deferred): fx-tdd "add the system test once it works: never drive RED..." chains the rule after a colon; split into two sentences.
+Task 15: minor (deferred): fx-debug Phase 6 prevention question lives only as a checklist item, not in the Phase 6 prose.
+Task 15: confirmed ⚠️ resolved: gate re-runs are covered by the task 17 phase gate (check-all).
+Task 15: cost unavailable (no transcript recorded)
+Task 15: complete (commits 53e2064..06a694c, review clean)
