@@ -59,3 +59,8 @@ Task 03: minor (deferred): SKILL.md Setup numbering starts at ### 4. The ledger 
 Task 03: confirmed ⚠️ resolved: COVERAGE row-by-row audit is owned by task 08 (COVERAGE files match fx); gate runs are covered by the implementer's test_scope exit 0 and the task 08 phase gate.
 Task 03: cost unavailable (no transcript recorded)
 Task 03: complete (commits d7083ab..35f5b22, review clean)
+Task 05: dispatched 3229906 2026-10-24T23:09:05Z
+Task 04: minor (deferred): moved files discovery.md and preamble.md open with a mid-level heading and no title line.
+Task 04: confirmed ⚠️ resolved: the live lane-triggering run is on request only (design Testing Decisions); not run, budget mode.
+Task 04: cost unavailable (no transcript recorded)
+Task 04: complete (commits 1ebcf07..14d7490, review clean)
