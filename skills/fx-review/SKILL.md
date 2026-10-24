@@ -205,7 +205,7 @@ construction.
 Lenses have no Write tool: each returns its full findings
 as its reply, as it did before the five-line contract existed. The
 controller records that reply to a findings file itself, without reasoning
-over it: see `fx-implement` §3's Lens dispatch for the exact command.
+over it: see [lens-dispatch.md](../fx-implement/references/lens-dispatch.md) for the exact command.
 
 **Branch mode also dispatches the broad reviewer**: [reviewer-prompt.md](./reviewer-prompt.md),
 on the most capable available model, with `Capable because: final branch review` as the prompt's first line, pointed at the ledger's deferred-minor and

@@ -26,11 +26,8 @@ for (const lens of ['fx-lens-a11y', 'fx-lens-pipeline']) {
 }
 assert.ok(!review.includes('auth, payment, or a migration'), 'the old task-mode blurb is gone');
 
-const impl = read('skills/fx-implement/SKILL.md');
-const start = impl.indexOf('**Lens dispatch.**');
-const end = impl.indexOf('The reviewer gets four paths');
-assert.ok(start >= 0 && end > start, 'the lens dispatch span is intact');
-const span = impl.slice(start, end);
+const span = read('skills/fx-implement/references/lens-dispatch.md');
+assert.ok(span.startsWith('**Lens dispatch.**'), 'the lens dispatch span is intact');
 assert.ok(span.includes('tripwire'), 'lens dispatch uses the tripwire column');
 assert.ok(span.includes("grep -n '^Tripwires:'"), 'lens dispatch reads the report Tripwires line, not the diff');
 assert.ok(span.includes('`mode: task`'), 'lens dispatch sends mode: task');

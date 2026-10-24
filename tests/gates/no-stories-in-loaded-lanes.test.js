@@ -31,6 +31,7 @@ const loaded = {
   "skills/fx-implement/implementer-prompt.md": "skills/fx-implement/COVERAGE.md",
   "skills/fx-implement/task-reviewer-prompt.md": "skills/fx-implement/COVERAGE.md",
   "skills/fx-implement/re-review-prompt.md": "skills/fx-implement/COVERAGE.md",
+  ...Object.fromEntries(fs.readdirSync(path.join(root, "skills/fx-implement/references")).filter((f) => f.endsWith(".md")).map((f) => [`skills/fx-implement/references/${f}`, "skills/fx-implement/COVERAGE.md"])),
   "skills/fx-plan/SKILL.md": "skills/fx-plan/COVERAGE.md",
   "skills/fx-tdd/SKILL.md": "skills/fx-tdd/COVERAGE.md"
 };

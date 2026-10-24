@@ -23,20 +23,20 @@ A claim with no verdict is a build error.
 | 21 | S | "side effect outside this worktree… a merge, a push, a publish" → broadened to "leaves the machine", per the offline rule |
 | 24 to 33 | S | Decision-graph edges → the "When this skill applies" table; `executing-plans` branch removed (that skill is absorbed, subagents always available) |
 | 34 to 61 | S | Process-graph nodes/edges → restated as prose in §1:§5. Every decision point is covered by prose; verified edge by edge |
-| 62 | K | Isolated workspace |
-| 63 | K | Never start on main/master without explicit consent |
+| 62 | R | `skills/fx-implement/references/setup.md`: isolated workspace |
+| 63 | R | `skills/fx-implement/references/setup.md`: never start on main/master without explicit consent |
 | 64 to 66 | K | Compaction fact, the re-dispatch anecdote, ledger-not-todos |
 | 67 to 68 | S | `scripts/sdd-workspace` derived a path (`dirname plan.md` here), it did no work. Deleted. The workspace **splits by lifetime**: durable `docs/plans/<slug>/` (design, plan, tasks, state.md: committed) and ephemeral `.fx/<slug>/` (reports, review packages: git-ignored, `check-ignore` verified before use) |
-| 69 | K | Another slug's directory is never yours to read or write |
+| 69 | R | `skills/fx-implement/references/setup.md`: another slug's directory is never yours to read or write |
 | 70 to 74 | K | Ledger check, resume rules, mid-loop rule, foreign-ledger rule, identity first line |
 | 75 to 76 | K | Ledger as recovery map; trust it over recollection after compaction |
 | 77 | S | `git clean -fdx` destroys the workspace → n/a, the plan dir is committed, not git-ignored scratch |
 | 78 to 81 | K | Read plan once, Global Constraints, read the design, provisional-rulings note |
-| 82 to 93 | K | Pre-flight scan: both row types, "not a scan you ran", write to ledger, rule before execution, proceed silently if clean, review loop as net |
+| 82 to 93 | R | `skills/fx-implement/references/preflight.md`: pre-flight scan: both row types, "not a scan you ran", write to ledger, rule before execution, proceed silently if clean, review loop as net |
 | 94 to 113 | K | Model selection entire section incl. turn-count-beats-token-price and the 3 complexity signals |
-| 114 to 117 | K | Batch same-shape work |
+| 114 to 117 | R | `skills/fx-implement/references/batching.md`: batch same-shape work |
 | 118 to 119 | K | Context-residency fact; artifacts as files |
-| 120 to 123 | K | Waiting on subagents: no polling, no open-ended wait, bounded 5 to 10 min stretches, reconcile children, the reason |
+| 120 to 123 | R | `skills/fx-implement/references/waiting.md`: waiting on subagents: no polling, no open-ended wait, bounded 5 to 10 min stretches, reconcile children, the reason |
 | 124 | K | Record BASE before dispatching |
 | 125 to 126 | S | `scripts/task-brief` → the task file **is** the brief (one file per task already). Script deleted |
 | 127 to 133 | K | The five dispatch contents; exact values only in the brief; never make a subagent read the whole plan |
@@ -47,11 +47,11 @@ A claim with no verdict is a build error.
 | 144 | K | Record agent identity for rounds 1 to 3 |
 | 145 | K | Never parallel implementers: **reason replaced**: shared test environment, not file conflicts (worktrees solve files; they don't give a second Postgres) |
 | 146 | K | implementer-prompt.md |
-| 147 to 162 | K | All four statuses, all BLOCKED sub-rules incl. "plan itself is wrong", never-ignore-an-escalation, answer questions properly. **Added**: BLOCKED-5 skip-and-continue, per the never-stall-the-queue decision |
+| 147 to 162 | R | `skills/fx-implement/references/handling-reports.md`: all four statuses (DONE stays inline), all BLOCKED sub-rules incl. "plan itself is wrong", never-ignore-an-escalation, answer questions properly. **Added**: BLOCKED-5 skip-and-continue, per the never-stall-the-queue decision |
 | 163 to 166 | K | Task-scoped gates; never skip; never accept a missing verdict; self-review never replaces |
 | 167 to 171 | K | review-package as a file; the bash-less fallback; the "never enters your context" reason; never `HEAD~1`; never dispatch without a diff file |
-| 172 to 180 | K | Three paths + constraints; attention-lens framing; verbatim copying; no open-ended directives; no re-running tests; **the anti-pre-judging rule and its four trigger phrases** |
-| 181 to 183 | K | ⚠️ Cannot-verify items: don't block, you resolve each, confirmed gap enters the loop |
+| 172 to 180 | R | `skills/fx-implement/references/review-inputs.md`: (the reviewer's paths stay inline) three paths + constraints; attention-lens framing; verbatim copying; no open-ended directives; no re-running tests; **the anti-pre-judging rule and its four trigger phrases** |
+| 181 to 183 | R | `skills/fx-implement/references/review-inputs.md`: ⚠️ Cannot-verify items: don't block, you resolve each, confirmed gap enters the loop |
 | 184 | K | task-reviewer-prompt.md |
 | 185 to 192 | K | Loop triggers; the two exit routes; Minor never enters; deferred-minor ledger format + "a roll-up nobody reads is a silent discard"; plan-mandated findings are yours to rule on |
 | 193 to 199 | K | Round definition; 5-round cap; resume 1 to 3 + reason; harness fallback; fresh+capable 4 to 5 with the exact framing text; the three-resumes reasoning |
@@ -59,13 +59,13 @@ A claim with no verdict is a build error.
 | 209 to 210 | K | Never fix findings in the controller session + reason |
 | 211 to 220 | K | The breaker; three adjudication categories with formats; the structural-failure reason; stop only when every path is a guess; adjudicate only at the cap; "pre-judging with a different name"; silent discard forbidden |
 | 221 to 225 | K | Completion lines, both formats; mark todo; never advance with open Critical/Important |
-| 226 to 229 | K | Final package with MERGE_BASE + reason; most capable model; point at deferred/parked |
-| 230 to 232 | K | ONE fix subagent; the rebuild-context reason; the cost anecdote |
-| 233 to 236 | K | Exactly one scoped re-review; adjudicate residuals; four stop classes; no second fix wave |
-| 237 to 240 | K | "Rulings I made" exhaustive; the reason; "a ruling that dies… was a decision made in secret" (reworded from "dies with the workspace") |
-| 241 to 242 | K | Delete the workspace at the end, but **only the ephemeral half** (`.fx/<slug>/`). `docs/plans/<slug>/` is committed and durable and is never deleted. Sibling-directories rule kept verbatim |
+| 226 to 229 | R | `skills/fx-implement/references/final-review.md`: final package with MERGE_BASE + reason; most capable model; point at deferred/parked |
+| 230 to 232 | R | `skills/fx-implement/references/final-review.md`: ONE fix subagent; the rebuild-context reason; the cost anecdote |
+| 233 to 236 | R | `skills/fx-implement/references/final-review.md`: exactly one scoped re-review; adjudicate residuals; four stop classes; no second fix wave |
+| 237 to 240 | R | `skills/fx-implement/references/completion.md`: "Rulings I made" exhaustive; the reason; "a ruling that dies… was a decision made in secret" (reworded from "dies with the workspace") |
+| 241 to 242 | R | `skills/fx-implement/references/completion.md`: delete the workspace at the end, but **only the ephemeral half** (`.fx/<slug>/`). `docs/plans/<slug>/` is committed and durable and is never deleted. Sibling-directories rule kept verbatim |
 | 243 | S | `finishing-a-development-branch` → completion report only; merge/PR/push are the user's |
-| 244 to 252 | K | All 9 rationalization rows verbatim; 5 more added for this project's failure modes |
+| 244 to 252 | R | `skills/fx-implement/references/rationalizations.md`: all 9 rationalization rows verbatim; 5 more added for this project's failure modes |
 | 253 to 289 | D | Example Workflow. Illustrative only; every rule it demonstrates is stated normatively above. **Reinstate if the skill proves hard to follow without a worked example.** |
 
 ## verification-before-completion (58)
@@ -73,13 +73,13 @@ A claim with no verdict is a build error.
 | Claims | Verdict | Note |
 |---|---|---|
 | V1:V2 | S | Frontmatter; absorbed into `fx-implement` |
-| V3:V6 | K | Evidence before claims; letter-vs-spirit; Iron Law; "in this message" |
-| V7:V15 | K | Gate function, all five steps, "skip any step = lying, not verifying" |
+| V3:V6 | R | `skills/fx-implement/references/exit-gate.md`: evidence before claims; letter-vs-spirit; Iron Law; "in this message" |
+| V7:V15 | R | `skills/fx-implement/references/exit-gate.md`: gate function, all five steps, "skip any step = lying, not verifying" |
 | V16:V22 | K | All 7 rows of the failures table, incl. the regression-test row |
-| V23:V30 | K | All 8 red flags |
+| V23:V30 | R | `skills/fx-implement/references/exit-gate.md`: all 8 red flags |
 | V31:V38 | R | 8-row rationalization table → `../../references/vocab/verification.md` |
 | V39:V48 | R | Key patterns (tests, regression red-green, build, requirements, agent delegation) → reference. **Regression red-green pattern also inlined into `fx-tdd`** |
-| V49:V58 | K | When-to-apply list; "the rule applies to paraphrases, synonyms, implications" |
+| V49:V58 | R | `skills/fx-implement/references/exit-gate.md`: when-to-apply list; "the rule applies to paraphrases, synonyms, implications" |
 
 ## using-git-worktrees (83)
 
@@ -111,8 +111,8 @@ A claim with no verdict is a build error.
 
 | | Count |
 |---|---:|
-| Kept inline | 203 |
-| Kept in a reference | 18 |
+| Kept inline | 95 |
+| Kept in a reference | 126 |
 | Superseded by an explicit decision | 71 |
 | Dropped | 37 (all of them the Example Workflow, claims 253 to 289) |
 | **Unaccounted** | **0** |
@@ -121,20 +121,20 @@ A claim with no verdict is a build error.
 
 Incidents moved out of the lane files that every session loads. Each is filed under the rule it supports, which stays in the lane file with one line of why. Text is as it was in the lane file.
 
-**Rule:** A task file that looks complete still needs the worktree, ledger, per-task review and lenses (`skills/fx-implement/SKILL.md`)
+**Rule:** A task file that looks complete still needs the worktree, ledger, per-task review and lenses (`skills/fx-implement/references/why-this-lane.md`)
 
 Measured: a 13-task
 plan handed to a capable agent produced a working, well-tested build with no
 worktree, no ledger, no per-task review and no lens dispatch.
 
-**Rule:** A ruling whose cost lands on a later task names the checkpoint that catches it (`skills/fx-implement/SKILL.md`)
+**Rule:** A ruling whose cost lands on a later task names the checkpoint that catches it (`skills/fx-implement/references/rulings.md`)
 
 Measured on a twelve-task build: a task 02 ruling recorded
 "a dead controller survives until 09, which the task review would catch". It
 did survive, and **that review caught it, eight tasks later**, because the
 ruling had told it to look.
 
-**Rule:** Check a ledger claim the way you check an implementer claim (`skills/fx-implement/SKILL.md`)
+**Rule:** Check a ledger claim the way you check an implementer claim (`skills/fx-implement/references/rulings.md`)
 
 Measured: a controller verified about forty implementer claims by executing
 something, several found wanting, and made four false claims of its own, every
@@ -143,7 +143,7 @@ ones on itself. Its own summary: "none of them went through the check I applied
 to everyone else's work." Of five bad verification probes in the same run, the
 probe was wrong every time and the code was right.
 
-**Rule:** Wait only on a process the harness tracks (`skills/fx-implement/SKILL.md`)
+**Rule:** Wait only on a process the harness tracks (`skills/fx-implement/references/waiting.md`)
 
 Measured on one build: an implementer launched its suite this way and stopped
 seven times in a row, each time reporting that it was waiting. Nothing was ever
@@ -156,23 +156,23 @@ twelve-task build: 26 of 26 dispatches were written in the tool call, and each
 dropped whichever clause was not in mind that minute. The fx-tdd lane was never
 invoked once across 111 subagents.
 
-**Rule:** Tell the plan reviewer to look for a story that must land in two places (`skills/fx-implement/SKILL.md`)
+**Rule:** Tell the plan reviewer to look for a story that must land in two places (`skills/fx-implement/references/coverage-audit.md`)
 
 Measured: a marker written
   to a CSV, tested at two seams, rendered in no view. Found nine tasks late, by
   an implementer working on something else.
 
-**Rule:** Tell the plan reviewer to look for a criterion satisfied by requesting a URL directly (`skills/fx-implement/SKILL.md`)
+**Rule:** Tell the plan reviewer to look for a criterion satisfied by requesting a URL directly (`skills/fx-implement/references/coverage-audit.md`)
 
 Measured: a rejected claim's reason and resubmit
   control, both tested, on a page nothing linked to.
 
-**Rule:** Tell the plan reviewer to look for criteria that are all refusals (`skills/fx-implement/SKILL.md`)
+**Rule:** Tell the plan reviewer to look for criteria that are all refusals (`skills/fx-implement/references/coverage-audit.md`)
 
 Measured on a task caught *before* dispatch: every criterion refused
   something, none said the successful action happens through the screen.
 
-**Rule:** Run every command the CI configuration runs before declaring the branch ready (`skills/fx-implement/SKILL.md`)
+**Rule:** Run every command the CI configuration runs before declaring the branch ready (`skills/fx-implement/references/exit-gate.md`)
 
 Measured: a twelve-task build ran its suite after every task and every fix
 round, green each time. **Nobody opened `.github/workflows/ci.yml` once.** The

@@ -71,7 +71,7 @@ cd "$LOCATION/$BRANCH_NAME"
 
 **Sandbox fallback:** creation fails with a permission error → say the sandbox
 blocked it, that you are working in the current directory instead, then run
-setup and baseline in place.
+setup in place.
 
 **Never start implementation on main/master** without the user's explicit
 consent.
@@ -84,4 +84,4 @@ consent.
 | "`git worktree add` is quicker than hunting for a native tool" | A native tool owns placement, branching and cleanup. Bypassing it is the #1 mistake: phantom state the harness can't see. |
 | "The worktree directory is surely ignored already" | Run `git check-ignore`. An unignored worktree directory commits the whole tree into the repo. |
 | "Any directory name works" | Explicit instructions beat an existing project-local directory, which beats the `.worktrees/` default. |
-| "The workspace is fresh: baseline tests can wait" | A dirty baseline makes every later failure ambiguous. Run them now; proceeding past failures is the user's call. |
+| "The workspace is fresh: baseline tests can wait" | The exit gate classifies failures against the merge base; a baseline run is not part of setup (ADR 0030). |

@@ -27,20 +27,21 @@ contract('skills/fx-implement/task-reviewer-prompt.md', REVIEWER);
 contract('skills/fx-review/reviewer-prompt.md', REVIEWER);
 const rr = contract('skills/fx-implement/re-review-prompt.md', ['Verdict', 'Open', 'Fixed', 'Findings', 'New breakage']);
 const skill = read('skills/fx-implement/SKILL.md');
-contract('skills/fx-implement/SKILL.md', ['Gaps', 'Findings', 'Tasks affected', 'Verdict', 'Next'], skill.indexOf('one coverage audit'));
+contract('skills/fx-implement/references/coverage-audit.md', ['Gaps', 'Findings', 'Tasks affected', 'Verdict', 'Next'], 0);
+const lensDispatch = read('skills/fx-implement/references/lens-dispatch.md');
+const readingRules = read('skills/fx-implement/references/reading-rules.md');
 
 const reviewSkill = read('skills/fx-review/SKILL.md');
 assert.ok(!reviewSkill.includes(MARK), 'Ruling R: lenses no longer carry the five-line contract');
 assert.ok(/no Write tool/i.test(reviewSkill), 'Ruling R: fx-review/SKILL.md says lenses have no Write tool');
 
-const lensDispatchAt = skill.indexOf('**Lens dispatch.**');
-assert.ok(lensDispatchAt >= 0, 'fx-implement/SKILL.md still has a Lens dispatch paragraph');
+assert.ok(lensDispatch.startsWith('**Lens dispatch.**'), 'references/lens-dispatch.md holds the Lens dispatch paragraph');
 {
-  const lens = skill.slice(lensDispatchAt, skill.indexOf('The reviewer gets three paths', lensDispatchAt));
+  const lens = lensDispatch;
   assert.ok(lens.includes('your Write tool'), 'Lens dispatch: the controller records a lens reply with its Write tool, without reasoning over it');
   assert.ok(!/<<\s*'?EOF/.test(lens), 'adversarial 3: no heredoc saves a lens reply (a reply line reading EOF ends it and runs the rest)');
 }
-assert.ok(skill.includes('confirmed ⚠️:'), "confirming a ⚠️ is ledgered with the finding's exact text, for the fixer and re-reviewer to read");
+assert.ok(read('skills/fx-implement/references/review-inputs.md').includes('confirmed ⚠️:'), "confirming a ⚠️ is ledgered with the finding's exact text, for the fixer and re-reviewer to read");
 
 assert.ok(!/under 15 lines/.test(read('skills/fx-implement/implementer-prompt.md')), 'implementer: the old 15-line contract is gone');
 assert.ok(!/final message \*\*is\*\* the report/i.test(rr), 're-review: the final message is no longer the report');
@@ -74,8 +75,11 @@ const i = skill.indexOf('### Controller reading rules');
 assert.ok(i >= 0, 'fx-implement has a Controller reading rules section');
 assert.ok(i < skill.indexOf('### 1. Dispatch the implementer'), 'the rules come before the first dispatch step');
 const rules = skill.slice(i, i + 3500);
-for (const needle of ['>>', 'tail', 'git log --oneline', 'review-package', 'five lines', 'report contract breached', 'BLOCKED', 'Concerns', 'appended line count']) {
+for (const needle of ['>>', 'tail', 'git log --oneline', 'review-package', 'five lines', 'Concerns']) {
   assert.ok(rules.includes(needle), `reading rules mention ${needle}`);
+}
+for (const needle of ['report contract breached', 'BLOCKED', 'appended line count']) {
+  assert.ok(readingRules.includes(needle), `references/reading-rules.md mentions ${needle}`);
 }
 
 // Review item 6: the ledger-copy shape is unambiguous (a plain line, no
@@ -92,7 +96,7 @@ for (const f of ['skills/fx-implement/task-reviewer-prompt.md', 'skills/fx-revie
 // count check needs, instead of a count the reply never states.
 assert.ok(rr.includes('ledger `<m>`'), 're-review: the Fixed field carries the ledger-line count the count check needs');
 assert.ok(loop.includes("in its `Fixed` field"), 'fix loop: the re-review count check reads the count from the reply, not from a count the reply lacks');
-assert.ok(rules.includes("Fixed` field"), 'reading rules: the re-reviewer count check cites the Fixed field, not counts absent from the reply');
+assert.ok(readingRules.includes("Fixed` field"), 'reading rules: the re-reviewer count check cites the Fixed field, not counts absent from the reply');
 
 // Fix round 2, item 2 (New breakage 1): a lens tags each finding's own
 // severity, so its Minor findings are never open, and the false "no
@@ -101,17 +105,18 @@ assert.ok(!loop.toLowerCase().includes('no severity split'), 'fix loop: lenses d
 assert.ok(!rr.toLowerCase().includes('no severity split'), 're-review: lenses do rate severity, so this false claim is gone');
 assert.ok(loop.includes('[Critical]') && loop.includes('[Important]'), 'fix loop: routes lens findings by their own Critical/Important tags');
 assert.ok(rr.includes('[Critical]') && rr.includes('[Important]'), 're-review: routes lens findings by their own Critical/Important tags');
-assert.ok(skill.slice(lensDispatchAt, lensDispatchAt + 2000).includes('[Minor]'), 'Lens dispatch: the controller ledgers a lens\'s own Minor findings itself');
+assert.ok(lensDispatch.includes('[Minor]'), 'Lens dispatch: the controller ledgers a lens\'s own Minor findings itself');
 
 // G1: the plan-complete line is the last write of the build, after the last
 // task commit, so nothing else carries state.md into git. The section must
 // commit it itself, not just append the line.
 {
-  const at = skill.indexOf('## Write the plan-complete line');
+  const completion = read('skills/fx-implement/references/completion.md');
+  const at = completion.indexOf('## Write the plan-complete line');
   assert.ok(at >= 0, 'fx-implement has a Write the plan-complete line section');
-  const nextAt = skill.indexOf('## Completion report');
+  const nextAt = completion.indexOf('## Completion report');
   assert.ok(nextAt > at, 'the plan-complete section comes before the completion report');
-  const section = skill.slice(at, nextAt);
+  const section = completion.slice(at, nextAt);
   assert.ok(/git commit/.test(section), 'plan-complete section: commits the ledger itself');
   assert.ok(/git add .*state\.md/.test(section), 'plan-complete section: stages state.md before committing');
 }
