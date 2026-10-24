@@ -68,4 +68,25 @@ assert.strictEqual(out.written.length, 6, 'all six roles planted on a fresh CODE
 assert.strictEqual(out.audit.present.length, 6, 'and audited present');
 assert.ok('hooksTrusted' in out, 'and hook trust reported');
 
+// The glossary migration step is vetted by the same check on every runtime.
+const mig = [...md.matchAll(/^```[^\n]*\n([\s\S]*?)^```$/gm)].map((m) => (m[1] ?? '').trim()).filter((b) => b.includes('glossary-migrate'));
+assert.strictEqual(mig.length, 1, `one command runs glossary-migrate, found ${mig.length}`);
+const migCmd = mig[0] ?? '';
+assert.ok(migCmd.endsWith('"FX" ""'), 'the migration command ends with the FX and mode arguments');
+function runMig(fx: string, cwd: string) {
+  const c = migCmd.slice(0, -'"FX" ""'.length) + JSON.stringify(fx) + ' ""';
+  return spawnSync('bash', ['-c', c], { cwd, env: { ...process.env, HOME: s, TMPDIR: s }, encoding: 'utf8' });
+}
+const fakeMig = fakeRoot(path.join(repo, 'vendor', 'fx2'));
+fs.mkdirSync(path.join(fakeMig, 'lib'), { recursive: true });
+fs.writeFileSync(path.join(fakeMig, 'lib', 'glossary-migrate.js'), `require('fs').writeFileSync(${JSON.stringify(marker + '-mig')}, 'x');`);
+const badMig = runMig(fakeMig, repo);
+assert.notStrictEqual(badMig.status, 0, 'a root inside cwd is refused');
+assert.match(badMig.stderr, /refusing/i);
+assert.ok(!fs.existsSync(marker + '-mig'), 'and no migration code was loaded from it');
+spawnSync('git', ['init', '-q'], { cwd: repo });
+const okMig = runMig(root, repo);
+assert.strictEqual(okMig.status, 0, `the real plugin root runs the migration dry run: ${okMig.stderr}`);
+assert.match(okMig.stdout, /dry run: nothing changed/);
+
 console.log('fx-setup-root-check: passed');

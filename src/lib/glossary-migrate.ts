@@ -22,22 +22,34 @@ function docFiles(root: string, dir: string, out: string[]): void {
 }
 
 export function planMigration(root: string): Plan {
+  const tracked = new Set(execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' }).split('\0'));
+  const problems = new Set<string>();
   const from = new Set<string>();
-  if (exists(root, 'CONTEXT-MAP.md')) {
-    from.add('CONTEXT-MAP.md');
-    const map = fs.readFileSync(path.join(root, 'CONTEXT-MAP.md'), 'utf8');
+  const want = (rel: string) => {
+    if (!tracked.has(rel)) problems.add(`${rel} is not tracked by git`);
+    else from.add(rel);
+  };
+  if (exists(root, 'CONTEXT-MAP.md')) want('CONTEXT-MAP.md');
+  // A rerun after a partial move reads the links from the already renamed map.
+  const mapFile = ['CONTEXT-MAP.md', 'GLOSSARY-MAP.md'].find((f) => exists(root, f));
+  if (mapFile) {
+    const map = fs.readFileSync(path.join(root, mapFile), 'utf8');
     for (const m of map.matchAll(/\]\(\s*<?([^)\s>#]+)/g)) {
-      const rel = path.posix.normalize(m[1] ?? '');
-      // Links that leave the repository are not ours to move.
-      if (path.posix.basename(rel) === 'CONTEXT.md' && !rel.startsWith('..') && exists(root, rel)) from.add(rel);
+      const link = m[1] ?? '';
+      if (path.posix.basename(link) !== 'CONTEXT.md') continue;
+      const rel = path.posix.normalize(link);
+      if (link.startsWith('/') || rel.startsWith('..')) problems.add(`${link} is not a relative path inside the repo`);
+      else if (exists(root, rel)) want(rel);
+      else if (!exists(root, path.posix.join(path.posix.dirname(rel), 'GLOSSARY.md'))) problems.add(`${rel} is missing`);
     }
   }
-  if (exists(root, 'CONTEXT.md')) from.add('CONTEXT.md');
+  if (exists(root, 'CONTEXT.md')) want('CONTEXT.md');
   const moves = [...from].sort().map((f) => ({
     from: f,
     to: path.posix.join(path.posix.dirname(f), f.endsWith('-MAP.md') ? 'GLOSSARY-MAP.md' : 'GLOSSARY.md'),
   }));
-  const conflicts = moves.filter((m) => exists(root, m.to)).map((m) => m.to).sort();
+  for (const m of moves) if (exists(root, m.to)) problems.add(m.to);
+  const conflicts = [...problems].sort();
 
   const candidates = ['CLAUDE.md', 'AGENTS.md', 'repo.md'].filter((f) => exists(root, f));
   if (exists(root, 'docs')) docFiles(root, 'docs', candidates);
@@ -46,34 +58,39 @@ export function planMigration(root: string): Plan {
   return { moves, edits, conflicts };
 }
 
+// All or nothing: the whole plan is validated before the first git mv.
 export function applyMigration(root: string): void {
   const { moves, edits, conflicts } = planMigration(root);
-  if (conflicts.length) throw new Error(`already exists: ${conflicts.join(', ')}`);
-  for (const m of moves) execFileSync('git', ['mv', m.from, m.to], { cwd: root });
-  const files = [...edits, ...moves.filter((m) => m.to.endsWith('-MAP.md')).map((m) => m.to)];
+  if (conflicts.length) throw new Error(conflicts.join('; '));
+  for (const m of moves) execFileSync('git', ['mv', m.from, m.to], { cwd: root, stdio: 'pipe' });
+  const files = [...edits, ...(exists(root, 'GLOSSARY-MAP.md') ? ['GLOSSARY-MAP.md'] : [])];
   for (const f of files) {
     const p = path.join(root, f);
     fs.writeFileSync(p, rename(fs.readFileSync(p, 'utf8')));
   }
 }
 
-if (require.main === module) {
+function main(): void {
   const args = process.argv.slice(2);
   const apply = args.includes('--apply');
   const root = args.find((a) => a !== '--apply');
   if (!root) { console.error('usage: glossary-migrate <root> [--apply]'); process.exit(2); }
   const plan = planMigration(root);
-  if (apply && plan.conflicts.length) {
-    for (const c of plan.conflicts) console.error(`conflict: ${c} already exists`);
-    process.exit(1);
-  }
   if (apply) {
     applyMigration(root);
     console.log(`moved ${plan.moves.length}, edited ${plan.edits.length}, committed nothing`);
   } else {
     for (const m of plan.moves) console.log(`git mv ${m.from} ${m.to}`);
     for (const e of plan.edits) console.log(`edit ${e}`);
-    for (const c of plan.conflicts) console.log(`conflict ${c} already exists`);
+    for (const c of plan.conflicts) console.log(`conflict ${c}`);
     console.log('dry run: nothing changed');
+  }
+}
+
+if (require.main === module) {
+  try { main(); } catch (e) {
+    const msg = String((e as { stderr?: unknown; message?: unknown }).stderr || (e as Error).message).trim().split('\n')[0];
+    console.error(`glossary-migrate: refused, repo unchanged: ${msg}`);
+    process.exit(1);
   }
 }

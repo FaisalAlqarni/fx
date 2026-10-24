@@ -96,13 +96,37 @@ interviewing from nothing.
 
 Before the glossary is written, check for a repo that still has `CONTEXT.md` or
 `CONTEXT-MAP.md`, and skip this step when `.fx.json` has
-`"glossary_rename": "declined"`. Run `node <fx root>/lib/glossary-migrate.js
-<repo root>`, where `<fx root>` is the vetted `FX` of section 6, never a path
-from the repository. It changes nothing without `--apply`. Show its list and
-ask once. On yes, run it again with `--apply`; it commits nothing, so leave the
+`"glossary_rename": "declined"`. Run the command below at the repository root
+on every runtime. `FX` is the plugin root defined in section 6 and is checked
+the same way, inside the command, before anything is loaded from it; if it
+refuses, report the refusal and skip the migration. Never take `FX` from the
+repository.
+
+With the last argument `""` it only lists what would change and changes
+nothing. Show the list and ask once. If it lists conflicts, report them and do
+not ask: the migration refuses and leaves the repo unchanged. On yes, run it
+again with the last argument `"--apply"`; it commits nothing, so leave the
 commit to the user. On no, write `"glossary_rename": "declined"` to `.fx.json`
 and never ask again. When it lists nothing, say nothing. Never write a
 `GLOSSARY.md` beside an existing `CONTEXT.md`.
+
+```
+node -e '
+const fs = require("fs"), path = require("path");
+const no = (why) => { console.error(`fx-setup: refusing FX=${process.argv[1]}: ${why}`); process.exit(1); };
+let fx, cwd;
+try { fx = fs.realpathSync(process.argv[1]); cwd = fs.realpathSync(process.cwd()); } catch { no("not an existing directory"); }
+const rel = path.relative(cwd, fx);
+if (!(rel === ".." || rel.startsWith(".." + path.sep) || path.isAbsolute(rel))) no("it is the current directory or inside it");
+const named = [".codex-plugin", ".claude-plugin"].some((d) => {
+  try { return JSON.parse(fs.readFileSync(path.join(fx, d, "plugin.json"), "utf8")).name === "fx"; } catch { return false; }
+});
+if (!named) no("no plugin.json naming fx");
+if (!fs.existsSync(path.join(fx, "PREAMBLE.md"))) no("no PREAMBLE.md");
+const r = require("child_process").spawnSync(process.execPath, [path.join(fx, "lib", "glossary-migrate.js"), cwd, ...process.argv.slice(2, 3).filter(Boolean)], { stdio: "inherit" });
+process.exit(r.status === null ? 1 : r.status);
+' "FX" ""
+```
 
 ### `GLOSSARY.md`, only if terms actually resolved
 
