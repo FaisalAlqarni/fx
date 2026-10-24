@@ -98,3 +98,20 @@ Task 09: complete (commits 22e6d73..8436042, review clean)
 Task 08: fix round 1: controller re-review (7 doc lines in 4 COVERAGE files, within the 20-line limit): brainstorm Dropped row now names the dropped file and map format; plan, tdd, debug totals moved by the verdict changes. Accepted; the implementer's count method (apply verdict moves to existing totals) is ruled acceptable since the tables span several sources.
 Task 08: cost unavailable (no transcript recorded)
 Task 08: complete (commits 97563a1..dfa3510, review clean after fix round 1)
+Task 10: dispatched 93db6ab 2026-10-24T23:23:46Z
+Task 11: dispatched 1c1bc1f 2026-10-24T23:26:41Z
+Task 10: minor (deferred): glossary-migrate mishandles absolute and reference-style map links (crash, or a rewritten dead link)
+Task 10: minor (deferred): glossary-migrate rewrites CONTEXT.md mentions of files it does not move, leaving dead references
+Task 10: minor (deferred): conflict wording differs between stderr and stdout, and fx-setup does not say how to handle a conflict list
+Task 10: minor (deferred): domain-modeling.md tells lanes to show the migration dry run without naming the command or the vetted root
+Task 10: minor (deferred): user-invoked drift-check RED before regeneration not captured
+Task 10: open Important 1: commands/fx-setup.md runs glossary-migrate from an FX root whose check has not run (the check is in the Codex-only block of section 6); ruling violated.
+Task 10: open Important 2: applyMigration is not atomic and cannot resume; a failed git mv leaves a half-migrated repo and a rerun cannot find the remaining files.
+Ruling: task 10 fix round 1 (after task 11 commits, one writer at a time): (1) run the same FX root check before the migration step on every runtime, or move the step after the check, so it never runs from an unchecked root; (2) make apply all-or-nothing: plan and validate every move first (every source tracked and present, no target exists, links relative and inside the repo), and on any failure leave the repo unchanged with a one-line error, no stack trace; a rerun on a partly migrated repo either completes or reports exactly what remains. Add a scratch-repo test for the failure path. Minors stay deferred. Why: the owner's repos are the blast radius. Cost if wrong: a half-migrated glossary, caught by the fix round's re-review.
+Task 10: confirmed ⚠️ resolved: the user-invoked.test.js RED was not captured; the GREEN gate is accepted since the main RED (MODULE_NOT_FOUND) is valid and the generated skill is checked by user-invoked.test.js in test_scope.
+Task 10: fix round 1 dispatched (resumed implementer) 2026-10-24T23:31:53Z
+Task 11: ran test_all (plan-mandated phase gate): ALL GREEN per report.
+Task 11: minor (deferred): SKILL.md lists 25 pattern headings; §26 is reachable only through the step 1 replies.md pointer, so name it in one line after §25.
+Task 11: confirmed ⚠️ resolved: controller re-ran the old-marker grep (35 patterns|P=35, excluding .fx, node_modules, .worktrees, plans): 0 hits; fx-humanize SKILL.md is 19,247 bytes. check-all is the implementer's phase-gate run.
+Task 11: cost unavailable (no transcript recorded)
+Task 11: complete (commits 1c1bc1f..a1a6a3f, review clean)
