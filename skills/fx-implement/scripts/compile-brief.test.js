@@ -85,6 +85,19 @@ const withFile = (file, text, fn) => {
     fs.writeFileSync(file, keep);
   }
 };
+{
+  const sub = "# D\n\n## Implementation Decisions\n\n### Phase 1: Size gate\n\nG body.\n\n### Phase 1: Skill splits\n\nS body.\n\n## Out of Scope\n\nO1.\n";
+  withFile(path.join(plan, "design.md"), sub, () => {
+    const child = run("# 01: a\n\n**Design:** Phase 1: Size gate\n");
+    assert.ok(child.includes("### Phase 1: Size gate") && child.includes("G body."), "subsection entry carries its heading and body");
+    assert.ok(!child.includes("S body.") && !child.includes("O1."), "subsection entry stops at the next sibling heading");
+    const parent = run("# 01: a\n\n**Design:** Implementation Decisions\n");
+    assert.ok(parent.includes("G body.") && parent.includes("S body.") && !parent.includes("O1."), "parent entry keeps its children");
+    const miss = runRaw("# 01: a\n\n**Design:** Phase 9: Missing\n").r;
+    assert.strictEqual(miss.status, 2, "unknown subsection exits 2");
+    assert.strictEqual(miss.stderr.trim(), "compile-brief: Design entry resolves to nothing: Phase 9: Missing");
+  });
+}
 failsNaming(runRaw("# 01: a\n\n**Design:** Implementation Decisions > 9\n").r, "Implementation Decisions > 9", "a numbered paragraph that does not exist");
 withFile(fx, JSON.stringify({ stacks: ["nosuchstack"] }), () => failsNaming(runRaw("# 01: a\n").r, "nosuchstack", "a .fx.json stack with no file"));
 withFile(fx, "{ not json", () => failsNaming(runRaw("# 01: a\n").r, ".fx.json", "an unparseable .fx.json"));

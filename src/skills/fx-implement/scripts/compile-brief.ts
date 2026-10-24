@@ -30,14 +30,16 @@ const planDir = path.join(worktree, 'docs', 'plans', slug);
 const task = read(taskFile);
 if (task === null) die(`cannot read task file ${taskFile}`);
 
-// The `## Heading` section of md, heading line included, up to the next `## `
-// or `# ` heading; null when absent.
+// The section of md headed `##` to `######` with this text, heading line
+// included, up to the next heading of the same or a higher level; null when absent.
 function section(md: string, heading: string): string | null {
   const lines = md.split('\n');
-  const start = lines.findIndex((l) => /^##\s/.test(l) && l.slice(2).trim().toLowerCase() === heading.toLowerCase());
+  const level = (l: string): number => /^(#{1,6})\s/.exec(l)?.[1]?.length ?? 0;
+  const start = lines.findIndex((l) => level(l) >= 2 && l.replace(/^#+/, '').trim().toLowerCase() === heading.toLowerCase());
   if (start === -1) return null;
+  const lv = level(lines[start] ?? '');
   let end = lines.length;
-  for (let i = start + 1; i < lines.length; i++) if (/^#{1,2}\s/.test(lines[i] ?? '')) { end = i; break; }
+  for (let i = start + 1; i < lines.length; i++) { const n = level(lines[i] ?? ''); if (n > 0 && n <= lv) { end = i; break; } }
   return lines.slice(start, end).join('\n').trim();
 }
 
