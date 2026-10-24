@@ -256,46 +256,13 @@ error handling, test gaps) · **Minor** (style, optimization, doc polish).
 
 ## 7. Acting on findings
 
-Read `../../references/vocab/receiving-review.md` before implementing anything. Short
-form:
+Read `../../references/vocab/receiving-review.md` before implementing anything; it owns the response pattern, the order of fixes, push-back and the YAGNI check.
 
-1. **READ** the complete feedback without reacting.
-2. **UNDERSTAND**: restate the requirement in your own words, or ask.
-3. **VERIFY** against the codebase. A finding is a claim, not a fact.
-4. **EVALUATE**: is it technically sound for THIS codebase, stack and version?
-5. **RESPOND**: technical acknowledgment or reasoned push-back.
-6. **IMPLEMENT** one item at a time, testing each.
+**Fix Critical immediately. Fix Important before proceeding. Record Minor where the final branch review will see it.**
 
-**If any item is unclear, STOP: do not implement anything yet.** Ask about the
-unclear ones first. Items are often related; partial understanding produces the
-wrong implementation.
+**Never:** skip review because "it's simple" · ignore a Critical · proceed with an unfixed Important · argue with valid technical feedback.
 
-**Order:** blocking (breaks, security) → simple (typos, imports) → complex
-(refactors, logic). Test each fix individually, then verify no regressions.
-
-**Fix Critical immediately. Fix Important before proceeding. Note Minor for
-later**: record them where the final branch review will see them, rather than
-letting them evaporate.
-
-**If the reviewer is wrong:** push back with technical reasoning · **show the
-code or tests that prove it works** · **request clarification** if the finding
-is ambiguous.
-
-**YAGNI check.** A finding says "implement this properly"? **Grep for actual
-usage first.** Nothing calls it → propose deleting it instead.
-
-**Push back when** the suggestion breaks existing functionality · the reviewer
-lacks full context · it violates YAGNI · it is technically incorrect for this
-stack · legacy or compatibility reasons exist · it conflicts with a decision in
-an ADR or `design.md`. Push back with technical reasoning and evidence, never
-defensiveness.
-
-**Never:** skip review because "it's simple" · ignore a Critical · proceed with
-an unfixed Important · argue with valid technical feedback.
-
-**Never write** "You're absolutely right!", "Great point!", "Thanks for
-catching that", or any gratitude expression. State the fix. The code shows you
-heard it.
+**Never write** "You're absolutely right!", "Great point!", "Thanks for catching that", or any gratitude expression. State the fix.
 
 ## 8. Flags
 

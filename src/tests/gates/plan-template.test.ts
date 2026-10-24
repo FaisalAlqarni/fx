@@ -7,8 +7,9 @@ import * as path from 'path';
 
 const root = path.join(__dirname, '..', '..');
 const plan = fs.readFileSync(path.join(root, 'skills', 'fx-plan', 'SKILL.md'), 'utf8');
+const templates = fs.readFileSync(path.join(root, 'skills', 'fx-plan', 'templates.md'), 'utf8');
 const flat = plan.replace(/\s+/g, ' ');
-const template = plan.slice(plan.indexOf('## tasks/NN-<slug>.md template'), plan.indexOf('## No placeholders'));
+const template = templates.slice(templates.indexOf('## tasks/NN-<slug>.md template'));
 const placeholders = flat.slice(flat.indexOf('## No placeholders'), flat.indexOf('## Quality red flags'));
 const flags = flat.slice(flat.indexOf('## Quality red flags'));
 const sec7 = flat.slice(flat.indexOf('## 7. Red-team recommendation'), flat.indexOf('## 8. Handoff'));
