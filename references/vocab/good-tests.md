@@ -14,15 +14,14 @@ Two principles govern everything here:
 
 ## Principle 1: Name the break
 
-Before writing the test body, answer: **what production change should make this
-test fail, and is that change a bug or a decision?** A test earns its place by
-catching a wrong branch, a missing side effect, a wrong argument, a boundary
-case, or a broken contract.
+Before the body, answer: **what production change should make this
+test fail, and is it a bug or a decision?** A test earns its place by
+catching a wrong branch, a missing side effect or argument, a boundary case or a broken contract.
 
 ### Derive expectations independently
 
-Use literals and hand-checked fixtures. Table-driven tests with literal
-expected values are the preferred shape. An expectation computed by the code
+Use literals and hand-checked fixtures; table-driven tests with literal
+expected values are preferred. An expectation computed by the code
 under test, or its helpers: passes no matter what that code does.
 
 ### No change detectors
@@ -139,8 +138,9 @@ queue, a timer, a race between two writers) **the seam is not optional.**
 Inject the collaborator that decides timing and assert on it directly, rather
 than asserting on the outcome through the race it creates.
 
-**Polling with a deadline is not the fix.** It passes for synchronous code that
-should have been async, and flakes for the right code on a slow runner.
+**Polling with a deadline is not the fix,** unless the test drives the system
+from outside, where waiting on a condition is the tool. It passes for
+synchronous code that should have been async, and flakes on a slow runner.
 **Inject the collaborator** (executor, job class, scheduler) and assert the
 work was scheduled. A returned handle (`Thread`, `Future`, job ID) is also a
 legitimate seam. A test-only synchronous path is a trade: production runs the
@@ -168,10 +168,11 @@ BEFORE adding a mock or test helper:
 
 ## What a good test looks like
 
-Test behavior callers care about, through the public API, so it survives refactors; describe what, not how; one logical assertion. A test asserting `receive(:process)` pins an implementation detail.
+Test behavior callers care about, through the public API; one logical assertion.
 
 Red flags: mocking internal collaborators · testing private methods · asserting
-call counts or ordering · breaks on refactor without behavior change · a name
+call counts or ordering on internal collaborators (not where it is the contract,
+as in "SMS sent exactly once") · breaks on refactor without behavior change · a name
 describing HOW not WHAT · verifying through a side channel.
 
 ---

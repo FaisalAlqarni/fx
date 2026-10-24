@@ -233,7 +233,7 @@ audit-template.md · design-template.md · report-assets.md
 stacks/ docker · dotnet · observability · rails · react · web
 vendor/ mermaid-11.17.2.min.js · tailwindcss-play-3.4.17.js
         LICENSE-mermaid · LICENSE-tailwindcss
-vocab/  codebase-design · condition-based-waiting · condition-based-waiting-example.ts
+vocab/  codebase-design · condition-based-waiting
         defense-in-depth · domain-modeling · fowler-smells · good-tests · grilling
         model-selection · receiving-review · root-cause-tracing · skill-testing
         verification · worktree-setup
