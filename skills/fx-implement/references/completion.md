@@ -38,7 +38,7 @@ wait**. Report:
   made in secret.*
 - **Parked**: deferred findings and why.
 - **Skipped**: blocked tasks and what unblocks them.
-- **Needs you**: anything that hit a stop condition, plus the branch name and
+- **Needs you**: every `needs you` line in the ledger (a parked task or a declined item), each with what unblocks it, plus the branch name and
   worktree path so the user can review and merge.
 
 ### Then ask, and stop
@@ -52,7 +52,6 @@ The work is on `<branch>` in `<worktree path>`. What next?
 1. Merge it into `<base branch>` locally
 2. Push the branch and open a pull request
 3. Leave it as it is, I will handle it
-4. Discard it
 
 Which?
 ```
@@ -63,8 +62,9 @@ made a base-branch commit fine, because the rule said "no exceptions" while the
 user's own version had a carve-out. An offer has nothing to interpret. The base
 branch moves when the user says which option, and not before.
 
-Options 1 and 2 are theirs to choose and yours to then perform. Option 4 deletes
-work: confirm the branch name back to them before doing it.
+Options 1 and 2 are theirs to choose and yours to then perform.
+
+Discard only when the owner asks for it: list the branch, its commits and the worktree path, and act only after the owner types the word discard.
 
 **Clean up the ephemeral half only.** When the final review is clean, delete
 `.fx/<slug>/`: regenerable from git. **Never delete `docs/plans/<slug>/`**:

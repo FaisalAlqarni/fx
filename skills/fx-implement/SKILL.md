@@ -60,7 +60,9 @@ parked on a question costs their whole day and buys nothing.
    leaves the machine.
 4. A task so broken that every path forward is a guess.
 
-For those, stop and ask. Everything else: rule, ledger, continue.
+For those, park the task and continue: read [status.md](./references/status.md), every time. Everything else: rule, ledger, continue.
+
+**After each task completes or parks, or when the owner asks for status**: read [status.md](./references/status.md), every time.
 
 **Before you end a turn while something runs**: read [waiting.md](./references/waiting.md), every time.
 
@@ -158,8 +160,7 @@ files.**
 **Serial implementers.** Never dispatch implementation subagents in parallel: the **shared test environment** (one Postgres, one ClickHouse, one Redis,
 one broker set) means a worktree is a second checkout, not a second database.
 Concurrent test runs produce false RED and false GREEN, poisoning every
-verification downstream. Relax only if `.fx.json` sets
-`isolated_test_execution: true`. Parallelism belongs to reviews and batched work.
+verification downstream. When `.fx.json` sets `isolated_test_execution: true`, read [parallel.md](./references/parallel.md). Parallelism otherwise belongs to reviews and batched work.
 
 **At most one task review is outstanding while the next implementer runs.** The
 next dispatch waits for it: a second review in flight would hold another diff
@@ -368,6 +369,8 @@ defect in your dispatch, not a reason to retry.**
 **Before any completion claim**: read [exit-gate.md](./references/exit-gate.md), every time.
 
 **Once the exit gate has passed**: read [completion.md](./references/completion.md), every time.
+
+After the owner answers the completion menu, read [finishing.md](./references/finishing.md).
 
 ## Common rationalizations
 

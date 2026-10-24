@@ -57,4 +57,15 @@ for (const o of ['stands', 'fix', 'parked']) assert.ok(inputs.includes(`**${o}**
 assert.ok(inputs.includes('Task <NN>: needs you: declined: <item text>'), 'a parked declined item writes a needs-you line');
 assert.ok(ref('final-review.md').includes('Final review: declined: <behaviour>: <reason>. Ruling: <stands | fix | parked>: <why>'), 'the branch pass declined line is defined');
 
+// Task 17: status block, park and continue, three-option menu.
+const status = ref('status.md');
+assert.ok(status.includes('Task <NN>: parked: needs you: <stop condition>: <what unblocks it>'), 'status.md defines the needs-you parked line');
+for (const l of ['Done: <n> of <total>', 'Running: Task <NN>, <dispatch', 'Left: <NN, NN> or none', 'Needs you: <NN: what unblocks it']) assert.ok(status.includes(l), `status.md defines the status line starting ${l}`);
+assert.ok(impl.includes('For those, park the task and continue: read [status.md](./references/status.md), every time.'), 'the stop list parks and continues');
+const completion = ref('completion.md');
+const menu = completion.slice(completion.indexOf('1. Merge it into'), completion.indexOf('Which?'));
+assert.ok(menu.includes('1. Merge it into') && menu.includes('2. Push the branch and open a pull request') && menu.includes('3. Leave it as it is, I will handle it'), 'the menu has three options');
+assert.ok(!menu.includes('4. '), 'the menu offers no fourth option');
+assert.ok(completion.includes('Discard only when the owner asks for it: list the branch, its commits and the worktree path, and act only after the owner types the word discard.'), 'discard needs the listing and the typed word');
+
 console.log('ledger-lines: OK');

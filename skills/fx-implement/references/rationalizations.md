@@ -10,8 +10,8 @@
 | "Ledger bookkeeping is overhead" | The ledger is what survives compaction. Controllers without one have re-dispatched entire completed sequences. |
 | "The implementer spawned its own reviewer: free extra assurance" | A duplicate seat on the same diff. The task review is the gate. A worker-spawned reviewer is a defect to flag, not rigor. |
 | "I'll just ask whether this is right" | Rule it, ledger it, continue. |
-| "A progress summary would be helpful" | They asked you to execute. The ledger is the record; write there, not here. |
+| "A progress summary would be helpful" | The four-line status in status.md is the only summary. It rides in the message that dispatches the next task; the ledger stays the record. |
 | "I remember finishing that task" | Trust the ledger, not your memory. |
 | "This task is blocked, I'll stop" | Skip it, ledger it, take the next unblocked one. |
-| "I'll run these in parallel to save time" | Implementers never run in parallel: the test environment is shared. |
+| "I'll run these in parallel to save time" | Implementers run serially: the test environment is shared. The one exception is `isolated_test_execution: true` in `.fx.json`, and then only by the procedure in parallel.md. |
 | "I'll run the full suite now to be safe" | `test_all` runs once, at the exit gate. A failure there is classified against the merge base, which is what a baseline would have told you. |

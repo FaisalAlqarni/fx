@@ -107,6 +107,16 @@ A claim with no verdict is a build error.
 
 ---
 
+## finishing-a-development-branch and implement-spec (upstream update)
+
+| Source | Verdict | Note |
+|---|---|---|
+| `superpowers:finishing-a-development-branch` steps 2, 3, 5, 6 and rationalization table | R | `skills/fx-implement/references/finishing.md`; two fx edits: no `git pull` or push unless the owner chose it, nothing removed with `--force` |
+| `superpowers:finishing-a-development-branch` step 1 | S | `skills/fx-implement/references/exit-gate.md` already runs the gate before the menu |
+| `superpowers:finishing-a-development-branch` step 4 | S | `skills/fx-implement/references/completion.md`: three options, discard never offered, typed word `discard` |
+| `mattpocock:implement-spec` steps 4 to 6 and 9 | R | `skills/fx-implement/references/parallel.md`, read only when `isolated_test_execution: true`; per-task review kept, one merger, controller-only ledger, no `git stash` |
+| `mattpocock:implement-spec` steps 1 to 3, 7, 8 | D | The plan, the worktree and the final review are fx-implement's own |
+
 ## Summary
 
 | | Count |
