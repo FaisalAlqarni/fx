@@ -51,3 +51,11 @@ Task 02: cost unavailable (no transcript recorded)
 Task 02: complete (commits fe4df17..d7083ab, review clean)
 Controller: owner-rule breach: the controller typed `bash -c true` (a no-op inside a check command) while verifying task 02. No effect; disclosed to the owner; not repeated.
 Ruling: task 03's rulings run follows the move table (lines 72 to 105 to references/rulings.md), not the contradicting "stays inline" note. Why: keeping 72 to 79 inline measures 18,326 bytes, over the 17,900 cap; the inline Ruling template still carries "caught by <the checkpoint that would catch it, if one would>", and SKILL.md points at rulings.md before any ruling. Cost if wrong: a compacted controller reads the checkpoint guidance one pointer away, caught by the task 03 review and the final review.
+Task 04: dispatched 1ebcf07 2026-10-24T23:05:09Z
+Ruling: owner, 2026-10-25 (asleep, weekly token quota at 88%, renews Wednesday 15:00): approved the docs/ADR/visual design; after this build, write its plan, red-team it, and start implementing when fit. Budget mode for the rest of this build: standard tier for implementers and reviewers (most capable only for HIGH-risk tasks); batch small same-shape tasks into one implementer and one review where the plan allows; lenses only on a reported tripwire; minimal chat. If quota runs out, the ledger is the resume point. Why: owner instruction. Cost if wrong: thinner reviews on low-risk tasks, caught by the final branch review.
+Task 03: minor (deferred): fix-loop-shape negative checks for the old rationalization row and baseline-0 wording no longer also scan SKILL.md
+Task 03: minor (deferred): moved text keeps positional words (setup.md below x2, waiting.md above, lens-dispatch.md fix loop below) whose referents are now in another file
+Task 03: minor (deferred): SKILL.md Setup numbering starts at ### 4. The ledger after subsections 1 to 3 moved
+Task 03: confirmed ⚠️ resolved: COVERAGE row-by-row audit is owned by task 08 (COVERAGE files match fx); gate runs are covered by the implementer's test_scope exit 0 and the task 08 phase gate.
+Task 03: cost unavailable (no transcript recorded)
+Task 03: complete (commits d7083ab..35f5b22, review clean)
