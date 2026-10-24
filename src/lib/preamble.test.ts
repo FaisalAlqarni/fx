@@ -7,6 +7,7 @@
 // by moving the codex assertions to after `cx` is defined, grouped with the
 // rest of the codex checks. No assertion content changed.
 import * as assert from 'assert';
+import { execFileSync } from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -322,6 +323,19 @@ const INTRO = 'The single canonical preamble. Injected into every session **and 
   assert.ok(t.includes('Companion tools.'), 'a non-string value falls back to the default');
   fs.rmSync(dir, { recursive: true, force: true });
   console.log('companions line: passed');
+}
+
+// ---- an old glossary name gets one session notice, never a subagent ----
+{
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-glossary-render-'));
+  execFileSync('git', ['init', '-q'], { cwd: dir });
+  fs.writeFileSync(path.join(dir, 'CONTEXT.md'), '# c\n');
+  try {
+    const session = render({ harness: 'claude-code', cwd: dir });
+    assert.match(session.trimEnd().split('\n').pop() ?? '', /^This repository's glossary is still named CONTEXT\.md\./);
+    assert.doesNotMatch(render({ harness: 'claude-code', cwd: dir, subagent: true }), /still named/);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  console.log('glossary notice: passed');
 }
 
 console.log('preamble.test.js: OK');

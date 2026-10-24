@@ -95,6 +95,7 @@ run base-branch.test.js node lib/base-branch.test.js "$MAIN" "$WT"
 run heredoc.test.js     node lib/heredoc.test.js     "$MAIN" "$WT"
 run git-guard-symbol.test.js node lib/git-guard-symbol.test.js
 run fx-json.test.js     node lib/fx-json.test.js
+run glossary.test.js    node lib/glossary.test.js
 run env.test.js         node lib/env.test.js
 run fx-paths.test.js    node lib/fx-paths.test.js
 run redact.test.js      node lib/redact.test.js

@@ -40,6 +40,12 @@ export function parseFxJson(raw: unknown): FxJsonResult {
     else problems.push({ key: 'companions', reason: 'companions must be a string' });
   }
 
+  const rename = input.get('glossary_rename');
+  if (rename !== undefined) {
+    if (rename === 'declined') value.glossary_rename = rename;
+    else problems.push({ key: 'glossary_rename', reason: 'glossary_rename must be "declined"' });
+  }
+
   const hooks = input.get('hooks');
   if (hooks !== undefined) {
     if (typeof hooks === 'object' && hooks !== null && !Array.isArray(hooks)) {

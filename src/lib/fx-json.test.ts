@@ -51,4 +51,12 @@ const notArray = parseFxJson({ rules: 'x' });
 assert.ok(notArray.ok);
 assert.deepStrictEqual(notArray.problems, []);
 
+const gl = parseFxJson({ glossary_rename: 'yes' });
+assert.ok(gl.ok);
+assert.strictEqual('glossary_rename' in gl.value, false);
+assert.deepStrictEqual(gl.problems, [{ key: 'glossary_rename', reason: 'glossary_rename must be "declined"' }]);
+const glOk = parseFxJson({ glossary_rename: 'declined' });
+assert.ok(glOk.ok);
+assert.strictEqual(glOk.value.glossary_rename, 'declined');
+
 console.log('fx-json.test.js: ok');

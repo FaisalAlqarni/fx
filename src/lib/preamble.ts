@@ -17,6 +17,8 @@ import * as path from 'path';
 import { describePlans, errCode } from './plan-state';
 import { parseFxJson } from './fx-json';
 import { parseJson } from './json';
+import { glossaryNotice } from './glossary';
+import { repoRoot } from './repo-config';
 import type { Harness } from './types.js';
 
 // Compiled to lib/, so '..' is the repository root, as for the hand-written file.
@@ -147,6 +149,10 @@ export function render({ harness, cwd = process.cwd(), subagent = false }: { har
       const plans = describePlans(cwd, { lane: addressing.lane });
       if (plans) text += `\n\n${plans}`;
     } catch { /* the preamble alone is still worth emitting */ }
+    try {
+      const notice = glossaryNotice(repoRoot(cwd));
+      if (notice) text += `\n\n${notice}`;
+    } catch { /* same: a notice is never worth a failed start */ }
   }
 
   return text;

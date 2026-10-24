@@ -35,6 +35,7 @@ export interface FxJson {
   coverage: string | null;
   coverage_floor: number | null;
   companions: string;
+  glossary_rename: 'declined';
   hooks: { stop_check?: boolean; loop_nudge?: boolean; edit_rules?: boolean };
 }
 
