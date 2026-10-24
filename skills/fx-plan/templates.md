@@ -42,6 +42,15 @@ attention lens.>
 - Locale: Arabic is the default locale, with RTL support throughout. Keep this
   line unless the design names another default locale.
 
+## Review Focus
+
+<Up to five lines, each: the input or condition the design implies and no task
+tests, the behaviour a reasonable user expects, and the owning task. Every
+reviewer receives this list beside Global Constraints. Empty means checked and
+none found.>
+
+- <Empty tenant list>: <shows the empty state> (task 01).
+
 ## Tasks
 
 | # | Title | Blocked by | Delivers | Phase |
@@ -83,6 +92,8 @@ the implementer's brief.)
 
   The implementer sees only its own task. **This block is how it learns the
   names and types its neighbours use.** Exact signatures, or it is useless.
+
+**Not this task:** <adjacent behaviour> (task NN)   (optional; omit if none)
 
 **Seam:** <the confirmed seam this is tested at, from design.md>
 

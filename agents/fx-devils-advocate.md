@@ -161,7 +161,9 @@ Adversarial review ({design|plan|code} mode) <file|diff>
 2. <short title>: <…>.
 ```
 
-In plan mode, findings 1..k are plan-internal; call out the design↔plan
+In plan mode, end each finding with ` [blocks]` (the plan cannot be built
+correctly as written) or ` [advisory]` (worth knowing, safe to build past).
+Findings 1..k are plan-internal; call out the design↔plan
 cross-reference findings as such. In code mode, note next to each finding
 whether it was already covered by the primed review it complements, if you
 were told what that review found: the value of this mode is the findings
@@ -180,9 +182,11 @@ Which?
 **Do not start discussing or resolving until the human chooses.** This is a
 judgment gate; in interactive use it stops for the human.
 
-**Unattended runs:** when there is no human to pick 1/2/3, do not stall. The
-caller feeds the findings into one bounded revision and logs each finding and
-its disposition. The methodology (the lens, the three modes, the numbered
+**Unattended runs:** when there is no human to pick 1/2/3, do not stall. In plan mode
+the caller feeds only the `[blocks]` findings into one bounded revision and
+ledgers each `[advisory]` finding to `state.md` without editing the plan; in
+other modes it feeds all findings into one bounded revision. It logs each
+finding and its disposition. The methodology (the lens, the three modes, the numbered
 findings) is identical; only the "who decides" step changes.
 
 ## Red flags in your own output

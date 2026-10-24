@@ -31,6 +31,10 @@ Subagent (general-purpose):
     [Copied verbatim from plan.md: exact values, formats, and stated
     relationships between components.]
 
+    Read the brief's Review focus section with its Global constraints, when the
+    brief has one: each line is an input to check, and an uncovered one is a
+    finding.
+
     **Read the plan or spec as a vision, not a checklist.** Where it is
     silent, a reasonable user's expectation is the requirement: an input it
     never named that crashes or corrupts is graded by its effect on a user,

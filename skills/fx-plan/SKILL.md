@@ -26,7 +26,9 @@ Give them the whole plan as **seam-sized tasks**.
 Assume they are a **skilled developer** who knows **almost nothing about our
 toolset or problem domain**, and who **invokes `fx-tdd` for test design**. That
 assumption sets the detail level for everything below. Write less and you are
-guessing on their behalf.
+guessing on their behalf. What they cannot know is what you decided: which
+files, which names and signatures, which values from the design, which tests
+prove each task. Write those.
 
 DRY. YAGNI. TDD.
 
@@ -73,7 +75,9 @@ self-contained changes that make sense independently.
 ## 4. Draft vertical slices
 
 **Explore the codebase first** if you haven't already: you cannot size a
-task against code you haven't read. Look specifically for **prefactoring
+task against code you haven't read. Read, do not build: no scratch implementation and no trial runs while
+planning. A question only running code can settle goes to `prototype`. Look
+specifically for **prefactoring
 opportunities** that would make the implementation easier.
 
 Each task is a **tracer bullet**: a narrow but COMPLETE path through every
@@ -168,6 +172,12 @@ Fresh eyes on the design, then check the plan against it.
    names exists in `design.md`, spelled the same. `compile-brief` fails on a
    heading it cannot find.
 
+5. **Review Focus.** For each input or failure the design implies, name the
+   task whose Tests cover it. The rest go into plan.md's Review Focus (up to
+   five) and into the owning task's Tests.
+6. **Proportion.** A plan several times the design's length is a transcript:
+   cut it back to decisions.
+
 Fix inline. No need to re-review: fix and move on.
 
 ## 7. Red-team recommendation
@@ -223,9 +233,9 @@ already does: never a bare "tell me when to start."
   this same menu again by hand.
 
 **Unattended runs:** no human to pick → do not stall. Apply the §7
-recommendation (run the red-team pass if it said YES, feed findings into
-**one** bounded plan revision, log each finding and its disposition to
-`state.md`), then default to **start implementing**. The methodology is
+recommendation (run the red-team pass if it said YES, feed the `[blocks]`
+findings into **one** bounded plan revision, and ledger each `[advisory]`
+finding to `state.md` without editing the plan; log each finding's disposition), then default to **start implementing**. The methodology is
 identical to the interactive path; only the "who decides" step changes.
 
 ---
@@ -254,5 +264,7 @@ Every step contains the actual content the implementer needs. Never write:
 - [ ] A wide refactor is sequenced expand:contract, not forced into a slice
 - [ ] Every request/integration spec declares its type (`type: :request`)
       unless the project infers it from file location
+- [ ] A requirement split across tasks names the owner of each half in both
+      tasks.
 - [ ] Every assertion on an error body states the error contract (exact
       message, key, or status) rather than a pattern that happens to match it

@@ -53,11 +53,28 @@ const run = (taskText) => {
   assert.strictEqual(r.stdout.trim(), out);
   return fs.readFileSync(out, "utf8");
 };
+const withFile = (file, text, fn) => {
+  const keep = fs.readFileSync(file, "utf8");
+  fs.writeFileSync(file, text);
+  try {
+    return fn();
+  } finally {
+    fs.writeFileSync(file, keep);
+  }
+};
 const brief = run("# 01: a\n\n**Design:** Implementation Decisions > 2\n**Stack:** rails/The traps\n");
-const heads = ["## Task", "## Global constraints", "## Context", "## Rulings", "## Design excerpt", "## Stack"];
+const heads = ["## Task", "## Global constraints", "## Review focus", "## Context", "## Rulings", "## Design excerpt", "## Stack"];
 const at = heads.map((h) => brief.indexOf(h));
-assert.ok(at.every((i, k) => i >= 0 && (k === 0 || i > (at[k - 1] ?? -1))), `six sections in order: ${at}`);
+assert.ok(at.every((i, k) => i >= 0 && (k === 0 || i > (at[k - 1] ?? -1))), `seven sections in order: ${at}`);
 assert.ok(brief.includes("- Locale: ar."), "global constraints carried");
+const focusOf = (b) => b.slice(b.indexOf("## Review focus") + 15, b.indexOf("## Context")).trim();
+assert.strictEqual(focusOf(brief), "None.", "a plan with no Review Focus section gives None.");
+const planMd = path.join(plan, "plan.md");
+withFile(planMd, "# P\n\n## Global Constraints\n\n- Locale: ar.\n\n## Review Focus\n\n- Empty tenant list: shows the empty state (task 01).\n\n## Tasks\n", () => {
+  const b = run("# 01: a\n");
+  assert.ok(focusOf(b).includes("- Empty tenant list: shows the empty state (task 01)."), "Review Focus body carried");
+  assert.ok(!focusOf(b).includes("## Review Focus") && !focusOf(b).includes("## Tasks"), "body only, no heading or next section");
+});
 assert.ok(brief.includes("Task 00 produced Store#get(id)."), "controller context carried");
 assert.ok(brief.includes("Ruling: task 01 uses UTC."), "rulings carried");
 assert.ok(brief.includes("D2 body.") && !brief.includes("D1 body.") && !brief.includes("O1."), "only decision 2");
@@ -76,15 +93,6 @@ const whole = run("# 01: a\n");
 assert.ok(whole.includes("## Engines"), "no Stack line: the whole stack file, as today");
 const fx = path.join(wt, ".fx.json");
 const failsNaming = (r, name, label) => assert.ok(r.status !== 0 && r.stderr.includes(name), `${label}: exit non-zero naming ${name}; got ${r.status} ${r.stderr}`);
-const withFile = (file, text, fn) => {
-  const keep = fs.readFileSync(file, "utf8");
-  fs.writeFileSync(file, text);
-  try {
-    return fn();
-  } finally {
-    fs.writeFileSync(file, keep);
-  }
-};
 {
   const sub = "# D\n\n## Implementation Decisions\n\n### Phase 1: Size gate\n\nG body.\n\n### Phase 1: Skill splits\n\nS body.\n\n## Out of Scope\n\nO1.\n";
   withFile(path.join(plan, "design.md"), sub, () => {

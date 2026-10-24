@@ -9,7 +9,7 @@ false, and two agents refused to comply rather than obey them.
 **An agent that pushes back on an impossible instruction is working
 correctly.** Treat it as a signal about your dispatch, not as insubordination.
 
-**The brief's Global Constraints are the reviewer's attention lens.** They are
+**The brief's Global Constraints and Review focus are the reviewer's attention lens.** They are
 copied verbatim from the plan by `compile-brief`: exact values, formats, and
 stated relationships between components. The reviewer's template already
 carries process rules (YAGNI, test hygiene, review method); the brief is for

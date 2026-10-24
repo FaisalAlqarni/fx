@@ -38,4 +38,7 @@ const code = da.slice(da.indexOf("## Code mode"), da.indexOf("## Output"));
 assert.ok(code.includes("**Unchanged callers and variants**"), "devil's advocate hunts caller breaks");
 const branch = read("skills/fx-review/reviewer-prompt.md");
 assert.ok(branch.includes("Docs, runbooks or examples the diff has made stale?"), "branch review checks doc drift");
+for (const f of ["skills/fx-implement/task-reviewer-prompt.md", "skills/fx-review/reviewer-prompt.md"]) {
+  assert.ok(read(f).includes("Read the brief's Review focus section with its Global constraints"), `${f} points at Review focus`);
+}
 console.log("review-content.test.js: OK");

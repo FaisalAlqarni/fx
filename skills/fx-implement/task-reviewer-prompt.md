@@ -161,6 +161,10 @@ Subagent (general-purpose):
     unchanged code, or spans tasks), report it as a **⚠️ item** instead of
     broadening your search.
 
+    Read the brief's Review focus section with its Global constraints, when the
+    brief has one: each line is an input to check, and an uncovered one is a
+    finding.
+
     **Read the brief as a vision, not a checklist.** Where it is silent, a
     reasonable user's expectation is the requirement: an input the task never
     named (an empty list, a missing record, a repeated request) that crashes or

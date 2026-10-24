@@ -63,6 +63,9 @@ if (plan === null) die(`cannot read ${path.join(planDir, 'plan.md')}`);
 const gc = section(plan, 'Global Constraints');
 const gcBody = gc && gc.split('\n').slice(1).join('\n').trim();
 
+const rf = section(plan, 'Review Focus');
+const rfBody = rf && rf.split('\n').slice(1).join('\n').trim();
+
 let context = 'None.';
 if (opt.context) {
   const c = read(opt.context);
@@ -115,6 +118,7 @@ fs.mkdirSync(path.dirname(path.resolve(outFile)), { recursive: true });
 fs.writeFileSync(outFile, [
   '## Task', task.trim(),
   '## Global constraints', gcBody || 'None.',
+  '## Review focus', rfBody || 'None.',
   '## Context', context,
   '## Rulings', rulings.length ? rulings.map((r) => `- ${r}`).join('\n') : 'None.',
   '## Design excerpt', designOut,
