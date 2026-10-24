@@ -130,3 +130,10 @@ Ruling: task 12 declined 2 (declined lines reaching the final brief in a real ru
 Task 12: confirmed ⚠️ resolved: controller read task-reviewer-prompt.md: the vision rule is at line 164 and the declined rule at 170, inside Part 1, with the findings heading at 281.
 Task 12: cost unavailable (no transcript recorded)
 Task 12: complete (commits 3897f14..afbafac, review clean)
+Ruling applied: S2 brief tool re-pinned at d983c6d (task 13's commit) before task 13's review completes; plan.md has no Review focus section, so briefs carry none either way. Cost if wrong: a compile-brief bug in 13 reaches later briefs, caught by compile-brief's exit code and task 13's review.
+Task 14: dispatched f471e8b 2026-10-24T23:38:52Z
+Task 13: minor (deferred): no gate asserts the [blocks]/[advisory] unattended-revision wording in fx-plan SKILL.md or the devils-advocate agent
+Task 13: confirmed ⚠️ resolved: the [blocks]/[advisory] unattended wording and the final-review verbatim line are prose with no test seam; the final review reads them. The reviewer's test_scope re-run (173 lines) had one FAIL, brainstorm-confidence.test.js, caused by task 14's uncommitted in-progress edits, outside task 13's range.
+Task 13: cost unavailable (no transcript recorded)
+Task 13: complete (commits 4bc7e34..d983c6d, review clean)
+Task 14: report contract breached (no head hash in reply); range read from git.
