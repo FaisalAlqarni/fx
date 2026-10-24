@@ -55,7 +55,7 @@ A claim with no verdict is a build error.
 | 105 to 107 | K | Visual companion: browser-based, **a tool not a mode**, accepting ≠ every question goes through it |
 | 108 to 114 | K | Offer just-in-time, never upfront; wait for a real visual question; **its own message with nothing else**; wait; `--open` on accept; don't re-offer on decline |
 | 115 to 121 | K | Per-question decision; the see-vs-read test; the browser list; the terminal list; **a UI topic is not automatically a visual question**; both worked examples |
-| 122 | V | The `visual-companion.md` guide and its 5 scripts (`server.cjs`, `helper.js`, `frame-template.html`, `start-server.sh`, `stop-server.sh`) are **copied verbatim**: they are working code, not prose to rewrite. Added: the server is localhost-only and writes into the project; nothing is published |
+| 122 | V | The `visual-companion.md` guide and its 5 scripts (`server.cjs`, `helper.js`, `frame-template.html`, `start-server.sh`, `stop-server.sh`) are **copied verbatim**: they are working code, not prose to rewrite. `server.cjs` and `helper.js` are now generated from TypeScript in `src/skills/fx-brainstorm/scripts/` with the same behaviour; the other three stay verbatim. Added: the server is localhost-only and writes into the project; nothing is published |
 
 ## mattpocock:grilling (123 to 141)
 

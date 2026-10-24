@@ -1,0 +1,1 @@
+{"cwd":"{{CWD}}","hook_event_name":"PreToolUse","agent_id":7,"tool_name":"apply_patch","tool_input":{"command":"*** Begin Patch\n*** Add File: x.txt\n+hi\n*** End Patch\n"}}

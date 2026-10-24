@@ -1,0 +1,1 @@
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","updatedInput":{"description":"look","prompt":"find the parser","subagent_type":"general-purpose","model":"sonnet"}}}

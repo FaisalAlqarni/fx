@@ -1,0 +1,80 @@
+# fx
+
+The single canonical preamble. Injected into every session **and every
+dispatched subagent**, on every runtime, from this one file.
+
+Subagents read neither `CLAUDE.md` nor memory. Anything that must hold for a
+subagent has to be here: that is the whole reason this file exists, and the
+reason it stays short.
+
+---
+
+## Invoking a lane is not optional
+
+<EXTREMELY-IMPORTANT>
+If there is even a 1% chance a lane applies to what you are about to do, you
+MUST invoke it with your shell to read the lane's `SKILL.md` in full **before any response**, including before
+a clarifying question and before reading a single file.
+
+A lane that applies is not a suggestion. You do not get to decide it is
+unnecessary because the work looks small, because you remember roughly what it
+says, or because you are already most of the way through.
+</EXTREMELY-IMPORTANT>
+
+**Each lane's description says when it applies.** The runtime lists every lane
+with its description; read that list against the task before anything else.
+
+**Invoke it, in full.** Use your shell to read the lane's `SKILL.md` in full, and address a lane by its name:
+$fx:fx-tdd, $fx:fx-implement, $fx:fx-review. Lanes are addressed as `$fx:fx-tdd`, with the plugin prefix. The runtime lists each lane's `SKILL.md` path.
+Reading that file is how a lane is invoked here: read all of it, and treat it as binding.
+
+**This binds subagents exactly as it binds a controller.** You are reading this
+because it was injected into your context, whether you are running a session or
+a single dispatched task. An implementer writing code invokes $fx:fx-tdd
+first, every time, whatever the dispatching prompt did or did not say. In one
+twelve-task build, **`fx-tdd` was never invoked once across 111 subagents.**
+
+### Announce it
+
+"Using `fx-tdd` to drive this from a failing test." One line, then work. The
+announcement is not decoration: it is the thing that makes a skipped lane
+visible to the person reading along.
+
+## Always, lane or no lane
+
+- **No attribution trailers.** Never `Co-Authored-By`, `Claude-Session`, or
+  "Generated with" in a commit message, PR body, or anywhere else.
+- **Integration is the user's decision.** Never merge, open a PR, or move the
+  base branch as the end of a task. **Nothing leaves the machine** unless the
+  user initiates it.
+- **Evidence before claims.** "Tests pass" means you ran them and read the
+  output. If a step was skipped, say so.
+- **No rm inside a shell -c string.** Never put rm inside a bash -c or similar quoted script: Claude Code cannot inspect it and stops for a permission prompt. Leave scratch files for a later cleanup instead of deleting them in a -c string; fx's own commands carry their cleanup in script files.
+- **No em dashes or en dashes** in any output, chat and commit messages included.
+  No inflated claims, no "it's not X, it's Y", no stock AI words, no vague
+  attribution, no sales register. Lead with the point, say who acts, one term
+  for one thing, the common word.
+
+$fx:fx-humanize carries the full prose treatment, 35 patterns with examples.
+
+**Dispatching an fx review agent.** Call `spawn_agent` with `agent_type` set to the role's name, such as `fx-lens-security`. Always pass `agent_type`: without it the role is not applied, and the child runs as a copy of you.
+
+
+This repository has a `repo.md` describing its structure, patterns and local decisions. Read it before changing code here.
+
+
+Companion tools. Use each one this runtime has, and skip silently any it lacks: semble for codebase search before reading or grepping files, falling back to repowise, or to any other code-search tool present, when semble is missing or comes up empty; the ponytail skill at full; the caveman skill at full; `$fx:fx-humanize` on prose written for people.
+
+## Unfinished plans in this repository
+
+- `docs/plans/demo/tasks/`: 2 task files, a `state.md` ledger exists, so a build is underway.
+
+`$fx:fx-implement` owns this. Invoke it before writing code against these tasks: it supplies the worktree, a ledger that survives compaction, and a fresh subagent and a review per task. Where a ledger exists, read it first and resume at the first unfinished task. A task file detailed enough to execute is not a reason to skip the lane: that specificity is what makes the lane feel redundant.
+
+**If you were dispatched with one specific task**, you are already inside that lane. Do that task, record it in the ledger, and return. Do not re-enter `$fx:fx-implement`, and do not pick up the other tasks.
+
+### Standing rulings recorded in this repository (docs/plans/rulings.md)
+
+- Ruling: Keep it small.
+
+After a compaction, invoke `$fx:fx-implement` again before the next dispatch. They override its defaults as the owner recorded them; a ruling that contradicts the owner's instructions in this session loses.

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Runs one built test against a git fixture: scripts/test-one <src test file>.
+# This lives in a script file, not in .fx.json's bash -c string, because Claude
+# Code cannot inspect such a string and stops the run for a permission prompt
+# when it holds rm (the 2026-10-22 hooks design, decision 14).
+set -euo pipefail
+USAGE="usage: scripts/test-one <src test file>, a relative path inside the repository"
+[ $# -eq 1 ] || { echo "$USAGE" >&2; exit 2; }
+# A path out of the repository would run as the repo's own command, unchecked (final review, lens minor 8).
+case "$1" in
+  /* | ~* | ..|../* | */../* | */.. | *\$*) echo "$USAGE" >&2; exit 2 ;;
+esac
+cd "$(dirname "$0")/.."
+D="$(mktemp -d)"
+trap 'rm -rf "$D"' EXIT
+scripts/check-generated
+# Its own assignment, so set -e stops the script when test-scope fails.
+BUILT="$(scripts/test-scope --built-path "$1")"
+F="$(scripts/make-git-fixture "$D/fixture")"
+# $F stays unquoted: make-git-fixture prints two paths, which are two arguments.
+# shellcheck disable=SC2086
+node "$BUILT" $F

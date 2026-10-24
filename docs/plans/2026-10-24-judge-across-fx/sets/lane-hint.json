@@ -1,0 +1,258 @@
+[
+ {
+  "prompt": "This service file has grown to 900 lines and I can't test any of it. It needs restructuring.",
+  "lane": "fx-architecture"
+ },
+ {
+  "prompt": "Look at src/ and tell me if this is over-engineered. What can we delete?",
+  "lane": "fx-architecture"
+ },
+ {
+  "prompt": "We keep dispatching a code-review subagent with this prompt and it reviews the wrong files every time:\n\n\"Review the changes and report issues.\"\n\nReword it so a fresh agent with no memory of this conversation reviews the actual diff, not whatever files happen to be open.",
+  "lane": "fx-authoring"
+ },
+ {
+  "prompt": "I want to add rate limiting to our API. Where should we start?",
+  "lane": "fx-brainstorm"
+ },
+ {
+  "prompt": "The login test passes locally and fails on CI about one run in five. Sort it out.",
+  "lane": "fx-debug"
+ },
+ {
+  "prompt": "We need a pricing page for this. Three tiers, monthly and annual toggle. Make it look good.",
+  "lane": "fx-design"
+ },
+ {
+  "prompt": "Our dashboard looks bland and generic. Rework how it looks.",
+  "lane": "fx-design"
+ },
+ {
+  "prompt": "Tidy up this paragraph, it reads like a press release: \"Our robust solution seamlessly leverages cutting-edge technology to deliver comprehensive value.\"",
+  "lane": "fx-humanize"
+ },
+ {
+  "prompt": "The plan in docs/plans/2026-01-01-notes/ is ready. Go.",
+  "lane": "fx-implement"
+ },
+ {
+  "prompt": "The design in docs/plans/2026-01-01-notes/design.md is approved. Break it into tasks.",
+  "lane": "fx-plan"
+ },
+ {
+  "prompt": "I'm about to merge this. Go over changes.diff and tell me what you find.",
+  "lane": "fx-review"
+ },
+ {
+  "prompt": "Add a helper that turns a duration string like 5m or 90s into a number of seconds.",
+  "lane": "fx-tdd"
+ },
+ {
+  "prompt": "Explain what this function does:\n\nfunction chunk(arr, size) {\n  const out = [];\n  for (let i = 0; i < arr.length; i += size) {\n    out.push(arr.slice(i, i + size));\n  }\n  return out;\n}",
+  "lane": "none"
+ },
+ {
+  "prompt": "What's the difference between git rebase and git merge, and when would I use one over the other?",
+  "lane": "none"
+ },
+ {
+  "prompt": "Give me a one-liner to find every file over 100MB under the current directory.",
+  "lane": "none"
+ },
+ {
+  "prompt": "We're arguing about how our upload retry should behave: exponential backoff with jitter, or a fixed three retries then fail. I can't tell from the descriptions alone which one leaves the user staring at a spinner longer under a flaky connection. Build something runnable that shows the difference.",
+  "lane": "prototype"
+ },
+ {
+  "prompt": "We're on Postgres 16 and considering the new pg_stat_io view. Find out what it actually measures and what changed relative to earlier versions.",
+  "lane": "research"
+ },
+ {
+  "prompt": "I want users to be able to export their reports as CSV. Not sure yet how it should work with the big ones.",
+  "lane": "fx-brainstorm"
+ },
+ {
+  "prompt": "Let's build a notifications feature for the dashboard. What would you do?",
+  "lane": "fx-brainstorm"
+ },
+ {
+  "prompt": "Can we add multi-tenant support to the billing service? I haven't thought through the data model.",
+  "lane": "fx-brainstorm"
+ },
+ {
+  "prompt": "New feature idea: let teams share saved searches. Help me figure out the shape of it.",
+  "lane": "fx-brainstorm"
+ },
+ {
+  "prompt": "The settings screen is a wall of checkboxes. Make it look like something a person would want to use.",
+  "lane": "fx-design"
+ },
+ {
+  "prompt": "Design the empty state for the projects list, with an illustration slot and a clear first action.",
+  "lane": "fx-design"
+ },
+ {
+  "prompt": "Our onboarding modal looks like every other SaaS template. Give it a look of its own.",
+  "lane": "fx-design"
+ },
+ {
+  "prompt": "I can't decide between a sidebar and top tabs for navigation until I click through both. Spike them quickly, we'll throw them away.",
+  "lane": "prototype"
+ },
+ {
+  "prompt": "Try three variations of the checkout summary card so we can pick one. Throwaway code is fine.",
+  "lane": "prototype"
+ },
+ {
+  "prompt": "We keep arguing whether websockets or polling feels snappier here. Build a quick throwaway of each and let's see.",
+  "lane": "prototype"
+ },
+ {
+  "prompt": "The design for the audit log is signed off. Write the plan and the task files.",
+  "lane": "fx-plan"
+ },
+ {
+  "prompt": "Break the approved search redesign into tasks we can hand to agents one by one.",
+  "lane": "fx-plan"
+ },
+ {
+  "prompt": "We have the design doc for the importer. What are the steps, in order?",
+  "lane": "fx-plan"
+ },
+ {
+  "prompt": "Tasks are in docs/plans/2026-03-02-importer/tasks/. Start building.",
+  "lane": "fx-implement"
+ },
+ {
+  "prompt": "Pick up where we left off on the audit-log plan, task 4 was the last one done.",
+  "lane": "fx-implement"
+ },
+ {
+  "prompt": "The plan is approved, implement it.",
+  "lane": "fx-implement"
+ },
+ {
+  "prompt": "Add a method on Invoice that returns the total in cents after discounts.",
+  "lane": "fx-tdd"
+ },
+ {
+  "prompt": "Fix the slugify helper so it strips trailing hyphens. Test first please.",
+  "lane": "fx-tdd"
+ },
+ {
+  "prompt": "Write a function that validates an IBAN checksum.",
+  "lane": "fx-tdd"
+ },
+ {
+  "prompt": "Add coverage for the date range parser, it has no tests at all.",
+  "lane": "fx-tdd"
+ },
+ {
+  "prompt": "The worker crashes with 'undefined method id for nil' after the last deploy. Why?",
+  "lane": "fx-debug"
+ },
+ {
+  "prompt": "Page load went from 300ms to 4s since Tuesday and nobody knows what changed.",
+  "lane": "fx-debug"
+ },
+ {
+  "prompt": "npm run build fails with a type error in a file I never touched.",
+  "lane": "fx-debug"
+ },
+ {
+  "prompt": "Users get logged out every ten minutes on Safari only. Figure out why.",
+  "lane": "fx-debug"
+ },
+ {
+  "prompt": "Review my branch before I open the PR.",
+  "lane": "fx-review"
+ },
+ {
+  "prompt": "Did I miss anything in the last commit? It touches the payment webhook.",
+  "lane": "fx-review"
+ },
+ {
+  "prompt": "Check the changes on feature/rate-limit against main and tell me what's wrong.",
+  "lane": "fx-review"
+ },
+ {
+  "prompt": "The OrderService has 40 methods and every test needs half the app booted. Where should the seams go?",
+  "lane": "fx-architecture"
+ },
+ {
+  "prompt": "We have three different HTTP client wrappers doing the same thing. Simplify this.",
+  "lane": "fx-architecture"
+ },
+ {
+  "prompt": "This README intro sounds like a robot wrote it. Make it read like a person.",
+  "lane": "fx-humanize"
+ },
+ {
+  "prompt": "Rewrite the release notes so they don't sound like marketing copy.",
+  "lane": "fx-humanize"
+ },
+ {
+  "prompt": "Edit this blog draft, it's full of 'delve' and 'seamless' and I hate it.",
+  "lane": "fx-humanize"
+ },
+ {
+  "prompt": "The agent keeps ignoring the rule in CLAUDE.md about running the linter. Reword it so it sticks.",
+  "lane": "fx-authoring"
+ },
+ {
+  "prompt": "Write a skill that teaches the agent how we cut releases here.",
+  "lane": "fx-authoring"
+ },
+ {
+  "prompt": "Improve the subagent prompt in .claude/agents/reviewer.md, it reports style nits instead of bugs.",
+  "lane": "fx-authoring"
+ },
+ {
+  "prompt": "What changed in React 19's handling of refs compared to 18? Check the docs.",
+  "lane": "research"
+ },
+ {
+  "prompt": "Look up how Sidekiq 7 handles job uniqueness, I think they changed it.",
+  "lane": "research"
+ },
+ {
+  "prompt": "Read RFC 9457 and tell me what our error responses would need to change.",
+  "lane": "research"
+ },
+ {
+  "prompt": "What does the ||= operator do in Ruby?",
+  "lane": "none"
+ },
+ {
+  "prompt": "Why would someone use a WeakMap instead of a Map here?",
+  "lane": "none"
+ },
+ {
+  "prompt": "What's the difference between let and const in a for loop?",
+  "lane": "none"
+ },
+ {
+  "prompt": "How does async/await differ from Task.Run in C#?",
+  "lane": "none"
+ },
+ {
+  "prompt": "What does this regex match: ^\\d{3}-\\d{4}$",
+  "lane": "none"
+ },
+ {
+  "prompt": "Is a Python list comprehension faster than a for loop with append?",
+  "lane": "none"
+ },
+ {
+  "prompt": "What does `git stash pop` do if there's a conflict?",
+  "lane": "none"
+ },
+ {
+  "prompt": "In SQL, what's the difference between WHERE and HAVING?",
+  "lane": "none"
+ },
+ {
+  "prompt": "What is the purpose of the `key` prop in React lists?",
+  "lane": "none"
+ }
+]

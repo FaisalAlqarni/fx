@@ -1,0 +1,6 @@
+{
+  "hook": "fx-codex.js",
+  "cwd": "worktree",
+  "exit": 2,
+  "stderr": "[fx] force push rewrites history that has already left the machine.\n"
+}

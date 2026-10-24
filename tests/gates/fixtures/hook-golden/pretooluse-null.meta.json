@@ -1,0 +1,6 @@
+{
+  "hook": "fx-pretooluse.js",
+  "cwd": "main",
+  "exit": 2,
+  "stderr": "[fx] hook crashed (Cannot read properties of null (reading 'tool_name')). Denying rather than assuming this is safe.\n"
+}

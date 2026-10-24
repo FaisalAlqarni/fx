@@ -1,0 +1,702 @@
+[
+ {
+  "lens": "fx-lens-security",
+  "path": "app/controllers/files_controller.rb",
+  "function": "download",
+  "text": "def download\n  send_file Rails.root.join('uploads', params[:name])\nend",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "app/controllers/accounts_controller.rb",
+  "function": "show",
+  "text": "def show\n  @account = Account.find(params[:id])\nend",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "src/routes/proxy.ts",
+  "function": "proxy",
+  "text": "export async function proxy(req: Request) {\n  const target = new URL(req.query.url as string);\n  return fetch(target);\n}",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "Controllers/AdminController.cs",
+  "function": "DeleteUser",
+  "text": "[AllowAnonymous]\n[HttpDelete(\"users/{id}\")]\npublic async Task<IActionResult> DeleteUser(int id) { await _users.DeleteAsync(id); return NoContent(); }",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "app/services/report_query.py",
+  "function": "run",
+  "text": "def run(self, column):\n    return self.db.execute(f\"SELECT {column} FROM sales ORDER BY {column}\")",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "internal/auth/token.go",
+  "function": "Issue",
+  "text": "func Issue(userID string) (string, error) {\n\tt := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{\"sub\": userID})\n\treturn t.SignedString([]byte(\"dev-secret-change-me\"))\n}",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "app/controllers/sessions_controller.rb",
+  "function": null,
+  "text": "+  def create\n+    user = User.find_by(email: params[:email])\n+    session[:user_id] = user.id if user && user.password == params[:password]\n+  end",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "src/main/java/com/acme/LoginController.java",
+  "function": "login",
+  "text": "@PostMapping(\"/login\")\npublic String login(@RequestParam String user, HttpSession session) {\n    session.setAttribute(\"user\", user);\n    return \"redirect:/home\";\n}",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "lib/thumbnail.js",
+  "function": "makeThumb",
+  "text": "function makeThumb(file) {\n  return execSync(`convert ${file} -resize 200x200 thumb_${file}`);\n}",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "app/controllers/redirects_controller.rb",
+  "function": "show",
+  "text": "def show\n  redirect_to params[:return_to], allow_other_host: true\nend",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "app/helpers/money_helper.rb",
+  "function": "format_cents",
+  "text": "def format_cents(cents)\n  number_to_currency(cents / 100.0)\nend",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "src/utils/chunk.ts",
+  "function": "chunk",
+  "text": "export function chunk<T>(xs: T[], n: number): T[][] {\n  const out: T[][] = [];\n  for (let i = 0; i < xs.length; i += n) out.push(xs.slice(i, i + n));\n  return out;\n}",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "Services/TaxService.cs",
+  "function": "Vat",
+  "text": "public decimal Vat(decimal net, string country) => net * (country == \"DE\" ? 0.19m : 0.2m);",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "app/models/post.rb",
+  "function": "reading_minutes",
+  "text": "def reading_minutes\n  (body.split.size / 200.0).ceil\nend",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "analytics/rollup.py",
+  "function": "weekly",
+  "text": "def weekly(rows):\n    return sorted(rows, key=lambda r: r[\"week\"])",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "internal/geo/distance.go",
+  "function": "Haversine",
+  "text": "func Haversine(a, b Point) float64 {\n\tdLat := (b.Lat - a.Lat) * math.Pi / 180\n\treturn 6371 * 2 * math.Asin(math.Sqrt(math.Sin(dLat/2)*math.Sin(dLat/2)))\n}",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "src/components/Badge.tsx",
+  "function": "Badge",
+  "text": "export function Badge({ count }: { count: number }) {\n  return count > 0 ? <span className=\"badge\">{count > 99 ? '99+' : count}</span> : null;\n}",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "app/models/user.rb",
+  "function": "full_name",
+  "text": "def full_name\n  [first_name, last_name].compact.join(' ')\nend",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "src/main/kotlin/Temperature.kt",
+  "function": "toFahrenheit",
+  "text": "fun toFahrenheit(c: Double): Double = c * 9 / 5 + 32",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-security",
+  "path": "lib/csv_export.rb",
+  "function": null,
+  "text": "+  headers = %w[id name total]\n+  csv << headers",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "db/migrate/20261020_add_index_to_events.rb",
+  "function": "change",
+  "text": "def change\n  add_index :events, :account_id\nend",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "db/migrate/20261020_backfill_slugs.rb",
+  "function": "up",
+  "text": "def up\n  Post.where(slug: nil).find_each { |p| p.update_column(:slug, p.title.parameterize) }\nend",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "Migrations/20261020_UniqueSku.cs",
+  "function": "Up",
+  "text": "protected override void Up(MigrationBuilder b)\n{\n    b.CreateIndex(\"IX_Products_Sku\", \"Products\", \"Sku\", unique: true);\n}",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "db/structure.sql",
+  "function": null,
+  "text": "+ALTER TABLE ONLY public.orders\n+    ADD CONSTRAINT orders_total_positive CHECK (total_cents >= 0);",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "db/migrate/20261020_not_null_email.rb",
+  "function": "change",
+  "text": "def change\n  change_column_null :users, :email, false\nend",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "alembic/versions/7f3a_add_status.py",
+  "function": "upgrade",
+  "text": "def upgrade():\n    op.add_column(\"orders\", sa.Column(\"status\", sa.String(20), nullable=False, server_default=\"new\"))",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "db/migrate/20261020_rename_column.rb",
+  "function": "change",
+  "text": "def change\n  rename_column :invoices, :amount, :amount_cents\nend",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "migrations/0042_drop_index.sql",
+  "function": null,
+  "text": "+DROP INDEX CONCURRENTLY IF EXISTS index_users_on_lower_email;",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "db/migrate/20261020_change_type.rb",
+  "function": "up",
+  "text": "def up\n  change_column :events, :payload, :jsonb, using: 'payload::jsonb'\nend",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "internal/db/migrations/003_sessions.go",
+  "function": "up003",
+  "text": "func up003(tx *sql.Tx) error {\n\t_, err := tx.Exec(`CREATE TABLE sessions (id uuid PRIMARY KEY, user_id bigint NOT NULL REFERENCES users(id))`)\n\treturn err\n}",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "app/helpers/date_helper.rb",
+  "function": "short_date",
+  "text": "def short_date(d)\n  d.strftime('%b %-d')\nend",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "src/components/Avatar.tsx",
+  "function": "Avatar",
+  "text": "export const Avatar = ({ url }: { url: string }) => <img src={url} alt=\"\" className=\"avatar\" />;",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "Services/EmailFormatter.cs",
+  "function": "Subject",
+  "text": "public string Subject(Order o) => $\"Your order {o.Number} has shipped\";",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "lib/retry.py",
+  "function": "backoff",
+  "text": "def backoff(attempt):\n    return min(30, 2 ** attempt)",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "cmd/server/main.go",
+  "function": "main",
+  "text": "func main() {\n\tlog.Fatal(http.ListenAndServe(\":8080\", router()))\n}",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "app/javascript/controllers/menu_controller.js",
+  "function": "toggle",
+  "text": "toggle() {\n  this.menuTarget.hidden = !this.menuTarget.hidden\n}",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "spec/models/user_spec.rb",
+  "function": null,
+  "text": "+  it 'downcases email' do\n+    expect(User.new(email: 'A@B.C').email).to eq('a@b.c')\n+  end",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "src/main/kotlin/Greeting.kt",
+  "function": "greet",
+  "text": "fun greet(name: String) = \"Hello, $name\"",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "config/locales/en.yml",
+  "function": null,
+  "text": "+  orders:\n+    empty: \"No orders yet\"",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-database",
+  "path": "app/services/pdf_renderer.rb",
+  "function": "render",
+  "text": "def render(html)\n  Grover.new(html, format: 'A4').to_pdf\nend",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "app/views/shared/_close_button.html.erb",
+  "function": null,
+  "text": "+<button class=\"close\" onclick=\"dismiss()\"><svg><use href=\"#x\"></use></svg></button>",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "src/components/Modal.tsx",
+  "function": "Modal",
+  "text": "export function Modal({ open, children }) {\n  if (!open) return null;\n  return <div className=\"modal\">{children}<span onClick={close}>Close</span></div>;\n}",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "src/components/Field.jsx",
+  "function": "Field",
+  "text": "export const Field = ({ name }) => (\n  <div>\n    <span>{name}</span>\n    <input name={name} />\n  </div>\n);",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "app/views/products/_card.html.erb",
+  "function": null,
+  "text": "+<div class=\"card\" onclick=\"location.href='<%= product_path(product) %>'\">\n+  <%= image_tag product.photo %>\n+</div>",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "app/assets/stylesheets/focus.css",
+  "function": null,
+  "text": "+*:focus { outline: none; }",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "ui/LoginScreen.swift",
+  "function": "body",
+  "text": "var body: some View {\n    Image(systemName: \"person.circle\").onTapGesture { login() }\n}",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "app/src/main/java/ProfileScreen.kt",
+  "function": "ProfileScreen",
+  "text": "@Composable\nfun ProfileScreen() {\n    Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.clickable { openSettings() })\n}",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "src/components/Toast.tsx",
+  "function": "Toast",
+  "text": "export function Toast({ message }) {\n  return <div className=\"toast\">Saved: {message}</div>;\n}",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "app/views/settings/_form.html.erb",
+  "function": null,
+  "text": "+<input type=\"text\" name=\"nickname\" placeholder=\"Nickname\">\n+<span class=\"hint\">Shown to other members</span>",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "app/views/layouts/_nav.html.erb",
+  "function": null,
+  "text": "+<div class=\"tabs\">\n+  <div class=\"tab active\" data-action=\"click->tabs#select\">Overview</div>\n+  <div class=\"tab\" data-action=\"click->tabs#select\">Billing</div>\n+</div>",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "app/models/invoice.rb",
+  "function": "overdue?",
+  "text": "def overdue?\n  due_on < Date.current && !paid?\nend",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "src/lib/http.ts",
+  "function": "get",
+  "text": "export async function get(url: string) {\n  const r = await fetch(url);\n  if (!r.ok) throw new Error(`GET ${url}: ${r.status}`);\n  return r.json();\n}",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "db/migrate/20261020_add_paid_at.rb",
+  "function": "change",
+  "text": "def change\n  add_column :invoices, :paid_at, :datetime\nend",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "Services/Mapper.cs",
+  "function": "ToDto",
+  "text": "public static OrderDto ToDto(Order o) => new(o.Id, o.Number, o.Total);",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "worker/tasks.py",
+  "function": "cleanup",
+  "text": "def cleanup(days=30):\n    Session.objects.filter(updated__lt=now() - timedelta(days=days)).delete()",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "internal/cache/lru.go",
+  "function": "Get",
+  "text": "func (c *LRU) Get(k string) (string, bool) {\n\te, ok := c.items[k]\n\tif ok { c.ll.MoveToFront(e) }\n\treturn e.Value.(string), ok\n}",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "internal/queue/backoff.go",
+  "function": "Next",
+  "text": "func Next(attempt int) time.Duration {\n\treturn time.Duration(1<<attempt) * time.Second\n}",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "src/lib/hash.ts",
+  "function": "digest",
+  "text": "export function digest(s: string): string {\n  return createHash('sha256').update(s).digest('hex');\n}",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "lib/tasks/cleanup.rake",
+  "function": null,
+  "text": "+task purge_tmp: :environment do\n+  TmpUpload.where('created_at < ?', 1.day.ago).delete_all\n+end",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-a11y",
+  "path": "src/main/kotlin/Pricing.kt",
+  "function": "discount",
+  "text": "fun discount(total: Double, code: String?) = if (code == \"WELCOME\") total * 0.9 else total",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "app/services/avatar_fetcher.rb",
+  "function": "call",
+  "text": "def call\n  URI.open(url).read\nrescue StandardError\n  nil\nend",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "src/sync/push.ts",
+  "function": "push",
+  "text": "export async function push(batch: Item[]) {\n  try { await api.post('/batch', batch); } catch { /* retry next run */ }\n}",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "worker/handlers.py",
+  "function": "on_message",
+  "text": "def on_message(body):\n    try:\n        apply(json.loads(body))\n    except Exception as e:\n        log.warning(\"skip %s\", e)",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "Services/ImportService.cs",
+  "function": "ImportAll",
+  "text": "public async Task ImportAll(IEnumerable<Row> rows)\n{\n    foreach (var r in rows)\n    {\n        try { await _repo.AddAsync(r); } catch (Exception ex) { _log.LogError(ex, \"row failed\"); }\n    }\n}",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "app/jobs/charge_job.rb",
+  "function": null,
+  "text": "+  retry_on Stripe::APIConnectionError, attempts: 5\n+  discard_on ActiveJob::DeserializationError",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "internal/billing/webhook.go",
+  "function": "HandleWebhook",
+  "text": "func HandleWebhook(w http.ResponseWriter, r *http.Request) {\n\tvar ev Event\n\t_ = json.NewDecoder(r.Body).Decode(&ev)\n\tapply(ev)\n\tw.WriteHeader(200)\n}",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "app/models/user.rb",
+  "function": "sync_crm",
+  "text": "def sync_crm\n  Crm.push(self) rescue nil\nend",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "src/main/java/com/acme/Mailer.java",
+  "function": "send",
+  "text": "public void send(Message m) {\n    try { transport.send(m); } catch (MessagingException e) { }\n}",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "app/workers/export_worker.rb",
+  "function": "perform",
+  "text": "def perform(id)\n  export = Export.find_by(id: id)\n  return unless export\n  export.build!\nend",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "src/main/kotlin/Uploader.kt",
+  "function": "upload",
+  "text": "suspend fun upload(file: File) = runCatching { api.put(file) }.getOrNull()",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "app/services/avatar_fetcher.rb",
+  "function": "call",
+  "text": "def call\n  URI.open(url).read\nrescue OpenURI::HTTPError => e\n  raise FetchFailed, \"#{url}: #{e.message}\"\nend",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "src/utils/clamp.ts",
+  "function": "clamp",
+  "text": "export const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "Services/Totals.cs",
+  "function": "Sum",
+  "text": "public decimal Sum(IEnumerable<Line> lines) => lines.Sum(l => l.Qty * l.Price);",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "app/views/orders/_row.html.erb",
+  "function": null,
+  "text": "+<tr><td><%= order.number %></td><td><%= order.total %></td></tr>",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "lib/parse.py",
+  "function": "parse_amount",
+  "text": "def parse_amount(s):\n    return Decimal(s.replace(\",\", \"\"))",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "internal/http/client.go",
+  "function": "Get",
+  "text": "func (c *Client) Get(ctx context.Context, url string) (*http.Response, error) {\n\treq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"build request: %w\", err)\n\t}\n\treturn c.http.Do(req)\n}",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "src/main/java/com/acme/Mailer.java",
+  "function": "send",
+  "text": "public void send(Message m) throws MessagingException {\n    transport.send(m);\n}",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "app/assets/stylesheets/table.css",
+  "function": null,
+  "text": "+table { border-collapse: collapse; }",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "config/locales/fr.yml",
+  "function": null,
+  "text": "+  checkout:\n+    pay: \"Payer\"",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-silent-failure",
+  "path": "src/components/Spinner.tsx",
+  "function": "Spinner",
+  "text": "export const Spinner = () => <div role=\"status\" aria-label=\"Loading\" className=\"spinner\" />;",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "app/jobs/nightly_fanout_job.rb",
+  "function": "perform",
+  "text": "def perform\n  Account.find_each { |a| SyncAccountJob.perform_later(a.id) }\nend",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "src/events/publisher.ts",
+  "function": "publishAll",
+  "text": "export async function publishAll(events: Event[]) {\n  for (const e of events) await queue.add('event', e);\n}",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "worker/scheduler.py",
+  "function": "schedule_reports",
+  "text": "@app.on_after_configure.connect\ndef schedule_reports(sender, **_):\n    sender.add_periodic_task(60.0, build_reports.s())",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "Services/Ingest.cs",
+  "function": "OnBatch",
+  "text": "public async Task OnBatch(IReadOnlyList<Click> clicks)\n{\n    foreach (var c in clicks) await _bus.Publish(new ClickReceived(c));\n}",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "internal/producer/kafka.go",
+  "function": "Run",
+  "text": "func (p *Producer) Run(ctx context.Context) {\n\tfor ev := range p.src {\n\t\tp.w.WriteMessages(ctx, kafka.Message{Value: ev})\n\t}\n}",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "config/schedule.yml",
+  "function": null,
+  "text": "+sync_all_shops:\n+  cron: \"* * * * *\"\n+  class: \"SyncAllShopsJob\"",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "app/models/order.rb",
+  "function": "after_commit",
+  "text": "after_commit :enqueue_webhooks, on: :create\ndef enqueue_webhooks\n  subscribers.each { |s| DeliverWebhookJob.perform_later(s.id, id) }\nend",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "src/main/java/com/acme/Importer.java",
+  "function": "importAll",
+  "text": "public void importAll(List<Row> rows) {\n    rows.forEach(r -> executor.submit(() -> save(r)));\n}",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "lib/tasks/reindex.rake",
+  "function": null,
+  "text": "+task reindex_all: :environment do\n+  Product.ids.each_slice(100) { |ids| ReindexJob.perform_later(ids) }\n+end",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "src/main/kotlin/Fanout.kt",
+  "function": "fanout",
+  "text": "fun fanout(users: List<User>) = users.forEach { scope.launch { notify(it) } }",
+  "flag": true
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "app/helpers/title_helper.rb",
+  "function": "page_title",
+  "text": "def page_title(t)\n  [t, 'Acme'].compact.join(' | ')\nend",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "src/utils/money.ts",
+  "function": "toCents",
+  "text": "export const toCents = (amount: number) => Math.round(amount * 100);",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "Services/Validator.cs",
+  "function": "IsValidEmail",
+  "text": "public static bool IsValidEmail(string s) => s.Contains('@') && s.IndexOf('@') < s.LastIndexOf('.');",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "app/views/users/show.html.erb",
+  "function": null,
+  "text": "+<h1><%= @user.name %></h1>",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "worker/utils.py",
+  "function": "slugify",
+  "text": "def slugify(s):\n    return re.sub(r\"[^a-z0-9]+\", \"-\", s.lower()).strip(\"-\")",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "internal/config/load.go",
+  "function": "Load",
+  "text": "func Load(path string) (Config, error) {\n\tvar c Config\n\tb, err := os.ReadFile(path)\n\tif err != nil {\n\t\treturn c, err\n\t}\n\treturn c, json.Unmarshal(b, &c)\n}",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "src/components/Pager.tsx",
+  "function": "Pager",
+  "text": "export function Pager({ page, pages }) {\n  return <nav aria-label=\"Pages\">{page} / {pages}</nav>;\n}",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "db/migrate/20261020_add_locale.rb",
+  "function": "change",
+  "text": "def change\n  add_column :users, :locale, :string, default: 'en'\nend",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "src/main/java/com/acme/Money.java",
+  "function": "add",
+  "text": "public Money add(Money o) { return new Money(cents + o.cents, currency); }",
+  "flag": false
+ },
+ {
+  "lens": "fx-lens-pipeline",
+  "path": "spec/jobs/sync_job_spec.rb",
+  "function": null,
+  "text": "+  it 'syncs the account' do\n+    expect { described_class.perform_now(account.id) }.to change { account.reload.synced_at }\n+  end",
+  "flag": false
+ }
+]

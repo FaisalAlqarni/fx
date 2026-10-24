@@ -1,0 +1,1 @@
+{"cwd":"{{CWD}}","hook_event_name":7,"tool_name":"Bash","tool_input":{"command":"git status"}}

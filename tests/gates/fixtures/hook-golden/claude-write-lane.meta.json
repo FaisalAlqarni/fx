@@ -1,0 +1,6 @@
+{
+  "hook": "fx-pretooluse.js",
+  "cwd": "main",
+  "exit": 2,
+  "stderr": "[fx] about to write src/app.ts, and this repo has no docs/plans/*/design.md.\n\nThe lane descriptions are read once, before your first action. This is the second time of asking, at the moment it actually matters.\n\nIf the work is architectural, a new project or subsystem or an interface others depend on, fx-brainstorm owns it and its output is a design doc plus a plan.\n\nIf it is genuinely bounded, or you are deliberately skipping the ceremony, say so in one line and write the file. This fires once. An unannounced skip is a decision made in secret.\n"
+}

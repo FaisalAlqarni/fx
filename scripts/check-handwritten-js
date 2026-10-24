@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Every tracked .js, .cjs, .mjs or extensionless node script carries the
+# generated header (line 1, or line 2 after a shebang) naming a source that
+# still exists and that scripts/build writes to this very path (the mapping is
+# scripts/test-scope --built-path), or matches scripts/handwritten-js-allowlist.txt.
+# docs/adr/0046-fx-sources-are-typescript.md.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+shopt -s extglob
+
+patterns=()
+while IFS= read -r line; do
+  line="${line%%#*}"; line="${line%%+([[:space:]])}"; line="${line##+([[:space:]])}"
+  [ -n "$line" ] && patterns+=("$line")
+done < scripts/handwritten-js-allowlist.txt
+
+HEADER='^// generated from (src/[^ ]+) by scripts/build: edit there, not here$'
+scanned=0 bad=0 files=() srcs=()
+while IFS= read -r -d '' f; do
+  [ -f "$f" ] || continue
+  base="${f##*/}"
+  case "$base" in
+    *.js|*.cjs|*.mjs) ;;
+    *.*) continue ;;
+    *) [ "$(head -n1 "$f" 2>/dev/null | tr -d '\r')" = '#!/usr/bin/env node' ] || continue ;;
+  esac
+  scanned=$((scanned + 1))
+  allowed=0
+  for p in ${patterns[@]+"${patterns[@]}"}; do
+    # shellcheck disable=SC2053  # the pattern is meant to glob
+    [[ $f == $p ]] && { allowed=1; break; }
+  done
+  [ "$allowed" = 1 ] && continue
+  hdr="$(head -n1 "$f" | tr -d '\r')"
+  case "$hdr" in '#!'*) hdr="$(sed -n 2p "$f" | tr -d '\r')" ;; esac
+  if [[ $hdr =~ $HEADER ]]; then
+    src="${BASH_REMATCH[1]}"
+    if [ -f "$src" ]; then files+=("$f"); srcs+=("$src")
+    else echo "FAIL: $f is stale generated output: $src does not exist"; bad=1; fi
+  else
+    echo "FAIL: $f is hand-written JavaScript"; bad=1
+  fi
+done < <(git ls-files -z)
+
+if [ "${#srcs[@]}" -gt 0 ]; then
+  built="$(scripts/test-scope --built-path ${srcs[@]+"${srcs[@]}"})" || { echo "FAIL: scripts/test-scope --built-path failed"; exit 1; }
+  i=0
+  while IFS= read -r want; do
+    [ "$want" = "${files[$i]}" ] || { echo "FAIL: ${files[$i]} names ${srcs[$i]}, which scripts/build writes to $want"; bad=1; }
+    i=$((i + 1))
+  done <<<"$built"
+  [ "$i" -eq "${#srcs[@]}" ] || { echo "FAIL: scripts/test-scope --built-path returned $i paths for ${#srcs[@]} sources"; exit 1; }
+fi
+
+if [ "$scanned" -eq 0 ]; then echo "FAIL: no JavaScript file scanned"; exit 1; fi
+[ "$bad" = 0 ] || exit 1
+echo "check-handwritten-js: OK ($scanned files)"

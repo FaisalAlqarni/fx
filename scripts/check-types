@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Type-checks the TypeScript sources with the repository's pinned tsc.
+#
+# The Node sources (tsconfig.json) and the browser helper (tsconfig.browser.json,
+# the only project with DOM types) are separate projects.
+#
+#     scripts/check-types [dir]     (a directory holding a tsconfig.json; default: both root projects)
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+TSC="$ROOT/node_modules/.bin/tsc"
+if [ ! -x "$TSC" ]; then
+  echo "scripts/check-types: run npm ci first" >&2
+  exit 1
+fi
+if [ -n "${1:-}" ]; then
+  "$TSC" --noEmit -p "$1"
+else
+  "$TSC" --noEmit -p "$ROOT"
+  "$TSC" --noEmit -p "$ROOT/tsconfig.browser.json"
+fi
+echo "check-types: OK"

@@ -1,0 +1,207 @@
+// Reads docs/plans and describes any plan whose build is unfinished.
+//
+// WHY THIS EXISTS
+//
+// A skill can hand off to a skill: fx-brainstorm names fx-plan in its closing
+// section, and that handoff works because the instruction is in context at the
+// moment it is needed. The plan-to-implement handoff is not a step inside a
+// skill, it is a SESSION BOUNDARY. A fresh agent opens a repo full of artifacts
+// with nothing in context naming fx-implement except a routing table it read
+// once, before it had looked at the repo. Measured: a 13-task plan handed to a
+// fresh agent produced 97 passing specs and zero Skill calls. DEBT #33.
+//
+// SessionStart and SubagentStart run before the agent acts, so the routing
+// happens here, against what is actually on disk, in specifics rather than in
+// the generic lane descriptions. (A tool hook fires only once the agent is
+// already writing, which is too late to route; docs/adr/0018 records that it
+// does fire for Write and Edit.)
+//
+// Returns a string to append to the preamble, or null when there is nothing to
+// say. Never throws: a bug here must not stop a session from starting.
+
+import * as fs from 'fs';
+import * as path from 'path';
+import type { PlanState } from './types.js';
+
+const TASK_DIRS = ['tasks', 'tickets'];   // `tickets` is the legacy name, DEBT #29
+const MAX_PLANS = 20;                     // a SessionStart hook has a 5s budget
+
+function readdir(p: string): fs.Dirent[] {
+  try { return fs.readdirSync(p, { withFileTypes: true }); } catch { return []; }
+}
+
+// The error code (`ENOENT`, `EACCES`), or undefined when the error carries none.
+export function errCode(e: unknown): string | undefined {
+  return typeof e === 'object' && e !== null && 'code' in e && typeof e.code === 'string' ? e.code : undefined;
+}
+
+// What the scan needs from a plan's state.md: whether a ledger exists and
+// whether it says the plan is complete. An unreadable state.md still counts
+// as a ledger and is not complete.
+function parseState(statePath: string): { hasState: boolean; complete: boolean } {
+  const hasState = fs.existsSync(statePath);
+  let text: string | null = null;
+  try { text = fs.readFileSync(statePath, 'utf8'); } catch { /* unreadable state.md still counts as a ledger */ }
+  return { hasState, complete: text !== null && /^Plan complete:/m.test(text) };
+}
+
+export function scan(cwd: string): PlanState[] {
+  const base = path.join(cwd, 'docs', 'plans');
+  const out: PlanState[] = [];
+  for (const e of readdir(base).slice(0, MAX_PLANS)) {
+    if (!e.isDirectory()) continue;
+    const dir = path.join(base, e.name);
+    let taskDir: string | null = null;
+    for (const d of TASK_DIRS) {
+      if (readdir(path.join(dir, d)).length) { taskDir = d; break; }
+    }
+    if (!taskDir) continue;
+    const tasks = readdir(path.join(dir, taskDir))
+      .filter((f) => f.isFile() && f.name.endsWith('.md')).length;
+    if (!tasks) continue;
+    const { hasState, complete } = parseState(path.join(dir, 'state.md'));
+    if (complete) continue;
+    out.push({
+      slug: e.name,
+      tasks,
+      taskDir,
+      hasState,
+    });
+  }
+  return out;
+}
+
+const MAX_RULINGS = 10;   // describePlans rides every session's preamble (9,000 char budget)
+const MAX_RULING_CHARS = 160;
+
+// A missing file is an absence; any other failure is reported in `notes` so a
+// session never mistakes "rulings not loaded" for "no rulings".
+function readText(cwd: string, p: string, notes: string[]): string {
+  try { return fs.readFileSync(p, 'utf8'); } catch (e) {
+    if (errCode(e) !== 'ENOENT') notes.push(`(could not read ${path.relative(cwd, p)}: ${errCode(e) || 'error'})`);
+    return '';
+  }
+}
+
+// An LLM writes the ledger by hand: accept `- `, `* ` and `**` around a ruling.
+function asRuling(raw: string): string | null {
+  const l = raw.trim().replace(/^[-*]\s+/, '').replace(/^\*\*Ruling:\*\*/, '**Ruling:')
+    .replace(/^\*\*/, '').replace(/\*\*$/, '').trim();
+  return /^Ruling( [A-Z])?:/.test(l) ? l : null;
+}
+
+// `Ruling:` lines from docs/plans/rulings.md, the only source. A ledger's
+// `## Standing rulings` copy is a record and is not read, so an edited or
+// deleted ruling takes effect at once. Trailing entries without `Ruling:` are
+// notes: a cap overflow or a read failure.
+export function standingRulings(cwd: string): string[] {
+  const notes: string[] = [];
+  const src = readText(cwd, path.join(cwd, 'docs', 'plans', 'rulings.md'), notes);
+  const all = [...new Set(src.split('\n').map(asRuling).filter((l) => l !== null))];
+  const carried = all.slice(0, MAX_RULINGS).map((l) => (
+    l.length > MAX_RULING_CHARS ? `${l.slice(0, MAX_RULING_CHARS - 1)}…` : l));
+  if (all.length > MAX_RULINGS) {
+    carried.push(`…and ${all.length - MAX_RULINGS} more in docs/plans/rulings.md.`);
+  }
+  return [...carried, ...notes];
+}
+
+// Every live `Ruling:` for a brief: docs/plans/rulings.md, then the ledger
+// body outside its `## Standing rulings` copy. A ruling wraps onto following
+// lines until a blank line or the start of another entry, in rulings.md only:
+// a ledger ruling is one line, since ledger lines carry free-form notes. No cap. With a task
+// id, a ruling that names only other tasks is dropped.
+const ENTRY_RE = /^(Task |Ruling( [A-Z])?:|\*\*Ruling( [A-Z])?:|- |\* |#)/;
+function rulingsIn(src: string, wrap: boolean): string[] {
+  const out: string[] = [];
+  const lines = src.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    let r = asRuling(lines[i] ?? '');
+    if (!r) continue;
+    // the next line, trimmed; the loop bound keeps it in range
+    const next = () => (lines[i + 1] ?? '').trim();
+    while (wrap && i + 1 < lines.length && next() && !ENTRY_RE.test(next())) { r += ` ${next()}`; i++; }
+    out.push(r);
+  }
+  return out;
+}
+
+// `task 03`, `tasks 03 and 05`, `tasks 03, 04, 05`, `tasks 03 to 07`: one run
+// of numbers after "task(s)", joined by commas, "and", "or", "to" or "-".
+const TASK_REF = /\btasks?:?\s*(\d+(?:\s*(?:,|and|or|to|-)\s*\d+)*)/gi;
+// Open-range wording (`task 03 on`, `from task 03`, `after task 03`, `onward`,
+// `and later`) keeps a ruling: a wrong exclusion loses a binding ruling.
+const OPEN_RANGE = /\b(?:from|after)\s+tasks?\b|\btasks?:?\s*\d+\s+on\b|\bonwards?\b|\band\s+later\b/i;
+function names(ruling: string, n: number): boolean[] {
+  return [...ruling.matchAll(TASK_REF)].map((m) => {
+    const run = m[1] ?? '';
+    const nums = (run.match(/\d+/g) ?? []).map(Number);
+    const ops = run.match(/,|and|or|to|-/g) || [];
+    return nums.some((x, i) => x === n || (i > 0 && /to|-/.test(ops[i - 1] ?? '') && (nums[i - 1] ?? n + 1) <= n && n <= x));
+  });
+}
+function namesOtherTasksOnly(ruling: string, taskId: string | number): boolean {
+  if (OPEN_RANGE.test(ruling)) return false;
+  const hits = names(ruling, Number(taskId));
+  return hits.length > 0 && !hits.some(Boolean);
+}
+
+export function rulingsFor(cwd: string, planDir: string, taskId?: string | number | null): string[] {
+  const notes: string[] = [];
+  const shared = readText(cwd, path.join(cwd, 'docs', 'plans', 'rulings.md'), notes);
+  const ledger = readText(cwd, path.join(planDir, 'state.md'), notes)
+    .replace(/^## Standing rulings[^\n]*\n[\s\S]*?(?=^## |(?![\s\S]))/m, '');
+  const live = [...new Set([...rulingsIn(shared, true), ...rulingsIn(ledger, false)])];
+  return [...(taskId == null ? live : live.filter((r) => !namesOtherTasksOnly(r, taskId))), ...notes];
+}
+
+// `lane` renders a lane name for the harness reading this (lib/preamble.js
+// passes its own); bare by default.
+export function describePlans(cwd: string, { lane = (name: string) => name }: { lane?: (name: string) => string } = {}): string | null {
+  let plans: PlanState[];
+  try { plans = scan(cwd); } catch { return null; }
+  if (!plans.length) return null;
+
+  // A plan with a ledger is resumable; one without has not been started under
+  // fx-implement. Both route to the same lane, with different opening moves.
+  const fresh = plans.filter((p) => !p.hasState);
+  const named = (fresh.length ? fresh : plans).slice(0, 3);
+
+  const lines = named.map((p) => {
+    const where = `\`docs/plans/${p.slug}/${p.taskDir}/\``;
+    const count = `${p.tasks} task file${p.tasks === 1 ? '' : 's'}`;
+    return `- ${where}: ${count}, ${p.hasState ? 'a `state.md` ledger exists, so a build is underway' : 'no `state.md`, so the build has not started'}.`;
+  });
+
+  let rulings: string[] = [];
+  try { rulings = standingRulings(cwd); } catch (e) {
+    // a rulings bug loses the rulings, never the plans block, but says so
+    rulings = [`(standing rulings could not be loaded: ${errCode(e) || String((e instanceof Error && e.message) || e)})`];
+  }
+
+  return [
+    '## Unfinished plans in this repository',
+    '',
+    ...lines,
+    '',
+    `\`${lane('fx-implement')}\` owns this. Invoke it before writing code against these `
+      + 'tasks: it supplies the worktree, a ledger that survives compaction, and '
+      + 'a fresh subagent and a review per task. Where a ledger exists, read it '
+      + 'first and resume at the first unfinished task. A task file detailed '
+      + 'enough to execute is not a reason to skip the lane: that specificity is '
+      + 'what makes the lane feel redundant.',
+    '',
+    '**If you were dispatched with one specific task**, you are already inside '
+      + 'that lane. Do that task, record it in the ledger, and return. Do not '
+      + `re-enter \`${lane('fx-implement')}\`, and do not pick up the other tasks.`,
+    ...(rulings.length ? [
+      '',
+      '### Standing rulings recorded in this repository (docs/plans/rulings.md)',
+      '',
+      ...rulings.map((r) => `- ${r}`),
+      '',
+      `After a compaction, invoke \`${lane('fx-implement')}\` again before the next dispatch. `
+        + "They override its defaults as the owner recorded them; a ruling that contradicts the owner's instructions in this session loses.",
+    ] : []),
+  ].join('\n') + '\n';
+}

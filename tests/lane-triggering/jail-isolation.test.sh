@@ -22,6 +22,12 @@ for f in tests/lane-triggering/run-test.sh tests/lane-triggering/run-reps.sh; do
   check "$f: runs claude through the jail array" \
     'grep -qE "JAIL\[@\]\}\" claude" "$f"'
 done
+# The fx config and state resolve under the scratch home even when the
+# owner's shell exports XDG_CONFIG_HOME or XDG_STATE_HOME (final review B4).
+check "run-test.sh: XDG_CONFIG_HOME is the scratch home's" \
+  'grep -qxF "XDG_CONFIG_HOME=\"\$HOME/.config\"" tests/lane-triggering/run-test.sh'
+check "run-test.sh: XDG_STATE_HOME is the scratch home's" \
+  'grep -qxF "XDG_STATE_HOME=\"\$HOME/.local/state\"" tests/lane-triggering/run-test.sh'
 
 command -v bwrap >/dev/null || { echo "jail-isolation: bwrap not installed, static checks only" >&2; [ "$fails" -eq 0 ]; exit $?; }
 command -v claude >/dev/null || { echo "jail-isolation: claude not on PATH, static checks only" >&2; [ "$fails" -eq 0 ]; exit $?; }

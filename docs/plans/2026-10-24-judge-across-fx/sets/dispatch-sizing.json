@@ -1,0 +1,314 @@
+[
+ {
+  "subagent_type": "Explore",
+  "description": "Find auth middleware",
+  "prompt": "Find where the request authentication middleware is registered and report the file and line. Change nothing.",
+  "kind": "lookup"
+ },
+ {
+  "subagent_type": "Explore",
+  "description": "List callers of charge",
+  "prompt": "List every caller of PaymentGateway#charge across app/ and engines/. Report paths and line numbers only.",
+  "kind": "lookup"
+ },
+ {
+  "subagent_type": "Explore",
+  "description": "Locate config loader",
+  "prompt": "Where is .fx.json read? Return the function name and file.",
+  "kind": "lookup"
+ },
+ {
+  "subagent_type": "Explore",
+  "description": "Read the migration history",
+  "prompt": "Read db/migrate and tell me which migrations touched the users table in the last year. Do not edit anything.",
+  "kind": "lookup"
+ },
+ {
+  "subagent_type": "Explore",
+  "description": "Check test runner",
+  "prompt": "Which test runner does this repo use, and what command runs a single file? Answer from package.json and the scripts directory.",
+  "kind": "lookup"
+ },
+ {
+  "subagent_type": "Explore",
+  "description": "Find dead flag",
+  "prompt": "Search for every use of the feature flag new_checkout and report whether any code path still reads it.",
+  "kind": "lookup"
+ },
+ {
+  "subagent_type": "Explore",
+  "description": "Summarize module",
+  "prompt": "Read src/lib/judge.ts and summarize what askJudge does in five lines. Read-only.",
+  "kind": "lookup"
+ },
+ {
+  "subagent_type": "Explore",
+  "description": "Find env vars",
+  "prompt": "List every environment variable the hooks read, with the file that reads each one.",
+  "kind": "lookup"
+ },
+ {
+  "subagent_type": "Explore",
+  "description": "Where is retry logic",
+  "prompt": "Find where HTTP retries are configured for the Stripe client. Report only.",
+  "kind": "lookup"
+ },
+ {
+  "subagent_type": "Explore",
+  "description": "Count endpoints",
+  "prompt": "Count the routes defined in config/routes.rb that are not namespaced under admin. Do not change files.",
+  "kind": "lookup"
+ },
+ {
+  "subagent_type": "Explore",
+  "description": "Explain failing assertion",
+  "prompt": "Read tests/gates/stop-check.test.ts around line 80 and explain what the failing assertion checks.",
+  "kind": "lookup"
+ },
+ {
+  "subagent_type": "Explore",
+  "description": "Find translations",
+  "prompt": "Which locale files define the key checkout.summary.total? Report paths.",
+  "kind": "lookup"
+ },
+ {
+  "subagent_type": "Explore",
+  "description": "Map the engines",
+  "prompt": "List the Rails engines under engines/ and what each one mounts. Read-only survey.",
+  "kind": "lookup"
+ },
+ {
+  "subagent_type": "Explore",
+  "description": "Find the index",
+  "prompt": "Does the orders table have an index on customer_id? Check db/structure.sql and answer yes or no with the line.",
+  "kind": "lookup"
+ },
+ {
+  "subagent_type": "Explore",
+  "description": "Trace a call",
+  "prompt": "Trace how a PreToolUse event reaches the shell guard, naming each function on the way. Do not edit.",
+  "kind": "lookup"
+ },
+ {
+  "subagent_type": "Explore",
+  "description": "Find TODOs",
+  "prompt": "Grep src/ for TODO and FIXME comments and return them grouped by file.",
+  "kind": "lookup"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Rename a constant",
+  "prompt": "In src/lib/judge-thresholds.ts rename EDIT_TEXT_CHARS to EDIT_ADDED_CHARS and update its three importers. Nothing else.",
+  "kind": "small-edit"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Fix a typo",
+  "prompt": "In README.md line 42, change 'recieve' to 'receive'.",
+  "kind": "small-edit"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Bump a version",
+  "prompt": "Set \"version\" in package.json to 0.2.10. Change nothing else.",
+  "kind": "small-edit"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Add a gitignore entry",
+  "prompt": "Append the line .scratch/ to .gitignore.",
+  "kind": "small-edit"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Change a default",
+  "prompt": "In config/initializers/sidekiq.rb change the concurrency default from 5 to 10.",
+  "kind": "small-edit"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Remove an unused import",
+  "prompt": "Delete the unused import of 'path' at the top of src/lib/env.ts.",
+  "kind": "small-edit"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Update a link",
+  "prompt": "In docs/INSTALL.md replace the link https://example.com/old with https://example.com/install.",
+  "kind": "small-edit"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Add a log line",
+  "prompt": "In app/jobs/sync_job.rb, add Rails.logger.info(\"sync started #{account.id}\") as the first line of perform.",
+  "kind": "small-edit"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Swap a string",
+  "prompt": "Change the button label 'Submit' to 'Save changes' in app/views/settings/_form.html.erb.",
+  "kind": "small-edit"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Edit a test name",
+  "prompt": "Rename the test 'works' in spec/models/user_spec.rb to 'downcases the email before save'.",
+  "kind": "small-edit"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Fix an off-by-one",
+  "prompt": "In src/lib/chunk.ts line 12, change i <= arr.length to i < arr.length. That is the whole change.",
+  "kind": "small-edit"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Add an env var to example",
+  "prompt": "Add REDIS_URL=redis://localhost:6379 to .env.example under the database section.",
+  "kind": "small-edit"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Delete a stale comment",
+  "prompt": "Remove the comment block above parseConfig in src/lib/config.ts that describes the old YAML format.",
+  "kind": "small-edit"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Set a timeout",
+  "prompt": "In src/lib/http.ts change the default timeout from 5000 to 8000 ms.",
+  "kind": "small-edit"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Sort a list",
+  "prompt": "Sort the entries of the KNOWN_HOSTS array in src/lib/hosts.ts alphabetically. No other edits.",
+  "kind": "small-edit"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Add a CHANGELOG line",
+  "prompt": "Add '- Fix crash when the config file is empty' under Unreleased in CHANGELOG.md.",
+  "kind": "small-edit"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Implement task 3",
+  "prompt": "Implement task 3 of docs/plans/2026-03-02-importer: the CSV row parser with validation and the error report. Follow TDD.",
+  "kind": "implementation"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Add pagination",
+  "prompt": "Add cursor pagination to the /api/orders endpoint, including the response envelope and tests.",
+  "kind": "implementation"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Build the export job",
+  "prompt": "Build a background job that exports a report to CSV in batches and emails a link when done.",
+  "kind": "implementation"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Fix the flaky retry",
+  "prompt": "The upload retry gives up too early under slow networks. Change the backoff so it respects the server Retry-After header, with tests.",
+  "kind": "implementation"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Port the parser",
+  "prompt": "Port the YAML front matter parser from Ruby to TypeScript and keep its behaviour on the existing fixtures.",
+  "kind": "implementation"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Review the branch",
+  "prompt": "Review the diff of feature/rate-limit against main for correctness, design and test gaps. Report findings by severity.",
+  "kind": "design-review"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Red-team the plan",
+  "prompt": "Read docs/plans/2026-03-02-importer/plan.md and find gaps, contradictions and missing tasks.",
+  "kind": "design-review"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Design the cache",
+  "prompt": "Propose two designs for caching the pricing lookups, with their trade-offs. Do not write code.",
+  "kind": "design-review"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Architecture pass",
+  "prompt": "Assess whether the notifications module is over-engineered and say what could be deleted.",
+  "kind": "design-review"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Plan the migration",
+  "prompt": "Write a step-by-step plan to move from Sidekiq to GoodJob, with risks and rollback.",
+  "kind": "design-review"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Audit session handling",
+  "prompt": "Review how session cookies are set and rotated after login, and whether logout invalidates them server side.",
+  "kind": "security"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Rotate the API key",
+  "prompt": "Replace the hard-coded Mapbox token in app/javascript/map.js with a value read from credentials.",
+  "kind": "security"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Fix the IDOR",
+  "prompt": "GET /invoices/:id returns invoices from other accounts. Scope the lookup to the current account and add a test.",
+  "kind": "security"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Add 2FA",
+  "prompt": "Add TOTP two-factor authentication to the Devise login flow with recovery codes.",
+  "kind": "security"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Check permissions",
+  "prompt": "Verify that every admin controller action has a Pundit authorize call, and fix the ones that do not.",
+  "kind": "security"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Deploy staging",
+  "prompt": "Run the deploy script for staging and report whether the health check passes.",
+  "kind": "side-effect"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Publish the package",
+  "prompt": "Run npm publish for the 0.2.10 release after the tests pass.",
+  "kind": "side-effect"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Run the migration",
+  "prompt": "Run bin/rails db:migrate against the shared development database and report the output.",
+  "kind": "side-effect"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Clean old branches",
+  "prompt": "Delete every remote branch merged into main more than 90 days ago.",
+  "kind": "side-effect"
+ },
+ {
+  "subagent_type": "general-purpose",
+  "description": "Purge the CDN",
+  "prompt": "Purge the CDN cache for /assets/* after the release.",
+  "kind": "side-effect"
+ }
+]

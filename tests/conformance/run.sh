@@ -53,7 +53,7 @@ if [ "${#ROWS[@]}" -eq 0 ]; then
   exit 2
 fi
 
-# Rows run against a scratch home: HOME, CODEX_HOME, XDG_CONFIG_HOME and
+# Rows run against a scratch home: HOME, CODEX_HOME, XDG_CONFIG_HOME, XDG_STATE_HOME and
 # CLAUDE_CONFIG_DIR all point inside one mktemp -d, and only that directory is
 # removed on exit. FX_REAL_HOME lets a live row copy credentials IN; nothing is
 # ever copied back out.
@@ -71,7 +71,7 @@ trap 'rm -rf -- "$SCRATCH"' EXIT
 # is only ever read from.
 export FX_REAL_HOME="${FX_REAL_HOME:-$HOME}"
 export HOME="$SCRATCH/home"
-export CODEX_HOME="$HOME/.codex" XDG_CONFIG_HOME="$HOME/.config" \
+export CODEX_HOME="$HOME/.codex" XDG_CONFIG_HOME="$HOME/.config" XDG_STATE_HOME="$HOME/.local/state" \
        CLAUDE_CONFIG_DIR="$HOME/.claude"
 mkdir -p "$CODEX_HOME" "$XDG_CONFIG_HOME/opencode" "$CLAUDE_CONFIG_DIR" || exit 2
 

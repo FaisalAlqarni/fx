@@ -14,7 +14,7 @@ The wording is conditional so a runtime without a tool skips it instead of faili
 
 A repository overrides the line with a `companions` key in `.fx.json`. A string replaces the default and is framed as repo content, not as fx's own text: `This repository's .fx.json adds: <text>`, cut to 300 characters with an ellipsis. The line reaches every subagent, so a committed file must not be able to pose as the plugin. An empty string turns the line off. A missing file, a missing key or a non-string value means the default. An unreadable or unparseable file means the default plus a note naming the error class only (`not valid JSON`, or a code such as `EACCES`), never the parser's message, which can quote file content. Reading the file never throws.
 
-The line sits outside the 3,000-character bootstrap (design.md section 5c). The bootstrap budget is measured with companions off. The line counts toward the 9,000-character worst case instead.
+The line sits outside the 3,400-character bootstrap (design.md section 5c). The bootstrap budget is measured with companions off. The line counts toward the 9,000-character worst case instead.
 
 ## Relation to ADR-0006
 
