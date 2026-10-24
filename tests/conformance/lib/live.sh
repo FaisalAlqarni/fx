@@ -489,11 +489,11 @@ seen() { grep -qF -- "$1" "$LOG"; }
 
 # A question only PREAMBLE.md answers, from both ends of it: the opening
 # section records that one lane went uninvoked across 111 subagents, and the
-# closing section that fx-humanize carries 35 patterns. Asking only the first
+# closing section that fx-humanize carries 26 patterns. Asking only the first
 # once passed on Claude Code while all but the first 2KB of the preamble was
 # held back as a file preview. Rows 01 and 02 ask it; preamble_known checks it.
 PREAMBLE_QUESTION='Answer from the instructions already in your context, without using any tool or reading any file. (1) They describe a twelve-task build in which one lane was never invoked: across how many subagents? (2) They say one lane carries a full treatment of patterns with examples: how many patterns? Reply in exactly this form and nothing else: N=<number or UNKNOWN> P=<number or UNKNOWN>'
-preamble_known() { grep -q 'N=111' <<<"$1" && grep -q 'P=35' <<<"$1"; }
+preamble_known() { grep -q 'N=111' <<<"$1" && grep -q 'P=26' <<<"$1"; }
 
 # lane_loaded <lane> <phrase>: did the session load that lane? Either a skill
 # load succeeded by name (events.js: Claude Code's Skill tool, opencode's skill

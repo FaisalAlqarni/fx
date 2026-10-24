@@ -125,7 +125,7 @@ const INTRO = 'The single canonical preamble. Injected into every session **and 
         `${harness}: the fixed intro is the only text above the opening imperative`);
       // The markers rows 01, 02 and 16 ask the model for (tests/conformance/lib/live.sh).
       assert.match(text, /across 111 subagents/, `${harness}: the 111-subagents marker is present`);
-      assert.match(text, /35 patterns with examples/, `${harness}: the 35-patterns marker is present`);
+      assert.match(text, /26 patterns with examples/, `${harness}: the 26-patterns marker is present`);
       assert.match(text, /Each lane's description says when it applies/, `${harness}: the bootstrap points at the descriptions`);
       assert.ok(!/^## (Routing|The ladder|Prose|Non-negotiables)$/m.test(text),
         `${harness}: a bootstrap, not a router: rules live in the lanes`);

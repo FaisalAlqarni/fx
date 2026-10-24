@@ -12,7 +12,7 @@ import * as path from 'path';
 import { spawnSync } from 'child_process';
 
 export const LIMIT = 20000;
-export const PENDING: Record<string, string> = { 'fx-humanize': '11' };
+export const PENDING: Record<string, string> = {};
 
 export function oversize(root: string, pending: Record<string, string>): string[] {
   const out: string[] = [];

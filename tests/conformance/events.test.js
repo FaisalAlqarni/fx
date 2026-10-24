@@ -251,7 +251,7 @@ const forkCases = [
 ];
 for (const [ns, args, want] of forkCases) assert.strictEqual(slice("sub_fork", "codex", spawn(ns, args)).trim(), want, `${ns} ${JSON.stringify(args)}`);
 const wait = (st) => [{ type: "item.completed", item: { type: "collab_tool_call", tool: "wait", agents_states: { t1: st } } }];
-assert.strictEqual(slice("sub_output", "codex", wait({ status: "completed", message: "N=111 P=35" })).trim(), "N=111 P=35");
+assert.strictEqual(slice("sub_output", "codex", wait({ status: "completed", message: "N=111 P=26" })).trim(), "N=111 P=26");
 assert.strictEqual(slice("sub_output", "codex", wait({ status: "errored", message: "oops" })).trim(), "", "an errored child returned nothing");
 assert.strictEqual(slice("sub_output", "codex", wait({ status: "pending_init", message: null })).trim(), "");
 const read = (cmd) => [

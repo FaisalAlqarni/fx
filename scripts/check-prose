@@ -10,9 +10,10 @@ An unmeasurable rule is one nobody checks. This makes it measurable.
 
     scripts/check-prose [path ...]      default: the whole plugin
 
-Upstream-verbatim files are exempt: fx-humanize is byte-identical to its
-source, and references/testing/ holds upstream pressure scenarios. Changing
-them would be a local modification we deliberately do not carry.
+Upstream files are exempt: fx-humanize is carried from upstream and
+rearranged (fx's added lines are listed in its COVERAGE.md), and
+references/testing/ holds upstream pressure scenarios. Changing them would
+be a local modification we deliberately do not carry.
 """
 import pathlib
 import re

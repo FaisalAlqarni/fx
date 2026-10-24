@@ -55,7 +55,7 @@ visible to the person reading along.
   attribution, no sales register. Lead with the point, say who acts, one term
   for one thing, the common word.
 
-fx:fx-humanize carries the full prose treatment, 35 patterns with examples.
+fx:fx-humanize carries the full prose treatment, 26 patterns with examples.
 
 **Dispatching an fx review agent.** Name the agent with the plugin prefix, such as `fx:fx-lens-security`, as the subagent type.
 

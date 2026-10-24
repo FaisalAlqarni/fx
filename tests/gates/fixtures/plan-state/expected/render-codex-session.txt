@@ -55,7 +55,7 @@ visible to the person reading along.
   attribution, no sales register. Lead with the point, say who acts, one term
   for one thing, the common word.
 
-$fx:fx-humanize carries the full prose treatment, 35 patterns with examples.
+$fx:fx-humanize carries the full prose treatment, 26 patterns with examples.
 
 **Dispatching an fx review agent.** Call `spawn_agent` with `agent_type` set to the role's name, such as `fx-lens-security`. Always pass `agent_type`: without it the role is not applied, and the child runs as a copy of you.
 

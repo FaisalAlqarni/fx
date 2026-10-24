@@ -55,6 +55,6 @@ visible to the person reading along.
   attribution, no sales register. Lead with the point, say who acts, one term
   for one thing, the common word.
 
-{{LANE:fx-humanize}} carries the full prose treatment, 35 patterns with examples.
+{{LANE:fx-humanize}} carries the full prose treatment, 26 patterns with examples.
 
 **Dispatching an fx review agent.** {{DISPATCH}}

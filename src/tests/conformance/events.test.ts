@@ -196,7 +196,7 @@ for (const [ns, args, want] of forkCases) assert.strictEqual(slice('sub_fork', '
 // exec stream: `completed` with the child's last message. Only that state
 // counts as a subagent's return (row 02, qwen run 2026-10-01).
 const wait = (st: object) => [{ type: 'item.completed', item: { type: 'collab_tool_call', tool: 'wait', agents_states: { t1: st } } }];
-assert.strictEqual(slice('sub_output', 'codex', wait({ status: 'completed', message: 'N=111 P=35' })).trim(), 'N=111 P=35');
+assert.strictEqual(slice('sub_output', 'codex', wait({ status: 'completed', message: 'N=111 P=26' })).trim(), 'N=111 P=26');
 assert.strictEqual(slice('sub_output', 'codex', wait({ status: 'errored', message: 'oops' })).trim(), '', 'an errored child returned nothing');
 assert.strictEqual(slice('sub_output', 'codex', wait({ status: 'pending_init', message: null })).trim(), '');
 

@@ -24,5 +24,5 @@ tools="$(events tool_output)"
 preamble_known "$a" || fail "the preamble is not wholly in context (answer: $(tail -c 300 <<<"$a"))"
 grep -q 'B=YES' <<<"$a" || fail "the repo.md note is not in context (answer: $(tail -c 300 <<<"$a"))"
 grep -q "$SLUG" <<<"$a" || fail "the plan-state block is not in context (answer: $(tail -c 300 <<<"$a"))"
-grep -qwE "111|35|$SLUG" <<<"$tools" && fail "the answer came from a tool, not from the session's context"
+grep -qwE "111|26|$SLUG" <<<"$tools" && fail "the answer came from a tool, not from the session's context"
 exit 0
