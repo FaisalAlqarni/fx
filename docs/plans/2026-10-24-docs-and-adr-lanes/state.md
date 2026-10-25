@@ -61,3 +61,10 @@ Task 02: cost unavailable (no transcript recorded)
 Task 02: complete (commits 22df560..f231895 plus fix 530aa89, review clean after fix round 1)
 Task 04: ran test_all (plan-mandated phase gate): ALL GREEN per report.
 Task 04: Visual check: not run: no browser.
+Task 05: dispatched 8a5ad39 2026-10-25T19:39:20Z
+Task 04: minor (deferred): ADR 0061 decision 8 repeats the vendoring rule already in decisions 1 and 2, leaving two live copies.
+Task 04: minor (deferred): fx-architecture SKILL.md badge row and ADR callout still name emerald, amber and slate while HTML-REPORT.md uses kit tokens.
+Task 04: minor (deferred): visual-assets.md (task 03's file) edited by one sentence outside the Files list; disclosed and justified.
+Task 04: confirmed ⚠️ resolved: visual check ledgered as not run (no browser). ADR 0015's status line quotes the replaced sentence instead of "decisions N" because 0015 has no numbered decisions; that follows fx-adr's lead-phrase rule for unnumbered ADRs and is accepted under S5.
+Task 04: cost unavailable (no transcript recorded)
+Task 04: complete (commits af1f742..e783040, review clean)
