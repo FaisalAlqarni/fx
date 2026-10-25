@@ -306,6 +306,25 @@ code cannot tell it (domain terms, what "done" means here), and writes
 before any of it lands. On Codex it also places the review roles and reminds
 you to check `/hooks`.
 
+### A repository that still has `CONTEXT.md`
+
+fx now names the glossary `GLOSSARY.md` (and a map `GLOSSARY-MAP.md`). Nothing
+is renamed unless you say yes.
+
+- Until you answer, fx reads `GLOSSARY.md` first and the old name second, and it
+  never creates a `GLOSSARY.md` beside an existing `CONTEXT.md`.
+- Each session in such a repository shows one notice (it names `CONTEXT-MAP.md` instead when a map is what is found): "This repository's
+  glossary is still named CONTEXT.md. fx now reads GLOSSARY.md (GLOSSARY-MAP.md
+  for a map) first and the old name second. Run the fx-setup command to rename
+  it; answer no there and fx stops asking."
+- `/fx-setup` lists what would change (the files to move and the pointers to
+  update) and asks once. On yes it moves the files with `git mv`, updates the
+  pointers, and commits nothing, so the commit is yours. If the list has
+  conflicts, setup reports them and does not ask; the repository stays
+  unchanged.
+- On no, setup writes `"glossary_rename": "declined"` to `.fx.json`, and fx stops
+  asking and stops showing the notice.
+
 ## Hooks (no setup needed)
 
 The git guard, the shell guard, the Stop check, the nudges and the edit rules

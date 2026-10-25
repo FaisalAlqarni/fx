@@ -12,7 +12,7 @@ Claude Code re-attaches a skill after compaction, and it cuts the text at 20,000
 
 **Splits move whole sections.** A split moves a section, unchanged in meaning, into a file beside the skill and leaves a pointer that says when to read it: at the step that needs it. The agent re-reads the file every time it reaches that step. Rules are not dropped or reworded beyond the pointer. The loop, the stop conditions and the ledger rules stay inline in fx-implement.
 
-**References stay one level deep.** A skill-local reference does not point to a further reference. `scripts/check-reference-leaves` enforces this.
+**References stay one level deep.** A skill-local reference does not point to a further reference. This is a convention that fx-authoring states, not a gate. `scripts/check-reference-leaves` checks only the top-level `references/` tree: it fails when one file there names another.
 
 **Every pointer resolves.** `scripts/check-paths` fails a pointer to a file that does not exist.
 
