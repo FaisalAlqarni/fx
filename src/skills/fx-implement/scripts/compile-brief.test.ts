@@ -151,6 +151,20 @@ withFile(fx, JSON.stringify({ stacks: null }), () => assert.strictEqual(runRaw('
   const longFx = docsFixture({ 'arch/l.md': `# A\n\n${'y'.repeat(300)}\nEvidence: \`engines/core/app/foo.rb:1-5\`\n` });
   const longLine = docsOf(briefFor(longFx, '- Modify: `engines/core/app/foo.rb`')).split('\n').find((l) => l.startsWith('- docs/'));
   assert.strictEqual(longLine, `- docs/arch/l.md:4 (doc): ${'y'.repeat(200)}...`, 'a long claim is cut at 200 characters');
+
+  // A corrupt cache (a directory where .fx/docs-index.json belongs) makes docs-index fail:
+  // the brief still compiles, with None. and one warning that carries docs-index's stderr.
+  const broken = docsFixture({ 'arch/a.md': '# A\n\nShortlinks expire after 30 days.\nEvidence: `engines/core/app/foo.rb:1-5`\n' });
+  fs.mkdirSync(path.join(broken, '.fx', 'docs-index.json'), { recursive: true });
+  const t = path.join(broken, 'docs', 'plans', 'x', 'tasks', '01-a.md');
+  fs.writeFileSync(t, '# 01: a\n\n**Files:**\n- Modify: `engines/core/app/foo.rb`\n');
+  const out = path.join(broken, 'brief.md');
+  const r = spawnSync(process.execPath, [BIN, '--worktree', broken, 'x', t, out], { encoding: 'utf8', cwd: TMP });
+  assert.strictEqual(r.status, 0, r.stderr);
+  assert.strictEqual(docsOf(fs.readFileSync(out, 'utf8')), 'None.', 'a failed lookup gives None.');
+  const warnings = r.stderr.split('\n').filter((l) => l.startsWith('compile-brief: warning:'));
+  assert.strictEqual(warnings.length, 1, r.stderr);
+  assert.match(warnings[0] ?? '', /^compile-brief: warning: docs-index query failed \(exit 1\): docs-index: EISDIR/, r.stderr);
 }
 
 console.log('compile-brief: OK');

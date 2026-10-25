@@ -144,16 +144,16 @@ withFile(fx, JSON.stringify({ stacks: null }), () => assert.strictEqual(runRaw("
     return d;
   };
   const briefFor = (d, files) => {
-    const t = path.join(d, "docs", "plans", "x", "tasks", "01-a.md");
-    fs.writeFileSync(t, `# 01: a
+    const t2 = path.join(d, "docs", "plans", "x", "tasks", "01-a.md");
+    fs.writeFileSync(t2, `# 01: a
 
 **Files:**
 ${files}
 `);
-    const out = path.join(d, "brief.md");
-    const r = (0, import_child_process.spawnSync)(process.execPath, [BIN, "--worktree", d, "x", t, out], { encoding: "utf8", cwd: TMP });
-    assert.strictEqual(r.status, 0, r.stderr);
-    return fs.readFileSync(out, "utf8");
+    const out2 = path.join(d, "brief.md");
+    const r2 = (0, import_child_process.spawnSync)(process.execPath, [BIN, "--worktree", d, "x", t2, out2], { encoding: "utf8", cwd: TMP });
+    assert.strictEqual(r2.status, 0, r2.stderr);
+    return fs.readFileSync(out2, "utf8");
   };
   const docsOf = (b) => b.slice(b.indexOf("## Docs and ADRs") + 16, b.indexOf("## Stack")).trim();
   const claimDoc = (n, text) => "# A\n\n" + Array.from({ length: n }, (_, i) => `${text} ${i}
@@ -182,5 +182,16 @@ Evidence: \`engines/core/app/foo.rb:1-5\`
 ` });
   const longLine = docsOf(briefFor(longFx, "- Modify: `engines/core/app/foo.rb`")).split("\n").find((l) => l.startsWith("- docs/"));
   assert.strictEqual(longLine, `- docs/arch/l.md:4 (doc): ${"y".repeat(200)}...`, "a long claim is cut at 200 characters");
+  const broken = docsFixture({ "arch/a.md": "# A\n\nShortlinks expire after 30 days.\nEvidence: `engines/core/app/foo.rb:1-5`\n" });
+  fs.mkdirSync(path.join(broken, ".fx", "docs-index.json"), { recursive: true });
+  const t = path.join(broken, "docs", "plans", "x", "tasks", "01-a.md");
+  fs.writeFileSync(t, "# 01: a\n\n**Files:**\n- Modify: `engines/core/app/foo.rb`\n");
+  const out = path.join(broken, "brief.md");
+  const r = (0, import_child_process.spawnSync)(process.execPath, [BIN, "--worktree", broken, "x", t, out], { encoding: "utf8", cwd: TMP });
+  assert.strictEqual(r.status, 0, r.stderr);
+  assert.strictEqual(docsOf(fs.readFileSync(out, "utf8")), "None.", "a failed lookup gives None.");
+  const warnings = r.stderr.split("\n").filter((l) => l.startsWith("compile-brief: warning:"));
+  assert.strictEqual(warnings.length, 1, r.stderr);
+  assert.match(warnings[0] ?? "", /^compile-brief: warning: docs-index query failed \(exit 1\): docs-index: EISDIR/, r.stderr);
 }
 console.log("compile-brief: OK");

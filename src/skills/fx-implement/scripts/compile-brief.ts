@@ -129,15 +129,20 @@ const filePaths = (): string[] => {
 };
 
 // The claims citing those paths, from docs-index (it owns the 20-claim cap); None. when there are none.
+// A failed lookup never stops a brief: it gives None. and one warning with docs-index's stderr.
 function docsOut(): string {
   const paths = filePaths();
   if (paths.length === 0) return 'None.';
-  const r = spawnSync(process.execPath, [path.join(PLUGIN, 'scripts', 'docs-index'), '--root', worktree ?? '', 'query', '--limit', '20', ...paths], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-  if (r.status !== 0) die(`docs-index query failed (exit ${r.status})`);
+  const r = spawnSync(process.execPath, [path.join(PLUGIN, 'scripts', 'docs-index'), '--root', worktree ?? '', 'query', '--limit', '20', ...paths], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const warn = (why: string): string => {
+    process.stderr.write(`compile-brief: warning: ${why}: ${(r.stderr ?? '').trim().split('\n').join('; ')}\n`);
+    return 'None.';
+  };
+  if (r.status !== 0) return warn(`docs-index query failed (exit ${r.status})`);
   const res = parseJson(r.stdout);
   const claims = res !== null && typeof res === 'object' && 'claims' in res && Array.isArray(res.claims) ? res.claims : null;
   const more = res !== null && typeof res === 'object' && 'more' in res && typeof res.more === 'number' ? res.more : 0;
-  if (claims === null) die('docs-index query printed no claims list');
+  if (claims === null) return warn('docs-index query printed no claims list');
   if (claims.length === 0) return 'None.';
   const cut = (t: string): string => (t.length > 200 ? `${t.slice(0, 200)}...` : t);
   return [

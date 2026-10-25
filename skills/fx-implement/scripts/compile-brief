@@ -152,12 +152,17 @@ const filePaths = () => {
 function docsOut() {
   const paths = filePaths();
   if (paths.length === 0) return "None.";
-  const r = (0, import_child_process.spawnSync)(process.execPath, [path.join(PLUGIN, "scripts", "docs-index"), "--root", worktree ?? "", "query", "--limit", "20", ...paths], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-  if (r.status !== 0) die(`docs-index query failed (exit ${r.status})`);
+  const r = (0, import_child_process.spawnSync)(process.execPath, [path.join(PLUGIN, "scripts", "docs-index"), "--root", worktree ?? "", "query", "--limit", "20", ...paths], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  const warn = (why) => {
+    process.stderr.write(`compile-brief: warning: ${why}: ${(r.stderr ?? "").trim().split("\n").join("; ")}
+`);
+    return "None.";
+  };
+  if (r.status !== 0) return warn(`docs-index query failed (exit ${r.status})`);
   const res = (0, import_json.parseJson)(r.stdout);
   const claims = res !== null && typeof res === "object" && "claims" in res && Array.isArray(res.claims) ? res.claims : null;
   const more = res !== null && typeof res === "object" && "more" in res && typeof res.more === "number" ? res.more : 0;
-  if (claims === null) die("docs-index query printed no claims list");
+  if (claims === null) return warn("docs-index query printed no claims list");
   if (claims.length === 0) return "None.";
   const cut = (t) => t.length > 200 ? `${t.slice(0, 200)}...` : t;
   return [
