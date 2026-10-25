@@ -47,11 +47,12 @@ Read `GLOSSARY-MAP.md` or `GLOSSARY.md`; if neither exists, read `CONTEXT-MAP.md
 or `CONTEXT.md`, the names fx used before. Never create `GLOSSARY.md` beside an
 existing `CONTEXT.md`: write to the old-named file instead.
 
-In the owner's own session, before the first write to an old-named file, show
-the dry-run list from the fx-setup migration and ask once whether to rename.
-On no, `.fx.json` gets `"glossary_rename": "declined"` and nobody asks again;
-a repo with that key is never asked. A dispatched subagent never asks and
-writes to the old-named file.
+Only `/fx:fx-setup` migrates. Any other lane that would write the glossary
+reads the old name, writes to the old-named file, and in the owner's session
+points the owner once at `/fx:fx-setup`, which renames it. It runs no
+migration and shows no dry run. A repo whose `.fx.json` has
+`"glossary_rename": "declined"` gets no pointer, and a dispatched subagent
+writes to the old-named file and says nothing.
 
 ## During the session
 
