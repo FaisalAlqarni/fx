@@ -167,3 +167,13 @@ Task 17: cost unavailable (no transcript recorded)
 Task 17: complete (commits cb878e0..4b26445, review clean)
 Tasks 18, 20: the implementer reported the upstream clones missing; the controller checked: they exist at <SCRATCH>/upstream/{superpowers 2ce8aa1, mattpocock-skills 5beb35b, humanizer 8c307f3}. No effect on 18 and 20 (fx-owned shapes). Later briefs name the exact clone paths.
 Task 18: concern: opencode-plugin.test.ts edited outside the listed files (it asserted exactly five user-invoked lanes); left to the review.
+Task 19: dispatched 82c927f 2026-10-25T00:01:26Z
+Task 18: minor (deferred): conformance row 14 comments at lines 8 and 37 still say "five commands", now seven
+Task 18: minor (deferred): finishing.md option 2 still says "following the repo's template" beside the new /fx:fx-pr pointer
+Task 18: minor (deferred): fx-pr Evidence ending does not name a literal "Not run" label, so drafts may vary
+Ruling: the task 22/23 batch adds an explicit "Not run:" line to the Evidence section of commands/fx-pr.md (then regenerates the skill), because the owner decided Evidence always ends with what did not run (design, Phase 4). Why: task 18 review Minor; an owner decision outranks the Minor rating. Cost if wrong: drafts that omit what was not run, caught by the task 23 review.
+Task 18: cost unavailable (no transcript recorded)
+Task 18: complete (commits cb99f8d..109d462, review clean; Not run line owned by task 23 by ruling)
+Task 20: cost unavailable (no transcript recorded)
+Task 20: complete (commits 109d462..6cb165b, review clean)
+Task 19: concern: conformance row 09 (skill count) was failing at HEAD after task 18 added two commands, outside task 18's test_scope; task 19 set it to 20 and fixed row 13's comment. The task 21 phase gate (check-all) is the check. Cost if wrong: a red row, caught there.
