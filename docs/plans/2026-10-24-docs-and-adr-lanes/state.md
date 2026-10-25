@@ -36,3 +36,19 @@ Task 01: confirmed ⚠️ resolved: the lane-triggering bench is on request only
 Task 01: cost unavailable (no transcript recorded)
 Task 01: complete (commits 86ffac9..22df560, review clean)
 Task 02: ran test_all (plan-mandated phase gate): ALL GREEN per report.
+Task 03: dispatched 87c9fec 2026-10-25T19:22:33Z
+Task 02: minor (deferred): scratch-migrate undo leaves an empty docs/ when mkdir created it (src/lib/scratch-migrate.ts:86)
+Task 02: minor (deferred): .gitignore rollback sed Ni is a no-op for a last line without newline, and sed -i is GNU only (src/lib/scratch-migrate.ts:125)
+Task 02: minor (deferred): ADR 0060 decision 3 omits fx-setup's migration step as a place that still names .scratch/
+Task 02: minor (deferred): fx-debug prevention line rewrap at skills/fx-debug/SKILL.md:372
+Task 02: open Important (4, findings/02-review.md): undo re-runs the failed step and reports a false UndoIncomplete; symlinks followed for .scratch, docs, docs/issues and .gitignore; the plugin-root check duplicated in fx-setup; package-lock.json still 0.6.0 (ruling violated).
+Ruling: task 02 fix round 1 runs after task 03 commits (one writer at a time): undo only completed steps; refuse a symlink at any path the migration reads or writes (.scratch, docs, docs/issues, .gitignore, entries, pointer files) with a test; one shared plugin-root check in fx-setup used by both migration steps; bump package-lock.json to 0.7.0. Minors stay deferred. Cost if wrong: a migration that writes through a link or misreports, caught by the fix round's re-review.
+Task 02: fix round 1 dispatched (resumed implementer) 2026-10-25T19:30:34Z
+Task 03: Visual check: not run: the light, dark and 390 px check needs a browser session; headless Chrome rendered the map with sample data only (implementer report).
+Task 03: minor (deferred): SURFACE.md:237 References heading counts and vendored-library wording are stale after the kit.
+Task 03: minor (deferred): visual-kit.test.ts runs its assertions on import, so task 04 importing kitErrors reruns the gate.
+Task 03: minor (deferred): fx-map-1.ts:162 unguarded JSON.parse skips the on-page invalid-data message for malformed JSON.
+Task 03: minor (deferred): fixed-size map nodes can clip long labels on dense levels; no overflow rule.
+Task 03: confirmed ⚠️ resolved: the visual check is ledgered as not run (no browser session; red-team #14 rule); the old report-assets, mermaid and tailwind files are task 04's (it moves the reports onto the kit).
+Task 03: cost unavailable (no transcript recorded)
+Task 03: complete (commits 87c9fec..e1d5e27, review clean)
