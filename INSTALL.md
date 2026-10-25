@@ -317,10 +317,12 @@ is renamed unless you say yes.
   glossary is still named CONTEXT.md. fx now reads GLOSSARY.md (GLOSSARY-MAP.md
   for a map) first and the old name second. Run the fx-setup command to rename
   it; answer no there and fx stops asking."
-- `/fx-setup` lists what would change (the files to move and the pointers to
-  update) and asks once. On yes it moves the files with `git mv`, updates the
-  pointers, and commits nothing, so the commit is yours. If the list has
-  conflicts, setup reports them and does not ask; the repository stays
+- `/fx:fx-setup` lists what would change (the files to move, the Markdown
+  files whose mentions it rewrites, and the lines in other files you update by
+  hand) and asks once. On yes it moves the files with `git mv`, rewrites the
+  Markdown mentions, and commits nothing, so the commit is yours. If a step
+  fails, it undoes what it did, or names what it could not undo. If the list
+  has conflicts, setup reports them and does not ask; the repository stays
   unchanged.
 - On no, setup writes `"glossary_rename": "declined"` to `.fx.json`, and fx stops
   asking and stops showing the notice.

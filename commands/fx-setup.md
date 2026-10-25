@@ -100,7 +100,7 @@ anything is loaded from it. If it refuses, report the refusal and skip the
 migration.
 
 With the last argument `""` it only lists what would change and changes
-nothing. Show the list and ask once. If it lists conflicts, report them and do
+nothing. Show the list, `update by hand` lines included, and ask once. If it lists conflicts, report them and do
 not ask: the migration refuses and leaves the repo unchanged. On yes, run it
 again with the last argument `"--apply"`; it commits nothing, so leave the
 commit to the user. On no, write `"glossary_rename": "declined"` to `.fx.json`
