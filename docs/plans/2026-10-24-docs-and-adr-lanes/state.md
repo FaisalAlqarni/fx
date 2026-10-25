@@ -52,3 +52,12 @@ Task 03: minor (deferred): fixed-size map nodes can clip long labels on dense le
 Task 03: confirmed ⚠️ resolved: the visual check is ledgered as not run (no browser session; red-team #14 rule); the old report-assets, mermaid and tailwind files are task 04's (it moves the reports onto the kit).
 Task 03: cost unavailable (no transcript recorded)
 Task 03: complete (commits 87c9fec..e1d5e27, review clean)
+Task 04: dispatched af1f742 2026-10-25T19:34:48Z
+Task 02: fix round 1/5 (4 addressed, 0 open; commits e1d5e27..530aa89)
+Task 02: minor (deferred): scratch-migrate edit and .gitignore steps leave a truncated file and print "undone" when the write fails after open (src/lib/scratch-migrate.ts:117-121, 132-136)
+Task 02: minor (deferred): scratch-migrate failed-move cleanup error masks the move error and still prints "undone"; the path has no test (src/lib/scratch-migrate.ts:101)
+Task 02: minor (deferred): scratch-migrate refuses a tracked pointer symlink such as CLAUDE.md -> AGENTS.md, blocking the whole migration (src/lib/scratch-migrate.ts:64)
+Task 02: cost unavailable (no transcript recorded)
+Task 02: complete (commits 22df560..f231895 plus fix 530aa89, review clean after fix round 1)
+Task 04: ran test_all (plan-mandated phase gate): ALL GREEN per report.
+Task 04: Visual check: not run: no browser.
