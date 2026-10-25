@@ -43,7 +43,8 @@ if (cmd === "build" && args.length === 0) {
   const index = (0, import_doc_index.loadIndex)(root);
   report(index.problems);
   const claims = (0, import_doc_index.queryIndex)(index, args);
-  print({ claims: claims.slice(0, limit), more: Math.max(0, claims.length - limit) });
+  const shown = limit === 0 ? claims : claims.slice(0, limit);
+  print({ claims: shown, more: claims.length - shown.length });
 } else {
   usage();
 }

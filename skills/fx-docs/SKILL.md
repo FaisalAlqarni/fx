@@ -65,8 +65,8 @@ yes you get the worktree, the changed paths from
 `git diff <merge-base>...HEAD --name-only`, and any `Docs claim wrong:` lines. Work in
 the worktree and commit on the branch:
 
-1. Find the claims citing the changed paths:
-   `node <skill base directory>/../../scripts/docs-index --root <worktree> query <changed paths>`.
+1. Find every claim citing the changed paths (`--limit 0` lifts the default cap of 20):
+   `node <skill base directory>/../../scripts/docs-index --root <worktree> query --limit 0 <changed paths>`.
 2. Update the docs those claims live in, verify every claim in them (section 5),
    and handle each `Docs claim wrong:` line the controller passed: the code wins,
    so fix the claim, never the code.

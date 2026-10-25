@@ -127,6 +127,9 @@ const out = JSON.parse(execFileSync(cmd, ['--root', many, 'query', '--limit', '2
 assert.strictEqual(out.claims.length, 20);
 assert.strictEqual(out.more, 5);
 assert.strictEqual(JSON.parse(execFileSync(cmd, ['--root', many, 'query', 'app'], { encoding: 'utf8' })).claims.length, 20, 'the default limit is 20'); // ts-gate-ok: the test parses output it just produced
+const all = JSON.parse(execFileSync(cmd, ['--root', many, 'query', '--limit', '0', 'app/x.rb'], { encoding: 'utf8' })); // ts-gate-ok: the test parses output it just produced
+assert.strictEqual(all.claims.length, 25, '--limit 0 means no cap');
+assert.strictEqual(all.more, 0);
 const bad = spawnSync(cmd, ['frob'], { encoding: 'utf8' });
 assert.strictEqual(bad.status, 2);
 assert.strictEqual(bad.stderr.trim(), 'docs-index: usage: docs-index [--root <dir>] build | query [--limit <n>] <path>... | stale');

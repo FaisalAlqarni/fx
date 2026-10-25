@@ -37,7 +37,9 @@ if (cmd === 'build' && args.length === 0) {
   const index = loadIndex(root);
   report(index.problems);
   const claims = queryIndex(index, args);
-  print({ claims: claims.slice(0, limit), more: Math.max(0, claims.length - limit) });
+  // --limit 0 means no cap: the branch-mode docs step must see every claim.
+  const shown = limit === 0 ? claims : claims.slice(0, limit);
+  print({ claims: shown, more: claims.length - shown.length });
 } else {
   usage();
 }
