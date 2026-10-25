@@ -123,6 +123,8 @@ run stop-check-gate.test.js node tests/gates/stop-check.test.js
 run edit-rules-gate.test.js node tests/gates/edit-rules.test.js
 run fx-json-notice.test.js node tests/gates/fx-json-notice.test.js
 run evidence.test.js    node lib/evidence.test.js
+run doc-evidence.test.js node lib/doc-evidence.test.js
+run doc-index.test.js   node lib/doc-index.test.js
 run shell-guard.test.js node lib/shell-guard.test.js
 run shell-guard-claude.test.js node tests/gates/shell-guard-claude.test.js
 run shell-guard-codex.test.js node tests/gates/shell-guard-codex.test.js
