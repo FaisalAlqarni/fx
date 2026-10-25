@@ -84,6 +84,7 @@ every later phase mechanical.
   recent commits, new dependencies, config changes, environmental differences.
 - Read `GLOSSARY.md` (old name: see domain-modeling) for a mental model of the modules involved, and check the
   ADRs in the area.
+- Look up the doc claims and ADR decisions citing the paths you touch: `../../references/docs-lookup.md`.
 
 ### Ten ways to build the loop
 

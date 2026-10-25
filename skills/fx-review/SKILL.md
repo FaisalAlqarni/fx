@@ -131,6 +131,8 @@ performance remain deliberately uncovered.
 
 ## 3. Find the spec
 
+Look up the doc claims and ADR decisions citing the paths you touch: `../../references/docs-lookup.md`.
+
 In order: the task file (task mode) → `docs/plans/<slug>/design.md` matching
 the branch → a path the user passed → **ask.**
 

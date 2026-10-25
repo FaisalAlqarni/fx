@@ -62,6 +62,13 @@ for (const name of ['fx-critique', 'fx-grill', 'fx-handoff', 'fx-pr', 'fx-retro'
   assert.ok(!/^disable-model-invocation:/m.test(frontmatter(adr).head), 'fx-adr is model-selectable');
 }
 
+// fx-docs is a model-selectable lane.
+{
+  const docs = path.join(root, 'skills', 'fx-docs', 'SKILL.md');
+  assert.ok(fs.existsSync(docs), 'skills/fx-docs/SKILL.md exists');
+  assert.ok(!/^disable-model-invocation:/m.test(frontmatter(docs).head), 'fx-docs is model-selectable');
+}
+
 // Nothing else is hidden. Check the FRONTMATTER only: skills/fx-authoring
 // legitimately documents this field in its body, and matching the whole file
 // makes this assertion red against correct content.

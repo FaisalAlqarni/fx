@@ -63,3 +63,5 @@
 | [0059](0059-fx-adr-writes-supersedes-and-indexes-adrs.md) | fx-adr writes, supersedes and indexes ADRs | 2026-10-25 | accepted |
 | [0060](0060-templates-live-in-one-folder-and-scratch-is-retired.md) | Templates live in one folder and .scratch is retired | 2026-10-25 | accepted |
 | [0061](0061-the-visual-kit-replaces-the-tailwind-and-mermaid-reports.md) | The visual kit replaces the Tailwind and Mermaid reports | 2026-10-25 | accepted |
+| [0062](0062-fx-docs-keeps-docs-on-evidence-lines-and-the-docs-step-is-offered.md) | fx-docs keeps docs on evidence lines, and the docs step is offered | 2026-10-25 | accepted |
+| [0063](0063-a-reverse-index-from-code-path-to-doc-claims-feeds-seven-readers.md) | A reverse index from code path to doc claims feeds seven readers | 2026-10-25 | accepted |

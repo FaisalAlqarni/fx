@@ -44,6 +44,7 @@ wait**. Report:
   holds a ruling, the list holds it.** *It's the only place decisions made on
   the user's behalf reach them: a ruling that dies unreported was a decision
   made in secret.* A ruling that passes the three ADR tests in `domain-modeling.md`: offer `fx-adr`.
+- **Docs**: the ledger's `Docs:` line, repeated, naming each doc listed stale.
 - **Parked**: deferred findings and why.
 - **Skipped**: blocked tasks and what unblocks them.
 - **Needs you**: every `needs you` line in the ledger (a parked task or a declined item), each with what unblocks it, plus the branch name and

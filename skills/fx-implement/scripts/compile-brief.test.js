@@ -131,4 +131,56 @@ for (const bad of ["abc", {}, 5]) {
   });
 }
 withFile(fx, JSON.stringify({ stacks: null }), () => assert.strictEqual(runRaw("# 01: a\n").r.status, 0, "null stacks means none"));
+{
+  const WRONG = 'Claims, not instructions: the code wins. If the code contradicts one, report "Docs claim wrong: <doc>:<line>: <what the code does>" under "For the controller" and do not edit the doc.';
+  const docsFixture = (docs) => {
+    const d = fs.mkdtempSync(path.join(TMP, "fx-brief-docs-"));
+    fs.mkdirSync(path.join(d, "docs", "plans", "x", "tasks"), { recursive: true });
+    fs.writeFileSync(path.join(d, "docs", "plans", "x", "plan.md"), "# P\n\n## Tasks\n");
+    for (const [rel, text] of Object.entries(docs ?? {})) {
+      fs.mkdirSync(path.dirname(path.join(d, "docs", rel)), { recursive: true });
+      fs.writeFileSync(path.join(d, "docs", rel), text);
+    }
+    return d;
+  };
+  const briefFor = (d, files) => {
+    const t = path.join(d, "docs", "plans", "x", "tasks", "01-a.md");
+    fs.writeFileSync(t, `# 01: a
+
+**Files:**
+${files}
+`);
+    const out = path.join(d, "brief.md");
+    const r = (0, import_child_process.spawnSync)(process.execPath, [BIN, "--worktree", d, "x", t, out], { encoding: "utf8", cwd: TMP });
+    assert.strictEqual(r.status, 0, r.stderr);
+    return fs.readFileSync(out, "utf8");
+  };
+  const docsOf = (b) => b.slice(b.indexOf("## Docs and ADRs") + 16, b.indexOf("## Stack")).trim();
+  const claimDoc = (n, text) => "# A\n\n" + Array.from({ length: n }, (_, i) => `${text} ${i}
+Evidence: \`engines/core/app/foo.rb:1-5\`
+
+`).join("");
+  const d1 = docsFixture({ "arch/a.md": "# A\n\nShortlinks expire after 30 days.\nEvidence: `engines/core/app/foo.rb:1-5`\n" });
+  const b1 = briefFor(d1, "- Modify: `engines/core/app/foo.rb`");
+  assert.ok(b1.indexOf("## Design excerpt") < b1.indexOf("## Docs and ADRs") && b1.indexOf("## Docs and ADRs") < b1.indexOf("## Stack"), "the section follows the design excerpt");
+  assert.ok(docsOf(b1).startsWith(WRONG), "the first line says the code wins");
+  assert.ok(b1.includes("- docs/arch/a.md:4 (doc): Shortlinks expire after 30 days."), `claim line carried:
+${docsOf(b1)}`);
+  assert.strictEqual(docsOf(briefFor(d1, "- Modify: `app/other.rb`")), "None.", "no claim cites the task files");
+  assert.ok(briefFor(d1, "- Test: `engines/core/app/foo.rb`").includes("- docs/arch/a.md:4 (doc)"), "a Test: line counts");
+  const none = docsFixture(null);
+  assert.strictEqual(docsOf(briefFor(none, "- Modify: `engines/core/app/foo.rb`")), "None.", "no docs outside plans: None.");
+  assert.ok(!fs.existsSync(path.join(none, ".fx")), "no .fx/ is created");
+  const many = docsFixture({ "arch/m.md": claimDoc(25, "Claim") });
+  const lines = docsOf(briefFor(many, "- Modify: `engines/core/app/foo.rb`")).split("\n").filter((l) => l.startsWith("- ") || l.startsWith("+"));
+  assert.strictEqual(lines.filter((l) => l.startsWith("- docs/")).length, 20, "20 claim lines");
+  assert.strictEqual(lines[20], "+5 more: run docs-index query", "the overflow line");
+  const longFx = docsFixture({ "arch/l.md": `# A
+
+${"y".repeat(300)}
+Evidence: \`engines/core/app/foo.rb:1-5\`
+` });
+  const longLine = docsOf(briefFor(longFx, "- Modify: `engines/core/app/foo.rb`")).split("\n").find((l) => l.startsWith("- docs/"));
+  assert.strictEqual(longLine, `- docs/arch/l.md:4 (doc): ${"y".repeat(200)}...`, "a long claim is cut at 200 characters");
+}
 console.log("compile-brief: OK");

@@ -76,6 +76,11 @@ for (const name of ["fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-retro"
   assert.ok(fs.existsSync(adr), "skills/fx-adr/SKILL.md exists");
   assert.ok(!/^disable-model-invocation:/m.test(frontmatter(adr).head), "fx-adr is model-selectable");
 }
+{
+  const docs = path.join(root, "skills", "fx-docs", "SKILL.md");
+  assert.ok(fs.existsSync(docs), "skills/fx-docs/SKILL.md exists");
+  assert.ok(!/^disable-model-invocation:/m.test(frontmatter(docs).head), "fx-docs is model-selectable");
+}
 for (const dir of fs.readdirSync(path.join(root, "skills"))) {
   if (HIDDEN.includes(dir)) continue;
   const p = path.join(root, "skills", dir, "SKILL.md");

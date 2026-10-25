@@ -97,6 +97,7 @@ Eleven of the thirteen work on their own, with no plan: only `fx-plan` and
 | `fx-review` | a diff, branch or PR needs checking |
 | `fx-architecture` | the structure of existing code is the problem |
 | `fx-adr` | a decision should be recorded, superseded or checked as an ADR |
+| `fx-docs` | system docs should be written, updated or checked against the code |
 | `fx-design` | a screen or component, and how it looks |
 | `fx-debug` | a bug, a test failure, anything unexpected |
 | `fx-humanize` | prose reads like a brochure |
@@ -243,7 +244,7 @@ opencode 2.x shows no notice.
 ## Layout
 
 ```
-skills/       21: 11 lanes, prototype and research, and 8 you invoke yourself:
+skills/       22: 12 lanes, prototype and research, and 8 you invoke yourself:
               fx-audit, plus fx-setup, fx-critique, fx-grill, fx-handoff,
               fx-pr, fx-retro and fx-what, generated from commands/
 agents/       6: 5 review lenses plus the devil's advocate, all read-only

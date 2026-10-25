@@ -18,6 +18,7 @@ it. **Propose first.** Write nothing until the owner picks candidates.
 
 ## Read
 
+- The doc claims and ADR decisions citing the paths the build touched: `../../references/docs-lookup.md`.
 - The ledger, the review findings and `docs/plans/<slug>/state.md`.
 - Build cost, through the plugin root as fx-implement does, never a path the
   repo supplies: `node <fx root>/scripts/build-cost`.

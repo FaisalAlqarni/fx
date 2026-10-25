@@ -59,6 +59,11 @@ fs.writeFileSync(path.join(fx, "docs", "plans", "rulings.md"), [
   ...Array.from({ length: 4 }, (_, i) => rule(i, i % 2 ? "task 02" : "every task")),
   ...Array.from({ length: 13 }, (_, i) => rule(i, `task 0${i % 7 + 3}`))
 ].join("\n") + "\n");
+fs.mkdirSync(path.join(fx, "docs", "arch"), { recursive: true });
+fs.writeFileSync(path.join(fx, "docs", "arch", "claims.md"), "# C\n\n" + Array.from({ length: 20 }, (_, i) => `${"c".repeat(200)}${i}
+Evidence: \`cli.js:1-2\`
+
+`).join(""));
 const task = fs.readdirSync(path.join(fx, "docs", "plans", "2026-01-01-notes", "tasks")).find((f) => f.startsWith("02-"));
 if (task === void 0) throw new Error("the fixture has no task 02 file");
 const out = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "fx-bs-")), "brief.md");
@@ -72,6 +77,7 @@ const r = (0, import_child_process.spawnSync)(process.execPath, [
 ], { encoding: "utf8" });
 assert.strictEqual(r.status, 0, r.stderr);
 assert.ok(fs.readFileSync(out, "utf8").split("\n").filter((l) => l.startsWith("- Ruling:")).length === 4, "only rulings for task 02 or the whole plan reach the brief");
+assert.strictEqual(fs.readFileSync(out, "utf8").split("\n").filter((l) => l.startsWith("- docs/arch/claims.md:")).length, 20, "the 20 claims reach the brief");
 assert.ok(fs.statSync(out).size <= 12e3, `fixture brief at most 12,000 bytes: ${fs.statSync(out).size}`);
 assert.ok(fs.existsSync(path.join(root, "docs", "adr", "0042-one-compiled-brief-per-implementer.md")), "ADR 0042 exists");
 console.log("brief-size: OK");

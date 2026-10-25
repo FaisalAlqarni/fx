@@ -74,6 +74,8 @@ self-contained changes that make sense independently.
 
 ## 4. Draft vertical slices
 
+Look up the doc claims and ADR decisions citing the paths you touch: `../../references/docs-lookup.md`.
+
 **Explore the codebase first** if you haven't already: you cannot size a
 task against code you haven't read. Read, do not build: no scratch implementation and no trial runs while
 planning. A question only running code can settle goes to `prototype`. Look

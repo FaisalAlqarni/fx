@@ -31,7 +31,7 @@ set -uo pipefail
 cd "$FX"
 
 # Pinned: adding or removing a skill updates this number on purpose.
-EXPECTED=21
+EXPECTED=22
 node -e '
 const fs = require("fs"), path = require("path");
 const dirs = fs.readdirSync("skills", { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name);

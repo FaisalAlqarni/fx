@@ -8,6 +8,10 @@ them and proceed.
 saves, so the work stands; ledger `Task <NN>: ran test_all (rule)` and repeat
 the rule in that implementer's next dispatch or resume.
 
+**A `Docs claim wrong:` line** in an implementer or reviewer report: copy it into
+the ledger as `Task <NN>: Docs claim wrong: <doc>:<line>: <text>`. The docs step
+passes these lines to `fx-docs`.
+
 **NEEDS_CONTEXT**: provide the missing context and re-dispatch.
 
 **NEEDS_CONTEXT and BLOCKED re-dispatch at most twice per task.** Each

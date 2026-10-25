@@ -42,7 +42,7 @@ Decide where to look before you look.**
   net.**
 
 Read the domain glossary (`GLOSSARY.md`, old name: see domain-modeling, or `GLOSSARY-MAP.md` → the relevant
-context) and any ADRs **in the area you're touching, first**: before the code.
+context) and any ADRs **in the area you're touching, first**: before the code. Also look up the doc claims and ADR decisions citing those paths: `../../references/docs-lookup.md`.
 
 **Anchor the requirements before you scan.** Who uses this, what it must do, the
 scale it actually runs at, the team that maintains it. One or two lines is

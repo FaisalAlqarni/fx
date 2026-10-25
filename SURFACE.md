@@ -34,6 +34,7 @@ recreate DEBT #20.
 | `fx-review` | Two axes reported separately + triggered risk lenses | ✅ |
 | `fx-architecture` | Deepening opportunities in existing code, local HTML report | ✅ |
 | `fx-adr` | Writes, supersedes and indexes ADRs in the repo's own format | ✅ |
+| `fx-docs` | Markdown docs with an evidence line on every claim; an offered docs step after a build | ✅ |
 | `fx-debug` | Feedback loop first, 3-fix circuit breaker, correct-seam rule | ✅ |
 | `fx-humanize` | Prose de-slopification (verbatim upstream, one line changed) | ✅ |
 | `fx-authoring` | Writing skills, agents, dispatch prompts, CLAUDE.md | ✅ |
@@ -237,7 +238,7 @@ already looking at is a no-op paying maintenance.
 ## References: markdown, the visual kit and its vendored libraries with their licences
 
 ```
-audit-template.md · wayfinder.md
+audit-template.md · docs-lookup.md · wayfinder.md
 templates/ adr · bug-report · design · pr · retro
 harnesses/ claude-code · codex · opencode · opencode-v2
 stacks/ docker · dotnet · observability · rails · react · web · web-polish
@@ -270,6 +271,7 @@ model reads (`docs/adr/0021`). This table summarizes it for people.
 | review a diff, branch or PR | `fx-review` |
 | structure of existing code is the problem | `fx-architecture` |
 | record, supersede or check a decision (ADR) | `fx-adr` |
+| write, update or check system docs | `fx-docs` |
 | bug · test failure · unexpected behavior | `fx-debug` |
 | a screen or component, and how it looks | `fx-design` |
 | a prose document needs fixing | `fx-humanize` |

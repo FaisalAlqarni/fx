@@ -1,3 +1,20 @@
+## Docs step: offer before the branch pass
+
+Before packaging the branch, decide the docs step. Never invoke `fx-docs` without a yes.
+
+1. The worktree has no `docs/` holding Markdown with `Evidence:` lines outside
+   `docs/plans/`: ledger `Docs: not run: no docs/` and go on.
+2. Otherwise offer it in one line: "`fx-docs` can update the docs this branch
+   affects before the branch review. Run it?"
+3. On yes, invoke `fx-docs` in branch mode in the worktree. Pass it every
+   `Docs claim wrong:` ledger line and `git diff <merge-base>...HEAD --name-only`.
+   It commits on the branch. Ledger `Docs: <n> updated, <n> written, <n> listed stale`.
+4. On no, ledger `Docs: not run: declined`.
+5. With the owner away (unattended), do not run it: ledger
+   `Docs: not run: offered, owner away`.
+
+The branch pass below then reviews the whole branch, docs commits included.
+
 Package the whole branch: `bash scripts/review-package <PLAN> <MERGE_BASE> <HEAD>`
 where `MERGE_BASE` is `git merge-base <base-branch> HEAD`. Include the printed
 path in the dispatch, **so the final reviewer reads one file instead of
