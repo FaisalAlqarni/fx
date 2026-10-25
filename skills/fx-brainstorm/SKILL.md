@@ -97,6 +97,7 @@ Too large for one design? Help decompose into sub-projects: what are the
 independent pieces, how do they relate, what order should they be built? Then
 brainstorm the first one through the normal flow. **Each sub-project gets its
 own design → plan → implementation cycle.**
+If the pieces cannot yet be named precisely, read `../../references/wayfinder.md`.
 
 ## 3. Interview in clustered rounds
 
