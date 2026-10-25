@@ -25,3 +25,14 @@ Ruling: task 02 adds src/tests/gates/lane-rules.test.ts (and its built js) to it
 Ruling: fx-brainstorm's "Never `.scratch/`" line stays (it forbids writing designs there, still true); task 02's .scratch acceptance grep excludes that exact line. Why: pre-flight conflict 3. Cost if wrong: none.
 Ruling: the 20-claim cap is implemented once, as task 05's queryIndex --limit (default 20, prints "+n more"); task 06's brief and lookup call it and do not cap again. Why: pre-flight conflict 4 (duplicated logic). Cost if wrong: two caps drifting, caught by task 06's review.
 Ruling: the status wording is S5(b)'s "Superseded by NNNN (replaced: decisions 2, 4; the rest carried forward)", capital S, in task 04 and everywhere. Why: pre-flight conflict 5. Cost if wrong: an index status mismatch, caught by task 04's test.
+Task 01: dispatched 86ffac9 2026-10-25T19:11:34Z
+Task 02: dispatched 22df560 2026-10-25T19:17:04Z
+Task 01: minor (deferred): fx-retro SKILL.md is 2,748 bytes against the 2,600 acceptance bound; the 2,300 estimate was unreachable, ratify the deviation.
+Task 01: minor (deferred): package-lock.json still reads 0.6.0 (lines 3 and 9) while the four manifests and package.json read 0.7.0; bump it with the release.
+Task 01: minor (deferred): SURFACE.md:235 References heading says 33 files, 29 markdown; the tree now has 37 files, 33 markdown.
+Ruling: fx-retro SKILL.md at 2,748 bytes is ratified over the task's 2,600 estimate: it holds only the command's own rules and is far under the 20,000 gate. Cost if wrong: none.
+Ruling: package-lock.json is bumped to 0.7.0 by task 02 (its brief already says to align it); SURFACE.md's reference count (37 files, 33 Markdown) is corrected in task 06's docs pass. Cost if wrong: a stale count, caught by the final review.
+Task 01: confirmed ⚠️ resolved: the lane-triggering bench is on request only (design Testing Decisions); not run, budget mode.
+Task 01: cost unavailable (no transcript recorded)
+Task 01: complete (commits 86ffac9..22df560, review clean)
+Task 02: ran test_all (plan-mandated phase gate): ALL GREEN per report.
