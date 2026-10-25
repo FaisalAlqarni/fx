@@ -96,7 +96,35 @@ assert.deepStrictEqual(shown, [
   'svg-animated.md', 'svg-static.md', 'visual-assets.md', 'visual-check.md',
 ]);
 const REPORT = 'skills/fx-architecture/HTML-REPORT.md';
-assert.deepStrictEqual(kitErrors(repo, [...shown.filter((n) => n !== 'visual-assets.md').map((n) => `references/visual/${n}`), REPORT]), []);
+// Every lane file that writes a page is under the same load and host check.
+const PAGE_LANES = [REPORT, 'skills/fx-docs/html-pages.md', 'skills/fx-audit/SKILL.md'];
+assert.deepStrictEqual(kitErrors(repo, [...shown.filter((n) => n !== 'visual-assets.md').map((n) => `references/visual/${n}`), ...PAGE_LANES]), []);
+
+// The table has a well-formed row for each vendored library and kit file, and every file in
+// references/vendor/ is either a row's file or a row's licence file.
+const tableText = fs.readFileSync(path.join(repo, TABLE), 'utf8');
+const listed = rows(repo).map((r) => r.file).sort();
+assert.deepStrictEqual(listed, [
+  'elkjs-0.9.3.bundled.js', 'fx-map-1.js', 'fx-tokens-1.css', 'react-18.3.1.production.min.js',
+  'react-dom-18.3.1.production.min.js', 'reactflow-11.11.4.min.js', 'reactflow-11.11.4.style.css',
+]);
+const licences = [...tableText.matchAll(/`(LICENSE-[\w-]+)`/g)].map((m) => m[1]);
+const unlisted = fs.readdirSync(path.join(repo, 'references', 'vendor')).filter((n) => !listed.includes(n) && !licences.includes(n));
+assert.deepStrictEqual(unlisted, [], 'every vendored file has a row in the assets table');
+
+// The page template keeps the theme memory, the legend and the evidence toggle, and lays
+// out with logical properties only, so dir="rtl" mirrors it.
+const template = fs.readFileSync(path.join(dir, 'page-template.html'), 'utf8');
+for (const part of ['localStorage.setItem("fx-theme"', 'class="legend"', 'id="evtoggle"']) {
+  assert.ok(template.includes(part), `page-template.html keeps ${part}`);
+}
+assert.deepStrictEqual(template.match(/(?<![\w-])(margin|padding|border)-(left|right)\b|(?<![\w-])(left|right)\s*:/g) ?? [], [], 'page-template.html uses logical properties');
+
+// The architecture report and the audit's Phase 4 page start from the kit, and the audit's
+// diagrams state their choice through the archify adapter.
+for (const part of ['page-template.html', 'visual-assets.md']) assert.ok(fs.readFileSync(path.join(repo, REPORT), 'utf8').includes(part), `${REPORT} names ${part}`);
+assert.ok(fs.readFileSync(path.join(repo, 'skills/fx-audit/SKILL.md'), 'utf8').includes('../../references/visual/archify-adapter.md'),
+  'fx-audit Phase 4 points at the archify adapter');
 
 // The architecture report loads only kit assets: an unlisted Mermaid script is caught.
 const mermaid = '<script src="../_assets/mermaid-11.17.2.min.js"></script>';
@@ -115,6 +143,12 @@ const stale = ['skills', 'commands', 'references', 'agents']
   .filter((f) => /\.(md|html|json)$/.test(f) && retired.test(fs.readFileSync(f, 'utf8')))
   .map((f) => path.relative(repo, f));
 assert.deepStrictEqual(stale, []);
+
+// With Tailwind gone, the architecture report names kit tokens, never Tailwind colour names.
+for (const f of ['skills/fx-architecture/SKILL.md', REPORT]) {
+  const names = fs.readFileSync(path.join(repo, f), 'utf8').match(/\b(emerald|amber|slate)\b/gi) ?? [];
+  assert.deepStrictEqual(names, [], `${f} names Tailwind colours`);
+}
 
 // The map-data escape rule keeps a hostile label inside the JSON block: applied as the
 // page writer applies it, no `</script` survives and the data parses back unchanged.
@@ -183,4 +217,45 @@ assert.deepStrictEqual(
 assert.deepStrictEqual(plain(fxMap.validateMapData({ root: 'zz', levels: [] })), ['root level zz missing']);
 assert.deepStrictEqual(plain(fxMap.levelPath(data([l0, l1]), 'l1-api')), ['l0', 'l1-api']);
 
-console.log('visual-kit: OK');
+// mount with stand-ins for React, ReactDOM and React Flow, and an ELK whose layout fails:
+// the canvas shows an error in place of the "Laying out" message.
+interface El { type: unknown; children: unknown[] }
+const textOf = (n: unknown): string => (typeof n === 'string' ? n : Array.isArray(n) ? n.map(textOf).join('')
+  : n !== null && typeof n === 'object' && 'children' in n ? textOf((n as El).children) : '');
+function mountWith(layout: () => Promise<unknown>): () => string {
+  const state: unknown[] = [];
+  const deps: (unknown[] | undefined)[] = [];
+  let slot = 0;
+  let app: (() => unknown) | null = null;
+  let tree: unknown = null;
+  let effects: (() => void)[] = [];
+  const render = (): void => {
+    slot = 0;
+    effects = [];
+    tree = app ? app() : null;
+    const run = effects;
+    run.forEach((f) => f());
+  };
+  const React = {
+    createElement: (type: unknown, _props: unknown, ...children: unknown[]): El => ({ type, children }),
+    useState: (init: unknown) => {
+      const i = slot++;
+      if (!(i in state)) state[i] = init;
+      return [state[i], (v: unknown) => { state[i] = v; render(); }];
+    },
+    useEffect: (f: () => void, d: unknown[]) => {
+      const i = slot++;
+      if (JSON.stringify(deps[i]) !== JSON.stringify(d)) { deps[i] = d; effects.push(f); }
+    },
+  };
+  const ReactDOM = { createRoot: () => ({ render: (el: El) => { app = el.type as () => unknown; render(); } }) };
+  Object.assign(ctx, { React, ReactDOM, ReactFlow: { default: 'flow', Controls: 'controls' }, ELK: class { layout = layout; } });
+  (ctx as { fxMap: { mount(host: unknown, d: unknown): void } }).fxMap.mount({}, data([l0, l1]));
+  return () => textOf(tree);
+}
+const failed = mountWith(() => Promise.reject(new Error('elk broke')));
+assert.ok(failed().includes('Laying out the map.'), 'the canvas waits for the layout');
+setTimeout(() => {
+  assert.ok(failed().includes('The map could not be laid out: Error: elk broke'), `a failed layout shows an error: ${failed()}`);
+  console.log('visual-kit: OK');
+}, 0);

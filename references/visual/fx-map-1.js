@@ -92,14 +92,20 @@
       const [path, setPath] = R.useState([data.root]);
       const [sel, setSel] = R.useState(null);
       const [flow, setFlow] = R.useState(null);
+      const [failed, setFailed] = R.useState(null);
       const curId = path[path.length - 1] ?? data.root;
       const cur = levels.get(curId);
       R.useEffect(() => {
         let dead = false;
         setFlow(null);
-        if (cur) layout(cur).then((f) => {
-          if (!dead) setFlow(f);
-        });
+        setFailed(null);
+        if (cur) {
+          layout(cur).then((f) => {
+            if (!dead) setFlow(f);
+          }).catch((e) => {
+            if (!dead) setFailed(String(e));
+          });
+        }
         return () => {
           dead = true;
         };
@@ -159,7 +165,7 @@
             onNodeClick: (_e, n) => setSel({ kind: "node", id: n.id }),
             onEdgeClick: (_e, ed) => setSel({ kind: "edge", id: ed.id }),
             onPaneClick: () => setSel(null)
-          }, h(RF.Controls, null)) : h("p", { className: "fxm-muted" }, "Laying out the map.")),
+          }, h(RF.Controls, null)) : h("p", { className: "fxm-muted" }, failed === null ? "Laying out the map." : `The map could not be laid out: ${failed}`)),
           h("aside", { className: "fxm-panel", "aria-live": "polite" }, panel)
         )
       );

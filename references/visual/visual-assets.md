@@ -17,7 +17,7 @@ references tree. fx's own kit files sit beside this file.
 | `reactflow-11.11.4.style.css` | React Flow | 11.11.4 | `reactflow/dist/style.css` | `https://registry.npmjs.org/reactflow/-/reactflow-11.11.4.tgz` | `8bb2def0f075030d4da2fc24570e12d0b8ddcb6cbc79566f8a5ff2c587a2b9b1` | `LICENSE-reactflow` |
 | `elkjs-0.9.3.bundled.js` | elkjs | 0.9.3 | `elkjs/lib/elk.bundled.js` | `https://registry.npmjs.org/elkjs/-/elkjs-0.9.3.tgz` | `b0745abd7f23cd91690a1587e377edbe19fd7233c783300290936720546216d4` | `LICENSE-elkjs` |
 | `fx-tokens-1.css` | fx | 0.7.0 |  |  | `5039daa841abe2b61dd062da9ff80c7408d2098c3d06b6eae502c7d81ea8b4d8` |  |
-| `fx-map-1.js` | fx | 0.7.0 |  |  | `8a2aa528cf8f4aa8efb276b32ff96b38cccdce358d7920da803f0c6517dc5053` |  |
+| `fx-map-1.js` | fx | 0.7.0 |  |  | `5270743f34aa8baa67f4bc9a1ac6cb117236c06aef5aab46aeeb21bb210fb04b` |  |
 
 React and React DOM are MIT and share one licence file. React Flow is MIT. elkjs is
 EPL-2.0. Each licence is carried verbatim in fx's `vendor/` folder.

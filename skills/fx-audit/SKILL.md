@@ -306,7 +306,9 @@ starts.
    any host. HTML-escape `&`, `<`, `>` and `"` in every string taken from the
    repository (facts, paths, symbols, titles) before it goes into the page. The
    Mermaid lifecycle diagram stays Mermaid in `design.md` and is
-   drawn in the report with `../../references/visual/svg-static.md`.
+   drawn in the report with `../../references/visual/svg-static.md`. Pick
+   each diagram's form through `../../references/visual/archify-adapter.md`
+   and state the pick in its one line.
 
 **Done when** `design.md` holds every section of both templates, every count
 the audit template states holds, and the report carries every section of

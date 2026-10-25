@@ -97,8 +97,8 @@ Full scaffold, diagram patterns and styling: [HTML-REPORT.md](./HTML-REPORT.md).
 Each candidate gets a card:
 
 - **Title**: short, names the deepening ("Collapse the Order intake pipeline")
-- **Badge row**: recommendation strength: `Strong` (emerald) ·
-  `Worth exploring` (amber) · `Speculative` (slate): plus the dependency
+- **Badge row**: recommendation strength: `Strong` (accent) ·
+  `Worth exploring` (alert) · `Speculative` (muted): plus the dependency
   category (`in-process`, `local-substitutable`, `ports & adapters`, `mock`)
 - **Files**, which files and modules are involved, monospaced
 - **Problem**: one sentence: why the current architecture causes friction
@@ -121,7 +121,7 @@ intake module": not "the FooBarHandler", and not "the Campaign service".
 
 **ADR conflicts:** only surface a candidate that contradicts an existing ADR
 when the friction is **real enough to warrant revisiting the ADR**, and mark it
-clearly in the card: an amber callout: *"contradicts ADR-0007, but worth
+clearly in the card: an alert-tinted callout: *"contradicts ADR-0007, but worth
 reopening because…"*. **Don't list every theoretical refactor an ADR forbids.**
 
 End with a **Top recommendation** section: which candidate you'd tackle first,

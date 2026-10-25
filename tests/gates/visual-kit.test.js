@@ -120,7 +120,32 @@ assert.deepStrictEqual(shown, [
   "visual-check.md"
 ]);
 const REPORT = "skills/fx-architecture/HTML-REPORT.md";
-assert.deepStrictEqual(kitErrors(repo, [...shown.filter((n) => n !== "visual-assets.md").map((n) => `references/visual/${n}`), REPORT]), []);
+const PAGE_LANES = [REPORT, "skills/fx-docs/html-pages.md", "skills/fx-audit/SKILL.md"];
+assert.deepStrictEqual(kitErrors(repo, [...shown.filter((n) => n !== "visual-assets.md").map((n) => `references/visual/${n}`), ...PAGE_LANES]), []);
+const tableText = fs.readFileSync(path.join(repo, TABLE), "utf8");
+const listed = rows(repo).map((r) => r.file).sort();
+assert.deepStrictEqual(listed, [
+  "elkjs-0.9.3.bundled.js",
+  "fx-map-1.js",
+  "fx-tokens-1.css",
+  "react-18.3.1.production.min.js",
+  "react-dom-18.3.1.production.min.js",
+  "reactflow-11.11.4.min.js",
+  "reactflow-11.11.4.style.css"
+]);
+const licences = [...tableText.matchAll(/`(LICENSE-[\w-]+)`/g)].map((m) => m[1]);
+const unlisted = fs.readdirSync(path.join(repo, "references", "vendor")).filter((n) => !listed.includes(n) && !licences.includes(n));
+assert.deepStrictEqual(unlisted, [], "every vendored file has a row in the assets table");
+const template = fs.readFileSync(path.join(dir, "page-template.html"), "utf8");
+for (const part of ['localStorage.setItem("fx-theme"', 'class="legend"', 'id="evtoggle"']) {
+  assert.ok(template.includes(part), `page-template.html keeps ${part}`);
+}
+assert.deepStrictEqual(template.match(/(?<![\w-])(margin|padding|border)-(left|right)\b|(?<![\w-])(left|right)\s*:/g) ?? [], [], "page-template.html uses logical properties");
+for (const part of ["page-template.html", "visual-assets.md"]) assert.ok(fs.readFileSync(path.join(repo, REPORT), "utf8").includes(part), `${REPORT} names ${part}`);
+assert.ok(
+  fs.readFileSync(path.join(repo, "skills/fx-audit/SKILL.md"), "utf8").includes("../../references/visual/archify-adapter.md"),
+  "fx-audit Phase 4 points at the archify adapter"
+);
 const mermaid = '<script src="../_assets/mermaid-11.17.2.min.js"></script>';
 assert.deepStrictEqual(
   kitErrors(kit({ [REPORT]: fs.readFileSync(path.join(repo, REPORT), "utf8") + "\n" + mermaid }), [REPORT]),
@@ -132,6 +157,10 @@ function walk(d) {
 const retired = /tailwindcss-play|mermaid-11|report-assets/;
 const stale = ["skills", "commands", "references", "agents"].flatMap((d) => walk(path.join(repo, d))).filter((f) => /\.(md|html|json)$/.test(f) && retired.test(fs.readFileSync(f, "utf8"))).map((f) => path.relative(repo, f));
 assert.deepStrictEqual(stale, []);
+for (const f of ["skills/fx-architecture/SKILL.md", REPORT]) {
+  const names = fs.readFileSync(path.join(repo, f), "utf8").match(/\b(emerald|amber|slate)\b/gi) ?? [];
+  assert.deepStrictEqual(names, [], `${f} names Tailwind colours`);
+}
 const escape = /every `<` written as\s+`([^`]+)`/.exec(fs.readFileSync(path.join(repo, TABLE), "utf8"))?.[1];
 assert.ok(escape, `${TABLE} states how a < in map data is written`);
 const hostile = { root: "l0", levels: [{ id: "l0", title: "</script><script>alert(1)</script>", nodes: [], edges: [] }] };
@@ -179,7 +208,55 @@ assert.deepStrictEqual(
 );
 assert.deepStrictEqual(plain(fxMap.validateMapData({ root: "zz", levels: [] })), ["root level zz missing"]);
 assert.deepStrictEqual(plain(fxMap.levelPath(data([l0, l1]), "l1-api")), ["l0", "l1-api"]);
-console.log("visual-kit: OK");
+const textOf = (n) => typeof n === "string" ? n : Array.isArray(n) ? n.map(textOf).join("") : n !== null && typeof n === "object" && "children" in n ? textOf(n.children) : "";
+function mountWith(layout) {
+  const state = [];
+  const deps = [];
+  let slot = 0;
+  let app = null;
+  let tree2 = null;
+  let effects = [];
+  const render = () => {
+    slot = 0;
+    effects = [];
+    tree2 = app ? app() : null;
+    const run = effects;
+    run.forEach((f) => f());
+  };
+  const React = {
+    createElement: (type, _props, ...children) => ({ type, children }),
+    useState: (init) => {
+      const i = slot++;
+      if (!(i in state)) state[i] = init;
+      return [state[i], (v) => {
+        state[i] = v;
+        render();
+      }];
+    },
+    useEffect: (f, d) => {
+      const i = slot++;
+      if (JSON.stringify(deps[i]) !== JSON.stringify(d)) {
+        deps[i] = d;
+        effects.push(f);
+      }
+    }
+  };
+  const ReactDOM = { createRoot: () => ({ render: (el) => {
+    app = el.type;
+    render();
+  } }) };
+  Object.assign(ctx, { React, ReactDOM, ReactFlow: { default: "flow", Controls: "controls" }, ELK: class {
+    layout = layout;
+  } });
+  ctx.fxMap.mount({}, data([l0, l1]));
+  return () => textOf(tree2);
+}
+const failed = mountWith(() => Promise.reject(new Error("elk broke")));
+assert.ok(failed().includes("Laying out the map."), "the canvas waits for the layout");
+setTimeout(() => {
+  assert.ok(failed().includes("The map could not be laid out: Error: elk broke"), `a failed layout shows an error: ${failed()}`);
+  console.log("visual-kit: OK");
+}, 0);
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   kitErrors
