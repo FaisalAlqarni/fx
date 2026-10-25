@@ -68,4 +68,13 @@ assert.strictEqual(parseDoc('docs/decisions/0001-x.md', 'Status: accepted' + dec
 assert.strictEqual(parseDoc('docs/arch/0001-x.md', 'Status: superseded by 2' + decision).claims[0]?.status, 'current', 'only ADR docs carry a status');
 assert.strictEqual(parseDoc('docs/arch/adr.md', 'x\nEvidence: `a.rb`\n').claims[0]?.kind, 'doc', 'a file named adr is not an adr folder');
 
+// A partly superseded ADR keeps its live decisions current (a repo's own words).
+for (const status of ['Status: Partly superseded by 0005: decisions 2 and 4', '## Status\n\nPartly superseded by 0005']) {
+  assert.strictEqual(parseDoc('docs/adr/0001-x.md', status + decision).claims[0]?.status, 'current', status);
+}
+// A whole ADR out of force under the repo's own status words leaves the lookups too.
+for (const status of ['Status: Deprecated', 'Status: Ignored', '## Status\n\nSuperseded']) {
+  assert.strictEqual(parseDoc('docs/adr/0001-x.md', status + decision).claims[0]?.status, 'superseded', status);
+}
+
 console.log('doc-evidence tests passed');

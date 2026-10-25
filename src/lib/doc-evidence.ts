@@ -37,6 +37,9 @@ function statusText(lines: string[], fenced: boolean[]): string | null {
   return null;
 }
 
+// An ADR is a doc under a folder named adr or decisions.
+export const isAdrPath = (doc: string): boolean => doc.split('/').slice(0, -1).some((s) => s === 'adr' || s === 'decisions');
+
 export function parseDoc(doc: string, text: string): { claims: Claim[]; problems: Problem[]; verified: string | null } {
   const lines = text.split('\n');
   // A fence line counts as fenced, so claims never run across or into one.
@@ -47,8 +50,10 @@ export function parseDoc(doc: string, text: string): { claims: Claim[]; problems
     if (fence === null) { fenced.push(f !== null); if (f) fence = f[1] ?? null; }
     else { fenced.push(true); if (f && f[1] === fence) fence = null; }
   }
-  const kind = doc.split('/').slice(0, -1).some((s) => s === 'adr' || s === 'decisions') ? 'adr' : 'doc';
-  const status = kind === 'adr' && /superseded by/i.test(statusText(lines, fenced) ?? '') ? 'superseded' : 'current';
+  const kind = isAdrPath(doc) ? 'adr' : 'doc';
+  // Only a status that opens with Superseded, Deprecated or Ignored takes the whole ADR out of
+  // force; "Partly superseded by" leaves its other decisions live.
+  const status = kind === 'adr' && /^\W*(superseded|deprecated|ignored)\b/i.test(statusText(lines, fenced) ?? '') ? 'superseded' : 'current';
 
   const claims: Claim[] = [];
   const problems: Problem[] = [];

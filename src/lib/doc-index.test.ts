@@ -119,6 +119,29 @@ assert.deepStrictEqual(staleCase((r) => { put(r, 'src/code.rb', 'l1\nl2\nl3\nl4\
 assert.deepStrictEqual(staleCase((r) => { put(r, 'src/code.rb', 'new\nl1\nl2\nl3\nl4\nl5\n'); put(r, 'src/b.rb', 'x\n'); commit(r); },
   (s) => `A.\nEvidence: \`src/code.rb:3-4\`; \`src/b.rb\`\n\n<!-- fx-docs verified: ${s} -->\n`), [['recheck', 'changed']], 'b.rb did not exist at the verified commit');
 
+// An ADR's verified commit lives in docs/adr/.fx-verified, never in the ADR: a recorded,
+// unchanged commit frees its claims; no line for that ADR means recheck.
+const ADR_CITED = 'Status: accepted\n\n1. Keep the code.\n   Evidence: `src/code.rb:3-4`\n';
+const verifiedFile = (line: (sha: string) => string) => (r: string) => { put(r, 'docs/adr/.fx-verified', line(git(r, 'rev-parse', 'HEAD'))); commit(r); };
+assert.deepStrictEqual(staleCase(verifiedFile((h) => `0002-x.md ${h}\n`), () => ADR_CITED, 'docs/adr/0002-x.md'), [['free', 'unchanged']]);
+assert.deepStrictEqual(staleCase(verifiedFile((h) => `0009-other.md ${h}\n`), () => ADR_CITED, 'docs/adr/0002-x.md'), [['recheck', 'unverified']]);
+assert.deepStrictEqual(staleCase(none, () => ADR_CITED, 'docs/adr/0002-x.md'), [['recheck', 'unverified']]);
+assert.deepStrictEqual(staleCase((r) => {
+  verifiedFile((h) => `0002-x.md ${h}\n`)(r);
+  put(r, 'src/code.rb', 'l1\nl2\nl3\nL4\nl5\n'); commit(r);
+}, () => ADR_CITED, 'docs/adr/0002-x.md'), [['recheck', 'changed']]);
+
+// The command records an ADR at HEAD, replacing its old line and keeping the others.
+{
+  const r = repo();
+  put(r, 'docs/adr/0002-x.md', ADR_CITED);
+  put(r, 'docs/adr/.fx-verified', `0001-a.md ${'1'.repeat(40)}\n0002-x.md ${'2'.repeat(40)}\n`);
+  const v = spawnSync(path.join(ROOT, 'scripts', 'docs-index'), ['--root', r, 'verify', 'docs/adr/0002-x.md'], { encoding: 'utf8' });
+  assert.strictEqual(v.status, 0, v.stderr);
+  assert.strictEqual(fs.readFileSync(path.join(r, 'docs/adr/.fx-verified'), 'utf8'), `0001-a.md ${'1'.repeat(40)}\n0002-x.md ${git(r, 'rev-parse', 'HEAD')}\n`);
+  assert.strictEqual(spawnSync(path.join(ROOT, 'scripts', 'docs-index'), ['--root', r, 'verify', 'docs/arch/a.md'], { encoding: 'utf8' }).status, 2, 'only an ADR is recorded');
+}
+
 // The command: --limit caps the claims and counts the rest; a bad command is a usage error.
 const many = tmp('many');
 put(many, 'docs/a.md', Array.from({ length: 25 }, (_, i) => `Claim ${i}.\nEvidence: \`app/x.rb:${i + 1}\`\n`).join('\n'));
@@ -132,7 +155,7 @@ assert.strictEqual(all.claims.length, 25, '--limit 0 means no cap');
 assert.strictEqual(all.more, 0);
 const bad = spawnSync(cmd, ['frob'], { encoding: 'utf8' });
 assert.strictEqual(bad.status, 2);
-assert.strictEqual(bad.stderr.trim(), 'docs-index: usage: docs-index [--root <dir>] build | query [--limit <n>] <path>... | stale');
+assert.strictEqual(bad.stderr.trim(), 'docs-index: usage: docs-index [--root <dir>] build | query [--limit <n>] <path>... | stale | verify <adr path>');
 const prob = tmp('prob');
 put(prob, 'docs/a.md', 'A.\nEvidence: nonsense\n');
 const pr = spawnSync(cmd, ['--root', prob, 'build'], { encoding: 'utf8' });

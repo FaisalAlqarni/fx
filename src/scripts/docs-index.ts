@@ -1,8 +1,10 @@
 #!/usr/bin/env node
-// The reverse index of doc claims by code path: scripts/docs-index [--root <dir>] build | query [--limit <n>] <path>... | stale
-import { loadIndex, queryIndex, stalePassOne, writeIndex } from '../lib/doc-index.js';
+// The reverse index of doc claims by code path:
+// scripts/docs-index [--root <dir>] build | query [--limit <n>] <path>... | stale | verify <adr path>
+import { loadIndex, queryIndex, recordAdrVerified, stalePassOne, writeIndex } from '../lib/doc-index.js';
+import { isAdrPath } from '../lib/doc-evidence.js';
 
-const USAGE = 'docs-index: usage: docs-index [--root <dir>] build | query [--limit <n>] <path>... | stale';
+const USAGE = 'docs-index: usage: docs-index [--root <dir>] build | query [--limit <n>] <path>... | stale | verify <adr path>';
 const usage = (): never => { process.stderr.write(`${USAGE}\n`); process.exit(2); };
 
 const args = process.argv.slice(2);
@@ -18,28 +20,38 @@ const report = (problems: { doc: string; line: number; message: string }[]): voi
   for (const p of problems) process.stderr.write(`${p.doc}:${p.line}: ${p.message}\n`);
 };
 
-if (cmd === 'build' && args.length === 0) {
-  const index = writeIndex(root);
-  report(index.problems);
-  print(index);
-} else if (cmd === 'stale' && args.length === 0) {
-  const index = loadIndex(root);
-  report(index.problems);
-  print(stalePassOne(root, index));
-} else if (cmd === 'query') {
-  let limit = 20;
-  if (args[0] === '--limit') {
-    if (!/^\d+$/.test(args[1] ?? '')) usage();
-    limit = Number(args[1]);
-    args.splice(0, 2);
+// One line on stderr and exit 1 for any failure, so a caller can show why.
+function main(): void {
+  if (cmd === 'build' && args.length === 0) {
+    const index = writeIndex(root);
+    report(index.problems);
+    print(index);
+  } else if (cmd === 'stale' && args.length === 0) {
+    const index = loadIndex(root);
+    report(index.problems);
+    print(stalePassOne(root, index));
+  } else if (cmd === 'verify' && args.length === 1 && isAdrPath(args[0] ?? '')) {
+    process.stdout.write(`${args[0]} verified at ${recordAdrVerified(root, args[0] ?? '')}\n`);
+  } else if (cmd === 'query') {
+    let limit = 20;
+    if (args[0] === '--limit') {
+      if (!/^\d+$/.test(args[1] ?? '')) usage();
+      limit = Number(args[1]);
+      args.splice(0, 2);
+    }
+    if (args.length === 0) usage();
+    const index = loadIndex(root);
+    report(index.problems);
+    const claims = queryIndex(index, args);
+    // --limit 0 means no cap: the branch-mode docs step must see every claim.
+    const shown = limit === 0 ? claims : claims.slice(0, limit);
+    print({ claims: shown, more: claims.length - shown.length });
+  } else {
+    usage();
   }
-  if (args.length === 0) usage();
-  const index = loadIndex(root);
-  report(index.problems);
-  const claims = queryIndex(index, args);
-  // --limit 0 means no cap: the branch-mode docs step must see every claim.
-  const shown = limit === 0 ? claims : claims.slice(0, limit);
-  print({ claims: shown, more: claims.length - shown.length });
-} else {
-  usage();
+}
+
+try { main(); } catch (e) {
+  process.stderr.write(`docs-index: ${(e as Error).message.split('\n')[0]}\n`);
+  process.exit(1);
 }

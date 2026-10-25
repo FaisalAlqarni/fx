@@ -2,7 +2,8 @@
 // generated from src/scripts/docs-index.ts by scripts/build: edit there, not here
 "use strict";
 var import_doc_index = require("../lib/doc-index.js");
-const USAGE = "docs-index: usage: docs-index [--root <dir>] build | query [--limit <n>] <path>... | stale";
+var import_doc_evidence = require("../lib/doc-evidence.js");
+const USAGE = "docs-index: usage: docs-index [--root <dir>] build | query [--limit <n>] <path>... | stale | verify <adr path>";
 const usage = () => {
   process.stderr.write(`${USAGE}
 `);
@@ -24,27 +25,39 @@ const report = (problems) => {
   for (const p of problems) process.stderr.write(`${p.doc}:${p.line}: ${p.message}
 `);
 };
-if (cmd === "build" && args.length === 0) {
-  const index = (0, import_doc_index.writeIndex)(root);
-  report(index.problems);
-  print(index);
-} else if (cmd === "stale" && args.length === 0) {
-  const index = (0, import_doc_index.loadIndex)(root);
-  report(index.problems);
-  print((0, import_doc_index.stalePassOne)(root, index));
-} else if (cmd === "query") {
-  let limit = 20;
-  if (args[0] === "--limit") {
-    if (!/^\d+$/.test(args[1] ?? "")) usage();
-    limit = Number(args[1]);
-    args.splice(0, 2);
+function main() {
+  if (cmd === "build" && args.length === 0) {
+    const index = (0, import_doc_index.writeIndex)(root);
+    report(index.problems);
+    print(index);
+  } else if (cmd === "stale" && args.length === 0) {
+    const index = (0, import_doc_index.loadIndex)(root);
+    report(index.problems);
+    print((0, import_doc_index.stalePassOne)(root, index));
+  } else if (cmd === "verify" && args.length === 1 && (0, import_doc_evidence.isAdrPath)(args[0] ?? "")) {
+    process.stdout.write(`${args[0]} verified at ${(0, import_doc_index.recordAdrVerified)(root, args[0] ?? "")}
+`);
+  } else if (cmd === "query") {
+    let limit = 20;
+    if (args[0] === "--limit") {
+      if (!/^\d+$/.test(args[1] ?? "")) usage();
+      limit = Number(args[1]);
+      args.splice(0, 2);
+    }
+    if (args.length === 0) usage();
+    const index = (0, import_doc_index.loadIndex)(root);
+    report(index.problems);
+    const claims = (0, import_doc_index.queryIndex)(index, args);
+    const shown = limit === 0 ? claims : claims.slice(0, limit);
+    print({ claims: shown, more: claims.length - shown.length });
+  } else {
+    usage();
   }
-  if (args.length === 0) usage();
-  const index = (0, import_doc_index.loadIndex)(root);
-  report(index.problems);
-  const claims = (0, import_doc_index.queryIndex)(index, args);
-  const shown = limit === 0 ? claims : claims.slice(0, limit);
-  print({ claims: shown, more: claims.length - shown.length });
-} else {
-  usage();
+}
+try {
+  main();
+} catch (e) {
+  process.stderr.write(`docs-index: ${e.message.split("\n")[0]}
+`);
+  process.exit(1);
 }

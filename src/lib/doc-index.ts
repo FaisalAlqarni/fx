@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { parseJson } from './json.js';
-import { Claim, Problem, parseDoc } from './doc-evidence.js';
+import { Claim, Problem, isAdrPath, parseDoc } from './doc-evidence.js';
 
 export type DocIndex = { version: 1; claims: Claim[]; problems: Problem[]; verified: Record<string, string | null> };
 export type Stale = { claim: Claim; verdict: 'free' | 'recheck' | 'skip'; reason: 'unchanged' | 'changed' | 'shifted' | 'deleted' | 'unverified' | 'owner' | 'superseded' };
@@ -106,13 +106,50 @@ function checkPath(root: string, verified: string, p: string, start: number | nu
   return shift !== 0 ? 'shifted' : 'unchanged';
 }
 
+// An ADR body is never edited (ADR S5), so its verified commit lives in a tracked file
+// beside it: one line per ADR, `<file name> <40-hex sha>`.
+const ADR_VERIFIED = '.fx-verified';
+const VERIFIED_LINE = /^(\S+) ([0-9a-f]{40})\s*$/;
+
+function adrVerified(root: string, dir: string): Map<string, string> {
+  const out = new Map<string, string>();
+  const file = path.join(root, dir, ADR_VERIFIED);
+  if (!fs.existsSync(file)) return out;
+  for (const l of fs.readFileSync(file, 'utf8').split('\n')) {
+    const m = VERIFIED_LINE.exec(l);
+    if (m) out.set(m[1] ?? '', m[2] ?? '');
+  }
+  return out;
+}
+
+// Records HEAD as the verified commit of one ADR, replacing its old line and keeping the rest.
+export function recordAdrVerified(root: string, doc: string): string {
+  if (!isAdrPath(doc) || !fs.existsSync(path.join(root, doc))) throw new Error(`not an ADR: ${doc}`);
+  const sha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+  const file = path.join(root, path.dirname(doc), ADR_VERIFIED);
+  if (fs.lstatSync(file, { throwIfNoEntry: false })?.isSymbolicLink()) throw new Error(`${ADR_VERIFIED} is a symlink`);
+  const name = path.basename(doc);
+  const lines = fs.existsSync(file) ? fs.readFileSync(file, 'utf8').split('\n').filter((l) => l !== '') : [];
+  const at = lines.findIndex((l) => VERIFIED_LINE.exec(l)?.[1] === name);
+  if (at >= 0) lines[at] = `${name} ${sha}`; else lines.push(`${name} ${sha}`);
+  fs.writeFileSync(file, lines.join('\n') + '\n');
+  return sha;
+}
+
 export function stalePassOne(root: string, index: DocIndex): Stale[] {
   const reachable = new Map<string, boolean>();
+  const folders = new Map<string, Map<string, string>>();
+  const verifiedFor = (claim: Claim): string | null => {
+    if (claim.kind !== 'adr') return index.verified[claim.doc] ?? null;
+    const dir = path.dirname(claim.doc);
+    if (!folders.has(dir)) folders.set(dir, adrVerified(root, dir));
+    return folders.get(dir)?.get(path.basename(claim.doc)) ?? null;
+  };
   return index.claims.map((claim): Stale => {
     if (claim.status === 'superseded') return { claim, verdict: 'skip', reason: 'superseded' };
     const paths = claim.evidence.filter((e) => e.type === 'path');
     if (paths.length === 0) return { claim, verdict: 'skip', reason: 'owner' };
-    const sha = index.verified[claim.doc] ?? null;
+    const sha = verifiedFor(claim);
     if (sha !== null && !reachable.has(sha)) reachable.set(sha, git(root, ['cat-file', '-e', `${sha}^{commit}`]) !== null);
     if (sha === null || !reachable.get(sha)) return { claim, verdict: 'recheck', reason: 'unverified' };
     let worst: Item = 'unchanged';
