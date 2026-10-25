@@ -28,13 +28,18 @@ function filesUnder(root: string, rel: string): string[] {
   return fs.readdirSync(abs(root, rel)).sort().flatMap((n) => filesUnder(root, `${rel}/${n}`));
 }
 
+const isLink = (root: string, rel: string) => fs.lstatSync(abs(root, rel), { throwIfNoEntry: false })?.isSymbolicLink() ?? false;
+
 export function planScratchMigration(root: string): ScratchPlan {
   const plan: ScratchPlan = { moves: [], edits: [], gitignore: null, conflicts: [], rollback: [] };
+  if (isLink(root, '.scratch')) { plan.conflicts.push('.scratch is a symlink'); return plan; }
   if (!fs.existsSync(abs(root, '.scratch'))) return plan;
   const names = fs.readdirSync(abs(root, '.scratch')).sort();
   if (!names.length) return plan;
   const tracked = new Set(git(root, 'ls-files', '-z').split('\0').filter(Boolean));
   const problems: string[] = [];
+  // Never read or write through a link: it could lead outside the repository.
+  for (const p of ['docs', 'docs/issues', '.gitignore']) if (isLink(root, p)) problems.push(`${p} is a symlink`);
   if (git(root, 'status', '--porcelain', '--untracked-files=no', '--', '.scratch').trim()) {
     problems.push('.scratch has uncommitted changes to tracked files');
   }
@@ -56,7 +61,8 @@ export function planScratchMigration(root: string): ScratchPlan {
   }
   for (const f of [...candidates].sort()) {
     const p = abs(root, f);
-    if (!fs.existsSync(p) || fs.lstatSync(p).isSymbolicLink()) continue;
+    if (isLink(root, f)) { problems.push(`${f} is a symlink`); continue; }
+    if (!fs.existsSync(p)) continue;
     fs.readFileSync(p, 'utf8').split('\n').forEach((before, i) => {
       if (before.match(OLD)) plan.edits.push({ file: f, line: i + 1, before, after: before.replace(OLD, 'docs/issues/') });
     });
@@ -79,17 +85,25 @@ interface Step { name: string; run: () => void; undo: () => void; rollback: stri
 function steps(root: string, plan: ScratchPlan): Step[] {
   const out: Step[] = [];
   for (const m of plan.moves) {
-    const made: string[] = [];
+    let made = ''; // the first directory mkdir created: docs or docs/issues, or '' when both existed
+    const dropMade = () => {
+      if (!made) return;
+      fs.rmdirSync(abs(root, 'docs/issues'));
+      if (made !== abs(root, 'docs/issues')) fs.rmdirSync(made);
+      made = '';
+    };
     out.push({
       name: `move ${m.from}`,
       run: () => {
-        if (!fs.existsSync(abs(root, 'docs/issues'))) { fs.mkdirSync(abs(root, 'docs/issues'), { recursive: true }); made.push('docs/issues'); }
-        if (m.tracked) git(root, 'mv', '--', m.from, m.to); else fs.renameSync(abs(root, m.from), abs(root, m.to));
+        made = fs.mkdirSync(abs(root, 'docs/issues'), { recursive: true }) ?? '';
+        try {
+          if (m.tracked) git(root, 'mv', '--', m.from, m.to); else fs.renameSync(abs(root, m.from), abs(root, m.to));
+        } catch (e) { dropMade(); throw e; }
       },
       undo: () => {
         fs.mkdirSync(abs(root, '.scratch'), { recursive: true });
         if (m.tracked) git(root, 'mv', '--', m.to, m.from); else fs.renameSync(abs(root, m.to), abs(root, m.from));
-        for (const d of made) fs.rmdirSync(abs(root, d));
+        dropMade();
       },
       rollback: ['mkdir -p .scratch', m.tracked ? `git mv -- ${q(m.to)} ${q(m.from)}` : `mv -- ${q(m.to)} ${q(m.from)}`],
     });
@@ -141,7 +155,8 @@ export function applyScratchMigration(root: string): void {
   for (const s of all) {
     try { s.run(); done.push(s); } catch (e) {
       const left: string[] = [];
-      for (const d of [...done, s].reverse()) {
+      // The failed step cleans up after itself; only finished steps are undone.
+      for (const d of [...done].reverse()) {
         try { d.undo(); } catch { left.push(...d.rollback); }
       }
       if (left.length) throw new UndoIncomplete(left);

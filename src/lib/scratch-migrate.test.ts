@@ -88,17 +88,27 @@ const snapshot = (d: string) => execFileSync('find', ['.', '-path', './.git', '-
   applyScratchMigration(d);
   assert.ok(/^R\s+\.scratch\/feat\/spec\.md -> docs\/issues\/feat\/spec\.md$/m.test(git(d, 'status', '--porcelain')));
 }
-// Failure undo: a read-only edit target makes apply throw; everything is put back.
+// Failure undo: a read-only edit target makes apply fail; the failed step is not
+// undone, the message is true, and everything is put back.
 if (process.getuid && process.getuid() === 0) {
-  console.log('scratch-migrate.test.js: skipping the read-only failure case when run as root');
+  console.log('scratch-migrate.test.js: skipping the read-only failure cases when run as root');
 } else {
   const d = repo({ '.gitignore': '.scratch/\n', 'CLAUDE.md': 'see .scratch/x\n' }, { '.scratch/feat/a.md': 'a' });
   fs.chmodSync(path.join(d, 'CLAUDE.md'), 0o444);
   const before = snapshot(d);
-  assert.throws(() => applyScratchMigration(d));
+  const r = run(d, '--apply');
+  assert.strictEqual(r.status, 1);
+  assert.ok(r.stderr.startsWith('scratch-migrate: failed at edit CLAUDE.md'), r.stderr);
+  assert.ok(r.stderr.trim().endsWith('; undone'), r.stderr);
   assert.strictEqual(snapshot(d), before);
-  assert.ok(fs.existsSync(path.join(d, '.scratch/feat/a.md')));
-  assert.ok(!fs.existsSync(path.join(d, 'docs/issues')));
+  assert.ok(!fs.existsSync(path.join(d, 'docs')), 'no leftover docs/');
+  // A failed write step (.gitignore read-only) is also reported as undone.
+  const e = repo({ '.gitignore': '.scratch/\n' }, { '.scratch/feat/a.md': 'a' });
+  fs.chmodSync(path.join(e, '.gitignore'), 0o444);
+  const r2 = run(e, '--apply');
+  assert.ok(r2.stderr.startsWith('scratch-migrate: failed at remove .gitignore:1') && r2.stderr.trim().endsWith('; undone'), r2.stderr);
+  assert.ok(fs.existsSync(path.join(e, '.scratch/feat/a.md')));
+  assert.ok(!fs.existsSync(path.join(e, 'docs')), 'no leftover docs/');
 }
 // Symlinked entry.
 {
@@ -106,5 +116,28 @@ if (process.getuid && process.getuid() === 0) {
   fs.mkdirSync(path.join(d, '.scratch'));
   fs.symlinkSync('../x.md', path.join(d, '.scratch/link'));
   assert.deepStrictEqual(planScratchMigration(d).conflicts, ['.scratch/link is a symlink']);
+}
+// Symlinks are refused before any change, and nothing outside the repo is touched.
+{
+  const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-scratch-out-'));
+  fs.writeFileSync(path.join(outside, 'gi'), 'keep\n');
+  const d = repo({ '.scratch/feat/a.md': 'a' });
+  fs.symlinkSync(outside, path.join(d, 'docs'));
+  fs.symlinkSync(path.join(outside, 'gi'), path.join(d, '.gitignore'));
+  assert.deepStrictEqual(planScratchMigration(d).conflicts, ['.gitignore is a symlink', 'docs is a symlink']);
+  const r = run(d, '--apply');
+  assert.strictEqual(r.status, 1);
+  assert.ok(r.stderr.includes('scratch-migrate: refused, repo unchanged:'), r.stderr);
+  assert.deepStrictEqual(fs.readdirSync(outside).sort(), ['gi']);
+  assert.strictEqual(fs.readFileSync(path.join(outside, 'gi'), 'utf8'), 'keep\n');
+  assert.ok(fs.existsSync(path.join(d, '.scratch/feat/a.md')));
+  // .scratch itself and docs/issues.
+  const e = repo({ 'x/a.md': 'a' });
+  fs.symlinkSync(path.join(e, 'x'), path.join(e, '.scratch'));
+  assert.deepStrictEqual(planScratchMigration(e).conflicts, ['.scratch is a symlink']);
+  const f = repo({ '.scratch/feat/a.md': 'a' });
+  fs.mkdirSync(path.join(f, 'docs'));
+  fs.symlinkSync(outside, path.join(f, 'docs/issues'));
+  assert.deepStrictEqual(planScratchMigration(f).conflicts, ['docs/issues is a symlink']);
 }
 console.log('scratch-migrate.test.js: ok');

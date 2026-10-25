@@ -97,9 +97,10 @@ const mig = fenced.filter((b) => b.includes("glossary-migrate"));
 assert.strictEqual(mig.length, 1, `one command runs glossary-migrate, found ${mig.length}`);
 const migCmd = mig[0] ?? "";
 assert.ok(migCmd.startsWith(PREFIX), "the migration command takes the skill base directory in FX_SKILL_DIR");
-assert.ok(migCmd.endsWith(`' ""`), "the migration command ends with the mode argument");
-function runMig(base, cwd) {
-  return (0, import_child_process.spawnSync)("bash", ["-c", withBase(migCmd, base)], { cwd, env: { ...process.env, HOME: s, TMPDIR: s }, encoding: "utf8" });
+assert.ok(migCmd.endsWith(`' glossary-migrate.js ""`), "the migration command ends with the script and mode arguments");
+assert.strictEqual(fenced.filter((b) => b.includes("scratch-migrate")).length, 1, "the scratch step reuses the one command");
+function runMig(base, cwd, script = "glossary-migrate.js") {
+  return (0, import_child_process.spawnSync)("bash", ["-c", withBase(migCmd, base).replace("' glossary-migrate.js", `' ${script}`)], { cwd, env: { ...process.env, HOME: s, TMPDIR: s }, encoding: "utf8" });
 }
 const fakeMig = fakeRoot(path.join(repo, "vendor", "fx2"));
 fs.writeFileSync(path.join(fakeMig, "lib", "glossary-migrate.js"), `require('fs').writeFileSync(${JSON.stringify(marker + "-mig")}, 'x');`);
@@ -111,4 +112,16 @@ assert.ok(!fs.existsSync(marker + "-mig"), "and no migration code was loaded fro
 const okMig = runMig(skillDir(odd), repo);
 assert.strictEqual(okMig.status, 0, `the real plugin root runs the migration dry run: ${okMig.stderr}`);
 assert.match(okMig.stdout, /dry run: nothing changed/);
+const fakeScr = fakeRoot(path.join(repo, "vendor", "fx3"));
+fs.writeFileSync(path.join(fakeScr, "lib", "scratch-migrate.js"), `require('fs').writeFileSync(${JSON.stringify(marker + "-scr")}, 'x');`);
+const badScr = runMig(skillDir(fakeScr), repo, "scratch-migrate.js");
+assert.notStrictEqual(badScr.status, 0, "scratch: a root inside cwd is refused");
+assert.match(badScr.stderr, /refusing/i);
+assert.ok(!fs.existsSync(marker + "-scr"), "scratch: and no code was loaded from it");
+const okScr = runMig(skillDir(odd), repo, "scratch-migrate.js");
+assert.strictEqual(okScr.status, 0, `the real plugin root runs the scratch dry run: ${okScr.stderr}`);
+assert.match(okScr.stdout, /nothing to move/);
+const unknown = runMig(skillDir(odd), repo, "plant-roles.js");
+assert.notStrictEqual(unknown.status, 0, "a script outside the two migrations is refused");
+assert.match(unknown.stderr, /refusing/i);
 console.log("fx-setup-root-check: passed");
