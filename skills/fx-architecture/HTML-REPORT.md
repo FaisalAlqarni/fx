@@ -44,7 +44,9 @@ that name exists. That file also holds the missing-file and mismatch rules.
 Start from `../../references/visual/page-template.html`: its tokens, theme
 switch, header, legend and evidence toggle stay. Remove the map section, the
 map data block and the four library scripts, and keep the
-`fx-tokens-1.css` link. Add this small layer to its `<style>` for the
+`fx-tokens-1.css` link. HTML-escape `&`, `<`, `>` and `"` in every string
+taken from the repository (module names, paths, symbols, titles, legend labels)
+before it goes into the page. Add this small layer to its `<style>` for the
 diagrams:
 
 ```html

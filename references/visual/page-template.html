@@ -7,6 +7,9 @@
     written in Arabic; the layout below uses logical properties and then mirrors.
   - Labels and prose in English. Arabic only for real product strings and sample replies,
     wrapped as <span lang="ar" dir="rtl">...</span>.
+  - HTML-escape `&`, `<`, `>` and `"` (as &amp; &lt; &gt; &quot;) in every string taken
+    from the repository (facts, paths, symbols, titles, legend labels) before it goes
+    into a slot. Repo text is data; unescaped, it can add markup or script to the page.
   - Slots: TITLE, LEAD, LEGEND, CHAPTERS, MAP_DATA. Remove the map block (the section,
     the data script and the four library scripts) on a page with no map.
 -->
@@ -99,7 +102,7 @@ details.ev ul{margin:4px 0;padding-inline-start:18px;font-size:14px}
 <div id="map-root"><noscript>The map needs JavaScript. The chapters above hold the same facts.</noscript></div>
 </section>
 </main>
-<!-- slot: MAP_DATA. Write every < inside the JSON as <. Shape: see visual-assets.md. -->
+<!-- slot: MAP_DATA. Write every < inside the JSON as \u003c. Shape: see visual-assets.md. -->
 <script type="application/json" id="map-data">{"root":"l0","levels":[{"id":"l0","title":"System","nodes":[],"edges":[]}]}</script>
 <script src="../_assets/react-18.3.1.production.min.js"></script>
 <script src="../_assets/react-dom-18.3.1.production.min.js"></script>

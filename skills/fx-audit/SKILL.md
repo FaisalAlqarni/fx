@@ -303,7 +303,9 @@ starts.
    on `../../references/visual/page-template.html`, following
    `../../references/visual/visual-assets.md` for the copy rule, the
    missing-file rule and the mismatch rule, so opening it fetches nothing from
-   any host. The Mermaid lifecycle diagram stays Mermaid in `design.md` and is
+   any host. HTML-escape `&`, `<`, `>` and `"` in every string taken from the
+   repository (facts, paths, symbols, titles) before it goes into the page. The
+   Mermaid lifecycle diagram stays Mermaid in `design.md` and is
    drawn in the report with `../../references/visual/svg-static.md`.
 
 **Done when** `design.md` holds every section of both templates, every count

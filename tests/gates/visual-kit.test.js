@@ -132,6 +132,19 @@ function walk(d) {
 const retired = /tailwindcss-play|mermaid-11|report-assets/;
 const stale = ["skills", "commands", "references", "agents"].flatMap((d) => walk(path.join(repo, d))).filter((f) => /\.(md|html|json)$/.test(f) && retired.test(fs.readFileSync(f, "utf8"))).map((f) => path.relative(repo, f));
 assert.deepStrictEqual(stale, []);
+const escape = /every `<` written as\s+`([^`]+)`/.exec(fs.readFileSync(path.join(repo, TABLE), "utf8"))?.[1];
+assert.ok(escape, `${TABLE} states how a < in map data is written`);
+const hostile = { root: "l0", levels: [{ id: "l0", title: "</script><script>alert(1)</script>", nodes: [], edges: [] }] };
+const inline = JSON.stringify(hostile).split("<").join(escape);
+assert.ok(!/<\/script/i.test(inline), `map data written with ${escape} still closes its script block: ${inline}`);
+assert.deepStrictEqual(JSON.parse(inline), hostile);
+assert.ok(
+  fs.readFileSync(path.join(dir, "page-template.html"), "utf8").includes(`Write every < inside the JSON as ${escape}.`),
+  "page-template.html states the same map-data escape as the assets table"
+);
+const PAGE_WRITERS = ["references/visual/page-template.html", "skills/fx-docs/html-pages.md", REPORT, "skills/fx-audit/SKILL.md"];
+const ESCAPE_RULE = 'HTML-escape `&`, `<`, `>` and `"`';
+assert.deepStrictEqual(PAGE_WRITERS.filter((f) => !fs.readFileSync(path.join(repo, f), "utf8").includes(ESCAPE_RULE)), []);
 assert.deepStrictEqual(kitErrors(kit({}, "other bytes"), []), [
   `visual-assets: ${ELK} SHA-256 ${sha("other bytes")}, table says ${sha("elk bytes")}`
 ]);

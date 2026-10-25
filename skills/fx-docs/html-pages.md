@@ -19,6 +19,8 @@ copy of the Markdown prose.
 3. Set `lang="en" dir="ltr"` on the page. Wrap Arabic product strings in
    `<span lang="ar" dir="rtl">`.
 4. Each fact on a page carries the evidence its Markdown claim has.
+   HTML-escape `&`, `<`, `>` and `"` in every string taken from the repository
+   (facts, paths, symbols, titles, legend labels) before it goes into the page.
 5. Run `../../references/visual/visual-check.md` before calling a page done.
 
 ## Out of date

@@ -66,7 +66,7 @@ name. A repo then never keeps an old copy under the new name.
 
 The page writer fills the map's data inline in
 `<script type="application/json" id="map-data">`, with every `<` written as
-`<`:
+`\u003c`:
 
 ```json
 { "root": "l0",
