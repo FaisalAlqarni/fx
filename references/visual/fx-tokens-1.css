@@ -1,0 +1,28 @@
+/* fx visual kit tokens, version 1. Light is the default; dark follows the reader's
+   system unless they chose a theme with the page's switch. A byte change to this file
+   renames it (fx-tokens-2.css) so a repo never keeps an old copy under the new name. */
+:root {
+  --paper: #f6f7f9; --panel: #ffffff; --ink: #14181f; --muted: #5b6472; --rule: #e3e7ee; --code: #eef2f7;
+  --accent: #0f766e; --accent-tint: #dcf0ed;
+  --warn: #a16207; --alert: #b45309; --violet: #7c3aed;
+  --info: #2563eb; --info-tint: #e3ecfd;
+  color-scheme: light;
+}
+:root:not([data-theme="light"]) {
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1318; --panel: #161b22; --ink: #e6edf3; --muted: #9aa4b2; --rule: #2a313b; --code: #1f2630;
+    --accent: #2dd4bf; --accent-tint: #123a37;
+    --warn: #fbbf24; --alert: #fdba74; --violet: #c9a2ff;
+    --info: #93c5fd; --info-tint: #1a2a45;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1318; --panel: #161b22; --ink: #e6edf3; --muted: #9aa4b2; --rule: #2a313b; --code: #1f2630;
+  --accent: #2dd4bf; --accent-tint: #123a37;
+  --warn: #fbbf24; --alert: #fdba74; --violet: #c9a2ff;
+  --info: #93c5fd; --info-tint: #1a2a45;
+  color-scheme: dark;
+}

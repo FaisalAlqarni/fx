@@ -18,3 +18,11 @@ references/vendor/mermaid-*.min.js
 docs/plans/_assets/mermaid-*.min.js
 references/vendor/tailwindcss-play-*.js
 docs/plans/_assets/tailwindcss-play-*.js
+references/vendor/react-[0-9]*.production.min.js
+docs/plans/_assets/react-[0-9]*.production.min.js
+references/vendor/react-dom-[0-9]*.production.min.js
+docs/plans/_assets/react-dom-[0-9]*.production.min.js
+references/vendor/reactflow-[0-9]*.min.js
+docs/plans/_assets/reactflow-[0-9]*.min.js
+references/vendor/elkjs-[0-9]*.bundled.js
+docs/plans/_assets/elkjs-[0-9]*.bundled.js

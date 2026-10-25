@@ -63,6 +63,7 @@ run brainstorm-confidence.test.js node tests/gates/brainstorm-confidence.test.js
 run brainstorm-server.test.js node tests/gates/brainstorm-server.test.js
 run review-content.test.js node tests/gates/review-content.test.js
 run branch-pass.test.js    node tests/gates/branch-pass.test.js
+run visual-kit.test.js node tests/gates/visual-kit.test.js
 run lens-content.test.js node tests/gates/lens-content.test.js
 run verdict.test.js        node tests/lane-triggering/verdict.test.js
 run tooling-malformed.test.js node tests/conformance/tooling-malformed.test.js

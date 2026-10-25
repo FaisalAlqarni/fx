@@ -31,7 +31,7 @@ while IFS= read -r -d '' src; do
     scripts/build-cost.ts|scripts/test-scope.ts|skills/fx-implement/scripts/compile-brief.ts)
       out="${rel%.ts}" mode=755 ;;
     plugins/*.ts|index.ts) format=esm ;;
-    skills/fx-brainstorm/scripts/helper.ts) platform=browser format=iife ;;
+    skills/fx-brainstorm/scripts/helper.ts|references/visual/fx-map-1.ts) platform=browser format=iife ;;
   esac
   target=()
   [ "$platform" = node ] && target=(--target=node20)

@@ -4,6 +4,6 @@
     "lib": ["ES2023", "DOM"],
     "types": []
   },
-  "include": ["src/skills/fx-brainstorm/scripts/helper.ts"],
+  "include": ["src/skills/fx-brainstorm/scripts/helper.ts", "src/references/visual/fx-map-1.ts"],
   "exclude": []
 }

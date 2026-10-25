@@ -243,6 +243,7 @@ harnesses/ claude-code · codex · opencode · opencode-v2
 stacks/ docker · dotnet · observability · rails · react · web · web-polish
 vendor/ mermaid-11.17.2.min.js · tailwindcss-play-3.4.17.js
         LICENSE-mermaid · LICENSE-tailwindcss
+visual/ page-template · tokens · map · svg recipes · archify-adapter · visual-assets · visual-check
 vocab/  codebase-design · condition-based-waiting
         defense-in-depth · domain-modeling · fowler-smells · good-tests · good-tests-examples · grilling
         model-selection · receiving-review · root-cause-tracing · skill-testing
