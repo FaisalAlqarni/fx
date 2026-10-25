@@ -51,26 +51,26 @@ trigger list, so neither can contest a lane.
 Upstream ships an `agents/openai.yaml` beside each. Not copied: fx targets
 Codex, but upstream's file restates the `description` we deliberately
 rewrote, and Codex reads the skill's own frontmatter without it. fx ships its
-own `agents/openai.yaml` only where it has a job: on the five user-invoked
+own `agents/openai.yaml` only where it has a job: on the eight user-invoked
 skills, where it hides the skill from the model on Codex.
 
 **Dropped:** `wizard`, `resolving-merge-conflicts`: merge conflicts are handled
 by hand, and infra-setup wizards are rare here.
 **Removed from inventory:** the 7 Android skills (`docs/adr/0012`).
 
-## User-invoked skills: 5
+## User-invoked skills: 8
 
 `disable-model-invocation: true`: the model never selects them, so they contest
 no lane and add no context load. Only the user types them. `fx-audit` is a
 skill rather than a command because a skill is given its own base directory,
-which is how it finds its templates. The other four are generated from
+which is how it finds its templates. The other seven are generated from
 `commands/` by `scripts/gen-command-skills`, because Codex has no command
 surface and reaches them only as skills.
 
 | Skill | Typed as | Does |
 |---|---|---|
 | `fx-audit` | `/fx:fx-audit`, `/fx-audit` on opencode, `$fx:fx-audit` on Codex | Audits an existing system in four gated phases, ending in a `design.md` for `fx-plan` |
-| `fx-setup`, `fx-critique`, `fx-grill`, `fx-handoff` | as the commands below | The same text as the command of the same name |
+| `fx-setup`, `fx-critique`, `fx-grill`, `fx-handoff`, `fx-pr`, `fx-retro`, `fx-what` | as the commands below | The same text as the command of the same name |
 
 ## Agents: 6 (performance lens cut, `docs/adr/0008`; pipeline lens added, `docs/adr/0014`)
 
@@ -206,7 +206,7 @@ Always blocked regardless of location:
 absent. Deterministic, and it survives a repo growing a second language: a Rails repo can carry a `Gemfile`, a `package.json` and over a thousand vendored `.ts`
 files, which no priority order resolves honestly.
 
-## Commands: 4
+## Commands: 7
 
 | Command | Does |
 |---|---|
@@ -214,6 +214,11 @@ files, which no priority order resolves honestly.
 | `/fx:fx-critique` | Dispatches `fx-devils-advocate` at any design or plan |
 | `/fx:fx-grill` | The interview technique standalone: no classification, no gate. For decisions not heading for code |
 | `/fx:fx-handoff` | Compacts the session into a block printed for copying. Not saved: the reason to hand off by hand is that the next session cannot read this disk |
+| `/fx:fx-pr` | Drafts a PR description (What and why, Changes, Evidence ending with what did not run, Merge danger). Never pushes or opens a PR; saved to `docs/plans/<slug>/pr.md` when a plan exists. User-invoked, `docs/adr/0055` |
+| `/fx:fx-retro` | Looks back at a build from the ledger, transcripts and build-cost; appends lessons to `tasks/lessons.md`, proposes fbrain notes, writes `docs/plans/<slug>/retro.md` |
+| `/fx:fx-what` | Re-explains the current state in plain words: asked, done, pending, needs you |
+
+**Glossary migration.** fx reads `GLOSSARY.md` (or `GLOSSARY-MAP.md`) and falls back to `CONTEXT.md`, never creating a second glossary. A repository on the old name gets one notice per session. `/fx:fx-setup` asks once, then renames with `git mv`; a no is stored as `"glossary_rename": "declined"` in `.fx.json` and fx stops asking (`docs/adr/0054`).
 
 Typed as shown on Claude Code. On opencode, drop the plugin prefix: `/fx-setup`.
 
@@ -226,15 +231,16 @@ On Codex each command ships as a skill, typed `$fx:fx-setup`.
 shows the model as the skill descriptions. A command that prints what you are
 already looking at is a no-op paying maintenance.
 
-## References: 27 files, 22 markdown, one TypeScript example, two vendored libraries and their two licence files
+## References: 33 files, 29 markdown, two vendored libraries and their two licence files
 
 ```
-audit-template.md · design-template.md · report-assets.md
-stacks/ docker · dotnet · observability · rails · react · web
+audit-template.md · design-template.md · report-assets.md · wayfinder.md
+harnesses/ claude-code · codex · opencode · opencode-v2
+stacks/ docker · dotnet · observability · rails · react · web · web-polish
 vendor/ mermaid-11.17.2.min.js · tailwindcss-play-3.4.17.js
         LICENSE-mermaid · LICENSE-tailwindcss
 vocab/  codebase-design · condition-based-waiting
-        defense-in-depth · domain-modeling · fowler-smells · good-tests · grilling
+        defense-in-depth · domain-modeling · fowler-smells · good-tests · good-tests-examples · grilling
         model-selection · receiving-review · root-cause-tracing · skill-testing
         verification · worktree-setup
 ```

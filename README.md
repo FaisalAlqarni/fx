@@ -104,7 +104,7 @@ Ten of the twelve work on their own, with no plan: only `fx-plan` and
 
 ## The commands
 
-You type five more skills yourself: four are generated from `commands/`,
+You type eight more skills yourself: seven are generated from `commands/`,
 `fx-audit` is its own skill. The model never picks them.
 
 | Command | Does |
@@ -114,6 +114,15 @@ You type five more skills yourself: four are generated from `commands/`,
 | `fx-critique` | red-teams a design or plan |
 | `fx-grill` | a stress-test interview for a decision not heading to code |
 | `fx-handoff` | prints a block to paste into another session |
+| `fx-pr` | drafts a short PR description to paste; never pushes or opens a PR |
+| `fx-retro` | looks back at a build and proposes lessons, checks and fbrain notes from evidence |
+| `fx-what` | re-explains where the session or build stands, in plain words |
+
+A repository that still has `CONTEXT.md` keeps working: fx reads it as before
+and shows one notice per session. `/fx:fx-setup` renames it to `GLOSSARY.md`
+(and `CONTEXT-MAP.md` to `GLOSSARY-MAP.md`) with `git mv`, but only after asking
+once. Answer no and fx records `"glossary_rename": "declined"` in `.fx.json`
+and stops asking.
 
 How you type them: `/fx:fx-<name>` on Claude Code, `/fx-<name>` on opencode,
 `$fx:fx-<name>` on Codex.
@@ -229,12 +238,13 @@ opencode 2.x shows no notice.
 ## Layout
 
 ```
-skills/       17: 10 lanes, prototype and research, and 5 you invoke yourself:
-              fx-audit, plus fx-setup, fx-critique, fx-grill and fx-handoff,
-              generated from commands/
+skills/       20: 10 lanes, prototype and research, and 8 you invoke yourself:
+              fx-audit, plus fx-setup, fx-critique, fx-grill, fx-handoff,
+              fx-pr, fx-retro and fx-what, generated from commands/
 agents/       6: 5 review lenses plus the devil's advocate, all read-only
 codex/agents/ the same 6 as Codex role files, generated
-commands/     4: fx-setup, fx-critique, fx-grill, fx-handoff
+commands/     7: fx-setup, fx-critique, fx-grill, fx-handoff, fx-pr, fx-retro,
+              fx-what
 references/   loaded on demand by a lane, never selectable
 hooks/        Claude Code: hooks.json, fx-context.js, fx-pretooluse.js, fx-turn.js
               Codex: fx-codex.js, wired by the root hooks.json
