@@ -221,6 +221,8 @@ files, which no priority order resolves honestly.
 
 **Glossary migration.** fx reads `GLOSSARY.md` (or `GLOSSARY-MAP.md`) and falls back to `CONTEXT.md`, never creating a second glossary. A repository on the old name gets one notice per session. `/fx:fx-setup` asks once, then renames with `git mv`; a no is stored as `"glossary_rename": "declined"` in `.fx.json` and fx stops asking (`docs/adr/0054`).
 
+**Scratch migration.** `/fx:fx-setup` asks once to move a `.scratch/` with issues into `docs/issues/`, showing the moves, the pointer edits and the `.gitignore` line first; it commits nothing. A no is stored as `"scratch_migrate": "declined"` in `.fx.json` and fx stops asking (`docs/adr/0060`).
+
 Typed as shown on Claude Code. On opencode, drop the plugin prefix: `/fx-setup`.
 
 On Codex each command ships as a skill, typed `$fx:fx-setup`.

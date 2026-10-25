@@ -46,6 +46,12 @@ export function parseFxJson(raw: unknown): FxJsonResult {
     else problems.push({ key: 'glossary_rename', reason: 'glossary_rename must be "declined"' });
   }
 
+  const scratch = input.get('scratch_migrate');
+  if (scratch !== undefined) {
+    if (scratch === 'declined') value.scratch_migrate = scratch;
+    else problems.push({ key: 'scratch_migrate', reason: 'scratch_migrate must be "declined"' });
+  }
+
   const hooks = input.get('hooks');
   if (hooks !== undefined) {
     if (typeof hooks === 'object' && hooks !== null && !Array.isArray(hooks)) {

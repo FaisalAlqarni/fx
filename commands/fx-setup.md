@@ -127,6 +127,41 @@ process.exit(r.status === null ? 1 : r.status);
 ' ""
 ```
 
+### .scratch/ issues: move once
+
+Skip this step when `.fx.json` has `"scratch_migrate": "declined"` or `.scratch/`
+holds no Markdown file. Run the command below at the repository root, with the
+same `SKILL_DIR` substitution and plugin-root check as the glossary step. With
+the last argument `""` it lists the moves, every pointer line it will change,
+the `.gitignore` line it will remove and the rollback, and changes nothing.
+Show the whole output. If it lists conflicts, report them and do not ask. Ask
+once. On yes, run it again with the last argument `"--apply"`, then show
+`git status --short` and tell the user to run `git add -- docs/issues` and
+commit; it commits nothing. On no, write `"scratch_migrate": "declined"` to
+`.fx.json` and never ask again. With no human to answer, do nothing and write
+nothing. Never run it from a dispatched subagent.
+
+```
+FX_SKILL_DIR='SKILL_DIR' node -e '
+const fs = require("fs"), path = require("path");
+const base = process.env.FX_SKILL_DIR || "";
+const no = (why) => { console.error(`fx-setup: refusing FX_SKILL_DIR=${base}: ${why}`); process.exit(1); };
+let fx, dir, cwd;
+try { dir = fs.realpathSync(base); fx = fs.realpathSync(path.join(base, "..", "..")); cwd = fs.realpathSync(process.cwd()); } catch { no("not an existing directory"); }
+if (dir !== path.join(fx, "skills", "fx-setup") || !fs.existsSync(path.join(dir, "SKILL.md"))) no("not the skills/fx-setup directory of a plugin root");
+const rel = path.relative(cwd, fx);
+if (!(rel === ".." || rel.startsWith(".." + path.sep) || path.isAbsolute(rel))) no("its plugin root is the current directory or inside it");
+const named = [".codex-plugin", ".claude-plugin"].some((d) => {
+  try { return JSON.parse(fs.readFileSync(path.join(fx, d, "plugin.json"), "utf8")).name === "fx"; } catch { return false; }
+});
+if (!named) no("no plugin.json naming fx");
+if (!fs.existsSync(path.join(fx, "PREAMBLE.md"))) no("no PREAMBLE.md");
+const r = require("child_process").spawnSync(process.execPath, [path.join(fx, "lib", "scratch-migrate.js"), cwd, ...process.argv.slice(1, 2).filter(Boolean)], { stdio: "inherit" });
+process.exit(r.status === null ? 1 : r.status);
+' ""
+```
+
+
 ### `GLOSSARY.md`, only if terms actually resolved
 
 If round 1 produced terms with settled meanings, write them to `GLOSSARY.md` as a

@@ -326,6 +326,9 @@ is renamed unless you say yes.
   unchanged.
 - On no, setup writes `"glossary_rename": "declined"` to `.fx.json`, and fx stops
   asking and stops showing the notice.
+- A `.scratch/` with Markdown issues is handled the same way: setup shows a dry
+  run, asks once, moves it to `docs/issues/` on yes, and on no writes
+  `"scratch_migrate": "declined"` to `.fx.json`.
 
 ## Hooks (no setup needed)
 

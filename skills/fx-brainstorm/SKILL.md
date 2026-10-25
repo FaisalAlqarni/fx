@@ -312,8 +312,8 @@ Template: `../../references/templates/design-template.md`.
 Use the domain glossary's vocabulary throughout and respect the ADRs in the
 area you're touching.
 
-**Never `.scratch/`. Never `docs/superpowers/`.** Do not commit it: the user
-runs git.
+**Never `.scratch/`. Never `docs/superpowers/`.** Issues go to `docs/issues/`,
+throwaway material to `.fx/`. Do not commit it: the user runs git.
 
 ## 8. Self-review, then one review of the file
 

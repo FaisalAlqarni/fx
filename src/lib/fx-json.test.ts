@@ -59,4 +59,13 @@ const glOk = parseFxJson({ glossary_rename: 'declined' });
 assert.ok(glOk.ok);
 assert.strictEqual(glOk.value.glossary_rename, 'declined');
 
+const sm = parseFxJson({ scratch_migrate: 'yes' });
+assert.ok(sm.ok);
+assert.strictEqual('scratch_migrate' in sm.value, false);
+assert.deepStrictEqual(sm.problems, [{ key: 'scratch_migrate', reason: 'scratch_migrate must be "declined"' }]);
+const smOk = parseFxJson({ scratch_migrate: 'declined' });
+assert.ok(smOk.ok);
+assert.strictEqual(smOk.value.scratch_migrate, 'declined');
+assert.deepStrictEqual(smOk.problems, []);
+
 console.log('fx-json.test.js: ok');

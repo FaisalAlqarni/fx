@@ -126,6 +126,9 @@ and shows one notice per session. `/fx:fx-setup` renames it to `GLOSSARY.md`
 once. Answer no and fx records `"glossary_rename": "declined"` in `.fx.json`
 and stops asking.
 
+A `.scratch/` with issues is moved to `docs/issues/` the same way, after one
+ask; a no is stored as `"scratch_migrate": "declined"` in `.fx.json`.
+
 How you type them: `/fx:fx-<name>` on Claude Code, `/fx-<name>` on opencode,
 `$fx:fx-<name>` on Codex.
 

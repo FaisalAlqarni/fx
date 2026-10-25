@@ -365,8 +365,11 @@ See `../../references/vocab/defense-in-depth.md`.
 - [ ] Throwaway prototypes deleted, or moved to a clearly-marked debug location
 - [ ] **The hypothesis that turned out correct is stated in the commit message,
       so the next debugger learns**
+- [ ] **Bug fixed? Write `docs/issues/<YYYY-MM-DD>-<slug>.md`** from
+      `../../references/templates/bug-report-template.md` and commit it with
+      the fix. A session with no fix writes no report.
 - [ ] **Prevention question answered:** name what would have prevented this
-      bug. A missing seam goes to `fx-architecture`, a process or lane gap to
+      bug, as the report's last section (`Prevention`). A missing seam goes to `fx-architecture`, a process or lane gap to
       `/fx:fx-retro`. Say it in the report and start neither.
 
 ---
