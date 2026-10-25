@@ -197,3 +197,16 @@ Coverage audit: 7 gaps, all owned but weakly asserted (findings/coverage-audit.m
 Ruling: the 7 coverage gaps go to the final branch review as named checks (one line each, from findings/coverage-audit.md); confirmed gaps are fixed in the final review's single fix wave with a text assertion each. Why: budget mode; no behaviour is missing. Cost if wrong: a rule present in text but unasserted, caught by the final review.
 Tasks 22, 23: ran test_all (plan-mandated phase gate): ALL GREEN per report (exit 0).
 Task 22: concern ruled: ADR 0045 had no status line; adding "Status: accepted. Amended by 0058." is within the owner's status-line-only rule.
+Task 22: minor (deferred): ADR 0056 cites ADR 0044 for ruled items reaching the branch pass; the mechanism is final-review.md:9-11, not 0044.
+Task 22: minor (deferred): ADR 0054 says the glossary is tested for four cases; glossary.test.ts covers more, drop the number.
+Task 22: minor (deferred): ADR 0045's new status line carries no date, unlike every other ADR; controller to confirm the form.
+Task 23: minor (deferred): SURFACE.md:252 says six stack profiles; references/stacks has seven.
+Tasks 22, 23: open Important 1: INSTALL.md has no glossary-migration or glossary_rename text (controller confirmed: only line 305 mentions GLOSSARY.md).
+Task 22: open Important 2: ADR 0053 claims scripts/check-reference-leaves enforces skill-local one-level references; the script scans only references/ (controller confirmed at lines 12 to 18).
+Tasks 22, 23: fix round 1 dispatched (resumed implementer) 2026-10-25T00:21:16Z
+Tasks 22, 23: fix round 1: controller re-review (21 doc lines): INSTALL section matches HEAD (src/lib/glossary*.ts, commands/fx-setup.md) and ADR 0053 states what check-reference-leaves checks. Accepted.
+Gap for the final review: the design says "/fx-setup, or the next lane that writes to the glossary, asks once"; at HEAD only /fx-setup asks, and ADR 0054 still names the next lane. Named check for the final review.
+Task 22: cost unavailable (no transcript recorded)
+Task 22: complete (commits 7acbb63..c511eec plus fix 198e557, review clean after fix round 1)
+Task 23: cost unavailable (no transcript recorded)
+Task 23: complete (commits c511eec..7b9bd71 plus fix 198e557, review clean after fix round 1)
