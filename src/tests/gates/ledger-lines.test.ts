@@ -76,6 +76,8 @@ assert.ok(/re-dispatch the task/i.test(status), 'status.md says the unparked tas
 assert.ok(completion.includes('Plan complete: tasks <first> to <last> complete, final review <clean|fixed>'), 'the plan-complete line carries no parked count');
 assert.ok(completion.includes('Plan paused: tasks <a> to <b> complete, <K> parked, needs you'), 'completion.md defines the plan-paused line');
 assert.ok(completion.includes('only when no task is parked'), 'Plan complete is written only with nothing parked');
+const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8').replace(/\s+/g, ' ');
+assert.ok(readme.includes('three options: merge | push and open a PR | leave it. Discard happens only when you type it.'), 'README shows the three-option menu');
 // The retro offer comes before the menu, so it cannot read as a fourth option.
 const retro = completion.indexOf('`/fx:fx-retro` reviews this build');
 assert.ok(retro >= 0 && retro < completion.indexOf('1. Merge it into'), 'the fx-retro line comes before the menu');

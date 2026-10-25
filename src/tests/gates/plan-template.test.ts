@@ -28,4 +28,12 @@ assert.ok(fs.existsSync(path.join(root, 'docs', 'adr', '0043-plan-tasks-state-be
 assert.ok(templates.includes('## Review Focus') && templates.includes('**Not this task:**'), 'template has Review Focus and Not this task');
 assert.ok(flags.includes('names the owner of each half'), 'split requirement red flag');
 
+// Final review I5, gap 5: the plan lane's reader framing, scratch-build ban and self-review checks.
+for (const [text, rule] of [
+  ['What they cannot know is what you decided', 'the plan is framed for a reader who cannot know what was decided'],
+  ['no scratch implementation', 'planning builds nothing'],
+  ['**Review Focus.**', 'self-review checks the Review Focus'],
+  ['**Proportion.**', 'self-review checks proportion'],
+]) assert.ok(flat.includes(text as string), rule);
+
 console.log('plan-template: OK');

@@ -41,4 +41,6 @@ assert.ok(branch.includes("Docs, runbooks or examples the diff has made stale?")
 for (const f of ["skills/fx-implement/task-reviewer-prompt.md", "skills/fx-review/reviewer-prompt.md"]) {
   assert.ok(read(f).includes("Read the brief's Review focus section with its Global constraints"), `${f} points at Review focus`);
 }
+assert.ok(task.includes("Read the brief as a vision, not a checklist."), "the task reviewer reads the brief as a vision, not a checklist");
+assert.ok(read("skills/fx-review/reviewer-prompt.md").includes("Read the plan or spec as a vision, not a checklist."), "the branch reviewer reads the plan as a vision, not a checklist");
 console.log("review-content.test.js: OK");

@@ -124,4 +124,16 @@ for (const name of ["fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-retro"
     );
   }
 }
+const pr = fs.readFileSync(path.join(root, "skills", "fx-pr", "SKILL.md"), "utf8");
+for (const h of ["## What and why", "## Changes", "## Evidence", "## Merge danger"]) assert.ok(pr.includes(`
+${h}
+`), `fx-pr drafts the ${h} section`);
+assert.ok(pr.includes("Never run `git push`"), "fx-pr never pushes");
+assert.ok(pr.includes("`Not run:`"), "fx-pr ends its evidence with a Not run: line");
+const retro = fs.readFileSync(path.join(root, "skills", "fx-retro", "SKILL.md"), "utf8").replace(/\s+/g, " ");
+assert.ok(retro.includes("**Citation or drop.**"), "fx-retro drops a candidate without a citation");
+assert.ok(
+  retro.includes("Never quote a credential, token, key or personal data from a transcript") && retro.includes("`[redacted]`"),
+  "fx-retro redacts credentials and personal data"
+);
 console.log("user-invoked.test.js: OK");

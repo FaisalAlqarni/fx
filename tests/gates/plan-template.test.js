@@ -45,4 +45,10 @@ assert.ok(!flat.includes("questionable taste"), "reader not assumed to have poor
 assert.ok(fs.existsSync(path.join(root, "docs", "adr", "0043-plan-tasks-state-behaviour-and-name-tests.md")), "ADR 0043 exists");
 assert.ok(templates.includes("## Review Focus") && templates.includes("**Not this task:**"), "template has Review Focus and Not this task");
 assert.ok(flags.includes("names the owner of each half"), "split requirement red flag");
+for (const [text, rule] of [
+  ["What they cannot know is what you decided", "the plan is framed for a reader who cannot know what was decided"],
+  ["no scratch implementation", "planning builds nothing"],
+  ["**Review Focus.**", "self-review checks the Review Focus"],
+  ["**Proportion.**", "self-review checks proportion"]
+]) assert.ok(flat.includes(text), rule);
 console.log("plan-template: OK");

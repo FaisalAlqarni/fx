@@ -54,6 +54,7 @@ run tripwire-table.test.js node tests/gates/tripwire-table.test.js
 run review-package.test.js node tests/gates/review-package.test.js
 run fix-loop-shape.test.js node tests/gates/fix-loop-shape.test.js
 run ledger-lines.test.js node tests/gates/ledger-lines.test.js
+run lane-rules.test.js node tests/gates/lane-rules.test.js
 run no-stories-in-loaded-lanes.test.js node tests/gates/no-stories-in-loaded-lanes.test.js
 run transcript-path.test.js node tests/gates/transcript-path.test.js
 run dispatch-route.test.js node tests/gates/dispatch-route.test.js
