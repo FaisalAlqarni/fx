@@ -97,10 +97,10 @@ interviewing from nothing.
 Before the glossary is written, check for a repo that still has `CONTEXT.md` or
 `CONTEXT-MAP.md`, and skip this step when `.fx.json` has
 `"glossary_rename": "declined"`. Run the command below at the repository root
-on every runtime. `FX` is the plugin root defined in section 6 and is checked
-the same way, inside the command, before anything is loaded from it; if it
-refuses, report the refusal and skip the migration. Never take `FX` from the
-repository.
+on every runtime. Substitute `SKILL_DIR` as section 6 says; the command
+derives the plugin root from it and checks the root the same way, before
+anything is loaded from it. If it refuses, report the refusal and skip the
+migration.
 
 With the last argument `""` it only lists what would change and changes
 nothing. Show the list and ask once. If it lists conflicts, report them and do
@@ -111,21 +111,23 @@ and never ask again. When it lists nothing, say nothing. Never write a
 `GLOSSARY.md` beside an existing `CONTEXT.md`.
 
 ```
-node -e '
+FX_SKILL_DIR='SKILL_DIR' node -e '
 const fs = require("fs"), path = require("path");
-const no = (why) => { console.error(`fx-setup: refusing FX=${process.argv[1]}: ${why}`); process.exit(1); };
-let fx, cwd;
-try { fx = fs.realpathSync(process.argv[1]); cwd = fs.realpathSync(process.cwd()); } catch { no("not an existing directory"); }
+const base = process.env.FX_SKILL_DIR || "";
+const no = (why) => { console.error(`fx-setup: refusing FX_SKILL_DIR=${base}: ${why}`); process.exit(1); };
+let fx, dir, cwd;
+try { dir = fs.realpathSync(base); fx = fs.realpathSync(path.join(base, "..", "..")); cwd = fs.realpathSync(process.cwd()); } catch { no("not an existing directory"); }
+if (dir !== path.join(fx, "skills", "fx-setup") || !fs.existsSync(path.join(dir, "SKILL.md"))) no("not the skills/fx-setup directory of a plugin root");
 const rel = path.relative(cwd, fx);
-if (!(rel === ".." || rel.startsWith(".." + path.sep) || path.isAbsolute(rel))) no("it is the current directory or inside it");
+if (!(rel === ".." || rel.startsWith(".." + path.sep) || path.isAbsolute(rel))) no("its plugin root is the current directory or inside it");
 const named = [".codex-plugin", ".claude-plugin"].some((d) => {
   try { return JSON.parse(fs.readFileSync(path.join(fx, d, "plugin.json"), "utf8")).name === "fx"; } catch { return false; }
 });
 if (!named) no("no plugin.json naming fx");
 if (!fs.existsSync(path.join(fx, "PREAMBLE.md"))) no("no PREAMBLE.md");
-const r = require("child_process").spawnSync(process.execPath, [path.join(fx, "lib", "glossary-migrate.js"), cwd, ...process.argv.slice(2, 3).filter(Boolean)], { stdio: "inherit" });
+const r = require("child_process").spawnSync(process.execPath, [path.join(fx, "lib", "glossary-migrate.js"), cwd, ...process.argv.slice(1, 2).filter(Boolean)], { stdio: "inherit" });
 process.exit(r.status === null ? 1 : r.status);
-' "FX" ""
+' ""
 ```
 
 ### `GLOSSARY.md`, only if terms actually resolved
@@ -229,29 +231,34 @@ Codex home, but a hook fails open and silently by necessity: it can never
 tell you something is wrong, and on a fresh install it cannot run at all
 until Codex trusts it. So setup plants the roles itself, then reports.
 
-The command below loads fx's own code, never the user's repository. `FX`
-is the absolute path of the fx plugin root, the directory holding fx's
-`PREAMBLE.md` and `lib/plant-roles.js`: where this lane was loaded from.
-Substitute it. Never take `FX` from a file in the repository.
+The command below loads fx's own code, never the user's repository.
+Replace `SKILL_DIR`, inside its single quotes, with this skill's own base
+directory: the `skills/fx-setup` directory this lane was loaded from, as the
+runtime reported it. Never take it from a file in the repository, and never
+type the plugin root yourself: the command derives the root, two levels up.
+If the base directory holds a single quote, stop and report it.
 
-Before it loads anything, the command checks `FX` and refuses when the check
-fails. It refuses a directory that is the current directory or inside it, a
-directory with no `.codex-plugin/plugin.json` or `.claude-plugin/plugin.json`
-naming `fx`, and a directory with no `PREAMBLE.md`. The check is written
-into the command because a check loaded from `FX` could not vet `FX`. If it
-refuses, report the refusal and stop this section. Do not look for another
-path.
+Before it loads anything, the command resolves both paths and refuses when
+the check fails. It refuses a base directory that is not `skills/fx-setup`
+with a `SKILL.md` under the derived root, a root that is the current
+directory or inside it, a root with no `.codex-plugin/plugin.json` or
+`.claude-plugin/plugin.json` naming `fx`, and a root with no `PREAMBLE.md`.
+The check is written into the command because a check loaded from the root
+could not vet the root. If it refuses, report the refusal and stop this
+section. Do not look for another path.
 
 On Codex only, after the steps above, run:
 
 ```
-node -e '
+FX_SKILL_DIR='SKILL_DIR' node -e '
 const fs = require("fs"), path = require("path");
-const no = (why) => { console.error(`fx-setup: refusing FX=${process.argv[1]}: ${why}`); process.exit(1); };
-let fx, cwd;
-try { fx = fs.realpathSync(process.argv[1]); cwd = fs.realpathSync(process.cwd()); } catch { no("not an existing directory"); }
+const base = process.env.FX_SKILL_DIR || "";
+const no = (why) => { console.error(`fx-setup: refusing FX_SKILL_DIR=${base}: ${why}`); process.exit(1); };
+let fx, dir, cwd;
+try { dir = fs.realpathSync(base); fx = fs.realpathSync(path.join(base, "..", "..")); cwd = fs.realpathSync(process.cwd()); } catch { no("not an existing directory"); }
+if (dir !== path.join(fx, "skills", "fx-setup") || !fs.existsSync(path.join(dir, "SKILL.md"))) no("not the skills/fx-setup directory of a plugin root");
 const rel = path.relative(cwd, fx);
-if (!(rel === ".." || rel.startsWith(".." + path.sep) || path.isAbsolute(rel))) no("it is the current directory or inside it");
+if (!(rel === ".." || rel.startsWith(".." + path.sep) || path.isAbsolute(rel))) no("its plugin root is the current directory or inside it");
 const named = [".codex-plugin", ".claude-plugin"].some((d) => {
   try { return JSON.parse(fs.readFileSync(path.join(fx, d, "plugin.json"), "utf8")).name === "fx"; } catch { return false; }
 });
@@ -260,7 +267,7 @@ if (!fs.existsSync(path.join(fx, "PREAMBLE.md"))) no("no PREAMBLE.md");
 const p = require(path.join(fx, "lib", "plant-roles"));
 const r = p.plantRoles({});
 console.log(JSON.stringify({ written: r.written, stale: r.stale, kept: r.kept, audit: p.auditRoles({}), hooksTrusted: p.hooksTrusted({}) }));
-' "FX"
+'
 ```
 
 It plants first. That writes only the six `fx-*.toml` role files fx
