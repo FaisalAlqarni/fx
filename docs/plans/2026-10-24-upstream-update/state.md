@@ -185,3 +185,15 @@ Task 19: complete (commits 82c927f..8ce7fc0, review clean)
 Task 21: ran test_all (plan-mandated phase gate): ALL GREEN per report.
 S1: the controller holds the full installed fx-implement text (re-invoked this session), including Final review, Exit gate and Completion report, before tasks 21 to 23.
 Ruling: tasks 22 and 23 batched into one implementer and one review (budget mode); 22 commits first. Cost if wrong: a larger review unit.
+Task 22: dispatched 7acbb63 2026-10-25T00:14:19Z
+Task 23: dispatched 7acbb63 2026-10-25T00:14:19Z
+Task 21: minor (deferred): each criteria .md has an H1 above the three required `##` headings
+Task 21: minor (deferred): extra scenario-specific seventh tdd criterion overrides the user's explicit instruction and is not a mattpocock sign
+Task 21: minor (deferred): 'tagged logs removed' criterion is unobservable when no logs were added; add an n/a clause
+Task 21: confirmed ⚠️ resolved: the exit gate reruns check-all fresh.
+Task 21: cost unavailable (no transcript recorded)
+Task 21: complete (commits aa735e4..8730988, review clean)
+Coverage audit: 7 gaps, all owned but weakly asserted (findings/coverage-audit.md); tasks 10, 11 with 08, 12, 13, 15, 17, 18, 19. Cleared: all 20 stories and every Implementation Decisions bullet have an owner.
+Ruling: the 7 coverage gaps go to the final branch review as named checks (one line each, from findings/coverage-audit.md); confirmed gaps are fixed in the final review's single fix wave with a text assertion each. Why: budget mode; no behaviour is missing. Cost if wrong: a rule present in text but unasserted, caught by the final review.
+Tasks 22, 23: ran test_all (plan-mandated phase gate): ALL GREEN per report (exit 0).
+Task 22: concern ruled: ADR 0045 had no status line; adding "Status: accepted. Amended by 0058." is within the owner's status-line-only rule.
