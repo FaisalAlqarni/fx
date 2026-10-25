@@ -108,10 +108,9 @@ so those rulings hold without the owner repeating them.
   commit on the dispatch line, **before any re-dispatch**. Commits there mean
   the work was done: it goes to review, not to a new implementer. A second
   implementer on committed work repeats the task at full price.
-- A task with a `Task <NN>: parked:` line is never re-dispatched, and the
-  tasks it blocks are skipped and named in the completion report. A parked
-  task has dispatched with no `complete` line, and re-dispatching it is the
-  loop the cap exists to stop.
+- A task whose last `parked:` line has no later `unparked:` line is never re-dispatched, and the tasks it blocks are skipped and named in the completion report. Re-dispatching it is the
+  loop the cap exists to stop. A task with an `unparked:` line after its last `parked:` line is dispatchable: see
+  [status.md](./references/status.md).
 - A ledger whose first line names a **different** plan is another plan's
   progress. Leave it alone and start your own.
 - **After compaction, trust the ledger and `git log` over your own

@@ -123,6 +123,12 @@ check(describePlans(repo({ 'a': { design: true } })) === null,
   check(/inprogress/.test(out || ''), 'a sibling plan with a readable in-progress ledger is still named', out);
 }
 
+// ---- a paused plan has parked work and stays named ----
+{
+  const out = describePlans(repo({ 'paused': { tasks: ['01-a.md', '02-b.md'], state: '# ledger\nTask 01: complete\nTask 02: parked: needs you: x\nPlan paused: tasks 01 to 01 complete, 1 parked, needs you\n' } }));
+  check(/paused/.test(out || ''), 'a plan with a Plan paused: line is still named', out);
+}
+
 // ---- never throws, whatever it finds ----
 {
   const cwd = path.join(root, 'weird');

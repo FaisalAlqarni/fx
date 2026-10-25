@@ -31,3 +31,15 @@ A declined item that a ruling parks is a smaller case: write
 item shows under `Needs you`.
 
 The completion report lists every needs-you item.
+
+## Unparking
+
+When the owner answers a parked task, in this session or a later one:
+
+1. Append `Task <NN>: unparked: <owner answer>` to the ledger (without
+   backticks).
+2. Re-dispatch the task with the answer in its brief, and the tasks it
+   blocked after it. A resumed controller does the same for any task whose
+   last `parked:` line is followed by an `unparked:` line.
+
+The owner's answer is the only thing that unparks a task.

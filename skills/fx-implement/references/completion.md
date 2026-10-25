@@ -1,11 +1,19 @@
 ## Write the plan-complete line
 
 Once the exit gate has passed, append one line to the ledger before the
-completion report: `lib/plan-state.js` looks for it to stop naming a finished
-plan in a later session's preamble.
+completion report: `lib/plan-state.js` looks for `Plan complete:` to stop
+naming a finished plan in a later session's preamble. Write it only when no
+task is parked:
 
 ```
-Plan complete: tasks <first> to <last> complete, <K> parked, final review <clean|fixed>
+Plan complete: tasks <first> to <last> complete, final review <clean|fixed>
+```
+
+With any task still parked, write this instead, so later sessions keep naming
+the plan until the parked work is answered and done:
+
+```
+Plan paused: tasks <a> to <b> complete, <K> parked, needs you
 ```
 
 **Commit it yourself, now.** This is the last write of the build: no task
@@ -43,7 +51,8 @@ wait**. Report:
 
 ### Then ask, and stop
 
-Present exactly these, and wait for an answer. Do not recommend one, do not
+End the report with one line: "`/fx:fx-retro` reviews this build." Then
+present exactly these, and wait for an answer. Do not recommend one, do not
 explain them, and do not start any of them.
 
 ```markdown
@@ -55,8 +64,6 @@ The work is on `<branch>` in `<worktree path>`. What next?
 
 Which?
 ```
-
-End the report with one line: "`/fx:fx-retro` reviews this build."
 
 **Why an offer rather than a rule.** A prohibition invites the reading that
 found its way around it: a measured run treated "commit it" as the say-so that

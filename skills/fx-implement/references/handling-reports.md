@@ -18,7 +18,7 @@ tokens. Append the parked line, tell the owner, and take the next unblocked
 task:
 
 ```
-`Task <NN>: parked: <one-line reason>`
+`Task <NN>: parked: needs you: <one-line reason>`
 ```
 
 (Write the line without the backticks.)

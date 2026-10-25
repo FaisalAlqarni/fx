@@ -13,7 +13,7 @@ const cost = ref('cost.md');
 
 assert.ok(impl.includes('`Task <NN>: dispatched <BASE7> <ISO-8601>`'), 'the dispatch line is defined');
 assert.ok(impl.includes('`Task <NN>: cost <tokens> tokens, <minutes> min, <dispatches> dispatches, fx-tdd <k>/<i>`'), 'the cost line is defined');
-assert.ok(handling.includes('`Task <NN>: parked: <one-line reason>`'), 'the parked line is defined');
+assert.ok(handling.includes('`Task <NN>: parked: needs you: <one-line reason>`'), 'the parked line has the needs-you shape status.md uses');
 assert.ok(cost.includes('../../scripts/build-cost'), 'the cost step names the script by its path from the skill');
 assert.ok(cost.includes('fx-tdd 0/'), 'a task whose implementer skipped fx-tdd is flagged to the reviewer');
 assert.ok(impl.includes('git log <BASE>..HEAD'), 'resume checks the task commits before re-dispatching');
@@ -36,8 +36,9 @@ assert.ok(rev.includes('When the controller cost line reads `fx-tdd 0/<i>`, a re
   'the reviewer template states what fx-tdd 0/<i> means');
 assert.ok(cost.includes('[COST_LINE]'), 'section 3 passes the cost line into the reviewer dispatch');
 // Coverage-audit G2: resume and the re-dispatch cap meet.
-assert.ok(impl.includes('A task with a `Task <NN>: parked:` line is never re-dispatched, and the tasks it blocks are skipped and named in the completion report.'),
-  'resume never re-dispatches a parked task');
+assert.ok(impl.includes('A task whose last `parked:` line has no later `unparked:` line is never re-dispatched, and the tasks it blocks are skipped and named in the completion report.'),
+  'resume never re-dispatches a task while it is parked');
+assert.ok(impl.includes('A task with an `unparked:` line after its last `parked:` line is dispatchable'), 'resume treats an unparked task as dispatchable');
 assert.ok(handling.includes('Each re-dispatch appends its own `dispatched` line, so the count is the number of those lines.'),
   'the re-dispatch count is the number of dispatched lines');
 
@@ -67,5 +68,16 @@ const menu = completion.slice(completion.indexOf('1. Merge it into'), completion
 assert.ok(menu.includes('1. Merge it into') && menu.includes('2. Push the branch and open a pull request') && menu.includes('3. Leave it as it is, I will handle it'), 'the menu has three options');
 assert.ok(!menu.includes('4. '), 'the menu offers no fourth option');
 assert.ok(completion.includes('Discard only when the owner asks for it: list the branch, its commits and the worktree path, and act only after the owner types the word discard.'), 'discard needs the listing and the typed word');
+
+// Final review: a parked task resumes when the owner answers, and a plan with a
+// parked task is paused, not complete.
+assert.ok(status.includes('Task <NN>: unparked: <owner answer>'), 'status.md defines the unparked line');
+assert.ok(/re-dispatch the task/i.test(status), 'status.md says the unparked task is re-dispatched');
+assert.ok(completion.includes('Plan complete: tasks <first> to <last> complete, final review <clean|fixed>'), 'the plan-complete line carries no parked count');
+assert.ok(completion.includes('Plan paused: tasks <a> to <b> complete, <K> parked, needs you'), 'completion.md defines the plan-paused line');
+assert.ok(completion.includes('only when no task is parked'), 'Plan complete is written only with nothing parked');
+// The retro offer comes before the menu, so it cannot read as a fourth option.
+const retro = completion.indexOf('`/fx:fx-retro` reviews this build');
+assert.ok(retro >= 0 && retro < completion.indexOf('1. Merge it into'), 'the fx-retro line comes before the menu');
 
 console.log('ledger-lines: OK');
