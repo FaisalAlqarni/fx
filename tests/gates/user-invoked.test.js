@@ -40,6 +40,12 @@ assert.deepStrictEqual(
   HIDDEN,
   "the opencode plugins hide exactly the lanes whose frontmatter says disable-model-invocation"
 );
+{
+  const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
+  const lanes = fs.readdirSync(path.join(root, "skills")).filter((d) => fs.existsSync(path.join(root, "skills", d, "SKILL.md")) && !HIDDEN.includes(d)).length;
+  const said = `${WORDS[lanes - 2] ?? ""} of the ${WORDS[lanes] ?? ""} work on their own`;
+  assert.ok(fs.readFileSync(path.join(root, "README.md"), "utf8").toLowerCase().includes(said), `README.md says "${said}"`);
+}
 for (const plugin of ["fx-opencode-v1.js", "fx-opencode-v2.js"]) {
   assert.ok(!/fx-critique/.test(fs.readFileSync(path.join(root, "plugins", plugin), "utf8")), `${plugin} imports the lane list, it keeps no copy`);
 }

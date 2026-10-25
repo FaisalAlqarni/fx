@@ -85,7 +85,7 @@ the pipeline above.
 
 ## The skills
 
-Eleven of the thirteen work on their own, with no plan: only `fx-plan` and
+Twelve of the fourteen work on their own, with no plan: only `fx-plan` and
 `fx-implement` need an artifact to start from.
 
 | Skill | Use when |
