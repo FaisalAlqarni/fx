@@ -177,3 +177,11 @@ Task 18: complete (commits cb99f8d..109d462, review clean; Not run line owned by
 Task 20: cost unavailable (no transcript recorded)
 Task 20: complete (commits 109d462..6cb165b, review clean)
 Task 19: concern: conformance row 09 (skill count) was failing at HEAD after task 18 added two commands, outside task 18's test_scope; task 19 set it to 20 and fixed row 13's comment. The task 21 phase gate (check-all) is the check. Cost if wrong: a red row, caught there.
+Task 21: dispatched aa735e4 2026-10-25T00:10:47Z
+Task 19: minor (deferred): stale "seven lanes" prose and error strings in conformance rows 09 and 13 now that eight lanes are hidden
+Task 19: minor (deferred): completion.md offer line sits after the "wait for an answer" menu, may read as a fourth option
+Task 19: cost unavailable (no transcript recorded)
+Task 19: complete (commits 82c927f..8ce7fc0, review clean)
+Task 21: ran test_all (plan-mandated phase gate): ALL GREEN per report.
+S1: the controller holds the full installed fx-implement text (re-invoked this session), including Final review, Exit gate and Completion report, before tasks 21 to 23.
+Ruling: tasks 22 and 23 batched into one implementer and one review (budget mode); 22 commits first. Cost if wrong: a larger review unit.
