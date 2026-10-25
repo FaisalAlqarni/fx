@@ -119,8 +119,10 @@ const no = (why) => { console.error(`fx-setup: refusing FX_SKILL_DIR=${base}: ${
 let fx, dir, cwd;
 try { dir = fs.realpathSync(base); fx = fs.realpathSync(path.join(base, "..", "..")); cwd = fs.realpathSync(process.cwd()); } catch { no("not an existing directory"); }
 if (dir !== path.join(fx, "skills", "fx-setup") || !fs.existsSync(path.join(dir, "SKILL.md"))) no("not the skills/fx-setup directory of a plugin root");
-const rel = path.relative(cwd, fx);
-if (!(rel === ".." || rel.startsWith(".." + path.sep) || path.isAbsolute(rel))) no("its plugin root is the current directory or inside it");
+let top = cwd;
+try { top = fs.realpathSync(require("child_process").execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim()); } catch {}
+const within = (d) => { const rel = path.relative(d, fx); return !(rel === ".." || rel.startsWith(".." + path.sep) || path.isAbsolute(rel)); };
+if (within(cwd) || within(top)) no("its plugin root is the current directory, the repository root or inside one of them");
 const named = [".codex-plugin", ".claude-plugin"].some((d) => {
   try { return JSON.parse(fs.readFileSync(path.join(fx, d, "plugin.json"), "utf8")).name === "fx"; } catch { return false; }
 });
@@ -138,9 +140,10 @@ process.exit(r.status === null ? 1 : r.status);
 Skip this step when `.fx.json` has `"scratch_migrate": "declined"` or `.scratch/`
 holds no Markdown file. Run the command from the glossary step above, with
 `scratch-migrate.js` in place of `glossary-migrate.js`, so it passes the same
-plugin-root check. With the last argument `""` it lists the moves, every pointer
-line it will change, the `.gitignore` line it will remove and the rollback, and
-changes nothing. Show the whole output. If it lists conflicts, report them and
+plugin-root check. With the last argument `""` it lists the moves (Markdown
+issue entries only), every pointer line it will change, the `.gitignore` line it
+will remove, the entries it leaves, the files to update by hand, a warning when
+ignored content will move, and the rollback, and changes nothing. Show the whole output. If it lists conflicts, report them and
 do not ask. Ask once. On yes, run it again with the last argument `"--apply"`,
 then show `git status --short` and tell the user to run
 `git add -- docs/issues` and commit; it commits nothing. On no, write
@@ -275,8 +278,10 @@ const no = (why) => { console.error(`fx-setup: refusing FX_SKILL_DIR=${base}: ${
 let fx, dir, cwd;
 try { dir = fs.realpathSync(base); fx = fs.realpathSync(path.join(base, "..", "..")); cwd = fs.realpathSync(process.cwd()); } catch { no("not an existing directory"); }
 if (dir !== path.join(fx, "skills", "fx-setup") || !fs.existsSync(path.join(dir, "SKILL.md"))) no("not the skills/fx-setup directory of a plugin root");
-const rel = path.relative(cwd, fx);
-if (!(rel === ".." || rel.startsWith(".." + path.sep) || path.isAbsolute(rel))) no("its plugin root is the current directory or inside it");
+let top = cwd;
+try { top = fs.realpathSync(require("child_process").execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim()); } catch {}
+const within = (d) => { const rel = path.relative(d, fx); return !(rel === ".." || rel.startsWith(".." + path.sep) || path.isAbsolute(rel)); };
+if (within(cwd) || within(top)) no("its plugin root is the current directory, the repository root or inside one of them");
 const named = [".codex-plugin", ".claude-plugin"].some((d) => {
   try { return JSON.parse(fs.readFileSync(path.join(fx, d, "plugin.json"), "utf8")).name === "fx"; } catch { return false; }
 });

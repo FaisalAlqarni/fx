@@ -59,9 +59,9 @@ function fakeRoot(dir, { manifest = true } = {}) {
   return dir;
 }
 const skillDir = (fx) => path.join(fx, "skills", "fx-setup");
-function run(base) {
+function run(base, cwd = repo) {
   const env = { ...process.env, HOME: s, TMPDIR: s, CODEX_HOME: path.join(s, "codex") };
-  return (0, import_child_process.spawnSync)("bash", ["-c", withBase(command, base)], { cwd: repo, env, encoding: "utf8" });
+  return (0, import_child_process.spawnSync)("bash", ["-c", withBase(command, base)], { cwd, env, encoding: "utf8" });
 }
 function refused(base, label) {
   const r = run(base);
@@ -124,4 +124,16 @@ assert.match(okScr.stdout, /nothing to move/);
 const unknown = runMig(skillDir(odd), repo, "plant-roles.js");
 assert.notStrictEqual(unknown.status, 0, "a script outside the two migrations is refused");
 assert.match(unknown.stderr, /refusing/i);
+const sub = path.join(repo, "app", "models");
+fs.mkdirSync(sub, { recursive: true });
+const fakeSib = fakeRoot(path.join(repo, "vendor", "fx4"));
+fs.writeFileSync(path.join(fakeSib, "lib", "scratch-migrate.js"), `require('fs').writeFileSync(${JSON.stringify(marker + "-sib")}, 'x');`);
+const badSib = runMig(skillDir(fakeSib), sub, "scratch-migrate.js");
+assert.notStrictEqual(badSib.status, 0, "a root inside the repository, run from a subdirectory, is refused");
+assert.match(badSib.stderr, /refusing/i);
+assert.ok(!fs.existsSync(marker + "-sib"), "and no migration code was loaded from it");
+const badPlant = run(skillDir(fakeSib), sub);
+assert.notStrictEqual(badPlant.status, 0, "plant-roles: a root inside the repository, run from a subdirectory, is refused");
+assert.match(badPlant.stderr, /refusing/i);
+assert.ok(!fs.existsSync(marker), "plant-roles: and nothing was loaded from it");
 console.log("fx-setup-root-check: passed");

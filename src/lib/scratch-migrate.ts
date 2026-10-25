@@ -12,12 +12,14 @@ export interface ScratchPlan {
   moves: { from: string; to: string; tracked: boolean }[];
   edits: { file: string; line: number; before: string; after: string }[];
   gitignore: { file: string; line: number; text: string } | null;
+  byHand: string[];
+  left: string[];
   conflicts: string[];
   rollback: string[];
 }
 
 const OLD = /(?<![\w.\/-])\.scratch\//g;
-const IGNORE_LINES = new Set(['.scratch', '.scratch/', '/.scratch', '/.scratch/']);
+const IGNORE_LINES = new Set(['.scratch', '.scratch/', '/.scratch', '/.scratch/', '.scratch/*', '/.scratch/*']);
 const git = (root: string, ...args: string[]) => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: 'pipe' });
 const abs = (root: string, rel: string) => path.join(root, rel);
 const q = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`;
@@ -28,10 +30,24 @@ function filesUnder(root: string, rel: string): string[] {
   return fs.readdirSync(abs(root, rel)).sort().flatMap((n) => filesUnder(root, `${rel}/${n}`));
 }
 
+// Writes a temp file beside the target, then renames it over the target, so a failed
+// write leaves the old file whole. A read-only target is refused, as a direct write would be.
+function writeWhole(file: string, text: string): void {
+  fs.accessSync(file, fs.constants.W_OK);
+  const tmp = `${file}.fx-tmp-${process.pid}`;
+  try {
+    fs.writeFileSync(tmp, text, { mode: fs.statSync(file).mode });
+    fs.renameSync(tmp, file);
+  } catch (e) {
+    fs.rmSync(tmp, { force: true });
+    throw e;
+  }
+}
+
 const isLink = (root: string, rel: string) => fs.lstatSync(abs(root, rel), { throwIfNoEntry: false })?.isSymbolicLink() ?? false;
 
 export function planScratchMigration(root: string): ScratchPlan {
-  const plan: ScratchPlan = { moves: [], edits: [], gitignore: null, conflicts: [], rollback: [] };
+  const plan: ScratchPlan = { moves: [], edits: [], gitignore: null, byHand: [], left: [], conflicts: [], rollback: [] };
   if (isLink(root, '.scratch')) { plan.conflicts.push('.scratch is a symlink'); return plan; }
   if (!fs.existsSync(abs(root, '.scratch'))) return plan;
   const names = fs.readdirSync(abs(root, '.scratch')).sort();
@@ -47,12 +63,19 @@ export function planScratchMigration(root: string): ScratchPlan {
     const from = `.scratch/${name}`;
     const to = `docs/issues/${name}`;
     if (fs.lstatSync(abs(root, from)).isSymbolicLink()) { problems.push(`${from} is a symlink`); continue; }
-    if (fs.existsSync(abs(root, to))) problems.push(`${to} already exists`);
     const files = filesUnder(root, from);
+    // Drafts and test material are not issues (ADR 0060 decision 3): they stay where they are.
+    if (files.some((f) => !f.endsWith('.md'))) { plan.left.push(from); continue; }
+    if (fs.existsSync(abs(root, to))) problems.push(`${to} already exists`);
     const n = files.filter((f) => tracked.has(f)).length;
     if (n && n < files.length) problems.push(`${from} mixes tracked and untracked files`);
     plan.moves.push({ from, to, tracked: n > 0 });
   }
+
+  // Reads src now; the edit runs on file, which is src unless the move puts it elsewhere.
+  const editsFor = (src: string, file: string) => fs.readFileSync(abs(root, src), 'utf8').split('\n').forEach((before, i) => {
+    if (before.match(OLD)) plan.edits.push({ file, line: i + 1, before, after: before.replace(OLD, 'docs/issues/') });
+  });
 
   // Pointers: the agent files, repo.md and tracked docs outside plans, ADRs and issues.
   const candidates = new Set(['CLAUDE.md', 'AGENTS.md', 'repo.md'].filter((f) => tracked.has(f)));
@@ -63,15 +86,31 @@ export function planScratchMigration(root: string): ScratchPlan {
     const p = abs(root, f);
     if (isLink(root, f)) { problems.push(`${f} is a symlink`); continue; }
     if (!fs.existsSync(p)) continue;
-    fs.readFileSync(p, 'utf8').split('\n').forEach((before, i) => {
-      if (before.match(OLD)) plan.edits.push({ file: f, line: i + 1, before, after: before.replace(OLD, 'docs/issues/') });
-    });
+    editsFor(f, f);
+  }
+
+  // Moved issue files cite each other by .scratch/ path; the edit runs after the move, at the new path.
+  for (const m of plan.moves) {
+    for (const f of filesUnder(root, m.from).filter((x) => x.endsWith('.md') && fs.lstatSync(abs(root, x)).isFile())) {
+      const file = m.to + f.slice(m.from.length);
+      editsFor(f, file);
+    }
+  }
+
+  // Any other file naming .scratch/ (.claude/CLAUDE.md, engine glossaries, .fx.json) is listed, not edited.
+  const others = new Set([...tracked, '.fx.json'].filter((f) =>
+    !candidates.has(f) && !f.startsWith('.scratch/') && !/^docs\/(plans|adr|issues)\//.test(f) && /\.(md|json)$/.test(f)));
+  for (const f of [...others].sort()) {
+    const st = fs.lstatSync(abs(root, f), { throwIfNoEntry: false });
+    if (st?.isFile() && fs.readFileSync(abs(root, f), 'utf8').match(OLD)) plan.byHand.push(f);
   }
 
   const gi = abs(root, '.gitignore');
-  if (fs.existsSync(gi)) {
-    const i = fs.readFileSync(gi, 'utf8').split('\n').findIndex((l) => IGNORE_LINES.has(l));
-    if (i >= 0) plan.gitignore = { file: '.gitignore', line: i + 1, text: fs.readFileSync(gi, 'utf8').split('\n')[i] as string };
+  // With entries left behind, the ignore line stays so they do not show up as untracked.
+  if (!plan.left.length && fs.existsSync(gi)) {
+    const lines = fs.readFileSync(gi, 'utf8').split('\n').map((l) => l.replace(/\r$/, '').trimEnd());
+    const i = lines.findIndex((l) => IGNORE_LINES.has(l));
+    if (i >= 0) plan.gitignore = { file: '.gitignore', line: i + 1, text: lines[i] as string };
   }
   plan.conflicts = problems.sort();
   plan.rollback = steps(root, plan).reverse().flatMap((s) => s.rollback);
@@ -118,9 +157,9 @@ function steps(root: string, plan: ScratchPlan): Step[] {
         original = fs.readFileSync(abs(root, file), 'utf8');
         const lines = original.split('\n');
         for (const e of list) lines[e.line - 1] = e.after;
-        fs.writeFileSync(abs(root, file), lines.join('\n'));
+        writeWhole(abs(root, file), lines.join('\n'));
       },
-      undo: () => fs.writeFileSync(abs(root, file), original),
+      undo: () => writeWhole(abs(root, file), original),
       rollback: list.map((e) => `sed -i ${q(`${e.line}s#docs/issues/#.scratch/#g`)} ${q(file)}`),
     });
   }
@@ -133,9 +172,9 @@ function steps(root: string, plan: ScratchPlan): Step[] {
         original = fs.readFileSync(abs(root, g.file), 'utf8');
         const lines = original.split('\n');
         lines.splice(g.line - 1, 1);
-        fs.writeFileSync(abs(root, g.file), lines.join('\n'));
+        writeWhole(abs(root, g.file), lines.join('\n'));
       },
-      undo: () => fs.writeFileSync(abs(root, g.file), original),
+      undo: () => writeWhole(abs(root, g.file), original),
       rollback: [`sed -i ${q(`${g.line}i ${g.text}`)} ${q(g.file)}`],
     });
   }
@@ -185,6 +224,11 @@ function main(): void {
   for (const m of plan.moves) console.log(`move ${m.from} -> ${m.to} (${m.tracked ? 'git mv' : 'filesystem move'})`);
   for (const e of plan.edits) console.log(`edit ${e.file}:${e.line}: ${e.before} -> ${e.after}`);
   if (plan.gitignore) console.log(`remove ${plan.gitignore.file}:${plan.gitignore.line}: ${plan.gitignore.text}`);
+  for (const f of plan.left) console.log(`leave ${f}: not only Markdown`);
+  for (const f of plan.byHand) console.log(`update by hand: ${f}`);
+  if (plan.moves.some((m) => !m.tracked)) {
+    console.log('warning: untracked or ignored .scratch/ content was kept out of git on purpose; read it for private notes or secrets before `git add -- docs/issues`');
+  }
   console.log('rollback:');
   for (const r of plan.rollback) console.log(r);
 }

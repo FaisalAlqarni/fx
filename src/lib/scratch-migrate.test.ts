@@ -140,4 +140,66 @@ if (process.getuid && process.getuid() === 0) {
   fs.symlinkSync(outside, path.join(f, 'docs/issues'));
   assert.deepStrictEqual(planScratchMigration(f).conflicts, ['docs/issues is a symlink']);
 }
+// Ignored or untracked content was kept out of git on purpose: the dry run says to check it first.
+{
+  const d = repo({ '.gitignore': '.scratch/\n' }, { '.scratch/feat/a.md': 'a' });
+  const dry = run(d);
+  assert.ok(/kept out of git on purpose.*private notes or secrets.*before `git add -- docs\/issues`/.test(dry.stdout), dry.stdout);
+  const t = repo({ '.scratch/feat/a.md': 'a' });
+  assert.ok(!run(t).stdout.includes('kept out of git'), 'no warning when every entry is tracked');
+}
+// A moved issue file that cites .scratch/ is rewritten at its new path.
+{
+  const d = repo({}, { '.scratch/feat/01-a.md': 'title\nsee .scratch/feat/02-b.md\n', '.scratch/feat/02-b.md': 'b' });
+  const plan = planScratchMigration(d);
+  assert.deepStrictEqual(plan.edits, [{ file: 'docs/issues/feat/01-a.md', line: 2, before: 'see .scratch/feat/02-b.md', after: 'see docs/issues/feat/02-b.md' }]);
+  applyScratchMigration(d);
+  assert.strictEqual(read(d, 'docs/issues/feat/01-a.md'), 'title\nsee docs/issues/feat/02-b.md\n');
+}
+// Other files naming .scratch/ are listed for a hand update, not edited.
+{
+  const d = repo({ '.claude/CLAUDE.md': 'see .scratch/x\n', 'engines/core/CONTEXT.md': 'issues: .scratch/\n', 'docs/adr/0001-x.md': 'was .scratch/\n', 'lib/a.rb': 'no mention\n' },
+    { '.scratch/feat/a.md': 'a', '.fx.json': '{"issues": ".scratch/"}\n' });
+  const plan = planScratchMigration(d);
+  assert.deepStrictEqual(plan.byHand, ['.claude/CLAUDE.md', '.fx.json', 'engines/core/CONTEXT.md']);
+  const dry = run(d);
+  assert.ok(dry.stdout.includes('update by hand: .claude/CLAUDE.md\n'), dry.stdout);
+  applyScratchMigration(d);
+  assert.strictEqual(read(d, '.claude/CLAUDE.md'), 'see .scratch/x\n');
+}
+// Only Markdown issue entries move; any other entry is listed and left, and so is the ignore line.
+{
+  const d = repo({ '.gitignore': '.scratch/\n' }, { '.scratch/feat/a.md': 'a', '.scratch/draft.txt': 'd', '.scratch/mixed/a.md': 'a', '.scratch/mixed/b.png': 'b' });
+  const plan = planScratchMigration(d);
+  assert.deepStrictEqual(plan.moves.map((m) => m.from), ['.scratch/feat']);
+  assert.deepStrictEqual(plan.left, ['.scratch/draft.txt', '.scratch/mixed']);
+  assert.strictEqual(plan.gitignore, null);
+  assert.ok(run(d).stdout.includes('leave .scratch/draft.txt: not only Markdown\n'));
+  applyScratchMigration(d);
+  assert.strictEqual(read(d, '.scratch/draft.txt'), 'd');
+  assert.strictEqual(read(d, '.scratch/mixed/b.png'), 'b');
+  assert.strictEqual(read(d, '.gitignore'), '.scratch/\n');
+}
+// The ignore line is found with CRLF endings and in its .scratch/* form, and removed whole.
+{
+  const d = repo({ '.gitignore': 'node_modules\r\n.scratch/\r\nlog\r\n' }, { '.scratch/feat/a.md': 'a' });
+  assert.deepStrictEqual(planScratchMigration(d).gitignore, { file: '.gitignore', line: 2, text: '.scratch/' });
+  applyScratchMigration(d);
+  assert.strictEqual(read(d, '.gitignore'), 'node_modules\r\nlog\r\n');
+  const e = repo({ '.gitignore': '/.scratch/*\n' }, { '.scratch/feat/a.md': 'a' });
+  assert.deepStrictEqual(planScratchMigration(e).gitignore, { file: '.gitignore', line: 1, text: '/.scratch/*' });
+}
+// A pointer write that fails part way (a file size limit) leaves the file whole, so "undone" is true.
+if (spawnSync('prlimit', ['--version']).status !== 0) {
+  console.log('scratch-migrate.test.js: skipping the partial-write case, prlimit is missing');
+} else {
+  const body = 'see .scratch/x\n' + 'a long line that will not fit under the size limit\n'.repeat(2000);
+  const d = repo({ '.gitignore': '.scratch/\n', 'CLAUDE.md': body }, { '.scratch/feat/a.md': 'a' });
+  const before = snapshot(d);
+  const r = spawnSync('prlimit', ['--fsize=8192', 'node', script, d, '--apply'], { encoding: 'utf8' });
+  assert.strictEqual(r.status, 1, r.stderr);
+  assert.ok(r.stderr.startsWith('scratch-migrate: failed at edit CLAUDE.md') && r.stderr.trim().endsWith('; undone'), r.stderr);
+  assert.strictEqual(read(d, 'CLAUDE.md'), body);
+  assert.strictEqual(snapshot(d), before);
+}
 console.log('scratch-migrate.test.js: ok');
