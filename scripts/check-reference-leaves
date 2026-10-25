@@ -1,21 +1,24 @@
 #!/usr/bin/env bash
-# Task 03's gate: references are leaves. A lane pulls one file, not a graph.
-# Fails while any reference file names another reference file.
+# References are leaves. A lane pulls one file, not a graph.
+# Fails while a reference file names, in backticks, another file that exists
+# anywhere under references/ (vendor excluded).
+#
+#     scripts/check-reference-leaves [root]     default: the repository root
 set -u
-cd "$(dirname "$0")/.."
+root="${1:-$(cd "$(dirname "$0")/.." && pwd)}"
+cd "$root" || exit 2
 
 fail=0
 while IFS= read -r src; do
   while IFS= read -r hit; do
     b=$(basename "$hit")
     [ "$b" = "$(basename "$src")" ] && continue
-    if [ -e "references/vocab/$b" ] || [ -e "references/stacks/$b" ] \
-       || [ -e "references/testing/$b" ] || [ -e "references/$b" ]; then
+    if [ -n "$(find references -path references/vendor -prune -o -name "$b" -type f -print -quit)" ]; then
       echo "  $src -> $b"
       fail=$((fail + 1))
     fi
   done < <(grep -ohE '`[A-Za-z0-9/._-]+\.md`' "$src" | tr -d '`' | sort -u)
-done < <(find references -name '*.md' | sort)
+done < <(find references -path references/vendor -prune -o -name '*.md' -type f -print | sort)
 
 if [ "$fail" -ne 0 ]; then
   echo "FAIL: $fail reference-to-reference link(s)"

@@ -85,7 +85,7 @@ the pipeline above.
 
 ## The skills
 
-Ten of the twelve work on their own, with no plan: only `fx-plan` and
+Eleven of the thirteen work on their own, with no plan: only `fx-plan` and
 `fx-implement` need an artifact to start from.
 
 | Skill | Use when |
@@ -96,6 +96,7 @@ Ten of the twelve work on their own, with no plan: only `fx-plan` and
 | `fx-tdd` | writing or changing code with logic, in any language |
 | `fx-review` | a diff, branch or PR needs checking |
 | `fx-architecture` | the structure of existing code is the problem |
+| `fx-adr` | a decision should be recorded, superseded or checked as an ADR |
 | `fx-design` | a screen or component, and how it looks |
 | `fx-debug` | a bug, a test failure, anything unexpected |
 | `fx-humanize` | prose reads like a brochure |
@@ -239,14 +240,15 @@ opencode 2.x shows no notice.
 ## Layout
 
 ```
-skills/       20: 10 lanes, prototype and research, and 8 you invoke yourself:
+skills/       21: 11 lanes, prototype and research, and 8 you invoke yourself:
               fx-audit, plus fx-setup, fx-critique, fx-grill, fx-handoff,
               fx-pr, fx-retro and fx-what, generated from commands/
 agents/       6: 5 review lenses plus the devil's advocate, all read-only
 codex/agents/ the same 6 as Codex role files, generated
 commands/     7: fx-setup, fx-critique, fx-grill, fx-handoff, fx-pr, fx-retro,
               fx-what
-references/   loaded on demand by a lane, never selectable
+references/   loaded on demand by a lane, never selectable; templates/ holds the
+              design, ADR, PR, retro and bug report shapes
 hooks/        Claude Code: hooks.json, fx-context.js, fx-pretooluse.js, fx-turn.js
               Codex: fx-codex.js, wired by the root hooks.json
 plugins/      opencode: fx-opencode-v1.js (1.x), fx-opencode-v2.js (2.x)

@@ -155,13 +155,8 @@ and give an opinionated recommendation.
   term there. Create the file lazily if it doesn't exist.
 - **Sharpening a fuzzy term during the conversation?** Update `GLOSSARY.md`
   right there: never batched.
-- **User rejects the candidate with a load-bearing reason?** Offer an ADR:
-  *"Want me to record this so future architecture reviews don't re-suggest
-  it?"* **Only offer when the reason would actually be needed by a future
-  explorer.** Skip ephemeral reasons ("not worth it right now") and
-  self-evident ones. An ADR passes all three tests: hard to reverse ·
-  surprising without context · the result of a real trade-off, or it isn't
-  written.
+- **User rejects the candidate with a load-bearing reason?** Offer `fx-adr` when
+  the reason passes the three tests in `domain-modeling.md`.
 
 ## 4. Handoff
 

@@ -177,32 +177,10 @@ to record beyond "we did the obvious thing."
   GraphQL and picked REST for subtle reasons? Record it, or someone suggests
   GraphQL again in six months.
 
-### ADR format
-
-`docs/adr/NNNN-slug.md`, sequential. Scan the directory for the highest number
-and increment.
-
-```markdown
-# <Short title of the decision>
-
-<1 to 3 sentences: what's the context, what did we decide, and why.>
-```
-
-**That's it.** An ADR can be a single paragraph. The value is in recording
-*that* a decision was made and *why*, not in filling out sections.
-
-Optional, only when they add genuine value: most ADRs need none:
-
-- **Status** frontmatter (`proposed | accepted | deprecated | superseded by
-  ADR-NNNN`): useful when decisions get revisited
-- **Considered Options**: only when the rejected alternatives are worth
-  remembering
-- **Consequences**: only when non-obvious downstream effects need calling out
-
 ## Where this is used
 
 `fx-brainstorm` (terms resolving mid-interview) · `fx-architecture` (naming a
 deepened module, recording a rejection so future reviews don't re-suggest it) ·
-`fx-plan` (task titles use the glossary's vocabulary).
+`fx-plan` (task titles use the glossary's vocabulary) · `fx-adr` writes the ADR.
 
 An ADR in the area you're touching **records a decision not to re-litigate.**

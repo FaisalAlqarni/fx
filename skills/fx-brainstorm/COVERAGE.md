@@ -12,7 +12,7 @@ Renamed to GLOSSARY.md and GLOSSARY-MAP.md following mattpocock-skills 1.3.0.
 
 Verdicts: **K** kept inline · **G** kept in `../../references/vocab/grilling.md` ·
 **D** kept in `../../references/vocab/domain-modeling.md` · **T** kept in
-`../../references/design-template.md` · **V** copied verbatim (visual companion) ·
+`../../references/templates/design-template.md` · **V** copied verbatim (visual companion) ·
 **S** superseded · **X** dropped.
 A claim with no verdict is a build error.
 
@@ -125,7 +125,7 @@ A claim with no verdict is a build error.
 |---|---:|
 | Kept inline in `fx-brainstorm` | 92 |
 | Kept in `../../references/vocab/grilling.md` | 14 |
-| Kept in `../../references/design-template.md` | 24 |
+| Kept in `../../references/templates/design-template.md` | 24 |
 | Kept in `../../references/vocab/domain-modeling.md` | (whole source) |
 | Copied verbatim (visual companion + scripts) | 1 + 5 files |
 | Superseded by an explicit decision | 20 |

@@ -307,7 +307,7 @@ refuse to write a test at an unconfirmed seam.
 ## 7. Write the design document
 
 `docs/plans/YYYY-MM-DD-<slug>/design.md`, always a directory.
-Template: `../../references/design-template.md`.
+Template: `../../references/templates/design-template.md`.
 
 Use the domain glossary's vocabulary throughout and respect the ADRs in the
 area you're touching.
@@ -361,6 +361,9 @@ user's approval.
 ## 9. Handoff
 
 Approved → **`fx-plan`. Do not invoke any other skill.**
+
+A decision made here that passes the three ADR tests in
+`../../references/vocab/domain-modeling.md`: offer `fx-adr` in the same line.
 
 ## Red flags: these thoughts mean you are rationalizing
 

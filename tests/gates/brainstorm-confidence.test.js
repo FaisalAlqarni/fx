@@ -46,7 +46,7 @@ assert.ok(!arch.includes("Propose 2 to 3 approaches"), "approaches are not a sep
 assert.ok(!/\| "I'm confident, I'll show approaches in the same message" \|/.test(skill), "the red-flag row against one message is gone");
 assert.ok(!skill.includes("create a task for each item on your path"), "no task item per checklist step");
 assert.ok(skill.includes("seams included"), "design.md is reviewed once, seams included");
-const tpl = fs.readFileSync(path.join(__dirname, "..", "..", "references", "design-template.md"), "utf8");
+const tpl = fs.readFileSync(path.join(__dirname, "..", "..", "references", "templates", "design-template.md"), "utf8");
 assert.ok(tpl.includes("**Approved:**") && !tpl.includes("extremely extensive"), "template: approval line, complete stories");
 const fxPlan = fs.readFileSync(path.join(__dirname, "..", "..", "skills", "fx-plan", "SKILL.md"), "utf8");
 assert.ok(fxPlan.slice(fxPlan.indexOf("## 1."), fxPlan.indexOf("## 2.")).includes("**Approved:**"), "fx-plan skips the restate on an approved design");

@@ -1,0 +1,1 @@
+We just decided to keep Postgres as the source of truth and ClickHouse optional. Record this decision.

@@ -55,6 +55,13 @@ for (const name of ['fx-critique', 'fx-grill', 'fx-handoff', 'fx-pr', 'fx-retro'
     `${name}: a one-level citation in a skill body breaks check-paths`);
 }
 
+// fx-adr is a model-selectable lane.
+{
+  const adr = path.join(root, 'skills', 'fx-adr', 'SKILL.md');
+  assert.ok(fs.existsSync(adr), 'skills/fx-adr/SKILL.md exists');
+  assert.ok(!/^disable-model-invocation:/m.test(frontmatter(adr).head), 'fx-adr is model-selectable');
+}
+
 // Nothing else is hidden. Check the FRONTMATTER only: skills/fx-authoring
 // legitimately documents this field in its body, and matching the whole file
 // makes this assertion red against correct content.
@@ -139,9 +146,11 @@ for (const name of ['fx-critique', 'fx-grill', 'fx-handoff', 'fx-pr', 'fx-retro'
 
 // Final review I5, gap 6: what the fx-pr and fx-retro commands promise.
 const pr = fs.readFileSync(path.join(root, 'skills', 'fx-pr', 'SKILL.md'), 'utf8');
-for (const h of ['## What and why', '## Changes', '## Evidence', '## Merge danger']) assert.ok(pr.includes(`\n${h}\n`), `fx-pr drafts the ${h} section`);
+const prTemplate = fs.readFileSync(path.join(root, 'references', 'templates', 'pr-template.md'), 'utf8');
+assert.ok(pr.includes('references/templates/pr-template.md'), 'fx-pr names its template');
+for (const h of ['## What and why', '## Changes', '## Evidence', '## Merge danger']) assert.ok(prTemplate.includes(`\n${h}\n`), `the PR template has the ${h} section`);
 assert.ok(pr.includes('Never run `git push`'), 'fx-pr never pushes');
-assert.ok(pr.includes('`Not run:`'), 'fx-pr ends its evidence with a Not run: line');
+assert.ok(prTemplate.includes('`Not run:`'), 'the PR template ends its evidence with a Not run: line');
 const retro = fs.readFileSync(path.join(root, 'skills', 'fx-retro', 'SKILL.md'), 'utf8').replace(/\s+/g, ' ');
 assert.ok(retro.includes('**Citation or drop.**'), 'fx-retro drops a candidate without a citation');
 assert.ok(retro.includes('Never quote a credential, token, key or personal data from a transcript') && retro.includes('`[redacted]`'),

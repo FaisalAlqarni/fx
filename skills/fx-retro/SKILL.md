@@ -55,11 +55,8 @@ which to keep.
 
 ## Write, for the picked candidates only
 
-- **`tasks/lessons.md`:** append one entry per lesson, superseding an old entry
-  by marking it rather than rewriting it:
-  `- <YYYY-MM-DD>, at <short commit>: <what happened> (<path>:<line>). Rule: <rule>. Check: <proposed check, or "judgement, no check">.`
-- **`docs/plans/<slug>/retro.md`:** the picked candidates, most severe first,
-  with the proposed checks as text.
+- **`tasks/lessons.md`** and **`docs/plans/<slug>/retro.md`:** use the shapes in
+  `../../references/templates/retro-template.md`.
 - **fbrain:** when the `fbrain` CLI or its MCP `propose` tool exists, one
   `fbrain propose` per durable lesson or decision. Never approve, reject or run
   `fbrain review`.

@@ -267,6 +267,8 @@ Read `../../references/vocab/receiving-review.md` before implementing anything; 
 
 **Never:** skip review because "it's simple" · ignore a Critical · proceed with an unfixed Important · argue with valid technical feedback.
 
+A finding that settles a decision passing the three ADR tests in `../../references/vocab/domain-modeling.md`: offer `fx-adr`.
+
 **Never write** "You're absolutely right!", "Great point!", "Thanks for catching that", or any gratitude expression. State the fix. The code shows you heard it.
 
 ## 8. Flags

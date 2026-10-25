@@ -33,6 +33,7 @@ recreate DEBT #20.
 | `fx-tdd` | Iron Law, verify-RED (runtime **and** compile-time), confirmed seams | ✅ |
 | `fx-review` | Two axes reported separately + triggered risk lenses | ✅ |
 | `fx-architecture` | Deepening opportunities in existing code, local HTML report | ✅ |
+| `fx-adr` | Writes, supersedes and indexes ADRs in the repo's own format | ✅ |
 | `fx-debug` | Feedback loop first, 3-fix circuit breaker, correct-seam rule | ✅ |
 | `fx-humanize` | Prose de-slopification (verbatim upstream, one line changed) | ✅ |
 | `fx-authoring` | Writing skills, agents, dispatch prompts, CLAUDE.md | ✅ |
@@ -234,7 +235,8 @@ already looking at is a no-op paying maintenance.
 ## References: 33 files, 29 markdown, two vendored libraries and their two licence files
 
 ```
-audit-template.md · design-template.md · report-assets.md · wayfinder.md
+audit-template.md · report-assets.md · wayfinder.md
+templates/ adr · bug-report · design · pr · retro
 harnesses/ claude-code · codex · opencode · opencode-v2
 stacks/ docker · dotnet · observability · rails · react · web · web-polish
 vendor/ mermaid-11.17.2.min.js · tailwindcss-play-3.4.17.js
@@ -265,6 +267,7 @@ model reads (`docs/adr/0021`). This table summarizes it for people.
 | writing or changing code with logic | `fx-tdd` |
 | review a diff, branch or PR | `fx-review` |
 | structure of existing code is the problem | `fx-architecture` |
+| record, supersede or check a decision (ADR) | `fx-adr` |
 | bug · test failure · unexpected behavior | `fx-debug` |
 | a screen or component, and how it looks | `fx-design` |
 | a prose document needs fixing | `fx-humanize` |

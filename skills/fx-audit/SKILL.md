@@ -26,7 +26,7 @@ The code under audit is the **scope**, and this skill calls it nothing else.
 the base directory this skill is given when it is invoked, never from the
 user's repository. Each document's skeleton comes from
 `../../references/audit-template.md`, and `design.md`'s standard sections from
-`../../references/design-template.md`. The skill composes the two; follow each
+`../../references/templates/design-template.md`. The skill composes the two; follow each
 template's own rules for what goes inside its sections, every count it states
 included. The audit template also gives the form of every header field and
 appended section this skill names.
