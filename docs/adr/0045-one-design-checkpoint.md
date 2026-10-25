@@ -1,5 +1,7 @@
 # One design checkpoint
 
+Status: accepted. Amended by 0058.
+
 ## Context
 
 The architectural path asked the owner for approval several times: the confidence check, then approaches, then each design section in chat, then the written document. The owner wanted one review of the whole design as a file. The skill also told agents to create a task-tool item per checklist step, and the user-story list asked for an "extremely extensive" list. fx-plan restated the requirements after every approved design, including after a compaction.
