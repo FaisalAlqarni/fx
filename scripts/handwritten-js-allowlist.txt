@@ -14,9 +14,7 @@ tests/fixture-build/hidden/traps.self-test.js
 tests/lens-pipeline/fixture/**
 
 # vendored third-party bundles
-references/vendor/mermaid-*.min.js
 docs/plans/_assets/mermaid-*.min.js
-references/vendor/tailwindcss-play-*.js
 docs/plans/_assets/tailwindcss-play-*.js
 references/vendor/react-[0-9]*.production.min.js
 docs/plans/_assets/react-[0-9]*.production.min.js

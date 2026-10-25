@@ -52,10 +52,11 @@ appended section this skill names.
   between unlike workloads, redelivery with no idempotency check, poison
   messages that requeue forever, a lease shorter than the work it covers, and
   retries with no jitter.
-- **Both HTML reports load the offline libraries the same way.** Phase 3's
-  report is left as `fx-architecture` makes it, and Phase 4's report, which
-  this skill writes, follows the same copy and load steps. Both load Tailwind
-  and Mermaid from `docs/plans/_assets/` and make no request to any host.
+- **Both HTML reports load only visual kit files.** Phase 3's report is left
+  as `fx-architecture` makes it, and Phase 4's report, which this skill
+  writes, follows the same copy and load steps from
+  `../../references/visual/visual-assets.md`. Both load from
+  `docs/plans/_assets/` and make no request to any host.
 
 ## Files
 
@@ -298,10 +299,12 @@ starts.
    whose defeater cannot be written is a preference; rewrite the
    recommendation until it has one.
 4. Write the Phase 4 `report-<timestamp>.html` under `.fx/<slug>/draft/`, for
-   its final place in the slug directory: one file rendering `design.md`,
-   following `../../references/report-assets.md` for the copy rule, the
-   missing-file rule, the mismatch rule and the three `<script>` tags, so
-   opening it fetches nothing from any host.
+   its final place in the slug directory: one file rendering `design.md`
+   on `../../references/visual/page-template.html`, following
+   `../../references/visual/visual-assets.md` for the copy rule, the
+   missing-file rule and the mismatch rule, so opening it fetches nothing from
+   any host. The Mermaid lifecycle diagram stays Mermaid in `design.md` and is
+   drawn in the report with `../../references/visual/svg-static.md`.
 
 **Done when** `design.md` holds every section of both templates, every count
 the audit template states holds, and the report carries every section of

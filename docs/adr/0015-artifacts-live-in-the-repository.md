@@ -1,5 +1,7 @@
 # Artifacts live in the repository, not the OS temp directory
 
+Status: Superseded by 0061 (replaced: "A report vendors what it needs instead of reaching for a CDN at render time"; the rest carried forward).
+
 Nothing fx tells an agent to write lands in the OS temp directory. A report a
 user returns to lives in `docs/plans/<slug>/`. A throwaway worktree lives in
 `.worktrees/`. A regenerable working file lives in the ephemeral workspace

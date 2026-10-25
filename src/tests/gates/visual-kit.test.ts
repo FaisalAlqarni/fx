@@ -95,7 +95,26 @@ assert.deepStrictEqual(shown, [
   'archify-adapter.md', 'fx-map-1.js', 'fx-tokens-1.css', 'page-template.html',
   'svg-animated.md', 'svg-static.md', 'visual-assets.md', 'visual-check.md',
 ]);
-assert.deepStrictEqual(kitErrors(repo, shown.filter((n) => n !== 'visual-assets.md').map((n) => `references/visual/${n}`)), []);
+const REPORT = 'skills/fx-architecture/HTML-REPORT.md';
+assert.deepStrictEqual(kitErrors(repo, [...shown.filter((n) => n !== 'visual-assets.md').map((n) => `references/visual/${n}`), REPORT]), []);
+
+// The architecture report loads only kit assets: an unlisted Mermaid script is caught.
+const mermaid = '<script src="../_assets/mermaid-11.17.2.min.js"></script>';
+assert.deepStrictEqual(
+  kitErrors(kit({ [REPORT]: fs.readFileSync(path.join(repo, REPORT), 'utf8') + '\n' + mermaid }), [REPORT]),
+  [`${REPORT}: loads ../_assets/mermaid-11.17.2.min.js, which is not in the assets table`],
+);
+
+// No lane text names the retired Tailwind, Mermaid or report-assets files.
+function walk(d: string): string[] {
+  return fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]));
+}
+const retired = /tailwindcss-play|mermaid-11|report-assets/;
+const stale = ['skills', 'commands', 'references', 'agents']
+  .flatMap((d) => walk(path.join(repo, d)))
+  .filter((f) => /\.(md|html|json)$/.test(f) && retired.test(fs.readFileSync(f, 'utf8')))
+  .map((f) => path.relative(repo, f));
+assert.deepStrictEqual(stale, []);
 
 // Bad checksum.
 assert.deepStrictEqual(kitErrors(kit({}, 'other bytes'), []), [

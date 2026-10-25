@@ -16,7 +16,7 @@
 | [0012](0012-what-fx-deliberately-does-not-cover.md) | What fx deliberately does not cover | 2026-09-05 | current |
 | [0013](0013-descriptions-name-categories-not-stacks.md) | Agents and skills name categories, not stacks | 2026-09-11 | current |
 | [0014](0014-the-app-layer-gap-gets-its-own-lens.md) | The app-layer gap gets its own lens, narrowed to unbounded enqueue | 2026-09-11 | current |
-| [0015](0015-artifacts-live-in-the-repository.md) | Artifacts live in the repository, not the OS temp directory | 2026-09-11 | current |
+| [0015](0015-artifacts-live-in-the-repository.md) | Artifacts live in the repository, not the OS temp directory | 2026-09-11 | superseded by 0061 |
 | [0016](0016-harness-facts-are-a-fourth-layer.md) | Harness facts are a fourth layer | 2026-09-21 | current |
 | [0017](0017-a-declared-component-key-replaces-it-does-not-fail.md) | A declared component key replaces the default scan; it does not fail validation | 2026-09-21 | current |
 | [0018](0018-matcher-groups-are-not-capped-per-plugin.md) | Matcher groups are not capped per plugin | 2026-09-21 | current |
@@ -62,3 +62,4 @@
 | [0058](0058-the-bounded-path-writes-a-short-design-md.md) | The bounded path writes a short design.md | 2026-10-25 | accepted |
 | [0059](0059-fx-adr-writes-supersedes-and-indexes-adrs.md) | fx-adr writes, supersedes and indexes ADRs | 2026-10-25 | accepted |
 | [0060](0060-templates-live-in-one-folder-and-scratch-is-retired.md) | Templates live in one folder and .scratch is retired | 2026-10-25 | accepted |
+| [0061](0061-the-visual-kit-replaces-the-tailwind-and-mermaid-reports.md) | The visual kit replaces the Tailwind and Mermaid reports | 2026-10-25 | accepted |

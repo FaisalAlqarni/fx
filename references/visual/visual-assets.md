@@ -2,8 +2,7 @@
 
 Any lane that writes an HTML page loads this file. A page opens with no internet
 connection: it loads only files copied from fx into its output root's `_assets/`
-folder. This file replaces the report-assets rules and holds the one list of what
-a page may load.
+folder. It holds the one list of what a page may load.
 
 ## Assets table
 

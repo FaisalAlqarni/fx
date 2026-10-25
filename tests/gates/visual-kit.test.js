@@ -119,7 +119,19 @@ assert.deepStrictEqual(shown, [
   "visual-assets.md",
   "visual-check.md"
 ]);
-assert.deepStrictEqual(kitErrors(repo, shown.filter((n) => n !== "visual-assets.md").map((n) => `references/visual/${n}`)), []);
+const REPORT = "skills/fx-architecture/HTML-REPORT.md";
+assert.deepStrictEqual(kitErrors(repo, [...shown.filter((n) => n !== "visual-assets.md").map((n) => `references/visual/${n}`), REPORT]), []);
+const mermaid = '<script src="../_assets/mermaid-11.17.2.min.js"></script>';
+assert.deepStrictEqual(
+  kitErrors(kit({ [REPORT]: fs.readFileSync(path.join(repo, REPORT), "utf8") + "\n" + mermaid }), [REPORT]),
+  [`${REPORT}: loads ../_assets/mermaid-11.17.2.min.js, which is not in the assets table`]
+);
+function walk(d) {
+  return fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
+}
+const retired = /tailwindcss-play|mermaid-11|report-assets/;
+const stale = ["skills", "commands", "references", "agents"].flatMap((d) => walk(path.join(repo, d))).filter((f) => /\.(md|html|json)$/.test(f) && retired.test(fs.readFileSync(f, "utf8"))).map((f) => path.relative(repo, f));
+assert.deepStrictEqual(stale, []);
 assert.deepStrictEqual(kitErrors(kit({}, "other bytes"), []), [
   `visual-assets: ${ELK} SHA-256 ${sha("other bytes")}, table says ${sha("elk bytes")}`
 ]);

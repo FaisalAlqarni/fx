@@ -234,15 +234,14 @@ On Codex each command ships as a skill, typed `$fx:fx-setup`.
 shows the model as the skill descriptions. A command that prints what you are
 already looking at is a no-op paying maintenance.
 
-## References: 33 files, 29 markdown, two vendored libraries and their two licence files
+## References: markdown, the visual kit and its vendored libraries with their licences
 
 ```
-audit-template.md · report-assets.md · wayfinder.md
+audit-template.md · wayfinder.md
 templates/ adr · bug-report · design · pr · retro
 harnesses/ claude-code · codex · opencode · opencode-v2
 stacks/ docker · dotnet · observability · rails · react · web · web-polish
-vendor/ mermaid-11.17.2.min.js · tailwindcss-play-3.4.17.js
-        LICENSE-mermaid · LICENSE-tailwindcss
+vendor/ react · react-dom · reactflow (script, style) · elkjs, with their licences
 visual/ page-template · tokens · map · svg recipes · archify-adapter · visual-assets · visual-check
 vocab/  codebase-design · condition-based-waiting
         defense-in-depth · domain-modeling · fowler-smells · good-tests · good-tests-examples · grilling

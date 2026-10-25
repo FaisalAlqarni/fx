@@ -107,9 +107,9 @@ Each candidate gets a card:
   leverage, and how tests would improve.** Never "cleaner code" or "easier to
   maintain"
 - **Before / After diagram**: side by side, custom-drawn, **illustrating the
-  shallowness and the deepening.** The centrepiece. Mermaid for graph-shaped
-  relationships (call graphs, dependencies, sequences); hand-built divs/SVG for
-  editorial visuals (mass diagrams, cross-sections, collapse animations)
+  shallowness and the deepening.** The centrepiece. Static or animated SVG by
+  default (call graphs, mass diagrams, cross-sections, collapse animations);
+  archify when the owner sets `detailed`. No Mermaid
 - **ADR callout**: only if it contradicts one
 
 **The diagrams carry the weight. Prose is sparse.** If a diagram needs a

@@ -35,8 +35,8 @@ Verdicts: **K** kept inline · **R** kept in a reference · **H** kept in
 | **`architecture-review-<timestamp>.html`, fresh per run** | K/H | **Restored** |
 | The restored temp-directory write target (the three rows above) | S | **Superseded** locally by ADR-0015: the report now writes to `docs/plans/<slug>/report-<timestamp>.html`, never the OS temp directory |
 | Open it (`xdg-open` / `open` / `start`) and tell them the absolute path | K/H | + **WSL** (`explorer.exe "$(wslpath -w …)"`), and "print the path regardless" for silent open failures |
-| Tailwind + Mermaid via CDN | S | **Superseded** by task 01 of the 2026-09-12 audit follow-ups: both libraries are now vendored in the plugin and served from the project, so the report renders with no connection |
-| Mix Mermaid with hand-crafted CSS/SVG; when to use which; **collapse animations** | H | |
+| Tailwind + Mermaid via CDN | S | **Superseded** twice: first vendored (2026-09-12 audit follow-ups), then replaced by the visual kit (ADR 0061); the report loads only kit files and renders with no connection |
+| Mix Mermaid with hand-crafted CSS/SVG; when to use which; **collapse animations** | H | Now static or animated SVG, archify on `detailed`; no Mermaid |
 | Each candidate gets a before/after visualisation | H | |
 | Card fields: Files · Problem · Solution · Benefits · Before/After · strength badge | K/H | |
 | **Benefits "explained in terms of locality and leverage, and how tests would improve"** | K | **Restored**: without it, benefits degrade to "cleaner code" |
@@ -54,11 +54,11 @@ Verdicts: **K** kept inline · **R** kept in a reference · **H** kept in
 
 | Content | Verdict |
 |---|---|
-| Scaffold (vendored Tailwind and Mermaid files, the `.seam`/`.leak`/`.deep` custom layer) | H |
+| Scaffold (the kit page template, the `.seam`/`.leak`/`.deep` custom layer) | H |
 | Header: repo, date, compact legend, **no intro paragraph** | H |
 | Candidate card: all 8 fields, badge palette, `font-mono text-sm` | H |
 | **"If the diagram needs a paragraph to be understood, redraw the diagram"** | H |
-| All 5 diagram patterns: Mermaid graph (with the code sample), hand-built boxes, cross-section, mass diagram, call-graph collapse | H |
+| All 5 diagram patterns: boxes and arrows (SVG), deep module, cross-section, mass diagram, call-graph collapse | H |
 | Style guidance: editorial not dashboard, one accent + red + amber, ~320px, `text-xs uppercase tracking-wider`, only-two-scripts | H |
 | Top recommendation: one card, name, one sentence, anchor | H |
 | Tone: the 10 exact terms, the 4 never-substitutes, the 4 fitting phrasings | H |
@@ -134,4 +134,4 @@ The draft proposed publishing the report as an **Artifact**. That sends your
 architecture (module names, file paths, domain vocabulary) to claude.ai.
 Removed entirely; the report is a committed file under `docs/plans/<slug>/`,
 per ADR-0015, opened in a local browser and rendered offline from the
-vendored Tailwind and Mermaid files the report-assets reference describes.
+kit files `../../references/visual/visual-assets.md` describes.

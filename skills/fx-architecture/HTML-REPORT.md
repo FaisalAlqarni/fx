@@ -2,18 +2,18 @@
 
 The architectural review renders as a **single self-contained HTML file inside
 the plan directory**, not loose at the repository root: opened in a local
-browser. Tailwind and Mermaid load from files copied into the project.
-Mermaid handles graph-shaped diagrams reliably; hand-built divs and inline SVG
-handle the more editorial visuals. **Mix the two: don't lean on Mermaid for
-everything, it starts to look generic.**
+browser. It is written on the visual kit in `../../references/visual/`, so the
+owner learns one page layout. Diagrams are inline SVG, or archify files when
+the owner sets `detailed`. **Mix the patterns below: variety is part of the
+point.**
 
 The file is local and stays local. **Never publish it.** It opens and renders
 with no internet connection: nothing about the repo leaves the machine.
 
-**Supply chain.** Both libraries are vendored, pinned, and served from the
-project: no CDN, no Subresource Integrity question, no third-party host in
-the loop. `../../references/report-assets.md` holds the exact versions, the
-checksums, the copy rule, and the three script tags below.
+**Supply chain.** The only files the page loads are the kit's vendored,
+pinned files, served from `docs/plans/_assets/`: no CDN, no third-party host.
+`../../references/visual/visual-assets.md` holds the versions, the checksums
+and the copy, missing-file and mismatch rules.
 
 ## Path and opening
 
@@ -33,39 +33,34 @@ A fresh file per run. Then open it, and **print the absolute path regardless**: 
 
 ## Copy the assets first
 
-Before writing the report file, follow the shared reference cited above for
-the copy rule: create `docs/plans/_assets/` if it is missing, and copy each
-vendored file there when no file of that name already exists. That reference
-also holds the missing-file rule and the mismatch rule for the two cases
-where a plain copy is not the right move.
+Before writing the report file, follow the copy rule in
+`../../references/visual/visual-assets.md` for the files this page loads
+(`fx-tokens-1.css` only, since the report has no map): create
+`docs/plans/_assets/` if it is missing and copy each file there when none of
+that name exists. That file also holds the missing-file and mismatch rules.
 
 ## Scaffold
 
+Start from `../../references/visual/page-template.html`: its tokens, theme
+switch, header, legend and evidence toggle stay. Remove the map section, the
+map data block and the four library scripts, and keep the
+`fx-tokens-1.css` link. Add this small layer to its `<style>` for the
+diagrams:
+
 ```html
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Architecture review for {{repo name}}</title>
-    <script src="../_assets/tailwindcss-play-3.4.17.js"></script>
-    <script src="../_assets/mermaid-11.17.2.min.js"></script>
-    <script>mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });</script>
-    <style>
-      /* small custom layer for what Tailwind doesn't cover cleanly:
-         dashed seam lines, hand-drawn-feeling arrow heads, etc. */
-      .seam { stroke-dasharray: 4 4; }
-      .leak { stroke: #dc2626; }
-      .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
-    </style>
-  </head>
-  <body class="bg-stone-50 text-slate-900 font-sans">
-    <main class="max-w-5xl mx-auto px-6 py-12 space-y-12">
-      <header>...</header>
-      <section id="candidates" class="space-y-10">...</section>
-      <section id="top-recommendation">...</section>
-    </main>
-  </body>
-</html>
+<style>
+  .seam { stroke-dasharray: 4 4; }
+  .leak { stroke: var(--alert); }
+  .deep { fill: var(--ink); }
+  article.card { border: 1px solid var(--rule); border-radius: 12px; background: var(--panel); padding: 20px; margin-block-end: 40px; }
+  .ba { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .svgbox { overflow-x: auto; margin: 0; }
+</style>
+<main>
+  <header>...</header>
+  <section id="candidates">...</section>
+  <section id="top-recommendation">...</section>
+</main>
 ```
 
 ## Header
@@ -82,19 +77,20 @@ glossary terms without ceremony.
 Each candidate is one `<article>`:
 
 - **Title**: short, names the deepening ("Collapse the Order intake pipeline")
-- **Badge row**: recommendation strength (`Strong` emerald · `Worth exploring`
-  amber · `Speculative` slate), plus a tag for the dependency category
+- **Badge row**: recommendation strength (`Strong` accent · `Worth exploring`
+  alert · `Speculative` muted), plus a tag for the dependency category
   (`in-process`, `local-substitutable`, `ports & adapters`, `mock`)
-- **Files**: monospaced list, `font-mono text-sm`
+- **Files**: monospaced list, `<code>`
 - **Before / After diagram**: the centrepiece. Two columns, side by side,
-  **custom-drawn, illustrating the shallowness and the deepening.** Mermaid
-  where the relationship is graph-shaped; hand-built divs/SVG for the editorial
-  visuals: mass diagrams, cross-sections, **collapse animations**
+  **custom-drawn, illustrating the shallowness and the deepening.** Static SVG
+  by default (`../../references/visual/svg-static.md`), animated SVG for a
+  collapse that needs motion (`svg-animated.md`), archify when the owner sets
+  `detailed` (`archify-adapter.md`). State the pick and reason in one line
 - **Problem**: one sentence. What hurts
 - **Solution**: one sentence. What changes
 - **Wins**: bullets, ≤6 words each: *"Tests hit one interface"*, *"Pricing
   logic stops leaking"*, *"Delete 4 shallow wrappers"*
-- **ADR callout** (if applicable): one line in an amber-tinted box
+- **ADR callout** (if applicable): one line in an alert-tinted box
 
 **No paragraphs of explanation. If the diagram needs a paragraph to be
 understood, redraw the diagram.**
@@ -104,36 +100,22 @@ understood, redraw the diagram.**
 Pick the pattern that fits the candidate. **Mix them. Don't make every diagram
 look the same: variety is part of the point.**
 
-### Mermaid graph: the workhorse for dependencies and call flow
+### Boxes and arrows: the workhorse for dependencies and call flow
 
-For "X calls Y calls Z, and look at the mess." Wrap it in a Tailwind-styled
-card so it doesn't feel parachuted in. Use `classDef` to colour leakage edges
-red and the deep module dark. Sequence diagrams work well for "before: 6
-round-trips; after: 1."
+For "X calls Y calls Z, and look at the mess." Draw it as the static SVG
+recipe does: `<rect>` modules, `<path>` arrows with a `marker-end`. Class
+leakage arrows `.leak` (alert colour) and seams `.seam` (dashed). For "before:
+6 round-trips; after: 1", use the animated recipe's stepped token.
 
-```html
-<div class="rounded-lg border border-slate-200 bg-white p-4">
-  <pre class="mermaid">
-    flowchart LR
-      A[OrderHandler] --> B[OrderValidator]
-      B --> C[OrderRepo]
-      C -.leak.-> D[PricingClient]
-      classDef leak stroke:#dc2626,stroke-width:2px;
-      class C,D leak
-  </pre>
-</div>
-```
+### Deep module: when the "after" should feel heavy
 
-### Hand-built boxes-and-arrows: when Mermaid's layout fights you
-
-Modules as `<div>`s with borders and labels; arrows as inline SVG `<line>` or
-`<path>` positioned absolutely over a relative container. Reach for this when
-the "after" diagram should feel like **one thick-bordered deep module with
-greyed-out internals**: Mermaid won't render that with the right weight.
+Draw the "after" as one thick-bordered `<rect>` (`.deep`) with its former
+neighbours drawn greyed inside it. Thickness carries the weight; no
+gradient is needed.
 
 ### Cross-section: for layered shallowness
 
-Stack horizontal bands (`h-12 border-l-4`) showing the layers a call passes
+Stack horizontal bands (`<rect>`, 48px tall, thick left stroke) showing the layers a call passes
 through. Before: 6 thin layers each doing nothing. After: 1 thick band labelled
 with the consolidated responsibility.
 
@@ -150,17 +132,21 @@ collapsed into one box, the now-internal calls shown faded inside it.
 
 ## Style guidance
 
-- **Lean editorial, not corporate-dashboard.** Generous whitespace. Serif
-  optional for headings (`font-serif` works well with stone/slate).
-- **Colour sparingly:** one accent (emerald or indigo), plus red for leakage
-  and amber for warnings.
-- Keep diagrams **~320px tall**, so before/after sits comfortably side by side
-  without scrolling.
-- `text-xs uppercase tracking-wider` for module labels inside diagrams, so they
-  read as schematic rather than as UI.
-- **The only scripts are the vendored Tailwind file and the vendored Mermaid
-  file**, per the shared reference cited above. The report is otherwise
-  static: no app code, no interactivity beyond Mermaid's own rendering.
+- **Lean editorial, not corporate-dashboard.** Generous whitespace; the
+  template's serif headings stay.
+- **Colour sparingly:** the kit's accent, plus the alert token for leakage.
+  Every colour is a page token, never a hard-coded value, so light and dark both
+  read.
+- Keep diagrams **~320px tall**, so before/after sits side by side without
+  scrolling. A wide figure scrolls inside its own box at phone width.
+- Uppercase small labels inside diagrams, so they read as schematic rather
+  than as UI.
+- **The only files the page loads are the kit's own**, per the shared
+  reference above. Scripts are the template's theme switch and, for animated
+  SVG, the recipe's few lines. No Mermaid, no Tailwind.
+- Labels and prose are English. Run the check in
+  `../../references/visual/visual-check.md`; with no browser, write
+  `Visual check: not run: no browser` and name the page.
 
 ## Top recommendation section
 
