@@ -218,3 +218,13 @@ Ruling: design.md line 85 now says only fx-setup migrates (the fix wave's item 5
 Ruling: the plugin-root check narrows but does not close the path: a complete fake fx tree outside the repo still passes, because the agent types the skill directory. Accepted residual risk (needs a prompt-injected agent and a planted tree); reported to the owner.
 Ruling: docs/adr/0040 keeps its old parked-line form (an ADR is never edited beyond its status line); docs/plans and docs/adr are not rewritten by the migration (history). Deferred, reported.
 Controller: owner-rule breach by the fix-wave fixer: one no-op `sh -c` command early in its run. No effect; disclosed to the owner.
+Exit gate: scripts/check-all at c93b790 (fresh, controller): EXIT=0, ALL GREEN, 0 FAIL lines.
+Task final: fix round 1/5 (12 addressed, 0 open; commits 2d164ea..c93b790)
+Task final: minor (deferred): glossary-migrate records a write for undo only after it returns, so a truncating write failure still prints "repo unchanged"
+Task final: minor (deferred): status.md unparks only the answered task; its parked dependents get no unparked line, so SKILL.md's resume rule never re-dispatches them
+Task final: minor (deferred): fx-setup's SKILL_DIR has no defined value on opencode, where fx-setup runs as a command with no base directory (fails safe by refusal)
+Task final: minor (deferred): glossary-migrate now rewrites CONTEXT.md mentions of unmoved files in every tracked Markdown file, widening deferred minor 18
+Task final: minor (deferred): check-all prints MODULE_TYPELESS_PACKAGE_JSON warnings for the built opencode plugins (pre-existing)
+Final review: fix wave re-review: all 12 addressed, 0 open, 5 minors ledgered (findings/final-rereview.md).
+Exit gate: CI is .github/workflows/conformance-nightly.yml only (live harness runs, tests/conformance/run.sh <harness> --free); not run (needs live harness sessions; owner budget mode).
+Plan complete: tasks 01 to 23 complete, 0 parked, final review fixed
