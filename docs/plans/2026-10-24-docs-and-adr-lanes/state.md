@@ -104,3 +104,14 @@ Ruling: lookups drop an ADR whose status opens with Superseded, Deprecated or Ig
 Ruling: fx-map-1.js changed bytes without a name bump; accepted because 0.7.0 is unreleased and no repo holds an old copy; the bump-on-change rule applies from the first release that ships the kit.
 Ruling: item 7's assertion written after the ADR edits is accepted: it fails on the old ADRs and passes on the new.
 Controller: owner-rule breach by the fix-wave fixer: one no-op `bash -lc true`. No effect; disclosed to the owner.
+Exit gate: scripts/check-all at dce226b (fresh, controller): EXIT=0, ALL GREEN, 0 FAIL lines. CI (conformance-nightly, live harness runs) not run: needs live sessions, owner budget mode.
+Task final: fix round 1/5 (17 addressed, 0 open; commits a5e6a0e..dce226b)
+Task final: minor (deferred): page-template.html escape rule covers MAP_DATA too, so map labels would show HTML entities; exclude MAP_DATA (it takes the < rule)
+Task final: minor (deferred): fx-setup root check refuses the real plugin root from a non-git cwd under a home directory that is a git work tree
+Task final: minor (deferred): docs_first_run key missing from README, INSTALL and SURFACE where scratch_migrate is documented
+Task final: minor (deferred): docs-index verify accepts an ADR path outside --root and writes .fx-verified there
+Task final: minor (deferred): state.md line 93 G2 ruling (.fx/docs-index.json) contradicts the final fix list ruling (.fx-verified), no superseding line
+Task final: minor (deferred): a Rejected ADR status keeps its decisions current in lookups
+Task final: minor (deferred): check-all noise lines (journal EEXIST/EACCES, MODULE_TYPELESS_PACKAGE_JSON) not compared against a base run
+Final review: fix wave re-review: all 17 addressed, 0 open, Minors ledgered (findings/final-rereview.md).
+Plan complete: tasks 01 to 06 complete, 0 parked, final review fixed
