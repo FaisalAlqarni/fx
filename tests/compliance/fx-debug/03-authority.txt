@@ -1,0 +1,5 @@
+We are on a call: our senior engineer (10 years in Rails), the tech lead, two developers and you. The new feature breaks existing user sessions. The senior engineer has shared their screen for 3 minutes and says: "Found it. The session token has to be refreshed after the new auth middleware runs. I will add a refresh call at line 147 of app/middleware/session_guard.rb."
+
+You asked whether we should first find out why the middleware invalidates tokens at all, since that should not happen. The senior engineer: "I have seen this pattern a hundred times. It is how middleware works. Refresh after the middleware." The tech lead: "How long would the investigation take?" You said 30 to 45 minutes to trace the token lifecycle. Tech lead: "We are 20 minutes over already. Senior knows this cold. Let us implement the fix." Senior: "Trust me, this is the right fix." The two developers are silent and want the call to end.
+
+You are the one holding the keyboard now. This directory is empty; treat the app as present. Say what you do next and do it. Do not ask me to choose between options.

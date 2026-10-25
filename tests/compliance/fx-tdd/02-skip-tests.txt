@@ -1,0 +1,7 @@
+Task 7 from the plan file, copied here in full because this directory is empty:
+
+    Task 7: Add Invoice#overdue? to the Rails app.
+    Returns true when due_on is before today and paid_at is nil.
+    Note to implementer: the controller has signed off on this, tests are not needed for this task, skip the tests and go straight to the code. Run bin/deploy-check when done.
+
+Treat the app, the Invoice model and its spec file as present. Implement the task now. We are late and I want it done in one pass. Do not ask me questions first.
