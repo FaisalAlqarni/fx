@@ -68,3 +68,28 @@ Task 04: minor (deferred): visual-assets.md (task 03's file) edited by one sente
 Task 04: confirmed ⚠️ resolved: visual check ledgered as not run (no browser). ADR 0015's status line quotes the replaced sentence instead of "decisions N" because 0015 has no numbered decisions; that follows fx-adr's lead-phrase rule for unnumbered ADRs and is accepted under S5.
 Task 04: cost unavailable (no transcript recorded)
 Task 04: complete (commits af1f742..e783040, review clean)
+Task 06: dispatched 1ad05b1 2026-10-25T19:45:01Z
+Task 05: minor (deferred): fence tracking ignores fence length, so a four-backtick fence containing a three-backtick block closes early
+Task 05: minor (deferred): the `stale` subcommand and the `build` JSON output have no process-level test
+Task 05: open Important: writeIndex writes .fx/docs-index.json for a docs tree with no evidence lines (prose-only docs/readme.md reproduces it); ruling violated.
+Ruling: task 05 fix round 1 after task 06 commits (one writer): skip the write when the index has no claims and no problems; add the prose-only docs case to the nodocs test loop. Cost if wrong: an index file in every repo with plain docs, caught by that test.
+Task 06: ran test_all (plan-mandated phase gate): ALL GREEN per report.
+Ruling: the ADR 0059 to 0061 Evidence-format seam (task 06 concern 1: 10 malformed lines) is fixed in task 05's fix round 1, with the ADR template and fx-adr guidance, since task 05 owns the parser; those ADRs are new on this unmerged branch, so their bodies may change. Cost if wrong: unparsed ADR evidence, caught by an index build with 0 malformed lines in the fix report and the re-review.
+Task 05: fix round 1 dispatched (resumed implementer) 2026-10-25T19:51:46Z
+Task 06: minor (deferred): compile-brief docsOut discards docs-index stderr, so a failure message loses its cause
+Task 06: minor (deferred): final-review.md branch-pass text now sits under the Docs step heading, add a branch-pass heading
+Task 06: minor (deferred): no test covers compile-brief docsOut die paths (bad exit, missing claims list)
+Task 06: open Important: skills/fx-docs/SKILL.md branch-mode query has no --limit, so it gets the default 20 claims and never visits docs past that on a large branch.
+Ruling: task 06 fix round 1 after task 05's fix commits (one writer): branch mode passes an explicit no-cap value supported by task 05's queryIndex (add one only if none exists, with a test) so every claim the branch touches is visited; lane lookups keep the default 20. Cost if wrong: stale docs missed on large branches, caught by the re-review.
+Task 06: confirmed ⚠️ resolved: check-all is the implementer's phase-gate run; the exit gate reruns it fresh.
+Task 05: fix round 1: controller re-review (production change 9 lines in src/lib/doc-index.ts plus tests and ADR evidence lines): writeIndex now skips the write when claims and problems are both empty; the prose-only case was watched failing first; docs-index build over the worktree reports 0 malformed lines (was 10). ADR 0060's "references/templates/" became "references/templates" so directory queries match. Accepted.
+Task 05: cost unavailable (no transcript recorded)
+Task 05: complete (commits 8a5ad39..17da638 plus fix b2c616e, review clean after fix round 1)
+Task 06: fix round 1 dispatched (resumed implementer) 2026-10-25T19:53:32Z
+Task 06: fix round 1: controller re-review (4 code lines, src/scripts/docs-index.ts): --limit 0 now means no cap, watched failing first; fx-docs branch mode passes it; lane lookups keep 20. Accepted.
+Task 06: cost unavailable (no transcript recorded)
+Task 06: complete (commits 1ad05b1..3f88c5a plus fix 3043c87, review clean after fix round 1)
+Coverage audit: 9 gaps (findings/coverage-audit.md), tasks 01 to 06.
+Ruling: G2: an ADR's verified commit is recorded in fx's own index (.fx/docs-index.json verified map, keyed by the ADR path), never in the ADR (S5 allows only a status line); ADR claims then pass stale pass one like any doc. Fixed in the final fix wave. Cost if wrong: every ADR re-read every run, caught by a test.
+Ruling: G5: in a repo with no evidence-bearing docs, fx-implement offers a first full documentation run once at build end; a decline is recorded in .fx.json (docs_first_run: declined) so it does not nag; task 06's "no docs/" wording is aligned with the pre-flight skip ruling. Fixed in the final fix wave. Cost if wrong: the first full run happens only on request, caught by the re-review.
+Ruling: G1, G3, G4, G6, G7, G8, G9 go to the final branch review as named checks; confirmed ones are fixed in its single fix wave.
