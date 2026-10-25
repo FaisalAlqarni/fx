@@ -156,3 +156,14 @@ Task 16: confirmed ⚠️ resolved: the reviewer read the touched files directly
 Task 16: cost unavailable (no transcript recorded)
 Task 16: complete (commits 69a339c..3b50f35, review clean)
 Task 17: ran test_all (plan-mandated phase gate): ALL GREEN per report.
+Ruling: tasks 18 and 20 batched into one implementer and one review (budget mode). Why: independent files, both small. Cost if wrong: a larger review unit.
+Task 18: dispatched cb99f8d 2026-10-24T23:55:33Z
+Task 20: dispatched cb99f8d 2026-10-24T23:55:33Z
+Task 17: minor (deferred): README.md:54 still describes a four-option menu with discard; update to three options.
+Task 17: minor (deferred): ledger-lines test does not assert the declined needs-you shape in status.md.
+Task 17: minor (deferred): SKILL.md carries two adjacent "read status.md, every time" pointers, as the brief mandated.
+Task 17: confirmed ⚠️ resolved: check-all ALL GREEN is the implementer's plan-mandated phase gate run; the exit gate reruns it fresh.
+Task 17: cost unavailable (no transcript recorded)
+Task 17: complete (commits cb878e0..4b26445, review clean)
+Tasks 18, 20: the implementer reported the upstream clones missing; the controller checked: they exist at <SCRATCH>/upstream/{superpowers 2ce8aa1, mattpocock-skills 5beb35b, humanizer 8c307f3}. No effect on 18 and 20 (fx-owned shapes). Later briefs name the exact clone paths.
+Task 18: concern: opencode-plugin.test.ts edited outside the listed files (it asserted exactly five user-invoked lanes); left to the review.
