@@ -2,7 +2,7 @@
 
 Status: accepted, 2026-10-25.
 
-Supersedes: 0015 (decision: "A report vendors what it needs instead of reaching for a CDN at render time: `references/report-assets.md` is where that copy lives.")
+Supersedes: 0015 (decision: "`references/report-assets.md` is where that copy lives")
 
 ## Context
 
@@ -26,7 +26,7 @@ Decisions of ADR 0015 that hold, restated as decisions of this ADR:
 5. This reverses the decision `fx-architecture` inherited, "Write to the OS temp directory so nothing lands in the repo". The reason it gave, that two runs left files in `/development`, is about the repository root. A plan directory is not the root, and fx has a durable home for what a user returns to.
 6. Reports are committed files. An architecture report, an audit's phase documents and the visual companion's saved mockups land under version control in `docs/plans/<slug>/`. This is intended.
 7. The ephemeral workspace under `.fx/` stays git ignored and is still deleted on a clean run. Only artifacts a user is meant to return to move into the repository.
-8. An artifact in the repository renders without a network. `scripts/check-artifacts` fails on any `skills/`, `agents/`, `commands/` or `references/` file that loads a script or stylesheet from an `http:`, `https:` or protocol-relative URL, except `references/vendor/`, which holds pinned upstream library code rather than an instruction to an agent. A report vendors what it needs and never reaches for a CDN at render time; decisions 1 and 2 name where that copy lives.
+8. An artifact in the repository renders without a network. `scripts/check-artifacts` fails on any `skills/`, `agents/`, `commands/` or `references/` file that loads a script or stylesheet from an `http:`, `https:` or protocol-relative URL, except `references/vendor/`, which holds pinned upstream library code rather than an instruction to an agent. A report vendors what it needs and never reaches for a CDN at render time.
    Evidence: `scripts/check-artifacts`
 
 ## Consequences

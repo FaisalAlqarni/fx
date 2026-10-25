@@ -37,6 +37,7 @@ export interface FxJson {
   companions: string;
   glossary_rename: 'declined';
   scratch_migrate: 'declined';
+  docs_first_run: 'declined';
   hooks: { stop_check?: boolean; loop_nudge?: boolean; edit_rules?: boolean };
 }
 

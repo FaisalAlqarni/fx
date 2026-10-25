@@ -21,7 +21,9 @@ one: say so and write nothing.
 Before writing, read the existing ADRs and note:
 
 - **The folder:** `docs/adr/`, `docs/decisions/`, or the folder `mkdocs.yml`
-  lists in its nav.
+  lists in its nav. The docs index reads an ADR only under a folder named `adr`
+  or `decisions`; in any other folder its decisions are read as ordinary doc
+  claims, and its status does not take them out of lookups.
 - **The naming:** `NNNN-slug.md`, `ADR-NNN-slug.md`, or the repo's own.
 - **The heading form,** the **status form** (a `Status:` line, a `## Status`
   section, a `- **Status:**` bullet) and the **sections in use.**

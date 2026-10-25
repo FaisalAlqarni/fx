@@ -62,7 +62,7 @@ and never write it into the repo unless the owner asks.
 
 fx-implement offers this lane after the build and before the branch review. On a
 yes you get the worktree, the changed paths from
-`git diff <merge-base>...HEAD --name-only`, and any `Docs claim wrong:` lines. Work in
+`git diff --no-renames <merge-base>...HEAD --name-only`, and any `Docs claim wrong:` lines. Work in
 the worktree and commit on the branch:
 
 1. Find every claim citing the changed paths (`--limit 0` lifts the default cap of 20):
@@ -70,13 +70,17 @@ the worktree and commit on the branch:
 2. Update the docs those claims live in, verify every claim in them (section 5),
    and handle each `Docs claim wrong:` line the controller passed: the code wins,
    so fix the claim, never the code.
-3. List the docs elsewhere that the change made stale. Do not rewrite them.
+3. List the docs elsewhere that the change made stale: run
+   `node <skill base directory>/../../scripts/docs-index --root <worktree> stale`
+   and list every `recheck` claim in a doc outside the step 2 set, with the HTML
+   pages of each area whose Markdown changed ([html-pages.md](./html-pages.md)).
+   Do not rewrite them.
 4. Write a new doc when the change adds an engine, subsystem, public flow,
    command or integration that no doc covers. Ask the owner only what the code
    cannot answer; leave the rest as open questions.
 5. Commit the doc changes on the branch.
 
-Report `Docs: <n> updated, <n> written, <n> listed stale`.
+Report `Docs: <n> updated, <n> written, <n> listed stale, <n> HTML pages out of date`.
 
 ## 5. Stale check
 
@@ -93,11 +97,21 @@ re-reads every claim marked `recheck` against the code at HEAD:
 - List every stale claim with its old and new evidence, and re-verify it. Nothing
   is rewritten without being listed.
 - A drifted ADR claim is reported for `fx-adr`. This lane never edits an ADR.
+  An ADR's verified commit lives in `.fx-verified` beside it, one
+  `<file name> <commit>` line per ADR. After verifying every claim of an ADR,
+  record it with
+  `node <skill base directory>/../../scripts/docs-index --root <repo> verify <adr path>`
+  and commit that file with the docs.
 
 ## 6. Full run
 
-Run it when the owner asks, or when no doc in the repo carries an evidence line.
-Steps, the doc set and the interview are in [full-run.md](./full-run.md).
+Run it only when the owner asks for it ("document the system") or says yes to
+fx-implement's first-run offer. Steps, the doc set and the interview are in
+[full-run.md](./full-run.md).
+
+"Update the docs" in a repo where no doc carries an evidence line is not a full
+run: annotate only the docs this change touches (evidence lines and the verified
+marker) and leave every other doc as it is.
 
 ## 7. HTML pages
 

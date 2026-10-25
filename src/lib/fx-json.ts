@@ -52,6 +52,12 @@ export function parseFxJson(raw: unknown): FxJsonResult {
     else problems.push({ key: 'scratch_migrate', reason: 'scratch_migrate must be "declined"' });
   }
 
+  const firstRun = input.get('docs_first_run');
+  if (firstRun !== undefined) {
+    if (firstRun === 'declined') value.docs_first_run = firstRun;
+    else problems.push({ key: 'docs_first_run', reason: 'docs_first_run must be "declined"' });
+  }
+
   const hooks = input.get('hooks');
   if (hooks !== undefined) {
     if (typeof hooks === 'object' && hooks !== null && !Array.isArray(hooks)) {

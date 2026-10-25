@@ -85,6 +85,7 @@ every later phase mechanical.
 - Read `GLOSSARY.md` (old name: see domain-modeling) for a mental model of the modules involved, and check the
   ADRs in the area.
 - Look up the doc claims and ADR decisions citing the paths you touch: `../../references/docs-lookup.md`.
+- Read the past bug reports in `docs/issues/` whose root cause cites the paths in play.
 
 ### Ten ways to build the loop
 

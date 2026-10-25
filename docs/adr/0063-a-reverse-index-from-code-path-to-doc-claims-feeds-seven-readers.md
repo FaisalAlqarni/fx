@@ -8,7 +8,7 @@ A lane that decides something about an area should know what the docs and ADRs c
 
 ## Decision
 
-1. One reverse index maps a code path to the doc claims and ADR decisions citing it. A TypeScript module builds it from the evidence lines, `scripts/docs-index` writes it to `.fx/docs-index.json` and rebuilds it when a doc is newer than the index. The stale check and the lanes use the same index.
+1. One reverse index maps a code path to the doc claims and ADR decisions citing it. A TypeScript module builds it from the evidence lines, `scripts/docs-index` writes it to `.fx/docs-index.json` and rebuilds it when a doc is newer than the index. The stale check and the lanes use the same index. A doc is read as an ADR only under a folder named `adr` or `decisions`, and a whole ADR leaves the lookups only when its status opens with Superseded, Deprecated or Ignored; "Partly superseded" keeps its decisions current.
    Evidence: `src/lib/doc-index.ts` `loadIndex`
 2. Seven readers look up the paths they touch before deciding and read what comes back: `fx-brainstorm`, `fx-plan`, the implementer brief `fx-implement` compiles, `fx-review`, `fx-debug`, `fx-architecture` and `/fx:fx-retro`. Each holds one pointer line to `references/docs-lookup.md`, which says how to query and what to do with the result.
    Evidence: `references/docs-lookup.md`

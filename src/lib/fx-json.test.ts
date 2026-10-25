@@ -68,4 +68,13 @@ assert.ok(smOk.ok);
 assert.strictEqual(smOk.value.scratch_migrate, 'declined');
 assert.deepStrictEqual(smOk.problems, []);
 
+const df = parseFxJson({ docs_first_run: 'yes' });
+assert.ok(df.ok);
+assert.strictEqual('docs_first_run' in df.value, false);
+assert.deepStrictEqual(df.problems, [{ key: 'docs_first_run', reason: 'docs_first_run must be "declined"' }]);
+const dfOk = parseFxJson({ docs_first_run: 'declined' });
+assert.ok(dfOk.ok);
+assert.strictEqual(dfOk.value.docs_first_run, 'declined');
+assert.deepStrictEqual(dfOk.problems, []);
+
 console.log('fx-json.test.js: ok');
