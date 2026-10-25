@@ -210,3 +210,6 @@ Task 22: cost unavailable (no transcript recorded)
 Task 22: complete (commits 7acbb63..c511eec plus fix 198e557, review clean after fix round 1)
 Task 23: cost unavailable (no transcript recorded)
 Task 23: complete (commits c511eec..7b9bd71 plus fix 198e557, review clean after fix round 1)
+Final review: broad 0C/5I/8M (findings/final-review.md, check-all ALL GREEN at cb5c4cb); unprimed 3I/6M (findings/final-unprimed.md); security lens 3I/2M (findings/final-lens-security.md).
+Ruling: one fix wave from .fx/2026-10-24-upstream-update/final-fix-list.md (12 items: migration rollback and git mv --, reference rewrite plus a hand-update list for non-Markdown files, no symlink following, fx-setup root derived from the skill's own base directory and passed by env, ADR 0054 and domain-modeling corrected instead of a second migration path, parked tasks resumable with Plan paused, retro offer placement, README menu, retro redaction, server.cts:402, conformance row counts, coverage-gap assertions). Deferred by ruling: U-5, U-6, U-9, S-5 and the minors the broad review said can wait. Why: the build rule allows one fix wave; these cover every Important. Cost if wrong: a residual Important, surfaced in the completion report.
+Final review: fix wave dispatched 2026-10-25T00:38:56Z at cb5c4cb (Capable because: final fix wave across code that moves owner files)
