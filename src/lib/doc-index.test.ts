@@ -58,6 +58,13 @@ for (const files of [[], ['docs/plans/p/plan.md']]) {
   assert.deepStrictEqual(loadIndex(n), { version: 1, claims: [], problems: [], verified: {} });
   assert.strictEqual(fs.existsSync(path.join(n, '.fx')), false, files.join());
 }
+// Prose-only docs: the index is empty and, like a missing docs/, no .fx/ is written.
+{
+  const n = tmp('prose');
+  put(n, 'docs/readme.md', 'Just prose.\n');
+  assert.deepStrictEqual(loadIndex(n).claims, []);
+  assert.strictEqual(fs.existsSync(path.join(n, '.fx')), false, 'prose-only docs');
+}
 
 // Cache: written once, rebuilt when a doc is newer, when a doc is deleted.
 const c = tree();

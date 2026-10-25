@@ -9,7 +9,7 @@ fx told lanes to offer an ADR but had no lane that wrote one. A repo's ADRs also
 ## Decision
 
 1. `fx-adr` is a model-selectable lane that writes, supersedes and indexes ADRs. Whether a decision deserves one is still decided by the three tests in `references/vocab/domain-modeling.md`; other lanes point at `fx-adr` and never invoke it (ADR 0006).
-   Evidence: skills/fx-adr/SKILL.md
+   Evidence: `skills/fx-adr/SKILL.md`
 2. The lane reads the repo's existing ADRs first and copies their folder, naming, heading and status form. Only a repo with no ADRs gets `references/templates/adr-template.md`.
 3. Every ADR the lane writes numbers each decision in its Decision section, so a later ADR can name "decisions 2 and 4". An older ADR without numbers is named by quoting each replaced decision's lead phrase.
 4. A superseding ADR restates every still-in-force decision of the old one in a `## Still in force` section, numbered on from the Decision section, and carries a `Supersedes: NNNN (decisions 2, 4)` line. Each decision then has exactly one live copy and the newest ADR alone tells the current story.

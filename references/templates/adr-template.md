@@ -18,7 +18,7 @@ Supersedes: NNNN (decisions 2, 4)
 ## Decision
 
 1. <The first decision, in one or two sentences.>
-   Evidence: <path or symbol the decision governs>
+   Evidence: `<path>:<first line>-<last line>` `<symbol>`
 2. <The second decision.>
 
 ## Still in force
@@ -36,4 +36,7 @@ Supersedes: NNNN (decisions 2, 4)
 ```
 
 Leave out the `Supersedes:` line and `## Still in force` unless this ADR
-replaces another. Leave out `Evidence:` lines when no code is governed.
+replaces another. Leave out `Evidence:` lines when no code is governed. In an
+`Evidence:` line the path, the lines and the symbol are each in backticks;
+`:<first>-<last>` and the symbol are optional, and `; ` separates items. A bare
+path or `file line 40` does not parse.

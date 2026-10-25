@@ -37,10 +37,10 @@ export function buildIndex(root: string): DocIndex {
   return index;
 }
 
-// Builds the index and overwrites .fx/docs-index.json whole; writes nothing when there is no doc to read.
+// Builds the index and overwrites .fx/docs-index.json whole; writes nothing when no doc holds a claim or a problem.
 export function writeIndex(root: string): DocIndex {
   const index = buildIndex(root);
-  if (Object.keys(index.verified).length === 0) return index;
+  if (index.claims.length === 0 && index.problems.length === 0) return index;
   fs.mkdirSync(path.join(root, '.fx'), { recursive: true });
   fs.writeFileSync(path.join(root, '.fx', 'docs-index.json'), JSON.stringify(index, null, 2) + '\n');
   return index;

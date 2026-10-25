@@ -9,14 +9,14 @@ Lane output formats (design, ADR, PR, retro) were spread across skills, and a fi
 ## Decision
 
 1. The text a lane copies to produce a document lives in `references/templates/`: `design-template.md`, `adr-template.md`, `pr-template.md`, `retro-template.md` and `bug-report-template.md`. Lanes point at a template by path and carry no inline copy. Templates are leaves and link no other reference.
-   Evidence: references/templates/
+   Evidence: `references/templates`
 2. A fixed bug leaves `docs/issues/<YYYY-MM-DD>-<slug>.md`, written from the bug report template at the end of fx-debug's Phase 6 and committed with the fix. A session with no fix writes none. The prevention question is the report's last section.
-   Evidence: skills/fx-debug/SKILL.md
+   Evidence: `skills/fx-debug/SKILL.md`
 3. Issues are committed under `docs/issues/`; throwaway material (drafts, test material, regenerated files) goes to `.fx/`. fx's own text no longer names `.scratch/`, except where it forbids writing designs there.
 4. `/fx:fx-setup` finds a `.scratch/` with Markdown issues and runs `lib/scratch-migrate.js` as a dry run. It shows the moves, every pointer line it will change, the `.gitignore` line it will remove and the rollback, then asks once. Tracked entries move with `git mv --`, untracked or ignored ones with a filesystem move. A failed step undoes the finished ones. The script commits nothing; the owner runs `git add -- docs/issues`.
-   Evidence: src/lib/scratch-migrate.ts
+   Evidence: `src/lib/scratch-migrate.ts`
 5. On no, setup writes `"scratch_migrate": "declined"` to `.fx.json` and never asks again. With no human to answer, it does nothing and writes nothing. The migration never runs from a dispatched subagent.
-   Evidence: src/lib/fx-json.ts
+   Evidence: `src/lib/fx-json.ts`
 
 ## Consequences
 

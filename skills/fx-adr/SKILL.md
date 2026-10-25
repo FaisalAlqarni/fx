@@ -38,8 +38,10 @@ later ADR can name "decisions 2 and 4". An older ADR without numbers is named
 by quoting each replaced decision's lead phrase.
 
 A numbered decision may carry an indented `Evidence:` line naming the code it
-governs (a path, or a path and symbol). The docs stale check reads it once that
-exists; until then the line is inert.
+governs, in the form the docs index parses: each item in backticks, as in
+``Evidence: `src/lib/x.ts:40-58` `parse`; `config/plans.yml` ``. `:40-58` and the
+symbol are optional, `; ` separates items, and a bare path does not parse. The
+docs stale check reads these lines.
 
 ## 3. Supersede
 
