@@ -56,6 +56,8 @@ The work is on `<branch>` in `<worktree path>`. What next?
 Which?
 ```
 
+End the report with one line: "`/fx:fx-retro` reviews this build."
+
 **Why an offer rather than a rule.** A prohibition invites the reading that
 found its way around it: a measured run treated "commit it" as the say-so that
 made a base-branch commit fine, because the rule said "no exceptions" while the

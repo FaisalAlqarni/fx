@@ -31,7 +31,7 @@ set -uo pipefail
 cd "$FX"
 
 # Pinned: adding or removing a skill updates this number on purpose.
-EXPECTED=17
+EXPECTED=20
 node -e '
 const fs = require("fs"), path = require("path");
 const dirs = fs.readdirSync("skills", { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name);
@@ -112,7 +112,7 @@ const effect = (rules, action, resource) => {
   return e;
 };
       const fs = require("fs");
-      const HIDDEN = ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-setup", "fx-what"];
+      const HIDDEN = ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-retro", "fx-setup", "fx-what"];
       const all = fs.readdirSync("skills", { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name);
       const listed = JSON.parse(fs.readFileSync(process.env.F, "utf8")).map(s => s.name);
       const want = process.env.ROUTE === "plugin" ? all : all.filter(n => !HIDDEN.includes(n));

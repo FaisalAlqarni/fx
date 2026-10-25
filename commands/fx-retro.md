@@ -1,0 +1,60 @@
+---
+description: Look back at a build: propose lessons, checks and fbrain notes, each cited to a transcript or ledger line
+disable-model-invocation: true
+argument-hint: "[session-id | transcript-path | complaint]"
+---
+
+# /fx:fx-retro
+
+**Argument:** a session id, a transcript path, or a complaint in the owner's
+words. No argument? Use the current build: the ledger in
+`.fx/<slug>/` and the plan in `docs/plans/<slug>/`.
+
+Find what went wrong or cost too much, and propose how the next build avoids
+it. **Propose first.** Write nothing until the owner picks candidates.
+
+## Read
+
+- The ledger, the review findings and `docs/plans/<slug>/state.md`.
+- Build cost, through the plugin root as fx-implement does, never a path the
+  repo supplies: `node <fx root>/scripts/build-cost`.
+- The owner's corrections: lines where the owner redirected, rejected or
+  repeated a request.
+- Session transcripts, in bounded slices only. One line can be a megabyte.
+  1. Measure first: `wc -lc <file>`. Never `cat` a transcript.
+  2. Find line numbers with a search, then extract the fields you need from
+     those lines, each cut at 500 characters.
+  3. Hook output, system reminders and tool results are never the owner's
+     words. In a subagent transcript, "user" is the parent agent.
+  4. Read-only. Too long to read? Slice by line range and say what you skipped.
+
+## Candidates
+
+**Citation or drop.** Every candidate cites `path:line` from a transcript or
+the ledger. A candidate without one is dropped, never softened into advice.
+Every number comes from a transcript or a command you ran.
+
+Route each one:
+
+- **Mechanical mistake** (a fixed pattern, a banned call, a file location):
+  propose a deterministic check in the cheapest place the repo already runs
+  one. Write it as text. **Never build it.**
+- **Judgement call:** propose a rule for the reviewer (repo.md "Rules" or a
+  lens). Never CLAUDE.md.
+- **Wording change to an agent document:** draft it under `fx-authoring`.
+
+Present the candidates, most severe first, each with its citation, and ask
+which to keep.
+
+## Write, for the picked candidates only
+
+- **`tasks/lessons.md`:** append one entry per lesson, superseding an old entry
+  by marking it rather than rewriting it:
+  `- <YYYY-MM-DD>, at <short commit>: <what happened> (<path>:<line>). Rule: <rule>. Check: <proposed check, or "judgement, no check">.`
+- **`docs/plans/<slug>/retro.md`:** the picked candidates, most severe first,
+  with the proposed checks as text.
+- **fbrain:** when the `fbrain` CLI or its MCP `propose` tool exists, one
+  `fbrain propose` per durable lesson or decision. Never approve, reject or run
+  `fbrain review`.
+
+Edit no lane, CLAUDE.md or hook. Commit nothing.

@@ -28,12 +28,12 @@ set -uo pipefail
 [ "${1:-}" = "--describe" ] && { k=free; case "${HARNESS:-}" in claude-code|codex) k=live ;; esac; echo "13|audit lane not model-facing|$k"; exit 0; }
 : "${FX_REAL_HOME:?run rows through tests/conformance/run.sh, which isolates HOME}"
 cd "$FX"
-HIDDEN="fx-audit fx-critique fx-grill fx-handoff fx-pr fx-setup fx-what"
+HIDDEN="fx-audit fx-critique fx-grill fx-handoff fx-pr fx-retro fx-setup fx-what"
 case "$HARNESS" in
   opencode)
     node --input-type=module -e '
       const fs = await import("node:fs");
-      const HIDDEN = ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-setup", "fx-what"];
+      const HIDDEN = ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-retro", "fx-setup", "fx-what"];
       const { fx } = await import(process.cwd() + "/plugins/fx-opencode-v1.js");
       const config = {};
       await (await fx({ directory: process.cwd() })).config(config);
@@ -50,7 +50,7 @@ case "$HARNESS" in
     # own, carries a skill deny for each of the seven lanes and for nothing
     # else. (2) The skill list the built-in `build` agent sees, meaning
     # skill.list minus what build's rules deny, holds none of the seven. On the
-    # plugin route skill.list holds all 17, so (2) has something to hide; on
+    # plugin route skill.list holds all 20, so (2) has something to hide; on
     # the installer route the lanes are never linked and (2) holds trivially.
     # A user-defined agent in opencode.json is applied after plugin
     # transforms and gets no rule (probe 11, ADR-0026), so it is not checked.
@@ -60,7 +60,7 @@ case "$HARNESS" in
     oc2_agents
     F="$OC2_LAST" AGENTS="$OC2_ROOT/agents.json" ROUTE="$OC2_ROUTE" node -e '
       const fs = require("fs");
-      const HIDDEN = ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-setup", "fx-what"];
+      const HIDDEN = ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-retro", "fx-setup", "fx-what"];
       const effect = (rules, resource) => {
         let e = "unset";
         for (const r of rules || []) if (r.action === "skill" && (r.resource === resource || r.resource === "*")) e = r.effect;

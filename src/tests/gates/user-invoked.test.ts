@@ -19,7 +19,7 @@ const HIDDEN = fs.readdirSync(path.join(root, 'skills'))
   .filter((d) => fs.existsSync(path.join(root, 'skills', d, 'SKILL.md'))
     && /^disable-model-invocation:\s*true$/m.test(frontmatter(path.join(root, 'skills', d, 'SKILL.md')).head))
   .sort();
-assert.deepStrictEqual(HIDDEN, ['fx-audit', 'fx-critique', 'fx-grill', 'fx-handoff', 'fx-pr', 'fx-setup', 'fx-what'], 'seven lanes are user-invoked');
+assert.deepStrictEqual(HIDDEN, ['fx-audit', 'fx-critique', 'fx-grill', 'fx-handoff', 'fx-pr', 'fx-retro', 'fx-setup', 'fx-what'], 'eight lanes are user-invoked');
 assert.deepStrictEqual([...USER_INVOKED_LANES].sort(), HIDDEN,
   'the opencode plugins hide exactly the lanes whose frontmatter says disable-model-invocation');
 for (const plugin of ['fx-opencode-v1.js', 'fx-opencode-v2.js']) {
@@ -40,7 +40,7 @@ for (const name of HIDDEN) {
 
 // The command body is the source of truth, modulo reference depth.
 const deepen = (s: string) => s.replace(/\.\.\/(references|agents)\//g, '../../$1/');
-for (const name of ['fx-critique', 'fx-grill', 'fx-handoff', 'fx-pr', 'fx-setup', 'fx-what']) {
+for (const name of ['fx-critique', 'fx-grill', 'fx-handoff', 'fx-pr', 'fx-retro', 'fx-setup', 'fx-what']) {
   const cmd = frontmatter(path.join(root, 'commands', `${name}.md`));
   const skill = frontmatter(path.join(root, 'skills', name, 'SKILL.md'));
   assert.strictEqual(skill.body.trim(), deepen(cmd.body).trim(),
@@ -88,7 +88,7 @@ for (const dir of fs.readdirSync(path.join(root, 'skills'))) {
 // behaviour, not a documented switch: if a future Codex release tolerates
 // this YAML, the hole reopens with no local warning, see the fix-round-1
 // report for the residual risk.
-for (const name of ['fx-critique', 'fx-grill', 'fx-handoff', 'fx-pr', 'fx-setup', 'fx-what']) {
+for (const name of ['fx-critique', 'fx-grill', 'fx-handoff', 'fx-pr', 'fx-retro', 'fx-setup', 'fx-what']) {
   const cmd = frontmatter(path.join(root, 'commands', `${name}.md`));
   const m = cmd.head.match(/^description:[ \t]*(.+)$/m);
   assert.ok(m, `${name}: commands/${name}.md has no single-line description field`);
@@ -103,7 +103,7 @@ for (const name of ['fx-critique', 'fx-grill', 'fx-handoff', 'fx-pr', 'fx-setup'
 // Fix round 1, Important: an unquoted `argument-hint: [name]` parses under
 // strict YAML as a one-element flow-sequence array, not the string the field
 // is meant to carry. Every argument-hint must be a quoted scalar.
-for (const name of ['fx-critique', 'fx-grill', 'fx-handoff', 'fx-pr']) {
+for (const name of ['fx-critique', 'fx-grill', 'fx-handoff', 'fx-pr', 'fx-retro']) {
   const cmd = frontmatter(path.join(root, 'commands', `${name}.md`));
   const m = cmd.head.match(/^argument-hint:[ \t]*(.+)$/m);
   assert.ok(m, `${name}: commands/${name}.md has no argument-hint field`);
