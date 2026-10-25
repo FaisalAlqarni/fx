@@ -5,7 +5,7 @@
 #   opencode:    the installer, run into a scratch config dir, generates a
 #                command for each hidden lane, which is how a user types it.
 #   opencode-v2: the real 2.x binary, no model call: `opencode api
-#                command.list` lists the five commands the plugin registers,
+#                command.list` lists the eight commands the plugin registers,
 #                on the installer route and on the plugin route.
 #   claude-code: a live session, addressing fx-handoff the way a user does: a
 #                /fx:fx-<name> slash command in the print-mode prompt.
@@ -34,7 +34,7 @@ case "$HARNESS" in
       [ -f "$dest/commands/$n.md" ] || { echo "opencode: no command for $n, user route gone" >&2; exit 1; }
     done ;;
   opencode-v2)
-    # The real 2.x binary. The plugin registers the five commands itself
+    # The real 2.x binary. The plugin registers the eight commands itself
     # (command.transform, no command files), so this waits for them in
     # `opencode api command.list` on the route FX_OPENCODE_ROUTE names.
     # Invoking one is `opencode api session.command`, which needs a model

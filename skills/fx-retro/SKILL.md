@@ -37,6 +37,10 @@ it. **Propose first.** Write nothing until the owner picks candidates.
 the ledger. A candidate without one is dropped, never softened into advice.
 Every number comes from a transcript or a command you ran.
 
+**Redact.** Never quote a credential, token, key or personal data from a
+transcript into a candidate, `tasks/lessons.md`, `retro.md` or fbrain. Write
+`[redacted]` in its place.
+
 Route each one:
 
 - **Mechanical mistake** (a fixed pattern, a banned call, a file location):

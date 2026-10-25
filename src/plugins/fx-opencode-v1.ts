@@ -276,7 +276,7 @@ function extractPatchPaths(text: unknown): string[] {
 // or a missing references directory throws here, where config() catches and
 // reports it, and never at module load, where it would take the guard down.
 function applyConfig(config: OpencodeV1Config): void {
-  // Hide the five user-invoked lanes from the model via permission.skill
+  // Hide the eight user-invoked lanes from the model via permission.skill
   // deny. The last matching rule wins, so the broad allow goes first,
   // and only once, so a repeat config() call does not reorder it behind
   // whatever else has since been added. First, before any require or file

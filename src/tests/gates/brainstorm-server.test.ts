@@ -13,8 +13,7 @@ import * as os from 'os';
 import * as path from 'path';
 
 const ROOT = path.join(__dirname, '..', '..');
-const SCRIPTS = path.join(ROOT, 'skills', 'fx-brainstorm', 'scripts');
-const SERVER = path.join(SCRIPTS, 'server.cjs');
+const SHIPPED = path.join(ROOT, 'skills', 'fx-brainstorm', 'scripts');
 
 // Recorded from the hand-written server.cjs before the port.
 const bootstrap = (token: string): string => `<!DOCTYPE html>
@@ -38,6 +37,14 @@ function cleanup(): void {
   fs.rmSync(scratch, { recursive: true, force: true });
 }
 process.on('exit', cleanup);
+
+// The server runs from a scratch copy whose helper.js holds $&, $' and $`, so a
+// string replacement that expands them shows up in the injected helper.
+const SCRIPTS = path.join(scratch, 'scripts');
+fs.mkdirSync(SCRIPTS);
+for (const f of ['server.cjs', 'frame-template.html', 'helper.js']) fs.copyFileSync(path.join(SHIPPED, f), path.join(SCRIPTS, f));
+fs.appendFileSync(path.join(SCRIPTS, 'helper.js'), "\n// replacement sequences: $& $' $`\n");
+const SERVER = path.join(SCRIPTS, 'server.cjs');
 for (const sig of ['SIGINT', 'SIGTERM'] as const) process.on(sig, () => process.exit(1));
 
 const delay = (ms: number): Promise<void> => new Promise(r => setTimeout(r, ms));
@@ -114,7 +121,7 @@ async function main(): Promise<void> {
   const withCookie = await get(port, '/', `brainstorm-key-${port}=${token}`);
   assert.strictEqual(withCookie.status, 200, 'GET / with the cookie is 200');
   const helper = fs.readFileSync(path.join(SCRIPTS, 'helper.js'), 'utf8');
-  assert.ok(withCookie.body.includes(`<script>\n${helper}\n</script>`), 'GET / with the cookie injects helper.js');
+  assert.ok(withCookie.body.includes(`<script>\n${helper}\n</script>`), 'GET / with the cookie injects helper.js byte for byte');
   console.log('ok: cookie request gets a page with the helper script');
 
   const bare = await get(port, '/');

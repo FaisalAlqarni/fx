@@ -51,8 +51,9 @@ recommendation.
         |      commands, each exit code read
         |
         v
-  four options: merge | push and open a PR | leave it | discard.
-  Nothing merges or leaves the machine until you choose.
+  three options: merge | push and open a PR | leave it.
+  Discard happens only when you type it. Nothing merges or
+  leaves the machine until you choose.
 ```
 
 ## What a build costs

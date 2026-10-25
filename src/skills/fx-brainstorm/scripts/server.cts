@@ -399,7 +399,7 @@ function handleRequest(req: http.IncomingMessage, res: http.ServerResponse): voi
       : waitingPage();
 
     if (html.includes('</body>')) {
-      html = html.replace('</body>', helperInjection + '\n</body>');
+      html = html.replace('</body>', () => helperInjection + '\n</body>');
     } else {
       html += helperInjection;
     }

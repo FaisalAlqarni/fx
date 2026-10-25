@@ -320,7 +320,7 @@ function handleRequest(req, res) {
     const screenFile = getNewestScreen();
     let html = screenFile ? ((raw) => isFullDocument(raw) ? raw : wrapInFrame(raw))(fs.readFileSync(screenFile, "utf-8")) : waitingPage();
     if (html.includes("</body>")) {
-      html = html.replace("</body>", helperInjection + "\n</body>");
+      html = html.replace("</body>", () => helperInjection + "\n</body>");
     } else {
       html += helperInjection;
     }
