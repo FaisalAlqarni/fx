@@ -17,7 +17,7 @@
 **Behaviour, exactly:**
 - In `live.sh`, after the fx install block (`codex plugin add` and role planting) and only when `$OPENROUTER` is set and `$HARNESS` is `codex`, run once per row (not once per scratch home: run.sh can re-run a row on the fallback model, and `applySetup` rewrites `config.toml` per row):
   the jail with the key file bound read-only (the same construction `live_run` uses: `JAIL` with its trailing `--` replaced by `--ro-bind "$OR_KEYFILE" "$OR_KEYFILE" --`), then `sh "$FX/tests/conformance/lib/with-key.sh" "$OR_KEYFILE" "$OR_KEY_VAR" --`, then `node "$FX/lib/codex-catalog.js" setup`. Exit 0 continues; any other exit calls `fail "codex catalog setup failed: <the CLI's stderr or report>"`. Factor the key-bound jail construction into one small shell function used by both places rather than copying it.
-- In `live_run`'s `codex)` branch, when `$OPENROUTER` is set, insert the global flag pair `--profile fx-openrouter` between `codex` and `exec`. Without OpenRouter the command line is unchanged.
+- In the `codex` case of `live_run`, when `$OPENROUTER` is set, insert the global flag pair `--profile fx-openrouter` between `codex` and `exec`. Without OpenRouter the command line is unchanged.
 - No new `rm`, `trap`, `bash -c` or `sh -c` text in `live.sh` or the test script.
 
 **Interfaces:**

@@ -44,7 +44,7 @@ The text Codex adds for plugin skills (full copy from `p1-top`; source `CX:ext/s
 
 > Trigger rules: If the user names a skill (with `$SkillName` or plain text) OR the task clearly matches a skill's description shown above, you must use that skill for that turn. Multiple mentions mean use them all. Do not carry skills across turns unless re-mentioned.
 >
-> 1) After deciding to use a skill, the main agent must expand the listed short `path` with the matching alias from `### Skill roots`, then open and read its `SKILL.md` completely before taking task actions.
+> 1. After deciding to use a skill, the main agent must expand the listed short `path` with the matching alias from `### Skill roots`, then open and read its `SKILL.md` completely before taking task actions.
 >
 > Announce which skill(s) you're using and why (one short line). If you skip an obvious skill, say why.
 >
