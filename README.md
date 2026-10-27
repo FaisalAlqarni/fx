@@ -61,6 +61,10 @@ recommendation.
 Measured on fx 0.2.9 with Opus sessions on 2026-10-22, one row per phase of
 the pipeline above.
 
+The implement and review row is the 6-task fixture with no auth; a realistic
+8-task feature with auth measured about 3 times that (40.05M tokens, 53.4 min,
+2026-10-27, Claude Code Opus).
+
 | Phase | Tokens | Wall clock | Measured on |
 |---|---|---|---|
 | Brainstorm: the interview, up to the confidence check | 0.50M to 0.56M | 3.4 to 3.6 min | 2 runs, below |
