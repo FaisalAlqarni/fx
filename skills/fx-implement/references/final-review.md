@@ -9,8 +9,7 @@ Before packaging the branch, decide the docs step. Never invoke `fx-docs` withou
    run a first full documentation run. Run it?" On yes, invoke `fx-docs` for a
    full run in the worktree and ledger `Docs: first full run: <n> written`. On
    no, write `"docs_first_run": "declined"` to `.fx.json` and ledger
-   `Docs: not run: no evidence-bearing docs, first run declined`. With the owner
-   away, ledger `Docs: not run: no evidence-bearing docs, owner away`. Then go on
+   `Docs: not run: no evidence-bearing docs, first run declined`. Then go on
    to the branch pass.
 2. Otherwise offer it in one line: "`fx-docs` can update the docs this branch
    affects before the branch review. Run it?"
@@ -18,8 +17,10 @@ Before packaging the branch, decide the docs step. Never invoke `fx-docs` withou
    `Docs claim wrong:` ledger line and `git diff --no-renames <merge-base>...HEAD --name-only`.
    It commits on the branch. Ledger `Docs: <n> updated, <n> written, <n> listed stale, <n> HTML pages out of date`.
 4. On no, ledger `Docs: not run: declined`.
-5. With the owner away (unattended), do not run it: ledger
-   `Docs: not run: offered, owner away`.
+5. If you cannot put either offer to the owner now (the whole build runs in
+   one turn with no point to ask), ledger `Docs: offer pending` and go on. The
+   completion report then carries the offer as a menu option
+   ([completion.md](./completion.md)). Never ledger `Docs: not run` without the owner's answer or the declined key.
 
 The branch pass below then reviews the whole branch, docs commits included.
 

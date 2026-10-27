@@ -66,7 +66,9 @@ assert.ok(impl.includes('For those, park the task and continue: read [status.md]
 const completion = ref('completion.md');
 const menu = completion.slice(completion.indexOf('1. Merge it into'), completion.indexOf('Which?'));
 assert.ok(menu.includes('1. Merge it into') && menu.includes('2. Push the branch and open a pull request') && menu.includes('3. Leave it as it is, I will handle it'), 'the menu has three options');
-assert.ok(!menu.includes('4. '), 'the menu offers no fourth option');
+// Options 4 and 5 appear only when the docs offer is pending or an ADR candidate exists (e2e bug 1).
+assert.ok(menu.includes('4. Run `fx-docs` on the branch') && menu.includes('5. Write ADRs for the candidates with `fx-adr`'), 'the menu carries the conditional docs and ADR options');
+assert.ok(!menu.includes('6. '), 'the menu offers no sixth option');
 assert.ok(completion.includes('Discard only when the owner asks for it: list the branch, its commits and the worktree path, and act only after the owner types the word discard.'), 'discard needs the listing and the typed word');
 
 // Final review: a parked task resumes when the owner answers, and a plan with a

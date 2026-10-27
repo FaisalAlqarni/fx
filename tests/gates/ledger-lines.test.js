@@ -84,7 +84,8 @@ assert.ok(impl.includes("For those, park the task and continue: read [status.md]
 const completion = ref("completion.md");
 const menu = completion.slice(completion.indexOf("1. Merge it into"), completion.indexOf("Which?"));
 assert.ok(menu.includes("1. Merge it into") && menu.includes("2. Push the branch and open a pull request") && menu.includes("3. Leave it as it is, I will handle it"), "the menu has three options");
-assert.ok(!menu.includes("4. "), "the menu offers no fourth option");
+assert.ok(menu.includes("4. Run `fx-docs` on the branch") && menu.includes("5. Write ADRs for the candidates with `fx-adr`"), "the menu carries the conditional docs and ADR options");
+assert.ok(!menu.includes("6. "), "the menu offers no sixth option");
 assert.ok(completion.includes("Discard only when the owner asks for it: list the branch, its commits and the worktree path, and act only after the owner types the word discard."), "discard needs the listing and the typed word");
 assert.ok(status.includes("Task <NN>: unparked: <owner answer>"), "status.md defines the unparked line");
 assert.ok(/re-dispatch the task/i.test(status), "status.md says the unparked task is re-dispatched");

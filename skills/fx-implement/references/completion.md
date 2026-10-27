@@ -43,10 +43,14 @@ wait**. Report:
   order made, each with what it costs if wrong. **Exhaustive: if the ledger
   holds a ruling, the list holds it.** *It's the only place decisions made on
   the user's behalf reach them: a ruling that dies unreported was a decision
-  made in secret.* A ruling that passes the three ADR tests in `domain-modeling.md`: offer `fx-adr`.
+  made in secret.*
+- **ADR candidates**: every `Ruling:` ledger line that passes the three ADR
+  tests in `domain-modeling.md`, quoted, offered through menu option 5. With
+  none, write `ADR candidates: none`, so the omission is visible.
 - **Docs**: the ledger's `Docs:` line, repeated, naming each doc listed stale.
   When the docs step did not run, list every `Docs claim wrong:` ledger line
-  too, so a wrong doc still reaches the owner.
+  too, so a wrong doc still reaches the owner. With `Docs: offer pending`, say
+  the docs step waits on menu option 4.
 - **Parked**: deferred findings and why.
 - **Skipped**: blocked tasks and what unblocks them.
 - **Needs you**: every `needs you` line in the ledger (a parked task or a declined item), each with what unblocks it, plus the branch name and
@@ -64,9 +68,17 @@ The work is on `<branch>` in `<worktree path>`. What next?
 1. Merge it into `<base branch>` locally
 2. Push the branch and open a pull request
 3. Leave it as it is, I will handle it
+4. Run `fx-docs` on the branch first
+5. Write ADRs for the candidates with `fx-adr`
 
 Which?
 ```
+
+Show option 4 only with `Docs: offer pending` in the ledger, and option 5 only
+with at least one ADR candidate; renumber so the list has no gap. On 4, run
+the docs step as [final-review.md](./final-review.md) says, review its commits
+with the branch pass, then show the menu again. On 5, invoke `fx-adr` for the
+candidates the owner picks, then show the menu again.
 
 **Why an offer rather than a rule.** A prohibition invites the reading that
 found its way around it: a measured run treated "commit it" as the say-so that

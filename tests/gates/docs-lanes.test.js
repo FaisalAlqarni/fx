@@ -62,6 +62,13 @@ has(finalReview, "Docs: not run: no evidence-bearing docs", "the ledger skip wor
 assert.ok(!read(finalReview).includes("Docs: not run: no docs/"), `${finalReview}: the old "no docs/" wording is gone`);
 has(finalReview, '"docs_first_run": "declined"', "a declined first run is recorded in .fx.json");
 has(docs, "says yes to fx-implement's first-run offer", "fx-docs names the first-run offer as a full-run trigger");
+assert.ok(!/owner away/i.test(read(finalReview)), `${finalReview}: no "owner away" skip`);
+has(finalReview, "Docs: offer pending", "an offer the controller cannot put now is ledgered as pending");
+has(finalReview, "Never ledger `Docs: not run` without the owner's answer or the declined key", "not run needs an answer or the declined key");
+has(completion, "Run `fx-docs` on the branch", "a pending docs offer is a completion menu option");
+has(completion, "**ADR candidates**", "the completion report has an ADR candidates section");
+has(completion, "ADR candidates: none", "zero candidates are stated, not omitted");
+has(completion, "Write ADRs for the candidates with `fx-adr`", "the ADR offer is a completion menu option");
 has(docs, "docs-index --root <worktree> stale", "branch mode step 3 runs the stale check");
 has(docs, "every `recheck` claim in a doc outside the step 2 set", "step 3 lists recheck claims outside the touched docs");
 for (const f of [docs, finalReview]) has(f, "<n> listed stale, <n> HTML pages out of date", "the Docs line counts out-of-date HTML pages");
