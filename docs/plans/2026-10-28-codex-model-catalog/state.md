@@ -101,3 +101,13 @@ Coverage audit: 6 gaps (findings/coverage-audit.md). Rulings:
 Ruling: G1 (user-named slugs never reach setupCatalog from fx-setup; commands/fx-setup.md:290 calls setupCatalog({})), G2 (stale fx profile after a model change is not named), G3 (report wording unasserted) and G4 (design.md still lists the write-visibility decision as open; the owner accepted the limit 2026-10-28, per the owner's resume instructions) go to a new task 07. Why: each is a design commitment (stories 2, 10, 3 and 5, Open Questions) with no carrier, and each is a few lines. Cost if wrong: SKILL.md byte budget (19752 of 20000) overrun, caught by skill-size in task 07 and the exit gate.
 Ruling: G5 (codex debug models from fx-setup needs the provider key in the user's shell; an unreachable provider yields Codex's cached view) is parked. Why: Codex itself needs that key to run the model, so a user with a working Codex has it; detecting staleness needs a provider call fx does not make. Cost if wrong: a catalog built from a stale cache, caught by nothing automatic; stated in the completion report.
 Ruling: G6 (no check that Codex is 0.164.0 or that the field set matches) is parked. Why: the design pins 0.164.0 and ADR 0065 and codex.md name it; the earlier fallback ruling already records the cost. Cost if wrong: a later Codex rejects or misreads the catalog, which Codex reports at startup.
+Task 07: dispatched 76d7a0e 2026-10-27T23:33:00Z
+Task 07: implementer a063dbd7ea2e4baf3 (sonnet). Waiting on it; the final review follows task 07.
+Task 07: implementer DONE_WITH_CONCERNS, commit 4a31b4f, SKILL.md 19979 bytes. Task 07: review dispatched (standard tier).
+Task 03: confirmed ⚠️: tests/gates/shell-guard-codex.test.js:121 fails: it compares the SubagentStart hook output to tests/gates/fixtures/hook-golden/codex-subagent-start.expected.txt, which task 03 re-recorded with `<root>` while the hook renders the real plugin root (controller reproduced it). Task 03 reopened: fix round 1 by a fresh implementer (the original implementer belonged to the stopped session and cannot be resumed).
+Task 07: minor (deferred): no test that a marker-carrying symlink fx-*.config.toml is excluded from left
+Task 07: cost unavailable (no transcript recorded)
+Task 07: complete (commits 76d7a0e..4a31b4f, review clean) files: src/lib/codex-catalog.ts and test (plus lib builds), commands/fx-setup.md, skills/fx-setup/SKILL.md, fx-setup-root-check test, design.md Open Questions, references/harnesses/codex.md
+Task 03: fix round 1/5: controller re-review (8 lines): 1 addressed, 0 open (commit 4c152d9)
+Task 03: minor (deferred): hook-env.ts rootToToken comment says it swaps the real path in; it swaps it out for <root>.
+Task 03: complete again (fix 4a31b4f..4c152d9, review clean)
