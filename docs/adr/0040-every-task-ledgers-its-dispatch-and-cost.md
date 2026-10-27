@@ -1,5 +1,7 @@
 # Every task ledgers its dispatch and its cost, and the controller caps outstanding reviews and re-dispatches
 
+Status: Superseded by 0064 (replaced: decisions 3; the rest carried forward)
+
 ## Context
 
 `scripts/build-cost` reports a whole build. Nothing says what one task cost, so a task that burned tokens on repeated dispatches looked the same as a cheap one until the end. Three findings from the pipeline lens on the 2026-10-21 audit sit on the same gap:

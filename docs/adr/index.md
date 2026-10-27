@@ -41,7 +41,7 @@
 | [0037](0037-the-opencode-v2-guard-in-layers.md) | The OpenCode 2.x git guard has three layers, and says which one is live | 2026-10-01 | current |
 | [0038](0038-live-conformance-through-openrouter.md) | Live conformance runs go through OpenRouter, one switch for all four harnesses | 2026-10-01 | current |
 | [0039](0039-codex-addressing-and-shell-run-apply-patch.md) | Codex lanes are addressed as `$fx:fx-<name>`, and the hook lane-checks a patch run through the shell | 2026-10-01 | current |
-| [0040](0040-every-task-ledgers-its-dispatch-and-cost.md) | Every task ledgers its dispatch and its cost, and the controller caps outstanding reviews and re-dispatches | 2026-10-21 | current |
+| [0040](0040-every-task-ledgers-its-dispatch-and-cost.md) | Every task ledgers its dispatch and its cost, and the controller caps outstanding reviews and re-dispatches | 2026-10-21 | superseded by 0064 |
 | [0041](0041-rules-load-stories-do-not.md) | Loaded lane files carry rules; incident stories live in COVERAGE.md | 2026-10-21 | current |
 | [0042](0042-one-compiled-brief-per-implementer.md) | One compiled brief per implementer and per task reviewer | 2026-10-21 | current |
 | [0043](0043-plan-tasks-state-behaviour-and-name-tests.md) | Plan tasks state behaviour and specify their tests in prose | 2026-10-21 | current |
@@ -65,3 +65,4 @@
 | [0061](0061-the-visual-kit-replaces-the-tailwind-and-mermaid-reports.md) | The visual kit replaces the Tailwind and Mermaid reports | 2026-10-25 | accepted |
 | [0062](0062-fx-docs-keeps-docs-on-evidence-lines-and-the-docs-step-is-offered.md) | fx-docs keeps docs on evidence lines, and the docs step is offered | 2026-10-25 | accepted |
 | [0063](0063-a-reverse-index-from-code-path-to-doc-claims-feeds-seven-readers.md) | A reverse index from code path to doc claims feeds seven readers | 2026-10-25 | accepted |
+| [0064](0064-the-transcript-path-is-recorded-in-the-git-common-dir.md) | The transcript path is recorded in the git common dir | 2026-10-27 | current |

@@ -14,7 +14,7 @@ Docs describe code and drift from it. A doc nobody can check reads as true until
    Evidence: `src/lib/doc-evidence.ts`
 3. Each doc records the commit it was last verified at. An ADR, whose body is never edited, has that commit recorded in a tracked `.fx-verified` file beside it, one `<file name> <commit>` line per ADR, written by `docs-index verify`. The stale check has two passes: unchanged cited lines pass free, and every other claim is re-read against the code at HEAD. A stale claim is listed with old and new evidence, never silently rewritten, and a drifted ADR claim is reported for `fx-adr`.
    Evidence: `src/lib/doc-index.ts` `stalePassOne`
-4. `fx-implement` offers the docs step in one line before the branch review and never invokes `fx-docs` itself, so ADR 0006 stands. On a yes, `fx-docs` runs in branch mode on the branch's diff and commits on the branch, so the branch review covers its commits. With the owner away the step is not run, and the completion report's Docs line says so. In a repo where no doc carries an evidence line, `fx-implement` instead offers a first full documentation run once; a no is stored as `"docs_first_run": "declined"` in `.fx.json` and the offer stops.
+4. `fx-implement` offers the docs step in one line before the branch review and never invokes `fx-docs` itself, so ADR 0006 stands. On a yes, `fx-docs` runs in branch mode on the branch's diff and commits on the branch, so the branch review covers its commits. An offer the controller cannot put to the owner (the build runs in one turn with no point to ask) is ledgered `Docs: offer pending` and becomes option 4 of the completion menu, so the step is never skipped on a guess that the owner is away. The completion report also carries a required ADR candidates section, offered as option 5 (`ADR candidates: none` when there are none). In a repo where no doc carries an evidence line, `fx-implement` instead offers a first full documentation run once; a no is stored as `"docs_first_run": "declined"` in `.fx.json` and the offer stops.
    Evidence: `skills/fx-implement/references/final-review.md`
 5. The lane writes into the repo's own docs structure and flavour: MkDocs Material features only in a MkDocs repo, GitHub callouts and Mermaid elsewhere. The repo's docs guide wins; with none the lane follows a default guide shipped beside it and does not write it into the repo.
    Evidence: `skills/fx-docs/docs-guide.md`
@@ -23,7 +23,7 @@ Docs describe code and drift from it. A doc nobody can check reads as true until
 
 - A reader can open the code a claim cites, and a doc that drifts shows up in the stale check.
 - Writing a doc costs an evidence line per claim.
-- A branch gets doc updates only when the owner says yes, and an unattended build records that it did not run them.
+- A branch gets doc updates only when the owner says yes, and an offer that could not be put during the build waits in the completion menu.
 
 ## Alternatives
 
