@@ -61,9 +61,11 @@ recommendation.
 Measured on fx 0.2.9 with Opus sessions on 2026-10-22, one row per phase of
 the pipeline above.
 
-The implement and review row is the 6-task fixture with no auth; a realistic
-8-task feature with auth measured about 3 times that (40.05M tokens, 53.4 min,
-2026-10-27, Claude Code Opus).
+The implement and review row is the 6-task fixture with no auth. A realistic
+7-task feature with auth, on fx 0.7.0 with Claude Code Opus on 2026-10-27, cost
+43.6M tokens and 52.6 min from idea to the completion menu, with the specs run
+for real (77 examples). The docs step, 2 ADRs and 4 HTML pages after it added
+23.1M tokens and 25 min.
 
 | Phase | Tokens | Wall clock | Measured on |
 |---|---|---|---|
