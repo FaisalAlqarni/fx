@@ -371,6 +371,14 @@ defect in your dispatch, not a reason to retry.**
 
 After the owner answers the completion menu, read [finishing.md](./references/finishing.md).
 
+**The end of a build is five steps, in this order. A report that skips one is not a completion report.**
+
+1. Docs offer: put it to the owner and ledger the `Docs:` line. No answer yet means `Docs: offer pending`, never a skip.
+2. Branch review, ledgered as `Final review:`.
+3. Exit gate: `test_all` from `.fx.json`, ledgered as `Exit gate:`.
+4. `node <skill base directory>/../../scripts/plan-check <worktree>/docs/plans/<slug>`: quote its output, and list every `FAIL` under "Not done".
+5. The completion report: an `ADR candidates` section ("none" when empty), then the menu, with options 4 (`fx-docs`) and 5 (`fx-adr`) when they apply.
+
 ## Common rationalizations
 
 **When a thought argues for skipping a step**: read [rationalizations.md](./references/rationalizations.md), every time.
