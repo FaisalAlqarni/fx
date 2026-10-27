@@ -93,3 +93,11 @@ Task 06: ⚠️ CX: line numbers come from research/codex-integration.md, not ch
 Task 06: cost unavailable (no transcript recorded)
 Task 06: complete (commits 320f88e..d518bd0, review clean) files: ADR 0065, ADR 0020 and 0039 amendments, ADR index, references/harnesses/codex.md, harness-facts test
 Task 05: fix round 1 implementer DONE, commit 8ef0ec2; re-review dispatched (lens finding, so dispatched not controller). Coverage audit dispatched (standard tier).
+Task 05: fix round 1/5 (1 addressed, 0 open: none; commits 93444e8..8ef0ec2)
+Task 05: minor (deferred): live.sh:265 the scrub exit status on the setup-failure path is ignored, so a key redacted from the scratch home there is not named
+Task 05: cost unavailable (no transcript recorded)
+Task 05: complete (commits e5ae11d..8ef0ec2 excluding 04 and 06 commits, review clean after fix round 1) files: tests/conformance/lib/live.sh, live-openrouter.test.sh, openrouter test (ts and js)
+Coverage audit: 6 gaps (findings/coverage-audit.md). Rulings:
+Ruling: G1 (user-named slugs never reach setupCatalog from fx-setup; commands/fx-setup.md:290 calls setupCatalog({})), G2 (stale fx profile after a model change is not named), G3 (report wording unasserted) and G4 (design.md still lists the write-visibility decision as open; the owner accepted the limit 2026-10-28, per the owner's resume instructions) go to a new task 07. Why: each is a design commitment (stories 2, 10, 3 and 5, Open Questions) with no carrier, and each is a few lines. Cost if wrong: SKILL.md byte budget (19752 of 20000) overrun, caught by skill-size in task 07 and the exit gate.
+Ruling: G5 (codex debug models from fx-setup needs the provider key in the user's shell; an unreachable provider yields Codex's cached view) is parked. Why: Codex itself needs that key to run the model, so a user with a working Codex has it; detecting staleness needs a provider call fx does not make. Cost if wrong: a catalog built from a stale cache, caught by nothing automatic; stated in the completion report.
+Ruling: G6 (no check that Codex is 0.164.0 or that the field set matches) is parked. Why: the design pins 0.164.0 and ADR 0065 and codex.md name it; the earlier fallback ruling already records the cost. Cost if wrong: a later Codex rejects or misreads the catalog, which Codex reports at startup.
