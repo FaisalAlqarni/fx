@@ -287,7 +287,7 @@ if (!fs.existsSync(path.join(fx, "PREAMBLE.md"))) no("no PREAMBLE.md");
 const p = require(path.join(fx, "lib", "plant-roles"));
 const r = p.plantRoles({});
 let catalog;
-try { catalog = require(path.join(fx, "lib", "codex-catalog")).setupCatalog({}); } catch (e) { catalog = { error: String(e && e.message || e) }; }
+try { catalog = require(path.join(fx, "lib", "codex-catalog")).setupCatalog({ slugs: (process.env.FX_CODEX_SLUGS || "").split(/\s+/).filter(Boolean) }); } catch (e) { catalog = { error: String(e && e.message || e) }; }
 console.log(JSON.stringify({ written: r.written, stale: r.stale, kept: r.kept, audit: p.auditRoles({}), hooksTrusted: p.hooksTrusted({}), catalog }));
 '
 ```
@@ -322,17 +322,21 @@ cannot dispatch the roles it just received.
 
 Then report `catalog`, fx's declaration of a third-party model to Codex:
 
-- `skipped`: one line, no catalog was needed, with the reason it gives.
-- `profile` set: list `written`. Print `command` as the line to start Codex
-  with. Say the profile's catalog replaces Codex's remote model list, so any
-  other model run under that profile gets Codex's fallback metadata. Name each
-  `cloned` slug and say its context window (272000) is Codex's guess.
+- `skipped`: one line, with the reason it gives. Name each `left` file as an
+  earlier fx profile still in place, which fx did not remove; a model change
+  needs fx-setup run again.
+- `profile` set: list `written`; print `command` as the line to start Codex.
+  Say the profile replaces Codex's remote model list, so any other model under
+  it gets Codex's fallback metadata. Name each `cloned` slug; its context
+  window (272000) is Codex's guess.
 - `kept`, `refused` or `error`: name each, say nothing was written for it and
   why. Never edit `config.toml` and never ask to.
-- Say once what fx's write checks see (tool facts: `../references/harnesses/codex.md`).
+- When the user names models for Codex, set `FX_CODEX_SLUGS` to them on the
+  command (space separated).
+- Say once what fx's write checks see (`../references/harnesses/codex.md`).
   On OpenRouter an `openai/` model gets Codex's patch tool and fx sees its
-  edits. An `anthropic/` model does not, so fx sees only patch commands run in
-  the shell; heredoc writes are not seen.
+  edits. An `anthropic/` model does not: fx sees only patch commands run in
+  the shell, not heredoc writes.
 
 Then report `hooksTrusted`:
 

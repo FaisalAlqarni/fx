@@ -187,6 +187,20 @@ const list = (...es: unknown[]) => () => es;
   assert.strictEqual(called, false);
 }
 
+// A skipped setup names the fx profiles it leaves in place; user files and others are not named.
+{
+  const home = tmpHome('model = "gpt-6.1-sol"\n');
+  const none = setupCatalog({ codexHome: home, listModels: () => [] });
+  assert.deepStrictEqual(none.left, []);
+  const fxFile = path.join(home, 'fx-openrouter.config.toml');
+  fs.writeFileSync(fxFile, `${PROFILE_MARKER}\nmodel_catalog_json = "x"\n`);
+  fs.writeFileSync(path.join(home, 'fx-x.config.toml'), 'model = "mine"\n');
+  const r = setupCatalog({ codexHome: home, listModels: () => [] });
+  assert.strictEqual(r.skipped, 'no third-party model in config.toml and no slug named');
+  assert.deepStrictEqual(r.left, [fxFile]);
+  assert.strictEqual(fs.readFileSync(fxFile, 'utf8'), `${PROFILE_MARKER}\nmodel_catalog_json = "x"\n`);
+}
+
 // Named slugs follow the config model, de-duplicated.
 {
   const home = tmpHome(OR_CFG);

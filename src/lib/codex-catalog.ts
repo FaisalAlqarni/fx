@@ -63,6 +63,7 @@ export interface SetupReport {
   cloned: string[];
   refused: { slug: string; reason: string }[];
   skipped: string | null;
+  left: string[];
 }
 
 // Only the top-level string keys model and model_provider; tables start at the first "[" line.
@@ -100,6 +101,19 @@ function isRegular(file: string): boolean | null {
 const ownsProfile = (file: string): boolean =>
   fs.readFileSync(file, 'utf8').split('\n', 1)[0] === PROFILE_MARKER;
 
+// fx profiles an earlier run wrote, still in place after the model changed.
+function leftProfiles(home: string): string[] {
+  let names: string[];
+  try {
+    names = fs.readdirSync(home);
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === 'ENOENT') return [];
+    throw e;
+  }
+  return names.filter((n) => /^fx-.*\.config\.toml$/.test(n)).sort()
+    .map((n) => path.join(home, n)).filter((f) => isRegular(f) === true && ownsProfile(f));
+}
+
 function ownsCatalog(file: string): boolean {
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8')).fx_generated === CATALOG_MARKER; // ts-gate-ok: parse failure is caught above and means not fx-owned
@@ -113,9 +127,10 @@ export function setupCatalog({ codexHome, slugs: named = [], listModels = defaul
   const cfg = readConfig(path.join(home, 'config.toml'));
   const thirdParty = cfg.provider !== null && cfg.provider !== 'openai';
   const slugs = [...new Set([...(thirdParty && cfg.model ? [cfg.model] : []), ...named])];
-  const report: SetupReport = { provider: cfg.provider, slugs, profile: null, command: null, written: [], kept: [], cloned: [], refused: [], skipped: null };
+  const report: SetupReport = { provider: cfg.provider, slugs, profile: null, command: null, written: [], kept: [], cloned: [], refused: [], skipped: null, left: [] };
   if (slugs.length === 0) {
     report.skipped = 'no third-party model in config.toml and no slug named';
+    report.left = leftProfiles(home);
     return report;
   }
   const provider = thirdParty ? (cfg.provider as string) : 'custom';

@@ -9,7 +9,7 @@ Nothing here is load-bearing before a lane is invoked: ADR 0020.
 
 No `Read`, `Grep` or `Glob` tool exists. Everything goes through the shell.
 
-MEASURED 2026-10-28 on Codex CLI 0.164.0: the `apply_patch` tool exists only when the model's catalog entry sets `apply_patch_tool_type` (`CX:core/src/tools/spec_plan.rs:1409-1412`; only `freeform` exists in 0.164, and `function` fails with "unknown variant `function`, expected `freeform`", run `ap2-function`). Over OpenRouter an `openai/` model receives the tool (run `ap5-gpt-tools`) and an `anthropic/` model does not (run `ap4-tools`: Haiku's tool list has no `apply_patch`). There its edits arrive as a shell `apply_patch` command, which fx sees (ADR 0039), or as heredocs, which fx does not see, by decision (ADR 0065).
+MEASURED 2026-10-28 on Codex CLI 0.164.0: the `apply_patch` tool exists only when the model's catalog entry sets `apply_patch_tool_type` (`CX:core/src/tools/spec_plan.rs:1409-1412`; only `freeform` exists in 0.164, and `function` fails with "unknown variant `function`, expected `freeform`", run `ap2-function`). Over OpenRouter an `openai/` model receives the tool (run `ap5-gpt-tools`) and an `anthropic/` model does not (run `ap4-tools`: Haiku's tool list has no `apply_patch`). There its edits arrive as a shell `apply_patch` command, which fx sees (ADR 0039), or as heredocs, which fx does not see, by decision (owner accepted 2026-10-28, ADR 0065).
 
 A shell call arrives at a hook as `tool_name: "Bash"`, with the command at
 `tool_input.command`. The `exec_command` tool reaches hooks under that name

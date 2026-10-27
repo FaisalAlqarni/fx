@@ -91,15 +91,15 @@ assert.strictEqual(out.catalog.skipped, 'no third-party model in config.toml and
 // OpenRouter config: the same command writes the profile and reports it; a failing
 // `codex` is reported under catalog.error and the roles still print.
 const OR_CFG = 'model = "anthropic/claude-haiku-4.5"\nmodel_provider = "openrouter"\n';
-function runWithCodex(label: string, stubBody: string) {
+function runWithCodex(label: string, stubBody: string, extraEnv: Record<string, string> = {}, cfg = OR_CFG) {
   const dir = fs.mkdtempSync(path.join(s, 'or-'));
   const home = path.join(dir, 'codex-home');
   fs.mkdirSync(home);
-  fs.writeFileSync(path.join(home, 'config.toml'), OR_CFG);
+  fs.writeFileSync(path.join(home, 'config.toml'), cfg);
   const bin = path.join(dir, 'bin');
   fs.mkdirSync(bin);
   fs.writeFileSync(path.join(bin, 'codex'), `#!/usr/bin/env node\n${stubBody}\n`, { mode: 0o755 });
-  const env = { ...process.env, HOME: s, TMPDIR: s, CODEX_HOME: home, PATH: `${bin}${path.delimiter}${process.env.PATH ?? ''}` };
+  const env = { ...process.env, HOME: s, TMPDIR: s, CODEX_HOME: home, ...extraEnv, PATH: `${bin}${path.delimiter}${process.env.PATH ?? ''}` };
   const r = spawnSync('bash', ['-c', withBase(command, skillDir(root))], { cwd: repo, env, encoding: 'utf8' });
   assert.strictEqual(r.status, 0, `${label}: exits 0 (${r.stderr})`);
   return { home, out: JSON.parse(r.stdout) }; // ts-gate-ok: the test parses output it just produced
@@ -116,6 +116,27 @@ const haikuEntry = { slug: 'anthropic/claude-haiku-4.5', display_name: 'Claude H
   const r = runWithCodex('codex fails', 'process.exit(1);');
   assert.ok(typeof r.out.catalog.error === 'string' && r.out.catalog.error.length > 0, 'catalog.error carries the message');
   assert.strictEqual(r.out.written.length, 6, 'the roles are still planted and printed');
+}
+
+// A model the user names reaches setupCatalog through FX_CODEX_SLUGS.
+{
+  const r = runWithCodex('named slug', `console.log(${JSON.stringify(JSON.stringify({ models: [] }))});`, { FX_CODEX_SLUGS: 'anthropic/claude-haiku-4.5' }, '');
+  assert.strictEqual(r.out.catalog.profile, 'fx-custom');
+  assert.deepStrictEqual(r.out.catalog.slugs, ['anthropic/claude-haiku-4.5']);
+}
+
+// The report wording for the Codex catalog is asserted, so a rewrite cannot drop a statement.
+{
+  const sec = (/^## [^\n]*Codex[^\n]*\n[\s\S]*?(?=^## )/m.exec(md) ?? [''])[0].replace(/\s+/g, ' ');
+  assert.ok(sec.includes('FX_CODEX_SLUGS'), 'the Codex section was found');
+  for (const [what, re] of [
+    ['the profile replaces the remote model list', /replaces Codex's remote model list/],
+    ['the cloned window is a guess', /272000\) is Codex's guess/],
+    ['kept, refused and error leave config.toml alone', /`kept`, `refused` or `error`[\s\S]*Never edit `config\.toml`/],
+    ['the Anthropic limit on OpenRouter', /`anthropic\/`[\s\S]*heredoc/],
+    ['FX_CODEX_SLUGS', /FX_CODEX_SLUGS/],
+    ['left', /`left`/],
+  ] as const) assert.ok(re.test(sec), `section 6 says: ${what}`);
 }
 
 // A path holding shell metacharacters reaches node unexpanded.

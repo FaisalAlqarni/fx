@@ -154,7 +154,7 @@ Anti-goals: a profile that silently drops the user's other models' metadata with
 
 ## Open Questions
 
-- [ ] **Write visibility for Anthropic models on OpenRouter.** Deferred to the owner. With this design, fx's write checks on that path see only shell-run `apply_patch`; heredoc writes are unseen, and protection against code before design rests on the skill contract plus the preamble. Without a decision, the design ships with that limit stated in the ADR, `codex.md` and the fx-setup report, and arm A3's code-before-design count measures how much it matters.
+- [x] **Write visibility for Anthropic models on OpenRouter.** Deferred to the owner. With this design, fx's write checks on that path see only shell-run `apply_patch`; heredoc writes are unseen, and protection against code before design rests on the skill contract plus the preamble. Without a decision, the design ships with that limit stated in the ADR, `codex.md` and the fx-setup report, and arm A3's code-before-design count measures how much it matters. Decided 2026-10-28: the owner accepted shipping with this limit stated.
 
 ## Further Notes
 
