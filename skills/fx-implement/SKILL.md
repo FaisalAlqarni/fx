@@ -376,7 +376,7 @@ After the owner answers the completion menu, read [finishing.md](./references/fi
 1. Docs offer: put it to the owner and ledger the `Docs:` line. No answer yet means `Docs: offer pending`, never a skip.
 2. Branch review, ledgered as `Final review:`.
 3. Exit gate: `test_all` from `.fx.json`, ledgered as `Exit gate:`.
-4. `node <skill base directory>/../../scripts/plan-check <worktree>/docs/plans/<slug>`: quote its output, and list every `FAIL` under "Not done".
+4. Ledger `ADR candidates: <n>: <rulings>` or `ADR candidates: none`, then `node <skill base directory>/../../scripts/plan-check <worktree>/docs/plans/<slug>`: quote its output, and list every `FAIL` under "Not done".
 5. The completion report: an `ADR candidates` section ("none" when empty), then the menu, with options 4 (`fx-docs`) and 5 (`fx-adr`) when they apply.
 
 ## Common rationalizations

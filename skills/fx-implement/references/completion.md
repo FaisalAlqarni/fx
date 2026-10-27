@@ -29,7 +29,8 @@ git commit -m "docs(plan): record plan completion"
 ## Completion report
 
 You do not integrate the work. You report it, then **offer the choice and
-wait**. First run
+wait**. First ledger `ADR candidates: <n>: <the rulings>` or `ADR candidates: none`
+(the section below says which rulings qualify). Then run
 `node <skill base directory>/../../scripts/plan-check <worktree>/docs/plans/<slug>`
 and quote its output. Every `FAIL` line goes under "Not done", and while any
 check fails the report never says the build is complete. Report:

@@ -47,7 +47,7 @@ const good = () => {
   put("plan.md", "# P\n\n| # | Title | Blocked by |\n|---|---|---|\n| 01 | One | none |\n| 02 | Two | 01 |\n");
   put("tasks/01-one.md", "# 01\n");
   put("tasks/02-two.md", "# 02\n");
-  put("state.md", "Task 01: complete (commits a..b, review clean)\nTask 02: parked: needs you: x\nFinal review: clean\nExit gate: scripts/check-all: ALL GREEN\n");
+  put("state.md", "Task 01: complete (commits a..b, review clean)\nTask 02: parked: needs you: x\nFinal review: clean\nExit gate: scripts/check-all: ALL GREEN\nDocs: offer pending\nADR candidates: none\n");
 };
 good();
 let r = check();
@@ -83,6 +83,10 @@ put("state.md", "Task 01: complete (x)\nTask 02: complete (y)\nExit gate: ok\n")
 fails("no Final review line", /^FAIL ledger: no Final review: line/m);
 put("state.md", "Task 01: complete (x)\nTask 02: complete (y)\nFinal review: clean\n");
 fails("no Exit gate line", /^FAIL ledger: no Exit gate: line/m);
+put("state.md", "Task 01: complete (x)\nTask 02: complete (y)\nFinal review: clean\nExit gate: ok\nADR candidates: none\n");
+fails("no Docs line: the docs offer never reached the owner", /^FAIL ledger: no Docs: line/m);
+put("state.md", "Task 01: complete (x)\nTask 02: complete (y)\nFinal review: clean\nExit gate: ok\nDocs: offer pending\n");
+fails("no ADR candidates line", /^FAIL ledger: no ADR candidates: line/m);
 put("findings/08-review.md", "fine\nan em \u2014 dash\n");
 fails("an em dash in a findings file", /^FAIL dashes: findings\/08-review\.md:2/m);
 put("state.md", "Task 01: complete (x \u2013 y)\nTask 02: complete (y)\nFinal review: clean\nExit gate: ok\n");

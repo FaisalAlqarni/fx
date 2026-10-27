@@ -65,8 +65,8 @@ if (state === null) report("state.md", "missing", "");
 else {
   const open = rows.filter((n) => !new RegExp(`^Task ${n}: (complete|parked:)`, "m").test(state));
   report("tasks done", open.length ? `${open.join(", ")} has no Task NN: complete or Task NN: parked: line` : null, `${rows.length} complete or parked`);
-  const missing = ["Final review:", "Exit gate:"].filter((l) => !new RegExp(`^${l}`, "m").test(state));
-  report("ledger", missing.length ? missing.map((l) => `no ${l} line`).join(", ") : null, "Final review: and Exit gate: lines present");
+  const missing = ["Final review:", "Exit gate:", "Docs:", "ADR candidates:"].filter((l) => !new RegExp(`^${l}`, "m").test(state));
+  report("ledger", missing.length ? missing.map((l) => `no ${l} line`).join(", ") : null, "Final review:, Exit gate:, Docs: and ADR candidates: lines present");
 }
 const b = (0, import_child_process.spawnSync)("git", ["-C", dir, "rev-parse", "--abbrev-ref", "HEAD"], { encoding: "utf8" });
 const branch = b.status === 0 ? b.stdout.trim() : "";
