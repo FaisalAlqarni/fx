@@ -239,6 +239,13 @@ grep -q CONFIG_HAS_CATALOG <<<"$cxlog" && { echo "FAIL: the scratch config.toml 
 cxstub 1
 check '^FAIL  95' "a failed catalog generator is not a FAIL"
 check 'codex catalog setup failed' "the failed generator is not named"
+# The generator runs with the key in its environment, so a failure's text is
+# scanned like a log: a key in it is withheld, never printed.
+sed -i 's|echo "stub: models list failed" >&2|echo "stub: models list failed, token $OPENROUTER_API_KEY" >\&2|' "$FAKE/bin/codex"
+out="$(env PATH="$FAKE/bin:$PATH" HOME="$FAKE" FX_REAL_HOME="$FAKE" FX_CONFORMANCE_ROWS="$T/rows" FX_CONFORMANCE_LOGS="$LOGS" \
+  FX_LIVE_PROVIDER=openrouter FX_LIVE_MODEL=openrouter/anthropic/claude-haiku-4.5 OPENROUTER_API_KEY=$KEY bash tests/conformance/run.sh codex 2>&1)"
+check 'codex catalog setup failed' "a generator failure that printed the key is not named"
+grep -q "$KEY" <<<"$out" && { echo "FAIL: the generator's failure text printed the key"; fails=1; }
 
 # run.sh: the re-run on the fallback, and a second 75.
 r75() { rm -f "$LOGS"/*; out="$(env FX_CONFORMANCE_ROWS="$T/rows75" FX_CONFORMANCE_LOGS="$LOGS" FX_LIVE_PROVIDER=openrouter "$@" bash tests/conformance/run.sh codex 2>&1)"; rc=$?; }

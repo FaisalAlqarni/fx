@@ -258,8 +258,14 @@ live_workdir() {
   if [ -n "$OPENROUTER" ] && [ "$HARNESS" = codex ]; then
     local -a SJ KW; key_jail
     local cat_out
-    cat_out="$("${SJ[@]}" "${KW[@]}" node "$FX/lib/codex-catalog.js" setup 2>&1)" \
-      || fail "codex catalog setup failed: $cat_out"
+    if ! cat_out="$("${SJ[@]}" "${KW[@]}" node "$FX/lib/codex-catalog.js" setup 2>&1)"; then
+      # The generator ran with the key in its environment: scan its text and the
+      # scratch home as live_run does, and never print a text that holds the key.
+      printf '%s\n' "$cat_out" > "$KEYDIR/setup.out"
+      node "$OR_JS" scrub "$LIVE_SCRATCH" "$OR_KEYFILE" >/dev/null 2>&1
+      node "$OR_JS" leaks "$KEYDIR/setup.out" "$OR_KEYFILE" || cat_out="(output withheld: it held the key, or the scan could not run)"
+      fail "codex catalog setup failed: $cat_out"
+    fi
   fi
   WORK="$(mktemp -d "$LIVE_SCRATCH/work.XXXXXX")" || fail "mktemp failed"
   case "$WORK" in "$LIVE_SCRATCH"/work.?*) ;; *) fail "unexpected workdir: $WORK" ;; esac
