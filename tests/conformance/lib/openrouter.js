@@ -37,6 +37,7 @@ __export(openrouter_exports, {
   isProviderError: () => isProviderError,
   leaksKey: () => leaksKey,
   providerSetup: () => providerSetup,
+  scrubKey: () => scrubKey,
   sessionModel: () => sessionModel
 });
 module.exports = __toCommonJS(openrouter_exports);
@@ -60,7 +61,7 @@ function readFile(f) {
   return Reflect.apply(fs.readFileSync, fs, [f, "utf8"]);
 }
 const OLD_KEYS = /^model(?:_provider)? = .*\n/gm;
-const OLD_TABLES = /^\[(?:model_providers\.openrouter(?:\.auth)?|agents)\]\n(?:(?!\[)[^\n]*\n)*/gm;
+const OLD_TABLES = /^\[(?:model_providers\.openrouter(?:\.auth)?|agents|shell_environment_policy)\]\n(?:(?!\[)[^\n]*\n)*/gm;
 function stripOld(toml) {
   const i = toml.search(/^\[/m);
   const head = i < 0 ? toml : toml.slice(0, i), rest = i < 0 ? "" : toml.slice(i);
@@ -87,6 +88,13 @@ function providerSetup(harness, model) {
         // a child that can dispatch. V2 models ignore the key.
         "[agents]",
         "max_depth = 2",
+        "",
+        // Codex snapshots the shell environment under CODEX_HOME/shell_snapshots
+        // and hands it to every command: the key once reached disk there (e2e
+        // bug 2). The provider auth command above reads Codex's own environment.
+        "[shell_environment_policy]",
+        "ignore_default_excludes = false",
+        'exclude = ["OPENROUTER_API_KEY", "ANTHROPIC_AUTH_TOKEN"]',
         ""
       ].join("\n") } };
     case "opencode":
@@ -218,6 +226,25 @@ function sessionModel(harness, logText) {
   return null;
 }
 const leaksKey = (text, key) => String(text).includes("sk-or-") || !!key && String(text).includes(String(key));
+function scrubKey(dir, key) {
+  if (!key) throw new Error("no key to scan for");
+  const needle = Buffer.from(key);
+  const hits = [];
+  const walk = (d) => {
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      const f = path.join(d, e.name);
+      if (e.isDirectory()) walk(f);
+      else if (e.isFile()) {
+        const buf = fs.readFileSync(f);
+        if (buf.indexOf(needle) < 0) continue;
+        fs.writeFileSync(f, buf.toString("latin1").split(needle.toString("latin1")).join("REDACTED"), "latin1");
+        hits.push(path.relative(dir, f));
+      }
+    }
+  };
+  walk(dir);
+  return hits.sort();
+}
 function applySetup(setup, home) {
   for (const [rel, body] of Object.entries(setup.files)) {
     const f = Reflect.apply(path.join, path, [home, rel]);
@@ -259,8 +286,17 @@ if (require.main === module) {
       console.error(`leak scan failed: ${e instanceof Error ? e.message : String(e)}`);
       process.exit(3);
     }
+  } else if (cmd === "scrub") {
+    try {
+      const hits = scrubKey(String(a), readFile(b).trim());
+      for (const h of hits) console.log(h);
+      process.exit(hits.length ? 10 : 0);
+    } catch (e) {
+      console.error(`key scrub failed: ${e instanceof Error ? e.message : String(e)}`);
+      process.exit(3);
+    }
   } else {
-    console.error("usage: openrouter.js env|setup|model|error|child|leaks ...");
+    console.error("usage: openrouter.js env|setup|model|error|child|leaks|scrub ...");
     process.exit(2);
   }
 }
@@ -273,5 +309,6 @@ if (require.main === module) {
   isProviderError,
   leaksKey,
   providerSetup,
+  scrubKey,
   sessionModel
 });

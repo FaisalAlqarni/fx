@@ -151,6 +151,11 @@ const toml = fs.readFileSync(path.join(home, '.codex', 'config.toml'), 'utf8');
 assert.strictEqual(toml.split('[model_providers.openrouter]').length, 2, 'the provider table appears once');
 assert.strictEqual(toml.split('[agents]').length, 2, 'the agents table appears once');
 assert.ok(/\[agents\]\nmax_depth = 2\n/.test(toml), 'codex nests two deep, so rows 15 and 18 can grade a V1 model');
+// Codex snapshots its shell environment under CODEX_HOME and passes it to commands:
+// the key names are excluded, and the default KEY/SECRET/TOKEN excludes are on.
+assert.strictEqual(toml.split('[shell_environment_policy]').length, 2, 'the shell environment policy appears once');
+assert.ok(/\[shell_environment_policy\]\nignore_default_excludes = false\nexclude = \["OPENROUTER_API_KEY", "ANTHROPIC_AUTH_TOKEN"\]\n/.test(toml),
+  'codex keeps the key variables out of the shell environment');
 assert.ok(toml.includes('model = "b/two"') && !toml.includes('a/one') && toml.includes('[plugins.fx]\nenabled = true') && toml.includes('[marketplaces.fx]'), 'latest model, existing tables kept');
 fs.mkdirSync(path.join(home, '.config', 'opencode'), { recursive: true });
 fs.writeFileSync(path.join(home, '.config', 'opencode', 'opencode.json'), '{"plugin":["x"]}');
@@ -158,5 +163,22 @@ or.applySetup(or.providerSetup('opencode', or.MODELS.primary), home);
 const oc = JSON.parse(fs.readFileSync(path.join(home, '.config', 'opencode', 'opencode.json'), 'utf8')); // ts-gate-ok: the test parses config it just wrote
 assert.deepStrictEqual(oc.plugin, ['x']);
 assert.strictEqual(oc.model, `openrouter/${or.MODELS.primary}`);
+// scrubKey: every regular file under a dir holding the key's value is
+// rewritten with REDACTED in place, and the paths are returned; the key is never.
+const fake = 'fxfake-0123456789-key';
+fs.mkdirSync(path.join(home, 'snap', 'deep'), { recursive: true });
+fs.writeFileSync(path.join(home, 'snap', 'deep', 's.sh'), `declare -x OPENROUTER_API_KEY=${fake}\nmore ${fake}\n`);
+fs.writeFileSync(path.join(home, 'snap', 'clean.txt'), 'nothing here\n');
+fs.symlinkSync(path.join(home, 'snap', 'deep', 's.sh'), path.join(home, 'snap', 'link'));
+assert.deepStrictEqual(or.scrubKey(path.join(home, 'snap'), fake), ['deep/s.sh'], 'only the file holding the key is reported, links are not followed');
+assert.strictEqual(fs.readFileSync(path.join(home, 'snap', 'deep', 's.sh'), 'utf8'), 'declare -x OPENROUTER_API_KEY=REDACTED\nmore REDACTED\n', 'the value is overwritten in place');
+assert.deepStrictEqual(or.scrubKey(path.join(home, 'snap'), fake), [], 'a scrubbed dir is clean');
+assert.throws(() => or.scrubKey(path.join(home, 'snap'), ''), /no key/, 'an empty key is a scan failure, never clean');
+const kf = path.join(home, 'keyfile'); fs.writeFileSync(kf, fake);
+fs.writeFileSync(path.join(home, 'snap', 'again'), fake);
+const cli = cpx.spawnSync('node', [path.join(__dirname, 'lib', 'openrouter.js'), 'scrub', path.join(home, 'snap'), kf], { encoding: 'utf8' });
+assert.strictEqual(cli.status, 10, 'the CLI exits 10 on a leak');
+assert.ok(cli.stdout.includes('again') && !cli.stdout.includes(fake) && !cli.stderr.includes(fake), 'the CLI names the file and never prints the key');
+assert.strictEqual(cpx.spawnSync('node', [path.join(__dirname, 'lib', 'openrouter.js'), 'scrub', '/nonexistent/dir', kf]).status, 3, 'a dir that cannot be read is a scan failure');
 fs.rmSync(home, { recursive: true });
 console.log('openrouter.test.js: OK');

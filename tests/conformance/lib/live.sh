@@ -337,6 +337,18 @@ live_run() {
   esac
   rc=$?
   wait "$p1" "$p2"
+  # The whole scratch home, not only the log: Codex once wrote the key into a
+  # shell snapshot under CODEX_HOME (e2e bug 2). Each hit is redacted in place
+  # and named, never printed, and fails the row; a scan that cannot run fails it too.
+  if [ -n "$OPENROUTER" ]; then
+    local leaked lrc=0
+    leaked="$(node "$OR_JS" scrub "$LIVE_SCRATCH" "$OR_KEYFILE")" || lrc=$?
+    case $lrc in
+      0) ;;
+      10) fail "LEAK: the key was in $(printf '%s' "$leaked" | tr '\n' ' ')under $LIVE_SCRATCH; redacted in place" ;;
+      *) fail "the key scan of the scratch home could not run" ;;
+    esac
+  fi
   local out_empty=0; [ -s "$LOG" ] || out_empty=1
   rm -f -- "$LOGDIR/out.pipe" "$LOGDIR/err.pipe"
   # The CLI's own errors, as JSON: a top-level error event (Codex's error and

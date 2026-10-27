@@ -184,6 +184,13 @@ row "echo '$ok'; echo 'the key is $KEY'; exit 0"
 check '^FAIL  95' "a log with the key's own value is not a FAIL"
 [ -z "$(ls -A "$LOGS")" ] || { echo "FAIL: a log holding the key value was copied"; fails=1; }
 
+# The whole scratch home is scanned after a session, not only the log: Codex
+# once wrote the key into a shell snapshot under CODEX_HOME (e2e bug 2).
+row "echo \"declare -x K=\$ANTHROPIC_AUTH_TOKEN\" > \"\$HOME/snapshot.sh\"; echo '$ok'; exit 0"
+check '^FAIL  95' "a key written into the scratch home is not a FAIL"
+check 'LEAK: .*home/snapshot.sh' "the leak does not name the file"
+grep -q "$KEY" <<<"$out" && { echo "FAIL: the leak report printed the key"; fails=1; }
+
 # A timeout is a provider error only beside an upstream HTTP error.
 export FX_LIVE_TIMEOUT=2
 row "exec sleep 30"

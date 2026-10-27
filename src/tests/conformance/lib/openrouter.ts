@@ -6,6 +6,8 @@
 //   openrouter.js model <harness> <logfile>        the session's own model, or nothing
 //   openrouter.js child  LOG HARNESS  print a subagent provider error and exit 0; exit 1 for none, 3 if the log cannot be read
 //   openrouter.js error   (env E = CLI error events, S = stderr)  print the match, exit 0 on a provider error
+//   openrouter.js scrub <dir> <keyfile>            redact the key in every file under dir; print each path, exit 10
+//                                                  on a hit, 0 when clean, 3 when the scan cannot run
 //   openrouter.js leaks <file> [keyfile]           exit 10 when the file holds a key (or the keyfile's value),
 //                                                  0 when clean; any other exit is a scan failure, never "clean"
 // The key is never in a file or an env value: every config reads it from
@@ -42,7 +44,7 @@ function readFile(f: unknown): string {
 // `plugin add` (comments move), so the old fragment is found by its keys and
 // tables, never by a fence, and the plugin tables after it stay.
 const OLD_KEYS = /^model(?:_provider)? = .*\n/gm;
-const OLD_TABLES = /^\[(?:model_providers\.openrouter(?:\.auth)?|agents)\]\n(?:(?!\[)[^\n]*\n)*/gm;
+const OLD_TABLES = /^\[(?:model_providers\.openrouter(?:\.auth)?|agents|shell_environment_policy)\]\n(?:(?!\[)[^\n]*\n)*/gm;
 // Top-level keys only: a `model` key inside another table is not ours.
 function stripOld(toml: string): string {
   const i = toml.search(/^\[/m);
@@ -73,6 +75,13 @@ export function providerSetup(harness: unknown, model: unknown): Setup {
         // a child that can dispatch. V2 models ignore the key.
         '[agents]',
         'max_depth = 2',
+        '',
+        // Codex snapshots the shell environment under CODEX_HOME/shell_snapshots
+        // and hands it to every command: the key once reached disk there (e2e
+        // bug 2). The provider auth command above reads Codex's own environment.
+        '[shell_environment_policy]',
+        'ignore_default_excludes = false',
+        'exclude = ["OPENROUTER_API_KEY", "ANTHROPIC_AUTH_TOKEN"]',
         '',
       ].join('\n') } };
     case 'opencode':
@@ -220,6 +229,30 @@ export function sessionModel(harness: unknown, logText: unknown): unknown {
 // need not start with sk-or-, and a prefix scan alone is easy to evade).
 export const leaksKey = (text: unknown, key?: unknown): boolean => String(text).includes('sk-or-') || (!!key && String(text).includes(String(key)));
 
+// Overwrite the key's value with REDACTED in every regular file under dir and
+// return the paths changed, relative to dir. Symlinks are not followed: a
+// session could point one at a file outside the scratch home.
+export function scrubKey(dir: string, key: string): string[] {
+  if (!key) throw new Error('no key to scan for');
+  const needle = Buffer.from(key);
+  const hits: string[] = [];
+  const walk = (d: string): void => {
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      const f = path.join(d, e.name);
+      if (e.isDirectory()) walk(f);
+      else if (e.isFile()) {
+        const buf = fs.readFileSync(f);
+        if (buf.indexOf(needle) < 0) continue;
+        // latin1 maps bytes one to one, so a binary file keeps every other byte.
+        fs.writeFileSync(f, buf.toString('latin1').split(needle.toString('latin1')).join('REDACTED'), 'latin1');
+        hits.push(path.relative(dir, f));
+      }
+    }
+  };
+  walk(dir);
+  return hits.sort();
+}
+
 // Write a setup's files under home: JSON merges into what is there, anything
 // else goes in front of it (TOML top-level keys must precede its tables),
 // replacing any earlier copy of the fragment.
@@ -254,5 +287,13 @@ if (require.main === module) {
       process.exit(leaksKey(readFile(a), key) ? 10 : 0);
     } catch (e) { console.error(`leak scan failed: ${e instanceof Error ? e.message : String(e)}`); process.exit(3); }
   }
-  else { console.error('usage: openrouter.js env|setup|model|error|child|leaks ...'); process.exit(2); }
+  else if (cmd === 'scrub') {
+    // exit 10: the key was found and redacted in the files printed; 0: clean; 3: the scan could not run.
+    try {
+      const hits = scrubKey(String(a), readFile(b).trim());
+      for (const h of hits) console.log(h);
+      process.exit(hits.length ? 10 : 0);
+    } catch (e) { console.error(`key scrub failed: ${e instanceof Error ? e.message : String(e)}`); process.exit(3); }
+  }
+  else { console.error('usage: openrouter.js env|setup|model|error|child|leaks|scrub ...'); process.exit(2); }
 }
