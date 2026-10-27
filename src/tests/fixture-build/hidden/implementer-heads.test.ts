@@ -66,8 +66,20 @@ write(path.join(sub, 'f-real-shape.jsonl'), [
   asst(205, 'Fixed. Commits 1212121..3434343, see report.'),
 ]);
 
+// E2E bug 9: a report path carrying a session id looked like the last SHA.
+// The reply's Commits: <base>..<head> line wins over any later hex run.
+write(path.join(sub, 'g-implementer.jsonl'), [
+  user(300, 'You are implementing task 06: paths'),
+  asst(301, 'Status: DONE\nCommits: 1a2b3c4..5d6e7f8\nReport: /tmp/claude-1000/41c30690-f980-4e40-a682-fd0bcbf989cf/reports/06.md'),
+]);
+// No Commits line: the old match, the last hex run in the reply, still applies.
+write(path.join(sub, 'h-implementer.jsonl'), [
+  user(310, 'You are implementing task 07: fallback'),
+  asst(311, 'Status: DONE at head 9abcdef.'),
+]);
+
 assert.deepStrictEqual(JSON.parse(execFileSync('node', [BIN, ctl], { encoding: 'utf8' })), // ts-gate-ok: the test parses output it just produced
-  { '01': '4444444abc', '03': 'bbbbbbb', '05': 'fffffff' });
+  { '01': '4444444abc', '03': 'bbbbbbb', '05': 'fffffff', '06': '5d6e7f8', '07': '9abcdef' });
 
 const p = spawnSync('node', [BIN], { encoding: 'utf8' });
 assert.strictEqual(p.status, 2, 'no argument exits 2');

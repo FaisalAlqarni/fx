@@ -74,10 +74,18 @@ write(path.join(sub, "f-real-shape.jsonl"), [
   metaUser(204, "The coordinator sent a message while you were working:\nTask 05, fix round 1 of 5"),
   asst(205, "Fixed. Commits 1212121..3434343, see report.")
 ]);
+write(path.join(sub, "g-implementer.jsonl"), [
+  user(300, "You are implementing task 06: paths"),
+  asst(301, "Status: DONE\nCommits: 1a2b3c4..5d6e7f8\nReport: /tmp/claude-1000/41c30690-f980-4e40-a682-fd0bcbf989cf/reports/06.md")
+]);
+write(path.join(sub, "h-implementer.jsonl"), [
+  user(310, "You are implementing task 07: fallback"),
+  asst(311, "Status: DONE at head 9abcdef.")
+]);
 assert.deepStrictEqual(
   JSON.parse((0, import_child_process.execFileSync)("node", [BIN, ctl], { encoding: "utf8" })),
   // ts-gate-ok: the test parses output it just produced
-  { "01": "4444444abc", "03": "bbbbbbb", "05": "fffffff" }
+  { "01": "4444444abc", "03": "bbbbbbb", "05": "fffffff", "06": "5d6e7f8", "07": "9abcdef" }
 );
 const p = (0, import_child_process.spawnSync)("node", [BIN], { encoding: "utf8" });
 assert.strictEqual(p.status, 2, "no argument exits 2");

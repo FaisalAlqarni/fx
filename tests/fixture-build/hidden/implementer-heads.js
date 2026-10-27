@@ -101,7 +101,10 @@ function firstReply(recs) {
 const heads = {};
 for (const task of Object.keys(original).sort()) {
   const reply = firstReply(original[task]?.recs ?? []);
-  const shas = reply ? textOf(reply).match(/\b[0-9a-f]{7,40}\b/g) : null;
-  if (shas) heads[task] = shas[shas.length - 1] ?? "";
+  const text = reply ? textOf(reply) : "";
+  const range = /\bCommits:? ([0-9a-f]{7,40})\.\.([0-9a-f]{7,40})\b/.exec(text);
+  const shas = text.match(/\b[0-9a-f]{7,40}\b/g);
+  if (range) heads[task] = range[2] ?? "";
+  else if (shas) heads[task] = shas[shas.length - 1] ?? "";
 }
 process.stdout.write(JSON.stringify(heads) + "\n");
