@@ -91,7 +91,154 @@ assert.throws(
   assert.strictEqual(f.shell_type, 'unified_exec');
   assert.ok(f.model_messages.instructions_template.startsWith('You are a coding agent running in the Codex CLI'));
   const raw = fs.readFileSync(path.join(__dirname, '..', 'codex', 'fallback-model-info.json'), 'utf8');
-  assert.ok(!raw.includes('—') && !raw.includes('–'));
+  assert.ok(!raw.includes('\u2014') && !raw.includes('\u2013'));
+}
+
+// ---- setupCatalog (task 02) ----
+import * as os from 'os';
+import * as cp from 'child_process';
+const { setupCatalog, PROFILE_MARKER } = require('./codex-catalog');
+
+const OR_CFG = 'model = "anthropic/claude-haiku-4.5"\nmodel_provider = "openrouter"\n\n[model_providers.openrouter]\nname = "openrouter"\n';
+const SLUG = 'anthropic/claude-haiku-4.5';
+const tmpHome = (cfg?: string): string => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-cc-'));
+  if (cfg !== undefined) fs.writeFileSync(path.join(d, 'config.toml'), cfg);
+  return d;
+};
+const list = (...es: unknown[]) => () => es;
+
+// OpenRouter model: both files written, config.toml untouched.
+{
+  const home = tmpHome(OR_CFG);
+  const r = setupCatalog({ codexHome: home, listModels: list(haiku) });
+  const cat = path.join(home, 'fx-openrouter.catalog.json');
+  const prof = path.join(home, 'fx-openrouter.config.toml');
+  assert.strictEqual(r.provider, 'openrouter');
+  assert.deepStrictEqual(r.slugs, [SLUG]);
+  assert.strictEqual(r.profile, 'fx-openrouter');
+  assert.strictEqual(r.command, 'codex --profile fx-openrouter');
+  assert.deepStrictEqual(r.written, [cat, prof]);
+  assert.strictEqual(fs.readFileSync(prof, 'utf8'), PROFILE_MARKER + '\nmodel_catalog_json = ' + JSON.stringify(cat) + '\n');
+  assert.strictEqual(JSON.parse(fs.readFileSync(cat, 'utf8')).models[0].include_skills_usage_instructions, true); // ts-gate-ok: the test parses a file it just wrote
+  assert.strictEqual(fs.statSync(cat).mode & 0o777, 0o600);
+  assert.strictEqual(fs.statSync(prof).mode & 0o777, 0o600);
+  assert.strictEqual(fs.readFileSync(path.join(home, 'config.toml'), 'utf8'), OR_CFG);
+}
+
+// A user's same-named profile is kept.
+{
+  const home = tmpHome(OR_CFG);
+  const prof = path.join(home, 'fx-openrouter.config.toml');
+  fs.writeFileSync(prof, 'model = "x"\n');
+  const r = setupCatalog({ codexHome: home, listModels: list(haiku) });
+  assert.strictEqual(r.profile, null);
+  assert.deepStrictEqual(r.kept, [prof]);
+  assert.deepStrictEqual(r.written, []);
+  assert.strictEqual(fs.readFileSync(prof, 'utf8'), 'model = "x"\n');
+  assert.ok(!fs.existsSync(path.join(home, 'fx-openrouter.catalog.json')));
+}
+
+// A symlinked profile is kept, and its target is unchanged.
+{
+  const home = tmpHome(OR_CFG);
+  const target = path.join(home, 'target.toml');
+  fs.writeFileSync(target, PROFILE_MARKER + '\nold\n');
+  const prof = path.join(home, 'fx-openrouter.config.toml');
+  fs.symlinkSync(target, prof);
+  const r = setupCatalog({ codexHome: home, listModels: list(haiku) });
+  assert.strictEqual(r.profile, null);
+  assert.deepStrictEqual(r.kept, [prof]);
+  assert.deepStrictEqual(r.written, []);
+  assert.strictEqual(fs.readFileSync(target, 'utf8'), PROFILE_MARKER + '\nold\n');
+  assert.ok(!fs.existsSync(path.join(home, 'fx-openrouter.catalog.json')));
+}
+
+// A catalog file without fx's marker is kept too.
+{
+  const home = tmpHome(OR_CFG);
+  const cat = path.join(home, 'fx-openrouter.catalog.json');
+  fs.writeFileSync(cat, '{"models":[]}');
+  const r = setupCatalog({ codexHome: home, listModels: list(haiku) });
+  assert.strictEqual(r.profile, null);
+  assert.deepStrictEqual(r.kept, [cat]);
+  assert.ok(!fs.existsSync(path.join(home, 'fx-openrouter.config.toml')));
+}
+
+// Re-run after a model change rewrites the catalog.
+{
+  const home = tmpHome(OR_CFG);
+  setupCatalog({ codexHome: home, listModels: list(haiku) });
+  fs.writeFileSync(path.join(home, 'config.toml'), OR_CFG.replace(SLUG, 'openai/gpt-6.1-sol'));
+  const gpt = { slug: 'openai/gpt-6.1-sol', include_skills_usage_instructions: false, base_instructions: 'BASE' };
+  const r = setupCatalog({ codexHome: home, listModels: list(gpt) });
+  assert.strictEqual(r.profile, 'fx-openrouter');
+  const cat = JSON.parse(fs.readFileSync(path.join(home, 'fx-openrouter.catalog.json'), 'utf8')); // ts-gate-ok: the test parses a file it just wrote
+  assert.deepStrictEqual(cat.models.map((m: { slug: string }) => m.slug), ['openai/gpt-6.1-sol']);
+}
+
+// No third-party model: nothing attempted, listModels not called.
+{
+  const home = tmpHome('model = "gpt-6.1-sol"\n');
+  let called = false;
+  const r = setupCatalog({ codexHome: home, listModels: () => { called = true; return []; } });
+  assert.strictEqual(r.skipped, 'no third-party model in config.toml and no slug named');
+  assert.deepStrictEqual(r.written, []);
+  assert.strictEqual(called, false);
+}
+
+// Named slugs follow the config model, de-duplicated.
+{
+  const home = tmpHome(OR_CFG);
+  const r = setupCatalog({ codexHome: home, slugs: ['openai/gpt-6.1-sol', SLUG], listModels: list(haiku) });
+  assert.deepStrictEqual(r.slugs, [SLUG, 'openai/gpt-6.1-sol']);
+}
+
+// Named slugs with no third-party provider use the provider name custom.
+{
+  const home = tmpHome();
+  const r = setupCatalog({ codexHome: home, slugs: [SLUG], listModels: list(haiku) });
+  assert.strictEqual(r.profile, 'fx-custom');
+  assert.ok(fs.existsSync(path.join(home, 'fx-custom.config.toml')));
+}
+
+// Everything refused: nothing written.
+{
+  const home = tmpHome(OR_CFG);
+  const r = setupCatalog({ codexHome: home, listModels: list({ ...haiku, include_skills_usage_instructions: true }) });
+  assert.strictEqual(r.profile, null);
+  assert.deepStrictEqual(r.written, []);
+  assert.strictEqual(r.refused.length, 1);
+  assert.deepStrictEqual(fs.readdirSync(home).filter((f) => f.startsWith('fx-openrouter.')), []);
+}
+
+// A provider name that cannot be a file name throws.
+{
+  const home = tmpHome(OR_CFG.replace('"openrouter"\n\n', '"open router"\n\n'));
+  assert.throws(
+    () => setupCatalog({ codexHome: home, listModels: list(haiku) }),
+    (e: unknown) => e instanceof Error && e.message === 'provider name not usable in a file name: open router',
+  );
+}
+
+// CLI, with a stub codex first on PATH.
+{
+  const bin = fs.mkdtempSync(path.join(os.tmpdir(), 'fx-cc-bin-'));
+  const stub = path.join(bin, 'codex');
+  fs.writeFileSync(stub, `#!/bin/sh\nif [ "$1 $2" = "debug models" ]; then\n cat <<'JSON'\n${JSON.stringify({ models: [haiku] })}\nJSON\n exit 0\nfi\nexit 1\n`, { mode: 0o755 });
+  const cli = path.join(__dirname, 'codex-catalog.js');
+  const run = (home: string, ...args: string[]) =>
+    cp.spawnSync(process.execPath, [cli, ...args], { encoding: 'utf8', env: { ...process.env, PATH: bin + path.delimiter + process.env.PATH, CODEX_HOME: home } });
+  const home = tmpHome(OR_CFG);
+  const ok = run(home, 'setup');
+  assert.strictEqual(ok.status, 0, ok.stderr);
+  assert.strictEqual(JSON.parse(ok.stdout).profile, 'fx-openrouter'); // ts-gate-ok: the test parses output it just produced
+  assert.ok(fs.existsSync(path.join(home, 'fx-openrouter.catalog.json')));
+  assert.ok(fs.existsSync(path.join(home, 'fx-openrouter.config.toml')));
+  const none = run(tmpHome(), 'setup');
+  assert.strictEqual(none.status, 3);
+  assert.ok(JSON.parse(none.stdout).skipped); // ts-gate-ok: the test parses output it just produced
+  assert.strictEqual(run(home, 'nope').status, 2);
 }
 
 console.log('codex-catalog: ok');
