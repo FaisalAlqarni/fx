@@ -120,6 +120,17 @@ fi
 # shellcheck disable=SC2086
 [ -z "$OPENROUTER" ] || jail_provider_env $OR_ENV_NAMES
 
+# Session-style call: the key file bound read-only, with-key.sh exporting it
+# inside the jail. Sets SJ (jail) and KW (key wrapper); empty KW without OpenRouter.
+key_jail() {
+  SJ=("${JAIL[@]}"); KW=()
+  if [ -n "$OPENROUTER" ]; then
+    unset 'SJ[${#SJ[@]}-1]'
+    SJ+=(--ro-bind "$OR_KEYFILE" "$OR_KEYFILE" --)
+    KW=(sh "$FX/tests/conformance/lib/with-key.sh" "$OR_KEYFILE" "$OR_KEY_VAR" --)
+  fi
+}
+
 OPENCODE_MODEL="llamacpp/qwen3.8-27b"
 
 # How each runtime dispatches a subagent, named in prompts so a row measures fx
@@ -242,6 +253,14 @@ fi
 # Every session runs in a throwaway git repo under the scratch home, never the
 # repository worktree. It is removed when the row exits.
 live_workdir() {
+  # Once per row (a fallback re-run is a new row process, and applySetup rewrote
+  # config.toml): the generator needs the key to fetch OpenRouter's model list.
+  if [ -n "$OPENROUTER" ] && [ "$HARNESS" = codex ]; then
+    local -a SJ KW; key_jail
+    local cat_out
+    cat_out="$("${SJ[@]}" "${KW[@]}" node "$FX/lib/codex-catalog.js" setup 2>&1)" \
+      || fail "codex catalog setup failed: $cat_out"
+  fi
   WORK="$(mktemp -d "$LIVE_SCRATCH/work.XXXXXX")" || fail "mktemp failed"
   case "$WORK" in "$LIVE_SCRATCH"/work.?*) ;; *) fail "unexpected workdir: $WORK" ;; esac
   # The log lives outside everything the jail binds, so a session can neither
@@ -292,12 +311,7 @@ live_run() {
   local tmp="$LIVE_SCRATCH/tmp"; mkdir -p "$tmp"
   # Session calls only: the key file is bound in, and with-key.sh exports it
   # for the CLI. Install and export calls keep the plain $JAIL and never see it.
-  local -a SJ=("${JAIL[@]}") KW=()
-  if [ -n "$OPENROUTER" ]; then
-    unset 'SJ[${#SJ[@]}-1]'
-    SJ+=(--ro-bind "$OR_KEYFILE" "$OR_KEYFILE" --)
-    KW=(sh "$FX/tests/conformance/lib/with-key.sh" "$OR_KEYFILE" "$OR_KEY_VAR" --)
-  fi
+  local -a SJ KW; key_jail
   LIVE_RUN_N=$(( ${LIVE_RUN_N:-0} + 1 ))
   : > "$WORK.start"
   # stdout and stderr each reach their file through a pipe read on the host
@@ -321,7 +335,9 @@ live_run() {
           "${model_flag[@]}" ) \
         </dev/null >"$LOGDIR/out.pipe" 2>"$LOGDIR/err.pipe" ;;
     codex)
-      timeout 900 "${SJ[@]}" "${KW[@]}" env TMPDIR="$tmp" codex exec --json -C "$WORK" -s danger-full-access \
+      # Under OpenRouter the row runs on the profile the generator wrote at setup.
+      local -a profile=(); [ -z "$OPENROUTER" ] || profile=(--profile fx-openrouter)
+      timeout 900 "${SJ[@]}" "${KW[@]}" env TMPDIR="$tmp" codex "${profile[@]}" exec --json -C "$WORK" -s danger-full-access \
         -c 'approval_policy="never"' --dangerously-bypass-hook-trust "$prompt" </dev/null >"$LOGDIR/out.pipe" 2>"$LOGDIR/err.pipe" ;;
     opencode-v2)
       # --standalone: no managed service, so nothing shares a port with the

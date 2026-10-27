@@ -44,6 +44,11 @@ assert.ok(
   JSON.stringify(or.providerSetup("codex", or.MODELS.primary).files).includes("OPENROUTER_API_KEY"),
   "codex reads the key from the environment"
 );
+{
+  const cfg = or.providerSetup("codex", "anthropic/claude-haiku-4.5").files[".codex/config.toml"] ?? "";
+  assert.ok(cfg !== "" && !cfg.includes("model_catalog_json"), "codex config.toml has no model_catalog_json");
+  assert.ok(!cfg.includes("profile"), "codex config.toml selects no profile");
+}
 assert.strictEqual(or.providerSetup("claude-code", or.MODELS.claude).env.ANTHROPIC_BASE_URL, "https://openrouter.ai/api");
 const v2cfg = JSON.parse(or.providerSetup("opencode-v2", or.MODELS.primary).files[".config/opencode/opencode.json"] ?? "");
 assert.deepStrictEqual(v2cfg.permissions, [{ action: "question", resource: "*", effect: "deny" }], "opencode-v2 runs deny the question tool");
