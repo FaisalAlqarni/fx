@@ -6,13 +6,15 @@ Before packaging the branch, decide the docs step. Never invoke `fx-docs` withou
    With `"docs_first_run": "declined"` in `.fx.json`, ledger
    `Docs: not run: no evidence-bearing docs` and go on. Otherwise offer the
    first full run once: "This repo's docs carry no evidence lines. `fx-docs` can
-   run a first full documentation run. Run it?" On yes, invoke `fx-docs` for a
-   full run in the worktree and ledger `Docs: first full run: <n> written`. On
+   run a first full documentation run, in Markdown, and HTML pages under
+   `docs/html/` too if you want them. Run it, and with pages?" On yes, invoke
+   `fx-docs` for a full run in the worktree, passing whether pages were wanted, and ledger `Docs: first full run: <n> written`. On
    no, write `"docs_first_run": "declined"` to `.fx.json` and ledger
    `Docs: not run: no evidence-bearing docs, first run declined`. Then go on
    to the branch pass.
 2. Otherwise offer it in one line: "`fx-docs` can update the docs this branch
-   affects before the branch review. Run it?"
+   affects before the branch review, and their HTML pages if you want them. Run
+   it, and with pages?" Pass the pages answer to `fx-docs`.
 3. On yes, invoke `fx-docs` in branch mode in the worktree. Pass it every
    `Docs claim wrong:` ledger line and `git diff --no-renames <merge-base>...HEAD --name-only`.
    It commits on the branch. Ledger `Docs: <n> updated, <n> written, <n> listed stale, <n> HTML pages out of date`.

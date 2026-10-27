@@ -72,7 +72,7 @@ The work is on `<branch>` in `<worktree path>`. What next?
 1. Merge it into `<base branch>` locally
 2. Push the branch and open a pull request
 3. Leave it as it is, I will handle it
-4. Run `fx-docs` on the branch first
+4. Run `fx-docs` on the branch first (say "with pages" for HTML pages too)
 5. Write ADRs for the candidates with `fx-adr`
 
 Which?
