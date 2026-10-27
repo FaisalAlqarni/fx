@@ -51,6 +51,23 @@ Proceed; task 01 establishes both the app and `.fx.json`.
 Asking here would turn every new project into a stall. Ask only when
 `.fx.json` is missing from a repo that plainly already has tests.
 
+**Before task 01, check the test command can start.** Take the first word of
+`test_scope`, or of `test_all` when there is no `test_scope`: a name must
+resolve with `command -v`, a path must exist. When it does not, stop and ask
+the owner once:
+
+```markdown
+The test command `<first word>` cannot run here. How should the build go?
+
+1. Install or fix the runner, then I retry (recommended)
+2. Build on review alone: every task ledgered "tests written, not run"
+3. Stop here
+```
+
+Ledger the answer as `Ruling: test runner: <1, 2 or 3>: <owner's words>`.
+A build that finds this at the exit gate has spent every task on tests that
+never ran. The greenfield case above skips the check: task 01 creates the runner.
+
 Then load `../../../references/stacks/<name>.md` for each entry in `stacks`. These carry
 ecosystem traps only. **A name with no file is not an error**: it means no
 traps file exists for that stack yet, and nothing else changes.

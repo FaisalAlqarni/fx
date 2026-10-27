@@ -84,4 +84,12 @@ assert.ok(readme.includes('three options: merge | push and open a PR | leave it.
 const retro = completion.indexOf('`/fx:fx-retro` reviews this build');
 assert.ok(retro >= 0 && retro < completion.indexOf('1. Merge it into'), 'the fx-retro line comes before the menu');
 
+// E2E bug 7: a test command that cannot start is asked about before task 01, not found at the exit gate.
+const setup = ref('setup.md').replace(/\s+/g, ' ');
+assert.ok(setup.includes('Before task 01, check the test command can start.'), 'setup.md checks the test runner before task 01');
+for (const o of ['1. Install or fix the runner, then I retry (recommended)', '2. Build on review alone: every task ledgered "tests written, not run"', '3. Stop here']) {
+  assert.ok(setup.includes(o), `setup.md offers: ${o}`);
+}
+assert.ok(setup.includes('Ruling: test runner:'), 'the answer is recorded as a Ruling line');
+
 console.log('ledger-lines: OK');

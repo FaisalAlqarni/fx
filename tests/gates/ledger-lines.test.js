@@ -96,4 +96,10 @@ const readme = fs.readFileSync(path.join(root, "README.md"), "utf8").replace(/\s
 assert.ok(readme.includes("three options: merge | push and open a PR | leave it. Discard happens only when you type it."), "README shows the three-option menu");
 const retro = completion.indexOf("`/fx:fx-retro` reviews this build");
 assert.ok(retro >= 0 && retro < completion.indexOf("1. Merge it into"), "the fx-retro line comes before the menu");
+const setup = ref("setup.md").replace(/\s+/g, " ");
+assert.ok(setup.includes("Before task 01, check the test command can start."), "setup.md checks the test runner before task 01");
+for (const o of ["1. Install or fix the runner, then I retry (recommended)", '2. Build on review alone: every task ledgered "tests written, not run"', "3. Stop here"]) {
+  assert.ok(setup.includes(o), `setup.md offers: ${o}`);
+}
+assert.ok(setup.includes("Ruling: test runner:"), "the answer is recorded as a Ruling line");
 console.log("ledger-lines: OK");
