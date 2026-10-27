@@ -142,6 +142,7 @@ run opencode-malformed.test.js node lib/opencode-malformed.test.js
 run user-invoked.test.js    node tests/gates/user-invoked.test.js
 run fx-setup-root-check.test.js node tests/gates/fx-setup-root-check.test.js
 run plant-roles.test.js     node lib/plant-roles.test.js
+run codex-catalog.test.js   node lib/codex-catalog.test.js
 run opencode-plugin.test.js  node tests/gates/opencode-plugin.test.js
 run opencode-v1-shell-guard.test.js node tests/gates/opencode-v1-shell-guard.test.js
 run opencode-turn.test.js node tests/gates/opencode-turn.test.js
