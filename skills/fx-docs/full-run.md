@@ -31,9 +31,13 @@ open question in the repo's callout form, not a guess.
 ## 4. Interview
 
 Ask the owner about what the code cannot say, most about purpose and users,
-history and decisions, and operations. Ask one question at a time. A confirmed
-answer replaces its open question and cites `owner, <date>` as evidence. The owner
-may skip the interview; the open questions stay.
+history and decisions, and operations. Every question carries a recommended
+answer: your best reading of the code, marked "(recommended)". Open with the
+count and the choice: "<n> questions. Answer them one at a time, skip the
+interview, or take the recommended answer for every question." Then ask one
+question at a time. A confirmed answer, a taken recommendation included,
+replaces its open question and cites `owner, <date>` as evidence. On a skip the
+open questions stay.
 
 ## 5. Finish
 

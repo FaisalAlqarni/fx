@@ -69,6 +69,9 @@ has(completion, "Run `fx-docs` on the branch", "a pending docs offer is a comple
 has(completion, "**ADR candidates**", "the completion report has an ADR candidates section");
 has(completion, "ADR candidates: none", "zero candidates are stated, not omitted");
 has(completion, "Write ADRs for the candidates with `fx-adr`", "the ADR offer is a completion menu option");
+has("skills/fx-docs/full-run.md", "Every question carries a recommended answer", "full-run interview questions carry a recommended answer");
+has("skills/fx-docs/full-run.md", "or take the recommended answer for every question", "the interview offer includes taking every recommended answer");
+has(docs, "each with a recommended answer", "branch-mode questions carry a recommended answer");
 has(docs, "docs-index --root <worktree> stale", "branch mode step 3 runs the stale check");
 has(docs, "every `recheck` claim in a doc outside the step 2 set", "step 3 lists recheck claims outside the touched docs");
 for (const f of [docs, finalReview]) has(f, "<n> listed stale, <n> HTML pages out of date", "the Docs line counts out-of-date HTML pages");

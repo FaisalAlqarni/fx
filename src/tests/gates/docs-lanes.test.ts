@@ -55,6 +55,11 @@ has(completion, '**ADR candidates**', 'the completion report has an ADR candidat
 has(completion, 'ADR candidates: none', 'zero candidates are stated, not omitted');
 has(completion, 'Write ADRs for the candidates with `fx-adr`', 'the ADR offer is a completion menu option');
 
+// E2E bug 8: every interview question carries a recommended answer, and the owner can take them all.
+has('skills/fx-docs/full-run.md', 'Every question carries a recommended answer', 'full-run interview questions carry a recommended answer');
+has('skills/fx-docs/full-run.md', 'or take the recommended answer for every question', 'the interview offer includes taking every recommended answer');
+has(docs, 'each with a recommended answer', 'branch-mode questions carry a recommended answer');
+
 // G6: branch mode finds stale docs outside the touched set and counts stale HTML pages.
 has(docs, 'docs-index --root <worktree> stale', 'branch mode step 3 runs the stale check');
 has(docs, 'every `recheck` claim in a doc outside the step 2 set', 'step 3 lists recheck claims outside the touched docs');

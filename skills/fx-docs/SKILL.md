@@ -77,7 +77,7 @@ the worktree and commit on the branch:
    Do not rewrite them.
 4. Write a new doc when the change adds an engine, subsystem, public flow,
    command or integration that no doc covers. Ask the owner only what the code
-   cannot answer; leave the rest as open questions.
+   cannot answer, each with a recommended answer; leave the rest as open questions.
 5. Commit the doc changes on the branch.
 
 Report `Docs: <n> updated, <n> written, <n> listed stale, <n> HTML pages out of date`.
