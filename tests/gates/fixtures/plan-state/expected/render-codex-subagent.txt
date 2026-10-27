@@ -13,8 +13,9 @@ reason it stays short.
 
 <EXTREMELY-IMPORTANT>
 If there is even a 1% chance a lane applies to what you are about to do, you
-MUST invoke it with your shell to read the lane's `SKILL.md` in full **before any response**, including before
-a clarifying question and before reading a single file.
+MUST invoke it with your shell, by reading the lane's `SKILL.md` in full **before any response**, including before
+a clarifying question. That `SKILL.md` is the first file you read, before any
+file in the repository.
 
 A lane that applies is not a suggestion. You do not get to decide it is
 unnecessary because the work looks small, because you remember roughly what it
@@ -24,8 +25,8 @@ says, or because you are already most of the way through.
 **Each lane's description says when it applies.** The runtime lists every lane
 with its description; read that list against the task before anything else.
 
-**Invoke it, in full.** Use your shell to read the lane's `SKILL.md` in full, and address a lane by its name:
-$fx:fx-tdd, $fx:fx-implement, $fx:fx-review. Lanes are addressed as `$fx:fx-tdd`, with the plugin prefix. The runtime lists each lane's `SKILL.md` path.
+**Invoke it, in full.** Use your shell, by reading the lane's `SKILL.md` in full, and address a lane by its name:
+$fx:fx-tdd, $fx:fx-implement, $fx:fx-review. Lanes are addressed as `$fx:fx-tdd`, with the plugin prefix. Each lane's file is `<root>/skills/<lane>/SKILL.md`, for example `<root>/skills/fx-brainstorm/SKILL.md`. The user types a lane as `$fx:fx-tdd`; you read its file.
 Reading that file is how a lane is invoked here: read all of it, and treat it as binding.
 
 **This binds subagents exactly as it binds a controller.** You are reading this

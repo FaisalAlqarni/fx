@@ -7,9 +7,11 @@
 // (`fx:fx-tdd`, invoked with the `Skill` tool) and shipped that text verbatim
 // to every runtime. On opencode a lane has no plugin prefix; on Codex lanes
 // are addressed with a leading `$` and there is no `Skill` tool at all. Each
-// runtime gets its own addressing substituted in; the opening imperative
-// itself (ADR 0002: position decides whether lanes fire) is never reordered
-// or extended, only its names are substituted. The text is a bootstrap that
+// runtime gets its own addressing substituted in. The imperative's ordering
+// clause is a per-runtime slot too ({{ORDER}}, ADR 0065): Codex loads a lane
+// by reading its SKILL.md, so it is told that file is the first read. Nothing
+// goes above the imperative and the first line is unchanged (ADR 0002:
+// position decides whether lanes fire). The text is a bootstrap that
 // makes the model invoke a lane; the rules live in the lanes (ADR 0021).
 
 import * as fs from 'fs';
@@ -30,6 +32,10 @@ export const HARNESSES: Harness[] = ['claude-code', 'opencode', 'codex', 'openco
 // and the resolution clause naming the form that fails on THAT runtime
 // (PREAMBLE.md's former lines 25-26, which were backwards on every runtime
 // but claude-code).
+// Compiled to lib/, so '..' is the installed plugin root.
+const ROOT = path.resolve(__dirname, '..');
+const ORDER_DEFAULT = 'including before\na clarifying question and before reading a single file.';
+
 const NEVER_READ = 'Never `Read` a `SKILL.md` instead of invoking it: reading gives you the text '
   + 'without the obligation, which is the failure this section exists to stop.';
 
@@ -37,6 +43,7 @@ interface Addressing {
   lane: (name: string) => string;
   skillTool: string;
   resolution: string;
+  order: string;
   readRule: string;
   dispatch: string;
 }
@@ -46,6 +53,7 @@ const ADDRESSING: Record<Harness, Addressing> = {
     lane: (name) => `fx:${name}`,
     skillTool: 'the `Skill` tool',
     resolution: 'A plugin skill resolves as `plugin:skill`, so a bare `fx-tdd` may not resolve at all',
+    order: ORDER_DEFAULT,
     readRule: NEVER_READ,
     dispatch: 'Name the agent with the plugin prefix, such as `fx:fx-lens-security`, as the subagent type.',
   },
@@ -53,6 +61,7 @@ const ADDRESSING: Record<Harness, Addressing> = {
     lane: (name) => name,
     skillTool: 'the `Skill` tool',
     resolution: 'The name carries no plugin prefix here, so the plugin-prefixed form will not resolve',
+    order: ORDER_DEFAULT,
     readRule: NEVER_READ,
     dispatch: 'Name the agent without a plugin prefix, such as `fx-lens-security`, as the subagent type.',
   },
@@ -60,6 +69,7 @@ const ADDRESSING: Record<Harness, Addressing> = {
     lane: (name) => name,
     skillTool: 'the `skill` tool',
     resolution: 'The name carries no plugin prefix here, so the plugin-prefixed form will not resolve',
+    order: ORDER_DEFAULT,
     readRule: NEVER_READ,
     dispatch: 'Call the `subagent` tool with `agent` set to the agent\'s name without a plugin prefix, '
             + 'such as `fx-lens-security`.',
@@ -69,8 +79,11 @@ const ADDRESSING: Record<Harness, Addressing> = {
     // Codex has no Skill tool: its model loads a skill by reading SKILL.md
     // through the shell, and `$name` is the user's syntax, not the model's
     // (research/codex.md, section 4, catalog_prompt.rs L1-L40).
-    skillTool: 'your shell to read the lane\'s `SKILL.md` in full',
-    resolution: 'Lanes are addressed as `$fx:fx-tdd`, with the plugin prefix. The runtime lists each lane\'s `SKILL.md` path',
+    skillTool: 'your shell, by reading the lane\'s `SKILL.md` in full',
+    order: 'including before\na clarifying question. That `SKILL.md` is the first file you read, before any\nfile in the repository.',
+    resolution: 'Lanes are addressed as `$fx:fx-tdd`, with the plugin prefix. Each lane\'s file is `'
+      + path.join(ROOT, 'skills') + '/<lane>/SKILL.md`, for example `'
+      + path.join(ROOT, 'skills', 'fx-brainstorm', 'SKILL.md') + '`. The user types a lane as `$fx:fx-tdd`; you read its file',
     readRule: 'Reading that file is how a lane is invoked here: read all of it, and treat it as binding.',
     dispatch: 'Call `spawn_agent` with `agent_type` set to the role\'s name, such as `fx-lens-security`. '
             + 'Always pass `agent_type`: without it the role is not applied, and the child runs as a copy of you.',
@@ -127,6 +140,7 @@ export function render({ harness, cwd = process.cwd(), subagent = false }: { har
   // (`$\`` inserts the text before the match), and Codex's wording is full of `$`.
   text = text.replace(/\{\{SKILL_TOOL\}\}/g, () => addressing.skillTool);
   text = text.replace(/\{\{LANE:([a-z0-9-]+)\}\}/g, (_: string, name: string) => addressing.lane(name));
+  text = text.replace(/\{\{ORDER\}\}/g, () => addressing.order);
   text = text.replace(/\{\{RESOLUTION\}\}/g, () => addressing.resolution);
   text = text.replace(/\{\{DISPATCH\}\}/g, () => addressing.dispatch);
   text = text.replace(/\{\{READ_RULE\}\}/g, () => addressing.readRule);
