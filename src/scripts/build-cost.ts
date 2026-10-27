@@ -8,6 +8,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { spawnSync } from 'child_process';
 import { parseJson } from '../lib/json.js';
 
 interface Usage { input_tokens?: number; cache_read_input_tokens?: number; cache_creation_input_tokens?: number; output_tokens?: number }
@@ -299,14 +300,23 @@ function taskLine(nn: string | undefined, since: string, argFile: string | undef
   }
 }
 
+// The path the SessionStart hook recorded in <git common dir>/fx/transcript-path,
+// shared by every worktree; .fx/transcript-path under cwd is the old place, read only as a fallback.
+function recordedTranscript(): string | undefined {
+  const g = spawnSync('git', ['rev-parse', '--git-common-dir'], { encoding: 'utf8', timeout: 2000 });
+  const places = [path.join(process.cwd(), '.fx', 'transcript-path')];
+  if (g.status === 0 && g.stdout.trim()) places.unshift(path.join(path.resolve(g.stdout.trim()), 'fx', 'transcript-path'));
+  for (const f of places) {
+    try { return fs.readFileSync(f, 'utf8').trim(); } catch { /* try the next place */ }
+  }
+  return undefined;
+}
+
 function taskCost(nn: string | undefined, since: string, argFile: string | undefined, head: string): string {
   let file = argFile;
   if (!file) {
-    try {
-      file = fs.readFileSync(path.join(process.cwd(), '.fx', 'transcript-path'), 'utf8').trim();
-    } catch {
-      return `${head} cost unavailable (no transcript recorded)`;
-    }
+    file = recordedTranscript();
+    if (!file) return `${head} cost unavailable (no transcript recorded)`;
   }
   const records = readRecords(file);
   if (records === null) return `${head} cost unavailable (transcript not found: ${file})`;

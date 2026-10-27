@@ -9,7 +9,8 @@ Important finding for a report with no captured RED run. The reviewer cannot be
 told this later, because the line does not exist until you run the script.
 
 (Write the line without the backticks.) It reads the transcript path the
-SessionStart hook recorded in `.fx/transcript-path`. When it cannot find a
+SessionStart hook recorded in the git common dir (`fx/transcript-path`),
+which every worktree of the repo shares. When it cannot find a
 transcript it prints `cost unavailable` and the reason: ledger that line as it
 is, and do not look for the file yourself. It also prints `cost unavailable`
 when the transcript has no `Task <NN>: dispatched` write of its own, which

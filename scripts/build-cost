@@ -25,6 +25,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var fs = __toESM(require("fs"));
 var path = __toESM(require("path"));
+var import_child_process = require("child_process");
 var import_json = require("../lib/json.js");
 function isObj(v) {
   return typeof v === "object" && v !== null;
@@ -223,14 +224,23 @@ function taskLine(nn, since, argFile) {
     return `${head} cost unavailable (${e.message})`;
   }
 }
+function recordedTranscript() {
+  const g = (0, import_child_process.spawnSync)("git", ["rev-parse", "--git-common-dir"], { encoding: "utf8", timeout: 2e3 });
+  const places = [path.join(process.cwd(), ".fx", "transcript-path")];
+  if (g.status === 0 && g.stdout.trim()) places.unshift(path.join(path.resolve(g.stdout.trim()), "fx", "transcript-path"));
+  for (const f of places) {
+    try {
+      return fs.readFileSync(f, "utf8").trim();
+    } catch {
+    }
+  }
+  return void 0;
+}
 function taskCost(nn, since, argFile, head) {
   let file = argFile;
   if (!file) {
-    try {
-      file = fs.readFileSync(path.join(process.cwd(), ".fx", "transcript-path"), "utf8").trim();
-    } catch {
-      return `${head} cost unavailable (no transcript recorded)`;
-    }
+    file = recordedTranscript();
+    if (!file) return `${head} cost unavailable (no transcript recorded)`;
   }
   const records = readRecords(file);
   if (records === null) return `${head} cost unavailable (transcript not found: ${file})`;

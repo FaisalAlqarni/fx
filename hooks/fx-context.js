@@ -45,21 +45,14 @@ try {
 } catch {
 }
 function recordTranscriptPath(cwd, transcript) {
-  const file = path.join(cwd, ".fx", "transcript-path");
-  const clear = () => {
-    try {
-      fs.rmSync(file, { force: true });
-    } catch {
-    }
-  };
   try {
-    const g = (0, import_child_process.spawnSync)("git", ["check-ignore", "-q", ".fx/transcript-path"], { cwd, timeout: 2e3 });
-    if (g.status === 1) return;
-    if (g.status !== 0 && g.status !== 128 || typeof transcript !== "string") return clear();
+    const g = (0, import_child_process.spawnSync)("git", ["rev-parse", "--git-common-dir"], { cwd, encoding: "utf8", timeout: 2e3 });
+    if (g.status !== 0 || !g.stdout.trim()) return;
+    const file = path.join(path.resolve(cwd, g.stdout.trim()), "fx", "transcript-path");
+    if (typeof transcript !== "string") return fs.rmSync(file, { force: true });
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, transcript + "\n");
   } catch {
-    clear();
   }
 }
 function recordSubagentTurn(input) {

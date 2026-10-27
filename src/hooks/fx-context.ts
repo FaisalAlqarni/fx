@@ -39,23 +39,21 @@ try {
   };
 } catch { /* readInput stays null */ }
 
-// build-cost reads the session transcript from <cwd>/.fx/transcript-path
-// (ADR 0040). Writes only where it cannot dirty a work tree: outside git
-// (check-ignore exits 128) or where .fx is ignored (0). Whenever it writes
-// nothing it removes the file instead, so an earlier session's path is never
-// read as this one's. Exit 1 (a tree where .fx is not ignored) is the one case
-// it leaves alone: the hook may not touch that tree. A git failure or timeout
-// is unknown, and clearing a file this hook wrote is safe there.
+// build-cost reads the session transcript from <git common dir>/fx/transcript-path
+// (ADR 0040, e2e bug 3). git never tracks that dir and every worktree of the
+// repo shares it, so a session in the main checkout is found from a worktree
+// and no ignore rule is needed. Outside git, or when git fails, it writes
+// nothing. With no transcript it removes the file, so an earlier session's
+// path is never read as this one's.
 function recordTranscriptPath(cwd: string, transcript: string | undefined): void {
-  const file = path.join(cwd, '.fx', 'transcript-path');
-  const clear = () => { try { fs.rmSync(file, { force: true }); } catch { /* nothing more to do */ } };
   try {
-    const g = spawnSync('git', ['check-ignore', '-q', '.fx/transcript-path'], { cwd, timeout: 2000 });
-    if (g.status === 1) return;
-    if ((g.status !== 0 && g.status !== 128) || typeof transcript !== 'string') return clear();
+    const g = spawnSync('git', ['rev-parse', '--git-common-dir'], { cwd, encoding: 'utf8', timeout: 2000 });
+    if (g.status !== 0 || !g.stdout.trim()) return;
+    const file = path.join(path.resolve(cwd, g.stdout.trim()), 'fx', 'transcript-path');
+    if (typeof transcript !== 'string') return fs.rmSync(file, { force: true });
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, transcript + '\n');
-  } catch { clear(); } // never block the preamble
+  } catch { /* never block the preamble */ }
 }
 
 // A subagent's turn starts at its SubagentStart. The journal loads inside the

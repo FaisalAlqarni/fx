@@ -290,6 +290,19 @@ for (const [label, file] of [['missing', path.join(root, 'nope.jsonl')], ['empty
   fs.writeFileSync(path.join(dir, '.fx', 'transcript-path'), path.join(dir, 'gone.jsonl') + '\n');
   const gone = spawnSync(process.execPath, [BIN, '--task', '04', '--since', at('10')], { encoding: 'utf8', cwd: dir });
   assert.strictEqual(gone.stdout, `Task 04: cost unavailable (transcript not found: ${path.join(dir, 'gone.jsonl')})\n`);
+
+  // E2E bug 3: run from a linked worktree, --task finds the path the SessionStart
+  // hook recorded from the main checkout, in the shared git common dir.
+  const main = path.join(dir, 'main');
+  fs.mkdirSync(main);
+  const git = (cwd: string, ...a: string[]) => assert.strictEqual(spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...a], { cwd }).status, 0, `git ${a.join(' ')}`);
+  git(main, 'init', '-q'); git(main, 'commit', '-q', '--allow-empty', '-m', 'init');
+  const wt = path.join(dir, 'wt');
+  git(main, 'worktree', 'add', '-q', '-b', 'wtb', wt);
+  const hook = spawnSync(process.execPath, [path.join(__dirname, '..', 'hooks', 'fx-context.js')], { input: JSON.stringify({ cwd: main, hook_event_name: 'SessionStart', transcript_path: ctlT }), encoding: 'utf8' });
+  assert.strictEqual(hook.status, 0, hook.stderr);
+  const fromWt = spawnSync(process.execPath, [BIN, '--task', '03', '--since', at('10')], { encoding: 'utf8', cwd: wt });
+  assert.strictEqual(fromWt.stdout, 'Task 03: cost 700 tokens, 10 min, 2 dispatches, fx-tdd 1/1\n', fromWt.stderr);
 }
 
 // --task never prints a normal-looking line from partial data, and always exits 0 with one line.

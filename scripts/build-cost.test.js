@@ -283,6 +283,17 @@ for (const [label, file] of [["missing", path.join(root, "nope.jsonl")], ["empty
   const gone = (0, import_child_process.spawnSync)(process.execPath, [BIN, "--task", "04", "--since", at("10")], { encoding: "utf8", cwd: dir });
   assert.strictEqual(gone.stdout, `Task 04: cost unavailable (transcript not found: ${path.join(dir, "gone.jsonl")})
 `);
+  const main = path.join(dir, "main");
+  fs.mkdirSync(main);
+  const git = (cwd, ...a) => assert.strictEqual((0, import_child_process.spawnSync)("git", ["-c", "user.name=t", "-c", "user.email=t@t", ...a], { cwd }).status, 0, `git ${a.join(" ")}`);
+  git(main, "init", "-q");
+  git(main, "commit", "-q", "--allow-empty", "-m", "init");
+  const wt = path.join(dir, "wt");
+  git(main, "worktree", "add", "-q", "-b", "wtb", wt);
+  const hook = (0, import_child_process.spawnSync)(process.execPath, [path.join(__dirname, "..", "hooks", "fx-context.js")], { input: JSON.stringify({ cwd: main, hook_event_name: "SessionStart", transcript_path: ctlT }), encoding: "utf8" });
+  assert.strictEqual(hook.status, 0, hook.stderr);
+  const fromWt = (0, import_child_process.spawnSync)(process.execPath, [BIN, "--task", "03", "--since", at("10")], { encoding: "utf8", cwd: wt });
+  assert.strictEqual(fromWt.stdout, "Task 03: cost 700 tokens, 10 min, 2 dispatches, fx-tdd 1/1\n", fromWt.stderr);
 }
 {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bc-fail-"));
