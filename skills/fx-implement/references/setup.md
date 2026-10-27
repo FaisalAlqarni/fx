@@ -25,9 +25,9 @@ written for an implementer. For a controller it inverts: entering is the mistake
 **An uncommitted plan is not a blocker.** `git worktree add` works fine
 against a dirty tree. The only real consequence: a worktree checked out from a
 commit won't contain files that were never committed, so an uncommitted
-`docs/plans/<slug>/` opens with no tasks in it. **Fix:** copy
-`docs/plans/<slug>/` into the worktree once it exists, so the branch's first
-commit carries it, and the ledger travels with the work. Warn; do not gate.
+`docs/plans/<slug>/` opens with no tasks in it. **Fix:** move `docs/plans/<slug>/` into the worktree
+once it exists (a filesystem move, `mv`), so only one copy exists, the branch's
+first commit carries it, and the ledger travels with the work; the main checkout gets it back on merge. Warn; do not gate.
 
 **Detached HEAD: do not commit.** Those commits become unreachable the moment
 HEAD moves. Create a branch first.

@@ -102,4 +102,7 @@ for (const o of ["1. Install or fix the runner, then I retry (recommended)", '2.
   assert.ok(setup.includes(o), `setup.md offers: ${o}`);
 }
 assert.ok(setup.includes("Ruling: test runner:"), "the answer is recorded as a Ruling line");
+assert.ok(setup.includes("**Fix:** move `docs/plans/<slug>/` into the worktree"), "setup.md moves the plan dir, not copies it");
+assert.ok(!/copy `docs\/plans/.test(setup), "setup.md no longer copies the plan dir");
+assert.ok(setup.includes("the main checkout gets it back on merge"), "setup.md says where the plan dir returns");
 console.log("ledger-lines: OK");
