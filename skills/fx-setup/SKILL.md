@@ -325,9 +325,9 @@ cannot dispatch the roles it just received.
 
 Then report `catalog`, fx's declaration of a third-party model to Codex:
 
-- `skipped`: one line, with the reason it gives. Name each `left` file as an
-  earlier fx profile still in place, which fx did not remove; a model change
-  needs fx-setup run again.
+- `skipped`: one line, with the reason it gives.
+- `left`, on every run: name each file as an earlier fx profile fx did not
+  remove; a model change needs fx-setup run again.
 - `profile` set: list `written`; print `command` as the line to start Codex.
   Say the profile replaces Codex's remote model list, so any other model under
   it gets Codex's fallback metadata. Name each `cloned` slug; its context
@@ -335,7 +335,7 @@ Then report `catalog`, fx's declaration of a third-party model to Codex:
 - `kept`, `refused` or `error`: name each, say nothing was written for it and
   why. Never edit `config.toml` and never ask to.
 - When the user names models for Codex, set `FX_CODEX_SLUGS` to them on the
-  command (space separated).
+  command, single-quoted and space separated.
 - Say once what fx's write checks see (`../../references/harnesses/codex.md`).
   On OpenRouter an `openai/` model gets Codex's patch tool and fx sees its
   edits. An `anthropic/` model does not: fx sees only patch commands run in

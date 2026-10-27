@@ -63,6 +63,7 @@ export interface SetupReport {
   cloned: string[];
   refused: { slug: string; reason: string }[];
   skipped: string | null;
+  // fx profiles other than this run's, still in place; fx never removes them.
   left: string[];
 }
 
@@ -77,15 +78,16 @@ function readConfig(file: string): { model: string | null; provider: string | nu
     throw e;
   }
   for (const line of text.split('\n')) {
-    if (line.startsWith('[')) break;
-    const m = /^(model|model_provider)\s*=\s*"([^"]*)"/.exec(line);
-    if (m) out[m[1] === 'model' ? 'model' : 'provider'] = m[2] as string;
+    if (/^\s*\[/.test(line)) break;
+    const m = /^\s*(model|model_provider)\s*=\s*(?:"([^"]*)"|'([^']*)')/.exec(line);
+    if (m) out[m[1] === 'model' ? 'model' : 'provider'] = (m[2] ?? m[3]) as string;
   }
   return out;
 }
 
+// 120 s: a provider refresh answers in seconds, so two minutes cuts off a hang without failing a slow network.
 function defaultListModels(): unknown[] {
-  const out = cp.execFileSync('codex', ['debug', 'models'], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+  const out = cp.execFileSync('codex', ['debug', 'models'], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, timeout: 120_000 });
   return JSON.parse(out).models; // ts-gate-ok: output of codex debug models, shape trusted as Codex ships it
 }
 
@@ -101,7 +103,7 @@ function isRegular(file: string): boolean | null {
 const ownsProfile = (file: string): boolean =>
   fs.readFileSync(file, 'utf8').split('\n', 1)[0] === PROFILE_MARKER;
 
-// fx profiles an earlier run wrote, still in place after the model changed.
+// fx profiles an earlier run wrote, still in place after the model or provider changed.
 function leftProfiles(home: string): string[] {
   let names: string[];
   try {
@@ -122,6 +124,18 @@ function ownsCatalog(file: string): boolean {
   }
 }
 
+// Same-directory temp file then rename: a cut-short write never leaves a torn file, and the new file is 0600 even over an older mode.
+function writeAtomic(file: string, text: string): void {
+  const tmp = `${file}.${process.pid}.tmp`;
+  try {
+    fs.writeFileSync(tmp, text, { mode: 0o600, flag: 'wx' });
+    fs.renameSync(tmp, file);
+  } catch (e) {
+    fs.rmSync(tmp, { force: true });
+    throw e;
+  }
+}
+
 export function setupCatalog({ codexHome, slugs: named = [], listModels = defaultListModels }: { codexHome?: string; slugs?: string[]; listModels?: () => unknown[] } = {}): SetupReport {
   const home = codexHome || parseFxEnv(process.env).codexHome || path.join(os.homedir(), '.codex');
   const cfg = readConfig(path.join(home, 'config.toml'));
@@ -139,6 +153,7 @@ export function setupCatalog({ codexHome, slugs: named = [], listModels = defaul
   const name = `fx-${provider}`;
   const catalogFile = path.join(home, `${name}.catalog.json`);
   const profileFile = path.join(home, `${name}.config.toml`);
+  report.left = leftProfiles(home).filter((f) => f !== profileFile);
   for (const [file, owns] of [[catalogFile, ownsCatalog], [profileFile, ownsProfile]] as const) {
     const regular = isRegular(file);
     if (regular !== null && !(regular && owns(file))) report.kept.push(file);
@@ -151,11 +166,8 @@ export function setupCatalog({ codexHome, slugs: named = [], listModels = defaul
   if (built.catalog.models.length === 0) return report;
 
   fs.mkdirSync(home, { recursive: true });
-  fs.writeFileSync(catalogFile, JSON.stringify(built.catalog, null, 1) + '\n', { mode: 0o600 });
-  fs.writeFileSync(profileFile, `${PROFILE_MARKER}\nmodel_catalog_json = ${JSON.stringify(path.resolve(catalogFile))}\n`, { mode: 0o600 });
-  // writeFileSync keeps the mode of an existing file; make 0600 hold on a rewrite.
-  fs.chmodSync(catalogFile, 0o600);
-  fs.chmodSync(profileFile, 0o600);
+  writeAtomic(catalogFile, JSON.stringify(built.catalog, null, 1) + '\n');
+  writeAtomic(profileFile, `${PROFILE_MARKER}\nmodel_catalog_json = ${JSON.stringify(path.resolve(catalogFile))}\n`);
   report.written = [catalogFile, profileFile];
   report.profile = name;
   report.command = `codex --profile ${name}`;

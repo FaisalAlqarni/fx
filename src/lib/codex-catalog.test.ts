@@ -177,6 +177,59 @@ const list = (...es: unknown[]) => () => es;
   assert.deepStrictEqual(cat.models.map((m: { slug: string }) => m.slug), ['openai/gpt-6.1-sol']);
 }
 
+// TOML literal (single-quoted) values and indented top-level keys read like double-quoted column-0 ones.
+{
+  for (const cfg of [
+    "model = 'anthropic/claude-haiku-4.5'\nmodel_provider = 'openrouter'\n",
+    '  model = "anthropic/claude-haiku-4.5"\n\tmodel_provider = "openrouter"\n',
+  ]) {
+    const home = tmpHome(cfg);
+    const r = setupCatalog({ codexHome: home, listModels: list(haiku) });
+    assert.strictEqual(r.skipped, null, cfg);
+    assert.strictEqual(r.provider, 'openrouter', cfg);
+    assert.deepStrictEqual(r.slugs, [SLUG], cfg);
+    assert.strictEqual(r.profile, 'fx-openrouter', cfg);
+  }
+}
+
+// A rewrite after a model change replaces both fx files, keeps 0600, and a second run is identical.
+{
+  const home = tmpHome(OR_CFG);
+  const cat = path.join(home, 'fx-openrouter.catalog.json');
+  const prof = path.join(home, 'fx-openrouter.config.toml');
+  setupCatalog({ codexHome: home, listModels: list(haiku) });
+  fs.chmodSync(cat, 0o644);
+  fs.chmodSync(prof, 0o644);
+  const inodes = [cat, prof].map((f) => fs.statSync(f).ino);
+  const gpt = { slug: 'openai/gpt-6.1-sol', include_skills_usage_instructions: false, base_instructions: 'BASE' };
+  fs.writeFileSync(path.join(home, 'config.toml'), OR_CFG.replace(SLUG, gpt.slug));
+  const first = setupCatalog({ codexHome: home, listModels: list(gpt) });
+  assert.deepStrictEqual(first.written, [cat, prof]);
+  assert.strictEqual(fs.statSync(cat).mode & 0o777, 0o600);
+  assert.strictEqual(fs.statSync(prof).mode & 0o777, 0o600);
+  // A new inode shows the file arrived by rename, not by an in-place truncate.
+  assert.notDeepStrictEqual([cat, prof].map((f) => fs.statSync(f).ino), inodes);
+  const snap = [cat, prof].map((f) => fs.readFileSync(f, 'utf8'));
+  assert.ok(snap[0]?.includes(gpt.slug) && !snap[0].includes(SLUG));
+  const second = setupCatalog({ codexHome: home, listModels: list(gpt) });
+  assert.deepStrictEqual(second.written, [cat, prof]);
+  assert.deepStrictEqual([cat, prof].map((f) => fs.readFileSync(f, 'utf8')), snap);
+  assert.strictEqual(fs.statSync(cat).mode & 0o777, 0o600);
+  assert.deepStrictEqual(fs.readdirSync(home).sort(), ['config.toml', 'fx-openrouter.catalog.json', 'fx-openrouter.config.toml']);
+}
+
+// A successful run names fx profiles of another provider that it leaves in place.
+{
+  const home = tmpHome(OR_CFG);
+  const old = path.join(home, 'fx-old.config.toml');
+  fs.writeFileSync(old, `${PROFILE_MARKER}\nmodel_catalog_json = "x"\n`);
+  fs.writeFileSync(path.join(home, 'fx-mine.config.toml'), 'model = "mine"\n');
+  const r = setupCatalog({ codexHome: home, listModels: list(haiku) });
+  assert.strictEqual(r.profile, 'fx-openrouter');
+  assert.deepStrictEqual(r.left, [old]);
+  assert.strictEqual(setupCatalog({ codexHome: tmpHome(OR_CFG), listModels: list(haiku) }).left.length, 0);
+}
+
 // No third-party model: nothing attempted, listModels not called.
 {
   const home = tmpHome('model = "gpt-6.1-sol"\n');

@@ -133,7 +133,8 @@ const haikuEntry = { slug: "anthropic/claude-haiku-4.5", display_name: "Claude H
     ["kept, refused and error leave config.toml alone", /`kept`, `refused` or `error`[\s\S]*Never edit `config\.toml`/],
     ["the Anthropic limit on OpenRouter", /`anthropic\/`[\s\S]*heredoc/],
     ["FX_CODEX_SLUGS", /FX_CODEX_SLUGS/],
-    ["left", /`left`/]
+    ["left, on every run", /`left`, on every run/],
+    ["FX_CODEX_SLUGS is single-quoted", /FX_CODEX_SLUGS[^.]*single-quoted/]
   ]) assert.ok(re.test(sec), `section 6 says: ${what}`);
 }
 const odd = path.join(s, 'we$HOME`id`"ird');
