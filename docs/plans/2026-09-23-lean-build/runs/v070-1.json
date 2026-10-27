@@ -1,0 +1,67 @@
+{
+  "label": "v070",
+  "run": 1,
+  "fxCommit": "4dc9f18",
+  "builtOnMain": false,
+  "caughtAtEnd": {
+    "path-escape": true,
+    "missing-note-error": true,
+    "readme-example": true,
+    "export-order": true,
+    "search-case": true,
+    "cli-wiring": true
+  },
+  "byReview": {
+    "path-escape": "unknown",
+    "missing-note-error": "unknown",
+    "readme-example": "unknown",
+    "export-order": "unknown",
+    "search-case": "unknown",
+    "cli-wiring": "unknown"
+  },
+  "cost": {
+    "controller": {
+      "calls": 73,
+      "tokens": 7651110,
+      "ctxMedian": 102914,
+      "ctxP90": 156619,
+      "tasksCompleted": 6,
+      "ctxGrowthPerTask": 7871.6,
+      "fixRounds": 0
+    },
+    "subagents": {
+      "implementer": {
+        "count": 6,
+        "tokens": 1599101,
+        "medianMs": 34372
+      },
+      "reviewer": {
+        "count": 7,
+        "tokens": 769243,
+        "medianMs": 17787
+      },
+      "other": {
+        "count": 5,
+        "tokens": 573467,
+        "medianMs": 25321
+      },
+      "lens": {
+        "count": 2,
+        "tokens": 57855,
+        "medianMs": 12917.5
+      },
+      "re-review": {
+        "count": 1,
+        "tokens": 105368,
+        "medianMs": 18315
+      },
+      "coverage": {
+        "count": 1,
+        "tokens": 119460,
+        "medianMs": 36492
+      }
+    },
+    "wallClockMs": 1110730,
+    "controllerActiveMs": 1098533
+  }
+}
