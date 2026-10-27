@@ -29,7 +29,10 @@ git commit -m "docs(plan): record plan completion"
 ## Completion report
 
 You do not integrate the work. You report it, then **offer the choice and
-wait**. Report:
+wait**. First run
+`node <skill base directory>/../../scripts/plan-check <worktree>/docs/plans/<slug>`
+and quote its output. Every `FAIL` line goes under "Not done", and while any
+check fails the report never says the build is complete. Report:
 
 - **Landed**: tasks complete, with per-task test evidence.
 - **Deviations**: every step of this skill you skipped, compressed or
@@ -51,6 +54,7 @@ wait**. Report:
   When the docs step did not run, list every `Docs claim wrong:` ledger line
   too, so a wrong doc still reaches the owner. With `Docs: offer pending`, say
   the docs step waits on menu option 4.
+- **Not done**: every `FAIL` line from `plan-check`, or "none".
 - **Parked**: deferred findings and why.
 - **Skipped**: blocked tasks and what unblocks them.
 - **Needs you**: every `needs you` line in the ledger (a parked task or a declined item), each with what unblocks it, plus the branch name and

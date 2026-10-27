@@ -6,7 +6,8 @@ description: >
   test", "TDD this", "red-green-refactor", "test first", "add coverage for",
   "this has no tests". Any language, any test runner. For a helper or
   function whose behavior the request already states, use this lane, not
-  fx-brainstorm. For a bug not yet diagnosed, use fx-debug first. Skip it and the tests get
+  fx-brainstorm. A new feature, a new model, migration or route, or anything
+  spanning several files goes to fx-brainstorm first. For a bug not yet diagnosed, use fx-debug first. Skip it and the tests get
   written afterwards, where they pass on the first run and prove nothing.
 ---
 

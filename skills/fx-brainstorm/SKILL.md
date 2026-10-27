@@ -35,7 +35,7 @@ I'll present a short design here rather than write a spec."*
   repo**: a new flag, a small endpoint, a one-file fix. **Understanding the
   kind of app is not enough: bounded means the flow you are changing is
   already here to read. If there is no existing flow to change, the task is not
-  bounded.** Ask the questions that matter, present a short design **in chat**,
+  bounded.** A change that adds a model, a migration, a route or a permission rule is never bounded. Ask the questions that matter, present a short design **in chat**,
   and STOP. Implementation starts only after an explicit yes: **a bounded
   task's approval is as hard a gate as an architectural one.** After the yes, a short design.md records it. No plan.
 - **Architectural**: new projects, new subsystems, changes that restructure

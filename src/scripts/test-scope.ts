@@ -31,7 +31,7 @@ const NEEDS_GIT_FIXTURE = new Set(['lib/git-guard.js', 'lib/git-guard.test.js', 
 
 const TS_GATES = ['scripts/check-types', 'scripts/check-ts-escapes', 'scripts/check-generated'];
 // The extensionless node scripts; scripts/build keeps the same list.
-const EXTENSIONLESS = new Set(['scripts/build-cost.ts', 'scripts/docs-index.ts', 'scripts/test-scope.ts', 'skills/fx-implement/scripts/compile-brief.ts']);
+const EXTENSIONLESS = new Set(['scripts/build-cost.ts', 'scripts/docs-index.ts', 'scripts/plan-check.ts', 'scripts/test-scope.ts', 'skills/fx-implement/scripts/compile-brief.ts']);
 
 // The committed path scripts/build writes for a src/ path; any other path as given.
 function builtPath(p: string): string {

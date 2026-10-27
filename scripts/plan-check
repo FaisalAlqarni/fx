@@ -1,0 +1,91 @@
+#!/usr/bin/env node
+// generated from src/scripts/plan-check.ts by scripts/build: edit there, not here
+"use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var fs = __toESM(require("fs"));
+var path = __toESM(require("path"));
+var import_child_process = require("child_process");
+const dir = process.argv[2];
+if (!dir || process.argv.length > 3) {
+  process.stderr.write("plan-check: usage: plan-check <plan dir>\n");
+  process.exit(2);
+}
+const lines = [];
+const report = (name, problem, okText) => lines.push(problem ? `FAIL ${name}: ${problem}` : `ok ${name}: ${okText}`);
+const read = (rel) => {
+  try {
+    return fs.readFileSync(path.join(dir, rel), "utf8");
+  } catch {
+    return null;
+  }
+};
+const design = read("design.md");
+report(
+  "design.md",
+  design === null ? "missing" : /^\*\*Approved:\*\* \d{4}-\d{2}-\d{2}/m.test(design) ? null : "no **Approved:** YYYY-MM-DD line",
+  "approved"
+);
+const plan = read("plan.md");
+const rows = plan === null ? [] : [...plan.matchAll(/^\|\s*(\d{2})\s*\|/gm)].map((m) => m[1] ?? "");
+let files = [];
+try {
+  files = fs.readdirSync(path.join(dir, "tasks")).filter((f) => /^\d{2}-.*\.md$/.test(f)).sort();
+} catch {
+}
+if (plan === null) report("plan.md", "missing", "");
+else if (rows.length === 0) report("plan.md", "no task table rows", "");
+else {
+  const missing = rows.filter((n) => files.filter((f) => f.startsWith(`${n}-`)).length !== 1);
+  const extra = files.filter((f) => !rows.includes(f.slice(0, 2)));
+  report("tasks", missing.length ? `no task file for ${missing.join(", ")} (one tasks/NN-*.md per plan row; tasks inline in plan.md do not count)` : extra.length ? `${extra.join(", ")} has no row in plan.md` : null, `${rows.length} rows, ${rows.length} task files`);
+}
+const state = read("state.md");
+if (state === null) report("state.md", "missing", "");
+else {
+  const open = rows.filter((n) => !new RegExp(`^Task ${n}: (complete|parked:)`, "m").test(state));
+  report("tasks done", open.length ? `${open.join(", ")} has no Task NN: complete or Task NN: parked: line` : null, `${rows.length} complete or parked`);
+  const missing = ["Final review:", "Exit gate:"].filter((l) => !new RegExp(`^${l}`, "m").test(state));
+  report("ledger", missing.length ? missing.map((l) => `no ${l} line`).join(", ") : null, "Final review: and Exit gate: lines present");
+}
+const b = (0, import_child_process.spawnSync)("git", ["-C", dir, "rev-parse", "--abbrev-ref", "HEAD"], { encoding: "utf8" });
+const branch = b.status === 0 ? b.stdout.trim() : "";
+report("branch", !branch ? "not in a git repository" : ["main", "master"].includes(branch) ? `${branch} is the base branch, not a work branch` : null, branch);
+const dashes = [];
+const walk = (d) => {
+  for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+    const f = path.join(d, e.name);
+    if (e.isDirectory()) walk(f);
+    else if (e.isFile()) fs.readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+      if (/[\u2013\u2014]/.test(l)) dashes.push(`${path.relative(dir, f)}:${i + 1}`);
+    });
+  }
+};
+try {
+  walk(dir);
+} catch {
+  dashes.push("plan dir cannot be read");
+}
+report("dashes", dashes.length ? dashes.join(", ") : null, "no em or en dash");
+process.stdout.write(lines.join("\n") + "\n");
+process.exit(lines.some((l) => l.startsWith("FAIL")) ? 1 : 0);

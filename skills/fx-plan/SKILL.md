@@ -156,7 +156,7 @@ docs/plans/YYYY-MM-DD-<slug>/
   tasks/01-<slug>.md …
 ```
 
-One task per file. **Never a single combined tasks file.**
+One task per file. **Never a single combined tasks file.** Tasks written inline in plan.md are a plan failure: `scripts/plan-check` rejects them.
 
 Copy both templates from [templates.md](./templates.md) verbatim when you write plan.md and the task files.
 

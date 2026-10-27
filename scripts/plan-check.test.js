@@ -1,0 +1,96 @@
+// generated from src/scripts/plan-check.test.ts by scripts/build: edit there, not here
+"use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var assert = __toESM(require("assert"));
+var fs = __toESM(require("fs"));
+var os = __toESM(require("os"));
+var path = __toESM(require("path"));
+var import_child_process = require("child_process");
+const BIN = path.join(__dirname, "plan-check");
+const root = fs.mkdtempSync(path.join(os.tmpdir(), "fx-plan-check-"));
+const git = (cwd, ...a) => assert.strictEqual((0, import_child_process.spawnSync)("git", ["-c", "user.name=t", "-c", "user.email=t@t", ...a], { cwd }).status, 0, `git ${a.join(" ")}`);
+git(root, "init", "-q", "-b", "main");
+git(root, "commit", "-q", "--allow-empty", "-m", "init");
+git(root, "checkout", "-q", "-b", "feature");
+const plan = path.join(root, "docs", "plans", "p");
+const put = (rel, body) => {
+  const f = path.join(plan, rel);
+  fs.mkdirSync(path.dirname(f), { recursive: true });
+  fs.writeFileSync(f, body);
+};
+const del = (rel) => fs.rmSync(path.join(plan, rel), { force: true, recursive: true });
+const check = () => (0, import_child_process.spawnSync)(process.execPath, [BIN, plan], { encoding: "utf8", cwd: root });
+const good = () => {
+  del("");
+  put("design.md", "# D\n\n**Status:** approved\n**Approved:** 2026-10-27\n");
+  put("plan.md", "# P\n\n| # | Title | Blocked by |\n|---|---|---|\n| 01 | One | none |\n| 02 | Two | 01 |\n");
+  put("tasks/01-one.md", "# 01\n");
+  put("tasks/02-two.md", "# 02\n");
+  put("state.md", "Task 01: complete (commits a..b, review clean)\nTask 02: parked: needs you: x\nFinal review: clean\nExit gate: scripts/check-all: ALL GREEN\n");
+};
+good();
+let r = check();
+assert.strictEqual(r.status, 0, r.stdout + r.stderr);
+assert.strictEqual(r.stdout.split("\n").filter((l) => l.startsWith("ok ")).length, 6, `six checks pass:
+${r.stdout}`);
+const fails = (why, expect) => {
+  r = check();
+  assert.strictEqual(r.status, 1, `${why}: exits 1
+${r.stdout}`);
+  assert.match(r.stdout, expect, why);
+  good();
+};
+put("design.md", "# D\n\n**Status:** draft\n");
+fails("a design with no Approved line", /^FAIL design\.md/m);
+del("design.md");
+fails("no design.md", /^FAIL design\.md/m);
+put("design.md", "**Approved:** yes\n");
+fails("an Approved line with no date", /^FAIL design\.md/m);
+del("tasks");
+fails("tasks inline in plan.md, no tasks/", /^FAIL tasks: no task file for 01, 02/m);
+del("tasks/02-two.md");
+fails("a task row with no file", /^FAIL tasks: no task file for 02/m);
+put("tasks/03-three.md", "# 03\n");
+fails("a task file with no row", /^FAIL tasks: 03-three\.md has no row/m);
+del("plan.md");
+fails("no plan.md", /^FAIL plan\.md/m);
+del("state.md");
+fails("no state.md", /^FAIL state\.md/m);
+put("state.md", "Task 01: complete (x)\nFinal review: clean\nExit gate: ok\n");
+fails("a task with no complete or parked line", /^FAIL tasks done: 02 has no/m);
+put("state.md", "Task 01: complete (x)\nTask 02: complete (y)\nExit gate: ok\n");
+fails("no Final review line", /^FAIL ledger: no Final review: line/m);
+put("state.md", "Task 01: complete (x)\nTask 02: complete (y)\nFinal review: clean\n");
+fails("no Exit gate line", /^FAIL ledger: no Exit gate: line/m);
+put("findings/08-review.md", "fine\nan em \u2014 dash\n");
+fails("an em dash in a findings file", /^FAIL dashes: findings\/08-review\.md:2/m);
+put("state.md", "Task 01: complete (x \u2013 y)\nTask 02: complete (y)\nFinal review: clean\nExit gate: ok\n");
+fails("an en dash in the ledger", /^FAIL dashes: state\.md:1/m);
+git(root, "checkout", "-q", "main");
+fails("the work branch is main", /^FAIL branch: main/m);
+git(root, "checkout", "-q", "feature");
+r = (0, import_child_process.spawnSync)(process.execPath, [BIN], { encoding: "utf8" });
+assert.strictEqual(r.status, 2, "no plan dir is a usage error");
+fs.rmSync(root, { recursive: true, force: true });
+console.log("plan-check: ok");
