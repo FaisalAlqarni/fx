@@ -329,9 +329,10 @@ Then report `catalog`, fx's declaration of a third-party model to Codex:
   `cloned` slug and say its context window (272000) is Codex's guess.
 - `kept`, `refused` or `error`: name each, say nothing was written for it and
   why. Never edit `config.toml` and never ask to.
-- Say once what fx's write checks see. On OpenRouter an `openai/` model gets
-  the `apply_patch` tool and fx sees its edits. An `anthropic/` model does not,
-  so fx sees only `apply_patch` run in the shell; heredoc writes are not seen.
+- Say once what fx's write checks see (tool facts: `../references/harnesses/codex.md`).
+  On OpenRouter an `openai/` model gets Codex's patch tool and fx sees its
+  edits. An `anthropic/` model does not, so fx sees only patch commands run in
+  the shell; heredoc writes are not seen.
 
 Then report `hooksTrusted`:
 
