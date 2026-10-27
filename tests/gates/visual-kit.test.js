@@ -140,6 +140,7 @@ const template = fs.readFileSync(path.join(dir, "page-template.html"), "utf8");
 for (const part of ['localStorage.setItem("fx-theme"', 'class="legend"', 'id="evtoggle"']) {
   assert.ok(template.includes(part), `page-template.html keeps ${part}`);
 }
+assert.ok(template.includes(".react-flow__edge-textbg{fill:var(--panel)}"), "page-template.html themes the edge-label background");
 assert.deepStrictEqual(template.match(/(?<![\w-])(margin|padding|border)-(left|right)\b|(?<![\w-])(left|right)\s*:/g) ?? [], [], "page-template.html uses logical properties");
 for (const part of ["page-template.html", "visual-assets.md"]) assert.ok(fs.readFileSync(path.join(repo, REPORT), "utf8").includes(part), `${REPORT} names ${part}`);
 assert.ok(

@@ -118,6 +118,8 @@ const template = fs.readFileSync(path.join(dir, 'page-template.html'), 'utf8');
 for (const part of ['localStorage.setItem("fx-theme"', 'class="legend"', 'id="evtoggle"']) {
   assert.ok(template.includes(part), `page-template.html keeps ${part}`);
 }
+// React Flow's default edge-label background is white: under light text in dark mode the label vanishes (e2e bug 5).
+assert.ok(template.includes('.react-flow__edge-textbg{fill:var(--panel)}'), 'page-template.html themes the edge-label background');
 assert.deepStrictEqual(template.match(/(?<![\w-])(margin|padding|border)-(left|right)\b|(?<![\w-])(left|right)\s*:/g) ?? [], [], 'page-template.html uses logical properties');
 
 // The architecture report and the audit's Phase 4 page start from the kit, and the audit's
