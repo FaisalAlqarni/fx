@@ -111,3 +111,18 @@ Task 07: complete (commits 76d7a0e..4a31b4f, review clean) files: src/lib/codex-
 Task 03: fix round 1/5: controller re-review (8 lines): 1 addressed, 0 open (commit 4c152d9)
 Task 03: minor (deferred): hook-env.ts rootToToken comment says it swaps the real path in; it swaps it out for <root>.
 Task 03: complete again (fix 4a31b4f..4c152d9, review clean)
+Final review: dispatched (most capable; Capable because: final branch review) on ce1fb19..94d7869 with broad pass, devil's advocate (standard tier, no auth change), fx-lens-silent-failure (never fired) and fx-lens-security (branch trigger matches files outside task 05: fx-setup command input, CODEX_HOME writes).
+Final review: with fixes, C/I/M 0/1/11, 2 carried minors must be fixed (findings/final-review.md). Controller opened src/lib/codex-catalog.ts:81 and confirmed: the regex is /^(model|model_provider)\s*=\s*"([^"]*)"/, so single-quoted or indented keys read as unset.
+Ruling: one fix wave takes the Important item 1 (readConfig), carried must-fixes (Task 01 Apache-2.0 notice; Task 02 rewrite, 0600 on rewrite and idempotency tests), and recommended minors 2 (timeout on codex debug models), 4 (atomic rewrite), 7 (left on every run, not only skip) and 10 (single-quote FX_CODEX_SLUGS), then the version bump as its own commit. Why: the reviewer named these as a few lines each; the rest of the minors stay deferred. Cost if wrong: SKILL.md (19979 bytes) overruns on item 10's wording, caught by skill-size in the scoped re-review and the exit gate.
+Ruling: the version bump is 0.7.0 to 0.8.0 in .claude-plugin/plugin.json, .codex-plugin/plugin.json and package.json (and any other file tests/gates/release-version.test.js reads). Why: a new user-facing capability (fx-setup writes a Codex catalog and profile); 0.6.0 and 0.7.0 were minor bumps for features. Cost if wrong: a version number the owner would pick differently, caught by the owner before merge.
+Final review fix wave: dispatched (one fixer, sonnet).
+Final fix wave: DONE_WITH_CONCERNS, commits 63bf16f, e41cc79 (fx 0.8.0). Controller verified the Apache-2.0 copyright line against upstream openai/codex NOTICE ("Copyright 2025 OpenAI"). Scoped re-review dispatched.
+Exit gate: check-all launched (tracked background) at 2026-10-27T23:51:07Z on e41cc79, output /tmp/claude-1000/fx-codex/tests/check-all.out; final re-review running in parallel (read-only).
+Final review: fix wave (8 addressed, 0 open: none; commits 94d7869..e41cc79)
+Final review: minor (deferred): left excludes the same-name profile on kept or refused runs, so a stale fx-owned profile of that name is not reported (codex-catalog.ts, report.left filter)
+Final review: minor (deferred): writeAtomic leaves a 0600 .tmp file in CODEX_HOME if the process is killed between write and rename (codex-catalog.ts writeAtomic)
+Final review: minor (deferred): readConfig now accepts an indented model key inside a multi-line TOML string (codex-catalog.ts readConfig)
+Final review: minor (deferred): live.sh:261 catalog setup call has no timeout wrapper
+Exit gate: scripts/check-all under scratch-env on e41cc79: exit 0, "ALL GREEN", 127 sections, 0 failed; read whole output (741 lines). Noise: MODULE_TYPELESS_PACKAGE_JSON warnings and "[fx] ... failed" lines from the opencode plugin error-path tests (plugins/ unchanged on this branch). CI (conformance-nightly.yml) runs tests/conformance/run.sh <harness> --free, which check-all runs for all four harnesses. Every SKILL.md under 20,000 bytes (largest skills/fx-setup/SKILL.md 19989).
+Parked for the owner: final review items 3, 5, 6, 8, 9, 11, 12, the fix-wave new minors, every earlier minor (deferred) line, coverage gaps G5 and G6.
+Plan complete: tasks 01 to 07 complete, 0 parked, final review fixed
