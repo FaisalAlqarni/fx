@@ -289,7 +289,9 @@ if (!named) no("no plugin.json naming fx");
 if (!fs.existsSync(path.join(fx, "PREAMBLE.md"))) no("no PREAMBLE.md");
 const p = require(path.join(fx, "lib", "plant-roles"));
 const r = p.plantRoles({});
-console.log(JSON.stringify({ written: r.written, stale: r.stale, kept: r.kept, audit: p.auditRoles({}), hooksTrusted: p.hooksTrusted({}) }));
+let catalog;
+try { catalog = require(path.join(fx, "lib", "codex-catalog")).setupCatalog({}); } catch (e) { catalog = { error: String(e && e.message || e) }; }
+console.log(JSON.stringify({ written: r.written, stale: r.stale, kept: r.kept, audit: p.auditRoles({}), hooksTrusted: p.hooksTrusted({}), catalog }));
 '
 ```
 
@@ -320,6 +322,19 @@ each under its own heading.
 empty), tell the user: **restart Codex once before dispatching an fx review
 agent.** Codex reads roles only when a session starts, so this session
 cannot dispatch the roles it just received.
+
+Then report `catalog`, fx's declaration of a third-party model to Codex:
+
+- `skipped`: one line, no catalog was needed, with the reason it gives.
+- `profile` set: list `written`. Print `command` as the line to start Codex
+  with. Say the profile's catalog replaces Codex's remote model list, so any
+  other model run under that profile gets Codex's fallback metadata. Name each
+  `cloned` slug and say its context window (272000) is Codex's guess.
+- `kept`, `refused` or `error`: name each, say nothing was written for it and
+  why. Never edit `config.toml` and never ask to.
+- Say once what fx's write checks see. On OpenRouter an `openai/` model gets
+  the `apply_patch` tool and fx sees its edits. An `anthropic/` model does not,
+  so fx sees only `apply_patch` run in the shell; heredoc writes are not seen.
 
 Then report `hooksTrusted`:
 

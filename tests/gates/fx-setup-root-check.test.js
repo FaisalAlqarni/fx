@@ -89,6 +89,36 @@ const out = JSON.parse(ok.stdout);
 assert.strictEqual(out.written.length, 6, "all six roles planted on a fresh CODEX_HOME");
 assert.strictEqual(out.audit.present.length, 6, "and audited present");
 assert.ok("hooksTrusted" in out, "and hook trust reported");
+assert.strictEqual(out.catalog.skipped, "no third-party model in config.toml and no slug named", "no Codex config: the catalog step reports why it did nothing");
+const OR_CFG = 'model = "anthropic/claude-haiku-4.5"\nmodel_provider = "openrouter"\n';
+function runWithCodex(label, stubBody) {
+  const dir = fs.mkdtempSync(path.join(s, "or-"));
+  const home = path.join(dir, "codex-home");
+  fs.mkdirSync(home);
+  fs.writeFileSync(path.join(home, "config.toml"), OR_CFG);
+  const bin = path.join(dir, "bin");
+  fs.mkdirSync(bin);
+  fs.writeFileSync(path.join(bin, "codex"), `#!/usr/bin/env node
+${stubBody}
+`, { mode: 493 });
+  const env = { ...process.env, HOME: s, TMPDIR: s, CODEX_HOME: home, PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}` };
+  const r = (0, import_child_process.spawnSync)("bash", ["-c", withBase(command, skillDir(root))], { cwd: repo, env, encoding: "utf8" });
+  assert.strictEqual(r.status, 0, `${label}: exits 0 (${r.stderr})`);
+  return { home, out: JSON.parse(r.stdout) };
+}
+const haikuEntry = { slug: "anthropic/claude-haiku-4.5", display_name: "Claude Haiku 4.5", context_window: 2e5, max_context_window: 2e5, include_skills_usage_instructions: false, apply_patch_tool_type: null, base_instructions: "BASE", model_messages: { instructions_template: "BASE" }, shell_type: "unified_exec", visibility: "list" };
+{
+  const r = runWithCodex("openrouter", `console.log(${JSON.stringify(JSON.stringify({ models: [haikuEntry] }))});`);
+  assert.strictEqual(r.out.catalog.profile, "fx-openrouter");
+  assert.strictEqual(r.out.catalog.command, "codex --profile fx-openrouter");
+  assert.ok(fs.existsSync(path.join(r.home, "fx-openrouter.config.toml")), "the profile file is written");
+  assert.strictEqual(fs.readFileSync(path.join(r.home, "config.toml"), "utf8"), OR_CFG, "config.toml is byte-identical");
+}
+{
+  const r = runWithCodex("codex fails", "process.exit(1);");
+  assert.ok(typeof r.out.catalog.error === "string" && r.out.catalog.error.length > 0, "catalog.error carries the message");
+  assert.strictEqual(r.out.written.length, 6, "the roles are still planted and printed");
+}
 const odd = path.join(s, 'we$HOME`id`"ird');
 fs.symlinkSync(root, odd);
 const oddRun = run(skillDir(odd));
