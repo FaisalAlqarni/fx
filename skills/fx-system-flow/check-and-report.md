@@ -62,6 +62,11 @@ Write the report in chat, from the last `BuildResult` and the run's record:
 - **Unconfirmed items:** by handle, with the reason.
 - **Visual check:** passed, the failures fixed, or
   `Visual check: not run: no browser` naming every page.
-- **Cost:** tokens and minutes against the `estimate` totals.
+- **Cost:** tokens and minutes against the `estimate` totals, measured with
+  `node <skill base directory>/../../scripts/build-cost` run from the host
+  root. It reads this session's transcript and prints the controller's tokens
+  and the subagents' tokens; report their sum and the wall clock it prints. When it
+  prints `no transcript recorded`, report the subagent tokens you have and
+  write `controller tokens not included`.
 - **Next:** the files written, for the owner to review and commit. The lane
   committed nothing.

@@ -381,5 +381,16 @@ for (const [label, file] of [["missing", path.join(root, "nope.jsonl")], ["empty
   assert.strictEqual(p.status, 2);
   assert.ok(p.stderr.includes(`malformed JSON: ${n}:1`), p.stderr);
 }
+{
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bc-own-"));
+  fs.mkdirSync(path.join(dir, ".fx"));
+  fs.writeFileSync(path.join(dir, ".fx", "transcript-path"), ctl + "\n");
+  const own = (0, import_child_process.spawnSync)(process.execPath, [BIN, "--json"], { encoding: "utf8", cwd: dir });
+  assert.strictEqual(own.status, 0, own.stderr);
+  assert.deepStrictEqual(JSON.parse(own.stdout), r);
+  const none = (0, import_child_process.spawnSync)(process.execPath, [BIN, "--json"], { encoding: "utf8", cwd: root });
+  assert.strictEqual(none.status, 2);
+  assert.ok(none.stderr.includes("no transcript recorded"), none.stderr);
+}
 fs.rmSync(root, { recursive: true, force: true });
 console.log("build-cost: ok");

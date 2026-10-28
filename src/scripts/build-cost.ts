@@ -384,8 +384,9 @@ function main(): void {
     return;
   }
   const jsonOut = args.includes('--json');
-  const file = args.find((a) => a !== '--json');
-  if (!file) fail('usage: build-cost <controller.jsonl> [--json]');
+  // No file: the session's own transcript, as the SessionStart hook recorded it.
+  const file = args.find((a) => a !== '--json') ?? recordedTranscript();
+  if (!file) fail('no transcript recorded; usage: build-cost [<controller.jsonl>] [--json]');
 
   const records = readRecords(file);
   if (records === null) fail(`file not found: ${file}`);

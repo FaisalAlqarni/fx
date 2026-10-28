@@ -401,5 +401,19 @@ for (const [label, file] of [['missing', path.join(root, 'nope.jsonl')], ['empty
   assert.ok(p.stderr.includes(`malformed JSON: ${n}:1`), p.stderr);
 }
 
+// With no file, the whole-run report reads the transcript the SessionStart hook recorded, so a lane can
+// measure its own session (controller and subagents) without knowing where the runtime keeps it.
+{
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bc-own-'));
+  fs.mkdirSync(path.join(dir, '.fx'));
+  fs.writeFileSync(path.join(dir, '.fx', 'transcript-path'), ctl + '\n');
+  const own = spawnSync(process.execPath, [BIN, '--json'], { encoding: 'utf8', cwd: dir });
+  assert.strictEqual(own.status, 0, own.stderr);
+  assert.deepStrictEqual(JSON.parse(own.stdout), r); // ts-gate-ok: the test parses output it just produced
+  const none = spawnSync(process.execPath, [BIN, '--json'], { encoding: 'utf8', cwd: root });
+  assert.strictEqual(none.status, 2);
+  assert.ok(none.stderr.includes('no transcript recorded'), none.stderr);
+}
+
 fs.rmSync(root, { recursive: true, force: true });
 console.log('build-cost: ok');
