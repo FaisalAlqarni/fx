@@ -411,3 +411,11 @@ Re-review fix N5 (.fx.json parse): commit bc3a669. RED: "system-flow: check: Une
 Re-review N6 (missing tests): commit 7d00f92. Table-cell links disarmed (A5) and choices saved before stamps (A13). Both passed on the fixed code; each failed with its fix reverted ("chapters unstamped"; the cell kept a live link), then passed restored. Timeout kill covered by N1.
 Estimate comment: commit 6e43c7c, "within 12%" (run (b) is 11.7% over). Comment only, no test.
 Exit gate after the re-review fixes (6e43c7c): check-all exit 0, ALL GREEN, 775 lines read (one SKIP: opencode 1.x row with opencode 2.1.4 on PATH). Stray [fx] stderr lines come from the tests' own failure cases, as before.
+Task 20: unparked: controller ran proof (a) steps 1 to 3 (session 93399dde-044e-43a6-af57-b9f8e8eb2213), results step done in 178489a.
+Task 20: complete (run by the controller; results proof/results-a.md; defects fixed in 43c4c90, be753eb, 6ee2b0e, b41c4cd, a3d5fc5, 0befdf1, befc7f6)
+Task 21: unparked: controller ran proof (b) steps 1 to 3 plus the layout split decision (1a, 2b), results step done in 767f982.
+Task 21: complete (run by the controller; results proof/results-b.md; defects fixed in 076c8ac..94b4ba8)
+Final review: broad, unprimed devil's advocate, security and silent-failure lenses (findings/final-*.md); one fix wave A1 to A25 and B1 to B8 (510acf3..7253c76); re-review found N1 to N4 blocking, fixed in b9dfafa, 69d4828, cc77bee, 5dce13a with N5, N6 (bc3a669, 7d00f92); controller visual check after the fixes: 108 pages, 432 views, no problems (c08d274).
+Exit gate: scripts/check-all at 60a5ce5: ALL GREEN, exit 0 (controller run, 2026-10-28).
+Docs: offer pending (fx's own docs; the completion report carries it as menu option 4)
+ADR candidates: none beyond ADR 0066, written during the build (rulings such as the in-place fx-map-2 change and plain roots warning in stale are local and reversible)
