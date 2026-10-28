@@ -62,6 +62,7 @@ run system-flow-only.test.js node scripts/system-flow-only.test.js
 run system-flow-prose.test.js node scripts/system-flow-prose.test.js
 run system-flow-migrate.test.js node scripts/system-flow-migrate.test.js
 run system-flow-markdown.test.js node scripts/system-flow-markdown.test.js
+run system-flow-compare.test.js node scripts/system-flow-compare.test.js
 run compile-brief.test.js  node skills/fx-implement/scripts/compile-brief.test.js
 run brief-size.test.js     node tests/gates/brief-size.test.js
 run skill-size.test.js node tests/gates/skill-size.test.js
