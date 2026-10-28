@@ -111,6 +111,25 @@ const { out, err } = build(f);
   assert.ok(JSON.stringify(s.cards).includes('@guide/README.md:1'), JSON.stringify(s.cards));
 }
 
+// An actor named like its store keeps participant ids unique, and the spec still validates.
+{
+  const g = setup();
+  const lvl = parseJson(fs.readFileSync(path.join(g.host, `${SITE}/model/fragments/level0.json`), 'utf8')) as Obj;
+  lvl.levels.diagrams[1].nodes.push({ id: 'cache', label: 'Cache', kind: 'cloud', role: 'Holds', evidence: ev('app/y.rb', '1', 'Y') });
+  lvl.levels.diagrams[1].edges.push({ from: 'api', to: 'cache', label: 'caches', evidence: ev('app/y.rb', '1', 'Y') });
+  g.fragment('level0', lvl);
+  const fl = parseJson(fs.readFileSync(path.join(g.host, `${SITE}/model/fragments/flows.json`), 'utf8')) as Obj;
+  fl.stores.cache = [{ id: 'k1', pattern: 'k:*', evidence: ev('app/y.rb', '1', 'Y') }];
+  fl.storeFlows.push({ id: 'second', trigger: 'Cached', chapter: 's1', steps: [{ n: 1, actor: 'cache', op: 'read', store: 'cache', key: 'k', evidence: ev('app/y.rb', '1', 'Y') }] });
+  g.fragment('flows', fl);
+  build(g);
+  const s = spec(g, 'flow-second');
+  const ids = s.participants.map((x: Obj) => x.id);
+  assert.strictEqual(new Set(ids).size, 2, ids.join());
+  assert.deepStrictEqual(validate(schema('sequence'), s, refs), []);
+  assert.ok(s.messages.every((m: Obj) => ids.includes(m.from) && ids.includes(m.to)));
+}
+
 // Schema validity and mutations.
 {
   for (const n of fs.readdirSync(path.join(f.host, D, 'src'))) {

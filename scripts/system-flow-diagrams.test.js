@@ -150,6 +150,23 @@ const { out, err } = build(f);
   assert.ok(JSON.stringify(s.cards).includes("@guide/README.md:1"), JSON.stringify(s.cards));
 }
 {
+  const g = setup();
+  const lvl = (0, import_json.parseJson)(fs.readFileSync(path.join(g.host, `${SITE}/model/fragments/level0.json`), "utf8"));
+  lvl.levels.diagrams[1].nodes.push({ id: "cache", label: "Cache", kind: "cloud", role: "Holds", evidence: ev("app/y.rb", "1", "Y") });
+  lvl.levels.diagrams[1].edges.push({ from: "api", to: "cache", label: "caches", evidence: ev("app/y.rb", "1", "Y") });
+  g.fragment("level0", lvl);
+  const fl = (0, import_json.parseJson)(fs.readFileSync(path.join(g.host, `${SITE}/model/fragments/flows.json`), "utf8"));
+  fl.stores.cache = [{ id: "k1", pattern: "k:*", evidence: ev("app/y.rb", "1", "Y") }];
+  fl.storeFlows.push({ id: "second", trigger: "Cached", chapter: "s1", steps: [{ n: 1, actor: "cache", op: "read", store: "cache", key: "k", evidence: ev("app/y.rb", "1", "Y") }] });
+  g.fragment("flows", fl);
+  build(g);
+  const s = spec(g, "flow-second");
+  const ids = s.participants.map((x) => x.id);
+  assert.strictEqual(new Set(ids).size, 2, ids.join());
+  assert.deepStrictEqual((0, import_sf_schema.validate)(schema("sequence"), s, refs), []);
+  assert.ok(s.messages.every((m) => ids.includes(m.from) && ids.includes(m.to)));
+}
+{
   for (const n of fs.readdirSync(path.join(f.host, D, "src"))) {
     const s = (0, import_json.parseJson)(read(f, `${D}/src/${n}`));
     const sch = schema(s.diagram_type === "architecture" ? "architecture" : "sequence");

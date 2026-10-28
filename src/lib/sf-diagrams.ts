@@ -123,9 +123,10 @@ function flow(f: StoreFlow, model: Model, roots: Map<string, Root>, limit: numbe
   const actors = [...new Set(f.steps.map((s) => s.actor))], stores = [...new Set(f.steps.map((s) => s.store as string))];
   const parts: Part[] = [
     ...actors.map((id): Part => { const n = nodes.get(id); return { id, type: componentType(n?.kind ?? ''), label: n?.label ?? id, sources: n ? sourcesOf(n.evidence, own, host, [], id) : undefined }; }),
-    ...stores.map((id): Part => ({ id, type: 'database', label: id })),
+    // Model ids are lowercase with no underscore, so S_<store> never equals an actor id.
+    ...stores.map((id): Part => ({ id: `S_${id}`, type: 'database', label: id })),
   ];
-  const msgs = f.steps.map((s): Msg => ({ n: s.n, from: s.actor, to: s.store, label: `${s.op}${s.key ? ` ${s.key}` : ''}`, ...(s.when ? { note: s.when } : {}) }));
+  const msgs = f.steps.map((s): Msg => ({ n: s.n, from: s.actor, to: `S_${s.store}`, label: `${s.op}${s.key ? ` ${s.key}` : ''}`, ...(s.when ? { note: s.when } : {}) }));
   return sequencePages(`flow-${f.id}`, f.trigger, parts, msgs, own, repository(roots.get(own), own), rest, limit, `flow:${f.id}`);
 }
 
