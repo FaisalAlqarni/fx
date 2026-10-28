@@ -228,8 +228,24 @@ assert.strictEqual(setup().run(["nope"]).status, 2);
   const f = setup({ label: 'Reads #3; then: "writes"', api: "API; v2" });
   built(f);
   const s1 = lines(f, "docs/system/s1.md");
-  assert.ok(s1.includes("    api->>db: Reads #35;3#59; then#58; #quot;writes#quot;"));
-  assert.ok(s1.includes("    participant api as API#59; v2"));
+  assert.ok(s1.includes("    p_api->>p_db: Reads #35;3#59; then#58; #quot;writes#quot;"));
+  assert.ok(s1.includes("    participant p_api as API#59; v2"));
+}
+{
+  const f = setup();
+  const flows = (0, import_json.parseJson)(read(f, `${F}/flows.json`));
+  const q = flows.sequences[0];
+  const ren = { api: "end", db: "loop" };
+  for (const p of q.participants) p.id = ren[p.id] ?? p.id;
+  for (const m of q.messages) {
+    m.from = ren[m.from] ?? m.from;
+    m.to = ren[m.to] ?? m.to;
+  }
+  for (const st of flows.storeFlows[0].steps) st.actor = ren[st.actor] ?? st.actor;
+  f.fragment("flows", flows);
+  built(f);
+  const s1 = lines(f, "docs/system/s1.md");
+  assert.ok(s1.includes("    participant p_end as API") && s1.includes("    p_end->>p_loop: Reads link"), s1.join("\n"));
 }
 {
   const f = setup({ label: "<script>alert(1)</script>", bullet: "Uses <b>bold</b> & more" });

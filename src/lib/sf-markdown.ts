@@ -53,14 +53,16 @@ const evCell = (e: Evidenced, hostId: string): string => escapeCell(evidenceItem
 
 const table = (head: string[], rows: string[][]): string[] => [`| ${head.join(' | ')} |`, `|${head.map(() => ' --- |').join('')}`, ...rows.map((r) => `| ${r.join(' | ')} |`)];
 
+// A prefix, so an id that is a Mermaid keyword (end, loop, alt, note) is still a participant.
+const pid = (id: string): string => `p_${id}`;
 function sequenceBlock(q: Sequence, hostId: string): string[] {
   const label = new Map(q.participants.map((p) => [p.id, p.label]));
   const arrow = (m: { mode?: string }): string => (m.mode === 'async' ? '-)' : '->>');
   return [
     `### ${prose(q.title)}`, '',
     '```mermaid', 'sequenceDiagram',
-    ...q.participants.map((p) => `    participant ${p.id} as ${escapeMermaid(p.label)}`),
-    ...q.messages.map((m) => `    ${m.from}${arrow(m)}${m.to}: ${escapeMermaid(m.label)}`),
+    ...q.participants.map((p) => `    participant ${pid(p.id)} as ${escapeMermaid(p.label)}`),
+    ...q.messages.map((m) => `    ${pid(m.from)}${arrow(m)}${pid(m.to)}: ${escapeMermaid(m.label)}`),
     '```', '',
     ...table(['#', 'From', 'To', 'Message', 'Evidence'], q.messages.map((m) => [String(m.n), cell(label.get(m.from) ?? m.from), cell(label.get(m.to) ?? m.to), cell(m.label), evCell(m, hostId)])), '',
   ];
