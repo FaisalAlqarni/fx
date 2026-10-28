@@ -42,6 +42,9 @@ question in the repo's callout form, never as a fact. Each doc ends with one
 marker, `<!-- fx-docs verified: <40-character commit> -->`. Rewrite it to HEAD
 after you have verified every claim in that doc, and only then.
 
+Before you commit a doc you wrote or changed, invoke the fx-humanize lane in file
+mode on it. It changes prose only, so evidence lines and the marker stay.
+
 ## 2. Layout and flavour
 
 Docs live in `docs/<area>/*.md`, with Mermaid for flows. In a repo that already

@@ -62,4 +62,17 @@ residuals as at the breaker: park with rulings, or rule and ledger the
 load-bearing ones. **No second fix wave**: residuals surface to the user in
 the completion report.
 
+## Humanize pass
+
+Once per branch, never per task: after the fix wave and before its scoped
+re-review, dispatch one subagent on the standard tier (Sonnet). It invokes
+the fx-humanize lane in file mode on the prose the branch added, as
+`git diff <MERGE_BASE>...HEAD` shows it: Markdown docs, ADRs, and the comments
+added in code. It changes prose only, runs
+`python3 -I <skill base directory>/../../scripts/check-prose --diff <MERGE_BASE>`
+until it exits 0, and commits once as `docs: humanize pass`. The scoped
+re-review covers that commit with the fixes; when the branch pass found nothing,
+the commit gets one scoped re-review of its own. Ledger
+`Final review: humanize pass <sha7>`, or `Final review: humanize pass: no prose changed`.
+
 Only the four stop conditions stop you here.
