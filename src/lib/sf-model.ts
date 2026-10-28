@@ -62,7 +62,7 @@ export function parseHandle(h: string): { prefix: string; id: string } | null {
 export const SCHEMA_VERSION = 2;
 export const ID_PATTERN = '^[a-z0-9][a-z0-9-]*$';
 
-const SCHEMA_FILE = path.join(__dirname, '..', 'references', 'system-flow', 'system-model.schema.json');
+export const SCHEMA_FILE = path.join(__dirname, '..', 'references', 'system-flow', 'system-model.schema.json');
 
 // The design's named fragments load first, in this order, then area fragments by name,
 // so a duplicate id is reported on the area fragment, not on level0.json.

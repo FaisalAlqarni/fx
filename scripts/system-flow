@@ -30,8 +30,9 @@ var import_sf_model = require("../lib/sf-model.js");
 var import_sf_stale = require("../lib/sf-stale.js");
 var import_sf_estimate = require("../lib/sf-estimate.js");
 var import_sf_evidence = require("../lib/sf-evidence.js");
+var import_sf_migrate = require("../lib/sf-migrate.js");
 var import_sf_detect = require("../lib/sf-detect.js");
-const USAGE = "system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build [--only <handle|path>[,...]]... [--archify <dir>] [--archify-timeout <seconds>] [--prefer cheap|fast|detailed] [--page-limit <name>=<1-8>]... [--svg <name>]... | estimate <plan file> | detect [--repo <path>]... [--write] | query <path>... | query --diff <base> [--base <root id>=<ref>]... | stale | verify <handle>... | --all";
+const USAGE = "system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build [--only <handle|path>[,...]]... [--archify <dir>] [--archify-timeout <seconds>] [--prefer cheap|fast|detailed] [--page-limit <name>=<1-8>]... [--svg <name>]... | estimate <plan file> | detect [--repo <path>]... [--write] | query <path>... | query --diff <base> [--base <root id>=<ref>]... | stale | verify <handle>... | --all | migrate";
 const usage = () => {
   process.stderr.write(`${USAGE}
 `);
@@ -48,7 +49,7 @@ const takeFlags = (names) => {
 };
 takeFlags(["--root", "--site", "--markdown"]);
 const cmd = args.shift();
-if (cmd !== "check" && cmd !== "build" && cmd !== "detect" && cmd !== "estimate" && cmd !== "query" && cmd !== "stale" && cmd !== "verify") usage();
+if (cmd !== "check" && cmd !== "build" && cmd !== "detect" && cmd !== "estimate" && cmd !== "query" && cmd !== "stale" && cmd !== "verify" && cmd !== "migrate") usage();
 const repos = [];
 let write = false;
 if (cmd === "detect") {
@@ -220,6 +221,12 @@ function verifyCmd() {
   if (report((0, import_sf_evidence.verifyEvidence)(named, roots, "build")) > 0) process.exit(1);
   print({ verified: (0, import_sf_stale.verifyItems)(root, fragmentsDir, verifyAll ? "all" : queried, roots) });
 }
+function migrateCmd() {
+  const root = hostRoot();
+  const { rewritten, owed, problems } = (0, import_sf_migrate.migrate)(root, siteOf(root));
+  if (report(problems) > 0) process.exit(1);
+  print({ rewritten, owed });
+}
 async function buildCmd() {
   const root = hostRoot();
   const output = (0, import_sf_build.systemFlowConfig)(root).config?.output;
@@ -231,7 +238,7 @@ async function buildCmd() {
   process.stdout.write(`${JSON.stringify(result)}
 `);
 }
-(cmd === "build" ? buildCmd() : Promise.resolve().then({ detect: detectCmd, estimate: estimateCmd, query: queryCmd, stale: staleCmd, verify: verifyCmd, check }[cmd])).catch((e) => {
+(cmd === "build" ? buildCmd() : Promise.resolve().then({ detect: detectCmd, estimate: estimateCmd, query: queryCmd, stale: staleCmd, verify: verifyCmd, migrate: migrateCmd, check }[cmd])).catch((e) => {
   process.stderr.write(`system-flow: ${cmd}: ${e.message.split("\n")[0]}
 `);
   if (!(e instanceof Error) || e.constructor !== Error) process.stderr.write(`${e?.stack ?? String(e)}

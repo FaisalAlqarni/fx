@@ -8,9 +8,10 @@ import { itemsOf, originOf, parseHandle } from '../lib/sf-model.js';
 import { changedPaths, diffBases, loadModelItems, plainRoots, queryPaths, staleItems, unusableRoots, verifyItems } from '../lib/sf-stale.js';
 import { estimate, readPlan } from '../lib/sf-estimate.js';
 import { verifyEvidence } from '../lib/sf-evidence.js';
+import { migrate } from '../lib/sf-migrate.js';
 import { detect, docsConfig, writeFxJson } from '../lib/sf-detect.js';
 
-const USAGE = 'system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build [--only <handle|path>[,...]]... [--archify <dir>] [--archify-timeout <seconds>] [--prefer cheap|fast|detailed] [--page-limit <name>=<1-8>]... [--svg <name>]... | estimate <plan file> | detect [--repo <path>]... [--write] | query <path>... | query --diff <base> [--base <root id>=<ref>]... | stale | verify <handle>... | --all';
+const USAGE = 'system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build [--only <handle|path>[,...]]... [--archify <dir>] [--archify-timeout <seconds>] [--prefer cheap|fast|detailed] [--page-limit <name>=<1-8>]... [--svg <name>]... | estimate <plan file> | detect [--repo <path>]... [--write] | query <path>... | query --diff <base> [--base <root id>=<ref>]... | stale | verify <handle>... | --all | migrate';
 const usage = (): never => { process.stderr.write(`${USAGE}\n`); process.exit(2); };
 
 const args = process.argv.slice(2);
@@ -25,7 +26,7 @@ const takeFlags = (names: string[]): void => {
 };
 takeFlags(['--root', '--site', '--markdown']);
 const cmd = args.shift();
-if (cmd !== 'check' && cmd !== 'build' && cmd !== 'detect' && cmd !== 'estimate' && cmd !== 'query' && cmd !== 'stale' && cmd !== 'verify') usage();
+if (cmd !== 'check' && cmd !== 'build' && cmd !== 'detect' && cmd !== 'estimate' && cmd !== 'query' && cmd !== 'stale' && cmd !== 'verify' && cmd !== 'migrate') usage();
 const repos: string[] = [];
 let write = false;
 if (cmd === 'detect') {
@@ -187,6 +188,13 @@ function verifyCmd(): void {
   print({ verified: verifyItems(root, fragmentsDir, verifyAll ? 'all' : queried, roots) });
 }
 
+function migrateCmd(): void {
+  const root = hostRoot();
+  const { rewritten, owed, problems } = migrate(root, siteOf(root));
+  if (report(problems) > 0) process.exit(1);
+  print({ rewritten, owed });
+}
+
 async function buildCmd(): Promise<void> {
   const root = hostRoot();
   const output = systemFlowConfig(root).config?.output;
@@ -197,7 +205,7 @@ async function buildCmd(): Promise<void> {
   process.stdout.write(`${JSON.stringify(result)}\n`);
 }
 
-(cmd === 'build' ? buildCmd() : Promise.resolve().then({ detect: detectCmd, estimate: estimateCmd, query: queryCmd, stale: staleCmd, verify: verifyCmd, check }[cmd as 'check'])).catch((e: Error) => {
+(cmd === 'build' ? buildCmd() : Promise.resolve().then({ detect: detectCmd, estimate: estimateCmd, query: queryCmd, stale: staleCmd, verify: verifyCmd, migrate: migrateCmd, check }[cmd as 'check'])).catch((e: Error) => {
   process.stderr.write(`system-flow: ${cmd}: ${e.message.split('\n')[0]}\n`);
   // The lib throws plain Errors for what it refuses; any other kind (TypeError, RangeError) is a bug: show where.
   if (!(e instanceof Error) || e.constructor !== Error) process.stderr.write(`${(e as Error)?.stack ?? String(e)}\n`);
