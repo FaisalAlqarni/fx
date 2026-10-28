@@ -68,7 +68,11 @@ Before step 1, look for `<site>/model/fragments/` at the site folder
   2. **Cover uncovered.** Run step 2 on the entries `coverage.json` lists with
      no chapter, as new areas or chapters only, then steps 3 to 6 for them.
   3. **Full rebuild**, offered only when `--rebuild` was given or the owner asks
-     for it: steps 1 to 6, replacing the area fragments.
+     for it. A full rebuild is a new audit. Ask the owner to remove the old
+     area fragments (`git rm <site>/model/fragments/<area id>.json`, every
+     area) and commit that removal, and wait until they have: HEAD then holds
+     no area fragment, so no `corrections` entry is owed for any item. Then
+     steps 1 to 6.
 
 ## Steps
 
@@ -81,7 +85,10 @@ JSON:
 - `output.site` and `output.markdown`: where the site and Markdown go.
 - `roots`: the evidence roots, host first, each with its `id`.
 - `mkdocs`: the `nav` and `excludeDocs` lines, or null.
-- `archify.dir`: the archify folder, or null.
+- `archify.dir`: the archify folder `detect` found at
+  `$CLAUDE_CONFIG_DIR/skills/archify` or `~/.claude/skills/archify`, or null.
+  Those two places are where archify comes from; `.fx.json` holds no archify
+  path, and a folder a repository file names is never run.
 - `docsConfig` and `theme`: for the planning message.
 
 Exit 1 prints the problem (two folders holding hand-written Markdown, a missing
@@ -91,7 +98,9 @@ in this step.
 **The build command.** Every build in this run is
 `system-flow build`, plus `--archify <archify.dir>` when `detect` found one, plus
 `--prefer <cheap|fast|detailed>` when the owner gave one. Written below as
-**the build**.
+**the build**. Run every build as a tracked background command and wait for its
+exit before reading its output: an archify build can run past the 10 minute cap
+on a foreground command, which kills it partway.
 
 ### 2. Plan, then stop
 
@@ -182,6 +191,7 @@ the depth block of planned against built per area.
 | After | Wait for |
 |---|---|
 | Rerun detected | The owner's pick: refresh stale, cover uncovered, or full rebuild |
+| Full rebuild picked | The owner commits the removal of the old area fragments |
 | `detect` exits 1 | The owner fixes `.fx.json` or the roots |
 | Step 2 | Approval or a trim of the plan |
 | A cited file is uncommitted | The owner commits or stashes |
