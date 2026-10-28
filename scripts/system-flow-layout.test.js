@@ -34,12 +34,13 @@ const ev = [{ path: "app/x.rb", lines: "1-4", symbol: "Link" }];
 const K33_CAP = 2;
 const node = (id, label = `Node ${id}`) => ({ id, label, kind: "backend", look: "service", role: `Role of ${id}`, evidence: ev });
 const edge = (from, to, label = `${from} to ${to}`, extra = {}) => ({ from, to, label, evidence: ev, ...extra });
-const diagram = (d) => ({ title: d.id, summary: `The ${d.id} diagram.`, groups: [], ...d });
+const diagram = (d) => ({ title: d.id, summary: `The ${d.id} diagram shows its parts and links.`, groups: [], ...d });
 function setup(level0, extra = []) {
   const f = (0, import_sf_fixture.sfFixture)();
   f.goodSet();
   f.fragment("level0", { levels: { root: "system", diagrams: [diagram(level0)] } });
   if (extra.length) f.fragment("area", { levels: { diagrams: extra.map(diagram) } });
+  f.floor();
   f.commit("host", "model");
   return f;
 }
@@ -80,7 +81,7 @@ async function main() {
     const f = setup(chain());
     built(f);
     const r = report(f);
-    assert.strictEqual(r.length, 1, reportBytes(f));
+    assert.deepStrictEqual(r.map((l) => l.key), ["level-system", "seq-turn"], reportBytes(f));
     const e = entry(f, "level-system");
     assert.deepStrictEqual([e.crossings, e.notDrawn, e.nodes, e.arrows], [0, 0, 4, 3]);
     assert.ok(e.width <= 860, `width ${e.width}`);
@@ -175,9 +176,10 @@ async function main() {
     const f = setup(chain());
     f.fragment("flows", {
       sequences: [{
-        id: "turn",
-        title: "Turn",
+        id: "trip",
+        title: "Trip",
         chapter: "s1",
+        summary: "The api reads the link and the token in turn.",
         participants: ["api", "db", "cache"].map((id) => ({ id, label: id.toUpperCase(), look: "service", evidence: ev })),
         messages: [
           { n: 1, from: "api", to: "db", label: "Reads link", evidence: ev },
@@ -189,7 +191,7 @@ async function main() {
     });
     f.commit("host", "sequence");
     built(f);
-    const fig = await figure(f, "seq-turn");
+    const fig = await figure(f, "seq-trip");
     assert.deepStrictEqual([fig.nodes.length, fig.edges.length, fig.steps.length], [3, 3, 4]);
     assert.ok(fig.edges.some((x) => x.label?.text === "1, 3"), JSON.stringify(fig.edges.map((x) => x.label?.text)));
     assert.ok(fig.steps[2]?.caption.includes("app/x.rb:4"), fig.steps[2]?.caption);
@@ -201,6 +203,7 @@ async function main() {
         id: "first",
         trigger: "A link is opened",
         chapter: "s1",
+        summary: "The api writes two rows and reads one token.",
         steps: [
           { n: 1, actor: "api", op: "write", store: "sql", key: "links", evidence: ev },
           { n: 2, actor: "api", op: "write", store: "sql", key: "clicks", evidence: ev },
@@ -234,7 +237,7 @@ async function main() {
   {
     const f = setup(chain(), [{ id: "grid2", level: 1, parent: "system", nodes: ["p", "q"].map((id) => node(id)), edges: [edge("p", "q")] }]);
     const out = built(f);
-    assert.strictEqual(out.layout.length, 2);
+    assert.strictEqual(out.layout.length, 3);
     assert.deepStrictEqual(out.layout, report(f));
     const g = setup(chain(), [{ id: "grid2", level: 1, parent: "system", nodes: ["p", "q"].map((id) => node(id)), edges: [edge("p", "q")] }]);
     built(g);

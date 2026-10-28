@@ -76,6 +76,7 @@ Status: ${o.adrStatus ?? "accepted, 2026-01-01"}
     ]
   });
   f.fragment("rules", { rules: [{ id: "r1", text: "Use X.", adr: { path: o.ruleAdr ?? "docs/adr/0001-x.md", ...o.ruleAdrRoot === void 0 ? {} : { root: o.ruleAdrRoot } }, decision: "Decision 1: use X", evidence: ev("app/x.rb", "4", "expired?") }] });
+  f.floor();
   return f;
 }
 const buildOk = (f) => {
@@ -113,7 +114,7 @@ assert.strictEqual(chapterOf((() => {
 {
   const f = setup();
   buildOk(f);
-  assert.strictEqual(chapterOf(f, "eng-a"), "s2");
+  assert.strictEqual(chapterOf(f, "eng-a"), "start-parts");
 }
 {
   const f = setup({ covers: ["int-sms"] });

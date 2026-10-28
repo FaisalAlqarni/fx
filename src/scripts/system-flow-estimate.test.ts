@@ -68,14 +68,14 @@ function estimate(plan: unknown) {
   assert.strictEqual(r.stderr, `system-flow: estimate: cannot read ${path.join(f.host, 'nope.json')}\n`);
 }
 
-// depth in build
+// depth in build; goodSet() holds sequence turn, so the engine's is trip.
 const engine = {
   schemaVersion: 2,
   levels: {
     root: 'system',
     diagrams: [
       {
-        id: 'engine', level: 1, parent: 'system', title: 'Engine', summary: 's', groups: [],
+        id: 'engine', level: 1, parent: 'system', title: 'Engine', summary: 'The engine runs its parts and calls one outside.', groups: [],
         nodes: [
           { id: 'a1', label: 'A1', kind: 'backend', look: 'service', role: 'r', children: 'engine-jobs', evidence: ev('app/x.rb', '1-4', 'Link') },
           { id: 'a2', label: 'A2', kind: 'backend', look: 'service', role: 'r', evidence: ev('app/x.rb', '1-4', 'Link') },
@@ -85,14 +85,14 @@ const engine = {
         edges: [{ from: 'a1', to: 'a2', label: 'e', evidence: ev('app/x.rb', '1-4', 'Link') }, { from: 'a2', to: 'a3', label: 'e', evidence: ev('app/x.rb', '1-4', 'Link') }, { from: 'a3', to: 'ctx', label: 'e', evidence: ev('app/x.rb', '1-4', 'Link') }],
       },
       {
-        id: 'engine-jobs', level: 2, parent: 'engine', title: 'Jobs', summary: 's', groups: [],
+        id: 'engine-jobs', level: 2, parent: 'engine', title: 'Jobs', summary: 'The jobs run one after the other.', groups: [],
         nodes: [{ id: 'j1', label: 'J1', kind: 'job', look: 'service', role: 'r', evidence: ev('app/x.rb', '1-4', 'Link') }, { id: 'j2', label: 'J2', kind: 'job', look: 'service', role: 'r', evidence: ev('app/x.rb', '1-4', 'Link') }],
         edges: [{ from: 'j1', to: 'j2', label: 'e', evidence: ev('app/x.rb', '1-4', 'Link') }],
       },
     ],
   },
   sequences: [{
-    id: 'turn', title: 'Turn', chapter: 's1',
+    id: 'trip', title: 'Trip', chapter: 's1', summary: 'The first part calls the second four times.',
     participants: [{ id: 'p1', label: 'P1', look: 'service', evidence: ev('app/x.rb', '1-4', 'Link') }, { id: 'p2', label: 'P2', look: 'service', evidence: ev('app/x.rb', '1-4', 'Link') }],
     messages: [1, 2, 3, 4].map((n) => ({ n, from: 'p1', to: 'p2', label: 'm', evidence: ev('app/x.rb', '1-4', 'Link') })),
   }],
@@ -122,9 +122,10 @@ function built(planAreas: unknown[] | null) {
   const t = out.depth.total;
   assert.strictEqual(t.levels, 3);
   assert.deepStrictEqual(t.diagramsPerLevel, [1, 1, 1, 0]);
-  assert.strictEqual(t.chapters, 1);
-  assert.strictEqual(t.filesCited, 2);
-  assert.strictEqual(t.evidence, 20);
+  // goodSet(): five chapters; 53 path entries over app/x.rb, app/y.rb and the code map folder app/; the engine adds 16.
+  assert.strictEqual(t.chapters, 5);
+  assert.strictEqual(t.filesCited, 3);
+  assert.strictEqual(t.evidence, 69);
 }
 {
   const out = built(null);

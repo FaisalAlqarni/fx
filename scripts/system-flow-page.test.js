@@ -81,6 +81,7 @@ function setup(o = {}) {
   f2.fragment("inventory", { inventory: [{ id: "job-a", kind: "job", name: "Job A", evidence: ev("app/x.rb", "1-4", "Link") }, { id: "job-b", kind: "job", name: "Job B", evidence: ev("app/y.rb", "1", "Y") }] });
   f2.fragment("corrections", { corrections: [{ id: "c1", date: "2026-10-01", item: "bullet:b1", before: "Links never expire.", after: "Links expire.", reason: "owner" }] });
   if (o.questions) f2.fragment("questions", { questions: [{ id: "q1", text: "Who prunes expired links?", recommended: "The nightly job.", items: ["node:api"] }] });
+  f2.floor();
   return f2;
 }
 const read = (f2, rel) => fs.readFileSync(path.join(f2.host, rel), "utf8");
@@ -135,7 +136,7 @@ const page = read(f, `${SITE}/index.html`);
   assert.notStrictEqual(read(g, `${SITE}/assets/theme.css`), "/* fx stale */");
 }
 {
-  const marks = ["<header", 'class="legend"', 'id="ch-00-explore"', 'id="ch-01-s1"', 'id="ch-02-s2"', 'id="components"', 'id="rules-in-force"', 'id="coverage"', 'id="corrections"'].map((m) => page.indexOf(m));
+  const marks = ["<header", 'class="legend"', 'id="ch-00-explore"', 'id="ch-01-start-what"', 'id="ch-04-start-code"', 'id="ch-05-s1"', 'id="ch-06-s2"', 'id="components"', 'id="rules-in-force"', 'id="coverage"', 'id="corrections"'].map((m) => page.indexOf(m));
   assert.ok(marks.every((m, i) => m >= 0 && (i === 0 || m > (marks[i - 1] ?? 0))), marks.join(","));
   assert.ok(!page.includes('id="open-questions"'));
   assert.ok(page.includes('<html lang="en" dir="ltr">'));
@@ -145,16 +146,18 @@ const page = read(f, `${SITE}/index.html`);
   assert.deepStrictEqual(items.map((i) => i.replace(/<[^>]*>/g, "")), ["backend", "database"]);
 }
 {
-  const s1 = chapter(page, "ch-01-s1");
+  const s1 = chapter(page, "ch-05-s1");
   assert.ok(/<h2[^>]*>[^<]*<\/h2>\s*<p[^>]*>Where do links expire\?<\/p>/.test(s1), "question is the first paragraph");
   assert.strictEqual(page.split('<figure data-fx-flow="level-engine">').length - 1, 1);
-  assert.ok(s1.includes('<figure data-fx-flow="level-engine">'));
-  const s2 = chapter(page, "ch-02-s2");
-  assert.ok(s2.includes('href="#ch-01-s1"') && s2.includes("Drawn in chapter 01"));
-  assert.ok(!s2.includes("data-fx-flow"));
+  assert.ok(chapter(page, "ch-02-start-parts").includes('<figure data-fx-flow="level-engine">'));
+  for (const id of ["ch-05-s1", "ch-06-s2"]) {
+    const c = chapter(page, id);
+    assert.ok(c.includes('href="#ch-02-start-parts"') && c.includes("Drawn in chapter 02"), id);
+    assert.ok(!c.includes('data-fx-flow="level-engine"'), id);
+  }
 }
 {
-  const s1 = chapter(page, "ch-01-s1");
+  const s1 = chapter(page, "ch-05-s1");
   assert.strictEqual(s1.split('<details class="evidence">').length - 1, 1);
   const box = /<details class="evidence"><summary>Files and locations \((\d+)\)<\/summary>([\s\S]*?)<\/details>/.exec(s1);
   assert.ok(box, "evidence box");
@@ -183,18 +186,18 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">\u0645\u0631\u062D\u06
 {
   assert.strictEqual(JSON.stringify(sandbox("fx-map-2.js").fxMap?.validateMapData?.(block(page, "map-data"))), "[]");
   const figs = block(page, "diagrams");
-  assert.deepStrictEqual(Object.keys(figs).sort(), ["flow-first", "level-engine", "seq-turn"]);
+  assert.deepStrictEqual(Object.keys(figs).sort(), ["flow-first", "level-engine", "seq-floor-visit", "seq-turn"]);
   const flow = sandbox("fx-flow-1.js").fxFlow;
   for (const [k, spec] of Object.entries(figs)) assert.strictEqual(JSON.stringify(flow?.validateFigure?.(spec)), "[]", k);
 }
 {
   const nav = /<nav[^>]*>([\s\S]*?)<\/nav>/.exec(page)?.[1] ?? "";
   const items = (/<ol>([\s\S]*?)<\/ol>/.exec(nav)?.[1] ?? "").match(/<li>[\s\S]*?<\/li>/g) ?? [];
-  assert.deepStrictEqual(items.map((i) => i.replace(/<[^>]*>/g, "")), ["Explore the system", "Links", "Again", "Components", "Rules in force", "Coverage", "Corrections"]);
-  for (const id of ["ch-00-explore", "ch-01-s1", "ch-02-s2", "components", "rules-in-force", "coverage", "corrections"]) assert.ok(nav.includes(`href="#${id}"`), id);
+  assert.deepStrictEqual(items.map((i) => i.replace(/<[^>]*>/g, "")), ["Explore the system", "What it is", "The parts", "One request", "The code", "Links", "Again", "Components", "Rules in force", "Coverage", "Corrections"]);
+  for (const id of ["ch-00-explore", "ch-01-start-what", "ch-02-start-parts", "ch-03-start-request", "ch-04-start-code", "ch-05-s1", "ch-06-s2", "components", "rules-in-force", "coverage", "corrections"]) assert.ok(nav.includes(`href="#${id}"`), id);
   for (const d of ["arch-engine", "seq-turn", "flow-first"]) {
     assert.ok(nav.includes(`href="diagrams/${d}.html"`), `nav links ${d}`);
-    assert.ok(chapter(page, "ch-01-s1").includes(`href="diagrams/${d}.html"`), `chapter s1 links ${d}`);
+    assert.ok(chapter(page, "ch-05-s1").includes(`href="diagrams/${d}.html"`), `chapter s1 links ${d}`);
   }
   const written = fs.readdirSync(path.join(f.host, SITE, "diagrams")).filter((n) => n.endsWith(".html"));
   assert.ok(written.length >= 3, written.join(","));
@@ -214,7 +217,7 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">\u0645\u0631\u062D\u06
   assert.ok(cov.entries.length > 0);
   for (const e of cov.entries) assert.ok(covHtml.includes(`>${e.name}<`), `coverage row ${e.name}`);
   for (const [k, c] of Object.entries(cov.counts)) assert.ok(covHtml.includes(`<td>${k}</td><td>${c.covered}</td><td>${c.total}</td>`), `coverage count ${k}`);
-  const s1 = chapter(pg, "ch-01-s1");
+  const s1 = chapter(pg, "ch-05-s1");
   assert.ok(/Store flow: A link is opened<\/h4>\s*<div class="table-scroll"[^>]*><table>[\s\S]*?<td>1<\/td><td>api<\/td><td>read<\/td><td>sql<\/td><td>links:\{id\}<\/td>/.test(s1), "flow step row");
   assert.ok(/Store: sql<\/h4>\s*<div class="table-scroll"[^>]*><table>[\s\S]*?<td>links-table<\/td><td>links<\/td>/.test(s1), "storeRefs row");
 }
@@ -227,13 +230,14 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">\u0645\u0631\u062D\u06
   g.fragment("chapters", { sections: [{ id: "s1", title: "Dense", question: "Why so many?", diagrams: ["dense"] }] });
   g.fragment("flows", {});
   g.fragment("corrections", {});
+  g.floor();
   build(g);
   const pg = read(g, `${SITE}/index.html`);
   const fig = block(pg, "diagrams")["level-dense"];
   assert.ok(fig && fig.notDrawn.length >= 1, "a dense figure drops an arrow");
-  const note = /<p class="not-drawn">([\s\S]*?)<\/p>/.exec(chapter(pg, "ch-01-s1"))?.[1] ?? "";
+  const note = /<p class="not-drawn">([\s\S]*?)<\/p>/.exec(chapter(pg, "ch-02-start-parts"))?.[1] ?? "";
   for (const id of fig?.notDrawn ?? []) assert.ok(note.includes(id.slice(id.indexOf(":") + 1).replace(">", " to ")), `${id} named under the figure`);
-  assert.ok(chapter(pg, "ch-01-s1").indexOf("</figure>") < chapter(pg, "ch-01-s1").indexOf('class="not-drawn"'), "the list follows the figure");
+  assert.ok(chapter(pg, "ch-02-start-parts").indexOf("</figure>") < chapter(pg, "ch-02-start-parts").indexOf('class="not-drawn"'), "the list follows the figure");
   const map = block(pg, "map-data");
   assert.strictEqual(map.levels[0]?.edges.length, 9, "map-data keeps every edge");
 }

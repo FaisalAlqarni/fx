@@ -101,6 +101,7 @@ const mkdocs = (f: Fx, body = 'docs_dir: docs\ntheme:\n  name: material\n'): voi
   f.goodSet();
   f.fragment('meta', { schemaVersion: 2, meta: { roots: [{ id: 'backend' }, { id: 'plain', remote: 'https://bot:s3cret@example.com/acme/plain.git' }] } });
   f.fxJson({ system_flow: { roots: { plain: '../plain' } } });
+  f.floor();
   const r = f.run(['check']);
   assert.strictEqual(r.status, 1, r.stdout);
   assert.ok(r.stderr.includes('root plain: remote holds a user name or password; write it without them'), r.stderr);

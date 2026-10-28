@@ -90,7 +90,7 @@ const engine = {
         level: 1,
         parent: "system",
         title: "Engine",
-        summary: "s",
+        summary: "The engine runs its parts and calls one outside.",
         groups: [],
         nodes: [
           { id: "a1", label: "A1", kind: "backend", look: "service", role: "r", children: "engine-jobs", evidence: ev("app/x.rb", "1-4", "Link") },
@@ -105,7 +105,7 @@ const engine = {
         level: 2,
         parent: "engine",
         title: "Jobs",
-        summary: "s",
+        summary: "The jobs run one after the other.",
         groups: [],
         nodes: [{ id: "j1", label: "J1", kind: "job", look: "service", role: "r", evidence: ev("app/x.rb", "1-4", "Link") }, { id: "j2", label: "J2", kind: "job", look: "service", role: "r", evidence: ev("app/x.rb", "1-4", "Link") }],
         edges: [{ from: "j1", to: "j2", label: "e", evidence: ev("app/x.rb", "1-4", "Link") }]
@@ -113,9 +113,10 @@ const engine = {
     ]
   },
   sequences: [{
-    id: "turn",
-    title: "Turn",
+    id: "trip",
+    title: "Trip",
     chapter: "s1",
+    summary: "The first part calls the second four times.",
     participants: [{ id: "p1", label: "P1", look: "service", evidence: ev("app/x.rb", "1-4", "Link") }, { id: "p2", label: "P2", look: "service", evidence: ev("app/x.rb", "1-4", "Link") }],
     messages: [1, 2, 3, 4].map((n) => ({ n, from: "p1", to: "p2", label: "m", evidence: ev("app/x.rb", "1-4", "Link") }))
   }]
@@ -145,9 +146,9 @@ function built(planAreas) {
   const t = out.depth.total;
   assert.strictEqual(t.levels, 3);
   assert.deepStrictEqual(t.diagramsPerLevel, [1, 1, 1, 0]);
-  assert.strictEqual(t.chapters, 1);
-  assert.strictEqual(t.filesCited, 2);
-  assert.strictEqual(t.evidence, 20);
+  assert.strictEqual(t.chapters, 5);
+  assert.strictEqual(t.filesCited, 3);
+  assert.strictEqual(t.evidence, 69);
 }
 {
   const out = built(null);

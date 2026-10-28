@@ -51,9 +51,10 @@ function setup(t = {}) {
   });
   f.fragment("flows", {
     sequences: [{
-      id: "turn",
-      title: "Turn",
+      id: "trip",
+      title: "Trip",
       chapter: "s1",
+      summary: "The api reads the link row from the database.",
       participants: [{ id: "api", label: t.api ?? "API", look: "service", evidence: ev("app/x.rb", "1", "Link") }, { id: "db", label: "DB", look: "service", evidence: ev("app/y.rb", "1", "Y") }],
       messages: [
         { n: 1, from: "api", to: "db", label: t.label ?? "Reads link", evidence: ev("app/x.rb", "4", "expired?") },
@@ -65,12 +66,14 @@ function setup(t = {}) {
       id: "first",
       trigger: "A link is opened",
       chapter: "s1",
+      summary: "The api reads and writes the link row.",
       steps: [
         { n: 1, actor: "api", op: "read", store: "sql", key: t.key ?? "links:{id}", evidence: ev("app/x.rb", "4", "expired?") },
         { n: 2, actor: "api", op: "write", store: "sql", key: "links:{id}", evidence: ev("app/x.rb", "4", "expired?") }
       ]
     }]
   });
+  f.floor();
   return f;
 }
 const read = (f, rel) => fs.readFileSync(path.join(f.host, rel), "utf8");
@@ -112,7 +115,7 @@ assert.strictEqual(setup().run(["nope"]).status, 2);
   const head = f.git("host", "rev-parse", "HEAD");
   const guideHead = f.git("guide", "rev-parse", "HEAD");
   const result = built(f);
-  assert.deepStrictEqual([result.ok, result.collisions, result.diagrams.map((d) => d.name), result.layout.map((l) => l.key), typeof result.pageBytes], [true, [], ["arch-system", "seq-turn", "flow-first"], ["level-system", "seq-turn", "flow-first"], "number"]);
+  assert.deepStrictEqual([result.ok, result.collisions, result.diagrams.map((d) => d.name), result.layout.map((l) => l.key), typeof result.pageBytes], [true, [], ["arch-system", "seq-turn", "seq-trip", "flow-first"], ["level-system", "seq-turn", "seq-trip", "flow-first"], "number"]);
   assert.ok(result.written.includes("docs/system/s1.md"), result.written.join(","));
   const s1 = lines(f, "docs/system/s1.md");
   assert.strictEqual(s1.find((l) => l !== "" && !l.startsWith("#")), "Where do links expire?");
@@ -140,7 +143,7 @@ assert.strictEqual(setup().run(["nope"]).status, 2);
   assert.ok(readme.includes(GEN));
   const model = (0, import_json.parseJson)(read(f, "docs/system-flow/model/system-model.json"));
   assert.strictEqual(model.generated, true);
-  assert.strictEqual(model.sections[0]?.bullets.length, 2);
+  assert.strictEqual(model.sections[4]?.bullets.length, 6);
   assert.strictEqual(model.levels.diagrams.length, 1);
   const v = verifiedOf(f);
   assert.deepStrictEqual(v.b1, { backend: head });
@@ -158,7 +161,7 @@ assert.strictEqual(setup().run(["nope"]).status, 2);
   built(f);
   assert.ok(read(f, "docs/system/s1.md").includes(`verified: ${c1} -->`));
   const chapters = (0, import_json.parseJson)(read(f, `${F}/chapters.json`));
-  chapters.sections[0].bullets[0].verified = { backend: c0 };
+  chapters.sections[4].bullets[0].verified = { backend: c0 };
   f.fragment("chapters", chapters);
   built(f);
   assert.ok(read(f, "docs/system/s1.md").includes(`<!-- fx-docs verified: ${c0} -->`));
@@ -187,7 +190,7 @@ assert.strictEqual(setup().run(["nope"]).status, 2);
 {
   const f = setup();
   const chapters = (0, import_json.parseJson)(read(f, `${F}/chapters.json`));
-  chapters.sections[0].bullets[0].evidence = ev("app/x.rb", "40-50", "expired?");
+  chapters.sections[4].bullets[0].evidence = ev("app/x.rb", "40-50", "expired?");
   f.fragment("chapters", chapters);
   const before = snapshot(f);
   const r = f.run(["build"]);
@@ -335,15 +338,19 @@ assert.strictEqual(setup().run(["nope"]).status, 2);
 {
   const f = (0, import_sf_fixture.sfFixture)();
   f.goodSet();
-  f.fragment("links", { sections: [{ id: "s1", lead: "Links expire. The job checks them.", bullets: [{ id: "b2", text: "Expired links answer 410.", evidence: ev("app/x.rb", "4", "expired?") }] }] });
+  const declared = (0, import_json.parseJson)(read(f, `${F}/chapters.json`));
+  delete declared.sections[4].lead;
+  f.fragment("chapters", declared);
+  const lead = `Links expire. The job checks them. ${(0, import_sf_fixture.sentence)(34)}`;
+  f.fragment("links", { sections: [{ id: "s1", lead, bullets: [{ id: "b2", text: "Expired links answer 410.", evidence: ev("app/x.rb", "4", "expired?") }] }] });
   built(f);
   const model = (0, import_json.parseJson)(read(f, "docs/system-flow/model/system-model.json"));
-  assert.strictEqual(model.sections.length, 1);
-  assert.deepStrictEqual([model.sections[0].id, model.sections[0].title, model.sections[0].lead], ["s1", "Links", "Links expire. The job checks them."]);
-  assert.deepStrictEqual(model.sections[0].bullets.map((b) => b.id), ["b1", "b2"]);
+  assert.strictEqual(model.sections.length, 5);
+  assert.deepStrictEqual([model.sections[4].id, model.sections[4].title, model.sections[4].lead], ["s1", "Links", lead]);
+  assert.deepStrictEqual(model.sections[4].bullets.map((b) => b.id), ["b1", "s1-b2", "s1-b3", "s1-b4", "b2"]);
   const links = (0, import_json.parseJson)(read(f, `${F}/links.json`));
   assert.ok(links.sections[0].bullets[0].verified, "b2 stamped in links.json");
   const chapters = (0, import_json.parseJson)(read(f, `${F}/chapters.json`));
-  assert.deepStrictEqual(chapters.sections[0].bullets.map((b) => b.id), ["b1"], "chapters.json gains no b2");
+  assert.deepStrictEqual(chapters.sections[4].bullets.map((b) => b.id), ["b1", "s1-b2", "s1-b3", "s1-b4"], "chapters.json gains no b2");
 }
 console.log("system-flow-build.test.js: ok");

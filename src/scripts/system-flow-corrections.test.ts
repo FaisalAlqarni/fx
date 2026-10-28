@@ -27,10 +27,13 @@ const committed = (extra?: (f: Fx) => void): Fx => {
   f.fragment('level0', level0());
   f.fragment('chapters', chapters([bullet()]));
   extra?.(f);
+  f.floor();
   f.commit('host', 'fragments');
   return f;
 };
+// floor() is deterministic, so HEAD and the working tree differ only by the test's own change.
 const verdict = (why: string, f: Fx, status: number, line?: RegExp): void => {
+  f.floor();
   const r = f.run(['check']);
   assert.strictEqual(r.status, status, `${why}\n${r.stdout}${r.stderr}`);
   if (line) assert.match(r.stderr, line, why);
@@ -41,7 +44,7 @@ verdict('no change', committed(), 0);
 {
   const f = committed();
   f.fragment('chapters', chapters([bullet('A link expires after 60 days.')]));
-  verdict('changed fact', f, 1, new RegExp(`^${F}/chapters\\.json:/sections/0/bullets/0: bullet:b1 changed since HEAD with no corrections entry$`, 'm'));
+  verdict('changed fact', f, 1, new RegExp(`^${F}/chapters\\.json:/sections/4/bullets/0: bullet:b1 changed since HEAD with no corrections entry$`, 'm'));
   f.fragment('corrections', { corrections: [corr] });
   verdict('corrected', f, 0);
 }

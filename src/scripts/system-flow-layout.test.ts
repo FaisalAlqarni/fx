@@ -21,13 +21,14 @@ const K33_CAP = 2;
 const node = (id: string, label = `Node ${id}`) => ({ id, label, kind: 'backend', look: 'service', role: `Role of ${id}`, evidence: ev });
 const edge = (from: string, to: string, label = `${from} to ${to}`, extra: Record<string, unknown> = {}) => ({ from, to, label, evidence: ev, ...extra });
 type Diagram = { id: string; level: number; parent?: string; title?: string; summary?: string; groups?: unknown[]; nodes: unknown[]; edges: unknown[]; layout?: unknown };
-const diagram = (d: Diagram) => ({ title: d.id, summary: `The ${d.id} diagram.`, groups: [], ...d });
+const diagram = (d: Diagram) => ({ title: d.id, summary: `The ${d.id} diagram shows its parts and links.`, groups: [], ...d });
 
 function setup(level0: Diagram, extra: Diagram[] = []): Fx {
   const f = sfFixture();
   f.goodSet();
   f.fragment('level0', { levels: { root: 'system', diagrams: [diagram(level0)] } });
   if (extra.length) f.fragment('area', { levels: { diagrams: extra.map(diagram) } });
+  f.floor();
   f.commit('host', 'model');
   return f;
 }
@@ -68,12 +69,12 @@ async function main(): Promise<void> {
     assert.strictEqual(labelOf(fig, 'system:b>c'), 'Session read');
   }
 
-  // A chain of 4 nodes: one report entry, nothing crossed or dropped.
+  // A chain of 4 nodes: one report entry beside goodSet()'s request sequence, nothing crossed or dropped.
   {
     const f = setup(chain());
     built(f);
     const r = report(f);
-    assert.strictEqual(r.length, 1, reportBytes(f));
+    assert.deepStrictEqual(r.map((l) => l.key), ['level-system', 'seq-turn'], reportBytes(f));
     const e = entry(f, 'level-system');
     assert.deepStrictEqual([e.crossings, e.notDrawn, e.nodes, e.arrows], [0, 0, 4, 3]);
     assert.ok(e.width <= 860, `width ${e.width}`);
@@ -180,11 +181,12 @@ async function main(): Promise<void> {
   }
 
   // Sequence: messages between the same pair fold into one arrow labelled with both step numbers.
+  // goodSet() holds sequence turn, so this one is trip.
   {
     const f = setup(chain());
     f.fragment('flows', {
       sequences: [{
-        id: 'turn', title: 'Turn', chapter: 's1',
+        id: 'trip', title: 'Trip', chapter: 's1', summary: 'The api reads the link and the token in turn.',
         participants: ['api', 'db', 'cache'].map((id) => ({ id, label: id.toUpperCase(), look: 'service', evidence: ev })),
         messages: [
           { n: 1, from: 'api', to: 'db', label: 'Reads link', evidence: ev },
@@ -196,7 +198,7 @@ async function main(): Promise<void> {
     });
     f.commit('host', 'sequence');
     built(f);
-    const fig = await figure(f, 'seq-turn');
+    const fig = await figure(f, 'seq-trip');
     assert.deepStrictEqual([fig.nodes.length, fig.edges.length, fig.steps.length], [3, 3, 4]);
     assert.ok(fig.edges.some((x) => x.label?.text === '1, 3'), JSON.stringify(fig.edges.map((x) => x.label?.text)));
     assert.ok(fig.steps[2]?.caption.includes('app/x.rb:4'), fig.steps[2]?.caption);
@@ -207,7 +209,7 @@ async function main(): Promise<void> {
     const f = setup({ id: 'system', level: 0, nodes: [node('api'), node('db')], edges: [edge('api', 'db')] });
     f.fragment('flows', {
       storeFlows: [{
-        id: 'first', trigger: 'A link is opened', chapter: 's1',
+        id: 'first', trigger: 'A link is opened', chapter: 's1', summary: 'The api writes two rows and reads one token.',
         steps: [
           { n: 1, actor: 'api', op: 'write', store: 'sql', key: 'links', evidence: ev },
           { n: 2, actor: 'api', op: 'write', store: 'sql', key: 'clicks', evidence: ev },
@@ -242,7 +244,7 @@ async function main(): Promise<void> {
   {
     const f = setup(chain(), [{ id: 'grid2', level: 1, parent: 'system', nodes: ['p', 'q'].map((id) => node(id)), edges: [edge('p', 'q')] }]);
     const out = built(f);
-    assert.strictEqual(out.layout.length, 2);
+    assert.strictEqual(out.layout.length, 3);
     assert.deepStrictEqual(out.layout, report(f));
     const g = setup(chain(), [{ id: 'grid2', level: 1, parent: 'system', nodes: ['p', 'q'].map((id) => node(id)), edges: [edge('p', 'q')] }]);
     built(g);

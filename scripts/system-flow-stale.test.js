@@ -73,6 +73,7 @@ function setup(opts = {}) {
       assert.strictEqual((0, import_child_process.spawnSync)("git", args, { cwd: dir }).status, 0);
     }
   }
+  f.floor();
   f.commit("host", "model");
   const b = f.run(["build"]);
   assert.strictEqual(b.status, 0, `build
@@ -220,7 +221,7 @@ ${r.stdout}`);
   const r = f.run(["verify", "--all"]);
   assert.strictEqual(r.status, 0, r.stderr);
   assert.deepStrictEqual(out(r).verified.sort(), ["bullet:b2", "edge:system:link>db", "node:link"]);
-  assert.strictEqual(frag(f, "chapters").sections[0].bullets[0].verified.guide, guideHead);
+  assert.strictEqual(frag(f, "chapters").sections[4].bullets[0].verified.guide, guideHead);
   assert.deepStrictEqual(stale(f), { backend: [], guide: [] });
   const once = fragBytes(f);
   assert.strictEqual(f.run(["verify", "--all"]).status, 0);
@@ -300,7 +301,7 @@ ${r.stdout}`);
   const f = setup();
   const lines = ev("app/x.rb", "1-4", "Link");
   f.fragment("glossary", {
-    glossary: [{ id: "link", term: "Link", tag: "model", meaning: "A short link.", evidence: lines }],
+    glossary: [{ id: "expires", term: "Expires", tag: "concept", meaning: "When a link stops.", evidence: lines }],
     codeMap: [{ id: "app", root: "backend", path: "app/", owns: "The app.", evidence: [{ path: "app/" }, ...lines] }]
   });
   f.commit("host", "glossary");
@@ -308,14 +309,14 @@ ${r.stdout}`);
   f.commit("host", "stamp");
   const g = frag(f, "glossary");
   assert.ok(g.glossary[0].verified.backend && g.codeMap[0].verified.backend, "build stamps both");
-  assert.deepStrictEqual(handles(f.run(["query", "app/x.rb"])).filter((h) => /^(term|code):/.test(h)), ["code:app", "term:link"]);
+  assert.deepStrictEqual(handles(f.run(["query", "app/x.rb"])).filter((h) => /^(term|code):/.test(h)), ["code:app", "term:expires"]);
   assert.deepStrictEqual(stale(f).backend, []);
   editX(f, (l) => l.map((x, i) => i === 1 ? "  # edited" : x));
   const s = (stale(f).backend ?? []).map((x) => x.handle);
-  assert.ok(s.includes("term:link") && s.includes("code:app"), s.join());
-  const v = f.run(["verify", "term:link"]);
+  assert.ok(s.includes("term:expires") && s.includes("code:app"), s.join());
+  const v = f.run(["verify", "term:expires"]);
   assert.strictEqual(v.status, 0, v.stderr);
-  assert.deepStrictEqual(out(v), { verified: ["term:link"] });
+  assert.deepStrictEqual(out(v), { verified: ["term:expires"] });
   assert.strictEqual(f.run(["verify", "thing:link"]).status, 2);
 }
 console.log("system-flow-stale.test.js: OK");

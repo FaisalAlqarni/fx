@@ -53,6 +53,7 @@ function setup(o: Opts = {}): Fx {
     ],
   });
   f.fragment('rules', { rules: [{ id: 'r1', text: 'Use X.', adr: { path: o.ruleAdr ?? 'docs/adr/0001-x.md', ...(o.ruleAdrRoot === undefined ? {} : { root: o.ruleAdrRoot }) }, decision: 'Decision 1: use X', evidence: ev('app/x.rb', '4', 'expired?') }] });
+  f.floor();
   return f;
 }
 const buildOk = (f: Fx) => { const r = f.run(['build']); assert.strictEqual(r.status, 0, `build exits 0\n${r.stdout}${r.stderr}`); return parseJson(r.stdout) as { coverage: Record<string, { covered: number; total: number }> }; };
@@ -74,8 +75,9 @@ const read = (f: Fx, rel: string): string => fs.readFileSync(path.join(f.host, r
 // No overlap, and the same path in another root.
 assert.strictEqual(chapterOf((() => { const f = setup({ bullet: ev('app/jobs/sweep.rb', '21-30', 'line 21') }); buildOk(f); return f; })(), 'job-sweep'), null);
 assert.strictEqual(chapterOf((() => { const f = setup({ bullet: ev('app/jobs/sweep.rb', '10-12', 'line 10', 'guide') }); buildOk(f); return f; })(), 'job-sweep'), null);
-// Folder entry covered by a diagram node under it, found through the section's diagram list.
-{ const f = setup(); buildOk(f); assert.strictEqual(chapterOf(f, 'eng-a'), 's2'); }
+// Folder entry covered by a diagram node under it, found through the section's diagram list:
+// start-parts lists the system diagram and comes before s2, and its own bullets carry no evidence.
+{ const f = setup(); buildOk(f); assert.strictEqual(chapterOf(f, 'eng-a'), 'start-parts'); }
 // covers needs no overlapping evidence.
 { const f = setup({ covers: ['int-sms'] }); buildOk(f); assert.strictEqual(chapterOf(f, 'int-sms'), 's1'); }
 // First chapter in section order wins.

@@ -91,7 +91,8 @@ function setup(extraSeqs = 0): Fx {
 }
 
 const logOf = (f: Fx) => (fs.existsSync(path.join(f.base, 'calls.log')) ? fs.readFileSync(path.join(f.base, 'calls.log'), 'utf8').trim().split('\n').filter(Boolean).map((l) => parseJson(l) as Obj) : []);
-const run = (f: Fx, args: string[], env: Record<string, string> = {}) => f.run(['build', ...args], { FAKE_LOG: path.join(f.base, 'calls.log'), ...env });
+// floor() first: a case may rewrite a fragment after setup(); it adds the request sequence seq-floor-visit.
+const run = (f: Fx, args: string[], env: Record<string, string> = {}) => { f.floor(); return f.run(['build', ...args], { FAKE_LOG: path.join(f.base, 'calls.log'), ...env }); };
 const ok = (f: Fx, args: string[], env: Record<string, string> = {}): { diagrams: Diag[] } => {
   const r = run(f, args, env);
   assert.strictEqual(r.status, 0, `build ${args.join(' ')}\n${r.stdout}${r.stderr}`);
@@ -106,7 +107,7 @@ const reason = (o: { diagrams: Diag[] }, name: string): Diag => o.diagrams.find(
   const a = fake(f, 'fake');
   ok(f, ['--archify', a]);
   const calls = logOf(f);
-  assert.deepStrictEqual(calls.map((c) => c.name).sort(), ['arch-engine', 'arch-system', 'flow-first', 'seq-turn', 'seq-turn-p2']);
+  assert.deepStrictEqual(calls.map((c) => c.name).sort(), ['arch-engine', 'arch-system', 'flow-first', 'seq-floor-visit', 'seq-turn', 'seq-turn-p2']);
   for (const c of calls) {
     const type = c.name.startsWith('arch-') ? 'architecture' : 'sequence';
     assert.deepStrictEqual(c.args, ['finalize', type, path.join(f.host, D, 'src', `${c.name}.json`), path.join(f.host, D, `${c.name}.html`),
@@ -129,7 +130,7 @@ const reason = (o: { diagrams: Diag[] }, name: string): Diag => o.diagrams.find(
   const a = fake(f, 'fake');
   ok(f, ['--archify', a], { FAKE_SLEEP_MS: '200' });
   const calls = logOf(f);
-  assert.strictEqual(calls.length, 9);
+  assert.strictEqual(calls.length, 10);
   const overlap = Math.max(...calls.map((c) => calls.filter((o) => o.start < c.end && c.start < o.end).length));
   assert.strictEqual(overlap, 1, `overlap ${overlap}`);
 }
@@ -327,7 +328,7 @@ const detectOf = (f: Fx, env: Record<string, string> = {}): Obj => parseJson(f.r
   ok(f, []);
   assert.strictEqual(logOf(f).length, 0, 'the saved cheap holds');
   const d = ok(f, ['--prefer', 'detailed']);
-  assert.strictEqual(logOf(f).length, 5);
+  assert.strictEqual(logOf(f).length, 6);
   assert.strictEqual(reason(d, 'arch-system').renderer, 'archify');
   assert.strictEqual(reason(d, 'arch-system').reason, 'archify architecture, 2 components');
   assert.strictEqual(reason(d, 'flow-first').reason, 'archify sequence, 7 messages in 1 pages');
@@ -338,10 +339,10 @@ const detectOf = (f: Fx, env: Record<string, string> = {}): Obj => parseJson(f.r
   f.fxJson({ system_flow: { diagrams: { prefer: 'cheap' } } });
   const a = fake(f, 'fake');
   const o = ok(f, ['--archify', a]);
-  assert.strictEqual(logOf(f).length, 5);
+  assert.strictEqual(logOf(f).length, 6);
   assert.strictEqual(reason(o, 'arch-system').renderer, 'archify');
   ok(f, ['--prefer', 'cheap', '--archify', a]);
-  assert.strictEqual(logOf(f).length, 10);
+  assert.strictEqual(logOf(f).length, 12);
   assert.strictEqual(fxDoc(f).system_flow.diagrams.prefer, 'cheap');
 }
 

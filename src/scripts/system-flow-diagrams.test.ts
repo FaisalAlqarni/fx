@@ -57,17 +57,18 @@ function setup(): Fx {
 }
 const read = (f: Fx, rel: string): string => fs.readFileSync(path.join(f.host, rel), 'utf8');
 const spec = (f: Fx, name: string): Obj => parseJson(read(f, `${D}/src/${name}.json`)) as Obj;
-const build = (f: Fx) => { const r = f.run(['build']); assert.strictEqual(r.status, 0, `build exits 0\n${r.stdout}${r.stderr}`); return { out: parseJson(r.stdout) as { diagrams: { name: string; renderer: string; reason: string }[] }, err: r.stderr }; };
+// floor() first: a case may rewrite a fragment after setup().
+const build = (f: Fx) => { f.floor(); const r = f.run(['build']); assert.strictEqual(r.status, 0, `build exits 0\n${r.stdout}${r.stderr}`); return { out: parseJson(r.stdout) as { diagrams: { name: string; renderer: string; reason: string }[] }, err: r.stderr }; };
 
 const f = setup();
 const { out, err } = build(f);
 
-// Names and page splits.
+// Names and page splits; seq-floor-visit is floor()'s request sequence.
 {
   const have = fs.readdirSync(path.join(f.host, D)).filter((n) => n.endsWith('.html')).sort();
-  assert.deepStrictEqual(have, ['arch-engine.html', 'arch-system.html', 'flow-first.html', 'seq-turn-p2.html', 'seq-turn.html']);
+  assert.deepStrictEqual(have, ['arch-engine.html', 'arch-system.html', 'flow-first.html', 'seq-floor-visit.html', 'seq-turn-p2.html', 'seq-turn.html']);
   const json = fs.readdirSync(path.join(f.host, D, 'src')).sort();
-  assert.deepStrictEqual(json, ['arch-engine.json', 'arch-system.json', 'flow-first.json', 'seq-turn-p2.json', 'seq-turn.json']);
+  assert.deepStrictEqual(json, ['arch-engine.json', 'arch-system.json', 'flow-first.json', 'seq-floor-visit.json', 'seq-turn-p2.json', 'seq-turn.json']);
   assert.deepStrictEqual(spec(f, 'seq-turn').messages.length, 8);
   assert.deepStrictEqual(spec(f, 'seq-turn-p2').messages.length, 6);
   for (const n of ['seq-turn', 'seq-turn-p2']) {

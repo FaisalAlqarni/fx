@@ -9,7 +9,7 @@ const F = 'docs/system-flow/model/fragments';
 const ev = [{ path: 'app/x.rb', lines: '1-4', symbol: 'Link' }];
 const node = (id: string, extra: object = {}) => ({ id, label: id, kind: 'backend', look: 'service', role: 'R', evidence: ev, ...extra });
 const edge = (from: string, to: string, extra: object = {}) => ({ from, to, label: 'l', evidence: ev, ...extra });
-const diagram = (id: string, nodes: object[], edges: object[], extra: object = {}) => ({ id, level: 0, title: id, summary: 'S', groups: [], nodes, edges, ...extra });
+const diagram = (id: string, nodes: object[], edges: object[], extra: object = {}) => ({ id, level: 0, title: id, summary: 'The figure shows how its parts connect.', groups: [], nodes, edges, ...extra });
 const levels = (...diagrams: object[]) => ({ levels: { root: 'system', diagrams } });
 const system = (nodes: object[], edges: object[] = [edge('link', 'db')]) => diagram('system', nodes, edges);
 const base = [node('link'), node('db')];
@@ -18,6 +18,7 @@ const run = (change: (f: Fx) => void) => {
   const f = sfFixture();
   f.goodSet();
   change(f);
+  f.floor();
   return f.run(['check']);
 };
 const fails = (why: string, change: (f: Fx) => void, line: string): void => {
@@ -39,18 +40,18 @@ assert.deepStrictEqual(passes('good set', () => {}).warnings, []);
 // Cap: 12 primary nodes per diagram.
 const many = (n: number) => Array.from({ length: n }, (_, i) => node(`n${i}`));
 const chain = (n: number) => Array.from({ length: n - 1 }, (_, i) => edge(`n${i}`, `n${i + 1}`));
-fails('13 primary nodes', (f) => f.fragment('level0', levels(diagram('engine', many(13), chain(13)))), `${L0}${D0}: level engine has 13 primary nodes, at most 12`);
-passes('12 primary nodes', (f) => f.fragment('level0', levels(diagram('engine', many(12), chain(12)))));
-passes('12 primary and a context node', (f) => f.fragment('level0', levels(diagram('engine', [...many(12), node('ctx', { primary: false })], [...chain(12), edge('n0', 'ctx')]))));
+fails('13 primary nodes', (f) => f.fragment('level0', levels(diagram('system', many(13), chain(13)))), `${L0}${D0}: level system has 13 primary nodes, at most 12`);
+passes('12 primary nodes', (f) => f.fragment('level0', levels(diagram('system', many(12), chain(12)))));
+passes('12 primary and a context node', (f) => f.fragment('level0', levels(diagram('system', [...many(12), node('ctx', { primary: false })], [...chain(12), edge('n0', 'ctx')]))));
 
-// Evidence on every evidenced kind.
+// Evidence on every evidenced kind. goodSet() holds sequence turn and store row sql-links, so these are trip and sql-clicks.
 const withParts = (extra: { node?: object; edge?: object; group?: object; seq?: object; msg?: object; store?: object; step?: object; cat?: object; inv?: object; rule?: object; bullet?: object }, bare: object) => (f: Fx) => {
   const e = ev;
   f.fragment('level0', levels(diagram('system', [node('api', { ...extra.node }), node('db')], [edge('api', 'db', { ...extra.edge })], { groups: [{ id: 'g1', label: 'G', members: ['api'], evidence: e, ...extra.group }] })));
   f.fragment('chapters', {
     sections: [{ id: 's1', title: 'T', question: 'Q?', bullets: [{ id: 'b1', text: 't', evidence: e, ...extra.bullet }] }],
-    sequences: [{ id: 'turn', title: 'T', chapter: 's1', participants: [{ id: 'api', label: 'A', look: 'service', evidence: e, ...extra.seq }, { id: 'db', label: 'D', look: 'service', evidence: e }], messages: [{ n: 1, from: 'api', to: 'db', label: 'm', evidence: e, ...extra.msg }] }],
-    stores: { sql: [{ id: 'sql-links', evidence: e, ...extra.store }] },
+    sequences: [{ id: 'trip', title: 'T', chapter: 's1', participants: [{ id: 'api', label: 'A', look: 'service', evidence: e, ...extra.seq }, { id: 'db', label: 'D', look: 'service', evidence: e }], messages: [{ n: 1, from: 'api', to: 'db', label: 'm', evidence: e, ...extra.msg }] }],
+    stores: { sql: [{ id: 'sql-clicks', evidence: e, ...extra.store }] },
     storeFlows: [{ id: 'first', trigger: 't', chapter: 's1', steps: [{ n: 1, actor: 'api', op: 'read', store: 'sql', evidence: e, ...extra.step }] }],
     catalogue: [{ id: 'q-mail', kind: 'queue', name: 'Mail', evidence: e, ...extra.cat }],
     inventory: [{ id: 'job-sweep', kind: 'job', name: 'Sweep', evidence: e, ...extra.inv }],
@@ -62,14 +63,14 @@ const kinds: [string, keyof Parameters<typeof withParts>[0], string, string][] =
   ['node api', 'node', 'level0.json', `${D0}/nodes/0`],
   ['edge engine:api>db', 'edge', 'level0.json', ''],
   ['group g1', 'group', 'level0.json', `${D0}/groups/0`],
-  ['participant turn.api', 'seq', 'chapters.json', '/sequences/0/participants/0'],
-  ['message turn#1', 'msg', 'chapters.json', '/sequences/0/messages/0'],
-  ['store row sql-links', 'store', 'chapters.json', '/stores/sql/0'],
+  ['participant trip.api', 'seq', 'chapters.json', '/sequences/0/participants/0'],
+  ['message trip#1', 'msg', 'chapters.json', '/sequences/0/messages/0'],
+  ['store row sql-clicks', 'store', 'chapters.json', '/stores/sql/0'],
   ['step first#1', 'step', 'chapters.json', '/storeFlows/0/steps/0'],
   ['catalogue entry q-mail', 'cat', 'chapters.json', '/catalogue/0'],
   ['inventory entry job-sweep', 'inv', 'chapters.json', '/inventory/0'],
   ['rule r1', 'rule', 'rules.json', '/rules/0'],
-  ['bullet b1', 'bullet', 'chapters.json', '/sections/0/bullets/0'],
+  ['bullet b1', 'bullet', 'chapters.json', '/sections/4/bullets/0'],
 ];
 for (const [word, key, file, pointer] of kinds) {
   const id = word.split(' ').pop() as string;
@@ -101,23 +102,23 @@ fails('edge to a missing node', (f) => f.fragment('level0', levels(system([...ba
 const seq = (msg: object, step: object = {}) => (f: Fx) => {
   f.fragment('chapters', {
     sections: [{ id: 's1', title: 'T', question: 'Q?' }],
-    sequences: [{ id: 'turn', title: 'T', chapter: 's1', participants: [{ id: 'api', label: 'A', look: 'service', evidence: ev }], messages: [{ n: 1, from: 'api', to: 'api', label: 'm', evidence: ev }, { n: 3, from: 'api', to: 'api', label: 'm', evidence: ev, ...msg }] }],
+    sequences: [{ id: 'trip', title: 'T', chapter: 's1', participants: [{ id: 'api', label: 'A', look: 'service', evidence: ev }], messages: [{ n: 1, from: 'api', to: 'api', label: 'm', evidence: ev }, { n: 3, from: 'api', to: 'api', label: 'm', evidence: ev, ...msg }] }],
     storeFlows: [{ id: 'first', trigger: 't', chapter: 's1', steps: [{ n: 2, actor: 'api', op: 'read', store: 'sql', evidence: ev, ...step }] }],
   });
   f.fragment('level0', levels(system([node('link'), node('db'), node('api')], [edge('link', 'db'), edge('api', 'db')])));
 };
-fails('message to a missing participant', seq({ to: 'ghost' }), 'chapters.json:/sequences/0/messages/1: message turn#3 names a missing participant ghost');
+fails('message to a missing participant', seq({ to: 'ghost' }), 'chapters.json:/sequences/0/messages/1: message trip#3 names a missing participant ghost');
 fails('step actor missing everywhere', seq({}, { actor: 'ghost' }), 'chapters.json:/storeFlows/0/steps/0: step first#2 names a missing actor ghost');
 passes('step actor is a node', seq({}, { actor: 'db' }));
 
 // Chapters and section references.
 fails('flow chapter', (f) => f.fragment('chapters', { sections: [{ id: 's1', title: 'T', question: 'Q?' }], storeFlows: [{ id: 'first', trigger: 't', chapter: 'nochapter', steps: [] }] }), 'chapters.json:/storeFlows/0: flow first names a missing chapter nochapter');
-fails('sequence chapter', (f) => f.fragment('chapters', { sections: [{ id: 's1', title: 'T', question: 'Q?' }], sequences: [{ id: 'turn', title: 'T', chapter: 'x', participants: [], messages: [] }] }), 'chapters.json:/sequences/0: sequence turn names a missing chapter x');
+fails('sequence chapter', (f) => f.fragment('chapters', { sections: [{ id: 's1', title: 'T', question: 'Q?' }], sequences: [{ id: 'trip', title: 'T', chapter: 'x', participants: [], messages: [] }] }), 'chapters.json:/sequences/0: sequence trip names a missing chapter x');
 // A deep diagram page name is <name>-p<n>; an id ending in -p<digits> would collide with another diagram's page.
 fails('sequence id ending -p2', (f) => f.fragment('chapters', { sections: [{ id: 's1', title: 'T', question: 'Q?' }], sequences: [{ id: 'turn-p2', title: 'T', chapter: 's1', participants: [], messages: [] }] }), 'chapters.json:/sequences/0: sequence turn-p2 ends in -p and digits, which deep diagram page names use');
 fails('flow id ending -p10', (f) => f.fragment('chapters', { sections: [{ id: 's1', title: 'T', question: 'Q?' }], storeFlows: [{ id: 'first-p10', trigger: 't', chapter: 's1', steps: [] }] }), 'chapters.json:/storeFlows/0: flow first-p10 ends in -p and digits, which deep diagram page names use');
 for (const [key, word] of [['diagrams', 'diagram'], ['sequences', 'sequence'], ['storeFlows', 'store flow'], ['storeRefs', 'store row'], ['catalogueRefs', 'catalogue entry'], ['covers', 'inventory entry']]) {
-  fails(`section ${key}`, (f) => f.fragment('chapters', { sections: [{ id: 's1', title: 'T', question: 'Q?', [key as string]: ['gone'] }] }), `chapters.json:/sections/0: section s1 names a missing ${word} gone`);
+  fails(`section ${key}`, (f) => f.fragment('chapters', { sections: [{ id: 's1', title: 'T', question: 'Q?', [key as string]: ['gone'] }] }), `chapters.json:/sections/4: section s1 names a missing ${word} gone`);
 }
 passes('section refs that resolve', (f) => f.fragment('chapters', { sections: [{ id: 's1', title: 'T', question: 'Q?', diagrams: ['system'] }] }));
 
@@ -131,7 +132,7 @@ passes('correction item resolves', (f) => f.fragment('corrections', { correction
 
 // Dashes and Arabic.
 fails('em dash in a label', (f) => f.fragment('level0', levels(system([node('link', { label: 'a\u2014b' }), node('db')]))), `${L0}${D0}/nodes/0/label: em or en dash`);
-fails('en dash in a bullet', (f) => f.fragment('chapters', { sections: [{ id: 's1', title: 'T', question: 'Q?', bullets: [{ id: 'b1', text: 'a\u2013b', evidence: ev }] }] }), 'chapters.json:/sections/0/bullets/0/text: em or en dash');
+fails('en dash in a bullet', (f) => f.fragment('chapters', { sections: [{ id: 's1', title: 'T', question: 'Q?', bullets: [{ id: 'b1', text: 'a\u2013b', evidence: ev }] }] }), 'chapters.json:/sections/4/bullets/0/text: em or en dash');
 assert.deepStrictEqual(passes('Arabic label', (f) => f.fragment('level0', levels(system([node('link', { label: 'مرحبا' }), node('db')])))).warnings, [`${F}/${L0}${D0}/nodes/0/label: Arabic script in a label of node link`]);
 
 console.log('system-flow-rules.test.js: OK');

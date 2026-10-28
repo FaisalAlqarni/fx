@@ -39,6 +39,7 @@ const setup = (evidence, roots = [{ id: "backend" }, { id: "guide" }], map = { g
   const l0 = (0, import_json.parseJson)(fs.readFileSync(path.join(f.host, F, "level0.json"), "utf8"));
   l0.levels.diagrams[0].nodes[0].evidence = evidence;
   f.fragment("level0", l0);
+  f.floor();
   return f;
 };
 const fails = (why, evidence, line, tweak = () => {
@@ -176,21 +177,23 @@ exec ${real} "$@"
     return { id: `d${d}`, level: 0, title: "D", summary: "D", groups: [], nodes, edges };
   });
   f.fragment("level0", { levels: { root: "d0", diagrams } });
+  f.floor();
   const r = f.run(["check"], { PATH: `${shim}${path.delimiter}${process.env.PATH ?? ""}` });
   assert.strictEqual(r.status, 0, r.stderr);
   const shows = fs.readFileSync(log, "utf8").split("\n").filter((l) => l.includes("show HEAD:app/x.rb"));
   assert.strictEqual(shows.length, 1, shows.join("\n"));
 }
+const TRIP = { sequences: [{ id: "trip", title: "Trip", chapter: "s1", summary: "The trip sequence shows one call through the engine.", participants: [], messages: [] }] };
 {
   const f = setup([{ ...good, lines: "8-12" }]);
-  f.fragment("engine", { sequences: [{ id: "turn", title: "Turn", chapter: "s1", participants: [], messages: [] }] });
+  f.fragment("engine", TRIP);
   const one = f.run(["check", "--fragment", `${F}/engine.json`]);
   assert.strictEqual(one.status, 0, one.stderr);
   assert.strictEqual(f.run(["check"]).status, 1);
 }
 {
   const f = setup([good]);
-  f.fragment("engine", { sequences: [{ id: "turn", title: "Turn", chapter: "s1", participants: [], messages: [] }] });
+  f.fragment("engine", TRIP);
   f.put("host", `${F}/other.json`, '{ "sections": [ half written');
   f.fragment("broken", { sections: [{ id: "x" }] });
   const one = f.run(["check", "--fragment", `${F}/engine.json`]);

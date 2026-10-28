@@ -9,6 +9,8 @@ import { checkCorrections, headModel } from './sf-corrections.js';
 import type { Root } from './sf-evidence.js';
 import { renderCoverage, renderMarkdown, renderReadme, renderRules, GENERATED } from './sf-markdown.js';
 import { checkRuleAdrs, checkRules } from './sf-rules.js';
+import { checkProse, proseStats } from './sf-prose.js';
+import type { Prose } from './sf-prose.js';
 import { coverage, sectionItems } from './sf-coverage.js';
 import { queryPaths } from './sf-stale.js';
 import { depth, readPlan } from './sf-estimate.js';
@@ -36,6 +38,7 @@ export type BuildResult = {
   theme: { source: string; kind: string; fallbacks: Theme['fallbacks']; candidates: NonNullable<Theme['candidates']> } | null; // null until the build reaches the theme step
   depth: ReturnType<typeof depth> | null; // null until the check passes; areas is empty without model/plan.json
   rebuilt: { docs: string[]; figures: string[]; diagrams: string[] }; // a full build lists everything; --only lists what holds the given items
+  prose: Prose | null; // null until the check passes
 };
 export type { Depth };
 
@@ -74,7 +77,7 @@ export function checkModel(hostRoot: string, site: string, mode: 'check' | 'buil
   if (only !== undefined && !loaded.fragments.some((f) => f.file === only) && !problems.some((p) => p.file === only)) throw new Error(`no fragment ${only}`);
   if (!problems.some((p) => p.level === 'error')) {
     const early = problems;
-    problems = [...early, ...checkRules(merged.model, merged.origin)];
+    problems = [...early, ...checkRules(merged.model, merged.origin), ...checkProse(merged.model, only === undefined ? 'whole' : 'fragment')];
     const resolved = resolveRoots(hostRoot, merged.model.meta, cfg.config);
     roots = resolved.roots;
     if (only !== undefined) items = items.filter((i) => i.file === only);
@@ -169,7 +172,7 @@ export async function layoutChecked(model: Model): Promise<{ figures: FigureSpec
 }
 
 export async function build(opts: { hostRoot: string; site: string; markdown: string; docsDir?: string | null; only?: string[]; archify?: string; archifyTimeout?: number; flags?: DiagramFlags }): Promise<BuildResult> {
-  const result: BuildResult = { ok: false, problems: [], written: [], collisions: [], diagrams: [], layout: [], pageBytes: null, coverage: null, theme: null, depth: null, rebuilt: { docs: [], figures: [], diagrams: [] } };
+  const result: BuildResult = { ok: false, problems: [], written: [], collisions: [], diagrams: [], layout: [], pageBytes: null, coverage: null, theme: null, depth: null, rebuilt: { docs: [], figures: [], diagrams: [] }, prose: null };
   if (opts.archify !== undefined && !hasArchify(opts.archify)) throw new Error(`--archify ${opts.archify} has no bin/archify.mjs`);
   const checked = checkModel(opts.hostRoot, opts.site, 'build');
   result.problems = checked.problems;
@@ -200,6 +203,7 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   result.layout = laid.report;
   result.problems.push(...laid.unfit);
   if (laid.unfit.length) return result;
+  result.prose = proseStats(checked.model, laid.figures);
 
   // Re-read from the repo on every build, so a change to its CSS reaches the site, before any write; the source saved in .fx.json
   // system_flow.theme is the one read, and detection runs only when that key is absent.

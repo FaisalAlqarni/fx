@@ -7,7 +7,7 @@ import { spawnSync } from 'child_process';
 import { parseJson } from '../lib/json.js';
 import { fieldOrigin, handleOf, mergeFragments, originOf, parseHandle } from '../lib/sf-model.js';
 import { validate } from '../lib/sf-schema.js';
-import { sfFixture } from '../tests/helpers/sf-fixture.js';
+import { sentence, sfFixture } from '../tests/helpers/sf-fixture.js';
 
 // The check's stdout on success.
 const out = (stdout: string) => parseJson(stdout) as { ok: boolean; fragments: number; items: number; warnings: string[] };
@@ -28,13 +28,13 @@ const ev = [{ path: 'app/x.rb', lines: '1-4', symbol: 'Link' }];
   if (saved === undefined) delete process.env.CLAUDE_CONFIG_DIR; else process.env.CLAUDE_CONFIG_DIR = saved;
 }
 
-// The good set checks clean: 2 nodes, 1 edge, 1 bullet.
+// The good set checks clean: 2 nodes, 1 edge, 22 bullets, 4 participants, 5 messages, a store row, a catalogue entry, 15 terms and a code map entry.
 {
   const f = sfFixture();
   f.goodSet();
   const r = f.run(['check']);
   assert.strictEqual(r.status, 0, r.stderr);
-  assert.deepStrictEqual(out(r.stdout), { ok: true, fragments: 3, items: 4, warnings: [] });
+  assert.deepStrictEqual(out(r.stdout), { ok: true, fragments: 5, items: 52, warnings: [] });
 }
 
 // A good set with one change: the check exits 1 and stderr holds the expected line.
@@ -48,7 +48,7 @@ const fails = (why: string, change: (f: Fx) => void, line: RegExp): void => {
   assert.match(r.stderr, line, why);
 };
 const level0 = (node: object, edge: object = {}) => ({
-  levels: { root: 'system', diagrams: [{ id: 'system', level: 0, title: 'System', summary: 'S', groups: [], nodes: [{ id: 'link', label: 'Link', kind: 'backend', look: 'service', role: 'R', evidence: ev, ...node }, { id: 'db', label: 'Db', kind: 'database', look: 'service', role: 'R', evidence: ev }], edges: [{ from: 'link', to: 'db', label: 'reads', evidence: ev, ...edge }] }] },
+  levels: { root: 'system', diagrams: [{ id: 'system', level: 0, title: 'System', summary: 'The link service reads and writes the database.', groups: [], nodes: [{ id: 'link', label: 'Link', kind: 'backend', look: 'service', role: 'R', evidence: ev, ...node }, { id: 'db', label: 'Db', kind: 'database', look: 'service', role: 'R', evidence: ev }], edges: [{ from: 'link', to: 'db', label: 'reads', evidence: ev, ...edge }] }] },
 });
 
 fails('an unknown key', (f) => f.fragment('level0', level0({ colour: 'red' })),
@@ -97,7 +97,7 @@ fails('a fragment that is not JSON', (f) => f.put('host', `${F}/x.json`, '{'),
 
 // A diagram fragment for engine.json holding the given nodes and a node src, each given an edge from src (edges resolve inside their diagram).
 const engine = (extra: object, ...ids: string[]) => ({
-  levels: { diagrams: [{ id: 'engine', level: 1, title: 'Engine', summary: 'E', groups: [], nodes: [...ids, 'src'].map((id) => ({ id, label: id, kind: 'backend', look: 'service', role: 'R', evidence: ev })), edges: ids.map((id) => ({ from: 'src', to: id, label: 'calls', evidence: ev })) }] },
+  levels: { diagrams: [{ id: 'engine', level: 1, title: 'Engine', summary: 'The engine calls each of its parts from src.', groups: [], nodes: [...ids, 'src'].map((id) => ({ id, label: id, kind: 'backend', look: 'service', role: 'R', evidence: ev })), edges: ids.map((id) => ({ from: 'src', to: id, label: 'calls', evidence: ev })) }] },
   ...extra,
 });
 fails('node api in two fragments', (f) => { f.fragment('level0', level0({ id: 'api' }, { from: 'api' })); f.fragment('engine', engine({}, 'api')); },
@@ -112,8 +112,9 @@ const passes = (why: string, change: (f: Fx) => void, items: number): void => {
   assert.strictEqual(r.status, 0, `${why}: exits 0\n${r.stderr}`);
   assert.strictEqual(out(r.stdout).items, items, `${why}: items`);
 };
-const turnSeq = { id: 'turn', title: 'Turn', chapter: 's1', participants: [], messages: [] };
-passes('node turn and sequence turn', (f) => f.fragment('engine', engine({ sequences: [turnSeq] }, 'turn')), 7);
+// goodSet() holds sequence turn, so this one is trip.
+const tripSeq = { id: 'trip', title: 'Trip', chapter: 's1', summary: 'The trip sequence shows one call through the engine.', participants: [], messages: [] };
+passes('node trip and sequence trip', (f) => f.fragment('engine', engine({ sequences: [tripSeq] }, 'trip')), 55);
 {
   const f = sfFixture();
   f.goodSet();
@@ -123,7 +124,7 @@ passes('node turn and sequence turn', (f) => f.fragment('engine', engine({ seque
   f.fragment('level0', twin);
   const r = f.run(['check']);
   assert.strictEqual(r.status, 0, `a second link to db edge is not a duplicate\n${r.stderr}`);
-  assert.strictEqual(out(r.stdout).items, 5, 'both edges are items');
+  assert.strictEqual(out(r.stdout).items, 53, 'both edges are items');
 }
 
 const withGroup = (group: object) => {
@@ -132,42 +133,44 @@ const withGroup = (group: object) => {
   if (d) (d.groups as object[]).push({ id: 'g1', label: 'Group', members: ['link', 'db'], evidence: ev, unconfirmed: true, ...group });
   return l;
 };
-passes('a group with evidence and unconfirmed', (f) => f.fragment('level0', withGroup({})), 5);
+passes('a group with evidence and unconfirmed', (f) => f.fragment('level0', withGroup({})), 53);
 fails('a group with an unknown key', (f) => f.fragment('level0', withGroup({ colour: 'red' })),
   /level0\.json:\/levels\/diagrams\/0\/groups\/0: property colour not allowed$/m);
 
 passes('stores tables from two fragments', (f) => {
-  f.fragment('a', { stores: { sql: [{ id: 'sql-links', table: 'links', evidence: ev }] } });
+  f.fragment('a', { stores: { sql: [{ id: 'sql-visits', table: 'visits', evidence: ev }] } });
   f.fragment('b', { stores: { sql: [{ id: 'sql-users', table: 'users', evidence: ev }], cache: [{ id: 'cache-links', pattern: 'link:{id}', evidence: ev }] } });
-}, 7);
+}, 55);
 fails('one store id in two tables', (f) => f.fragment('a', { stores: { sql: [{ id: 'links', evidence: ev }], cache: [{ id: 'links', evidence: ev }] } }),
   /^docs\/system-flow\/model\/fragments\/a\.json:\/stores\/cache\/0: store links is also defined in docs\/system-flow\/model\/fragments\/a\.json$/m);
 
 const api = { id: 'api', label: 'API', look: 'service', evidence: ev };
 passes('a participant, message, flow step, catalogue, inventory and rule entry', (f) => f.fragment('engine', {
-  sequences: [{ ...turnSeq, participants: [api], messages: [{ n: 1, from: 'api', to: 'api', label: 'loops', evidence: ev }] }],
-  storeFlows: [{ id: 'save', trigger: 'A save', chapter: 's1', steps: [{ n: 1, actor: 'api', op: 'write', store: 'sql', evidence: ev }] }],
+  sequences: [{ ...tripSeq, participants: [api], messages: [{ n: 1, from: 'api', to: 'api', label: 'loops', evidence: ev }] }],
+  storeFlows: [{ id: 'save', trigger: 'A save', chapter: 's1', summary: 'The api writes one row to the database.', steps: [{ n: 1, actor: 'api', op: 'write', store: 'sql', evidence: ev }] }],
   catalogue: [{ id: 'bus', kind: 'queue', name: 'Bus', evidence: ev }],
   inventory: [{ id: 'links', kind: 'engine', name: 'Links', evidence: ev }],
   rules: [{ id: 'expiry', text: 'Links expire.', evidence: ev }],
-}), 10);
-fails('one participant twice in a sequence', (f) => f.fragment('engine', { sequences: [{ ...turnSeq, participants: [api, api] }] }),
-  /engine\.json:\/sequences\/0\/participants\/1: participant turn\.api is also defined in docs\/system-flow\/model\/fragments\/engine\.json$/m);
+}), 58);
+fails('one participant twice in a sequence', (f) => f.fragment('engine', { sequences: [{ ...tripSeq, participants: [api, api] }] }),
+  /engine\.json:\/sequences\/0\/participants\/1: participant trip\.api is also defined in docs\/system-flow\/model\/fragments\/engine\.json$/m);
 
 // The site comes from --site, else .fx.json system_flow.output.site, else docs/system-flow.
 {
   const f = sfFixture();
-  const meta = `${JSON.stringify({ schemaVersion: 2, meta: { roots: [{ id: 'backend' }] } })}\n`;
-  f.put('host', 'site/model/fragments/meta.json', meta);
+  // The good set, copied into each site: a model below the prose floor would fail the check.
+  f.goodSet();
+  const copy = (site: string): void => { for (const n of fs.readdirSync(path.join(f.host, F))) f.put('host', `${site}/model/fragments/${n}`, fs.readFileSync(path.join(f.host, F, n), 'utf8')); };
+  copy('site');
+  f.put('host', 'site/model/fragments/more.json', '{}\n');
   f.fxJson({ system_flow: { output: { site: 'site', markdown: 'docs/system' } } });
   let r = f.run(['check']);
   assert.strictEqual(r.status, 0, `.fx.json site\n${r.stderr}`);
-  assert.strictEqual(out(r.stdout).fragments, 1, '.fx.json site: one fragment');
-  f.put('host', 'flag/model/fragments/meta.json', meta);
-  f.put('host', 'flag/model/fragments/more.json', '{}\n');
+  assert.strictEqual(out(r.stdout).fragments, 6, '.fx.json site: six fragments');
+  copy('flag');
   r = f.run(['--site', 'flag', 'check']);
   assert.strictEqual(r.status, 0, `--site\n${r.stderr}`);
-  assert.strictEqual(out(r.stdout).fragments, 2, '--site wins over .fx.json');
+  assert.strictEqual(out(r.stdout).fragments, 5, '--site wins over .fx.json');
 }
 
 // With no --root, the root is the git top level of the working directory.
@@ -176,7 +179,7 @@ fails('one participant twice in a sequence', (f) => f.fragment('engine', { seque
   f.goodSet();
   const r = spawnSync(process.execPath, [path.join(__dirname, 'system-flow'), 'check'], { cwd: path.join(f.host, 'app'), encoding: 'utf8', env: f.env() });
   assert.strictEqual(r.status, 0, `no --root, run from app/\n${r.stderr}`);
-  assert.strictEqual(out(r.stdout).fragments, 3);
+  assert.strictEqual(out(r.stdout).fragments, 5);
 }
 
 // No fragments folder: one line naming it, exit 1.
@@ -297,6 +300,8 @@ assert.throws(() => validate({ $ref: '#/$defs/constructor', $defs: {} }, 'x'), /
     `${F}/meta.json:/schemaVersion: schemaVersion 1: run system-flow migrate`,
     `${F}/level0.json:: schemaVersion 1: run system-flow migrate`,
     `${F}/chapters.json:: schemaVersion 1: run system-flow migrate`,
+    `${F}/app.json:: schemaVersion 1: run system-flow migrate`,
+    `${F}/glossary.json:: schemaVersion 1: run system-flow migrate`,
   ].join('\n') + '\n', 'a version-1 set: one hint per fragment and no look problem');
 }
 {
@@ -320,27 +325,28 @@ const L0 = 'docs/system-flow/model/fragments/level0.json:/levels/diagrams/0';
 }
 fails('a look out of the enum', (f) => f.fragment('level0', level0({ look: 'database' })),
   /\/levels\/diagrams\/0\/nodes\/0\/look: value "database" not in enum$/m);
-fails('a participant with no look', (f) => f.fragment('engine', { sequences: [{ ...turnSeq, participants: [{ id: 'api', label: 'API', evidence: ev }] }] }),
+fails('a participant with no look', (f) => f.fragment('engine', { sequences: [{ ...tripSeq, participants: [{ id: 'api', label: 'API', evidence: ev }] }] }),
   /engine\.json:\/sequences\/0\/participants\/0: required property look missing$/m);
-fails('a message short label of 27 characters', (f) => f.fragment('engine', { sequences: [{ ...turnSeq, participants: [api], messages: [{ n: 1, from: 'api', to: 'api', label: 'l', short: 'x'.repeat(27), evidence: ev }] }] }),
+fails('a message short label of 27 characters', (f) => f.fragment('engine', { sequences: [{ ...tripSeq, participants: [api], messages: [{ n: 1, from: 'api', to: 'api', label: 'l', short: 'x'.repeat(27), evidence: ev }] }] }),
   /\/sequences\/0\/messages\/0\/short: longer than 26 characters$/m);
 
 // Glossary terms and code map entries are items.
-const term = { id: 'link', term: 'Link', tag: 'model', meaning: 'A short link.', evidence: ev };
-const codeEntry = { id: 'app', root: 'backend', path: 'app/', owns: 'The app.', evidence: [{ path: 'app/' }, { path: 'app/x.rb', lines: '1-4', symbol: 'Link' }] };
+// goodSet() holds term:link and code:app in glossary.json and app.json; these add their own.
+const term = { id: 'expires', term: 'Expires', tag: 'concept', meaning: 'When a link stops.', evidence: ev };
+const codeEntry = { id: 'app-models', root: 'backend', path: 'app/', owns: 'The app.', evidence: [{ path: 'app/' }, { path: 'app/x.rb', lines: '1-4', symbol: 'Link' }] };
 fails('a glossary tag out of the enum', (f) => f.fragment('glossary', { glossary: [{ ...term, tag: 'thing' }] }),
   /\/glossary\/0\/tag: value "thing" not in enum$/m);
 fails('a code map path with no trailing slash', (f) => f.fragment('glossary', { codeMap: [{ ...codeEntry, path: 'app' }] }),
   /\/codeMap\/0\/path: does not match \^\(\?!\/\)\(\?:\[\^\/\]\+\/\)\+\$$/m);
-passes('a term and a code map entry', (f) => f.fragment('glossary', { glossary: [term], codeMap: [codeEntry] }), 6);
+passes('a term and a code map entry', (f) => f.fragment('extra', { glossary: [term], codeMap: [codeEntry] }), 54);
 {
   const f = sfFixture();
   f.goodSet();
-  f.fragment('glossary', { glossary: [term], codeMap: [codeEntry] });
+  f.fragment('extra', { glossary: [term], codeMap: [codeEntry] });
   const r = f.run(['query', 'app/x.rb']);
   assert.strictEqual(r.status, 0, r.stderr);
   const handles = (parseJson(r.stdout) as { items: { handle: string }[] }).items.map((i) => i.handle);
-  assert.ok(handles.includes('term:link') && handles.includes('code:app'), handles.join());
+  assert.ok(handles.includes('term:expires') && handles.includes('code:app-models'), handles.join());
 }
 {
   const f = sfFixture();
@@ -348,7 +354,7 @@ passes('a term and a code map entry', (f) => f.fragment('glossary', { glossary: 
   f.fragment('glossary', { glossary: [{ ...term, evidence: [{ path: 'app/x.rb', lines: '40-41', symbol: 'Link' }] }] });
   const r = f.run(['check']);
   assert.strictEqual(r.status, 1);
-  assert.ok(r.stderr.split('\n').includes(`${F}/glossary.json:/glossary/0/evidence/0: term:link: backend/app/x.rb:40-41 Link: range outside file (10 lines)`), r.stderr);
+  assert.ok(r.stderr.split('\n').includes(`${F}/glossary.json:/glossary/0/evidence/0: term:expires: backend/app/x.rb:40-41 Link: range outside file (10 lines)`), r.stderr);
 }
 {
   const f = sfFixture();
@@ -356,7 +362,7 @@ passes('a term and a code map entry', (f) => f.fragment('glossary', { glossary: 
   f.fragment('glossary', { glossary: [{ ...term, evidence: [{ path: 'app/' }] }] });
   const r = f.run(['check']);
   assert.strictEqual(r.status, 1);
-  assert.ok(r.stderr.split('\n').includes(`${F}/glossary.json:/glossary/0/evidence/0: glossary term link: a folder entry is allowed only on catalogue and inventory entries`), r.stderr);
+  assert.ok(r.stderr.split('\n').includes(`${F}/glossary.json:/glossary/0/evidence/0: glossary term expires: a folder entry is allowed only on catalogue and inventory entries`), r.stderr);
 }
 
 
@@ -364,27 +370,36 @@ passes('a term and a code map entry', (f) => f.fragment('glossary', { glossary: 
 const b2 = { id: 'b2', text: 'Expired links answer 410.', evidence: [{ path: 'app/x.rb', lines: '4', symbol: 'expired?' }] };
 const area = (f: Fx, section: object): void => f.fragment('links', { sections: [{ id: 's1', ...section }] });
 const stderrOf = (f: Fx, args: string[] = ['check']): { status: number | null; stderr: string } => f.run(args);
+const LEAD = `${sentence(20)} ${sentence(20)}`;
+// goodSet() gives s1 a lead in chapters.json; these tests move it to an area fragment.
+const noLead = (f: Fx): void => {
+  const c = parseJson(fs.readFileSync(path.join(f.host, F, 'chapters.json'), 'utf8')) as { sections: { lead?: string }[] };
+  delete c.sections[4]!.lead;
+  f.fragment('chapters', c);
+};
 {
   const f = sfFixture();
   f.goodSet();
-  area(f, { lead: 'Links expire. The job checks them.', bullets: [b2] });
+  noLead(f);
+  area(f, { lead: LEAD, bullets: [b2] });
   const r = f.run(['check']);
   assert.strictEqual(r.status, 0, r.stderr);
   const m = mergeFragments(['meta', 'level0', 'chapters', 'links'].map((n) => ({ file: `${F}/${n}.json`, data: parseJson(fs.readFileSync(path.join(f.host, F, `${n}.json`), 'utf8')) as Record<string, unknown> }))).model;
-  assert.strictEqual(m.sections.length, 1);
-  assert.strictEqual(fieldOrigin(m.sections[0]!, 'lead')?.file, `${F}/links.json`);
-  assert.strictEqual(originOf(m.sections[0]!).file, `${F}/chapters.json`);
-  assert.strictEqual(originOf(m.sections[0]!.bullets![1]!).file, `${F}/links.json`);
+  assert.strictEqual(m.sections.length, 5);
+  assert.strictEqual(fieldOrigin(m.sections[4]!, 'lead')?.file, `${F}/links.json`);
+  assert.strictEqual(originOf(m.sections[4]!).file, `${F}/chapters.json`);
+  assert.strictEqual(originOf(m.sections[4]!.bullets![4]!).file, `${F}/links.json`);
 }
 {
   const f = sfFixture();
   f.goodSet();
   f.fragment('chapters', { sections: [{ id: 's1', title: 'Links', question: 'Q?' }, { id: 's2', title: 'More', question: 'Q2?' }] });
-  f.fragment('links', { sections: [{ id: 's2', lead: 'Two.' }, { id: 's1', lead: 'One.' }] });
+  f.fragment('links', { sections: [{ id: 's2', lead: `Two. ${LEAD}` }, { id: 's1', lead: `One. ${LEAD}` }] });
+  f.floor();
   const r = f.run(['check']);
   assert.strictEqual(r.status, 0, r.stderr);
   const m = mergeFragments(['chapters', 'links'].map((n) => ({ file: `${F}/${n}.json`, data: parseJson(fs.readFileSync(path.join(f.host, F, `${n}.json`), 'utf8')) as Record<string, unknown> }))).model;
-  assert.deepStrictEqual(m.sections.map((s) => [s.id, s.lead]), [['s1', 'One.'], ['s2', 'Two.']]);
+  assert.deepStrictEqual(m.sections.slice(4).map((s) => [s.id, s.lead]), [['s1', `One. ${LEAD}`], ['s2', `Two. ${LEAD}`]]);
 }
 {
   const f = sfFixture();
@@ -407,9 +422,10 @@ const stderrOf = (f: Fx, args: string[] = ['check']): { status: number | null; s
   const f = sfFixture();
   f.goodSet();
   f.fragment('chapters', { sections: [{ id: 's1', title: 'Links', question: 'Q?' }, { id: 's3', question: 'Why?' }] });
+  f.floor();
   const r = stderrOf(f);
   assert.strictEqual(r.status, 1);
-  assert.strictEqual(r.stderr, `${F}/chapters.json:/sections/1: section s3: title missing\n`);
+  assert.strictEqual(r.stderr, `${F}/chapters.json:/sections/5: section s3: title missing\n`);
 }
 {
   const f = sfFixture();
@@ -422,10 +438,10 @@ const stderrOf = (f: Fx, args: string[] = ['check']): { status: number | null; s
 {
   const f = sfFixture();
   f.goodSet();
-  area(f, { lead: 'Links expire.', bullets: [b2] });
+  area(f, { bullets: [b2] });
   const r = f.run(['check', '--fragment', `${F}/links.json`]);
   assert.strictEqual(r.status, 0, r.stderr);
-  area(f, { lead: 'Links expire.', bullets: [{ ...b2, evidence: [{ path: 'app/x.rb', lines: '40-50', symbol: 'expired?' }] }] });
+  area(f, { bullets: [{ ...b2, evidence: [{ path: 'app/x.rb', lines: '40-50', symbol: 'expired?' }] }] });
   f.fragment('level0', level0({}, {}));
   const bad = f.run(['check', '--fragment', `${F}/links.json`]);
   assert.strictEqual(bad.status, 1);

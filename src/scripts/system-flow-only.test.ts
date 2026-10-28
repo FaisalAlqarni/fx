@@ -27,11 +27,12 @@ const model = (f: Fx, t: Tweak = {}): void => {
   f.fragment('flows', { sequences: [{ id: 'turn', title: 'Turn', chapter: 's2',
     participants: [{ id: 'api', label: 'API', look: 'service', evidence: ev }, { id: 'db', label: 'DB', look: 'service', evidence: ev }],
     messages: [{ n: 1, from: 'api', to: 'db', label: 'Reads', evidence: ev }] }] });
+  f.floor();
 };
 const setup = (): Fx => { const f = sfFixture(); model(f); f.commit('host', 'fragments'); return f; };
 
-// Rewritten by every --only build: the index, coverage.md and rules-in-force.md (final fix A16).
-const ALWAYS = ['docs/system/index.md', 'docs/system/coverage.md', 'docs/system/rules-in-force.md'];
+// Rewritten by every --only build: the indexes (the Start here folder has its own), coverage.md and rules-in-force.md (final fix A16).
+const ALWAYS = ['docs/system/index.md', 'docs/system/start-here/index.md', 'docs/system/coverage.md', 'docs/system/rules-in-force.md'];
 const GEN = ['docs/system/s1.md', 'docs/system/s2.md', 'docs/system-flow/diagrams/seq-turn.html', 'docs/system-flow/diagrams/arch-engine.html', 'docs/system-flow/index.html'];
 const snap = (f: Fx): Record<string, { text: string; mtime: number }> => Object.fromEntries(GEN.map((r) => {
   const file = path.join(f.host, r);
@@ -47,6 +48,7 @@ const changed = (before: ReturnType<typeof snap>, after: ReturnType<typeof snap>
   assert.notStrictEqual((after[rel] as { text: string }).text, (before[rel] as { text: string }).text, `${rel} changed`);
 };
 
+// start-parts lists the level-0 diagram engine, so an item on it also rebuilds start-parts.md.
 {
   const f = setup();
   const first = full(f);
@@ -71,7 +73,7 @@ const changed = (before: ReturnType<typeof snap>, after: ReturnType<typeof snap>
   // By path: the same set `query` prints.
   const q = parseJson(f.run(['query', 'app/x.rb']).stdout) as { items: { handle: string }[] };
   assert.ok(q.items.length > 0);
-  assert.deepStrictEqual(only(f, 'app/x.rb').rebuilt, { docs: ['docs/system/s1.md', 'docs/system/s2.md', ...ALWAYS], figures: ['level-engine', 'seq-turn'], diagrams: ['arch-engine', 'seq-turn'] });
+  assert.deepStrictEqual(only(f, 'app/x.rb').rebuilt, { docs: ['docs/system/start-here/start-parts.md', 'docs/system/s1.md', 'docs/system/s2.md', ...ALWAYS], figures: ['level-engine', 'seq-turn'], diagrams: ['arch-engine', 'seq-turn'] });
   // Comma list and repeated flags both work.
   assert.deepStrictEqual(only(f, 'bullet:b1,bullet:b2').rebuilt.docs, ['docs/system/s1.md', 'docs/system/s2.md', ...ALWAYS]);
   assert.deepStrictEqual(only(f, 'bullet:b1', '--only', 'bullet:b2').rebuilt.docs, ['docs/system/s1.md', 'docs/system/s2.md', ...ALWAYS]);
@@ -83,14 +85,14 @@ const changed = (before: ReturnType<typeof snap>, after: ReturnType<typeof snap>
   f.fragment('corrections', { corrections: [corr('node:api', 'API', 'Gateway')] });
   const before = snap(f);
   const r = only(f, 'node:api');
-  assert.deepStrictEqual(r.rebuilt, { docs: ['docs/system/s1.md', ...ALWAYS], figures: ['level-engine'], diagrams: ['arch-engine'] });
+  assert.deepStrictEqual(r.rebuilt, { docs: ['docs/system/start-here/start-parts.md', 'docs/system/s1.md', ...ALWAYS], figures: ['level-engine'], diagrams: ['arch-engine'] });
   same(before, snap(f), 'docs/system-flow/diagrams/seq-turn.html', 'node:api');
 }
 {
   const f = setup();
   full(f);
   assert.deepStrictEqual(only(f, 'seq:turn').rebuilt, { docs: ['docs/system/s2.md', ...ALWAYS], figures: ['seq-turn'], diagrams: ['seq-turn'] });
-  assert.deepStrictEqual(only(f, 'diagram:engine').rebuilt, { docs: ['docs/system/s1.md', ...ALWAYS], figures: ['level-engine'], diagrams: ['arch-engine'] });
+  assert.deepStrictEqual(only(f, 'diagram:engine').rebuilt, { docs: ['docs/system/start-here/start-parts.md', 'docs/system/s1.md', ...ALWAYS], figures: ['level-engine'], diagrams: ['arch-engine'] });
   assert.deepStrictEqual(only(f, 'section:s2').rebuilt, { docs: ['docs/system/s2.md', ...ALWAYS], figures: [], diagrams: [] });
 }
 {
@@ -99,6 +101,7 @@ const changed = (before: ReturnType<typeof snap>, after: ReturnType<typeof snap>
   f.fragment('level0', { levels: { root: 'engine', diagrams: [{ id: 'engine', level: 0, title: 'Engine', summary: 'S', groups: [],
     nodes: [{ id: 'api', label: 'API', kind: 'backend', look: 'service', role: 'R', evidence: ev }, { id: 'turn', label: 'Turn', kind: 'backend', look: 'service', role: 'R', evidence: ev }],
     edges: [{ from: 'api', to: 'turn', label: 'x', evidence: ev }] }] } });
+  f.floor();
   f.commit('host', 'fragments');
   full(f);
   const r = only(f, 'node:turn').rebuilt;
@@ -136,7 +139,7 @@ const changed = (before: ReturnType<typeof snap>, after: ReturnType<typeof snap>
   for (const s of strip.sections) for (const b of s.bullets) delete b.verified;
   f.fragment('chapters', strip);
   only(f, 'bullet:b1');
-  const [s1, s2] = chapters().sections;
+  const [s1, s2] = chapters().sections.slice(4);
   assert.deepStrictEqual(s1?.bullets[0]?.verified, { backend: head }, 'selected item stamped');
   assert.strictEqual(s2?.bullets[0]?.verified, undefined, 'item outside --only not stamped');
 }

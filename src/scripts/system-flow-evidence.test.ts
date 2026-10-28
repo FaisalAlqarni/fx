@@ -21,6 +21,7 @@ const setup = (evidence: Ev[], roots: object[] = [{ id: 'backend' }, { id: 'guid
   const l0 = parseJson(fs.readFileSync(path.join(f.host, F, 'level0.json'), 'utf8')) as { levels: { diagrams: { nodes: { evidence: Ev[] }[] }[] } };
   l0.levels.diagrams[0]!.nodes[0]!.evidence = evidence;
   f.fragment('level0', l0);
+  f.floor();
   return f;
 };
 const fails = (why: string, evidence: Ev[], line: string, tweak: (f: Fx) => void = () => {}): void => {
@@ -164,16 +165,19 @@ fails('folder on a node', [{ path: 'app/' }], `${NODE0}: node link: a folder ent
     return { id: `d${d}`, level: 0, title: 'D', summary: 'D', groups: [], nodes, edges };
   });
   f.fragment('level0', { levels: { root: 'd0', diagrams } });
+  f.floor();
   const r = f.run(['check'], { PATH: `${shim}${path.delimiter}${process.env.PATH ?? ''}` });
   assert.strictEqual(r.status, 0, r.stderr);
   const shows = fs.readFileSync(log, 'utf8').split('\n').filter((l) => l.includes('show HEAD:app/x.rb'));
   assert.strictEqual(shows.length, 1, shows.join('\n'));
 }
 
+// goodSet() holds sequence turn, so the area's is trip.
+const TRIP = { sequences: [{ id: 'trip', title: 'Trip', chapter: 's1', summary: 'The trip sequence shows one call through the engine.', participants: [], messages: [] }] };
 // --fragment verifies one fragment; plain check fails on another fragment's bad range.
 {
   const f = setup([{ ...good, lines: '8-12' }]);
-  f.fragment('engine', { sequences: [{ id: 'turn', title: 'Turn', chapter: 's1', participants: [], messages: [] }] });
+  f.fragment('engine', TRIP);
   const one = f.run(['check', '--fragment', `${F}/engine.json`]);
   assert.strictEqual(one.status, 0, one.stderr);
   assert.strictEqual(f.run(['check']).status, 1);
@@ -182,7 +186,7 @@ fails('folder on a node', [{ path: 'app/' }], `${NODE0}: node link: a folder ent
 // --fragment answers for its own file only: another fragment that does not parse or breaks a schema rule is a warning (A15).
 {
   const f = setup([good]);
-  f.fragment('engine', { sequences: [{ id: 'turn', title: 'Turn', chapter: 's1', participants: [], messages: [] }] });
+  f.fragment('engine', TRIP);
   f.put('host', `${F}/other.json`, '{ "sections": [ half written');
   f.fragment('broken', { sections: [{ id: 'x' }] });
   const one = f.run(['check', '--fragment', `${F}/engine.json`]);

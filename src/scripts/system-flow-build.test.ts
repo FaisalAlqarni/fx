@@ -6,7 +6,7 @@ import * as path from 'path';
 import { parseDoc } from '../lib/doc-evidence.js';
 import { parseJson } from '../lib/json.js';
 import { evidenceLine, renderRules } from '../lib/sf-markdown.js';
-import { sfFixture } from '../tests/helpers/sf-fixture.js';
+import { sentence, sfFixture } from '../tests/helpers/sf-fixture.js';
 
 type Fx = ReturnType<typeof sfFixture>;
 type Obj = Record<string, unknown>;
@@ -15,6 +15,7 @@ const GEN = '<!-- fx-system-flow generated: edit the model, then rebuild -->';
 const ev = (p: string, lines: string, symbol: string, root?: string) => [{ ...(root === undefined ? {} : { root }), path: p, lines, symbol }];
 
 type Tweak = { label?: string; api?: string; key?: string; bullet?: string; folder?: string };
+// goodSet() holds sequence turn, so this set's is trip; floor() brings the rest up to the prose floor.
 function setup(t: Tweak = {}): Fx {
   const f = sfFixture();
   f.goodSet();
@@ -31,7 +32,7 @@ function setup(t: Tweak = {}): Fx {
   });
   f.fragment('flows', {
     sequences: [{
-      id: 'turn', title: 'Turn', chapter: 's1',
+      id: 'trip', title: 'Trip', chapter: 's1', summary: 'The api reads the link row from the database.',
       participants: [{ id: 'api', label: t.api ?? 'API', look: 'service', evidence: ev('app/x.rb', '1', 'Link') }, { id: 'db', label: 'DB', look: 'service', evidence: ev('app/y.rb', '1', 'Y') }],
       messages: [
         { n: 1, from: 'api', to: 'db', label: t.label ?? 'Reads link', evidence: ev('app/x.rb', '4', 'expired?') },
@@ -40,13 +41,14 @@ function setup(t: Tweak = {}): Fx {
     }],
     stores: { sql: [{ id: 'links-table', table: 'links', evidence: ev('app/y.rb', '1', 'Y') }] },
     storeFlows: [{
-      id: 'first', trigger: 'A link is opened', chapter: 's1',
+      id: 'first', trigger: 'A link is opened', chapter: 's1', summary: 'The api reads and writes the link row.',
       steps: [
         { n: 1, actor: 'api', op: 'read', store: 'sql', key: t.key ?? 'links:{id}', evidence: ev('app/x.rb', '4', 'expired?') },
         { n: 2, actor: 'api', op: 'write', store: 'sql', key: 'links:{id}', evidence: ev('app/x.rb', '4', 'expired?') },
       ],
     }],
   });
+  f.floor();
   return f;
 }
 const read = (f: Fx, rel: string): string => fs.readFileSync(path.join(f.host, rel), 'utf8');
@@ -87,7 +89,7 @@ assert.strictEqual(setup().run(['nope']).status, 2);
   const head = f.git('host', 'rev-parse', 'HEAD');
   const guideHead = f.git('guide', 'rev-parse', 'HEAD');
   const result = built(f);
-  assert.deepStrictEqual([result.ok, result.collisions, (result.diagrams as { name: string }[]).map((d) => d.name), (result.layout as { key: string }[]).map((l) => l.key), typeof result.pageBytes], [true, [], ['arch-system', 'seq-turn', 'flow-first'], ['level-system', 'seq-turn', 'flow-first'], 'number']);
+  assert.deepStrictEqual([result.ok, result.collisions, (result.diagrams as { name: string }[]).map((d) => d.name), (result.layout as { key: string }[]).map((l) => l.key), typeof result.pageBytes], [true, [], ['arch-system', 'seq-turn', 'seq-trip', 'flow-first'], ['level-system', 'seq-turn', 'seq-trip', 'flow-first'], 'number']);
   assert.ok(result.written.includes('docs/system/s1.md'), result.written.join(','));
 
   const s1 = lines(f, 'docs/system/s1.md');
@@ -123,7 +125,8 @@ assert.strictEqual(setup().run(['nope']).status, 2);
 
   const model = parseJson(read(f, 'docs/system-flow/model/system-model.json')) as Obj & { sections: { bullets: unknown[] }[]; levels: { diagrams: unknown[] } };
   assert.strictEqual(model.generated, true);
-  assert.strictEqual(model.sections[0]?.bullets.length, 2);
+  // s1 follows the four Start here sections and holds its 2 bullets and floor()'s 4.
+  assert.strictEqual(model.sections[4]?.bullets.length, 6);
   assert.strictEqual(model.levels.diagrams.length, 1);
 
   // Ruling 6: an item citing the host carries verified.backend, b2 (guide only) carries verified.guide only.
@@ -147,7 +150,7 @@ assert.strictEqual(setup().run(['nope']).status, 2);
   built(f);
   assert.ok(read(f, 'docs/system/s1.md').includes(`verified: ${c1} -->`));
   const chapters = parseJson(read(f, `${F}/chapters.json`)) as { sections: { bullets: Obj[] }[] };
-  chapters.sections[0]!.bullets[0]!.verified = { backend: c0 };
+  chapters.sections[4]!.bullets[0]!.verified = { backend: c0 };
   f.fragment('chapters', chapters);
   built(f);
   assert.ok(read(f, 'docs/system/s1.md').includes(`<!-- fx-docs verified: ${c0} -->`));
@@ -182,7 +185,7 @@ assert.strictEqual(setup().run(['nope']).status, 2);
 {
   const f = setup();
   const chapters = parseJson(read(f, `${F}/chapters.json`)) as { sections: { bullets: Obj[] }[] };
-  chapters.sections[0]!.bullets[0]!.evidence = ev('app/x.rb', '40-50', 'expired?');
+  chapters.sections[4]!.bullets[0]!.evidence = ev('app/x.rb', '40-50', 'expired?');
   f.fragment('chapters', chapters);
   const before = snapshot(f);
   const r = f.run(['build']);
@@ -343,19 +346,24 @@ assert.strictEqual(setup().run(['nope']).status, 2);
 }
 
 // A bullet an area fragment adds reaches the chapter, and its stamp lands in that fragment (task 02).
+// goodSet() writes s1's lead in chapters.json; here the area fragment writes it instead.
 {
   const f = sfFixture();
   f.goodSet();
-  f.fragment('links', { sections: [{ id: 's1', lead: 'Links expire. The job checks them.', bullets: [{ id: 'b2', text: 'Expired links answer 410.', evidence: ev('app/x.rb', '4', 'expired?') }] }] });
+  const declared = parseJson(read(f, `${F}/chapters.json`)) as { sections: { lead?: string }[] };
+  delete declared.sections[4]!.lead;
+  f.fragment('chapters', declared);
+  const lead = `Links expire. The job checks them. ${sentence(34)}`;
+  f.fragment('links', { sections: [{ id: 's1', lead, bullets: [{ id: 'b2', text: 'Expired links answer 410.', evidence: ev('app/x.rb', '4', 'expired?') }] }] });
   built(f);
   const model = parseJson(read(f, 'docs/system-flow/model/system-model.json')) as { sections: { id: string; title: string; lead: string; bullets: { id: string }[] }[] };
-  assert.strictEqual(model.sections.length, 1);
-  assert.deepStrictEqual([model.sections[0]!.id, model.sections[0]!.title, model.sections[0]!.lead], ['s1', 'Links', 'Links expire. The job checks them.']);
-  assert.deepStrictEqual(model.sections[0]!.bullets.map((b) => b.id), ['b1', 'b2']);
+  assert.strictEqual(model.sections.length, 5);
+  assert.deepStrictEqual([model.sections[4]!.id, model.sections[4]!.title, model.sections[4]!.lead], ['s1', 'Links', lead]);
+  assert.deepStrictEqual(model.sections[4]!.bullets.map((b) => b.id), ['b1', 's1-b2', 's1-b3', 's1-b4', 'b2']);
   const links = parseJson(read(f, `${F}/links.json`)) as { sections: { bullets: { verified?: unknown }[] }[] };
   assert.ok(links.sections[0]!.bullets[0]!.verified, 'b2 stamped in links.json');
   const chapters = parseJson(read(f, `${F}/chapters.json`)) as { sections: { bullets: { id: string }[] }[] };
-  assert.deepStrictEqual(chapters.sections[0]!.bullets.map((b) => b.id), ['b1'], 'chapters.json gains no b2');
+  assert.deepStrictEqual(chapters.sections[4]!.bullets.map((b) => b.id), ['b1', 's1-b2', 's1-b3', 's1-b4'], 'chapters.json gains no b2');
 }
 
 console.log('system-flow-build.test.js: ok');

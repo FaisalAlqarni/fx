@@ -101,6 +101,7 @@ function setup() {
 const read = (f2, rel) => fs.readFileSync(path.join(f2.host, rel), "utf8");
 const spec = (f2, name) => (0, import_json.parseJson)(read(f2, `${D}/src/${name}.json`));
 const build = (f2) => {
+  f2.floor();
   const r = f2.run(["build"]);
   assert.strictEqual(r.status, 0, `build exits 0
 ${r.stdout}${r.stderr}`);
@@ -110,9 +111,9 @@ const f = setup();
 const { out, err } = build(f);
 {
   const have = fs.readdirSync(path.join(f.host, D)).filter((n) => n.endsWith(".html")).sort();
-  assert.deepStrictEqual(have, ["arch-engine.html", "arch-system.html", "flow-first.html", "seq-turn-p2.html", "seq-turn.html"]);
+  assert.deepStrictEqual(have, ["arch-engine.html", "arch-system.html", "flow-first.html", "seq-floor-visit.html", "seq-turn-p2.html", "seq-turn.html"]);
   const json = fs.readdirSync(path.join(f.host, D, "src")).sort();
-  assert.deepStrictEqual(json, ["arch-engine.json", "arch-system.json", "flow-first.json", "seq-turn-p2.json", "seq-turn.json"]);
+  assert.deepStrictEqual(json, ["arch-engine.json", "arch-system.json", "flow-first.json", "seq-floor-visit.json", "seq-turn-p2.json", "seq-turn.json"]);
   assert.deepStrictEqual(spec(f, "seq-turn").messages.length, 8);
   assert.deepStrictEqual(spec(f, "seq-turn-p2").messages.length, 6);
   for (const n of ["seq-turn", "seq-turn-p2"]) {
