@@ -101,6 +101,8 @@ if [ "$HARNESS" = opencode ]; then
   check "opencode.json gains fx's subagent_depth" \
     'test "$(python3 -c "import json;print(json.load(open(\"$D1/opencode.json\")).get(\"subagent_depth\",1))")" -ge 2'
   for s in $(ls "$FX/skills"); do
+    # The installer links only folders with a SKILL.md (a lane's data can land before its SKILL.md).
+    [ -f "$FX/skills/$s/SKILL.md" ] || continue
     if grep -qx "$s" <<<"$USER_INVOKED"; then
       check "user-invoked $s not linked" '[ ! -e "$D1/skills/$s" ] && [ ! -L "$D1/skills/$s" ]'
     else
