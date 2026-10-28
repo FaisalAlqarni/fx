@@ -126,3 +126,45 @@ Waiting: task 04 fix round 1 (mutation check); task 07 next once the tree is cle
 Task 04: fix round 1/5: controller re-review (0 lines): 1 addressed, 0 open
 Task 04: cost unavailable (no transcript recorded)
 Task 04: complete (commits 3e85a0a..e289dab, review clean after 1 fix round; TDD order slip on record)
+Task 05: dispatched 1c60d86 2026-10-28T11:23:33+03:00 (opus, Capable because: the plan's HIGH layout risk, porting variant search and crossing reduction)
+Task 05: implementer a47425ca0110e8261. Waiting on it; return channel .fx/2026-10-28-system-flow/reports/05-figure-layout-and-report-report.md.
+Task 05: DONE_WITH_CONCERNS 1c60d86..9005697; parity with system-flow on parser-stages and K(3,3), K33_CAP 2. Concerns: one task 04 test assertion changed (layout no longer empty), figure-spec checks call layoutAll directly, fallback label placer not ported. Passed to the reviewer.
+Task 07: dispatched 9005697 2026-10-28T11:39:59+03:00
+Task 05: reviewer a1725e0f21cf99ada. Task 07: implementer af06218e104dca006 (sonnet). Waiting on both.
+Task 05: minor (deferred): figure-spec tests call layoutAll directly, not through the CLI seam, until a later task emits specs.
+Task 05: minor (deferred): label fallback placer not ported, so unlabelled may exceed system-flow on crowded figures.
+Task 05: minor (deferred): task 04 build test assertion edited to the three figure keys, outside this task's file list.
+Task 05: review 0/0/3 spec ✅; ⚠️ (system-flow numbers measured by the implementer on a scratch copy, not re-measured) accepted; task 20 measures layout on a real repo.
+Task 05: cost unavailable (no transcript recorded)
+Task 05: complete (commits 1c60d86..9005697, review clean)
+Waiting: task 07 implementer.
+Task 07: DONE_WITH_CONCERNS 9005697..849d93f, check-all ALL GREEN per implementer. Concerns: BuildResult.theme nullable, task 06 detect test now expects the fx theme, build() takes docsDir to avoid an import cycle. Passed to the reviewer.
+Task 08: dispatched 849d93f 2026-10-28T11:49:27+03:00
+Task 07: reviewer aea5d123f26465ea5. Task 08: implementer a186251f623472e51 (sonnet). Waiting on both.
+Task 07: minor (deferred): Material colour lookup uses a plain object, so names like constructor give NaN; use Object.hasOwn.
+Task 07: minor (deferred): Tailwind hex regex accepts 4 and 5 digit values that reach theme.css for slots outside the checked pairs.
+Task 07: minor (deferred): contrast is rounded before the threshold test, so 4.496 passes as 4.5.
+Task 07: minor (deferred): no test proves a Tailwind config is never executed, and no direct contrast edge tests.
+Task 07: review 0/0/4 spec ✅.
+Task 07: cost unavailable (no transcript recorded)
+Task 07: complete (commits 9005697..849d93f, review clean)
+Waiting: task 08 implementer.
+Task 08: DONE_WITH_CONCERNS 849d93f..a795cc4; kit rendering unverified in a browser until task 18's visual check; Show all arrows off narrows to the selection (implementer's choice). Passed to the reviewer.
+Task 09: dispatched a795cc4 2026-10-28T11:59:31+03:00
+Task 08: reviewer aece3cab8f9533e79. Task 09: implementer a548774819f9fda86 (sonnet). Waiting on both.
+Task 08: minor (deferred): Show all arrows toggle is a no-op with no selection and still reports aria-pressed false.
+Task 08: minor (deferred): fx-flow-1 SVG has a fixed width attribute; confirm it shrinks at 390 px in the visual check.
+Task 08: review 0/0/2 spec ✅; browser rendering deferred to task 18's visual check.
+Task 08: cost unavailable (no transcript recorded)
+Task 08: complete (commits 849d93f..a795cc4, review clean)
+Waiting: task 09 implementer.
+Task 09: DONE a795cc4..ffeb246, test_scope ALL GREEN per implementer.
+Task 10: dispatched ffeb246 2026-10-28T12:05:59+03:00
+Task 09: reviewer af371519ac030ba73. Task 10: implementer ae13f7a1b0dfed47c (sonnet). Waiting on both.
+Task 09: minor (deferred): coverage uses meta.roots[0] as the host id while checkRuleAdrs uses the root flagged host; align them.
+Task 09: minor (deferred): rules-in-force.md ADR link target is not percent-encoded.
+Task 09: minor (deferred): no test for a rule whose ADR root is missing (skipped by checkRuleAdrs).
+Task 09: review 0/0/3 spec ✅; ⚠️ (tests not re-run) accepted, exit gate reruns.
+Task 09: cost unavailable (no transcript recorded)
+Task 09: complete (commits a795cc4..ffeb246, review clean)
+Waiting: task 10 implementer.
