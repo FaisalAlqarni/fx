@@ -5,6 +5,7 @@ import * as path from 'path';
 import { execFileSync } from 'child_process';
 import type { Item, Meta, Problem } from './sf-model.js';
 import { KIND_WORD } from './sf-rules.js';
+import { originOf } from './sf-model.js';
 import type { FxJson } from './types.js';
 
 // `missing` marks a root meta.roots names whose folder is not there: reported once, its entries skipped.
@@ -26,8 +27,10 @@ export function resolveCommit(dir: string, ref: string): string | null {
 
 // Only a network address (URL or scp-style git@host:path) is a remote: archify rejects a local path as url-invalid,
 // and a path names one machine's folders, so it never goes into the model.
+// A URL's user name and password are dropped: a token in an https remote must not reach the output or the model.
+const USERINFO = /^([a-z][a-z0-9+.-]*:\/\/)[^/@]*@/i;
 const address = (remote: string | undefined): string | null =>
-  remote !== undefined && (/^(?!file:)[a-z][a-z0-9+.-]*:\/\//i.test(remote) || /^[^/\s@]+@[^/\s:]+:/.test(remote)) ? remote : null;
+  remote !== undefined && (/^(?!file:)[a-z][a-z0-9+.-]*:\/\//i.test(remote) || /^[^/\s@]+@[^/\s:]+:/.test(remote)) ? remote.replace(USERINFO, '$1') : null;
 
 // The folder relative roots resolve from: the main working tree when the host is a linked worktree
 // (fx-docs runs in <repo>/.worktrees/<slug>, where ../<id> points nowhere), else the host itself.
@@ -41,6 +44,7 @@ export function resolveRoots(hostRoot: string, meta: Meta, fx: FxJson['system_fl
   const problems: Problem[] = [];
   const base = rootsBase(hostRoot);
   meta.roots.forEach((r, i) => {
+    if (r.remote !== undefined && USERINFO.test(r.remote)) problems.push({ ...originOf(r), message: `root ${r.id}: remote holds a user name or password; write it without them`, level: 'error' });
     const mapped = i === 0 ? hostRoot : (fx?.roots ?? {})[r.id];
     const dir = path.resolve(base, mapped ?? path.join('..', r.id));
     const pointer = `/system_flow/roots/${r.id}`;

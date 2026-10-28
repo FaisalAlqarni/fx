@@ -121,6 +121,19 @@ ${MARK}
 }
 {
   const f = (0, import_sf_fixture.sfFixture)();
+  f.git("host", "remote", "add", "origin", "https://bot:s3cret@example.com/acme/app.git");
+  assert.strictEqual(ok(f).roots[0]?.remote, "https://example.com/acme/app.git");
+  f.goodSet();
+  f.fragment("meta", { schemaVersion: 1, meta: { roots: [{ id: "backend" }, { id: "plain", remote: "https://bot:s3cret@example.com/acme/plain.git" }] } });
+  f.fxJson({ system_flow: { roots: { plain: "../plain" } } });
+  const r = f.run(["check"]);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(r.stderr.includes("root plain: remote holds a user name or password; write it without them"), r.stderr);
+  assert.ok(!r.stderr.includes("s3cret"), "the token is not echoed");
+  assert.ok(r.stderr.startsWith("docs/system-flow/model/fragments/meta.json:/meta/roots/1: "), r.stderr);
+}
+{
+  const f = (0, import_sf_fixture.sfFixture)();
   const d = ok(f, ["--repo", "../guide", "--repo", "../plain", "--write"]);
   assert.deepStrictEqual(d.roots[2], { id: "plain", path: "../plain", git: false, remote: null, head: null, dir: f.plain });
   const text = fs.readFileSync(path.join(f.host, ".fx.json"), "utf8");

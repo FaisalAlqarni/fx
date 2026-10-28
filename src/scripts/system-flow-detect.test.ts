@@ -94,6 +94,19 @@ const mkdocs = (f: Fx, body = 'docs_dir: docs\ntheme:\n  name: material\n'): voi
   assert.strictEqual(d.roots[1]?.remote, null);
   assert.strictEqual(d.roots[0]?.remote, 'git@example.com:acme/app.git');
 }
+{ // a remote's user and token never reach the output or the model (final fix A17)
+  const f = sfFixture();
+  f.git('host', 'remote', 'add', 'origin', 'https://bot:s3cret@example.com/acme/app.git');
+  assert.strictEqual(ok(f).roots[0]?.remote, 'https://example.com/acme/app.git');
+  f.goodSet();
+  f.fragment('meta', { schemaVersion: 1, meta: { roots: [{ id: 'backend' }, { id: 'plain', remote: 'https://bot:s3cret@example.com/acme/plain.git' }] } });
+  f.fxJson({ system_flow: { roots: { plain: '../plain' } } });
+  const r = f.run(['check']);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(r.stderr.includes('root plain: remote holds a user name or password; write it without them'), r.stderr);
+  assert.ok(!r.stderr.includes('s3cret'), 'the token is not echoed');
+  assert.ok(r.stderr.startsWith('docs/system-flow/model/fragments/meta.json:/meta/roots/1: '), r.stderr);
+}
 { // --repo and --write
   const f = sfFixture();
   const d = ok(f, ['--repo', '../guide', '--repo', '../plain', '--write']);
