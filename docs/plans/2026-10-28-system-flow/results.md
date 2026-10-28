@@ -105,3 +105,7 @@ archify's own browser check ran inside each `finalize` call and passed (stage `b
 ## (a) Shamel.Backend
 
 The measured numbers, the checks and the calibration are in `proof/results-a.md`.
+
+## (b) Advantage, four roots
+
+The measured numbers, the checks and the seven defects the run found are in `proof/results-b.md`; the controller commands are in `proof/run-b.md`. Tokens 49,415,523 against an estimate of 56,824,000 (13.0% under) and wall clock 52.7 min against 53.7 min (2.0% under), both inside the 50% bar.
