@@ -79,9 +79,9 @@ export function checkModel(hostRoot: string, site: string, mode: 'check' | 'buil
     const host = [...resolved.roots.values()].find((r) => r.host);
     if (host) {
       const head = headModel(host, path.join(hostRoot, site, 'model', 'fragments'));
-      problems.push(...checkCorrections(head.items, head.model, itemsOf(merged.model), merged.model));
+      problems.push(...head.problems, ...checkCorrections(head.items, head.model, itemsOf(merged.model), merged.model));
     }
-    if (only !== undefined) problems = [...early, ...problems.slice(early.length).filter((p) => p.file === only || p.file === '.fx.json')];
+    if (only !== undefined) problems = [...early, ...problems.slice(early.length).filter((p) => p.file === only || p.file === '.fx.json' || p.file === '')];
   }
   return { config: cfg.config, fragments: loaded.fragments, model: merged.model, items, roots, origin: merged.origin, problems };
 }

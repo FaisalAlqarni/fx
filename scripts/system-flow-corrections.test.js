@@ -23,6 +23,8 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 var assert = __toESM(require("assert"));
+var fs = __toESM(require("fs"));
+var path = __toESM(require("path"));
 var import_sf_fixture = require("../tests/helpers/sf-fixture.js");
 const F = "docs/system-flow/model/fragments";
 const ev = [{ path: "app/x.rb", lines: "1-4", symbol: "Link" }];
@@ -139,5 +141,20 @@ verdict("no change", committed(), 0);
   const f = committed();
   f.fragment("corrections", { corrections: [{ ...corr, reason: "whim" }] });
   verdict("bad reason", f, 1, /value "whim" not in enum/);
+}
+{
+  const f = committed();
+  f.fragment("chapters", chapters([bullet("A link expires after 60 days.")]));
+  const real = (process.env.PATH ?? "").split(path.delimiter).map((d) => path.join(d, "git")).find((p) => fs.existsSync(p));
+  assert.ok(real);
+  const shim = path.join(f.base, "shim");
+  fs.mkdirSync(shim);
+  fs.writeFileSync(path.join(shim, "git"), `#!/bin/sh
+case "$1 $2" in "ls-tree --name-only") echo "fatal: boom" >&2; exit 128;; esac
+exec ${real} "$@"
+`, { mode: 493 });
+  const r = f.run(["check"], { PATH: `${shim}${path.delimiter}${process.env.PATH ?? ""}` });
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(r.stderr.split("\n").includes("system-flow: check: cannot read the model at HEAD: fatal: boom"), r.stderr);
 }
 process.stdout.write("system-flow-corrections.test.js: OK\n");

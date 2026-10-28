@@ -1,6 +1,8 @@
 // Run: node scripts/system-flow-corrections.test.js
 // system-flow check: a changed or removed fact needs a new corrections entry, run as a process.
 import * as assert from 'assert';
+import * as fs from 'fs';
+import * as path from 'path';
 import { sfFixture } from '../tests/helpers/sf-fixture.js';
 
 const F = 'docs/system-flow/model/fragments';
@@ -114,5 +116,19 @@ verdict('no change', committed(), 0);
   const f = committed();
   f.fragment('corrections', { corrections: [{ ...corr, reason: 'whim' }] });
   verdict('bad reason', f, 1, /value "whim" not in enum/);
+}
+// A git failure reading the HEAD fragments is an error, never an empty HEAD model that lets every change through (A8).
+{
+  const f = committed();
+  f.fragment('chapters', chapters([bullet('A link expires after 60 days.')]));
+  const real = (process.env.PATH ?? '').split(path.delimiter).map((d) => path.join(d, 'git')).find((p) => fs.existsSync(p));
+  assert.ok(real);
+  const shim = path.join(f.base, 'shim');
+  fs.mkdirSync(shim);
+  // Only the HEAD fragment listing fails: `ls-tree --name-only HEAD <dir>/`.
+  fs.writeFileSync(path.join(shim, 'git'), `#!/bin/sh\ncase "$1 $2" in "ls-tree --name-only") echo "fatal: boom" >&2; exit 128;; esac\nexec ${real} "$@"\n`, { mode: 0o755 });
+  const r = f.run(['check'], { PATH: `${shim}${path.delimiter}${process.env.PATH ?? ''}` });
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(r.stderr.split('\n').includes('system-flow: check: cannot read the model at HEAD: fatal: boom'), r.stderr);
 }
 process.stdout.write('system-flow-corrections.test.js: OK\n');

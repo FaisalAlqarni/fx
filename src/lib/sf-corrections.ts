@@ -8,13 +8,19 @@ import type { Root } from './sf-evidence.js';
 import { collect, mergeFragments } from './sf-model.js';
 import type { Fragment, Item, Model, Problem } from './sf-model.js';
 
-// Every fragment file committed under fragmentsDir at HEAD, merged. No HEAD or no fragments gives an empty model.
-export function headModel(host: Root, fragmentsDir: string): { model: Model; items: Item[] } {
+// Every fragment file committed under fragmentsDir at HEAD, merged. No HEAD or no fragments gives an empty model;
+// a git failure is a problem, since an empty HEAD model would let every changed fact through without an entry.
+export function headModel(host: Root, fragmentsDir: string): { model: Model; items: Item[]; problems: Problem[] } {
   const fragments: Fragment[] = [];
+  const problems: Problem[] = [];
   if (host.git && host.head) {
     const dir = path.relative(host.dir, path.resolve(host.dir, fragmentsDir)).split(path.sep).join('/');
     let names: string[] = [];
-    try { names = execFileSync('git', ['ls-tree', '--name-only', 'HEAD', `${dir}/`], { cwd: host.dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).split('\n').filter((n) => n.endsWith('.json')).sort(); } catch { /* no such folder at HEAD */ }
+    // A folder missing at HEAD lists nothing and succeeds; only a real git failure lands in the catch.
+    try { names = execFileSync('git', ['ls-tree', '--name-only', 'HEAD', `${dir}/`], { cwd: host.dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).split('\n').filter((n) => n.endsWith('.json')).sort(); } catch (e) {
+      const why = String((e as { stderr?: unknown }).stderr ?? '').trim().split('\n')[0] || (e as Error).message.split('\n')[0];
+      problems.push({ file: '', pointer: '', message: `cannot read the model at HEAD: ${why}`, level: 'error' });
+    }
     for (const file of names) {
       const text = readCited(host, file);
       // A HEAD fragment that no longer parses cannot be compared; skip it.
@@ -22,7 +28,7 @@ export function headModel(host: Root, fragmentsDir: string): { model: Model; ite
     }
   }
   const merged = mergeFragments(fragments);
-  return { model: merged.model, items: collect(merged.model).map(({ item }) => item) };
+  return { model: merged.model, items: collect(merged.model).map(({ item }) => item), problems };
 }
 
 const SKIP = new Set(['id', 'evidence', 'verified', 'unconfirmed']);

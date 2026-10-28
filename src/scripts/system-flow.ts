@@ -98,7 +98,7 @@ if (args.length > 0) usage();
 const hostRoot = (): string => path.resolve(opts.root ?? execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim());
 const report = (problems: { file: string; pointer: string; message: string; level: string }[]): number => {
   const errors = problems.filter((p) => p.level === 'error');
-  for (const p of errors) process.stderr.write(`${p.file}:${p.pointer}: ${p.message}\n`);
+  for (const p of errors) process.stderr.write(p.file === '' ? `system-flow: ${cmd}: ${p.message}\n` : `${p.file}:${p.pointer}: ${p.message}\n`);
   return errors.length;
 };
 
