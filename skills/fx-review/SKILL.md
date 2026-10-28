@@ -271,7 +271,7 @@ Read `../../references/vocab/receiving-review.md` before implementing anything; 
 
 A finding that settles a decision passing the three ADR tests in `../../references/vocab/domain-modeling.md`: offer `fx-adr`.
 
-**Never write** "You're absolutely right!", "Great point!", "Thanks for catching that", or any gratitude expression. State the fix. The code shows you heard it.
+**Never write** "You're absolutely right!", "Great point!", "Thanks for catching that", or any gratitude expression. State the fix. The code shows you heard it. (prose-gate: quoting)
 
 ## 8. Flags
 

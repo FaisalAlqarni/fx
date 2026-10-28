@@ -12,7 +12,7 @@ carries the same restriction for the same reason and must be generated too
 
 Each match becomes one `<name>.toml` Codex role file: `name`, `description`
 and `sandbox_mode = "read-only"` from the frontmatter, `developer_instructions`
-from the body, verbatim. `sandbox_mode` is declared intent, not enforcement —
+from the body, verbatim. `sandbox_mode` is declared intent, not enforcement:
 docs/adr/0019-read-only-is-three-mechanisms-and-one-guarantee.md measured
 that a role file alone does not stop a write; `lib/plant-roles.js` and the
 PreToolUse hook are the enforcement. The header says so.

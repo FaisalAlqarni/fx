@@ -44,7 +44,7 @@ AC means an acceptance criterion in the named task file.
 | S13 | 98-99 verdict per module | 07 AC row for every module; count device, `state.md:1199-1201` |
 | S14 | 100-102 add-a-provider walkthrough with exact modules | 07 AC heading; the exact-modules clause rests on the heading alone |
 | S15 | 103-104 target is the file fx-plan looks for | 08 AC writes `design.md`. **UNCARRIED in part**, item 9 |
-| S16 | 105-106 sound architecture says so and stops | 08 AC sound outcome. Interplay with S5 is item 2 |
+| S16 | 105-106 sound architecture says so and stops | 08 AC sound outcome. Its overlap with S5 is item 2 |
 | S17 | 107-108 audit names areas it failed to cover | 07 AC Areas not covered; 08 AC empty explorer. **UNCARRIED in part**, item 10 |
 | S18 to S22 | 109-120 lens behaviours | Superseded by Ruling U, recorded at `state.md:2490-2495` |
 | S23 | 121-122 lens not firing per task | 05 AC Mode column. **UNCARRIED in the per-task dispatcher**, item 3 |
