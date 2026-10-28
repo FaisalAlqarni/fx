@@ -168,3 +168,69 @@ Task 09: review 0/0/3 spec ✅; ⚠️ (tests not re-run) accepted, exit gate re
 Task 09: cost unavailable (no transcript recorded)
 Task 09: complete (commits a795cc4..ffeb246, review clean)
 Waiting: task 10 implementer.
+Task 10: DONE_WITH_CONCERNS 642d177..e651fa4, test_scope with check-all ALL GREEN per implementer. Concerns: the copy step leaves existing assets alone without reporting a checksum mismatch; the test asserts 9 asset names where the brief says seven table files. Passed to the reviewer.
+Task 11: dispatched e651fa4 2026-10-28T12:13:42+03:00
+Task 10: reviewer a3ecfdc051c248280. Task 11: implementer aa2647d35ea75146f (sonnet). Waiting on both.
+Task 10: minor (deferred): checksum mismatch on an existing asset is left alone but not reported, as visual-assets.md's Mismatch rule describes.
+Task 10: minor (deferred): a missing fx asset throws a bare Error instead of a file:pointer: message problem.
+Task 10: minor (deferred): corrections reason is escaped but Arabic runs in it are not wrapped.
+Task 10: minor (deferred): the details.ev CSS patch matches an exact template string and fails silently if the template changes.
+Task 10: review 0/1/4 spec ❌ (LEGEND slot empty). Checksum-mismatch concern is a Minor (only visual-assets.md asks for it); asset count concern withdrawn (nine names correct).
+Task 10: fix round 1 dispatched to ae13f7a1b0dfed47c at e651fa4, commit by path only since task 11 shares the tree.
+Task 10: fix round 1/5: controller re-review (7 lines): 1 addressed, 0 open
+Task 10: test_scope after the fix stopped at check-types on task 11's uncommitted test file; the page and build tests pass per the fix report. Exit gate covers it.
+Task 10: cost unavailable (no transcript recorded)
+Task 10: complete (commits 642d177..66dad6d, review clean after 1 fix round)
+Waiting: task 11 implementer.
+Task 11: DONE_WITH_CONCERNS 66dad6d..35810ff, scope exit 0 per implementer. Concerns: task 01 and task 04 test assertions changed (unknown keyword now a returned error, diagrams no longer empty); pickLine follows ruling 12; self-message-only sequence pages borrow a second participant. Passed to the reviewer.
+Task 13: dispatched 35810ff 2026-10-28T12:23:23+03:00 (ahead of 12 so task 11's fixes cannot collide with 12's work in sf-diagrams)
+Task 11: reviewer ac713d2d62900dcd0. Task 13: implementer a595336a550605597 (sonnet). Waiting on both.
+Task 11: minor (deferred): unsupported keyword inside anyOf, oneOf or not branch is swallowed as a failed branch.
+Task 11: minor (deferred): all-self-message page borrows a participant with no note in the spec.
+Task 11: minor (deferred): the other-root evidence card appears on page 1 only.
+Task 11: review 0/1/3 spec ❌ (store participant ids collide with actor ids in flow specs). Borrowed participant accepted.
+Task 11: fix round 1 dispatched to aa2647d35ea75146f at 35810ff.
+Task 11: fix round 1/5: controller re-review (5 lines): 1 addressed, 0 open
+Task 11: minor (deferred): a digit-leading id gets an n prefix in archify specs, so ids 2fa and n2fa in one diagram would collide.
+Task 11: cost unavailable (no transcript recorded)
+Task 11: complete (commits 66dad6d..229a4a3, review clean after 1 fix round)
+Waiting: task 13 implementer; task 12 next (serial implementers).
+Task 13: DONE 229a4a3..371f5ce, check-all ALL GREEN per implementer.
+Task 12: dispatched 371f5ce 2026-10-28T12:31:04+03:00
+Task 13: reviewer a954d9fa1f288363c. Task 12: implementer a65c08d06f5efff91 (sonnet). Waiting on both.
+Task 13: minor (deferred): verifyItems repeats stampVerified's fragment read and write loop instead of reusing it.
+Task 13: review 1/1/1 spec ✅ (⚠️ fixtures read, not run). Critical: git option injection through refs from --diff, --base and fragment verified values; missed security tripwire.
+Task 13: fix round 1 dispatched to a595336a550605597 at 371f5ce; security lens a64082ca90544a502 dispatched on the task 13 diff (mode task, tripwire: string-built shell, here git arguments).
+Task 13: security lens 0/1/3, findings docs/plans/2026-10-28-system-flow/findings/13-lens-security.md. Its Important is the same option injection the fix round already targets.
+Task 13: minor (deferred): fragment verified values are not schema-checked as 40-hex; safety rests on the cat-file gate running before checkPath.
+Task 13: minor (deferred): evidence paths reach git as pathspecs, so magic prefixes such as :(top) or :! can skew stale results; use --literal-pathspecs or reject a leading colon.
+Task 13: minor (deferred): verify writes are confined only by the trusted --site path and follow a symlinked fragment file.
+Task 13: fix round 1 DONE_WITH_CONCERNS 371f5ce..c66b2e9 (resolveCommit with --end-of-options, -- before paths, verified must be 40 hex, oldestVerified guarded); test_scope stopped at ts-toolchain on task 12's uncommitted test. Dispatched re-review (lens finding in the loop).
+Task 13: fix round 1/5 (3 addressed, 0 open: none; commits 371f5ce..c66b2e9)
+Task 13: minor (deferred): non-40-hex `verified` in a fragment now aborts stale, query and verify instead of reading as unverified.
+Task 13: minor (deferred): a bad `--diff` or `--base` ref exits 1 from a thrown error, not the usage exit 2.
+Task 13: cost unavailable (no transcript recorded)
+Task 13: complete (commits 229a4a3..c66b2e9, review clean after 1 fix round)
+Waiting: task 12 implementer; then 14, 16 (frontier), 15 after 12, 13, 14.
+Task 12: DONE_WITH_CONCERNS ad4dd8a (single commit on top of task 13's fix; review range c66b2e9..ad4dd8a). Concerns: theme block body is the ruling 16 mapping, not themeCss; stale retry pages may remain after an SVG fallback; prefer cheap overrides --archify; a sequence already at 5 or fewer per page is not retried.
+Task 14: dispatched ad4dd8a 2026-10-28T12:46:43+03:00
+Task 12: reviewer a415c43d9cbf93b4f. Task 14: implementer aeb92eb471072c34f (sonnet). Waiting on both.
+Task 12: minor (deferred): stale -pN archify pages remain on disk after a failed retry or a later fallback.
+Task 12: minor (deferred): no retry when the page limit is already 5 or less; behavior is undocumented outside the report.
+Task 12: minor (deferred): runArchify never reads the receipt and has no timeout.
+Task 12: minor (deferred): fallback line names an expected receipt path even when archify wrote none.
+Task 12: review 0/1/4 spec ❌ (prefer cheap overrode an explicit --archify, against the Global Constraints lookup). Ruling 16 binds over the Tests line's themeCss wording, as the reviewer found.
+Task 12: fix round 1 dispatched to a65c08d06f5efff91 at ad4dd8a.
+Task 14: DONE_WITH_CONCERNS ad4dd8a..f6c1d59, test_scope ALL GREEN per implementer.
+Ruling: task 14's calibrated note has no date because ESTIMATE has no date field; task 20 adds the field and the on <date> text when it writes measured constants (tasks 14 and 20). Cost if wrong: a calibrated estimate without provenance, caught by task 20's review.
+Task 14: reviewer dispatched. Task 16: brief compiled; dispatch waits for task 12's fix round to land (one writer at a time). Waiting on task 12 fix and task 14 review.
+Task 14: minor (deferred): plan validation accepts duplicate area ids.
+Task 14: minor (deferred): STORE kind list duplicates STORE_KINDS in sf-model.
+Task 14: minor (deferred): no test for non-zero storeRows, flows, per-area chapters or the calibrated note.
+Task 14: review 0/1/3 spec ❌: f6c1d59 also carries the --archify over prefer cheap precedence change in src/lib/sf-build.ts.
+Ruling: that hunk is task 12's fix round 1, swept into task 14's commit because both implementers edited sf-build.ts in one tree (the tree still holds task 12's uncommitted archify test). It stays where it is; task 12's re-review judges it together with task 12's test commit, over ad4dd8a..<task 12 fix head> (tasks 12 and 14). Why: reverting and recommitting the same lines costs a round and changes nothing. Cost if wrong: mixed attribution in history, caught by the final branch review. Lesson: concurrent writers in one tree mix commits; from here on, one writer at a time.
+Task 14: cost unavailable (no transcript recorded)
+Task 14: complete (commits ad4dd8a..f6c1d59, review clean after the attribution ruling; no code change needed)
+Task 12: fix round 1/5: controller re-review (3 lines): 1 addressed, 0 open
+Task 12: cost unavailable (no transcript recorded)
+Task 12: complete (commits c66b2e9..ad4dd8a and ea595fb, with the precedence hunk in f6c1d59; review clean after 1 fix round)
