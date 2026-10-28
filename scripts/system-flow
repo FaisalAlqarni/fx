@@ -208,7 +208,7 @@ function verifyCmd() {
   const root = hostRoot();
   const { roots, fragmentsDir } = (0, import_sf_stale.loadModelItems)(root, siteOf(root));
   refuseUnusable(roots);
-  print({ verified: (0, import_sf_stale.verifyItems)(fragmentsDir, verifyAll ? "all" : queried, roots) });
+  print({ verified: (0, import_sf_stale.verifyItems)(root, fragmentsDir, verifyAll ? "all" : queried, roots) });
 }
 async function buildCmd() {
   const root = hostRoot();

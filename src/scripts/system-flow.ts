@@ -174,7 +174,7 @@ function verifyCmd(): void {
   const root = hostRoot();
   const { roots, fragmentsDir } = loadModelItems(root, siteOf(root));
   refuseUnusable(roots);
-  print({ verified: verifyItems(fragmentsDir, verifyAll ? 'all' : queried, roots) });
+  print({ verified: verifyItems(root, fragmentsDir, verifyAll ? 'all' : queried, roots) });
 }
 
 async function buildCmd(): Promise<void> {

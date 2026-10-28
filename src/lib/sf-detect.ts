@@ -5,8 +5,10 @@ import * as path from 'path';
 import { parseJson } from './json.js';
 import { systemFlowConfig } from './sf-build.js';
 import { resolveRoots, rootsBase } from './sf-evidence.js';
+import { writable } from './sf-model.js';
 import type { Problem } from './sf-model.js';
 import { findArchify } from './sf-diagrams.js';
+import { insideRel } from './fx-json.js';
 import { GENERATED } from './sf-markdown.js';
 import { detectTheme } from './sf-theme.js';
 
@@ -59,6 +61,7 @@ export function detect(hostRoot: string, repos: string[]): { detected: Detected;
   const cfg = systemFlowConfig(hostRoot);
   problems.push(...cfg.problems);
   const dc = docsConfig(hostRoot);
+  if (dc.docsDir !== null && !insideRel(dc.docsDir)) return { detected: { docsConfig: dc, output: { site: '', markdown: '' }, mkdocs: null, theme: { source: 'fx', kind: 'fx' }, archify: null, roots: [] }, problems: [err(`docs_dir ${dc.docsDir} leaves the host root`, dc.path ?? '')] };
   const base = dc.docsDir === null || dc.docsDir === '.' ? (dc.docsDir === '.' ? '' : 'docs') : dc.docsDir;
   const join = (name: string): string => path.posix.join(base, name);
   let output = cfg.config?.output;
@@ -107,7 +110,7 @@ export function detect(hostRoot: string, repos: string[]): { detected: Detected;
 
 // Replaces system_flow.output and system_flow.theme and adds roots not listed yet; every other key stays.
 export function writeFxJson(hostRoot: string, d: Detected): void {
-  const file = path.join(hostRoot, '.fx.json');
+  const file = writable(hostRoot, path.join(hostRoot, '.fx.json'));
   const doc = (fs.existsSync(file) ? parseJson(fs.readFileSync(file, 'utf8')) : {}) as Record<string, unknown>;
   const sf = (doc.system_flow ?? {}) as Record<string, unknown>;
   const roots = (sf.roots ?? {}) as Record<string, string>;

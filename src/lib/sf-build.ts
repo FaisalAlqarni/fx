@@ -21,7 +21,7 @@ import type { ArchifyRun, DeepDiagram } from './sf-diagrams.js';
 import { detectTheme, themeCss } from './sf-theme.js';
 import type { Theme } from './sf-theme.js';
 import type { Evidenced, FigureSpec, Fragment, Item, LayoutLine, Model, Problem } from './sf-model.js';
-import { collect, itemsOf, loadFragments, mergeFragments, originOf, parseHandle, planStamps, stampVerified } from './sf-model.js';
+import { collect, itemsOf, loadFragments, mergeFragments, originOf, parseHandle, planStamps, stampVerified, writable } from './sf-model.js';
 import type { FxJson } from './types.js';
 
 // The diagram choices a build takes from its flags; they merge into .fx.json system_flow.diagrams on success.
@@ -85,7 +85,7 @@ export function checkModel(hostRoot: string, site: string, mode: 'check' | 'buil
 
 // Writes a generated file unless it exists without the marker; returns whether it was written.
 function writeGenerated(root: string, rel: string, text: string, isOurs: (old: string) => boolean, r: BuildResult): void {
-  const file = path.join(root, rel);
+  const file = writable(root, path.join(root, rel));
   if (fs.existsSync(file)) {
     const old = fs.readFileSync(file, 'utf8');
     if (!isOurs(old)) { r.collisions.push(rel); return; }
@@ -106,7 +106,7 @@ const ASSETS: [string, string][] = [
 
 // Merges the choices into .fx.json system_flow.diagrams by key; every other key stays.
 function saveChoices(hostRoot: string, c: DiagramFlags): void {
-  const file = path.join(hostRoot, '.fx.json');
+  const file = writable(hostRoot, path.join(hostRoot, '.fx.json'));
   const doc = (fs.existsSync(file) ? parseJson(fs.readFileSync(file, 'utf8')) : {}) as Record<string, unknown>;
   const sf = (doc.system_flow ?? {}) as Record<string, unknown>;
   const d = { ...(sf.diagrams as Record<string, unknown> | undefined) };
@@ -234,7 +234,7 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   }
   for (const [name, dir] of ASSETS) {
     const rel = path.posix.join(opts.site, 'assets', name);
-    const dest = path.join(opts.hostRoot, rel);
+    const dest = writable(opts.hostRoot, path.join(opts.hostRoot, rel));
     if (fs.existsSync(dest)) continue;
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.copyFileSync(path.join(REFERENCES, dir, name), dest);
@@ -268,10 +268,11 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   };
   // The retry's receipts carry .retry, so the first attempt's receipts survive it.
   const receiptOf = (d: DeepDiagram, retry: boolean): string => path.posix.join(pages, `${d.name}${retry ? '.retry' : ''}.receipt.json`);
+  const w = (rel: string): string => writable(opts.hostRoot, path.join(opts.hostRoot, rel));
   const jobsOf = (ds: DeepDiagram[], retry: boolean) => ds.map((d) => ({
     name: d.name, kind: d.kind, spec: path.join(opts.hostRoot, pages, 'src', `${d.name}.json`),
-    out: path.join(opts.hostRoot, pages, `${d.name}.html`), repoRoot: checked.roots.get(d.owningRoot)?.dir ?? opts.hostRoot,
-    receipt: path.join(opts.hostRoot, receiptOf(d, retry)),
+    out: w(path.posix.join(pages, `${d.name}.html`)), repoRoot: checked.roots.get(d.owningRoot)?.dir ?? opts.hostRoot,
+    receipt: w(receiptOf(d, retry)), check: w(path.posix.join(pages, `${d.name}.browser-check.json`)),
   }));
   const bySource = new Map<string, DeepDiagram[]>();
   for (const d of all) bySource.set(d.source, [...(bySource.get(d.source) ?? []), d]);
@@ -339,13 +340,13 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
     const page = new RegExp(`^${g0.name}(?:-p\\d+)?\\.(?:html|json)$`);
     for (const dir of [pages, path.posix.join(pages, 'src')]) {
       const abs = path.join(opts.hostRoot, dir);
-      if (fs.existsSync(abs)) for (const n of fs.readdirSync(abs)) if (page.test(n) && !keep.has(n.replace(/\.(?:html|json)$/, ''))) fs.rmSync(path.join(abs, n));
+      if (fs.existsSync(abs)) for (const n of fs.readdirSync(abs)) if (page.test(n) && !keep.has(n.replace(/\.(?:html|json)$/, ''))) fs.rmSync(writable(opts.hostRoot, path.join(abs, n)));
     }
     for (const d of shown) {
       if (renderer === 'svg') writeGenerated(opts.hostRoot, path.posix.join(pages, `${d.name}.html`), svgPage(d, figureOf(d), Number(/-p(\d+)$/.exec(d.name)?.[1] ?? 1)), () => true, result);
       else {
         const rel = path.posix.join(pages, `${d.name}.html`);
-        const file = path.join(opts.hostRoot, rel);
+        const file = writable(opts.hostRoot, path.join(opts.hostRoot, rel));
         fs.writeFileSync(file, applyThemeBlock(fs.readFileSync(file, 'utf8'), theme));
         result.written.push(rel);
       }
@@ -354,7 +355,7 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   }
 
   // Last step, only when everything above succeeded (a write error above throws before this line).
-  stampVerified(path.join(opts.hostRoot, opts.site, 'model', 'fragments'), stamps);
+  stampVerified(opts.hostRoot, path.join(opts.hostRoot, opts.site, 'model', 'fragments'), stamps);
   if (opts.flags) saveChoices(opts.hostRoot, { prefer, pageLimits: limits, svg: svgNames });
   result.ok = true;
   return result;

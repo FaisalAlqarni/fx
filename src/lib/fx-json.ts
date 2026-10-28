@@ -88,6 +88,9 @@ const THEME_KINDS: ThemeKind[] = ['docs-css', 'mkdocs-material', 'tailwind', 'ap
 const themeKind = (v: unknown): ThemeKind | undefined => THEME_KINDS.find((k) => k === v);
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
+// A path relative to the host root that stays inside it: build writes there (security review S2).
+export const insideRel = (p: unknown): p is string => typeof p === 'string' && p !== '' && !p.startsWith('/') && !/^[a-z]:/i.test(p) && !p.split(/[\\/]/).includes('..');
+
 // A bad part is dropped and listed; the good parts stay.
 function parseSystemFlow(sf: unknown, problems: { key: string; reason: string }[]): SystemFlow | null {
   if (!isObj(sf)) {
@@ -98,8 +101,8 @@ function parseSystemFlow(sf: unknown, problems: { key: string; reason: string }[
   const bad = (key: string, reason: string): void => { problems.push({ key: `system_flow.${key}`, reason }); };
   const { output, theme, roots, diagrams } = sf;
   if (output !== undefined) {
-    if (isObj(output) && typeof output.site === 'string' && typeof output.markdown === 'string') out.output = { site: output.site, markdown: output.markdown };
-    else bad('output', 'output must have site and markdown strings');
+    if (isObj(output) && insideRel(output.site) && insideRel(output.markdown)) out.output = { site: output.site, markdown: output.markdown };
+    else bad('output', 'output must have site and markdown paths relative to the root and inside it');
   }
   if (theme !== undefined) {
     const kind = isObj(theme) ? themeKind(theme.kind) : undefined;

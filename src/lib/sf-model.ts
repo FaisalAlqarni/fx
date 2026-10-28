@@ -228,9 +228,24 @@ export function planStamps(items: Item[], roots: Map<string, { head: string | nu
   return stamps;
 }
 
+// The one gate before a write or delete under the host root: the file must lie inside it, and no folder on the way
+// nor the file itself may be a symlink, so a committed link never sends a write outside (security review S2).
+export function writable(root: string, file: string): string {
+  const rel = path.relative(root, file);
+  if (rel === '' || rel.startsWith('..') || path.isAbsolute(rel)) throw new Error(`refusing to write outside the host root: ${file}`);
+  let at = root;
+  for (const part of rel.split(path.sep)) {
+    at = path.join(at, part);
+    let link = false;
+    try { link = fs.lstatSync(at).isSymbolicLink(); } catch { break; } // the rest does not exist yet
+    if (link) throw new Error(`refusing to write through a symlink: ${path.relative(root, at).split(path.sep).join('/')}`);
+  }
+  return file;
+}
+
 // Writes the planned values into the fragment files that hold those items; returns the files it changed.
 // Only a file that gained a value is rewritten (2-space JSON, as the fixtures and the lane write it).
-export function stampVerified(fragmentsDir: string, stamps: Map<string, Verified>): string[] {
+export function stampVerified(hostRoot: string, fragmentsDir: string, stamps: Map<string, Verified>): string[] {
   const names = fs.readdirSync(fragmentsDir).filter((n) => n.endsWith('.json'));
   const fragments: Fragment[] = names.map((file) => ({ file, data: parseJson(fs.readFileSync(path.join(fragmentsDir, file), 'utf8')) as Record<string, unknown> }));
   const model = mergeFragments(fragments).model;
@@ -246,7 +261,7 @@ export function stampVerified(fragmentsDir: string, stamps: Map<string, Verified
     changed.add(item.file);
   }
   return [...changed].sort().map((file) => {
-    const full = path.join(fragmentsDir, file);
+    const full = writable(hostRoot, path.join(fragmentsDir, file));
     fs.writeFileSync(full, `${JSON.stringify(fragments.find((f) => f.file === file)?.data, null, 2)}\n`);
     return full;
   });

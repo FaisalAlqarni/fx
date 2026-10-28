@@ -246,4 +246,35 @@ assert.strictEqual(setup().run(["nope"]).status, 2);
   assert.ok(lines(f, "docs/system/index.md").some((l) => l.includes("(api/s1.md)")), "root index reaches the chapter");
   assert.ok(read(f, "docs/system/api/s1.md").includes("(../../system-flow/index.html#s1)"), "doc in a folder links the site");
 }
+{
+  const f = setup();
+  const target = path.join(f.base, "target.txt");
+  fs.writeFileSync(target, "keep\n");
+  fs.mkdirSync(path.join(f.host, "docs/system-flow/model"), { recursive: true });
+  fs.symlinkSync(target, path.join(f.host, "docs/system-flow/model/layout-report.json"));
+  f.commit("host", "model");
+  const before = fs.readFileSync(path.join(f.host, F, "level0.json"), "utf8");
+  const r = f.run(["build"]);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(r.stderr.includes("refusing to write through a symlink: docs/system-flow/model/layout-report.json"), r.stderr);
+  assert.strictEqual(fs.readFileSync(target, "utf8"), "keep\n", "the link target is untouched");
+  assert.strictEqual(fs.readFileSync(path.join(f.host, F, "level0.json"), "utf8"), before, "no stamps");
+}
+{
+  for (const output of [{ site: "../out", markdown: "docs/system" }, { site: "docs/system-flow", markdown: "/tmp/x" }]) {
+    const f = setup();
+    f.fxJson({ system_flow: { roots: { guide: "../guide" }, output } });
+    f.commit("host", "model");
+    const r = f.run(["check"]);
+    assert.strictEqual(r.status, 1, r.stdout);
+    assert.ok(r.stderr.includes(".fx.json:/system_flow/output: output must have site and markdown paths relative to the root and inside it"), r.stderr);
+  }
+}
+{
+  const f = setup();
+  f.put("host", "mkdocs.yml", "site_name: x\ndocs_dir: ../..\n");
+  const r = f.run(["detect"]);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(r.stderr.includes("docs_dir ../.. leaves the host root"), r.stderr);
+}
 console.log("system-flow-build.test.js: ok");

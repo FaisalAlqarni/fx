@@ -4,7 +4,7 @@ import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { parseJson } from './json.js';
 import { checkPath } from './doc-index.js';
-import { collect, itemsOf, loadFragments, mergeFragments } from './sf-model.js';
+import { collect, itemsOf, loadFragments, mergeFragments, writable } from './sf-model.js';
 import type { Evidenced, Evidence, Fragment, Item, ItemKind, Verified } from './sf-model.js';
 import { COMMIT, resolveCommit, resolveRoots } from './sf-evidence.js';
 import type { Root } from './sf-evidence.js';
@@ -125,7 +125,7 @@ export function staleItems(items: Item[], roots: Map<string, Root>): Record<stri
 
 // Sets each named item's verified value to the HEAD of every root it cites, replacing an old value.
 // An unknown handle throws before any file is written. Returns the handles that got a value.
-export function verifyItems(fragmentsDir: string, handles: string[] | 'all', roots: Map<string, Root>): string[] {
+export function verifyItems(hostRoot: string, fragmentsDir: string, handles: string[] | 'all', roots: Map<string, Root>): string[] {
   const names = fs.readdirSync(fragmentsDir).filter((n) => n.endsWith('.json'));
   const fragments: Fragment[] = names.map((file) => ({ file, data: parseJson(fs.readFileSync(path.join(fragmentsDir, file), 'utf8')) as Record<string, unknown> }));
   const all = collect(mergeFragments(fragments).model);
@@ -147,6 +147,6 @@ export function verifyItems(fragmentsDir: string, handles: string[] | 'all', roo
     if (JSON.stringify(next) !== JSON.stringify(target.verified)) { target.verified = next; changed.add(item.file); }
     done.push(item.handle);
   }
-  for (const file of changed) fs.writeFileSync(path.join(fragmentsDir, file), `${JSON.stringify(fragments.find((f) => f.file === file)?.data, null, 2)}\n`);
+  for (const file of changed) fs.writeFileSync(writable(hostRoot, path.join(fragmentsDir, file)), `${JSON.stringify(fragments.find((f) => f.file === file)?.data, null, 2)}\n`);
   return done;
 }

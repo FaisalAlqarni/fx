@@ -344,13 +344,13 @@ export function findArchify(env: NodeJS.ProcessEnv): { dir: string; version: str
 // Runs `finalize` for each job, one at a time: archify's delivery lock rejects a second call in the same folder
 // (delivery/concurrent-attempt). Each job names its receipt (ruling 17). A call past timeoutS is killed.
 export type ArchifyRun = { name: string; ok: boolean; receipt: string | null; timedOut: boolean; json: string; stderr: string };
-export async function runArchify(dir: string, jobs: { name: string; kind: 'architecture' | 'sequence'; spec: string; out: string; repoRoot: string; receipt: string }[], timeoutS = 600): Promise<ArchifyRun[]> {
+export async function runArchify(dir: string, jobs: { name: string; kind: 'architecture' | 'sequence'; spec: string; out: string; repoRoot: string; receipt: string; check: string }[], timeoutS = 600): Promise<ArchifyRun[]> {
   const results: ArchifyRun[] = [];
   const one = (j: (typeof jobs)[number]): Promise<void> => new Promise((resolve) => {
     const receipt = j.receipt;
     // The build rewrites each page with its theme block after archify's browser check, so that check's evidence never
     // matches the page again and archify refuses to replace it (viewer/evidence-path-conflict) on the next build.
-    fs.rmSync(j.out.replace(/\.html$/, '.browser-check.json'), { force: true });
+    fs.rmSync(j.check, { force: true });
     const args = [path.join(dir, 'bin', 'archify.mjs'), 'finalize', j.kind, j.spec, j.out, '--repo-root', j.repoRoot, '--quality', 'showcase', '--receipt', receipt, '--json'];
     let stdout = '', stderr = '', timedOut = false, settled = false;
     const child = spawn(process.execPath, args, { stdio: ['ignore', 'pipe', 'pipe'] });
