@@ -76,13 +76,20 @@ the Markdown path alone.
 2. `node <skill base directory>/../../scripts/system-flow --root <worktree> query --diff <merge-base>` lists the model items citing a changed path, in
    every root, and prints the `added` paths per root.
 3. For each new engine, job or integration among the added paths, add an
-   inventory entry to the fragments, with evidence.
-4. Re-read each listed item against the code at HEAD. Edit the fragments, add a
-   `corrections` entry for every changed or removed fact, then run
-   `node <skill base directory>/../../scripts/system-flow --root <worktree> verify <handle>...` on each re-read item.
+   inventory entry to the fragments, with evidence. Each added entry is a
+   re-read item in steps 4 and 5, like the listed ones.
+4. Re-read each listed item against the code at HEAD. Edit the fragments and
+   add a `corrections` entry for every changed or removed fact. A removed item
+   needs only its `corrections` entry. Then run
+   `node <skill base directory>/../../scripts/system-flow --root <worktree> verify <handle>...`
+   with the handles of the items still in the model: the edited, unchanged and
+   added ones.
 5. `node <skill base directory>/../../scripts/system-flow --root <worktree> build --only <handles> --archify <detect's archify.dir>`, with the
-   `--archify` part only when `detect` printed one. It rebuilds the Markdown,
-   figures and deep diagrams that hold those items.
+   same handles as step 4 and the `--archify` part only when `detect` printed
+   one. It rebuilds the Markdown, figures and deep diagrams that hold those
+   items. Run it as a tracked background command and wait for its exit before
+   reading its output: an archify build can run past the 10 minute cap on a
+   foreground command, which kills it partway.
 6. `node <skill base directory>/../../scripts/system-flow --root <worktree> stale` lists every other item to recheck. List them; do not rewrite them.
 7. List each inventory entry that no chapter covers as uncovered, with a pointer
    to `/fx:fx-system-flow`.
@@ -101,7 +108,8 @@ the marker alone decides, so a generated file that lost it is read as hand-writt
    so fix the claim, never the code.
 3. List the docs elsewhere that the change made stale: run
    `node <skill base directory>/../../scripts/docs-index --root <worktree> stale`
-   and list every `recheck` claim in a doc outside the step 2 set, with the HTML
+   and list every `recheck` claim in a doc outside the step 2 set and outside
+   the generated files (those carrying the marker), with the HTML
    pages of each area whose Markdown changed ([html-pages.md](./html-pages.md)),
    in a repo without a model.
 4. Write a new doc only in a repo without a system model; with one, the inventory entry from the model path is the one record. Write it when the change adds an engine, subsystem, public flow,
