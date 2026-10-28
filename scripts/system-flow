@@ -27,7 +27,8 @@ var path = __toESM(require("path"));
 var import_child_process = require("child_process");
 var import_sf_build = require("../lib/sf-build.js");
 var import_sf_model = require("../lib/sf-model.js");
-const USAGE = "system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build";
+var import_sf_detect = require("../lib/sf-detect.js");
+const USAGE = "system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build | detect [--repo <path>]... [--write]";
 const usage = () => {
   process.stderr.write(`${USAGE}
 `);
@@ -44,7 +45,16 @@ const takeFlags = (names) => {
 };
 takeFlags(["--root", "--site", "--markdown"]);
 const cmd = args.shift();
-if (cmd !== "check" && cmd !== "build") usage();
+if (cmd !== "check" && cmd !== "build" && cmd !== "detect") usage();
+const repos = [];
+let write = false;
+if (cmd === "detect") {
+  for (let a = args.shift(); a !== void 0; a = args.shift()) {
+    if (a === "--write") write = true;
+    else if (a === "--repo" && args.length > 0) repos.push(args.shift());
+    else usage();
+  }
+}
 let fragmentArg;
 if (cmd === "check" && args[0] === "--fragment") {
   args.shift();
@@ -60,6 +70,17 @@ const report = (problems) => {
 `);
   return errors.length;
 };
+function detectCmd() {
+  const root = hostRoot();
+  const { detected, problems } = (0, import_sf_detect.detect)(root, repos);
+  for (const p of problems) process.stderr.write(p.file === "" ? `system-flow: detect: ${p.message}
+` : `${p.file}:${p.pointer}: ${p.message}
+`);
+  if (problems.length > 0) process.exit(1);
+  if (write) (0, import_sf_detect.writeFxJson)(root, detected);
+  process.stdout.write(`${JSON.stringify(detected)}
+`);
+}
 function check() {
   const root = hostRoot();
   const site = opts.site ?? (0, import_sf_build.systemFlowConfig)(root).config?.output?.site ?? "docs/system-flow";
@@ -78,7 +99,7 @@ async function buildCmd() {
   process.stdout.write(`${JSON.stringify(result)}
 `);
 }
-(cmd === "build" ? buildCmd() : Promise.resolve().then(check)).catch((e) => {
+(cmd === "build" ? buildCmd() : Promise.resolve().then(cmd === "detect" ? detectCmd : check)).catch((e) => {
   process.stderr.write(`system-flow: ${cmd}: ${e.message.split("\n")[0]}
 `);
   process.exit(1);
