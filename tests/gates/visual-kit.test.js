@@ -146,6 +146,9 @@ for (const part of ['localStorage.setItem("fx-theme"', 'class="legend"', 'id="ev
   assert.ok(template.includes(part), `page-template.html keeps ${part}`);
 }
 assert.ok(template.includes(".react-flow__edge-textbg{fill:var(--panel)}"), "page-template.html themes the edge-label background");
+const rule = (sel) => new RegExp(`(?:^|\\n)${sel}\\{([^}]*)\\}`).exec(template)?.[1] ?? "";
+for (const part of ["display:block", "overflow-x:auto"]) assert.ok(rule("table").includes(part), `page-template.html table rule keeps ${part}`);
+assert.ok(rule("th,td").includes("overflow-wrap:anywhere"), "page-template.html table cells wrap long words");
 assert.deepStrictEqual(template.match(/(?<![\w-])(margin|padding|border)-(left|right)\b|(?<![\w-])(left|right)\s*:/g) ?? [], [], "page-template.html uses logical properties");
 for (const part of ["page-template.html", "visual-assets.md"]) assert.ok(fs.readFileSync(path.join(repo, REPORT), "utf8").includes(part), `${REPORT} names ${part}`);
 assert.ok(

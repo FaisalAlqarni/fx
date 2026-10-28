@@ -121,6 +121,10 @@ for (const part of ['localStorage.setItem("fx-theme"', 'class="legend"', 'id="ev
 }
 // React Flow's default edge-label background is white: under light text in dark mode the label vanishes (e2e bug 5).
 assert.ok(template.includes('.react-flow__edge-textbg{fill:var(--panel)}'), 'page-template.html themes the edge-label background');
+// Long evidence paths in tables overflowed the page at 1440 and 390 px: a table scrolls on its own and its cells wrap.
+const rule = (sel: string): string => new RegExp(`(?:^|\\n)${sel}\\{([^}]*)\\}`).exec(template)?.[1] ?? '';
+for (const part of ['display:block', 'overflow-x:auto']) assert.ok(rule('table').includes(part), `page-template.html table rule keeps ${part}`);
+assert.ok(rule('th,td').includes('overflow-wrap:anywhere'), 'page-template.html table cells wrap long words');
 assert.deepStrictEqual(template.match(/(?<![\w-])(margin|padding|border)-(left|right)\b|(?<![\w-])(left|right)\s*:/g) ?? [], [], 'page-template.html uses logical properties');
 
 // The architecture report and the audit's Phase 4 page start from the kit, and the audit's
