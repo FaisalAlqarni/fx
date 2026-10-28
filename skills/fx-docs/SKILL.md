@@ -104,7 +104,7 @@ the marker alone decides, so a generated file that lost it is read as hand-writt
    and list every `recheck` claim in a doc outside the step 2 set, with the HTML
    pages of each area whose Markdown changed ([html-pages.md](./html-pages.md)),
    in a repo without a model.
-4. Write a new doc when the change adds an engine, subsystem, public flow,
+4. Write a new doc only in a repo without a system model; with one, the inventory entry from the model path is the one record. Write it when the change adds an engine, subsystem, public flow,
    command or integration that no doc covers. Ask the owner only what the code
    cannot answer, each with a recommended answer; leave the rest as open questions.
 5. Commit the doc changes on the branch.

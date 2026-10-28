@@ -87,6 +87,7 @@ for (const t of [
 has(docs, "In a repo with a system model, the model path runs first and the Markdown path runs after it", "the two paths run in order");
 has(docs, "The Markdown path skips every file that carries `<!-- fx-system-flow generated`", "the Markdown path skips generated files, keyed on the marker alone");
 has(docs, "For each new engine, job or integration among the added paths, add an inventory entry", "new engines, jobs and integrations get inventory entries");
+has(docs, "Write a new doc only in a repo without a system model; with one, the inventory entry from the model path is the one record", "a model repo gets no second, hand-written record of a new engine");
 assert.ok(!read(docs).includes("full-run.md"), `${docs}: no link to the removed full-run.md`);
 assert.ok(!fs.existsSync(path.join(root, "skills/fx-docs/full-run.md")), "full-run.md is gone");
 has(docs, "(./html-pages.md)", "fx-docs still links html-pages.md");
