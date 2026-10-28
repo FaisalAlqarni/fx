@@ -35,6 +35,24 @@ Still failing after round 2: report the figure to the owner with its crossings
 and width, and stop for their decision. Nothing is built for that figure until
 they decide.
 
+## Unmet prose floor
+
+`build` exits 1 on a prose problem, naming the chapter, the rule and the
+fragment that holds the field. The message text is `check`'s own, for example
+`section <id>: <n> words of lead, bullets and not owned; at least 100 required`.
+The controller sends the problem to that chapter's writer: the area that wrote
+it, or the controller for `start-what`, `start-parts` and `start-code`.
+
+- Send it back at most 2 rounds per chapter, as for evidence.
+- Still failing: report the chapter to the owner with its numbers and stop for
+  a decision: merge the chapter into a neighbour, or drop it. There is no flag
+  that waives the floor.
+- A build that passes with a warning is not finished: a chapter with the 120 to
+  200 words warning goes back to its writer once, then the build runs again.
+- The glossary under 15 terms after the candidates: ask each area for more
+  glossary candidates, one round. Still short: report it to the owner and stop,
+  as above.
+
 ## Report
 
 Write the report in chat, from the last `BuildResult` and the run's record:
@@ -50,6 +68,9 @@ Write the report in chat, from the last `BuildResult` and the run's record:
   Under it, each shortfall with the reason its subagent gave. Then the totals
   from `depth.total`: primary nodes, context nodes, edges, messages, store rows,
   chapters.
+- **Prose:** a block beside Depth, from `BuildResult.prose`: words per chapter
+  (id, words, lead sentences, bullets), the average words per chapter, the
+  glossary size and the lifelines drawn inline.
 - **Diagrams:** each `diagrams[]` entry with its renderer and `reason`. When
   archify was not found, say once that every deep diagram is SVG.
 - **Layout:** the layout report summary from `layout`: figures, crossings,

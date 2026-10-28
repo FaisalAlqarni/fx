@@ -124,4 +124,82 @@ has(
   "decision 3 names fx-setup's migration step"
 );
 assert.ok(/^## Branch pass$/m.test(raw(finalReview)), `${finalReview}: the branch pass sits under its own heading`);
+{
+  const sf = "skills/fx-system-flow";
+  const all = (file, texts) => {
+    for (const t of texts) has(`${sf}/${file}`, t, `holds ${t}`);
+  };
+  all("planning.md", [
+    "start-what",
+    "start-parts",
+    "start-request",
+    "start-code",
+    '"schemaVersion": 2',
+    "the main request",
+    "one writer per chapter",
+    '"name"',
+    '"intro"',
+    "120 to 200 words",
+    "at least 100 words"
+  ]);
+  all("area-brief.md", [
+    "## Prose",
+    "2 to 4 sentences",
+    "4 to 8 bullets",
+    "at most 40 words",
+    "120 to 200 words",
+    "at least 100 words",
+    "one sentence of 6 to 30 words",
+    "`look`",
+    "`short`",
+    "`reply`",
+    "`codeMap`",
+    "Prose: <chapter ids written>",
+    "Glossary candidates",
+    'no "who uses it"'
+  ]);
+  all("fragment-guide.md", [
+    "`look`",
+    "`service`",
+    "`store`",
+    "`client`",
+    "`external`",
+    "`security`",
+    "`term:<id>`",
+    "`code:<id>`",
+    "chapters.json declares every section",
+    "a scalar set in two fragments is an error"
+  ]);
+  all("check-and-report.md", [
+    "Prose",
+    "words per chapter",
+    "glossary",
+    "lifelines",
+    "at most 2 rounds",
+    "merge the chapter into a neighbour, or drop it",
+    "There is no flag that waives the floor",
+    "a chapter with the 120 to 200 words warning goes back to its writer once",
+    "ask each area for more glossary candidates, one round"
+  ]);
+  all("interview.md", ["at least 100 words", "goes back to its writer"]);
+  all("SKILL.md", ["system-flow migrate", "Bring the prose up to date", "glossary.json", "only on a clean working tree", "git restore -- <site>/model/fragments"]);
+  for (const f of ["area-brief.md", "planning.md"]) all(f, ["fx-humanize", "before returning"]);
+  has(docs, "every node or participant it adds carries `look`", "fx-docs sets look on what it adds");
+  has(docs, "Bring the prose up to date", "fx-docs points a prose floor failure to the rerun choice");
+  has(docs, "system-flow migrate", "fx-docs names the migrate hint it stops on");
+  has(`${sf}/check-and-report.md`, "section <id>: <n> words of lead, bullets and not owned; at least 100 required", "the floor message is quoted");
+  const adr66 = "docs/adr/0066-a-system-model-is-the-record-for-the-system-flow-site.md";
+  for (const t of ["site template", "Start here", "schema version 2", "lifelines"]) has(adr66, t, `ADR 0066 holds ${t}`);
+  const adr = raw(adr66);
+  const nums = (body) => [...body.matchAll(/^(\d+)\. /gm)].map((m) => Number(m[1]));
+  const decision = nums(adr.slice(adr.indexOf("## Decision"), adr.indexOf("## Still in force")));
+  const kept = nums(adr.slice(adr.indexOf("## Still in force"), adr.indexOf("## Consequences")));
+  const wanted = (n, from) => Array.from({ length: n }, (_, i) => from + i);
+  assert.deepStrictEqual(decision, wanted(decision.length, 1), "ADR 0066 Decision is numbered from 1 with no gap");
+  assert.deepStrictEqual(kept, wanted(kept.length, decision.length + 1), "ADR 0066 Still in force continues the numbering with no gap");
+  assert.ok(kept.length === 5, "ADR 0066 still carries the five decisions of 0062");
+  for (const f of ["SKILL.md", "planning.md", "area-brief.md", "fragment-guide.md", "check-and-report.md", "interview.md"].map((n) => `${sf}/${n}`).concat([docs, adr66])) {
+    assert.ok(!/[\u2013\u2014]/.test(raw(f)), `${f}: no en or em dash`);
+  }
+}
 console.log("docs-lanes: OK");

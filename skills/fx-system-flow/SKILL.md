@@ -35,7 +35,7 @@ Sidecars, each read at the step that names it:
 | File | Read at |
 |---|---|
 | `../../skills/fx-system-flow/planning.md` ([planning.md](planning.md)) | Step 2 |
-| `../../skills/fx-system-flow/area-brief.md` ([area-brief.md](area-brief.md)) | Step 3, pasted into each area subagent's prompt |
+| `../../skills/fx-system-flow/area-brief.md` ([area-brief.md](area-brief.md)) | Step 3, pasted into each area subagent's prompt (it holds the prose floors) |
 | `../../skills/fx-system-flow/fragment-guide.md` ([fragment-guide.md](fragment-guide.md)) | Step 3, for every fragment, by the controller and by each subagent |
 | `../../skills/fx-system-flow/interview.md` ([interview.md](interview.md)) | Step 5 |
 | `../../skills/fx-system-flow/check-and-report.md` ([check-and-report.md](check-and-report.md)) | Step 6 |
@@ -62,8 +62,9 @@ Before step 1, look for `<site>/model/fragments/` at the site folder
 
 - **None:** run steps 1 to 6.
 - **Present:** run step 1, then `system-flow stale` and read
-  `<site>/model/coverage.json`. Offer the owner these choices and stop until
-  they pick:
+  `<site>/model/coverage.json`. Offer the owner these choices (add "Bring the
+  prose up to date" when `check` prints `schemaVersion 1: run system-flow
+  migrate` or a prose problem) and stop until they pick:
   1. **Refresh stale.** For each handle `stale` lists, reread the cited code,
      fix the item in the fragment that owns it, run
      `system-flow check --fragment <file>`, then
@@ -71,7 +72,17 @@ Before step 1, look for `<site>/model/fragments/` at the site folder
      a `corrections` entry (fragment guide). Then steps 4 to 6.
   2. **Cover uncovered.** Run step 2 on the entries `coverage.json` lists with
      no chapter, as new areas or chapters only, then steps 3 to 6 for them.
-  3. **Full rebuild**, offered only when `--rebuild` was given or the owner asks
+  3. **Bring the prose up to date.** For a site built before the prose floor.
+     Run it only on a clean working tree: check `git status --porcelain` and
+     stop if it prints anything, so the undo below cannot lose other work. When
+     the model is version 1, run `system-flow migrate`; undo it with
+     `git restore -- <site>/model/fragments`. Then write the `owed` list it
+     prints (or `system-flow check`'s prose problems when the model is already
+     version 2): the four Start here sections, leads and bullets, `summary` on
+     every figure, `meta.name` and `meta.intro`, the code map and
+     `glossary.json`, by the writers the planning sidecar names. Then steps 4
+     to 6.
+  4. **Full rebuild**, offered only when `--rebuild` was given or the owner asks
      for it. A full rebuild is a new audit. Ask the owner to remove the old
      area fragments (`git rm <site>/model/fragments/<area id>.json`, every
      area) and commit that removal, and wait until they have: HEAD then holds
@@ -138,11 +149,24 @@ pasted text to the absolute path it resolves to from the sidecar's own folder,
 since a subagent has no skill base directory.
 
 A subagent returns when `system-flow check --fragment <its file>` exits 0, or
-after its 2 fix rounds. Collect its open questions and its depth line.
+after its 2 fix rounds. Collect its open questions, its depth line, its `Prose:` line and its
+`Glossary candidates`.
 
 When an area returns, set `children: "<area id>-l1"` on its level-0 node in
 `level0.json`, and add the area's diagrams to the `diagrams` of the chapters
 that show them in `chapters.json`; check both with `--fragment`.
+
+After the last area returns, the controller writes the Start here prose and
+the glossary:
+
+- `what`, `parts` and `code`: lead, bullets and `notOwned` in `chapters.json`,
+  from the planning reads and the area fragments. Re-read the evidence a
+  fragment cites; never copy it blind.
+- `glossary.json`: from the 3 to 8 `Glossary candidates` each area returned,
+  duplicates removed, 15 to 40 terms.
+- The final `meta.intro` in `meta.json`.
+- Invoke `fx-humanize` on this prose before returning to the build, and check
+  each file with `system-flow check --fragment <file>`.
 
 While subagents run, the controller writes `rules.json`, the Rules in force,
 checked the same way. List every ADR in every root's ADR folder whose status
@@ -188,13 +212,13 @@ questions, say so and go to step 6.
 Run the build again. Then read `../../skills/fx-system-flow/check-and-report.md`
 and follow it: the visual check of `index.html` and every diagram page at 1440
 and 390 in light and dark, the archify retries, and the report, which carries
-the depth block of planned against built per area.
+the depth block of planned against built per area and the Prose block.
 
 ## Every stop
 
 | After | Wait for |
 |---|---|
-| Rerun detected | The owner's pick: refresh stale, cover uncovered, or full rebuild |
+| Rerun detected | The owner's pick: refresh stale, cover uncovered, bring the prose up to date, or full rebuild |
 | Full rebuild picked | The owner commits the removal of the old area fragments |
 | `detect` exits 1 | The owner fixes `.fx.json` or the roots |
 | Step 2 | Approval or a trim of the plan |
@@ -212,6 +236,6 @@ the depth block of planned against built per area.
 - The code wins over a doc, a comment or an earlier fragment.
 - A fragment another area owns is read, never written.
 - Never invent a CLI flag. The subcommands are `detect`, `estimate`, `check`,
-  `build`, `query`, `stale` and `verify`, as named above and in the sidecars.
+  `build`, `query`, `stale`, `verify` and `migrate`, as named above and in the sidecars.
 - Prose on the site and in the report follows the `fx-humanize` lane: no em or en
   dashes, English labels, Arabic only for real product strings.

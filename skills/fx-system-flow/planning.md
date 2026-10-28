@@ -36,6 +36,45 @@ Count the diagrams this implies per area. Name the sequence candidates (a
 request or job that crosses three or more participants) and the store flow
 candidates (a trigger that reads and writes more than one store).
 
+## Chapters and their writers
+
+The plan always carries the four Start here chapters first, then the system's
+own chapters. The Start here ids and roles are fixed:
+
+| Id | Role | Folder | Says |
+|---|---|---|---|
+| `start-what` | `what` | `start-here` | what the system is, and what it does not own |
+| `start-parts` | `parts` | `start-here` | the parts and how they fit (the level-0 diagram) |
+| `start-request` | `request` | `start-here` | the main request end to end, with its one sequence |
+| `start-code` | `code` | `start-here` | where data lives, and which folder owns what |
+
+Name **one writer per chapter**, never two:
+
+- `start-what`, `start-parts`, `start-code`: the controller, after every area
+  returns.
+- `start-request` and each system chapter: the one area the plan names as its
+  writer. The area writes the chapter's lead and bullets as a section in its
+  own fragment, and the sections merge.
+
+Name **the main request** in the planning message: the sequence candidate that
+crosses the most level-0 parts, with the area that owns it. The owner can swap
+it. That area writes `start-request`.
+
+## Writing rules
+
+For every lead and bullet, the controller's and each area's: written for an
+engineer who knows backends and not this code; the lead says what the part does
+and why it matters to someone changing it; one fact per bullet, from code the
+writer read, with the narrowest evidence; glossary terms in the code's meaning;
+plain words; no "who uses it". `area-brief.md` holds the full floors (lead 2 to
+4 sentences, 4 to 8 bullets of at most 40 words, at least 100 words per chapter
+and 120 to 200 words expected).
+
+The agent that writes chapter prose, leads, bullets, captions, glossary
+definitions and code-map lines invokes `fx-humanize` on it before returning.
+The controller does the same for the Start here prose and the glossary it
+writes.
+
 ## The plan file
 
 Write `<site>/model/plan.json`. `build` reads it for the depth block, so it
@@ -43,7 +82,7 @@ stays beside the fragments:
 
 ```json
 {
-  "chapters": 9,
+  "chapters": 13,
   "areas": [
     { "id": "engine", "root": "host", "files": 320, "filesToRead": 140,
       "levels": 3, "diagrams": 7, "sequences": 2, "storeFlows": 1 }
@@ -56,16 +95,18 @@ stays beside the fragments:
   the chapters' questions need first.
 - `levels`, `diagrams`, `sequences`, `storeFlows`: the proposed depth.
 - `root`: a root id from `detect`.
-- `chapters`: the total chapter count.
+- `chapters`: the total chapter count, the four Start here chapters included.
 
 Run `system-flow estimate <site>/model/plan.json`. It prints tokens and
 minutes per area and in total, its `note` on the constants, and `warnings`.
 
 ## Fragments written now
 
-- `meta.json`: top-level `"schemaVersion": 1` (check rejects the fragment
-  without it), then `meta.title`, `meta.date`, `meta.purpose`, and
-  `meta.roots` copied from `detect`'s `roots` ids in the same order, host
+- `meta.json`: top-level `"schemaVersion": 2` (check rejects the fragment
+  without it, and a version 1 fragment with the hint to run `system-flow
+  migrate`), then `meta.title`, `meta.date`, `meta.purpose`, `"name"` (the
+  system's short name, for the page header) and a first `"intro"` of 2 to 5
+  sentences (the controller rewrites it after the areas return), then `meta.roots` copied from `detect`'s `roots` ids in the same order, host
   first, each with its `remote` when `detect` printed one. Evidence in another
   root names that id.
 - `inventory.json`: every engine, flow, store, job and integration found in
@@ -80,9 +121,13 @@ Written after the owner approves, before any area is dispatched, so every
 area's `check --fragment` finds the ids it names. Check each file with
 `system-flow check --fragment <file>` until it exits 0.
 
-- `chapters.json`: one section per approved chapter: `id`, `title`, its
-  reader's `question`, and `covers` naming inventory ids where the plan named
-  them. No `diagrams`, `sequences` or `storeFlows` yet: those ids do not exist
+- `chapters.json`: one section per approved chapter, the four Start here
+  sections first (ids `start-what`, `start-parts`, `start-request`,
+  `start-code`; `role` `what`, `parts`, `request`, `code`; `folder`
+  `start-here`), then the system's chapters: `id`, `title`, its reader's
+  `question`, and `covers` naming inventory ids where the plan named them. The
+  controller's own sections (`start-what`, `start-parts`, `start-code`) get
+  their lead and bullets later, in this file. No `diagrams`, `sequences` or `storeFlows` yet: those ids do not exist
   until the areas write them. Areas name a section id in each sequence's and
   store flow's `chapter`.
 - `level0.json`: the level-0 diagram, id `level0`, `level: 0`, with
@@ -106,7 +151,9 @@ owner approves.
    every deep diagram is SVG", the site and Markdown folders, the roots.
 2. A table of areas: id, root, files, filesToRead, levels, diagrams,
    sequences, store flows.
-3. The chapters, each with its reader's question in one sentence.
+3. The chapters, the four Start here chapters first, each with its reader's
+   question in one sentence and its one writer. Name the main request and the
+   area that owns it.
 4. The inventory counts by kind.
 5. The estimate: total tokens and minutes, the note, every warning.
 6. **MkDocs only** (`detect`'s `mkdocs` is not null), asked once: "Add the

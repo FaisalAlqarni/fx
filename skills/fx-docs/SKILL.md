@@ -78,6 +78,9 @@ the Markdown path alone.
 3. For each new engine, job or integration among the added paths, add an
    inventory entry to the fragments, with evidence. Each added entry is a
    re-read item in steps 4 and 5, like the listed ones.
+   In the fragments, every node or participant it adds carries `look` (`service`, `store`,
+   `client`, `external` or `security`; the fragment guide of
+   `/fx:fx-system-flow` has the table).
 4. Re-read each listed item against the code at HEAD. Edit the fragments and
    add a `corrections` entry for every changed or removed fact. A removed item
    needs only its `corrections` entry. Then run
@@ -90,6 +93,10 @@ the Markdown path alone.
    items. Run it as a tracked background command and wait for its exit before
    reading its output: an archify build can run past the 10 minute cap on a
    foreground command, which kills it partway.
+   When `build --only` fails on `schemaVersion 1: run system-flow migrate` or on
+   a chapter below the prose floor, stop. Do not run `migrate` and do not write
+   the owed prose: the owner reruns `/fx:fx-system-flow` and picks "Bring the
+   prose up to date". Report that and the failing lines.
 6. `node <skill base directory>/../../scripts/system-flow --root <worktree> stale` lists every other item to recheck. List them; do not rewrite them.
 7. List each inventory entry that no chapter covers as uncovered, with a pointer
    to `/fx:fx-system-flow`.

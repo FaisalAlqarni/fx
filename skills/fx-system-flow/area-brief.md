@@ -32,6 +32,35 @@ root.
 2. Read the area's entry points and the files `filesToRead` counts for.
 3. Write each fact once, from code you read, with the evidence that proves it.
 
+## Prose
+
+You write the prose for what you own, from code you read.
+
+- **Chapters you write:** your slice names the chapters you write (its
+  `start-request` when you own the main request). Write each as a section in
+  your own fragment with its `id`, `lead` and `bullets`; the controller's
+  `chapters.json` already declares the section, and the two merge.
+- **Lead:** 2 to 4 sentences. Say what the part does and why it matters to
+  someone changing it.
+- **Bullets:** 4 to 8 bullets of at most 40 words, one fact each, each with the
+  narrowest evidence.
+- **Chapter floor:** at least 100 words of lead and bullets together, and 120
+  to 200 words expected. A chapter under 100 words fails `check`; one under 120
+  passes with a warning and goes back to its writer once.
+- **Figures:** every diagram, sequence and store flow carries `summary`, one
+  sentence of 6 to 30 words that says what to notice. Every node and
+  participant carries `look`; every message carries `label` (one plain
+  sentence, it becomes the narration) and `short` (the code-ish name on the
+  arrow), and `reply` set to `true` on a reply.
+- **Code map:** one `codeMap` entry for each folder of your area that a
+  newcomer opens first: `root`, `path` (a folder ending in `/`), `owns` (one
+  sentence) and evidence (the folder, then the file to start reading).
+- **Words:** write for an engineer who knows backends and not this code. Use
+  glossary terms in the code's meaning. Plain words, no "who uses it".
+- **`fx-humanize`:** invoke it on the chapter prose, leads, bullets, captions,
+  glossary candidates and code-map lines before returning. It changes wording
+  only; evidence and facts stay.
+
 ## Evidence rules
 
 - Every evidenced item carries at least one evidence entry, or
@@ -84,5 +113,11 @@ In this order, nothing else:
 
 1. `Fragment: <path>` and `check --fragment: exit 0` (or the last stderr lines).
 2. `Depth: levels <n>/<planned>, diagrams <n>/<planned>, sequences <n>/<planned>, store flows <n>/<planned>`, then one line per shortfall saying why.
-3. Open questions, each as `<question id>: <text> | recommended: <answer> | items: <handle>, ...`. Every question has a recommended answer and the handles of the items it settles.
-4. Items left `unconfirmed`, by handle.
+3. `Prose: <chapter ids written>`, the section ids you wrote a lead and bullets for.
+4. `Glossary candidates`: 3 to 8 terms the code gives a particular meaning, one
+   JSON line each: `{"term","tag","meaning","evidence"}`. `tag` is one of
+   `model`, `service`, `job`, `store`, `message`, `external`, `concept`;
+   `evidence` is the entry list of the fragment guide. The controller writes
+   `glossary.json` from them.
+5. Open questions, each as `<question id>: <text> | recommended: <answer> | items: <handle>, ...`. Every question has a recommended answer and the handles of the items it settles.
+6. Items left `unconfirmed`, by handle.

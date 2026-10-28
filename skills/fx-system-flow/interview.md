@@ -36,6 +36,11 @@ settles, and its recommended answer. Wait for the reply before the next.
   a `corrections` entry with `reason: "owner"`, the `before` and `after` text,
   and the date.
 
+An answer that changes prose keeps every chapter on the floor: at least 100
+words, a lead of 2 to 4 sentences, 4 to 8 bullets. An answer that drops a
+chapter below it goes back to its writer (the area that wrote the chapter, or
+the controller for the Start here chapters) before the next question.
+
 After each write, run `system-flow check --fragment <file>` on every fragment
 you changed until it exits 0.
 
