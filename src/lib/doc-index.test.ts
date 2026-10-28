@@ -119,6 +119,12 @@ assert.deepStrictEqual(staleCase((r) => { put(r, 'src/code.rb', 'l1\nl2\nl3\nl4\
 assert.deepStrictEqual(staleCase((r) => { put(r, 'src/code.rb', 'new\nl1\nl2\nl3\nl4\nl5\n'); put(r, 'src/b.rb', 'x\n'); commit(r); },
   (s) => `A.\nEvidence: \`src/code.rb:3-4\`; \`src/b.rb\`\n\n<!-- fx-docs verified: ${s} -->\n`), [['recheck', 'changed']], 'b.rb did not exist at the verified commit');
 
+// An evidence path starting with @ names another root: skipped, never deleted; a mixed claim is judged on its host paths.
+assert.deepStrictEqual(staleCase(none, (s) => `A.\nEvidence: \`@guide/README.md:1\` \`Guide\`\n\n<!-- fx-docs verified: ${s} -->\n`), [['skip', 'other-root']]);
+assert.deepStrictEqual(staleCase((r) => { put(r, 'src/code.rb', 'l1\nl2\nl3\nL4\nl5\n'); commit(r); },
+  (s) => `A.\nEvidence: \`src/code.rb:3-4\`; \`@guide/README.md:1\` \`Guide\`\n\n<!-- fx-docs verified: ${s} -->\n`), [['recheck', 'changed']], 'host path decides');
+assert.deepStrictEqual(staleCase(commit, (s) => `A.\nEvidence: \`src/code.rb:3-4\`; \`@guide/README.md:1\` \`Guide\`\n\n<!-- fx-docs verified: ${s} -->\n`), [['free', 'unchanged']], 'host path unchanged');
+
 // An ADR's verified commit lives in docs/adr/.fx-verified, never in the ADR: a recorded,
 // unchanged commit frees its claims; no line for that ADR means recheck.
 const ADR_CITED = 'Status: accepted\n\n1. Keep the code.\n   Evidence: `src/code.rb:3-4`\n';

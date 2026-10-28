@@ -195,3 +195,57 @@ export function collect(model: Model): { item: Item; o: object }[] {
   for (const s of model.sections) for (const b of s.bullets ?? []) add('bullet', b.id, b);
   return out;
 }
+
+// Shared by the layout step (task 05) and the browser kit (task 08).
+export type LayoutLine = { key: string; width: number; height: number; direction: 'RIGHT' | 'DOWN'; crossings: number; nodeHits: number; nodes: number; arrows: number; notDrawn: number; unlabelled: number };
+export type FigureSpec = {
+  key: string; // level-<diagram id> | seq-<sequence id> | flow-<flow id>
+  kind: 'level' | 'sequence' | 'flow';
+  width: number; height: number; direction: 'RIGHT' | 'DOWN';
+  nodes: { id: string; x: number; y: number; w: number; h: number; lines: string[]; kind: string; primary: boolean; store: boolean }[];
+  edges: { id: string; d: string; mode: 'sync' | 'async'; label: { x: number; y: number; w: number; h: number; text: string } | null }[];
+  groups: { id: string; label: string; x: number; y: number; w: number; h: number }[];
+  steps: { edges: string[]; nodes: string[]; caption: string }[]; // caption is plain text holding the first evidence `path:lines`
+  notDrawn: string[]; // edge ids
+};
+
+// The values build adds: <root HEAD> for each root an item cites and its `verified` lacks. An existing value is never replaced.
+export function planStamps(items: Item[], roots: Map<string, { head: string | null; host: boolean }>): Map<string, Verified> {
+  const hostId = [...roots].find(([, r]) => r.host)?.[0] ?? '';
+  const stamps = new Map<string, Verified>();
+  for (const item of items) {
+    const add: Verified = {};
+    for (const e of item.evidence) {
+      if (!('path' in e)) continue;
+      const id = e.root ?? hostId;
+      const head = roots.get(id)?.head;
+      if (head && item.verified?.[id] === undefined) add[id] = head;
+    }
+    if (Object.keys(add).length > 0) stamps.set(item.handle, add);
+  }
+  return stamps;
+}
+
+// Writes the planned values into the fragment files that hold those items; returns the files it changed.
+// Only a file that gained a value is rewritten (2-space JSON, as the fixtures and the lane write it).
+export function stampVerified(fragmentsDir: string, stamps: Map<string, Verified>): string[] {
+  const names = fs.readdirSync(fragmentsDir).filter((n) => n.endsWith('.json'));
+  const fragments: Fragment[] = names.map((file) => ({ file, data: parseJson(fs.readFileSync(path.join(fragmentsDir, file), 'utf8')) as Record<string, unknown> }));
+  const model = mergeFragments(fragments).model;
+  const changed = new Set<string>();
+  // Merge shares the item objects with the fragment data, so setting `verified` here edits what is written below.
+  for (const { item, o } of collect(model)) {
+    const add = stamps.get(item.handle);
+    if (!add) continue;
+    const target = o as Evidenced;
+    const fresh = Object.fromEntries(Object.entries(add).filter(([id]) => target.verified?.[id] === undefined));
+    if (Object.keys(fresh).length === 0) continue;
+    target.verified = { ...target.verified, ...fresh };
+    changed.add(item.file);
+  }
+  return [...changed].sort().map((file) => {
+    const full = path.join(fragmentsDir, file);
+    fs.writeFileSync(full, `${JSON.stringify(fragments.find((f) => f.file === file)?.data, null, 2)}\n`);
+    return full;
+  });
+}

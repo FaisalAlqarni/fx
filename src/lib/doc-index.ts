@@ -7,7 +7,7 @@ import { parseJson } from './json.js';
 import { Claim, Problem, isAdrPath, parseDoc } from './doc-evidence.js';
 
 export type DocIndex = { version: 1; claims: Claim[]; problems: Problem[]; verified: Record<string, string | null> };
-export type Stale = { claim: Claim; verdict: 'free' | 'recheck' | 'skip'; reason: 'unchanged' | 'changed' | 'shifted' | 'deleted' | 'unverified' | 'owner' | 'superseded' };
+export type Stale = { claim: Claim; verdict: 'free' | 'recheck' | 'skip'; reason: 'unchanged' | 'changed' | 'shifted' | 'deleted' | 'unverified' | 'owner' | 'superseded' | 'other-root' };
 
 const SKIP_DIRS = new Set(['plans', 'issues', 'html']);
 const emptyIndex = (): DocIndex => ({ version: 1, claims: [], problems: [], verified: {} });
@@ -147,8 +147,11 @@ export function stalePassOne(root: string, index: DocIndex): Stale[] {
   };
   return index.claims.map((claim): Stale => {
     if (claim.status === 'superseded') return { claim, verdict: 'skip', reason: 'superseded' };
-    const paths = claim.evidence.filter((e) => e.type === 'path');
-    if (paths.length === 0) return { claim, verdict: 'skip', reason: 'owner' };
+    const all = claim.evidence.filter((e) => e.type === 'path');
+    // An @<root id>/ path names another root; the CLI's stale covers it, so it is never judged here.
+    const paths = all.filter((e) => !e.path.startsWith('@'));
+    if (all.length === 0) return { claim, verdict: 'skip', reason: 'owner' };
+    if (paths.length === 0) return { claim, verdict: 'skip', reason: 'other-root' };
     const sha = verifiedFor(claim);
     if (sha !== null && !reachable.has(sha)) reachable.set(sha, git(root, ['cat-file', '-e', `${sha}^{commit}`]) !== null);
     if (sha === null || !reachable.get(sha)) return { claim, verdict: 'recheck', reason: 'unverified' };
