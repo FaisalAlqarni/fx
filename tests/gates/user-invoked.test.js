@@ -34,7 +34,7 @@ const frontmatter = (p) => {
   return { head: m[1] ?? "", body: m[2] ?? "" };
 };
 const HIDDEN = fs.readdirSync(path.join(root, "skills")).filter((d) => fs.existsSync(path.join(root, "skills", d, "SKILL.md")) && /^disable-model-invocation:\s*true$/m.test(frontmatter(path.join(root, "skills", d, "SKILL.md")).head)).sort();
-assert.deepStrictEqual(HIDDEN, ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-retro", "fx-setup", "fx-what"], "eight lanes are user-invoked");
+assert.deepStrictEqual(HIDDEN, ["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-retro", "fx-setup", "fx-system-flow", "fx-what"], "nine lanes are user-invoked");
 assert.deepStrictEqual(
   [...import_user_invoked_lanes.USER_INVOKED_LANES].sort(),
   HIDDEN,
@@ -76,6 +76,33 @@ for (const name of ["fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-retro"
     !/(?<!\.\.\/)\.\.\/(references|agents)\//.test(skill.body),
     `${name}: a one-level citation in a skill body breaks check-paths`
   );
+}
+{
+  const dir = path.join(root, "skills", "fx-system-flow");
+  const lane = fs.readFileSync(path.join(dir, "SKILL.md"), "utf8");
+  assert.ok(/^disable-model-invocation:\s*true$/m.test(frontmatter(path.join(dir, "SKILL.md")).head), "fx-system-flow is user-invoked");
+  for (const s of [
+    "system-flow estimate",
+    "system-flow check --fragment",
+    "detect --repo",
+    "--archify",
+    "at most 4",
+    "It never commits; the owner runs git.",
+    "questions. Answer one at a time, skip, or take the recommended answer for every question."
+  ]) {
+    assert.ok(lane.includes(s), `fx-system-flow SKILL.md says ${s}`);
+  }
+  const sidecar = {
+    "planning.md": ["filesToRead", "levels", "meta.roots"],
+    "area-brief.md": ["level 3", "8 to 12 primary nodes", "context nodes"],
+    "fragment-guide.md": ["starts with its area id", "<kind>:<id>"],
+    "interview.md": ["Every question carries a recommended answer"],
+    "check-and-report.md": ["depth", "planned"]
+  };
+  for (const [file, needs] of Object.entries(sidecar)) {
+    const text = fs.readFileSync(path.join(dir, file), "utf8");
+    for (const s of needs) assert.ok(text.includes(s), `fx-system-flow ${file} says ${s}`);
+  }
 }
 {
   const adr = path.join(root, "skills", "fx-adr", "SKILL.md");

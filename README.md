@@ -113,13 +113,14 @@ Twelve of the fourteen work on their own, with no plan: only `fx-plan` and
 
 ## The commands
 
-You type eight more skills yourself: seven are generated from `commands/`,
-`fx-audit` is its own skill. The model never picks them.
+You type nine more skills yourself: seven are generated from `commands/`,
+`fx-audit` and `fx-system-flow` are their own skills. The model never picks them.
 
 | Command | Does |
 |---|---|
 | `fx-setup` | per repository: writes `.fx.json`, `repo.md` and `GLOSSARY.md` for your review |
 | `fx-audit` | audits an existing system in four gated phases, ending in a design for `fx-plan` |
+| `fx-system-flow` | investigates a whole system across its repositories and builds an evidenced system flow site; never commits |
 | `fx-critique` | red-teams a design or plan |
 | `fx-grill` | a stress-test interview for a decision not heading to code |
 | `fx-handoff` | prints a block to paste into another session |
@@ -250,8 +251,8 @@ opencode 2.x shows no notice.
 ## Layout
 
 ```
-skills/       22: 12 lanes, prototype and research, and 8 you invoke yourself:
-              fx-audit, plus fx-setup, fx-critique, fx-grill, fx-handoff,
+skills/       23: 12 lanes, prototype and research, and 9 you invoke yourself:
+              fx-audit and fx-system-flow, plus fx-setup, fx-critique, fx-grill, fx-handoff,
               fx-pr, fx-retro and fx-what, generated from commands/
 agents/       6: 5 review lenses plus the devil's advocate, all read-only
 codex/agents/ the same 6 as Codex role files, generated

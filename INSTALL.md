@@ -90,8 +90,8 @@ Then delete `~/.codex/agents/fx-*.toml`.
 - Read-only review agents keep a shell, because Codex has no read tool. fx's
   hook refuses every command its classifier does not clear. It stops
   accidents; it is not a security boundary.
-- Codex's plugin linter reports eight failures for `disable-model-invocation`
-  on the eight user-invoked skills. They are expected; the install accepts fx
+- Codex's plugin linter reports nine failures for `disable-model-invocation`
+  on the nine user-invoked skills. They are expected; the install accepts fx
   as shipped.
 - A subagent dispatching its own subagent needs `[agents] max_depth = 2` in
   `$CODEX_HOME/config.toml` on models that use Codex's V1 subagent tools. A
@@ -246,8 +246,8 @@ Hooks section below.
 
 ### The user-invoked skills
 
-`fx-audit`, `fx-setup`, `fx-critique`, `fx-grill`, `fx-handoff`, `fx-pr`,
-`fx-retro` and `fx-what` are hidden
+`fx-audit`, `fx-system-flow`, `fx-setup`, `fx-critique`, `fx-grill`,
+`fx-handoff`, `fx-pr`, `fx-retro` and `fx-what` are hidden
 from the model and run as commands: type `/fx-<name>` in the TUI. `opencode
 run` treats `/fx-audit` as plain text; use the TUI, or
 `opencode api session.command`.
@@ -259,7 +259,7 @@ To let the model load one of them on its own, allow it on that agent:
 ```
 
 This works on the built-in agents and fx's own. An agent you define yourself
-in `opencode.json` stays blocked from the eight.
+in `opencode.json` stays blocked from the nine.
 
 ### Check it works
 

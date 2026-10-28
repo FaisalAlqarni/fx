@@ -5,7 +5,7 @@
 #   opencode:    the installer, run into a scratch config dir, generates a
 #                command for each hidden lane, which is how a user types it.
 #   opencode-v2: the real 2.x binary, no model call: `opencode api
-#                command.list` lists the eight commands the plugin registers,
+#                command.list` lists the nine commands the plugin registers,
 #                on the installer route and on the plugin route.
 #   claude-code: a live session, addressing fx-handoff the way a user does: a
 #                /fx:fx-<name> slash command in the print-mode prompt.
@@ -23,7 +23,7 @@ set -uo pipefail
 [ "${1:-}" = "--describe" ] && { k=free; case "${HARNESS:-}" in claude-code|codex) k=live ;; esac; echo "14|audit lane user-invocable|$k"; exit 0; }
 : "${FX_REAL_HOME:?run rows through tests/conformance/run.sh, which isolates HOME}"
 cd "$FX"
-HIDDEN="fx-audit fx-critique fx-grill fx-handoff fx-pr fx-retro fx-setup fx-what"
+HIDDEN="fx-audit fx-critique fx-grill fx-handoff fx-pr fx-retro fx-setup fx-system-flow fx-what"
 case "$HARNESS" in
   opencode)
     # HOME is the runner's scratch home, so this destination is inside it.
@@ -34,14 +34,14 @@ case "$HARNESS" in
       [ -f "$dest/commands/$n.md" ] || { echo "opencode: no command for $n, user route gone" >&2; exit 1; }
     done ;;
   opencode-v2)
-    # The real 2.x binary. The plugin registers the eight commands itself
+    # The real 2.x binary. The plugin registers the nine commands itself
     # (command.transform, no command files), so this waits for them in
     # `opencode api command.list` on the route FX_OPENCODE_ROUTE names.
     # Invoking one is `opencode api session.command`, which needs a model
     # (task 10); listing is what a user picks from.
     . "$FX/tests/conformance/lib/opencode-v2.sh"
     oc2_setup
-    oc2_wait command.list '["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-retro", "fx-setup", "fx-what"].every((x) => d.some((c) => c.name === x))'
+    oc2_wait command.list '["fx-audit", "fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-retro", "fx-setup", "fx-system-flow", "fx-what"].every((x) => d.some((c) => c.name === x))'
     F="$OC2_LAST" node -e '
       const d = JSON.parse(require("fs").readFileSync(process.env.F, "utf8"));
       const audit = d.find(c => c.name === "fx-audit");

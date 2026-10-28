@@ -150,7 +150,7 @@ const scratchEnv = (0, import_hook_env.applyScratchEnv)();
       const f = path.join(root, "skills", n, "SKILL.md");
       return fs.existsSync(f) && /^disable-model-invocation:\s*true\s*$/m.test(fs.readFileSync(f, "utf8"));
     }).sort();
-    assert.strictEqual(userInvoked.length, 8, "eight user-invoked lanes");
+    assert.strictEqual(userInvoked.length, 9, "nine user-invoked lanes");
     assert.deepStrictEqual(
       Object.keys(config.command || {}).sort(),
       userInvoked,
@@ -180,6 +180,15 @@ const scratchEnv = (0, import_hook_env.applyScratchEnv)();
       }
     } finally {
       fs.rmSync(dest, { recursive: true, force: true });
+    }
+    {
+      const dest2 = path.join(os.tmpdir(), "fx-oc-dest");
+      const template = (0, import_opencode_commands.opencodeCommands)(root, dest2)["fx-system-flow"]?.template ?? "";
+      assert.ok(template.includes(`${dest2}/skills/fx-system-flow/planning.md`), "the fx-system-flow command names its planning sidecar by absolute path");
+      assert.ok(!template.includes("../../skills/"), "the fx-system-flow command keeps no relative sidecar path");
+      for (const m of template.matchAll(/`([^`]*\/skills\/fx-system-flow\/[^`]+)`/g)) {
+        assert.ok(fs.existsSync(path.join(root, (m[1] ?? "").slice(dest2.length + 1))), `${m[1]} names an existing sidecar`);
+      }
     }
     const before2 = JSON.stringify(config.command);
     await hooks.config(config);

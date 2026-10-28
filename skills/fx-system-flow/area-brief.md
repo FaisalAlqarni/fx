@@ -1,0 +1,69 @@
+# Area brief
+
+The controller pastes this file, the fragment guide and your slice of the plan
+into your prompt. You investigate one area of a system and write one fragment.
+
+## You own
+
+- One file: the fragment path in your prompt,
+  `<site>/model/fragments/<area id>.json`. Write no other file. Read other
+  fragments only to reuse an id.
+- Your slice: the area id, its root, `filesToRead`, the planned `levels`,
+  `diagrams`, `sequences` and `storeFlows`, the chapters with their reader's
+  questions, the sequence and store flow candidates.
+
+You never invoke `/fx:fx-system-flow`, never commit, never edit code in any
+root.
+
+## How to investigate
+
+1. **semble first.** Search with semble for each chapter question and each
+   candidate before opening files; read the file and line it returns. Fall
+   back to grep only for every occurrence of a literal.
+2. Read the area's entry points and the files `filesToRead` counts for.
+3. Write each fact once, from code you read, with the evidence that proves it.
+
+## Evidence rules
+
+- Every evidenced item carries at least one evidence entry, or
+  `"unconfirmed": true` and a question.
+- A file entry is `{ "root", "path", "lines", "symbol" }`: `path` relative to
+  the root, `lines` such as `"40-62"` inside the file, `symbol` a name that
+  appears in those lines. Omit `root` for the host.
+- Cite the narrowest range that holds the fact. A guess is a question, not
+  evidence.
+
+## Depth rules
+
+- Your level-1 diagram has a node for each part of the area. Drill every
+  level-1 node that stands for a real mechanism (a pipeline, a state machine,
+  a retry loop, a scheduler, a protocol) down to level 3: a level-2 diagram
+  for the node, and a level-3 diagram for each level-2 node that is itself a
+  mechanism. A plain config holder or a thin wrapper stays a leaf.
+- Give each diagram 8 to 12 primary nodes. Fewer means the level is too thin
+  to be worth a page; more means a group belongs one level down.
+- Draw the neighbours that live outside the diagram (another area's service,
+  a store, an external API) as context nodes with `primary: false`, so each
+  page shows where its parts connect.
+- Meet the area's planned `levels` and `diagrams`. When the code does not hold
+  enough to meet them, build what it holds and say why in your return.
+- Keep each sequence to one request or job. `build` pages a deep sequence at
+  8 messages or fewer per page.
+
+## Check
+
+Run `<cli> --root <host root> check --fragment <your file>` until it exits 0.
+It prints problems as `<file>:<pointer>: <message>`. Fix each from the code.
+
+At most 2 fix rounds after your first full write. An item still failing after
+round 2: set `"unconfirmed": true`, remove its evidence, add a question for it,
+and list it in your return.
+
+## Return
+
+In this order, nothing else:
+
+1. `Fragment: <path>` and `check --fragment: exit 0` (or the last stderr lines).
+2. `Depth: levels <n>/<planned>, diagrams <n>/<planned>, sequences <n>/<planned>, store flows <n>/<planned>`, then one line per shortfall saying why.
+3. Open questions, each as `<question id>: <text> | recommended: <answer> | items: <handle>, ...`. Every question has a recommended answer and the handles of the items it settles.
+4. Items left `unconfirmed`, by handle.

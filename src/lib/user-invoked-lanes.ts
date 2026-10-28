@@ -2,4 +2,4 @@
 // opencode plugins hide from the model; tests/gates/user-invoked.test.js pins
 // it to the skills' `disable-model-invocation: true` frontmatter. No
 // dependencies, so a plugin can load it before anything else can fail.
-export const USER_INVOKED_LANES = ['fx-audit', 'fx-critique', 'fx-grill', 'fx-handoff', 'fx-pr', 'fx-retro', 'fx-setup', 'fx-what'];
+export const USER_INVOKED_LANES = ['fx-audit', 'fx-critique', 'fx-grill', 'fx-handoff', 'fx-pr', 'fx-retro', 'fx-setup', 'fx-system-flow', 'fx-what'];

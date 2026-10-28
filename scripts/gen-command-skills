@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate fx's eight user-invoked skills and hide them from model
+"""Generate fx's nine user-invoked skills and hide them from model
 auto-selection on both runtimes.
 
     scripts/gen-command-skills
@@ -13,10 +13,10 @@ the same citation needs `../../references/...` and `../../agents/...`.
 `scripts/fx-opencode-install` performs this same rewrite for opencode; this
 script reuses its approach (frontmatter split, folded-block field reader).
 
-The eighth, `fx-audit`, already has a hand-written `SKILL.md` predating this
-script; only its `agents/openai.yaml` sidecar is generated here.
+Two, `fx-audit` and `fx-system-flow`, have a hand-written `SKILL.md`; only
+their `agents/openai.yaml` sidecar is generated here.
 
-Every one of the eight carries `disable-model-invocation: true` in its
+Every one of the nine carries `disable-model-invocation: true` in its
 `SKILL.md` frontmatter (Claude Code's hiding mechanism) and
 `policy.allow_implicit_invocation: false` in `agents/openai.yaml` (Codex's).
 Neither mechanism satisfies the other runtime's validator: Codex's bundled
@@ -38,6 +38,8 @@ SKILLS = ROOT / "skills"
 # `commands/`. A generated `skills/<name>/SKILL.md` sits one directory
 # deeper, so every such citation needs one more `../`.
 DEEPEN = re.compile(r"\.\./(references|agents)/")
+
+HAND_WRITTEN = ["fx-audit", "fx-system-flow"]
 
 COMMAND_DERIVED = ["fx-critique", "fx-grill", "fx-handoff", "fx-pr", "fx-retro", "fx-setup", "fx-what"]
 
@@ -106,13 +108,12 @@ def main():
               skill_md(name, source, description, deepened_body, argument_hint))
         write(skill_dir / "agents" / "openai.yaml", openai_yaml(name, source, description))
 
-    # fx-audit's SKILL.md is hand-written and predates this script: only its
-    # sidecar is generated.
-    audit_skill = SKILLS / "fx-audit" / "SKILL.md"
-    audit_fm, _ = split_frontmatter(audit_skill.read_text())
-    audit_description = field(audit_fm, "description") or "fx-audit"
-    write(SKILLS / "fx-audit" / "agents" / "openai.yaml",
-          openai_yaml("fx-audit", "skills/fx-audit/SKILL.md", audit_description))
+    # A hand-written SKILL.md is the source: only its sidecar is generated.
+    for name in HAND_WRITTEN:
+        fm, _ = split_frontmatter((SKILLS / name / "SKILL.md").read_text())
+        description = field(fm, "description") or name
+        write(SKILLS / name / "agents" / "openai.yaml",
+              openai_yaml(name, f"skills/{name}/SKILL.md", description))
 
 
 if __name__ == "__main__":

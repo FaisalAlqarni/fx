@@ -53,25 +53,26 @@ trigger list, so neither can contest a lane.
 Upstream ships an `agents/openai.yaml` beside each. Not copied: fx targets
 Codex, but upstream's file restates the `description` we deliberately
 rewrote, and Codex reads the skill's own frontmatter without it. fx ships its
-own `agents/openai.yaml` only where it has a job: on the eight user-invoked
+own `agents/openai.yaml` only where it has a job: on the nine user-invoked
 skills, where it hides the skill from the model on Codex.
 
 **Dropped:** `wizard`, `resolving-merge-conflicts`: merge conflicts are handled
 by hand, and infra-setup wizards are rare here.
 **Removed from inventory:** the 7 Android skills (`docs/adr/0012`).
 
-## User-invoked skills: 8
+## User-invoked skills: 9
 
 `disable-model-invocation: true`: the model never selects them, so they contest
-no lane and add no context load. Only the user types them. `fx-audit` is a
-skill rather than a command because a skill is given its own base directory,
-which is how it finds its templates. The other seven are generated from
+no lane and add no context load. Only the user types them. `fx-audit` and
+`fx-system-flow` are skills rather than commands because a skill is given its
+own base directory, which is how it finds its templates and sidecars. The other seven are generated from
 `commands/` by `scripts/gen-command-skills`, because Codex has no command
 surface and reaches them only as skills.
 
 | Skill | Typed as | Does |
 |---|---|---|
 | `fx-audit` | `/fx:fx-audit`, `/fx-audit` on opencode, `$fx:fx-audit` on Codex | Audits an existing system in four gated phases, ending in a `design.md` for `fx-plan` |
+| `fx-system-flow` | `/fx:fx-system-flow`, `/fx-system-flow` on opencode, `$fx:fx-system-flow` on Codex | Investigates a whole system across its repositories and builds an evidenced system flow site; stops for the owner's approval of the plan and never commits |
 | `fx-setup`, `fx-critique`, `fx-grill`, `fx-handoff`, `fx-pr`, `fx-retro`, `fx-what` | as the commands below | The same text as the command of the same name |
 
 ## Agents: 6 (performance lens cut, `docs/adr/0008`; pipeline lens added, `docs/adr/0014`)

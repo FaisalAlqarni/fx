@@ -8,8 +8,8 @@
 // Sources, as the installer has always read them:
 //   - every `commands/*.md`, body verbatim apart from opencode's names;
 //   - every skill marked `disable-model-invocation: true` that has no source
-//     command of its own (today, `fx-audit`). Its `../../references/...` and
-//     `../../agents/...` citations become absolute paths under `destAbs`,
+//     command of its own (today, `fx-audit` and `fx-system-flow`). Its
+//     `../../references/...`, `../../agents/...` and `../../skills/...` citations become absolute paths under `destAbs`,
 //     because a command has no skill directory to resolve them against.
 //
 // Every command ends with `Arguments, if any: $ARGUMENTS`: both runtimes read
@@ -22,9 +22,9 @@ import { splitFrontmatter, field } from './agent-dialects.js';
 // Claude Code addresses plugin parts as `fx:fx-<name>`; opencode registers
 // the same commands and agents as `fx-<name>`.
 const PLUGIN_PREFIX_RE = /\bfx:(?=fx-)/g;
-// A citation into references/ or agents/, or the bare prefix illustrating
-// the convention.
-const SKILL_PATH_RE = /`(\.\.\/\.\.\/(?:references|agents)\/[^`]+|\.\.\/\.\.\/)`/g;
+// A citation into references/, agents/ or a lane's own sidecar under skills/,
+// or the bare prefix illustrating the convention.
+const SKILL_PATH_RE = /`(\.\.\/\.\.\/(?:references|agents|skills)\/[^`]+|\.\.\/\.\.\/)`/g;
 // The skill's sentence saying its `../../` paths resolve from the base
 // directory a skill is given. A command is given none, so it is replaced
 // whole, before the paths inside it are rewritten.
