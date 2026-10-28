@@ -116,6 +116,13 @@ const TEAL = '    - scheme: default\n      primary: teal\n      accent: teal\n  
   f.put('host', 'docs/assets/docs.css', css('', '').replace('#0a7d6e', '#0b7a3e'));
   assert.ok(built(f).light.includes('--accent: #0b7a3e'));
 }
+{ // A saved docs CSS theme reads when the docs folder is the host itself, a VitePress config at the root (final review N4)
+  const f = make({ '.vitepress/config.mts': 'export default {}\n', 'style.css': css('', '') });
+  f.fxJson({ system_flow: { theme: { source: 'style.css', kind: 'docs-css' } } });
+  const b = built(f);
+  assert.deepStrictEqual([b.kind, b.source], ['docs-css', 'style.css']);
+  assert.ok(b.light.includes('--accent: #0a7d6e'), b.light);
+}
 { // The theme saved in .fx.json wins; build detects only when the key is absent (final fix A21)
   const f = make({ 'docs/assets/docs.css': css('', ''), 'app/assets/app.css': css('', '').replace('#0a7d6e', '#7a1f8f') });
   f.fxJson({ system_flow: { theme: { source: 'app/assets/app.css', kind: 'app-css' } } });

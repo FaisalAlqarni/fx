@@ -236,7 +236,8 @@ function chosenPick(root: string, docsDir: string, yml: string, c: { source: str
   if (c.kind === 'fx') return { source: 'fx', kind: 'fx', light: {}, dark: {} };
   if (c.kind === 'mkdocs-material') return material(yml);
   if (c.kind === 'tailwind') { const t = tailwind(root); return t?.source === c.source ? t : null; }
-  if (c.kind === 'docs-css' && !c.source.startsWith(`${docsDir}/`)) return null;
+  // A docs folder of '.' (a VitePress config at the host root) holds every host path; walk writes those without './'.
+  if (c.kind === 'docs-css' && !c.source.startsWith(docsDir === '.' ? '' : `${docsDir}/`)) return null;
   const file = path.resolve(root, c.source);
   if (!file.startsWith(root + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) return null;
   if (c.kind === 'brand') return brandFile(root, c.source);

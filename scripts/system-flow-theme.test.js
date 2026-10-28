@@ -145,6 +145,13 @@ ${TEAL}`), "docs/assets/docs.css": css("", "") });
   assert.ok(built(f).light.includes("--accent: #0b7a3e"));
 }
 {
+  const f = make({ ".vitepress/config.mts": "export default {}\n", "style.css": css("", "") });
+  f.fxJson({ system_flow: { theme: { source: "style.css", kind: "docs-css" } } });
+  const b = built(f);
+  assert.deepStrictEqual([b.kind, b.source], ["docs-css", "style.css"]);
+  assert.ok(b.light.includes("--accent: #0a7d6e"), b.light);
+}
+{
   const f = make({ "docs/assets/docs.css": css("", ""), "app/assets/app.css": css("", "").replace("#0a7d6e", "#7a1f8f") });
   f.fxJson({ system_flow: { theme: { source: "app/assets/app.css", kind: "app-css" } } });
   const b = built(f);
