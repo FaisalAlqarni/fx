@@ -10,9 +10,9 @@ ADR 0062 made the Markdown the source of truth and ruled out a JSON model of the
 
 ## Decision
 
-1. In a repo with a system model, the model's fragments are the record, and the Markdown under the site's sections is generated from them. Hand-written docs elsewhere keep evidence lines as the record. This replaces decision 2 of 0062.
+1. In a repo with a system model, the model's fragments are the record, and the Markdown under the site's sections is generated from them. Hand-written docs elsewhere keep evidence lines as the record (decision 9). This replaces the first sentence of decision 2 of 0062; the rest of it holds as decision 9.
    Evidence: `src/lib/sf-markdown.ts`
-2. The first full documentation run is `/fx:fx-system-flow`, the ninth user-invoked lane, which the owner types. `fx-implement`'s first-run offer names it and never runs it (ADR 0055); `fx-docs` says so in one line on "document the system" and `skills/fx-docs/full-run.md` is removed. This replaces the first-run offer in decision 4 of 0062. The rest of that decision is unchanged: the branch offer, `Docs: offer pending` and the ADR candidates section.
+2. The first full documentation run is `/fx:fx-system-flow`, the ninth user-invoked lane, which the owner types. `fx-implement`'s first-run offer names it and never runs it (ADR 0055); `fx-docs` says so in one line on "document the system" and `skills/fx-docs/full-run.md` is removed. This replaces the first-run offer in decision 4 of 0062; the rest of that decision holds as decision 10.
    Evidence: `skills/fx-implement/references/final-review.md`
 3. The `system-flow` CLI is the one place for deterministic steps: `check`, `build`, `detect`, `query`, `stale` and `verify`. Evidence is verified on a path, a line range and a symbol, and an evidence path may take the `@<root>` form to name another root of a multi-root model.
    Evidence: `src/scripts/system-flow.ts`
@@ -31,6 +31,10 @@ Decisions of ADR 0062 that hold, restated as decisions of this ADR:
    Evidence: `src/lib/doc-index.ts` `stalePassOne`
 8. The lane writes into the repo's own docs structure and flavour: MkDocs Material features only in a MkDocs repo, GitHub callouts and Mermaid elsewhere. The repo's docs guide wins; with none the lane follows a default guide shipped beside it and does not write it into the repo.
    Evidence: `skills/fx-docs/docs-guide.md`
+9. In hand-written docs, every factual claim carries one evidence line directly under it: a path, optional lines and an optional symbol, or `owner, <date>` for a fact the owner confirmed. The line is one form that a reader and the parser in `src/lib/doc-evidence.ts` both accept. A claim with no evidence is an open question, never a fact.
+   Evidence: `src/lib/doc-evidence.ts`
+10. `fx-implement` offers the docs step in one line before the branch review and never invokes `fx-docs` itself, so ADR 0006 stands. On a yes, `fx-docs` runs in branch mode on the branch's diff and commits on the branch, so the branch review covers its commits. An offer the controller cannot put to the owner (the build runs in one turn with no point to ask) is ledgered `Docs: offer pending` and becomes option 4 of the completion menu, so the step is never skipped on a guess that the owner is away. The completion report also carries a required ADR candidates section, offered as option 5 (`ADR candidates: none` when there are none). In a repo where no doc carries an evidence line, a no to the first-run offer of decision 2 is stored as `"docs_first_run": "declined"` in `.fx.json` and the offer stops.
+   Evidence: `skills/fx-implement/references/final-review.md`
 
 ## Consequences
 
