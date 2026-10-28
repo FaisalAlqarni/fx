@@ -43,7 +43,8 @@ has(completion, 'When the docs step did not run, list every `Docs claim wrong:` 
 has(finalReview, 'Docs: not run: no evidence-bearing docs', 'the ledger skip wording names evidence-bearing docs');
 assert.ok(!read(finalReview).includes('Docs: not run: no docs/'), `${finalReview}: the old "no docs/" wording is gone`);
 has(finalReview, '"docs_first_run": "declined"', 'a declined first run is recorded in .fx.json');
-has(docs, "says yes to fx-implement's first-run offer", 'fx-docs names the first-run offer as a full-run trigger');
+has(docs, 'The full run is `/fx:fx-system-flow`, which the owner types; a lane cannot invoke it (ADR 0055).', 'fx-docs names the user-invoked full run and never runs it');
+has(finalReview, '/fx:fx-system-flow', 'the first-run offer names the user-invoked full run');
 
 // E2E bug 1: the docs offer is never skipped on a guess that the owner is away.
 assert.ok(!/owner away/i.test(read(finalReview)), `${finalReview}: no "owner away" skip`);
@@ -56,14 +57,36 @@ has(completion, 'ADR candidates: none', 'zero candidates are stated, not omitted
 has(completion, 'Write ADRs for the candidates with `fx-adr`', 'the ADR offer is a completion menu option');
 
 // E2E bug 8: every interview question carries a recommended answer, and the owner can take them all.
-has('skills/fx-docs/full-run.md', 'Every question carries a recommended answer', 'full-run interview questions carry a recommended answer');
-has('skills/fx-docs/full-run.md', 'or take the recommended answer for every question', 'the interview offer includes taking every recommended answer');
+has('skills/fx-system-flow/interview.md', 'Every question carries a recommended answer', 'full-run interview questions carry a recommended answer');
+has('skills/fx-system-flow/interview.md', 'or take the recommended answer for every question', 'the interview offer includes taking every recommended answer');
 has(docs, 'each with a recommended answer', 'branch-mode questions carry a recommended answer');
 
 // G6: branch mode finds stale docs outside the touched set and counts stale HTML pages.
 has(docs, 'docs-index --root <worktree> stale', 'branch mode step 3 runs the stale check');
 has(docs, 'every `recheck` claim in a doc outside the step 2 set', 'step 3 lists recheck claims outside the touched docs');
 for (const f of [docs, finalReview]) has(f, '<n> listed stale, <n> HTML pages out of date', 'the Docs line counts out-of-date HTML pages');
+
+// Task 19: in a repo with a system model, fx-docs updates the model first, then the hand-written Markdown.
+has(docs, 'system-flow --root <worktree> query --diff <merge-base>', 'the model path starts from the branch diff');
+for (const t of ['build --only', '--archify', 'added', '/fx:fx-system-flow',
+  'Docs: <n> model items updated, <n> listed stale, <n> uncovered, <n> inventory added, <n> diagrams rebuilt']) has(docs, t, `the model path names ${t}`);
+has(docs, 'In a repo with a system model, the model path runs first and the Markdown path runs after it', 'the two paths run in order');
+has(docs, 'The Markdown path skips every file that carries `<!-- fx-system-flow generated`', 'the Markdown path skips generated files, keyed on the marker alone');
+has(docs, 'For each new engine, job or integration among the added paths, add an inventory entry', 'new engines, jobs and integrations get inventory entries');
+assert.ok(!read(docs).includes('full-run.md'), `${docs}: no link to the removed full-run.md`);
+assert.ok(!fs.existsSync(path.join(root, 'skills/fx-docs/full-run.md')), 'full-run.md is gone');
+has(docs, '(./html-pages.md)', 'fx-docs still links html-pages.md');
+has(docs, 'only in a repo without a system model', 'the HTML pages stay for a repo without a model');
+has('skills/fx-docs/html-pages.md', 'only in a repo without a system model', 'html-pages.md says when it applies');
+has(finalReview, 'Docs: <n> model items updated', 'the branch offer ledger follows the model-path line');
+{
+  const adr62 = raw('docs/adr/0062-fx-docs-keeps-docs-on-evidence-lines-and-the-docs-step-is-offered.md');
+  assert.ok(/^Status: Superseded by 0066 \(replaced: decisions 2, 4; the rest carried forward\)/m.test(adr62), '0062 reads as superseded by 0066');
+  const adr66 = raw('docs/adr/0066-a-system-model-is-the-record-for-the-system-flow-site.md');
+  assert.ok(/^Supersedes: 0062/m.test(adr66), '0066 supersedes 0062');
+  assert.ok(adr66.includes('`<docs_dir>/system/`'), '0066 records the Markdown location rule');
+  assert.ok(raw('docs/adr/index.md').includes('](0066-a-system-model-is-the-record-for-the-system-flow-site.md)'), 'the index links 0066');
+}
 
 // I1 (G2): fx-docs records an ADR's verified commit with the command, never in the ADR.
 has(docs, 'docs-index --root <repo> verify <adr path>', 'fx-docs records a verified ADR with docs-index verify');

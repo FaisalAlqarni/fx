@@ -54,7 +54,8 @@ check fails the report never says the build is complete. Report:
 - **Docs**: the ledger's `Docs:` line, repeated, naming each doc listed stale.
   When the docs step did not run, list every `Docs claim wrong:` ledger line
   too, so a wrong doc still reaches the owner. With `Docs: offer pending`, say
-  the docs step waits on menu option 4.
+  the docs step waits on menu option 4. With `/fx:fx-system-flow named`, tell
+  the owner to type that command to start the first full run.
 - **Not done**: every `FAIL` line from `plan-check`, or "none".
 - **Parked**: deferred findings and why.
 - **Skipped**: blocked tasks and what unblocks them.

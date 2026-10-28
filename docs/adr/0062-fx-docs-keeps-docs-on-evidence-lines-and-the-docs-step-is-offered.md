@@ -1,6 +1,6 @@
 # fx-docs keeps docs on evidence lines, and the docs step is offered
 
-Status: accepted, 2026-10-25.
+Status: Superseded by 0066 (replaced: decisions 2, 4; the rest carried forward)
 
 ## Context
 

@@ -19,7 +19,10 @@ doc, and a doc you cannot back with evidence is an open question, not a fact.
 
 ## 1. Source of truth: the Markdown
 
-The Markdown docs are the record. There is no separate JSON model of the system.
+The Markdown docs are the record, except where a repo has a system model (a
+`system_flow` block in `.fx.json` or a `model/` folder under the site): there the
+model's fragments are the record of the generated docs and section 4's model
+path keeps them current (ADR 0066).
 Directly under every factual claim (a paragraph or a list item) write one
 evidence line:
 
@@ -63,7 +66,33 @@ and never write it into the repo unless the owner asks.
 fx-implement offers this lane after the build and before the branch review. On a
 yes you get the worktree, the changed paths from
 `git diff --no-renames <merge-base>...HEAD --name-only`, and any `Docs claim wrong:` lines. Work in
-the worktree and commit on the branch:
+the worktree and commit on the branch. In a repo with a system model, the model
+path runs first and the Markdown path runs after it. A repo without a model runs
+the Markdown path alone.
+
+### Model path
+
+1. `node <skill base directory>/../../scripts/system-flow --root <worktree> detect` prints the site folder and an `archify` field when archify is found.
+2. `node <skill base directory>/../../scripts/system-flow --root <worktree> query --diff <merge-base>` lists the model items citing a changed path, in
+   every root, and prints the `added` paths per root.
+3. For each new engine, job or integration among the added paths, add an
+   inventory entry to the fragments, with evidence.
+4. Re-read each listed item against the code at HEAD. Edit the fragments, add a
+   `corrections` entry for every changed or removed fact, then run
+   `node <skill base directory>/../../scripts/system-flow --root <worktree> verify <handle>...` on each re-read item.
+5. `node <skill base directory>/../../scripts/system-flow --root <worktree> build --only <handles> --archify <detect's archify.dir>`, with the
+   `--archify` part only when `detect` printed one. It rebuilds the Markdown,
+   figures and deep diagrams that hold those items.
+6. `node <skill base directory>/../../scripts/system-flow --root <worktree> stale` lists every other item to recheck. List them; do not rewrite them.
+7. List each inventory entry that no chapter covers as uncovered, with a pointer
+   to `/fx:fx-system-flow`.
+
+Report `Docs: <n> model items updated, <n> listed stale, <n> uncovered, <n> inventory added, <n> diagrams rebuilt`.
+
+### Markdown path
+
+The Markdown path skips every file that carries `<!-- fx-system-flow generated`;
+the marker alone decides, so a generated file that lost it is read as hand-written.
 
 1. Find every claim citing the changed paths (`--limit 0` lifts the default cap of 20):
    `node <skill base directory>/../../scripts/docs-index --root <worktree> query --limit 0 <changed paths>`.
@@ -73,8 +102,8 @@ the worktree and commit on the branch:
 3. List the docs elsewhere that the change made stale: run
    `node <skill base directory>/../../scripts/docs-index --root <worktree> stale`
    and list every `recheck` claim in a doc outside the step 2 set, with the HTML
-   pages of each area whose Markdown changed ([html-pages.md](./html-pages.md)).
-   Do not rewrite them.
+   pages of each area whose Markdown changed ([html-pages.md](./html-pages.md)),
+   in a repo without a model.
 4. Write a new doc when the change adds an engine, subsystem, public flow,
    command or integration that no doc covers. Ask the owner only what the code
    cannot answer, each with a recommended answer; leave the rest as open questions.
@@ -105,9 +134,8 @@ re-reads every claim marked `recheck` against the code at HEAD:
 
 ## 6. Full run
 
-Run it only when the owner asks for it ("document the system") or says yes to
-fx-implement's first-run offer. Steps, the doc set and the interview are in
-[full-run.md](./full-run.md).
+The full run is `/fx:fx-system-flow`, which the owner types; a lane cannot invoke it (ADR 0055).
+On "document the system", say that in one line and stop.
 
 "Update the docs" in a repo where no doc carries an evidence line is not a full
 run: annotate only the docs this change touches (evidence lines and the verified
@@ -116,7 +144,9 @@ marker) and leave every other doc as it is.
 ## 7. HTML pages
 
 Markdown is always written. HTML pages in `docs/html/<area>/` are optional, on
-the visual kit. Steps are in [html-pages.md](./html-pages.md). Pages default to
+the visual kit, and written only in a repo without a system model; in a repo with
+one the system-flow site replaces them and existing pages are left as they are.
+Steps are in [html-pages.md](./html-pages.md). Pages default to
 `lang="en" dir="ltr"`.
 
 ## 8. Language and fbrain

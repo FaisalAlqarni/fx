@@ -1,5 +1,7 @@
 # HTML pages
 
+These steps run only in a repo without a system model; with one, the site replaces them.
+
 HTML pages are optional. The Markdown is the record; a page presents the same
 facts in its own way (chapters, a drill-down map, interactive diagrams), never a
 copy of the Markdown prose.

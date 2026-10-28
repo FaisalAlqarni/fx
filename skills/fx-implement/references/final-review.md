@@ -4,20 +4,23 @@ Before packaging the branch, decide the docs step. Never invoke `fx-docs` withou
 
 1. No Markdown under `docs/` outside `docs/plans/` carries an `Evidence:` line.
    With `"docs_first_run": "declined"` in `.fx.json`, ledger
-   `Docs: not run: no evidence-bearing docs` and go on. Otherwise offer the
-   first full run once: "This repo's docs carry no evidence lines. `fx-docs` can
-   run a first full documentation run, in Markdown, and HTML pages under
-   `docs/html/` too if you want them. Run it, and with pages?" On yes, invoke
-   `fx-docs` for a full run in the worktree, passing whether pages were wanted, and ledger `Docs: first full run: <n> written`. On
-   no, write `"docs_first_run": "declined"` to `.fx.json` and ledger
-   `Docs: not run: no evidence-bearing docs, first run declined`. Then go on
+   `Docs: not run: no evidence-bearing docs` and go on. Otherwise ask once:
+   "This repo's docs carry no evidence lines. The first full documentation run is
+   `/fx:fx-system-flow`, which you type in this repo. Want it named in the
+   completion report, or not now?" Never invoke it (ADR 0055). On not now, write
+   `"docs_first_run": "declined"` to `.fx.json` and ledger
+   `Docs: not run: no evidence-bearing docs, first run declined`. Otherwise ledger
+   `Docs: not run: no evidence-bearing docs, /fx:fx-system-flow named`. Then go on
    to the branch pass.
 2. Otherwise offer it in one line: "`fx-docs` can update the docs this branch
    affects before the branch review, and their HTML pages if you want them. Run
-   it, and with pages?" Pass the pages answer to `fx-docs`.
+   it, and with pages?" Pass the pages answer to `fx-docs`. In a repo with a
+   system model, offer without "with pages": the site replaces them.
 3. On yes, invoke `fx-docs` in branch mode in the worktree. Pass it every
    `Docs claim wrong:` ledger line and `git diff --no-renames <merge-base>...HEAD --name-only`.
-   It commits on the branch. Ledger `Docs: <n> updated, <n> written, <n> listed stale, <n> HTML pages out of date`.
+   It commits on the branch. Ledger the lines `fx-docs` reports: in a repo with a model
+   `Docs: <n> model items updated, <n> listed stale, <n> uncovered, <n> inventory added, <n> diagrams rebuilt`,
+   then for the Markdown path `Docs: <n> updated, <n> written, <n> listed stale, <n> HTML pages out of date`.
 4. On no, ledger `Docs: not run: declined`.
 5. If you cannot put either offer to the owner now (the whole build runs in
    one turn with no point to ask), ledger `Docs: offer pending` and go on. The
