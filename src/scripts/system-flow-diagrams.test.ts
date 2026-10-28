@@ -214,6 +214,17 @@ assert.deepStrictEqual(validate({ type: 'string', format: 'email' }, 'x'), [{ po
   assert.ok(seq.includes('<animate') || (seq.includes('@keyframes') && seq.includes('prefers-reduced-motion')));
 }
 
+// A narrow screen keeps the diagram's 13 px text at 12 px or more: the svg never shrinks below 12/13 of its drawn
+// width, and it scrolls inside its own box so the page does not scroll sideways.
+for (const n of ['arch-engine', 'seq-turn']) {
+  const html = read(f, `${D}/${n}.html`);
+  const w = Number(/<svg\b[^>]*\swidth="(\d+)"/.exec(html)?.[1]);
+  const min = Number(/<svg\b[^>]*min-inline-size:(\d+)px/.exec(html)?.[1]);
+  assert.ok(min >= Math.ceil((w * 12) / 13), `${n}: svg min-inline-size ${min} keeps text at 12 px for width ${w}`);
+  assert.ok(/<div class="scroll">\s*<svg\b/.test(html), `${n}: svg sits in the scroll box`);
+  assert.ok(/\.scroll\{[^}]*overflow-x:auto/.test(html), `${n}: the scroll box scrolls sideways`);
+}
+
 // Pick lines.
 {
   assert.deepStrictEqual(out.diagrams.find((d) => d.name === 'seq-turn'), { name: 'seq-turn', renderer: 'svg', reason: 'animated SVG, archify not installed' });

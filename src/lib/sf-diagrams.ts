@@ -203,6 +203,7 @@ export function svgPage(d: DeepDiagram, figure: FigureSpec, page: number): strin
   const nodes = figure.nodes.map((n) => `<g><rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="8" class="node${n.primary ? '' : ' ctx'}"/>${n.lines.map((l, i) => `<text x="${n.x + n.w / 2}" y="${n.y + n.h / 2 + (i - (n.lines.length - 1) / 2) * 15 + 4}" text-anchor="middle" class="ink">${escapeHtml(l)}</text>`).join('')}</g>`).join('');
   const captions = (animated ? mine.map((n) => figure.steps[n - 1]?.caption) : figure.steps.map((s) => s.caption)).filter((c): c is string => !!c);
   const title = escapeHtml(spec.meta.title);
+  // Node text is 13 px: the svg never shrinks below 12/13 of its width, and a narrow screen scrolls it in .scroll.
   return `<!doctype html>
 <html lang="en" dir="ltr">
 <head>
@@ -214,6 +215,7 @@ export function svgPage(d: DeepDiagram, figure: FigureSpec, page: number): strin
 <style>
 body{margin:0;padding:1.5rem;background:var(--paper);color:var(--ink);font:16px/1.5 system-ui,sans-serif}
 a{color:var(--accent)}
+.scroll{max-inline-size:100%;overflow-x:auto}
 svg{max-inline-size:100%;block-size:auto;background:var(--panel);border:1px solid var(--rule);border-radius:8px}
 svg text{font-size:13px;fill:var(--ink)} svg .muted{fill:var(--muted);font-size:12px}
 .node{fill:var(--panel);stroke:var(--ink);stroke-width:1.4} .node.ctx{stroke:var(--muted);stroke-dasharray:5 4}
@@ -226,10 +228,12 @@ ${keyframes}
 <body>
 <p><a href="../index.html">Back to the system page</a></p>
 <h1>${title}</h1>
-${d.pages > 1 ? `<p>Page ${page} of ${d.pages}</p>\n` : ''}<svg role="img" aria-label="${title}" viewBox="0 0 ${figure.width} ${figure.height}" width="${figure.width}" height="${figure.height}" xmlns="http://www.w3.org/2000/svg">
+${d.pages > 1 ? `<p>Page ${page} of ${d.pages}</p>\n` : ''}<div class="scroll">
+<svg role="img" aria-label="${title}" viewBox="0 0 ${figure.width} ${figure.height}" width="${figure.width}" height="${figure.height}" style="min-inline-size:${Math.ceil((figure.width * 12) / 13)}px" xmlns="http://www.w3.org/2000/svg">
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker></defs>
 ${groups}${edges}${nodes}
 </svg>
+</div>
 <ol>
 ${captions.map((c) => `<li>${escapeHtml(c)}</li>`).join('\n')}
 </ol>
