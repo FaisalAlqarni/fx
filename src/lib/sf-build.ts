@@ -43,7 +43,10 @@ export type { Depth };
 export function systemFlowConfig(root: string): { config: FxJson['system_flow']; problems: Problem[] } {
   const file = path.join(root, '.fx.json');
   if (!fs.existsSync(file)) return { config: undefined, problems: [] };
-  const parsed = parseFxJson(parseJson(fs.readFileSync(file, 'utf8')));
+  let raw: unknown;
+  // A plain Error: the CLI prints a SyntaxError's stack as if it were a bug.
+  try { raw = parseJson(fs.readFileSync(file, 'utf8')); } catch (e) { throw new Error(`.fx.json is not valid JSON: ${(e as Error).message}`); }
+  const parsed = parseFxJson(raw);
   if (!parsed.ok) throw new Error(parsed.reason);
   const problems = parsed.problems.filter((p) => p.key.startsWith('system_flow'))
     .map((p): Problem => ({ file: '.fx.json', pointer: `/${p.key.split('.').join('/')}`, message: p.reason, level: 'error' }));

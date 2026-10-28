@@ -271,4 +271,13 @@ assert.throws(() => validate({ $ref: '#/$defs/constructor', $defs: {} }, 'x'), /
   assert.strictEqual(own.stderr, 'system-flow: check: no fragment nope.json\n');
 }
 
+{ // A malformed .fx.json is one plain line naming the file, not a SyntaxError stack (final review N5)
+  const f = sfFixture();
+  f.goodSet();
+  f.put('host', '.fx.json', '{"system_flow": ');
+  const r = f.run(['check']);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(/^system-flow: check: \.fx\.json is not valid JSON: [^\n]+\n$/.test(r.stderr), r.stderr);
+}
+
 process.stdout.write('system-flow-check.test.js: OK\n');

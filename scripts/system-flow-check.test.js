@@ -318,4 +318,12 @@ ${r.stdout}`);
   const own = f.run(["check", "--fragment", "nope.json"]);
   assert.strictEqual(own.stderr, "system-flow: check: no fragment nope.json\n");
 }
+{
+  const f = (0, import_sf_fixture.sfFixture)();
+  f.goodSet();
+  f.put("host", ".fx.json", '{"system_flow": ');
+  const r = f.run(["check"]);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(/^system-flow: check: \.fx\.json is not valid JSON: [^\n]+\n$/.test(r.stderr), r.stderr);
+}
 process.stdout.write("system-flow-check.test.js: OK\n");
