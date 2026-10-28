@@ -86,7 +86,7 @@ function git(root: string, args: string[]): string | null {
 const RANK = { unchanged: 0, shifted: 1, changed: 2, deleted: 3 } as const;
 type Item = keyof typeof RANK;
 
-function checkPath(root: string, verified: string, p: string, start: number | null, end: number | null): Item {
+export function checkPath(root: string, verified: string, p: string, start: number | null, end: number | null): Item {
   if (git(root, ['cat-file', '-e', `HEAD:${p}`]) === null) return 'deleted';
   if (git(root, ['cat-file', '-e', `${verified}:${p}`]) === null) return 'changed';
   const diff = git(root, ['diff', '--no-color', '--no-renames', '-U0', verified, 'HEAD', '--', p]);

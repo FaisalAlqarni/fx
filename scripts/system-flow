@@ -27,8 +27,9 @@ var path = __toESM(require("path"));
 var import_child_process = require("child_process");
 var import_sf_build = require("../lib/sf-build.js");
 var import_sf_model = require("../lib/sf-model.js");
+var import_sf_stale = require("../lib/sf-stale.js");
 var import_sf_detect = require("../lib/sf-detect.js");
-const USAGE = "system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build | detect [--repo <path>]... [--write]";
+const USAGE = "system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build | detect [--repo <path>]... [--write] | query <path>... | query --diff <base> [--base <root id>=<ref>]... | stale | verify <handle>... | --all";
 const usage = () => {
   process.stderr.write(`${USAGE}
 `);
@@ -45,7 +46,7 @@ const takeFlags = (names) => {
 };
 takeFlags(["--root", "--site", "--markdown"]);
 const cmd = args.shift();
-if (cmd !== "check" && cmd !== "build" && cmd !== "detect") usage();
+if (cmd !== "check" && cmd !== "build" && cmd !== "detect" && cmd !== "query" && cmd !== "stale" && cmd !== "verify") usage();
 const repos = [];
 let write = false;
 if (cmd === "detect") {
@@ -62,6 +63,40 @@ if (cmd === "check" && args[0] === "--fragment") {
   if (fragmentArg === void 0) usage();
 }
 if (cmd === "build") takeFlags(["--markdown"]);
+let diffBase;
+const givenBases = {};
+let queried = [];
+let verifyAll = false;
+if (cmd === "query") {
+  if (args[0] === "--diff") {
+    args.shift();
+    diffBase = args.shift();
+    if (diffBase === void 0) usage();
+    while (args[0] === "--base") {
+      args.shift();
+      const m = /^([^=]+)=(.+)$/.exec(args.shift() ?? "");
+      if (!m) usage();
+      givenBases[m?.[1] ?? ""] = m?.[2] ?? "";
+    }
+  } else {
+    queried = args.splice(0);
+    if (queried.length === 0) usage();
+  }
+}
+if (cmd === "verify") {
+  if (args[0] === "--all") {
+    args.shift();
+    verifyAll = true;
+  } else queried = args.splice(0);
+  if (!verifyAll && queried.length === 0) usage();
+  for (const h of queried) {
+    if ((0, import_sf_model.parseHandle)(h) === null) {
+      process.stderr.write(`system-flow: verify: ${h} is not a handle (<kind>:<id>)
+`);
+      process.exit(2);
+    }
+  }
+}
 if (args.length > 0) usage();
 const hostRoot = () => path.resolve(opts.root ?? (0, import_child_process.execFileSync)("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim());
 const report = (problems) => {
@@ -90,6 +125,43 @@ function check() {
   process.stdout.write(`${JSON.stringify({ ok: true, fragments: checked.fragments.length, items: (0, import_sf_model.itemsOf)(checked.model).length, warnings })}
 `);
 }
+const siteOf = (root) => opts.site ?? (0, import_sf_build.systemFlowConfig)(root).config?.output?.site ?? "docs/system-flow";
+const print = (v) => {
+  process.stdout.write(`${JSON.stringify(v)}
+`);
+};
+function queryCmd() {
+  const root = hostRoot();
+  const { items, roots } = (0, import_sf_stale.loadModelItems)(root, siteOf(root));
+  const hostId = [...roots.values()].find((r) => r.host)?.id ?? "";
+  if (diffBase === void 0) return print({ items: (0, import_sf_stale.queryPaths)(items, queried, hostId) });
+  for (const id of Object.keys(givenBases)) {
+    if (!roots.has(id) || roots.get(id)?.host) {
+      process.stderr.write(`system-flow: query: --base names ${roots.has(id) ? "the host root" : "no root"} ${id}
+`);
+      process.exit(2);
+    }
+  }
+  const { bases, unbased } = (0, import_sf_stale.diffBases)(items, roots, diffBase, givenBases);
+  const found = /* @__PURE__ */ new Map();
+  const added = {};
+  for (const [id, base] of Object.entries(bases)) {
+    const diff = (0, import_sf_stale.changedPaths)(roots.get(id), base);
+    added[id] = diff.added;
+    for (const hit of (0, import_sf_stale.queryPaths)(items, diff.changed.map((p) => id === hostId ? p : `@${id}/${p}`), hostId)) found.set(hit.handle, hit);
+  }
+  print({ items: [...found.values()], bases, unbased, added });
+}
+function staleCmd() {
+  const root = hostRoot();
+  const { items, roots } = (0, import_sf_stale.loadModelItems)(root, siteOf(root));
+  print({ roots: (0, import_sf_stale.staleItems)(items, roots) });
+}
+function verifyCmd() {
+  const root = hostRoot();
+  const { roots, fragmentsDir } = (0, import_sf_stale.loadModelItems)(root, siteOf(root));
+  print({ verified: (0, import_sf_stale.verifyItems)(fragmentsDir, verifyAll ? "all" : queried, roots) });
+}
 async function buildCmd() {
   const root = hostRoot();
   const output = (0, import_sf_build.systemFlowConfig)(root).config?.output;
@@ -99,7 +171,7 @@ async function buildCmd() {
   process.stdout.write(`${JSON.stringify(result)}
 `);
 }
-(cmd === "build" ? buildCmd() : Promise.resolve().then(cmd === "detect" ? detectCmd : check)).catch((e) => {
+(cmd === "build" ? buildCmd() : Promise.resolve().then({ detect: detectCmd, query: queryCmd, stale: staleCmd, verify: verifyCmd, check }[cmd])).catch((e) => {
   process.stderr.write(`system-flow: ${cmd}: ${e.message.split("\n")[0]}
 `);
   process.exit(1);

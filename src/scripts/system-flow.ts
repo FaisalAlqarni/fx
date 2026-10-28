@@ -3,10 +3,11 @@
 import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { build, checkModel, systemFlowConfig } from '../lib/sf-build.js';
-import { itemsOf } from '../lib/sf-model.js';
+import { itemsOf, parseHandle } from '../lib/sf-model.js';
+import { changedPaths, diffBases, loadModelItems, queryPaths, staleItems, verifyItems } from '../lib/sf-stale.js';
 import { detect, docsConfig, writeFxJson } from '../lib/sf-detect.js';
 
-const USAGE = 'system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build | detect [--repo <path>]... [--write]';
+const USAGE = 'system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build | detect [--repo <path>]... [--write] | query <path>... | query --diff <base> [--base <root id>=<ref>]... | stale | verify <handle>... | --all';
 const usage = (): never => { process.stderr.write(`${USAGE}\n`); process.exit(2); };
 
 const args = process.argv.slice(2);
@@ -21,7 +22,7 @@ const takeFlags = (names: string[]): void => {
 };
 takeFlags(['--root', '--site', '--markdown']);
 const cmd = args.shift();
-if (cmd !== 'check' && cmd !== 'build' && cmd !== 'detect') usage();
+if (cmd !== 'check' && cmd !== 'build' && cmd !== 'detect' && cmd !== 'query' && cmd !== 'stale' && cmd !== 'verify') usage();
 const repos: string[] = [];
 let write = false;
 if (cmd === 'detect') {
@@ -38,6 +39,33 @@ if (cmd === 'check' && args[0] === '--fragment') {
   if (fragmentArg === undefined) usage();
 }
 if (cmd === 'build') takeFlags(['--markdown']);
+let diffBase: string | undefined;
+const givenBases: Record<string, string> = {};
+let queried: string[] = [];
+let verifyAll = false;
+if (cmd === 'query') {
+  if (args[0] === '--diff') {
+    args.shift();
+    diffBase = args.shift();
+    if (diffBase === undefined) usage();
+    while ((args[0] as string | undefined) === '--base') {
+      args.shift();
+      const m = /^([^=]+)=(.+)$/.exec(args.shift() ?? '');
+      if (!m) usage();
+      givenBases[m?.[1] ?? ''] = m?.[2] ?? '';
+    }
+  } else {
+    queried = args.splice(0);
+    if (queried.length === 0) usage();
+  }
+}
+if (cmd === 'verify') {
+  if (args[0] === '--all') { args.shift(); verifyAll = true; } else queried = args.splice(0);
+  if (!verifyAll && queried.length === 0) usage();
+  for (const h of queried) {
+    if (parseHandle(h) === null) { process.stderr.write(`system-flow: verify: ${h} is not a handle (<kind>:<id>)\n`); process.exit(2); }
+  }
+}
 if (args.length > 0) usage();
 
 const hostRoot = (): string => path.resolve(opts.root ?? execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim());
@@ -66,6 +94,40 @@ function check(): void {
   process.stdout.write(`${JSON.stringify({ ok: true, fragments: checked.fragments.length, items: itemsOf(checked.model).length, warnings })}\n`);
 }
 
+const siteOf = (root: string): string => opts.site ?? systemFlowConfig(root).config?.output?.site ?? 'docs/system-flow';
+const print = (v: unknown): void => { process.stdout.write(`${JSON.stringify(v)}\n`); };
+
+function queryCmd(): void {
+  const root = hostRoot();
+  const { items, roots } = loadModelItems(root, siteOf(root));
+  const hostId = [...roots.values()].find((r) => r.host)?.id ?? '';
+  if (diffBase === undefined) return print({ items: queryPaths(items, queried, hostId) });
+  for (const id of Object.keys(givenBases)) {
+    if (!roots.has(id) || roots.get(id)?.host) { process.stderr.write(`system-flow: query: --base names ${roots.has(id) ? 'the host root' : 'no root'} ${id}\n`); process.exit(2); }
+  }
+  const { bases, unbased } = diffBases(items, roots, diffBase, givenBases);
+  const found = new Map<string, { handle: string; kind: string; file: string }>();
+  const added: Record<string, string[]> = {};
+  for (const [id, base] of Object.entries(bases)) {
+    const diff = changedPaths(roots.get(id) as NonNullable<ReturnType<typeof roots.get>>, base);
+    added[id] = diff.added;
+    for (const hit of queryPaths(items, diff.changed.map((p) => (id === hostId ? p : `@${id}/${p}`)), hostId)) found.set(hit.handle, hit);
+  }
+  print({ items: [...found.values()], bases, unbased, added });
+}
+
+function staleCmd(): void {
+  const root = hostRoot();
+  const { items, roots } = loadModelItems(root, siteOf(root));
+  print({ roots: staleItems(items, roots) });
+}
+
+function verifyCmd(): void {
+  const root = hostRoot();
+  const { roots, fragmentsDir } = loadModelItems(root, siteOf(root));
+  print({ verified: verifyItems(fragmentsDir, verifyAll ? 'all' : queried, roots) });
+}
+
 async function buildCmd(): Promise<void> {
   const root = hostRoot();
   const output = systemFlowConfig(root).config?.output;
@@ -75,7 +137,7 @@ async function buildCmd(): Promise<void> {
   process.stdout.write(`${JSON.stringify(result)}\n`);
 }
 
-(cmd === 'build' ? buildCmd() : Promise.resolve().then(cmd === 'detect' ? detectCmd : check)).catch((e: Error) => {
+(cmd === 'build' ? buildCmd() : Promise.resolve().then({ detect: detectCmd, query: queryCmd, stale: staleCmd, verify: verifyCmd, check }[cmd as 'check'])).catch((e: Error) => {
   process.stderr.write(`system-flow: ${cmd}: ${e.message.split('\n')[0]}\n`);
   process.exit(1);
 });
