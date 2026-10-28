@@ -57,6 +57,17 @@ miss('backtick symbol', { path: 'app/x.rb', lines: '1', symbol: 'a`b' }, 'backen
 miss('no symbol', { path: 'app/x.rb', lines: '1' }, 'backend/app/x.rb:1', 'a file entry needs lines and symbol');
 miss('unknown root', { root: 'mobile', path: 'app/x.rb', lines: '1', symbol: 'Link' }, 'mobile/app/x.rb:1 Link', 'evidence names root mobile, not in meta.roots');
 
+// lines is checked on every entry before anything else, so no backtick or HTML reaches a generated doc (final fix A5).
+const LINES = 'lines must be ranges such as 4, 1-4 or 1-4,9';
+miss('bad lines', { path: 'app/x.rb', lines: '1`<b>x</b>', symbol: 'Link' }, 'backend/app/x.rb:1`<b>x</b> Link', LINES);
+fails('bad lines on a folder', [good], `${F}/inventory.json:/inventory/0/evidence/0: inventory:inv: backend/app/:1\`x: ${LINES}`,
+  (f) => f.fragment('inventory', { inventory: [{ id: 'inv', kind: 'store', name: 'N', evidence: [{ path: 'app/', lines: '1`x' }] }] }));
+{
+  const f = setup([good, { root: 'guide', path: 'README.md', lines: '1`x', symbol: 'Guide' }], undefined, { guide: '../nowhere' });
+  const r = f.run(['check']);
+  assert.ok(r.stderr.includes(`node:link: guide/README.md:1\`x Guide: ${LINES}`), `bad lines in a missing root\n${r.stderr}`);
+}
+
 // A folder entry: allowed on an inventory entry, not on a node.
 const inventory = (p: string) => (f: Fx) => f.fragment('inventory', { inventory: [{ id: 'inv', kind: 'store', name: 'N', evidence: [{ path: p }] }] });
 passes('folder on inventory', [good], inventory('app/'));

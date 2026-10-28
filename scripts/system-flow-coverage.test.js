@@ -74,7 +74,7 @@ Status: ${o.adrStatus ?? "accepted, 2026-01-01"}
       { id: "s2", title: "Engines", question: "What is in A?", diagrams: ["system"], ...o.second ? { covers: ["job-sweep"], bullets: [bullet("b2", ev("app/jobs/sweep.rb", "1", "Sweep"))] } : {} }
     ]
   });
-  f.fragment("rules", { rules: [{ id: "r1", text: "Use X.", adr: { path: o.ruleAdr ?? "docs/adr/0001-x.md" }, decision: "Decision 1: use X", evidence: ev("app/x.rb", "4", "expired?") }] });
+  f.fragment("rules", { rules: [{ id: "r1", text: "Use X.", adr: { path: o.ruleAdr ?? "docs/adr/0001-x.md", ...o.ruleAdrRoot === void 0 ? {} : { root: o.ruleAdrRoot } }, decision: "Decision 1: use X", evidence: ev("app/x.rb", "4", "expired?") }] });
   return f;
 }
 const buildOk = (f) => {
@@ -152,5 +152,10 @@ assert.strictEqual(setup({ adrStatus: "Partly superseded by 0002" }).run(["check
   const r = setup({ ruleAdr: "docs/adr/0009-gone.md" }).run(["check"]);
   assert.strictEqual(r.status, 1);
   assert.ok(r.stderr.trimEnd().endsWith("rule r1: ADR docs/adr/0009-gone.md not found"), r.stderr);
+}
+{
+  const r = setup({ ruleAdrRoot: "nope" }).run(["check"]);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(r.stderr.trimEnd().endsWith("rule r1: ADR names root nope, not in meta.roots"), r.stderr);
 }
 console.log("system-flow-coverage.test.js: ok");

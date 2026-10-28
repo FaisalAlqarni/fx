@@ -10,12 +10,20 @@ import type { Evidence, Evidenced, Model, Section, Sequence, StoreFlow } from '.
 export const GENERATED = '<!-- fx-system-flow generated: edit the model, then rebuild -->';
 
 // Prose and table text: a repository string must never become HTML in Markdown.
+// Nor a link: [ and ] are escaped, after the backslashes that could undo that (security review S5).
 const html = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const oneLine = (s: string): string => s.replace(/\r\n|[\r\n\u2028\u2029]/g, ' ');
-const prose = (s: string): string => oneLine(html(s));
+const noLinks = (s: string): string => s.replace(/[[\]]/g, '\\$&');
+const prose = (s: string): string => noLinks(oneLine(html(s)).replace(/\\/g, '\\\\'));
 
 export const escapeCell = (s: string): string => s.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\r\n|[\r\n]/g, ' ');
-const cell = (s: string | undefined): string => escapeCell(html(s ?? ''));
+const cell = (s: string | undefined): string => noLinks(escapeCell(html(s ?? '')));
+// A code span whose fence is longer than any backtick run inside it, so the text cannot close it early.
+const code = (s: string): string => {
+  const fence = '`'.repeat(Math.max(0, ...[...s.matchAll(/`+/g)].map((m) => m[0].length)) + 1);
+  const pad = fence.length > 1 && (s.startsWith('`') || s.endsWith('`')) ? ' ' : '';
+  return `${fence}${pad}${s}${pad}${fence}`;
+};
 
 // One pass, so an inserted entity is never escaped again; < > & are entities too, since Mermaid labels may render as HTML.
 const MERMAID: Record<string, string> = { '#': '#35;', ';': '#59;', ':': '#58;', '"': '#quot;', '<': '#lt;', '>': '#gt;', '&': '#amp;' };
@@ -31,9 +39,9 @@ function evidenceItems(evidence: Evidence[], hostId: string): string[] {
       continue;
     }
     const p = `${e.root !== undefined && e.root !== hostId ? `@${e.root}/` : ''}${e.path}`;
-    const sym = e.symbol === undefined ? '' : ` \`${e.symbol.replace(/\s+/g, ' ').replace(/; /g, ';')}\``;
-    if (e.lines === undefined) out.push(`\`${p}\`${sym}`);
-    else for (const part of e.lines.split(',')) out.push(`\`${p}:${part.trim()}\`${sym}`);
+    const sym = e.symbol === undefined ? '' : ` ${code(e.symbol.replace(/\s+/g, ' ').replace(/; /g, ';'))}`;
+    if (e.lines === undefined) out.push(`${code(p)}${sym}`);
+    else for (const part of e.lines.split(',')) out.push(`${code(`${p}:${part.trim()}`)}${sym}`);
   }
   return out;
 }
@@ -80,7 +88,6 @@ function oldestVerified(items: Evidenced[], roots: Map<string, Root>, hostId: st
 }
 
 const posix = (p: string): string => p.split(path.sep).join('/');
-const linkText = (s: string): string => prose(s).replace(/[[\]]/g, '\\$&');
 
 export function renderMarkdown(model: Model, roots: Map<string, Root>, hostId: string, markdownRoot: string, site = 'docs/system-flow'): { path: string; text: string }[] {
   const ages = new Map<string, number | null>();
@@ -134,7 +141,7 @@ export function renderMarkdown(model: Model, roots: Map<string, Root>, hostId: s
     const rel = (s: Section): string => posix(path.relative(dir, secPath(s)));
     emit(posix(path.join(dir, 'index.md')), [
       `# ${prose(model.meta.title ?? 'System')}`, '', `[Open the site](${siteLink(dir)})`, '',
-      ...sections.map((s) => `- [${linkText(s.title)}](${rel(s)}): ${prose(s.question)}`),
+      ...sections.map((s) => `- [${prose(s.title)}](${rel(s)}): ${prose(s.question)}`),
       ...extra,
     ], []);
   };
@@ -162,8 +169,8 @@ export function renderRules(model: Model, roots: Map<string, Root>, hostId: stri
   const body = ['# Rules in force', ''];
   for (const r of model.rules) {
     const adr = r.adr === undefined ? '' : (r.adr.root ?? hostId) === hostId
-      ? ` ([${linkText(r.adr.path)}](${posix(path.relative(markdownRoot, r.adr.path))}))`
-      : ` (@${r.adr.root}/${prose(r.adr.path)})`;
+      ? ` ([${prose(r.adr.path)}](${posix(path.relative(markdownRoot, r.adr.path))}))`
+      : ` (@${prose(r.adr.root ?? '')}/${prose(r.adr.path)})`;
     body.push(`- ${r.id}: ${prose(r.text)}${adr}${r.decision === undefined ? '' : ` ${prose(r.decision)}`}`);
     const line = evidenceLine(r.evidence ?? [], hostId);
     if (line !== '') body.push(`  ${line}`);

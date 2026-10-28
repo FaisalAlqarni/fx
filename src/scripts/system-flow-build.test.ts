@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { parseDoc } from '../lib/doc-evidence.js';
 import { parseJson } from '../lib/json.js';
+import { evidenceLine, renderRules } from '../lib/sf-markdown.js';
 import { sfFixture } from '../tests/helpers/sf-fixture.js';
 
 type Fx = ReturnType<typeof sfFixture>;
@@ -279,6 +280,17 @@ assert.strictEqual(setup().run(['nope']).status, 2);
   const r = f.run(['detect']);
   assert.strictEqual(r.status, 1, r.stdout);
   assert.ok(r.stderr.includes('docs_dir ../.. leaves the host root'), r.stderr);
+}
+
+// Model text never becomes a live link or raw HTML in the Markdown (final fix A5).
+{
+  const f = setup({ bullet: 'See [here](javascript:alert(1)) and \\[x](y).' });
+  built(f);
+  const doc = read(f, 'docs/system/s1.md');
+  assert.ok(doc.includes('- See \\[here\\](javascript:alert(1)) and \\\\\\[x\\](y).'), doc);
+  assert.strictEqual(evidenceLine([{ path: 'a.rb', lines: '1', symbol: 'a`b' }], 'h'), 'Evidence: `a.rb:1` ``a`b``', 'a backtick gets a longer fence');
+  const rules = renderRules({ rules: [{ id: 'r1', text: 't', adr: { root: '<b>g', path: 'docs/<i>.md' } }] } as never, new Map(), 'h', 'docs/system').text;
+  assert.ok(rules.includes('(@&lt;b&gt;g/docs/&lt;i&gt;.md)'), rules);
 }
 
 console.log('system-flow-build.test.js: ok');

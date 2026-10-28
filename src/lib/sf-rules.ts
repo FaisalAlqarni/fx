@@ -114,7 +114,8 @@ export function checkRuleAdrs(model: Model, roots: Map<string, Root>): Problem[]
   for (const r of model.rules) {
     if (!r.adr) continue;
     const root = roots.get(r.adr.root ?? hostId);
-    if (!root || root.missing) continue;
+    if (!root) { out.push({ ...originOf(r), message: `rule ${r.id}: ADR names root ${r.adr.root}, not in meta.roots`, level: 'error' }); continue; }
+    if (root.missing) continue;
     const text = readCited(root, r.adr.path);
     const why = text === null ? 'not found' : adrStatus(text) === 'superseded' ? 'is superseded' : null;
     if (why !== null) out.push({ ...originOf(r), message: `rule ${r.id}: ADR ${r.adr.path} ${why}`, level: 'error' });

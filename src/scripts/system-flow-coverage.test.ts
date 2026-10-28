@@ -12,7 +12,7 @@ type Ev = { root?: string; path: string; lines?: string; symbol: string };
 const ev = (p: string, lines: string, symbol: string, root?: string): Ev[] => [{ ...(root === undefined ? {} : { root }), path: p, lines, symbol }];
 const lines30 = Array.from({ length: 30 }, (_, i) => (i === 0 ? 'class Sweep' : `  # line ${i + 1}`)).join('\n') + '\n';
 
-type Opts = { bullet?: Ev[]; covers?: string[]; second?: boolean; adrStatus?: string; ruleAdr?: string; bare?: boolean };
+type Opts = { bullet?: Ev[]; covers?: string[]; second?: boolean; adrStatus?: string; ruleAdr?: string; ruleAdrRoot?: string; bare?: boolean };
 // Inventory: one entry of each kind. Section s1 holds a bullet; s2 lists the system diagram.
 function setup(o: Opts = {}): Fx {
   const f = sfFixture();
@@ -50,7 +50,7 @@ function setup(o: Opts = {}): Fx {
       { id: 's2', title: 'Engines', question: 'What is in A?', diagrams: ['system'], ...(o.second ? { covers: ['job-sweep'], bullets: [bullet('b2', ev('app/jobs/sweep.rb', '1', 'Sweep'))] } : {}) },
     ],
   });
-  f.fragment('rules', { rules: [{ id: 'r1', text: 'Use X.', adr: { path: o.ruleAdr ?? 'docs/adr/0001-x.md' }, decision: 'Decision 1: use X', evidence: ev('app/x.rb', '4', 'expired?') }] });
+  f.fragment('rules', { rules: [{ id: 'r1', text: 'Use X.', adr: { path: o.ruleAdr ?? 'docs/adr/0001-x.md', ...(o.ruleAdrRoot === undefined ? {} : { root: o.ruleAdrRoot }) }, decision: 'Decision 1: use X', evidence: ev('app/x.rb', '4', 'expired?') }] });
   return f;
 }
 const buildOk = (f: Fx) => { const r = f.run(['build']); assert.strictEqual(r.status, 0, `build exits 0\n${r.stdout}${r.stderr}`); return parseJson(r.stdout) as { coverage: Record<string, { covered: number; total: number }> }; };
@@ -111,4 +111,9 @@ assert.strictEqual(setup({ adrStatus: 'Partly superseded by 0002' }).run(['check
   assert.ok(r.stderr.trimEnd().endsWith('rule r1: ADR docs/adr/0009-gone.md not found'), r.stderr);
 }
 
+{ // An ADR root that names no root in meta.roots is an error, never skipped (final fix A5)
+  const r = setup({ ruleAdrRoot: 'nope' }).run(['check']);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(r.stderr.trimEnd().endsWith('rule r1: ADR names root nope, not in meta.roots'), r.stderr);
+}
 console.log('system-flow-coverage.test.js: ok');

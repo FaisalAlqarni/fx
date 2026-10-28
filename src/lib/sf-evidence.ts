@@ -129,6 +129,8 @@ export function verifyEvidence(items: Item[], roots: Map<string, Root>, mode: 'c
       const shown = `${rootId}/${e.path}${e.lines === undefined ? '' : `:${e.lines}`}${e.symbol === undefined ? '' : ` ${e.symbol}`}`;
       const at = { file: item.file, pointer: `${item.pointer}/evidence/${i}` };
       const fail = (test: string, whole = false): void => { out.push({ ...at, message: whole ? test : `${item.handle}: ${shown}: ${test}`, level: 'error' }); };
+      // First, before any return: lines lands in generated Markdown however the rest of the entry fares.
+      if (e.lines !== undefined && !/^\d+(?:-\d+)?(?: ?, ?\d+(?:-\d+)?)*$/.test(e.lines)) return fail('lines must be ranges such as 4, 1-4 or 1-4,9');
       const root = roots.get(rootId);
       if (!root) return fail(`evidence names root ${rootId}, not in meta.roots`);
       if (/[*{]/.test(e.path)) return fail('path with * or { is not allowed');

@@ -27,6 +27,7 @@ var fs = __toESM(require("fs"));
 var path = __toESM(require("path"));
 var import_doc_evidence = require("../lib/doc-evidence.js");
 var import_json = require("../lib/json.js");
+var import_sf_markdown = require("../lib/sf-markdown.js");
 var import_sf_fixture = require("../tests/helpers/sf-fixture.js");
 const F = "docs/system-flow/model/fragments";
 const GEN = "<!-- fx-system-flow generated: edit the model, then rebuild -->";
@@ -276,5 +277,14 @@ assert.strictEqual(setup().run(["nope"]).status, 2);
   const r = f.run(["detect"]);
   assert.strictEqual(r.status, 1, r.stdout);
   assert.ok(r.stderr.includes("docs_dir ../.. leaves the host root"), r.stderr);
+}
+{
+  const f = setup({ bullet: "See [here](javascript:alert(1)) and \\[x](y)." });
+  built(f);
+  const doc = read(f, "docs/system/s1.md");
+  assert.ok(doc.includes("- See \\[here\\](javascript:alert(1)) and \\\\\\[x\\](y)."), doc);
+  assert.strictEqual((0, import_sf_markdown.evidenceLine)([{ path: "a.rb", lines: "1", symbol: "a`b" }], "h"), "Evidence: `a.rb:1` ``a`b``", "a backtick gets a longer fence");
+  const rules = (0, import_sf_markdown.renderRules)({ rules: [{ id: "r1", text: "t", adr: { root: "<b>g", path: "docs/<i>.md" } }] }, /* @__PURE__ */ new Map(), "h", "docs/system").text;
+  assert.ok(rules.includes("(@&lt;b&gt;g/docs/&lt;i&gt;.md)"), rules);
 }
 console.log("system-flow-build.test.js: ok");
