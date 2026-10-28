@@ -278,6 +278,17 @@ const detectOf = (f, env = {}) => (0, import_json.parseJson)(f.run(["detect"], e
 }
 {
   const f = setup();
+  f.fxJson({ system_flow: { diagrams: { prefer: "cheap" } } });
+  const a = fake(f, "fake");
+  const o = ok(f, ["--archify", a]);
+  assert.strictEqual(logOf(f).length, 5);
+  assert.strictEqual(reason(o, "arch-system").renderer, "archify");
+  ok(f, ["--prefer", "cheap", "--archify", a]);
+  assert.strictEqual(logOf(f).length, 10);
+  assert.strictEqual(fxDoc(f).system_flow.diagrams.prefer, "cheap");
+}
+{
+  const f = setup();
   const o = ok(f, []);
   assert.deepStrictEqual(logOf(f), []);
   for (const d of o.diagrams) assert.ok(d.reason.endsWith(", archify not installed"), d.reason);

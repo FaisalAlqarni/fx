@@ -243,6 +243,18 @@ const detectOf = (f: Fx, env: Record<string, string> = {}): Obj => parseJson(f.r
   assert.strictEqual(reason(d, 'flow-first').reason, 'archify sequence, 7 messages in 1 pages');
 }
 
+{ // An explicit --archify wins over a saved or given cheap
+  const f = setup();
+  f.fxJson({ system_flow: { diagrams: { prefer: 'cheap' } } });
+  const a = fake(f, 'fake');
+  const o = ok(f, ['--archify', a]);
+  assert.strictEqual(logOf(f).length, 5);
+  assert.strictEqual(reason(o, 'arch-system').renderer, 'archify');
+  ok(f, ['--prefer', 'cheap', '--archify', a]);
+  assert.strictEqual(logOf(f).length, 10);
+  assert.strictEqual(fxDoc(f).system_flow.diagrams.prefer, 'cheap');
+}
+
 { // Not installed
   const f = setup();
   const o = ok(f, []);
