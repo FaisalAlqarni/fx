@@ -347,6 +347,9 @@ export async function runArchify(dir: string, jobs: { name: string; kind: 'archi
   const results: { name: string; ok: boolean; receipt: string | null }[] = [];
   const one = (j: (typeof jobs)[number]): Promise<void> => new Promise((resolve) => {
     const receipt = j.receipt;
+    // The build rewrites each page with its theme block after archify's browser check, so that check's evidence never
+    // matches the page again and archify refuses to replace it (viewer/evidence-path-conflict) on the next build.
+    fs.rmSync(j.out.replace(/\.html$/, '.browser-check.json'), { force: true });
     const args = [path.join(dir, 'bin', 'archify.mjs'), 'finalize', j.kind, j.spec, j.out, '--repo-root', j.repoRoot, '--quality', 'showcase', '--receipt', receipt, '--json'];
     const done = (code: number | null): void => {
       results[jobs.indexOf(j)] = { name: j.name, ok: code === 0 && fs.existsSync(j.out), receipt: fs.existsSync(receipt) ? receipt : null };

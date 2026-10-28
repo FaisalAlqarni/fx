@@ -31,11 +31,16 @@ await new Promise((r) => setTimeout(r, Number(process.env.FAKE_SLEEP_MS || 0)));
 const fails = (process.env.FAKE_FAIL || '').split(',').filter(Boolean);
 const max = Number(process.env.FAKE_MAX_MSGS || 1e9);
 const messages = (spec.messages || []).length;
-const bad = fails.some((n) => name === n || name.startsWith(n + '-p')) || (type === 'sequence' && messages > max);
+// archify's browser-check refuses to replace evidence written for other page bytes (viewer/evidence-path-conflict),
+// and the build rewrites every page with its theme block, so a leftover evidence file always mismatches.
+const evidence = path.join(path.dirname(out), name + '.browser-check.json');
+const conflict = process.env.FAKE_EVIDENCE === '1' && fs.existsSync(evidence);
+const bad = conflict || fails.some((n) => name === n || name.startsWith(n + '-p')) || (type === 'sequence' && messages > max);
 const receipt = a[a.indexOf('--receipt') + 1];
 fs.mkdirSync(path.dirname(receipt), { recursive: true });
 fs.writeFileSync(receipt, JSON.stringify({ name, ok: !bad }));
 if (!bad) fs.writeFileSync(out, '<!doctype html><html><head><style>:root{--bg:#000}</style></head><body><a href="#top">top</a><a class="diagram-guide-credit" href="https://github.com/tt-a1i/archify">archify</a><img src="data:image/png;base64,AA">' + (process.env.FAKE_LEAK === name ? '<script src="https://cdn.example/x.js"></script>' : '') + name + '</body></html>');
+if (!bad && process.env.FAKE_EVIDENCE === '1') fs.writeFileSync(evidence, '{}');
 fs.appendFileSync(process.env.FAKE_LOG, JSON.stringify({ args: a, name, messages, start, end: now() }) + '\\n');
 process.exit(bad ? 1 : 0);
 `;
@@ -98,6 +103,15 @@ const reason = (o: { diagrams: Diag[] }, name: string): Diag => o.diagrams.find(
     assert.deepStrictEqual(c.args, ['finalize', type, path.join(f.host, D, 'src', `${c.name}.json`), path.join(f.host, D, `${c.name}.html`),
       '--repo-root', f.host, '--quality', 'showcase', '--receipt', path.join(f.host, D, `${c.name}.receipt.json`), '--json'], c.name);
   }
+}
+
+{ // A second build keeps archify: it clears the browser-check evidence of the pages it rewrote with the theme block
+  const f = setup();
+  const a = fake(f, 'fake');
+  const first = ok(f, ['--archify', a], { FAKE_EVIDENCE: '1' });
+  assert.ok(first.diagrams.every((d) => d.renderer === 'archify'), JSON.stringify(first.diagrams));
+  const again = ok(f, ['--archify', a], { FAKE_EVIDENCE: '1' });
+  assert.ok(again.diagrams.every((d) => d.renderer === 'archify'), JSON.stringify(again.diagrams));
 }
 
 { // One at a time: archify's delivery lock rejects a second finalize in the same folder
