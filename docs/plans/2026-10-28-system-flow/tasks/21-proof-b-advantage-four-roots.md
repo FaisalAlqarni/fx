@@ -27,7 +27,7 @@
 - The estimate made at the planning pass with the calibrated constants and the actual (tokens from `scripts/build-cost` on a copy of the run's transcript in the scratchpad, wall-clock as the sum of `duration_ms` over the three results) each land within 50%: `|actual - estimate| / estimate <= 0.5` for tokens and for wall-clock.
 - The same numbers as run (a): subagent dispatches, files cited, evidence entries, items by kind, diagrams by renderer, layout report totals, archify failures.
 
-**Risks:** advantage-backend has about 13,038 tracked files: the planning pass must split areas over 400 files, and the approval takes the plan as proposed, so record the areas and their `filesToRead`. `git clone` of a local path reads the source's objects only. The real repos' working trees are never opened for writing; verify with `git -C <real repo> status --porcelain` before and after showing the same output. The headless session's HOME and permission mode are as in task 20's Risks.
+**Risks:** advantage-backend has about 13,038 tracked files: the planning pass must split areas over 400 files, and the approval takes the plan as proposed, so record the areas and their `filesToRead`. `git clone` of a local path reads the source's objects only. The real repos' working trees are never opened for writing; verify with `git -C <real repo> status --porcelain` before and after showing the same output. The headless session's HOME and permission mode are as in task 20's Risks, the archify copy included: `cp -rL`, never `cp -r`.
 
 **Idempotency:** each run clones into a new scratch folder `<SCRATCH>/proof-b-<date>-<n>`; nothing is reused or deleted.
 

@@ -87,7 +87,8 @@ A cited file with uncommitted changes is a warning in `check` and an error in
   `readBy`).
 - **Store flow**: `id`, `trigger`, `chapter`, `steps` (`n`, `actor`, `op` of
   read, write or delete, `store` of sql, cache, memory, files or client,
-  optional `key` and `when`).
+  optional `key` and `when`). A step's `actor` is the id of a node in a level
+  diagram, never a class or service name.
 - **Catalogue entry**: `id`, `kind` (stream, gateway, queue, scheduler, cache,
   integration, component), `name`, optional `role`, `owner`, `connects`.
 - **Section** (chapter): `id`, `title`, `question`, optional `folder`,
