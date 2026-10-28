@@ -10,7 +10,7 @@ import { COMMIT, resolveCommit, resolveRoots } from './sf-evidence.js';
 import type { Root } from './sf-evidence.js';
 import { systemFlowConfig } from './sf-build.js';
 
-export type StaleReason = 'shifted' | 'changed' | 'deleted' | 'unverified';
+export type StaleReason = 'shifted' | 'changed' | 'deleted' | 'unverified' | 'not checkable';
 
 const git = (dir: string, args: string[]): string | null => {
   try { return execFileSync('git', ['-c', 'core.quotepath=off', ...args], { cwd: dir, encoding: 'utf8', maxBuffer: 1 << 28, stdio: ['ignore', 'pipe', 'ignore'] }); } catch { return null; }
@@ -33,10 +33,12 @@ export function loadModelItems(hostRoot: string, site: string): { items: Item[];
   return { items, roots, fragmentsDir };
 }
 
-// stale and verify read every root from git at HEAD; a root they cannot read is an error, never an empty list.
+// stale and verify read every git root at HEAD; a missing root or an unreadable HEAD is an error, never an empty list.
+// A plain (non-git) root is not: check only warns about one, and stale lists its items as not checkable.
 export function unusableRoots(roots: Map<string, Root>): string[] {
-  return [...roots.values()].flatMap((r) => (r.missing ? [`root ${r.id} not found at ${r.dir}`] : !r.git ? [`root ${r.id} at ${r.dir} is not a git root`] : !r.head ? [`root ${r.id}: git cannot read HEAD: ${r.refused ?? 'no commit'}`] : []));
+  return [...roots.values()].flatMap((r) => (r.missing ? [`root ${r.id} not found at ${r.dir}`] : r.git && !r.head ? [`root ${r.id}: git cannot read HEAD: ${r.refused ?? 'no commit'}`] : []));
 }
+export const plainRoots = (roots: Map<string, Root>): Root[] => [...roots.values()].filter((r) => !r.missing && !r.git);
 
 // A query path is host-relative or `@<root id>/<path>`; a folder matches what lies under it, and an evidence folder matches what lies under it.
 export function queryPaths(items: Item[], paths: string[], hostId: string): { handle: string; kind: ItemKind; file: string }[] {
@@ -100,17 +102,19 @@ function worstOf(root: Root, sha: string, e: { path: string; lines?: string }): 
   return worst;
 }
 
-// Lists only items to recheck. The caller refuses a root that is missing, not a git root or without a commit (unusableRoots).
+// Lists only items to recheck; every item citing a plain root, which has no commit to compare against, is not checkable.
+// The caller refuses a root that is missing or a git root without a readable HEAD (unusableRoots).
 export function staleItems(items: Item[], roots: Map<string, Root>): Record<string, { handle: string; reason: StaleReason }[]> {
   const hostId = hostIdOf(roots);
   const out: Record<string, { handle: string; reason: StaleReason }[]> = {};
   const reachable = new Map<string, boolean>();
   for (const root of roots.values()) {
     out[root.id] = [];
-    if (root.missing || !root.git || !root.head) continue;
+    if (root.missing || (root.git && !root.head)) continue;
     for (const item of items) {
       const cited = item.evidence.filter(fileEvidence).filter((e) => (e.root ?? hostId) === root.id);
       if (cited.length === 0) continue;
+      if (!root.git) { out[root.id]?.push({ handle: item.handle, reason: 'not checkable' }); continue; }
       const sha = item.verified?.[root.id];
       const key = `${root.id}\0${sha}`;
       if (sha !== undefined && !reachable.has(key)) reachable.set(key, git(root.dir, ['cat-file', '-e', `${sha}^{commit}`]) !== null);

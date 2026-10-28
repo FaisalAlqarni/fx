@@ -265,4 +265,24 @@ const editX = (f: Fx, edit: (lines: string[]) => string[]): string => {
   }
 }
 
+// A plain (non-git) root is a warning in stale, as in check; verify refuses only an item that cites it (final review N2).
+{
+  const f = setup();
+  f.fxJson({ system_flow: { roots: { guide: '../plain' } } });
+  const s = f.run(['stale']);
+  assert.strictEqual(s.status, 0, s.stderr);
+  assert.deepStrictEqual(out(s), {
+    roots: { backend: [], guide: [{ handle: 'bullet:b2', reason: 'not checkable' }] },
+    warnings: [`root guide at ${f.plain} is not a git root: its items are not checkable`],
+  });
+  const host = f.run(['verify', 'node:link']);
+  assert.strictEqual(host.status, 0, host.stderr);
+  assert.deepStrictEqual(out(host), { verified: ['node:link'] });
+  const before = fragBytes(f);
+  const cites = f.run(['verify', 'bullet:b2']);
+  assert.strictEqual(cites.status, 1, cites.stdout);
+  assert.strictEqual(cites.stderr, `system-flow: verify: bullet:b2 cites root guide at ${f.plain}, which is not a git root\n`);
+  assert.deepStrictEqual(fragBytes(f), before, 'nothing written');
+}
+
 console.log('system-flow-stale.test.js: OK');

@@ -204,13 +204,19 @@ function staleCmd() {
   const root = hostRoot();
   const { items, roots } = (0, import_sf_stale.loadModelItems)(root, siteOf(root));
   refuseUnusable(roots);
-  print({ roots: (0, import_sf_stale.staleItems)(items, roots) });
+  print({ roots: (0, import_sf_stale.staleItems)(items, roots), warnings: (0, import_sf_stale.plainRoots)(roots).map((r) => `root ${r.id} at ${r.dir} is not a git root: its items are not checkable`) });
 }
 function verifyCmd() {
   const root = hostRoot();
   const { items, roots, fragmentsDir } = (0, import_sf_stale.loadModelItems)(root, siteOf(root));
   refuseUnusable(roots);
   const named = verifyAll ? items : items.filter((i) => queried.includes(i.handle));
+  const plain = new Map((0, import_sf_stale.plainRoots)(roots).map((r) => [r.id, r]));
+  const hostId = [...roots.values()].find((r) => r.host)?.id ?? "";
+  const cites = named.flatMap((i) => [...new Set(i.evidence.flatMap((e) => "path" in e ? [e.root ?? hostId] : []))].filter((id) => plain.has(id)).map((id) => `${i.handle} cites root ${id} at ${plain.get(id)?.dir}, which is not a git root`));
+  for (const m of cites) process.stderr.write(`system-flow: verify: ${m}
+`);
+  if (cites.length) process.exit(1);
   if (report((0, import_sf_evidence.verifyEvidence)(named, roots, "build")) > 0) process.exit(1);
   print({ verified: (0, import_sf_stale.verifyItems)(root, fragmentsDir, verifyAll ? "all" : queried, roots) });
 }

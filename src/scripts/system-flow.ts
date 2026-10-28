@@ -5,7 +5,7 @@ import { execFileSync } from 'child_process';
 import { build, checkModel, layoutChecked, systemFlowConfig } from '../lib/sf-build.js';
 import type { DiagramFlags } from '../lib/sf-build.js';
 import { itemsOf, originOf, parseHandle } from '../lib/sf-model.js';
-import { changedPaths, diffBases, loadModelItems, queryPaths, staleItems, unusableRoots, verifyItems } from '../lib/sf-stale.js';
+import { changedPaths, diffBases, loadModelItems, plainRoots, queryPaths, staleItems, unusableRoots, verifyItems } from '../lib/sf-stale.js';
 import { estimate, readPlan } from '../lib/sf-estimate.js';
 import { verifyEvidence } from '../lib/sf-evidence.js';
 import { detect, docsConfig, writeFxJson } from '../lib/sf-detect.js';
@@ -168,7 +168,7 @@ function staleCmd(): void {
   const root = hostRoot();
   const { items, roots } = loadModelItems(root, siteOf(root));
   refuseUnusable(roots);
-  print({ roots: staleItems(items, roots) });
+  print({ roots: staleItems(items, roots), warnings: plainRoots(roots).map((r) => `root ${r.id} at ${r.dir} is not a git root: its items are not checkable`) });
 }
 
 function verifyCmd(): void {
@@ -177,6 +177,12 @@ function verifyCmd(): void {
   refuseUnusable(roots);
   // A stamp says the evidence holds at HEAD, so it is checked as build checks it before anything is written.
   const named = verifyAll ? items : items.filter((i) => queried.includes(i.handle));
+  // A stamp needs a commit; an item citing a plain root has none to record there.
+  const plain = new Map(plainRoots(roots).map((r) => [r.id, r]));
+  const hostId = [...roots.values()].find((r) => r.host)?.id ?? '';
+  const cites = named.flatMap((i) => [...new Set(i.evidence.flatMap((e) => ('path' in e ? [e.root ?? hostId] : [])))].filter((id) => plain.has(id)).map((id) => `${i.handle} cites root ${id} at ${plain.get(id)?.dir}, which is not a git root`));
+  for (const m of cites) process.stderr.write(`system-flow: verify: ${m}\n`);
+  if (cites.length) process.exit(1);
   if (report(verifyEvidence(named, roots, 'build')) > 0) process.exit(1);
   print({ verified: verifyItems(root, fragmentsDir, verifyAll ? 'all' : queried, roots) });
 }
