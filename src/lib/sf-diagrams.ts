@@ -9,12 +9,15 @@ import type { FxJson } from './types.js';
 import type { Diagram, Evidence, FigureSpec, FileEvidence, Model, StoreFlow } from './sf-model.js';
 import type { Root } from './sf-evidence.js';
 import { escapeHtml } from './sf-page.js';
+import { shortLabel } from './sf-layout.js';
 
 type Obj = Record<string, unknown>;
 // shortened: each label the spec cut to fit archify, as '<model id> <field>'.
-export type DeepDiagram = { name: string; kind: 'architecture' | 'sequence'; source: string; spec: object; pages: number; owningRoot: string; shortened: string[] };
+// steps: the message numbers a sequence page covers, self-messages folded into notes included.
+export type DeepDiagram = { name: string; kind: 'architecture' | 'sequence'; source: string; spec: object; pages: number; owningRoot: string; shortened: string[]; steps?: number[] };
 
 const PAGE_DEFAULT = 8;
+const EDGE = 16; // px kept clear between a boundary frame and the canvas's left or top edge
 const COMPONENT_TYPES = ['frontend', 'backend', 'database', 'cloud', 'security', 'messagebus', 'external'];
 
 // Model ids allow a leading digit; archify ids do not.
@@ -85,6 +88,19 @@ function architecture(d: Diagram, fig: FigureSpec, roots: Map<string, Root>): De
   const repo = repository(roots.get(own));
   const byId = new Map(d.nodes.map((n) => [n.id, n]));
   const shortened: string[] = [];
+  const known = new Set(d.nodes.map((n) => n.id));
+  const groups = d.groups.flatMap((g) => { const wraps = g.members.filter((x) => known.has(x)); return wraps.length ? [{ label: g.label, wraps }] : []; });
+  // archify 3.2.0 frames a boundary 30 px around its members' box (boundaryRect) and widens it to fit its title at up to
+  // 9 px (0.6 px a unit + 18); it never moves a frame back from the left or top edge, so everything shifts right and down.
+  let dx = 0, dy = 0;
+  for (const g of groups) {
+    const m = fig.nodes.filter((n) => g.wraps.includes(n.id));
+    const x0 = Math.min(...m.map((n) => n.x)), x1 = Math.max(...m.map((n) => n.x + n.w));
+    const title = Math.max(30, units(g.label) * 9 * 0.6 + 10) + 8;
+    dx = Math.max(dx, EDGE + 30 + Math.max(0, title - (x1 - x0 + 60)) / 2 - x0);
+    dy = Math.max(dy, EDGE + 30 - Math.min(...m.map((n) => n.y)));
+  }
+  dx = Math.ceil(dx); dy = Math.ceil(dy);
   const components = fig.nodes.map((n) => {
     const m = byId.get(n.id);
     const sources = m && m.primary !== false ? sourcesOf(m.evidence, linked(own, repo), host, rest, m.label) : undefined;
@@ -92,17 +108,18 @@ function architecture(d: Diagram, fig: FigureSpec, roots: Map<string, Root>): De
     // within width - 8 at its 6 px minimum (component-sublabel-overflow).
     const label = fit(m?.label ?? n.id, Math.floor((n.w + 8) / 6.6), `${n.id} label`, shortened);
     const sublabel = m?.role ? fit(m.role, Math.floor((n.w - 8) / 3.6), `${n.id} sublabel`, shortened) : undefined;
-    return { id: aid(n.id), type: componentType(m?.kind ?? n.kind), label, ...(sublabel ? { sublabel } : {}), ...(sources ? { sources } : {}), pos: [n.x, n.y], size: [n.w, n.h] };
+    return { id: aid(n.id), type: componentType(m?.kind ?? n.kind), label, ...(sublabel ? { sublabel } : {}), ...(sources ? { sources } : {}), pos: [n.x + dx, n.y + dy], size: [n.w, n.h] };
   });
-  const known = new Set(d.nodes.map((n) => n.id));
-  const boundaries = d.groups.flatMap((g) => { const wraps = g.members.filter((x) => known.has(x)).map(aid); return wraps.length ? [{ kind: 'region', label: g.label, wraps }] : []; });
+  const boundaries = groups.map((g) => ({ kind: 'region', label: g.label, wraps: g.wraps.map(aid) }));
   const name = `arch-${d.id}`;
+  // No viewBox: archify's own canvas then covers frames, routes, labels and the legend on the right and at the bottom.
   const spec = {
     schema_version: 1, diagram_type: 'architecture',
-    meta: { title: d.title, subtitle: d.summary, output: `${name}.html`, quality_profile: 'showcase', ...(repo ? { repository: repo } : {}), viewBox: [Math.max(320, fig.width), Math.max(240, fig.height)] },
+    meta: { title: d.title, subtitle: d.summary, output: `${name}.html`, quality_profile: 'showcase', ...(repo ? { repository: repo } : {}) },
     components,
     ...(boundaries.length ? { boundaries } : {}),
-    connections: d.edges.map((e) => ({ from: aid(e.from), to: aid(e.to), label: e.label, ...(e.mode === 'async' ? { variant: 'dashed' } : {}) })),
+    // The figure's short label: the layout made room for it, and archify places it on its own route.
+    connections: d.edges.map((e) => ({ from: aid(e.from), to: aid(e.to), label: shortLabel(e.label, e.short), ...(e.mode === 'async' ? { variant: 'dashed' } : {}) })),
     ...(rest.length ? { cards: evCard(rest) } : {}),
   };
   return { name, kind: 'architecture', source: `diagram:${d.id}`, spec, pages: 1, owningRoot: own, shortened };
@@ -110,6 +127,40 @@ function architecture(d: Diagram, fig: FigureSpec, roots: Map<string, Root>): De
 
 type Msg = { n: number; from: string; to: string; label: string; mode?: string; note?: string };
 type Part = { id: string; type: string; label: string; sources?: Source[] };
+
+// archify 3.2.0 sequence geometry on an authored width (render-sequence.mjs spreadColumnGeometry): each box is
+// max(86, min(190, round((width - 124) / count) - 24)) px, and lifeline i stands at margin + box / 2 + i * gap.
+function columns(width: number, count: number): { box: number; at: (i: number) => number } {
+  const box = Math.max(86, Math.min(190, Math.round((width - 124) / count) - 24));
+  const margin = Math.max(40, Math.min(62, width - 40 - (count * box + (count - 1) * 16)));
+  const gap = count > 1 ? Math.max(box + 16, (width - 40 - margin - box) / (count - 1)) : 108;
+  return { box, at: (i) => margin + box / 2 + i * gap };
+}
+
+// archify 3.2.0 wraps a note's 7 px text (4.2 px a unit) inside the lane gap less 30 px (noteLayout). Greedy word
+// wrap plus one spare line: archify may also break inside a long word, and a spare line only costs 11 px.
+function noteLines(text: string, width: number): number {
+  let lines = 1, line = '';
+  for (const word of text.split(/\s+/)) {
+    const next = line ? `${line} ${word}` : word;
+    if (line && units(next) * 4.2 > width) { lines += 1; line = word; } else line = next;
+  }
+  return lines + 1;
+}
+
+// archify 3.2.0 rejects a self-message (sequence/self-message-unsupported) and suggests a note on a real message:
+// each one joins the note of the message before it on the page, or after it when it comes first.
+function foldSelf(slice: Msg[]): Msg[] {
+  const out = slice.map((m) => ({ ...m }));
+  const real = out.filter((m) => m.from !== m.to);
+  if (!real.length) return out;
+  for (const m of out) {
+    if (m.from !== m.to) continue;
+    const host = [...real].reverse().find((r) => r.n < m.n) ?? (real[0] as Msg);
+    host.note = [host.note, `${m.n}. ${m.label}`].filter(Boolean).join('; ');
+  }
+  return real;
+}
 
 // Splits messages into pages and writes one sequence spec per page, listing only the participants it uses.
 function sequencePages(base: string, title: string, parts: Part[], msgs: Msg[], own: string, repo: Obj | undefined, rest: string[], limit: number, source: string): DeepDiagram[] {
@@ -120,23 +171,47 @@ function sequencePages(base: string, title: string, parts: Part[], msgs: Msg[], 
     // archify wants two participants; a page of self messages borrows the next one.
     for (const x of parts) if (used.size < 2) used.add(x.id);
     const shown = parts.filter((x) => used.has(x.id));
+    const index = new Map(shown.map((x, i) => [x.id, i]));
     const name = p === 0 ? base : `${base}-p${p + 1}`;
-    const height = Math.max(480, 180 + 56 * slice.length + 60);
-    // archify 3.2.0 gives an authored sequence viewBox no reader fit, and its delivery fails a canvas narrower than
-    // 1.55 times its height when the page outgrows 900 px (composition/viewport-height), so the canvas widens to 1.55.
-    const width = Math.max(480, 150 * shown.length + 60, Math.ceil(height * 1.55));
-    // archify 3.2.0 on an authored viewBox: each box is max(86, min(190, round((width - 124) / count) - 24)) px, and a
-    // label needs units * 6.8 px within it + 6 (participant-label-overflow).
-    const box = Math.max(86, Math.min(190, Math.round((width - 124) / shown.length) - 24));
+    const page = foldSelf(slice);
+    // Message rows: 56 px apart, more under a wrapped note (the next message sits 22 px below its bottom, y + 22 +
+    // 11 px a line). The legend needs content bottom + 12 + 86 (legendRequiredHeight). The canvas widens to 1.55 times
+    // its height: archify 3.2.0 gives an authored sequence viewBox no reader fit, and its delivery fails a narrower
+    // canvas when the page outgrows 900 px (composition/viewport-height). A wider canvas only shortens notes, so the
+    // rows measured at the narrower width still hold.
+    const rows = (width: number): { ys: number[]; height: number } => {
+      const { at } = columns(width, shown.length);
+      const ys: number[] = [];
+      let y = 180, bottom = 0;
+      for (const m of page) {
+        ys.push(y);
+        const span = Math.abs(at(index.get(m.to) ?? 0) - at(index.get(m.from) ?? 0));
+        const end = m.note ? y + 22 + 11 * (noteLines(m.note, span - 30) - 1) : y + 6;
+        bottom = Math.max(bottom, end);
+        y = Math.max(y + 56, m.note ? end + 22 : 0);
+      }
+      return { ys, height: Math.max(480, (ys[ys.length - 1] ?? 180) + 116, bottom + 12 + 86 + 8) };
+    };
+    const narrow = Math.max(480, 150 * shown.length + 60);
+    const { ys, height } = rows(narrow);
+    const width = Math.max(narrow, Math.ceil(height * 1.55));
+    const { box, at } = columns(width, shown.length);
     const shortened: string[] = [];
+    // A showcase message label is units * 6.6 + 12 px wide, centred between its lifelines, and must stay on the canvas
+    // (composition/label-canvas-containment).
+    const label = (m: Msg): string => {
+      const mid = (at(index.get(m.from) ?? 0) + at(index.get(m.to) ?? 0)) / 2;
+      return fit(`${m.n}. ${m.label}`, Math.floor((2 * Math.min(mid, width - mid) - 12) / 6.6), `message ${m.n} label`, shortened);
+    };
     const spec = {
       schema_version: 1, diagram_type: 'sequence',
       meta: { title: pages > 1 ? `${title} (page ${p + 1} of ${pages})` : title, output: `${name}.html`, quality_profile: 'showcase', ...(repo ? { repository: repo } : {}), viewBox: [width, height] },
+      // A participant label needs units * 6.8 px within its box + 6 (participant-label-overflow).
       participants: shown.map((x) => ({ id: aid(x.id), type: x.type, label: fit(x.label, Math.floor((box + 6) / 6.8), `${x.id} label`, shortened), ...(x.sources ? { sources: x.sources } : {}) })),
-      messages: slice.map((m, i) => ({ id: `m${m.n}`, from: aid(m.from), to: aid(m.to), y: 180 + 56 * i, label: `${m.n}. ${m.label}`, ...(m.mode === 'async' ? { variant: 'dashed' } : {}), ...(m.note ? { note: m.note } : {}) })),
+      messages: page.map((m, i) => ({ id: `m${m.n}`, from: aid(m.from), to: aid(m.to), y: ys[i], label: label(m), ...(m.mode === 'async' ? { variant: 'dashed' } : {}), ...(m.note ? { note: m.note } : {}) })),
       ...(rest.length && p === 0 ? { cards: evCard(rest) } : {}),
     };
-    return { name, kind: 'sequence' as const, source, spec, pages, owningRoot: own, shortened };
+    return { name, kind: 'sequence' as const, source, spec, pages, owningRoot: own, shortened, steps: slice.map((m) => m.n) };
   });
 }
 
@@ -185,7 +260,7 @@ export function svgPage(d: DeepDiagram, figure: FigureSpec, page: number): strin
   const spec = d.spec as { meta: { title: string }; messages?: { id: string }[] };
   const animated = d.kind === 'sequence';
   // A sequence page animates its own messages: message m<n> is figure step n.
-  const mine = animated ? (spec.messages ?? []).map((m) => Number(m.id.slice(1))) : [];
+  const mine = animated ? d.steps ?? (spec.messages ?? []).map((m) => Number(m.id.slice(1))) : [];
   const total = Math.max(1, mine.length) * STEP_SECONDS;
   const stepOf = new Map<string, number>();
   mine.forEach((n, j) => { for (const e of figure.steps[n - 1]?.edges ?? []) if (!stepOf.has(e)) stepOf.set(e, j); });

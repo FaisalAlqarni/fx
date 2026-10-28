@@ -194,6 +194,72 @@ const { out, err } = build(f);
     assert.ok(w / h >= 1.55 || Math.round(1346 * h / w) + 126 <= 900, `${n} ${w}x${h}`);
   }
 }
+const seqColumns = (w, count) => {
+  const box = Math.max(86, Math.min(190, Math.round((w - 124) / count) - 24));
+  const margin = Math.max(40, Math.min(62, w - 40 - (count * box + (count - 1) * 16)));
+  const gap = count > 1 ? Math.max(box + 16, (w - 40 - margin - box) / (count - 1)) : 108;
+  return (i) => margin + box / 2 + i * gap;
+};
+const noteLines = (text, width) => {
+  let lines = 1, line = "";
+  for (const word of text.split(" ")) {
+    const next = line ? `${line} ${word}` : word;
+    if (line && next.length * 4.2 > width) {
+      lines += 1;
+      line = word;
+    } else line = next;
+  }
+  return lines;
+};
+const NOTE = "only when the platform is enabled and the request carries a header, otherwise the validator passes the call through to the next middleware";
+const WIDE = "AddConfiguration(BuildInitialConfiguration): appsettings.{env}.json, then environment variables, then the database rows";
+{
+  const g = setup();
+  const lvl = (0, import_json.parseJson)(fs.readFileSync(path.join(g.host, `${SITE}/model/fragments/level0.json`), "utf8"));
+  lvl.levels.diagrams[1].groups = [{ id: "edge", label: "A boundary title that is much wider than the one node it wraps", members: ["api"], evidence: ev("app/x.rb", "1", "Link") }];
+  lvl.levels.diagrams[1].edges[0].label = "reads every row of the links table at boot and again on each hourly refresh tick";
+  g.fragment("level0", lvl);
+  const fl = (0, import_json.parseJson)(fs.readFileSync(path.join(g.host, `${SITE}/model/fragments/flows.json`), "utf8"));
+  const ms = fl.sequences[0].messages;
+  ms[0].label = WIDE;
+  ms[1].note = NOTE;
+  ms[2].note = NOTE;
+  ms[7].note = NOTE;
+  ms[3].to = ms[3].from;
+  ms[3].label = "builds the client context";
+  g.fragment("flows", fl);
+  build(g);
+  const a = spec(g, "arch-engine");
+  assert.ok(!("viewBox" in a.meta), "architecture spec leaves the canvas to archify");
+  for (const b of a.boundaries) {
+    const m = a.components.filter((c) => b.wraps.includes(c.id));
+    const x0 = Math.min(...m.map((c) => c.pos[0])), x1 = Math.max(...m.map((c) => c.pos[0] + c.size[0]));
+    const title = Math.max(30, b.label.length * 9 * 0.6 + 10) + 8;
+    assert.ok(x0 - 30 - Math.max(0, title - (x1 - x0 + 60)) / 2 >= 0, `boundary "${b.label}" frame and title start inside the canvas`);
+    assert.ok(Math.min(...m.map((c) => c.pos[1])) - 30 >= 0, `boundary "${b.label}" frame starts below the canvas top`);
+  }
+  assert.ok(a.connections.every((c) => c.label.length <= 26), JSON.stringify(a.connections.map((c) => c.label)));
+  for (const n of ["seq-turn", "seq-turn-p2"]) {
+    const s = spec(g, n);
+    const [w, h] = s.meta.viewBox;
+    const at = seqColumns(w, s.participants.length);
+    const idx = new Map(s.participants.map((p, i) => [p.id, i]));
+    const ms2 = s.messages;
+    assert.ok(ms2.every((m) => m.from !== m.to), `${n}: no self-message`);
+    let bottom = 0;
+    ms2.forEach((m, i) => {
+      const xa = at(idx.get(m.from)), xb = at(idx.get(m.to));
+      const half = (m.label.length * 6.6 + 12) / 2, mid = (xa + xb) / 2;
+      assert.ok(mid - half >= 0 && mid + half <= w, `${n}: label "${m.label}" fits the canvas ${w}`);
+      const end = m.note ? m.y + 22 + 11 * (noteLines(m.note, Math.abs(xb - xa) - 30) - 1) : m.y + 6;
+      bottom = Math.max(bottom, end);
+      const next = ms2[i + 1];
+      if (m.note && next) assert.ok(next.y >= end + 22, `${n}: message ${next.id} at ${next.y} clears the note above, which ends at ${end}`);
+    });
+    assert.ok(h >= bottom + 12 + 86, `${n}: height ${h} leaves the legend room below ${bottom}`);
+  }
+  assert.ok(spec(g, "seq-turn").messages.some((m) => (m.note ?? "").includes("4. builds the client context")), "self-message folded into a note");
+}
 {
   for (const n of fs.readdirSync(path.join(f.host, D, "src"))) {
     const s = (0, import_json.parseJson)(read(f, `${D}/src/${n}`));
@@ -218,7 +284,6 @@ async function geometry() {
     assert.ok(c, id);
     assert.deepStrictEqual([c.pos, c.size], [[n.x, n.y], [n.w, n.h]]);
   }
-  assert.deepStrictEqual(s.meta.viewBox, [Math.max(320, level.width), Math.max(240, level.height)]);
   assert.ok(s.components.some((c) => c.id === "n2fa"));
   assert.ok(s.connections.some((c) => c.to === "n2fa"));
 }
