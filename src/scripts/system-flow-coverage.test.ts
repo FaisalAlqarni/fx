@@ -12,7 +12,7 @@ type Ev = { root?: string; path: string; lines?: string; symbol: string };
 const ev = (p: string, lines: string, symbol: string, root?: string): Ev[] => [{ ...(root === undefined ? {} : { root }), path: p, lines, symbol }];
 const lines30 = Array.from({ length: 30 }, (_, i) => (i === 0 ? 'class Sweep' : `  # line ${i + 1}`)).join('\n') + '\n';
 
-type Opts = { bullet?: Ev[]; covers?: string[]; second?: boolean; adrStatus?: string; ruleAdr?: string };
+type Opts = { bullet?: Ev[]; covers?: string[]; second?: boolean; adrStatus?: string; ruleAdr?: string; bare?: boolean };
 // Inventory: one entry of each kind. Section s1 holds a bullet; s2 lists the system diagram.
 function setup(o: Opts = {}): Fx {
   const f = sfFixture();
@@ -31,7 +31,7 @@ function setup(o: Opts = {}): Fx {
     levels: { root: 'system', diagrams: [{
       id: 'system', level: 0, title: 'System', summary: 'The whole system.', groups: [],
       nodes: [{ id: 'ea', label: 'Ax', kind: 'backend', role: 'Engine A', evidence: ev('engines/a/app/x.rb', '1', 'Ax') }, { id: 'eb', label: 'Y', kind: 'backend', role: 'Y', evidence: ev('app/y.rb', '1', 'Y') }],
-      edges: [{ from: 'ea', to: 'eb', label: 'calls', evidence: ev('app/y.rb', '1', 'Y') }],
+      edges: [{ from: 'ea', to: 'eb', label: 'calls', evidence: ev('app/y.rb', '1', 'Y') }, ...(o.bare ? [{ from: 'eb', to: 'ea', label: 'replies', unconfirmed: true }] : [])],
     }] },
   });
   f.fragment('inventory', {
@@ -67,6 +67,8 @@ const read = (f: Fx, rel: string): string => fs.readFileSync(path.join(f.host, r
   assert.deepStrictEqual(Object.keys(out.coverage).sort(), ['engine', 'flow', 'integration', 'job', 'store']);
   assert.deepStrictEqual(out.coverage.flow, { covered: 0, total: 1 });
 }
+// An unconfirmed item may have its evidence removed entirely (design: an evidence check that keeps failing).
+{ const f = setup({ bare: true, bullet: ev('app/jobs/sweep.rb', '10-12', 'line 10') }); buildOk(f); assert.strictEqual(chapterOf(f, 'job-sweep'), 's1'); }
 // No overlap, and the same path in another root.
 assert.strictEqual(chapterOf((() => { const f = setup({ bullet: ev('app/jobs/sweep.rb', '21-30', 'line 21') }); buildOk(f); return f; })(), 'job-sweep'), null);
 assert.strictEqual(chapterOf((() => { const f = setup({ bullet: ev('app/jobs/sweep.rb', '10-12', 'line 10', 'guide') }); buildOk(f); return f; })(), 'job-sweep'), null);

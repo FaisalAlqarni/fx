@@ -130,6 +130,8 @@ export function mergeFragments(fragments: Fragment[]): { model: Model; problems:
     recordOrigin(f.data, f.file, '');
     mergeInto(model as unknown as Record<string, unknown>, f.data);
   }
+  // An unconfirmed item may have had its evidence removed, key and all; every reader expects an array.
+  for (const { o } of collect(model)) (o as Evidenced).evidence ??= [];
   const origin = new Map<string, { file: string; pointer: string }>();
   for (const { handle, o } of declared(model)) if (!origin.has(handle)) origin.set(handle, originOf(o));
   return { model, problems: duplicates(model), origin };

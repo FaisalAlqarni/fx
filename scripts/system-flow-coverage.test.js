@@ -55,7 +55,7 @@ Status: ${o.adrStatus ?? "accepted, 2026-01-01"}
       summary: "The whole system.",
       groups: [],
       nodes: [{ id: "ea", label: "Ax", kind: "backend", role: "Engine A", evidence: ev("engines/a/app/x.rb", "1", "Ax") }, { id: "eb", label: "Y", kind: "backend", role: "Y", evidence: ev("app/y.rb", "1", "Y") }],
-      edges: [{ from: "ea", to: "eb", label: "calls", evidence: ev("app/y.rb", "1", "Y") }]
+      edges: [{ from: "ea", to: "eb", label: "calls", evidence: ev("app/y.rb", "1", "Y") }, ...o.bare ? [{ from: "eb", to: "ea", label: "replies", unconfirmed: true }] : []]
     }] }
   });
   f.fragment("inventory", {
@@ -93,6 +93,11 @@ const read = (f, rel) => fs.readFileSync(path.join(f.host, rel), "utf8");
   assert.deepStrictEqual(out.coverage.job, { covered: 1, total: 1 });
   assert.deepStrictEqual(Object.keys(out.coverage).sort(), ["engine", "flow", "integration", "job", "store"]);
   assert.deepStrictEqual(out.coverage.flow, { covered: 0, total: 1 });
+}
+{
+  const f = setup({ bare: true, bullet: ev("app/jobs/sweep.rb", "10-12", "line 10") });
+  buildOk(f);
+  assert.strictEqual(chapterOf(f, "job-sweep"), "s1");
 }
 assert.strictEqual(chapterOf((() => {
   const f = setup({ bullet: ev("app/jobs/sweep.rb", "21-30", "line 21") });
