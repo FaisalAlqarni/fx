@@ -13,7 +13,7 @@ const KIT = path.join(__dirname, '..', 'references', 'visual');
 const ev = (p: string, lines: string, symbol: string) => [{ path: p, lines, symbol }];
 const LABEL = '<script>alert(1)</script>';
 
-function setup(o: { catalogue?: boolean } = {}): Fx {
+function setup(o: { catalogue?: boolean; questions?: boolean } = {}): Fx {
   const f = sfFixture();
   f.fxJson({});
   f.fragment('meta', { schemaVersion: 1, meta: { title: 'Fixture', purpose: 'A fixture system.', roots: [{ id: 'backend' }] } });
@@ -29,7 +29,7 @@ function setup(o: { catalogue?: boolean } = {}): Fx {
   });
   f.fragment('chapters', {
     sections: [
-      { id: 's1', title: 'Links', question: 'Where do links expire?', diagrams: ['engine'], sequences: ['turn'], storeFlows: ['first'],
+      { id: 's1', title: 'Links', question: 'Where do links expire?', diagrams: ['engine'], sequences: ['turn'], storeFlows: ['first'], storeRefs: ['links-table'],
         bullets: [{ id: 'b1', text: 'Reply: مرحبا', evidence: ev('app/x.rb', '4', 'expired?') }] },
       { id: 's2', title: 'Again', question: 'Who else draws it?', diagrams: ['engine'] },
     ],
@@ -46,7 +46,8 @@ function setup(o: { catalogue?: boolean } = {}): Fx {
   if (o.catalogue !== false) f.fragment('catalogue', { catalogue: [{ id: 'q1', kind: 'queue', name: 'Main queue', role: 'Holds jobs', evidence: ev('app/y.rb', '1', 'Y') }] });
   f.fragment('rules', { rules: [{ id: 'r1', text: 'Links expire.', evidence: ev('app/x.rb', '4', 'expired?') }] });
   f.fragment('inventory', { inventory: [{ id: 'job-a', kind: 'job', name: 'Job A', evidence: ev('app/x.rb', '1-4', 'Link') }, { id: 'job-b', kind: 'job', name: 'Job B', evidence: ev('app/y.rb', '1', 'Y') }] });
-  f.fragment('corrections', { corrections: [{ id: 'c1', date: '2026-10-01', item: 'bullet:b1', reason: 'owner' }] });
+  f.fragment('corrections', { corrections: [{ id: 'c1', date: '2026-10-01', item: 'bullet:b1', before: 'Links never expire.', after: 'Links expire.', reason: 'owner' }] });
+  if (o.questions) f.fragment('questions', { questions: [{ id: 'q1', text: 'Who prunes expired links?', recommended: 'The nightly job.', items: ['node:api'] }] });
   return f;
 }
 const read = (f: Fx, rel: string): string => fs.readFileSync(path.join(f.host, rel), 'utf8');
@@ -152,6 +153,61 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">مرحبا</span>'));
   assert.deepStrictEqual(Object.keys(figs).sort(), ['flow-first', 'level-engine', 'seq-turn']);
   const flow = sandbox('fx-flow-1.js').fxFlow;
   for (const [k, spec] of Object.entries(figs)) assert.strictEqual(JSON.stringify(flow?.validateFigure?.(spec)), '[]', k);
+}
+
+// Design, Renderers (Page): NAV holds the numbered chapter list and the deep diagram list, and every deep page is linked.
+{
+  const nav = /<nav[^>]*>([\s\S]*?)<\/nav>/.exec(page)?.[1] ?? '';
+  const items = (/<ol>([\s\S]*?)<\/ol>/.exec(nav)?.[1] ?? '').match(/<li>[\s\S]*?<\/li>/g) ?? [];
+  assert.deepStrictEqual(items.map((i) => i.replace(/<[^>]*>/g, '')), ['Explore the system', 'Links', 'Again', 'Components', 'Rules in force', 'Coverage', 'Corrections']);
+  for (const id of ['ch-00-explore', 'ch-01-s1', 'ch-02-s2', 'components', 'rules-in-force', 'coverage', 'corrections']) assert.ok(nav.includes(`href="#${id}"`), id);
+  for (const d of ['arch-engine', 'seq-turn', 'flow-first']) {
+    assert.ok(nav.includes(`href="diagrams/${d}.html"`), `nav links ${d}`);
+    assert.ok(chapter(page, 'ch-01-s1').includes(`href="diagrams/${d}.html"`), `chapter s1 links ${d}`);
+  }
+  const written = fs.readdirSync(path.join(f.host, SITE, 'diagrams')).filter((n) => n.endsWith('.html'));
+  assert.ok(written.length >= 3, written.join(','));
+  for (const n of written) assert.ok(page.includes(`href="diagrams/${n}"`), `index.html links ${n}`);
+}
+
+// Design, Renderers (Page): Open questions, Corrections, Coverage and the store tables hold their content.
+{
+  const g = setup({ questions: true });
+  build(g);
+  const pg = read(g, `${SITE}/index.html`);
+  const q = chapter(pg, 'open-questions');
+  for (const want of ['Who prunes expired links?', 'The nightly job.', 'node:api']) assert.ok(q.includes(want), want);
+  const cells = (/<tbody><tr>([\s\S]*?)<\/tr>/.exec(chapter(pg, 'corrections'))?.[1] ?? '').split('</td><td>').map((c) => c.replace(/<[^>]*>/g, ''));
+  assert.deepStrictEqual(cells, ['2026-10-01', 'bullet:b1', 'Links never expire.', 'Links expire.', 'owner']);
+  const cov = parseJson(read(g, `${SITE}/model/coverage.json`)) as { entries: { kind: string; name: string }[]; counts: Record<string, { covered: number; total: number }> };
+  const covHtml = chapter(pg, 'coverage');
+  assert.ok(cov.entries.length > 0);
+  for (const e of cov.entries) assert.ok(covHtml.includes(`>${e.name}<`), `coverage row ${e.name}`);
+  for (const [k, c] of Object.entries(cov.counts)) assert.ok(covHtml.includes(`<td>${k}</td><td>${c.covered}</td><td>${c.total}</td>`), `coverage count ${k}`);
+  const s1 = chapter(pg, 'ch-01-s1');
+  assert.ok(/Store flow: A link is opened<\/h4>\s*<table>[\s\S]*?<td>1<\/td><td>api<\/td><td>read<\/td><td>sql<\/td><td>links:\{id\}<\/td>/.test(s1), 'flow step row');
+  assert.ok(/Store: sql<\/h4>\s*<table>[\s\S]*?<td>links-table<\/td><td>links<\/td>/.test(s1), 'storeRefs row');
+}
+
+// Design, Layout: dropped arrows are listed under the figure; the map still holds every edge.
+{
+  const g = setup();
+  const names = ['a1', 'a2', 'a3', 'b1', 'b2', 'b3'];
+  const nodes = names.map((id) => ({ id, label: `Node ${id}`, kind: 'backend', role: `Role of ${id}`, evidence: ev('app/x.rb', '1-4', 'Link') }));
+  const edges = ['a1', 'a2', 'a3'].flatMap((a) => ['b1', 'b2', 'b3'].map((b) => ({ from: a, to: b, label: `${a} to ${b}`, evidence: ev('app/y.rb', '1-2', 'Y') })));
+  g.fragment('level0', { levels: { root: 'dense', diagrams: [{ id: 'dense', level: 0, title: 'Dense', summary: 'K33.', groups: [], nodes, edges }] } });
+  g.fragment('chapters', { sections: [{ id: 's1', title: 'Dense', question: 'Why so many?', diagrams: ['dense'] }] });
+  g.fragment('flows', {});
+  g.fragment('corrections', {});
+  build(g);
+  const pg = read(g, `${SITE}/index.html`);
+  const fig = (block(pg, 'diagrams') as Record<string, { notDrawn: string[] }>)['level-dense'];
+  assert.ok(fig && fig.notDrawn.length >= 1, 'a dense figure drops an arrow');
+  const note = /<p class="not-drawn">([\s\S]*?)<\/p>/.exec(chapter(pg, 'ch-01-s1'))?.[1] ?? '';
+  for (const id of fig?.notDrawn ?? []) assert.ok(note.includes(id.slice(id.indexOf(':') + 1).replace('>', ' to ')), `${id} named under the figure`);
+  assert.ok(chapter(pg, 'ch-01-s1').indexOf('</figure>') < chapter(pg, 'ch-01-s1').indexOf('class="not-drawn"'), 'the list follows the figure');
+  const map = block(pg, 'map-data') as { levels: { edges: unknown[] }[] };
+  assert.strictEqual(map.levels[0]?.edges.length, 9, 'map-data keeps every edge');
 }
 
 // pageBytes.

@@ -111,6 +111,11 @@ async function main(): Promise<void> {
     for (const n of ['a1', 'a2', 'a3', 'b1', 'b2', 'b3']) {
       assert.ok(drawn.some((id) => id.startsWith(`dense:${n}>`) || id.endsWith(`>${n}`)), `${n} keeps an arrow`);
     }
+    // Design, Layout: step captions name the arrows the figure leaves out.
+    for (const id of fig.notDrawn) {
+      const [from, to] = id.slice(id.indexOf(':') + 1).split('>');
+      assert.ok(fig.steps.some((s) => s.caption.includes(`to Node ${to}: ${from} to ${to} (arrow not drawn)`)), `${id} named in a step caption`);
+    }
     const dense = mergedModel(f).levels.diagrams.find((d) => d.id === 'dense');
     assert.strictEqual(dense?.edges.length, 9, 'the map data keeps every edge');
   }

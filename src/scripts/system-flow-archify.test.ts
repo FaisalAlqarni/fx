@@ -5,7 +5,7 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import { parseJson } from '../lib/json.js';
-import { applyThemeBlock } from '../lib/sf-diagrams.js';
+import { applyThemeBlock, outsideRefs } from '../lib/sf-diagrams.js';
 import { SLOTS } from '../lib/sf-theme.js';
 import type { Theme } from '../lib/sf-theme.js';
 import { sfFixture } from '../tests/helpers/sf-fixture.js';
@@ -35,7 +35,7 @@ const bad = fails.some((n) => name === n || name.startsWith(n + '-p')) || (type 
 const receipt = a[a.indexOf('--receipt') + 1];
 fs.mkdirSync(path.dirname(receipt), { recursive: true });
 fs.writeFileSync(receipt, JSON.stringify({ name, ok: !bad }));
-if (!bad) fs.writeFileSync(out, '<!doctype html><html><head><style>:root{--bg:#000}</style></head><body>' + name + '</body></html>');
+if (!bad) fs.writeFileSync(out, '<!doctype html><html><head><style>:root{--bg:#000}</style></head><body><a href="#top">top</a><img src="data:image/png;base64,AA">' + (process.env.FAKE_LEAK === name ? '<script src="https://cdn.example/x.js"></script>' : '') + name + '</body></html>');
 fs.appendFileSync(process.env.FAKE_LOG, JSON.stringify({ args: a, name, messages, start, end: now() }) + '\\n');
 process.exit(bad ? 1 : 0);
 `;
@@ -156,6 +156,18 @@ const varOf = (css: string, name: string): string[] => [...css.matchAll(new RegE
     ['flow-first-p2:2', 'flow-first:5', 'flow-first:7']);
   assert.ok(read(f, `${D}/flow-first.html`).includes('<svg'));
   assert.deepStrictEqual(reason(o, 'flow-first'), { name: 'flow-first', renderer: 'svg', reason: `animated SVG, archify failed: ${D}/flow-first-p2.receipt.json` });
+}
+
+{ // Design, Global Constraints: pages load only files under the site; a page with an outside src or href falls back to SVG
+  const f = setup();
+  const o = ok(f, ['--archify', fake(f, 'fake')], { FAKE_LEAK: 'arch-engine' });
+  assert.ok(read(f, `${D}/arch-engine.html`).includes('<svg'));
+  assert.deepStrictEqual(reason(o, 'arch-engine'), { name: 'arch-engine', renderer: 'svg', reason: 'static SVG, archify page loads outside the site: https://cdn.example/x.js' });
+  for (const n of ['arch-system', 'seq-turn', 'seq-turn-p2', 'flow-first']) {
+    assert.strictEqual(reason(o, n).renderer, 'archify', n);
+    assert.deepStrictEqual(outsideRefs(read(f, `${D}/${n}.html`)), [], n);
+  }
+  assert.deepStrictEqual(outsideRefs('<a href="//x.io/a"></a><link href=\'http://y\'><img src="assets/a.png"><a href="#t"><img src="data:image/png;base64,AA">'), ['//x.io/a', 'http://y']);
 }
 
 { // No retry for architecture

@@ -16,7 +16,7 @@ import type { Depth } from './sf-estimate.js';
 import type { Coverage } from './sf-coverage.js';
 import { layoutAll } from './sf-layout.js';
 import { renderPage } from './sf-page.js';
-import { applyThemeBlock, deepDiagrams, findArchify, pickLine, runArchify, svgPage } from './sf-diagrams.js';
+import { applyThemeBlock, deepDiagrams, findArchify, outsideRefs, pickLine, runArchify, svgPage } from './sf-diagrams.js';
 import type { DeepDiagram } from './sf-diagrams.js';
 import { detectTheme, themeCss } from './sf-theme.js';
 import type { Theme } from './sf-theme.js';
@@ -303,9 +303,14 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
     const skip = svgReason(g);
     const attempt = second.get(g0.source) ?? first.get(g0.source);
     const done = retried.get(g0.source) ?? g;
+    // Design, Global Constraints: a page may load only files under the site's assets/.
+    const leak = attempt?.every((r) => r.ok) ? done.flatMap((d) => outsideRefs(fs.readFileSync(path.join(opts.hostRoot, pages, `${d.name}.html`), 'utf8')))[0] : undefined;
     let shown = g, renderer: 'archify' | 'svg' = 'svg', line: string;
     if (skip !== null) line = pickLine(g0.name, svgLabel(g), skip);
-    else if (attempt?.every((r) => r.ok)) {
+    else if (leak !== undefined) {
+      line = pickLine(g0.name, svgLabel(g), `archify page loads outside the site: ${leak}`);
+      writeSpecs(g);
+    } else if (attempt?.every((r) => r.ok)) {
       renderer = 'archify'; shown = done;
       const cut = [...new Set(done.flatMap((d) => d.shortened))];
       const tail = `${retried.has(g0.source) ? ', retried at 5 per page' : ''}${cut.length ? `, shortened: ${cut.join(', ')}` : ''}`;

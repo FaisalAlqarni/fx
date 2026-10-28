@@ -61,7 +61,12 @@ export function renderPage(input: Input): string {
     const parts: string[] = [`<section id="${id}">`, `<h2>${nn(i + 1)}. ${t(s.title)}</h2>`, `<p class="lead-q">${t(s.question)}</p>`];
     if ((s.bullets ?? []).length > 0) parts.push(`<ul class="facts">${(s.bullets ?? []).map((b) => `<li>${t(b.text)}</li>`).join('')}</ul>`);
     const figure = (key: string, title: string): void => {
-      if (claim(key, i)) parts.push(`<h3>${t(title)}</h3><figure data-fx-flow="${escapeHtml(key)}"></figure>`);
+      if (claim(key, i)) {
+        parts.push(`<h3>${t(title)}</h3><figure data-fx-flow="${escapeHtml(key)}"></figure>`);
+        // Arrows the layout left out of the figure; the map still draws them.
+        const left = input.figures.find((f) => f.key === key)?.notDrawn ?? [];
+        if (left.length > 0) parts.push(`<p class="not-drawn">Arrows not drawn here (the map shows them): ${left.map((id) => escapeHtml(id.slice(id.indexOf(':') + 1).replace(/#\d+$/, '').replace('>', ' to '))).join(', ')}.</p>`);
+      }
       else {
         const at = drawnBy.get(key) ?? 0;
         const home = model.sections[at];
@@ -128,7 +133,7 @@ export function renderPage(input: Input): string {
     })));
   if (model.questions.length > 0) {
     fixedChapter('open-questions', 'Open questions', 'What does the model not yet know?',
-      `<ul class="facts">${model.questions.map((q) => `<li>${t(q.text)}${q.answer === undefined ? '' : ` Answer: ${t(q.answer)}`}${q.recommended === undefined ? '' : ` Recommended: ${t(q.recommended)}`}</li>`).join('')}</ul>`);
+      `<ul class="facts">${model.questions.map((q) => `<li>${t(q.text)}${q.answer === undefined ? '' : ` Answer: ${t(q.answer)}`}${q.recommended === undefined ? '' : ` Recommended: ${t(q.recommended)}`}${(q.items ?? []).length === 0 ? '' : ` Items: ${(q.items ?? []).map((h) => `<code>${escapeHtml(h)}</code>`).join(' ')}`}</li>`).join('')}</ul>`);
   }
   fixedChapter('corrections', 'Corrections', 'What was changed after the first draft?', model.corrections.length === 0 ? '<p>No corrections are recorded.</p>'
     : table(['Date', 'Item', 'Before', 'After', 'Reason'], model.corrections.map((c) => [escapeHtml(c.date), t(c.item), t(c.before), t(c.after), escapeHtml(c.reason)])));

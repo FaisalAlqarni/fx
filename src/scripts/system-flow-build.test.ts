@@ -13,7 +13,7 @@ const F = 'docs/system-flow/model/fragments';
 const GEN = '<!-- fx-system-flow generated: edit the model, then rebuild -->';
 const ev = (p: string, lines: string, symbol: string, root?: string) => [{ ...(root === undefined ? {} : { root }), path: p, lines, symbol }];
 
-type Tweak = { label?: string; api?: string; key?: string; bullet?: string };
+type Tweak = { label?: string; api?: string; key?: string; bullet?: string; folder?: string };
 function setup(t: Tweak = {}): Fx {
   const f = sfFixture();
   f.goodSet();
@@ -21,7 +21,7 @@ function setup(t: Tweak = {}): Fx {
   f.fxJson({ system_flow: { roots: { guide: '../guide' } } });
   f.fragment('chapters', {
     sections: [{
-      id: 's1', title: 'Links', question: 'Where do links expire?',
+      id: 's1', title: 'Links', question: 'Where do links expire?', ...(t.folder === undefined ? {} : { folder: t.folder }),
       bullets: [
         { id: 'b1', text: t.bullet ?? 'A link expires after 30 days.', evidence: [{ path: 'app/x.rb', lines: '1,4', symbol: 'expired?' }] },
         { id: 'b2', text: 'The guide explains it.', evidence: ev('README.md', '1', 'Guide', 'guide') },
@@ -111,6 +111,9 @@ assert.strictEqual(setup().run(['nope']).status, 2);
   const index = lines(f, 'docs/system/index.md');
   assert.ok(index.some((l) => l.includes('(s1.md)')), 'index links s1.md');
   assert.ok(index.some((l) => l.includes('(../system-flow/index.html)')), 'index links the site');
+  // Design, Renderers (Markdown): each doc links its figure in the site; stores.md holds a row per store row.
+  assert.ok(s1.includes('[Figures for this chapter in the site](../system-flow/index.html#s1)'), 's1.md links its figure');
+  assert.ok(read(f, 'docs/system/stores.md').split('\n').some((l) => l.startsWith('| links-table | links |')), 'stores.md row');
   for (const doc of ['components', 'stores']) assert.ok(read(f, `docs/system/${doc}.md`).includes(GEN), doc);
 
   const readme = read(f, 'docs/system-flow/README.md');
@@ -231,6 +234,18 @@ assert.strictEqual(setup().run(['nope']).status, 2);
   assert.ok(!text.includes('<script>') && !text.includes('<b>'));
   assert.ok(text.includes('| &lt;script&gt;alert(1)&lt;/script&gt; |'));
   assert.ok(text.includes('- Uses &lt;b&gt;bold&lt;/b&gt; &amp; more'));
+}
+
+// Design, Renderers (Markdown): a section with a folder gets an index.md there, listing its chapters and linking the site.
+{
+  const f = setup({ folder: 'api' });
+  const r = built(f);
+  assert.ok(r.written.includes('docs/system/api/s1.md') && r.written.includes('docs/system/api/index.md'), r.written.join(','));
+  const sub = lines(f, 'docs/system/api/index.md');
+  assert.ok(sub.some((l) => l.includes('[Links](s1.md): Where do links expire?')), 'folder index lists the chapter');
+  assert.ok(sub.some((l) => l.includes('(../../system-flow/index.html)')), 'folder index links the site');
+  assert.ok(lines(f, 'docs/system/index.md').some((l) => l.includes('(api/s1.md)')), 'root index reaches the chapter');
+  assert.ok(read(f, 'docs/system/api/s1.md').includes('(../../system-flow/index.html#s1)'), 'doc in a folder links the site');
 }
 
 console.log('system-flow-build.test.js: ok');

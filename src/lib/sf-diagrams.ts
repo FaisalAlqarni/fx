@@ -273,6 +273,11 @@ export async function runArchify(dir: string, jobs: { name: string; kind: 'archi
   return results;
 }
 
+// A src or href that leaves the site: any scheme except data:, or a protocol-relative URL.
+export function outsideRefs(html: string): string[] {
+  return [...html.matchAll(/\b(?:src|href)\s*=\s*["']([^"']*)["']/gi)].map((m) => (m[1] ?? '').trim()).filter((u) => /^(?:\/\/|[a-z][a-z0-9+.-]*:)/i.test(u) && !/^data:/i.test(u));
+}
+
 // ---------------------------------------------------------------- theme block
 const rgba = (hex: string, a: number): string => {
   const h = hex.replace('#', '');
