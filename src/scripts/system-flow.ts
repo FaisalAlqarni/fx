@@ -3,11 +3,12 @@
 import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { build, checkModel, systemFlowConfig } from '../lib/sf-build.js';
+import type { DiagramFlags } from '../lib/sf-build.js';
 import { itemsOf, parseHandle } from '../lib/sf-model.js';
 import { changedPaths, diffBases, loadModelItems, queryPaths, staleItems, verifyItems } from '../lib/sf-stale.js';
 import { detect, docsConfig, writeFxJson } from '../lib/sf-detect.js';
 
-const USAGE = 'system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build | detect [--repo <path>]... [--write] | query <path>... | query --diff <base> [--base <root id>=<ref>]... | stale | verify <handle>... | --all';
+const USAGE = 'system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build [--archify <dir>] [--prefer cheap|fast|detailed] [--page-limit <name>=<1-8>]... [--svg <name>]... | detect [--repo <path>]... [--write] | query <path>... | query --diff <base> [--base <root id>=<ref>]... | stale | verify <handle>... | --all';
 const usage = (): never => { process.stderr.write(`${USAGE}\n`); process.exit(2); };
 
 const args = process.argv.slice(2);
@@ -39,6 +40,23 @@ if (cmd === 'check' && args[0] === '--fragment') {
   if (fragmentArg === undefined) usage();
 }
 if (cmd === 'build') takeFlags(['--markdown']);
+let archifyArg: string | undefined;
+const flags: DiagramFlags = {};
+if (cmd === 'build') {
+  for (let a = args[0]; a !== undefined && a.startsWith('--'); a = args[0]) {
+    args.shift();
+    const v = args.shift();
+    if (v === undefined) usage();
+    if (a === '--archify') archifyArg = path.resolve(v as string);
+    else if (a === '--prefer' && (v === 'cheap' || v === 'fast' || v === 'detailed')) flags.prefer = v;
+    else if (a === '--page-limit') {
+      const m = /^([^=]+)=([1-8])$/.exec(v as string);
+      if (!m) usage();
+      flags.pageLimits = { ...flags.pageLimits, [m?.[1] as string]: Number(m?.[2]) };
+    } else if (a === '--svg' && v !== '') flags.svg = [...(flags.svg ?? []), v as string];
+    else usage();
+  }
+}
 let diffBase: string | undefined;
 const givenBases: Record<string, string> = {};
 let queried: string[] = [];
@@ -131,7 +149,7 @@ function verifyCmd(): void {
 async function buildCmd(): Promise<void> {
   const root = hostRoot();
   const output = systemFlowConfig(root).config?.output;
-  const result = await build({ hostRoot: root, site: opts.site ?? output?.site ?? 'docs/system-flow', markdown: opts.markdown ?? output?.markdown ?? 'docs/system', docsDir: docsConfig(root).docsDir });
+  const result = await build({ hostRoot: root, site: opts.site ?? output?.site ?? 'docs/system-flow', markdown: opts.markdown ?? output?.markdown ?? 'docs/system', docsDir: docsConfig(root).docsDir, archify: archifyArg, flags: Object.keys(flags).length ? flags : undefined });
   report(result.problems);
   if (!result.ok) process.exit(1);
   process.stdout.write(`${JSON.stringify(result)}\n`);

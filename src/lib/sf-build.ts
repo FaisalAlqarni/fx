@@ -12,12 +12,17 @@ import { coverage } from './sf-coverage.js';
 import type { Coverage } from './sf-coverage.js';
 import { layoutAll } from './sf-layout.js';
 import { renderPage } from './sf-page.js';
-import { deepDiagrams, pickLine, svgPage } from './sf-diagrams.js';
+import { applyThemeBlock, deepDiagrams, findArchify, pickLine, runArchify, svgPage } from './sf-diagrams.js';
+import type { DeepDiagram } from './sf-diagrams.js';
 import { detectTheme, themeCss } from './sf-theme.js';
 import type { Theme } from './sf-theme.js';
 import type { Evidenced, Fragment, Item, LayoutLine, Model, Problem } from './sf-model.js';
 import { collect, itemsOf, loadFragments, mergeFragments, originOf, planStamps, stampVerified } from './sf-model.js';
 import type { FxJson } from './types.js';
+
+// The diagram choices a build takes from its flags; they merge into .fx.json system_flow.diagrams on success.
+export type DiagramFlags = { prefer?: 'cheap' | 'fast' | 'detailed'; pageLimits?: Record<string, number>; svg?: string[] };
+const RETRY_PAGE = 5;
 
 export type BuildResult = {
   ok: boolean; problems: Problem[]; written: string[]; collisions: string[];
@@ -87,7 +92,21 @@ const ASSETS: [string, string][] = [
   ...['react-18.3.1.production.min.js', 'react-dom-18.3.1.production.min.js', 'reactflow-11.11.4.min.js', 'reactflow-11.11.4.style.css', 'elkjs-0.9.3.bundled.js', 'LICENSE-react', 'LICENSE-reactflow', 'LICENSE-elkjs'].map((n): [string, string] => [n, 'vendor']),
 ];
 
-export async function build(opts: { hostRoot: string; site: string; markdown: string; docsDir?: string | null; only?: string[]; archify?: string }): Promise<BuildResult> {
+// Merges the choices into .fx.json system_flow.diagrams by key; every other key stays.
+function saveChoices(hostRoot: string, c: DiagramFlags): void {
+  const file = path.join(hostRoot, '.fx.json');
+  const doc = (fs.existsSync(file) ? parseJson(fs.readFileSync(file, 'utf8')) : {}) as Record<string, unknown>;
+  const sf = (doc.system_flow ?? {}) as Record<string, unknown>;
+  const d = { ...(sf.diagrams as Record<string, unknown> | undefined) };
+  if (c.prefer) d.prefer = c.prefer;
+  if (Object.keys(c.pageLimits ?? {}).length) d.pageLimits = c.pageLimits;
+  if (c.svg?.length) d.svg = c.svg;
+  sf.diagrams = d;
+  doc.system_flow = sf;
+  fs.writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
+}
+
+export async function build(opts: { hostRoot: string; site: string; markdown: string; docsDir?: string | null; only?: string[]; archify?: string; flags?: DiagramFlags }): Promise<BuildResult> {
   const result: BuildResult = { ok: false, problems: [], written: [], collisions: [], diagrams: [], layout: [], pageBytes: null, coverage: null, theme: null };
   const checked = checkModel(opts.hostRoot, opts.site, 'build');
   result.problems = checked.problems;
@@ -154,21 +173,94 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'index.html'), html, hasMarker, result);
   if (!result.collisions.includes(path.posix.join(opts.site, 'index.html'))) result.pageBytes = Buffer.byteLength(html);
 
-  // Archify is not wired yet: every deep diagram is an fx page, said once per diagram in the result.
+  // Saved choices plus this build's flags, in memory; .fx.json is written at the end.
+  const saved = checked.config?.diagrams ?? {};
+  const flags = opts.flags ?? {};
+  const prefer = flags.prefer ?? saved.prefer;
+  const limits = { ...saved.pageLimits, ...flags.pageLimits };
+  const svgNames = [...new Set([...(saved.svg ?? []), ...(flags.svg ?? [])])].sort();
+  const archify = prefer === 'cheap' ? undefined : opts.archify ?? findArchify(opts.hostRoot, process.env, checked.config)?.dir;
+
   const pages = path.posix.join(opts.site, 'diagrams');
   const generatedJson = (old: string): boolean => { try { return parseJson(old) !== null; } catch { return false; } };
-  for (const d of deepDiagrams(checked.model, laid.figures, checked.roots, checked.config?.diagrams?.pageLimits ?? {})) {
+  const all = deepDiagrams(checked.model, laid.figures, checked.roots, limits);
+  const figureOf = (d: DeepDiagram) => {
     const figure = laid.figures.find((f) => f.key === (d.source.startsWith('diagram:') ? `level-${d.source.slice(8)}` : d.source.startsWith('seq:') ? `seq-${d.source.slice(4)}` : `flow-${d.source.slice(5)}`));
     if (!figure) throw new Error(`no figure for ${d.name}`);
-    const page = Number(/-p(\d+)$/.exec(d.name)?.[1] ?? 1);
-    writeGenerated(opts.hostRoot, path.posix.join(pages, `${d.name}.html`), svgPage(d, figure, page), () => true, result);
-    writeGenerated(opts.hostRoot, path.posix.join(pages, 'src', `${d.name}.json`), `${JSON.stringify(d.spec, null, 2)}\n`, generatedJson, result);
-    const line = pickLine(d.name, d.kind === 'sequence' ? 'animated SVG' : 'static SVG', 'archify not installed');
-    result.diagrams.push({ name: d.name, renderer: 'svg', reason: line.slice(d.name.length + 2) });
+    return figure;
+  };
+  const writeSpecs = (ds: DeepDiagram[]): void => {
+    for (const d of ds) writeGenerated(opts.hostRoot, path.posix.join(pages, 'src', `${d.name}.json`), `${JSON.stringify(d.spec, null, 2)}\n`, generatedJson, result);
+  };
+  const jobsOf = (ds: DeepDiagram[]) => ds.map((d) => ({
+    name: d.name, kind: d.kind, spec: path.join(opts.hostRoot, pages, 'src', `${d.name}.json`),
+    out: path.join(opts.hostRoot, pages, `${d.name}.html`), repoRoot: checked.roots.get(d.owningRoot)?.dir ?? opts.hostRoot,
+  }));
+  const bySource = new Map<string, DeepDiagram[]>();
+  for (const d of all) bySource.set(d.source, [...(bySource.get(d.source) ?? []), d]);
+  const groups = [...bySource.values()];
+  const svgReason = (g: DeepDiagram[]): string | null => (prefer === 'cheap' ? 'preference cheap' : svgNames.includes((g[0] as DeepDiagram).name) ? 'owner or lane chose SVG' : archify === undefined ? 'archify not installed' : null);
+  const svgLabel = (g: DeepDiagram[]): 'static SVG' | 'animated SVG' => ((g[0] as DeepDiagram).kind === 'sequence' ? 'animated SVG' : 'static SVG');
+
+  for (const g of groups) writeSpecs(g);
+  const live = archify === undefined ? [] : groups.filter((g) => svgReason(g) === null);
+  type Run = { ok: boolean; receipt: string };
+  const runAll = async (gs: DeepDiagram[][]): Promise<Map<string, Run[]>> => {
+    const rs = await runArchify(archify as string, jobsOf(gs.flat()), 4);
+    const byGroup = new Map<string, Run[]>();
+    gs.flat().forEach((d, i) => {
+      const r = rs[i] as { ok: boolean };
+      byGroup.set(d.source, [...(byGroup.get(d.source) ?? []), { ok: r.ok, receipt: path.posix.join(pages, `${d.name}.receipt.json`) }]);
+    });
+    return byGroup;
+  };
+  const first = live.length ? await runAll(live) : new Map<string, Run[]>();
+  // One fixed retry for a sequence or flow whose page limit is above 5; nothing edits the spec between attempts.
+  const retried = new Map<string, DeepDiagram[]>();
+  for (const g of live) {
+    const g0 = g[0] as DeepDiagram;
+    const key = g0.source.replace(':', '-');
+    if (g0.kind === 'sequence' && (first.get(g0.source) as Run[]).some((r) => !r.ok) && (limits[key] ?? 8) > RETRY_PAGE) {
+      retried.set(g0.source, deepDiagrams(checked.model, laid.figures, checked.roots, { ...limits, [key]: RETRY_PAGE }).filter((d) => d.source === g0.source));
+    }
+  }
+  for (const g of retried.values()) writeSpecs(g);
+  const second = retried.size ? await runAll([...retried.values()]) : new Map<string, Run[]>();
+
+  const msgs = (g: DeepDiagram[]): number => g.reduce((n, d) => n + ((d.spec as { messages?: unknown[] }).messages?.length ?? 0), 0);
+  for (const g of groups) {
+    const g0 = g[0] as DeepDiagram;
+    const skip = svgReason(g);
+    const attempt = second.get(g0.source) ?? first.get(g0.source);
+    const done = retried.get(g0.source) ?? g;
+    let shown = g, renderer: 'archify' | 'svg' = 'svg', line: string;
+    if (skip !== null) line = pickLine(g0.name, svgLabel(g), skip);
+    else if (attempt?.every((r) => r.ok)) {
+      renderer = 'archify'; shown = done;
+      const tail = retried.has(g0.source) ? ', retried at 5 per page' : '';
+      line = g0.kind === 'architecture'
+        ? pickLine(g0.name, 'archify architecture', `${(g0.spec as { components: unknown[] }).components.length} components`)
+        : pickLine(g0.name, 'archify sequence', `${msgs(done)} messages in ${done.length} pages${tail}`);
+    } else {
+      const failed = (attempt as Run[]).map((r, i) => ({ r, i })).filter((x) => !x.r.ok).pop();
+      line = pickLine(g0.name, svgLabel(g), `archify failed: ${(failed as { r: Run }).r.receipt}`);
+      writeSpecs(g);
+    }
+    for (const d of shown) {
+      if (renderer === 'svg') writeGenerated(opts.hostRoot, path.posix.join(pages, `${d.name}.html`), svgPage(d, figureOf(d), Number(/-p(\d+)$/.exec(d.name)?.[1] ?? 1)), () => true, result);
+      else {
+        const rel = path.posix.join(pages, `${d.name}.html`);
+        const file = path.join(opts.hostRoot, rel);
+        fs.writeFileSync(file, applyThemeBlock(fs.readFileSync(file, 'utf8'), theme));
+        result.written.push(rel);
+      }
+    }
+    for (const d of shown) result.diagrams.push({ name: d.name, renderer, reason: line.slice(g0.name.length + 2) });
   }
 
   // Last step, only when everything above succeeded (a write error above throws before this line).
   stampVerified(path.join(opts.hostRoot, opts.site, 'model', 'fragments'), stamps);
+  if (opts.flags) saveChoices(opts.hostRoot, { prefer, pageLimits: limits, svg: svgNames });
   result.ok = true;
   return result;
 }

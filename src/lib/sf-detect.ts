@@ -6,6 +6,7 @@ import { parseJson } from './json.js';
 import { systemFlowConfig } from './sf-build.js';
 import { resolveRoots } from './sf-evidence.js';
 import type { Problem } from './sf-model.js';
+import { findArchify } from './sf-diagrams.js';
 import { GENERATED } from './sf-markdown.js';
 import { detectTheme } from './sf-theme.js';
 
@@ -14,6 +15,7 @@ export type Detected = {
   output: { site: string; markdown: string };
   mkdocs: { nav: string[]; excludeDocs: string[] } | null;
   theme: { source: string; kind: string };
+  archify: { dir: string; version: string | null; via: string } | null; // null when the saved preference is cheap or nothing is found
   roots: { id: string; path: string; dir: string; git: boolean; remote: string | null; head: string | null }[]; // [0] is the host; path is relative to the host root
 };
 
@@ -98,7 +100,7 @@ export function detect(hostRoot: string, repos: string[]): { detected: Detected;
   const mkdocs = dc.kind === 'mkdocs'
     ? { nav: [`- System flow: ${site}/index.html`, `- System docs: ${rel(output.markdown)}/index.md`], excludeDocs: [`${site}/README.md`, `${site}/model/`, `${site}/diagrams/src/`] }
     : null;
-  return { detected: { docsConfig: dc, output, mkdocs, theme: { source: theme.source, kind: theme.kind }, roots: rootList }, problems };
+  return { detected: { docsConfig: dc, output, mkdocs, theme: { source: theme.source, kind: theme.kind }, archify: cfg.config?.diagrams?.prefer === 'cheap' ? null : findArchify(hostRoot, process.env, cfg.config), roots: rootList }, problems };
 }
 
 // Replaces system_flow.output and system_flow.theme and adds roots not listed yet; every other key stays.

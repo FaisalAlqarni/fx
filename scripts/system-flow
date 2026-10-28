@@ -29,7 +29,7 @@ var import_sf_build = require("../lib/sf-build.js");
 var import_sf_model = require("../lib/sf-model.js");
 var import_sf_stale = require("../lib/sf-stale.js");
 var import_sf_detect = require("../lib/sf-detect.js");
-const USAGE = "system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build | detect [--repo <path>]... [--write] | query <path>... | query --diff <base> [--base <root id>=<ref>]... | stale | verify <handle>... | --all";
+const USAGE = "system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build [--archify <dir>] [--prefer cheap|fast|detailed] [--page-limit <name>=<1-8>]... [--svg <name>]... | detect [--repo <path>]... [--write] | query <path>... | query --diff <base> [--base <root id>=<ref>]... | stale | verify <handle>... | --all";
 const usage = () => {
   process.stderr.write(`${USAGE}
 `);
@@ -63,6 +63,23 @@ if (cmd === "check" && args[0] === "--fragment") {
   if (fragmentArg === void 0) usage();
 }
 if (cmd === "build") takeFlags(["--markdown"]);
+let archifyArg;
+const flags = {};
+if (cmd === "build") {
+  for (let a = args[0]; a !== void 0 && a.startsWith("--"); a = args[0]) {
+    args.shift();
+    const v = args.shift();
+    if (v === void 0) usage();
+    if (a === "--archify") archifyArg = path.resolve(v);
+    else if (a === "--prefer" && (v === "cheap" || v === "fast" || v === "detailed")) flags.prefer = v;
+    else if (a === "--page-limit") {
+      const m = /^([^=]+)=([1-8])$/.exec(v);
+      if (!m) usage();
+      flags.pageLimits = { ...flags.pageLimits, [m?.[1]]: Number(m?.[2]) };
+    } else if (a === "--svg" && v !== "") flags.svg = [...flags.svg ?? [], v];
+    else usage();
+  }
+}
 let diffBase;
 const givenBases = {};
 let queried = [];
@@ -165,7 +182,7 @@ function verifyCmd() {
 async function buildCmd() {
   const root = hostRoot();
   const output = (0, import_sf_build.systemFlowConfig)(root).config?.output;
-  const result = await (0, import_sf_build.build)({ hostRoot: root, site: opts.site ?? output?.site ?? "docs/system-flow", markdown: opts.markdown ?? output?.markdown ?? "docs/system", docsDir: (0, import_sf_detect.docsConfig)(root).docsDir });
+  const result = await (0, import_sf_build.build)({ hostRoot: root, site: opts.site ?? output?.site ?? "docs/system-flow", markdown: opts.markdown ?? output?.markdown ?? "docs/system", docsDir: (0, import_sf_detect.docsConfig)(root).docsDir, archify: archifyArg, flags: Object.keys(flags).length ? flags : void 0 });
   report(result.problems);
   if (!result.ok) process.exit(1);
   process.stdout.write(`${JSON.stringify(result)}

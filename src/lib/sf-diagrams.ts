@@ -1,5 +1,11 @@
 // Deep diagrams: one archify spec per level diagram, sequence and store flow page, and the SVG
 // fallback page drawn from the same figure spec. Archify itself runs in a later task.
+import * as fs from 'fs';
+import { parseJson } from './json.js';
+import * as path from 'path';
+import { spawn } from 'child_process';
+import type { Theme } from './sf-theme.js';
+import type { FxJson } from './types.js';
 import type { Diagram, Evidence, FigureSpec, FileEvidence, Model, StoreFlow } from './sf-model.js';
 import type { Root } from './sf-evidence.js';
 import { escapeHtml } from './sf-page.js';
@@ -199,4 +205,88 @@ ${captions.map((c) => `<li>${escapeHtml(c)}</li>`).join('\n')}
 </body>
 </html>
 `;
+}
+
+// ---------------------------------------------------------------- running archify
+const hasArchify = (dir: string): boolean => fs.existsSync(path.join(dir, 'bin', 'archify.mjs'));
+
+// The lookup order of the Global Constraints: $CLAUDE_CONFIG_DIR, then $HOME, then .fx.json; a folder without bin/archify.mjs is skipped.
+export function findArchify(hostRoot: string, env: NodeJS.ProcessEnv, fx: FxJson['system_flow']): { dir: string; version: string | null; via: 'CLAUDE_CONFIG_DIR' | 'HOME' | '.fx.json' } | null {
+  const tries: ['CLAUDE_CONFIG_DIR' | 'HOME' | '.fx.json', string | undefined][] = [
+    ['CLAUDE_CONFIG_DIR', env.CLAUDE_CONFIG_DIR ? path.join(env.CLAUDE_CONFIG_DIR, 'skills', 'archify') : undefined],
+    ['HOME', env.HOME ? path.join(env.HOME, '.claude', 'skills', 'archify') : undefined],
+    ['.fx.json', fx?.diagrams?.archify ? path.resolve(hostRoot, fx.diagrams.archify) : undefined],
+  ];
+  for (const [via, dir] of tries) {
+    if (!dir || !hasArchify(dir)) continue;
+    let version: string | null = null;
+    try { version = (parseJson(fs.readFileSync(path.join(dir, 'skill-release.json'), 'utf8')) as { version?: string }).version ?? null; } catch { /* no release file */ }
+    return { dir, version, via };
+  }
+  return null;
+}
+
+// Runs `finalize` for each job, at most `limit` at a time. The receipt sits beside the output as <name>.receipt.json (ruling 17).
+export function runArchify(dir: string, jobs: { name: string; kind: 'architecture' | 'sequence'; spec: string; out: string; repoRoot: string }[], limit: 4): Promise<{ name: string; ok: boolean; receipt: string | null }[]> {
+  const results: { name: string; ok: boolean; receipt: string | null }[] = [];
+  const one = (j: (typeof jobs)[number]): Promise<void> => new Promise((resolve) => {
+    const receipt = path.join(path.dirname(j.out), `${j.name}.receipt.json`);
+    const args = [path.join(dir, 'bin', 'archify.mjs'), 'finalize', j.kind, j.spec, j.out, '--repo-root', j.repoRoot, '--quality', 'showcase', '--receipt', receipt, '--json'];
+    const done = (code: number | null): void => {
+      results[jobs.indexOf(j)] = { name: j.name, ok: code === 0 && fs.existsSync(j.out), receipt: fs.existsSync(receipt) ? receipt : null };
+      resolve();
+    };
+    const child = spawn(process.execPath, args, { stdio: 'ignore' });
+    child.on('error', () => done(null));
+    child.on('close', done);
+  });
+  let next = 0;
+  const worker = async (): Promise<void> => { while (next < jobs.length) await one(jobs[next++] as (typeof jobs)[number]); };
+  return Promise.all(Array.from({ length: Math.min(limit, jobs.length) }, worker)).then(() => results);
+}
+
+// ---------------------------------------------------------------- theme block
+const rgba = (hex: string, a: number): string => {
+  const h = hex.replace('#', '');
+  const f = h.length === 3 ? [...h].map((c) => c + c).join('') : h;
+  return `rgba(${parseInt(f.slice(0, 2), 16)}, ${parseInt(f.slice(2, 4), 16)}, ${parseInt(f.slice(4, 6), 16)}, ${a})`;
+};
+// archify's component kinds take fx's stroke slots; fx has no red slot, so security shares --alert with messagebus.
+const KIND_SLOT: [string, string][] = [['frontend', '--info'], ['backend', '--accent'], ['database', '--violet'], ['cloud', '--warn'], ['security', '--alert'], ['messagebus', '--alert'], ['external', '--muted']];
+
+// archify's variable names from fx's slots, after system-flow's apply-theme.mjs.
+function archifyVars(v: Record<string, string>, fillA: number, pad: string): string {
+  const x = (k: string): string => v[k] as string;
+  const all: [string, string][] = [
+    ['bg', x('--paper')], ['grid', x('--rule')], ['text', x('--ink')], ['text-muted', x('--muted')], ['text-dim', x('--muted')], ['text-faint', x('--muted')],
+    ['panel', x('--panel')], ['panel-border', x('--rule')], ['lane-fill', rgba(x('--code'), 0.7)], ['lane-stroke', x('--rule')],
+    ['arrow', x('--muted')], ['arrow-emphasis', x('--accent')], ['mask', x('--panel')],
+    ['toolbar-bg', x('--panel')], ['toolbar-border', x('--rule')], ['toolbar-text', x('--ink')], ['toolbar-hover', x('--panel')], ['toolbar-menu-bg', x('--panel')],
+    ...KIND_SLOT.flatMap(([k, slot]): [string, string][] => [[`${k}-fill`, rgba(x(slot), fillA)], [`${k}-stroke`, x(slot)]]),
+  ];
+  return all.map(([k, val]) => `${pad}--${k}: ${val};`).join('\n');
+}
+
+const THEME_BLOCK = /\/\* fx-theme:begin \*\/[\s\S]*?\/\* fx-theme:end \*\/\n?/g;
+// shortcut: archify's print block and opt-in presets keep their own colours; map them if a proof run shows the need.
+export function applyThemeBlock(html: string, t: Theme): string {
+  const block = `/* fx-theme:begin */
+:root, [data-theme="light"] {
+${archifyVars(t.light, 0.1, '  ')}
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+${archifyVars(t.dark, 0.14, '    ')}
+  }
+}
+[data-theme="dark"] {
+${archifyVars(t.dark, 0.14, '  ')}
+}
+/* fx-theme:end */
+`;
+  const bare = html.replace(THEME_BLOCK, '');
+  const close = bare.indexOf('</style>');
+  if (close >= 0) return `${bare.slice(0, close)}${block}${bare.slice(close)}`;
+  const head = bare.indexOf('</head>');
+  return head >= 0 ? `${bare.slice(0, head)}<style>\n${block}</style>\n${bare.slice(head)}` : `<style>\n${block}</style>\n${bare}`;
 }

@@ -26,6 +26,7 @@ Open each page four ways: light at 1440 px wide, dark at 1440, light at 390, dar
 ## archify diagrams
 
 Use archify's own browser check for each diagram it rendered.
+archify outputs are opened at 1440 and 390, light and dark, like every page; archify's own check still runs as well.
 
 ## No browser
 
