@@ -299,8 +299,12 @@ function hintLayout(input: Input, edges: FEdge[], hints: Record<string, { col: n
   for (const e of edges) {
     const a = rects.get(e.from), b = rects.get(e.to);
     if (!a || !b) continue;
-    const p = border(a, centre(b)), q = border(b, centre(a));
-    routes.set(e.id, [p, q]);
+    // A self-loop has no direction between centres; it goes out of the box's right side and back, inside the gap.
+    const route: Pt[] = a === b
+      ? [[a.x + a.w, a.y + a.h * 0.3], [a.x + a.w + 14, a.y + a.h * 0.3], [a.x + a.w + 14, a.y + a.h * 0.7], [a.x + a.w, a.y + a.h * 0.7]]
+      : [border(a, centre(b)), border(b, centre(a))];
+    routes.set(e.id, route);
+    const p = route[a === b ? 1 : 0] ?? [0, 0], q = route[a === b ? 2 : 1] ?? p;
     if (e.label) { const box = labelBox([e.label]); labels.set(e.id, { x: (p[0] + q[0]) / 2 - box.w / 2, y: (p[1] + q[1]) / 2 - box.h / 2, ...box, lines: [e.label] }); }
   }
   const all = [...rects.values(), ...groups.values()];

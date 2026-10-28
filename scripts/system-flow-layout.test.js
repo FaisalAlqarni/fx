@@ -150,6 +150,17 @@ async function main() {
     assert.ok(crossings >= 2, hit[0]);
   }
   {
+    const layout = { a: { col: 0, row: 0 }, b: { col: 1, row: 0 } };
+    const f = setup({ id: "system", level: 0, nodes: [node("a"), node("b")], edges: [edge("a", "b"), edge("a", "a", "retries")], layout });
+    built(f);
+    const fig = await figure(f, "level-system");
+    const loop = fig.edges.find((x) => x.id === "system:a>a");
+    assert.ok(loop && !loop.d.includes("NaN"), JSON.stringify(loop));
+    const box = fig.nodes.find((n) => n.id === "a");
+    const pts = [...(loop?.d ?? "").matchAll(/(-?[0-9.]+),(-?[0-9.]+)/g)].map((m) => [Number(m[1]), Number(m[2])]);
+    assert.ok(box && pts.some(([x, y]) => (x ?? 0) > box.x + box.w || (y ?? 0) < box.y), `loop leaves box a: ${loop?.d}`);
+  }
+  {
     const f = setup(chain());
     f.fragment("flows", {
       sequences: [{
