@@ -295,4 +295,15 @@ assert.strictEqual(setup().run(['nope']).status, 2);
   assert.ok(rules.includes('(@&lt;b&gt;g/docs/&lt;i&gt;.md)'), rules);
 }
 
+// Stamps are all or nothing: one fragment that cannot be written leaves every fragment as it was (final fix A13).
+{
+  const f = setup();
+  f.commit('host', 'model');
+  fs.mkdirSync(path.join(f.host, F, 'level0.json.tmp'));
+  const before = Object.fromEntries(['chapters', 'flows', 'level0'].map((n) => [n, fs.readFileSync(path.join(f.host, F, `${n}.json`), 'utf8')]));
+  const r = f.run(['build']);
+  assert.strictEqual(r.status, 1, r.stdout);
+  for (const [n, text] of Object.entries(before)) assert.strictEqual(fs.readFileSync(path.join(f.host, F, `${n}.json`), 'utf8'), text, `${n} unchanged`);
+}
+
 console.log('system-flow-build.test.js: ok');

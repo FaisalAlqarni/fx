@@ -260,9 +260,23 @@ export function stampVerified(hostRoot: string, fragmentsDir: string, stamps: Ma
     target.verified = { ...target.verified, ...fresh };
     changed.add(item.file);
   }
-  return [...changed].sort().map((file) => {
-    const full = writable(hostRoot, path.join(fragmentsDir, file));
-    fs.writeFileSync(full, `${JSON.stringify(fragments.find((f) => f.file === file)?.data, null, 2)}\n`);
-    return full;
-  });
+  return writeAll(hostRoot, [...changed].sort().map((file) => [path.join(fragmentsDir, file), `${JSON.stringify(fragments.find((f) => f.file === file)?.data, null, 2)}\n`]));
+}
+
+// All or nothing: every file goes to <file>.tmp first and is renamed only once all of them are written,
+// so a failed write leaves every fragment as it was. Returns the files written.
+export function writeAll(hostRoot: string, files: [string, string][]): string[] {
+  const temps: string[] = [];
+  try {
+    for (const [file, text] of files) {
+      const tmp = writable(hostRoot, `${writable(hostRoot, file)}.tmp`);
+      fs.writeFileSync(tmp, text);
+      temps.push(tmp);
+    }
+  } catch (e) {
+    for (const t of temps) fs.rmSync(t, { force: true });
+    throw e;
+  }
+  files.forEach(([file], i) => fs.renameSync(temps[i] as string, file));
+  return files.map(([file]) => file);
 }

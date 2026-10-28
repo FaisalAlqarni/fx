@@ -363,8 +363,9 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
     return result;
   }
   // Last step, only when everything above succeeded (a write error above throws before this line).
-  stampVerified(opts.hostRoot, path.join(opts.hostRoot, opts.site, 'model', 'fragments'), stamps);
+  // The choices first: a throw there leaves the fragments unstamped.
   if (opts.flags) saveChoices(opts.hostRoot, { prefer, pageLimits: limits, svg: svgNames });
+  stampVerified(opts.hostRoot, path.join(opts.hostRoot, opts.site, 'model', 'fragments'), stamps);
   result.ok = true;
   return result;
 }

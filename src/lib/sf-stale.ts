@@ -4,7 +4,7 @@ import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { parseJson } from './json.js';
 import { checkPath } from './doc-index.js';
-import { collect, itemsOf, loadFragments, mergeFragments, writable } from './sf-model.js';
+import { collect, itemsOf, loadFragments, mergeFragments, writeAll } from './sf-model.js';
 import type { Evidenced, Evidence, Fragment, Item, ItemKind, Verified } from './sf-model.js';
 import { COMMIT, resolveCommit, resolveRoots } from './sf-evidence.js';
 import type { Root } from './sf-evidence.js';
@@ -147,6 +147,6 @@ export function verifyItems(hostRoot: string, fragmentsDir: string, handles: str
     if (JSON.stringify(next) !== JSON.stringify(target.verified)) { target.verified = next; changed.add(item.file); }
     done.push(item.handle);
   }
-  for (const file of changed) fs.writeFileSync(writable(hostRoot, path.join(fragmentsDir, file)), `${JSON.stringify(fragments.find((f) => f.file === file)?.data, null, 2)}\n`);
+  writeAll(hostRoot, [...changed].map((file) => [path.join(fragmentsDir, file), `${JSON.stringify(fragments.find((f) => f.file === file)?.data, null, 2)}\n`]));
   return done;
 }
