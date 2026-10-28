@@ -1,5 +1,5 @@
 // The system model: types, fragment loading, merge and the item list.
-// The JSON Schema in skills/fx-system-flow/system-model.schema.json is the
+// The JSON Schema in references/system-flow/system-model.schema.json is the
 // one copy of the format; these types follow it.
 import * as fs from 'fs';
 import * as path from 'path';
@@ -59,7 +59,7 @@ export function parseHandle(h: string): { prefix: string; id: string } | null {
 export const SCHEMA_VERSION = 1;
 export const ID_PATTERN = '^[a-z0-9][a-z0-9-]*$';
 
-const SCHEMA_FILE = path.join(__dirname, '..', 'skills', 'fx-system-flow', 'system-model.schema.json');
+const SCHEMA_FILE = path.join(__dirname, '..', 'references', 'system-flow', 'system-model.schema.json');
 
 // The design's named fragments load first, in this order, then area fragments by name,
 // so a duplicate id is reported on the area fragment, not on level0.json.
