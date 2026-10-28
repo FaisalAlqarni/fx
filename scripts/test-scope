@@ -33,7 +33,7 @@ function allGateCommands() {
 }
 const NEEDS_GIT_FIXTURE = /* @__PURE__ */ new Set(["lib/git-guard.js", "lib/git-guard.test.js", "lib/heredoc.test.js", "lib/base-branch.test.js"]);
 const TS_GATES = ["scripts/check-types", "scripts/check-ts-escapes", "scripts/check-generated"];
-const EXTENSIONLESS = /* @__PURE__ */ new Set(["scripts/build-cost.ts", "scripts/docs-index.ts", "scripts/plan-check.ts", "scripts/test-scope.ts", "skills/fx-implement/scripts/compile-brief.ts"]);
+const EXTENSIONLESS = /* @__PURE__ */ new Set(["scripts/build-cost.ts", "scripts/docs-index.ts", "scripts/plan-check.ts", "scripts/system-flow.ts", "scripts/test-scope.ts", "skills/fx-implement/scripts/compile-brief.ts"]);
 function builtPath(p) {
   if (!p.startsWith("src/")) return p;
   const rel = p.slice("src/".length);

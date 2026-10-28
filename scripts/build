@@ -28,7 +28,7 @@ while IFS= read -r -d '' src; do
   case "$rel" in
     *.cts) out="${rel%.cts}.cjs" ;;
     # Extensionless node scripts; scripts/test-scope keeps the same list.
-    scripts/build-cost.ts|scripts/docs-index.ts|scripts/plan-check.ts|scripts/test-scope.ts|skills/fx-implement/scripts/compile-brief.ts)
+    scripts/build-cost.ts|scripts/docs-index.ts|scripts/plan-check.ts|scripts/system-flow.ts|scripts/test-scope.ts|skills/fx-implement/scripts/compile-brief.ts)
       out="${rel%.ts}" mode=755 ;;
     plugins/*.ts|index.ts) format=esm ;;
     skills/fx-brainstorm/scripts/helper.ts|references/visual/fx-map-1.ts) platform=browser format=iife ;;

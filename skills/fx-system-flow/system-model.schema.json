@@ -1,0 +1,386 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "system-model.schema.json",
+  "title": "fx system model fragment",
+  "description": "One fragment under <site>/model/fragments/. Every top-level key is optional; check requires schemaVersion in meta.json. Validated by lib/sf-schema.js, which supports type, required, properties, additionalProperties false, items, enum, pattern, maxLength and local $ref only.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "integer" },
+    "meta": { "$ref": "#/$defs/meta" },
+    "levels": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "root": { "$ref": "#/$defs/id" },
+        "diagrams": { "type": "array", "items": { "$ref": "#/$defs/diagram" } }
+      }
+    },
+    "sequences": { "type": "array", "items": { "$ref": "#/$defs/sequence" } },
+    "stores": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sql": { "type": "array", "items": { "$ref": "#/$defs/sqlRow" } },
+        "cache": { "type": "array", "items": { "$ref": "#/$defs/cacheRow" } },
+        "memory": { "type": "array", "items": { "$ref": "#/$defs/memoryRow" } },
+        "files": { "type": "array", "items": { "$ref": "#/$defs/filesRow" } },
+        "client": { "type": "array", "items": { "$ref": "#/$defs/filesRow" } }
+      }
+    },
+    "storeFlows": { "type": "array", "items": { "$ref": "#/$defs/storeFlow" } },
+    "catalogue": { "type": "array", "items": { "$ref": "#/$defs/catalogueEntry" } },
+    "rules": { "type": "array", "items": { "$ref": "#/$defs/rule" } },
+    "inventory": { "type": "array", "items": { "$ref": "#/$defs/inventoryEntry" } },
+    "sections": { "type": "array", "items": { "$ref": "#/$defs/section" } },
+    "questions": { "type": "array", "items": { "$ref": "#/$defs/question" } },
+    "corrections": { "type": "array", "items": { "$ref": "#/$defs/correction" } }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "texts": { "type": "array", "items": { "type": "string" } },
+    "mode": { "type": "string", "enum": ["sync", "async"] },
+    "evidence": {
+      "description": "A file entry (path, with root, lines, symbol) or an owner entry (owner, question). Which fields each needs is checked in code.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "root": { "type": "string" },
+        "path": { "type": "string" },
+        "lines": { "type": "string" },
+        "symbol": { "type": "string" },
+        "owner": { "type": "string" },
+        "question": { "type": "string" }
+      }
+    },
+    "evidenceList": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+    "verified": { "description": "Root id to the 40-character commit the item was last verified at.", "type": "object" },
+    "unconfirmed": { "type": "boolean" },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string" },
+        "date": { "type": "string" },
+        "purpose": { "type": "string" },
+        "roots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "label": { "type": "string" },
+              "remote": { "type": "string" }
+            }
+          }
+        },
+        "conventions": { "$ref": "#/$defs/texts" }
+      }
+    },
+    "diagram": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "level", "title", "summary", "groups", "nodes", "edges"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "level": { "type": "integer", "enum": [0, 1, 2, 3] },
+        "parent": { "type": "string" },
+        "title": { "type": "string" },
+        "summary": { "type": "string" },
+        "groups": { "type": "array", "items": { "$ref": "#/$defs/group" } },
+        "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+        "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } },
+        "layout": { "description": "Node id to a { col, row } grid cell.", "type": "object" }
+      }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "kind", "role"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "type": "string" },
+        "kind": { "type": "string" },
+        "role": { "type": "string" },
+        "children": { "type": "string" },
+        "primary": { "type": "boolean" },
+        "evidence": { "$ref": "#/$defs/evidenceList" },
+        "unconfirmed": { "$ref": "#/$defs/unconfirmed" },
+        "verified": { "$ref": "#/$defs/verified" }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to", "label"],
+      "properties": {
+        "from": { "type": "string" },
+        "to": { "type": "string" },
+        "label": { "type": "string" },
+        "short": { "type": "string", "maxLength": 26 },
+        "mode": { "$ref": "#/$defs/mode" },
+        "evidence": { "$ref": "#/$defs/evidenceList" },
+        "unconfirmed": { "$ref": "#/$defs/unconfirmed" },
+        "verified": { "$ref": "#/$defs/verified" }
+      }
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "members"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "type": "string" },
+        "members": { "$ref": "#/$defs/texts" },
+        "groups": { "$ref": "#/$defs/texts" },
+        "evidence": { "$ref": "#/$defs/evidenceList" },
+        "unconfirmed": { "$ref": "#/$defs/unconfirmed" },
+        "verified": { "$ref": "#/$defs/verified" }
+      }
+    },
+    "sequence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "chapter", "participants", "messages"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "type": "string" },
+        "chapter": { "type": "string" },
+        "participants": { "type": "array", "items": { "$ref": "#/$defs/participant" } },
+        "messages": { "type": "array", "items": { "$ref": "#/$defs/message" } },
+        "notes": { "$ref": "#/$defs/texts" }
+      }
+    },
+    "participant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "type": "string" },
+        "kind": { "type": "string" },
+        "role": { "type": "string" },
+        "evidence": { "$ref": "#/$defs/evidenceList" },
+        "unconfirmed": { "$ref": "#/$defs/unconfirmed" },
+        "verified": { "$ref": "#/$defs/verified" }
+      }
+    },
+    "message": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["n", "from", "to", "label"],
+      "properties": {
+        "n": { "type": "integer" },
+        "from": { "type": "string" },
+        "to": { "type": "string" },
+        "label": { "type": "string" },
+        "mode": { "$ref": "#/$defs/mode" },
+        "note": { "type": "string" },
+        "evidence": { "$ref": "#/$defs/evidenceList" },
+        "unconfirmed": { "$ref": "#/$defs/unconfirmed" },
+        "verified": { "$ref": "#/$defs/verified" }
+      }
+    },
+    "sqlRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "table": { "type": "string" },
+        "database": { "type": "string" },
+        "purpose": { "type": "string" },
+        "writtenBy": { "type": "string" },
+        "readBy": { "type": "string" },
+        "when": { "type": "string" },
+        "evidence": { "$ref": "#/$defs/evidenceList" },
+        "unconfirmed": { "$ref": "#/$defs/unconfirmed" },
+        "verified": { "$ref": "#/$defs/verified" }
+      }
+    },
+    "cacheRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "pattern": { "type": "string" },
+        "owner": { "type": "string" },
+        "value": { "type": "string" },
+        "ttl": { "type": "string" },
+        "writtenBy": { "type": "string" },
+        "readBy": { "type": "string" },
+        "when": { "type": "string" },
+        "evidence": { "$ref": "#/$defs/evidenceList" },
+        "unconfirmed": { "$ref": "#/$defs/unconfirmed" },
+        "verified": { "$ref": "#/$defs/verified" }
+      }
+    },
+    "memoryRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "owner": { "type": "string" },
+        "name": { "type": "string" },
+        "holds": { "type": "string" },
+        "key": { "type": "string" },
+        "lifetime": { "type": "string" },
+        "evidence": { "$ref": "#/$defs/evidenceList" },
+        "unconfirmed": { "$ref": "#/$defs/unconfirmed" },
+        "verified": { "$ref": "#/$defs/verified" }
+      }
+    },
+    "filesRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "owner": { "type": "string" },
+        "path": { "type": "string" },
+        "purpose": { "type": "string" },
+        "writtenBy": { "type": "string" },
+        "readBy": { "type": "string" },
+        "evidence": { "$ref": "#/$defs/evidenceList" },
+        "unconfirmed": { "$ref": "#/$defs/unconfirmed" },
+        "verified": { "$ref": "#/$defs/verified" }
+      }
+    },
+    "storeFlow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "trigger", "chapter", "steps"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "trigger": { "type": "string" },
+        "chapter": { "type": "string" },
+        "steps": { "type": "array", "items": { "$ref": "#/$defs/flowStep" } }
+      }
+    },
+    "flowStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["n", "actor", "op", "store"],
+      "properties": {
+        "n": { "type": "integer" },
+        "actor": { "type": "string" },
+        "op": { "type": "string", "enum": ["read", "write", "delete"] },
+        "store": { "type": "string", "enum": ["sql", "cache", "memory", "files", "client"] },
+        "key": { "type": "string" },
+        "when": { "type": "string" },
+        "evidence": { "$ref": "#/$defs/evidenceList" },
+        "unconfirmed": { "$ref": "#/$defs/unconfirmed" },
+        "verified": { "$ref": "#/$defs/verified" }
+      }
+    },
+    "catalogueEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "name"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "type": "string", "enum": ["stream", "gateway", "queue", "scheduler", "cache", "integration", "component"] },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "owner": { "type": "string" },
+        "connects": { "$ref": "#/$defs/texts" },
+        "evidence": { "$ref": "#/$defs/evidenceList" },
+        "unconfirmed": { "$ref": "#/$defs/unconfirmed" },
+        "verified": { "$ref": "#/$defs/verified" }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "text"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "text": { "type": "string" },
+            "adr": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path"],
+          "properties": { "root": { "type": "string" }, "path": { "type": "string" } }
+        },
+        "decision": { "description": "The decision number or its lead phrase.", "type": "string" },
+        "evidence": { "$ref": "#/$defs/evidenceList" },
+        "unconfirmed": { "$ref": "#/$defs/unconfirmed" },
+        "verified": { "$ref": "#/$defs/verified" }
+      }
+    },
+    "inventoryEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "name"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "type": "string", "enum": ["engine", "flow", "store", "job", "integration"] },
+        "name": { "type": "string" },
+        "evidence": { "$ref": "#/$defs/evidenceList" },
+        "unconfirmed": { "$ref": "#/$defs/unconfirmed" },
+        "verified": { "$ref": "#/$defs/verified" }
+      }
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "question"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "type": "string" },
+        "question": { "type": "string" },
+        "folder": { "$ref": "#/$defs/id" },
+        "bullets": { "type": "array", "items": { "$ref": "#/$defs/bullet" } },
+        "diagrams": { "$ref": "#/$defs/texts" },
+        "sequences": { "$ref": "#/$defs/texts" },
+        "storeFlows": { "$ref": "#/$defs/texts" },
+        "storeRefs": { "$ref": "#/$defs/texts" },
+        "catalogueRefs": { "$ref": "#/$defs/texts" },
+        "covers": { "$ref": "#/$defs/texts" }
+      }
+    },
+    "bullet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "text"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "text": { "type": "string" },
+            "evidence": { "$ref": "#/$defs/evidenceList" },
+        "unconfirmed": { "$ref": "#/$defs/unconfirmed" },
+        "verified": { "$ref": "#/$defs/verified" }
+      }
+    },
+    "question": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "text"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "text": { "type": "string" },
+            "recommended": { "type": "string" },
+        "answer": { "type": "string" },
+        "date": { "type": "string" },
+        "items": { "$ref": "#/$defs/texts" }
+      }
+    },
+    "correction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "date", "item", "reason"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "date": { "type": "string" },
+        "item": { "type": "string" },
+        "before": { "type": "string" },
+        "after": { "type": "string" },
+        "reason": { "type": "string", "enum": ["owner", "stale", "audit"] },
+        "evidence": { "$ref": "#/$defs/evidenceList" }
+      }
+    }
+  }
+}

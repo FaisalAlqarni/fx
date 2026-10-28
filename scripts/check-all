@@ -43,6 +43,7 @@ run check-handwritten-js.test.sh bash tests/gates/check-handwritten-js.test.sh
 run agent-model.test.js    node tests/gates/agent-model.test.js
 run build-cost.test.js     node scripts/build-cost.test.js
 run plan-check.test.js     node scripts/plan-check.test.js
+run system-flow-check.test.js node scripts/system-flow-check.test.js
 run compile-brief.test.js  node skills/fx-implement/scripts/compile-brief.test.js
 run brief-size.test.js     node tests/gates/brief-size.test.js
 run skill-size.test.js node tests/gates/skill-size.test.js

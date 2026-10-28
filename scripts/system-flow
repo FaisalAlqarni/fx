@@ -1,0 +1,71 @@
+#!/usr/bin/env node
+// generated from src/scripts/system-flow.ts by scripts/build: edit there, not here
+"use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var fs = __toESM(require("fs"));
+var path = __toESM(require("path"));
+var import_child_process = require("child_process");
+var import_json = require("../lib/json.js");
+var import_sf_model = require("../lib/sf-model.js");
+const USAGE = "system-flow: usage: system-flow [--root <dir>] [--site <dir>] check";
+const usage = () => {
+  process.stderr.write(`${USAGE}
+`);
+  process.exit(2);
+};
+const args = process.argv.slice(2);
+const opts = {};
+while (args[0] === "--root" || args[0] === "--site") {
+  const [flag, value] = args.splice(0, 2);
+  if (value === void 0) usage();
+  opts[(flag ?? "").slice(2)] = value ?? "";
+}
+const cmd = args.shift();
+if (cmd !== "check" || args.length > 0) usage();
+function siteFromFxJson(root) {
+  const file = path.join(root, ".fx.json");
+  if (!fs.existsSync(file)) return void 0;
+  const site = (0, import_json.parseJson)(fs.readFileSync(file, "utf8")).system_flow?.output?.site;
+  return typeof site === "string" ? site : void 0;
+}
+function check() {
+  const root = path.resolve(opts.root ?? (0, import_child_process.execFileSync)("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim());
+  const site = opts.site ?? siteFromFxJson(root) ?? "docs/system-flow";
+  const dir = path.join(root, site, "model", "fragments");
+  const loaded = (0, import_sf_model.loadFragments)(dir, root);
+  const merged = (0, import_sf_model.mergeFragments)(loaded.fragments);
+  const problems = [...loaded.problems, ...merged.problems];
+  for (const p of problems) process.stderr.write(`${p.file}:${p.pointer}: ${p.message}
+`);
+  if (problems.some((p) => p.level === "error")) process.exit(1);
+  process.stdout.write(`${JSON.stringify({ ok: true, fragments: loaded.fragments.length, items: (0, import_sf_model.itemsOf)(merged.model).length, warnings: [] })}
+`);
+}
+try {
+  check();
+} catch (e) {
+  process.stderr.write(`system-flow: ${cmd}: ${e.message.split("\n")[0]}
+`);
+  process.exit(1);
+}
