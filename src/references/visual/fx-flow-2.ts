@@ -1,10 +1,12 @@
 // The inline figure player for the system flow site. The page supplies the figure
 // specs inline in <script type="application/json" id="diagrams"> (an object keyed by
-// figure key) and one <figure data-fx-flow="<key>"> per figure. This file draws the
-// SVG, a box figure (nodes and edges) or a lifeline sequence (lanes and rows), steps
-// through it with Back, Play or Pause, Next and Reset, names the code for each step in
-// an aria-live caption, moves a token along the step's arrow, plays when the figure
-// scrolls into view, and does not animate under reduced motion.
+// figure key) and one card per figure: figure.card > div.fig (the scroller) and
+// div.ctl[data-fx-flow="<key>"] (the bar, holding a.deep). This file draws the SVG at 1:1
+// into .fig, a box figure (nodes and edges) or a lifeline sequence (lanes and rows), puts
+// Play or Pause, Back, Next, Reset, the aria-live narration and the count before a.deep,
+// steps every 1.6 s, plays the first time the figure reaches the middle of the window,
+// pauses while the card is off screen, scrolls .fig sideways to the active arrow, and
+// plays nothing on its own under reduced motion.
 // The FigureSpec shape is copied from src/lib/sf-model.ts: a browser file cannot
 // import a Node module. scripts/build wraps this in an IIFE; loaded with no DOM
 // (the gate test, node) it only exports fxFlow.
@@ -56,7 +58,7 @@ const lookAttrs = (look: Look): Record<string, string | number> => {
 };
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const STEP_MS = 2200;
+const STEP_MS = 1600;
 const TOKEN_MS = 900;
 
 function svg(tag: string, attrs: Record<string, string | number>, parent?: Element): SVGElement {
@@ -66,20 +68,25 @@ function svg(tag: string, attrs: Record<string, string | number>, parent?: Eleme
   return el;
 }
 
-function button(label: string, onClick: () => void): HTMLButtonElement {
+function button(cls: string, text: string, onClick: () => void, label?: string): HTMLButtonElement {
   const b = document.createElement('button');
   b.type = 'button';
-  b.textContent = label;
+  b.className = cls;
+  b.textContent = text;
+  if (label !== undefined) b.setAttribute('aria-label', label);
   b.addEventListener('click', onClick);
   return b;
 }
 
-function mountFigure(host: Element, spec: FigureSpec): void {
+const REST = 'Press Play, or step with Next.';
+
+// card: figure.card; fig: its .fig scroller; ctl: its .ctl bar.
+function mountFigure(card: Element, fig: Element, ctl: Element, spec: FigureSpec): void {
   const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  host.textContent = '';
+  fig.textContent = '';
+  // 1:1, never shrunk: a figure wider than the card scrolls inside .fig.
   const root = svg('svg', {
-    viewBox: `0 0 ${spec.width} ${spec.height}`, width: spec.width, role: 'img', 'aria-label': spec.key,
-    style: 'max-inline-size:100%;block-size:auto;display:block',
+    viewBox: `0 0 ${spec.width} ${spec.height}`, width: spec.width, height: spec.height, role: 'img', 'aria-label': card.querySelector('h3')?.textContent ?? spec.key,
   });
   const defs = svg('defs', {}, root);
   const marker = svg('marker', { id: `${spec.key}-arrow`, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' }, defs);
@@ -150,12 +157,17 @@ function mountFigure(host: Element, spec: FigureSpec): void {
   }
   const token = svg('circle', { r: 6, fill: 'var(--accent)', opacity: 0 }, root);
 
-  const status = document.createElement('p');
-  status.setAttribute('aria-live', 'polite');
+  const narr = document.createElement('span');
+  narr.className = 'narr';
+  narr.setAttribute('aria-live', 'polite');
   const counter = document.createElement('span');
-  let at = -1; // -1: nothing played yet
+  counter.className = 'count';
+  const last = spec.steps.length - 1;
+  let at = -1; // -1: at rest, before step 1
   let timer: number | undefined;
   let frame: number | undefined;
+  let started = false; // autoplay starts a figure once, and never after the reader touched it
+  let parked = false; // the card observer paused it, so the card observer may resume it
 
   function moveToken(step: FigStep | undefined): void {
     if (frame !== undefined) cancelAnimationFrame(frame);
@@ -174,6 +186,18 @@ function mountFigure(host: Element, spec: FigureSpec): void {
     frame = requestAnimationFrame(tick);
   }
 
+  // Scrolls .fig sideways (never the page) so the active arrow and its label are in view.
+  function follow(step: FigStep | undefined): void {
+    const a = step ? arrows.get(step.edges[0] ?? '') : undefined;
+    if (!a || fig.scrollWidth <= fig.clientWidth) return;
+    const f = fig.getBoundingClientRect();
+    const boxes = a.els.map((el) => el.getBoundingClientRect());
+    const left = Math.min(...boxes.map((b) => b.left)) - f.left + fig.scrollLeft;
+    const right = Math.max(...boxes.map((b) => b.right)) - f.left + fig.scrollLeft;
+    if (left >= fig.scrollLeft && right <= fig.scrollLeft + fig.clientWidth) return;
+    fig.scrollTo({ left: Math.max(0, (left + right) / 2 - fig.clientWidth / 2), behavior: reduced ? 'instant' : 'smooth' });
+  }
+
   function paint(): void {
     const seen = new Set<string>();
     const lit = new Set<string>();
@@ -181,7 +205,7 @@ function mountFigure(host: Element, spec: FigureSpec): void {
       if (i > at) return;
       for (const id of [...s.edges, ...s.nodes]) { seen.add(id); if (i === at) lit.add(id); }
     });
-    const all = at < 0; // before the first step, the whole figure shows at rest
+    const all = at < 0; // at rest, the whole figure shows
     for (const [id, a] of arrows) {
       for (const el of a.els) el.setAttribute('opacity', all || seen.has(id) ? '1' : '0.25');
       a.path.setAttribute('stroke', lit.has(id) ? 'var(--accent)' : a.rest[0]);
@@ -190,56 +214,81 @@ function mountFigure(host: Element, spec: FigureSpec): void {
     }
     for (const [id, el] of nodeEls) el.setAttribute('opacity', all || seen.has(id) ? '1' : '0.35');
     const step = spec.steps[at];
-    counter.textContent = at < 0 ? `Step 0 of ${spec.steps.length}` : `Step ${at + 1} of ${spec.steps.length}`;
-    status.textContent = step ? step.caption : 'Press Play or Next to step through.';
-    if (step?.where) { const code = document.createElement('code'); code.textContent = step.where; status.append(' ', code); }
+    counter.textContent = `${at + 1} / ${spec.steps.length}`;
+    narr.textContent = step ? step.caption : REST;
+    if (step?.where) { const code = document.createElement('code'); code.textContent = step.where; narr.append(' ', code); }
     moveToken(step);
+    follow(step);
   }
 
   function go(i: number): void {
-    at = Math.max(-1, Math.min(spec.steps.length - 1, i));
+    at = Math.max(-1, Math.min(last, i));
     paint();
   }
-  function stop(): void {
+  // Stops playback; the button reads Play again.
+  function halt(): void {
     if (timer !== undefined) clearInterval(timer);
     timer = undefined;
     playBtn.textContent = 'Play';
   }
+  // Shows the next step at once (step 1 again from the last step), then one step every 1.6 s; the last step stops it for good.
   function play(): void {
-    if (at >= spec.steps.length - 1) go(-1);
+    started = true;
+    parked = false;
+    halt();
+    go(at >= last ? 0 : at + 1);
+    if (at >= last) return;
     playBtn.textContent = 'Pause';
     timer = window.setInterval(() => {
-      if (at >= spec.steps.length - 1) { stop(); return; }
       go(at + 1);
+      if (at >= last) halt();
     }, STEP_MS);
-    go(at + 1);
   }
-  const playBtn = button('Play', () => (timer === undefined ? play() : stop()));
-  const bar = document.createElement('div');
-  bar.setAttribute('role', 'group');
-  bar.setAttribute('aria-label', `${spec.key} controls`);
-  bar.append(button('Back', () => { stop(); go(at - 1); }), playBtn, button('Next', () => { stop(); go(at + 1); }),
-    button('Reset', () => { stop(); go(-1); }), counter);
-  host.append(root, bar, status);
+  // A reader's own action: autoplay and the card observer leave the figure alone from here on.
+  const by = (f: () => void) => (): void => { started = true; parked = false; f(); };
+  const playBtn = button('play', 'Play', () => (timer === undefined ? play() : by(halt)()));
+  const back = button('back', '\u2039', by(() => { halt(); go(at - 1); }), 'Back');
+  const next = button('next', '\u203A', by(() => { halt(); go(at + 1); }), 'Next');
+  const reset = button('reset', 'Reset', by(() => { halt(); go(-1); }));
+  if (spec.steps.length === 0) for (const b of [playBtn, next, reset]) b.disabled = true;
+  ctl.setAttribute('role', 'group');
+  ctl.setAttribute('aria-label', `${card.querySelector('h3')?.textContent ?? spec.key} controls`);
+  const deep = ctl.querySelector('a.deep');
+  for (const el of [playBtn, back, next, reset, narr, counter]) ctl.insertBefore(el, deep);
+  fig.append(root);
   paint();
 
-  if (!reduced && typeof IntersectionObserver === 'function') {
-    const io = new IntersectionObserver((entries) => {
-      if (entries.some((en) => en.isIntersecting) && at < 0 && timer === undefined) { play(); io.disconnect(); }
-    }, { threshold: 0.6 });
-    io.observe(host);
+  if (!reduced && spec.steps.length > 0 && typeof IntersectionObserver === 'function') {
+    // Plays the first time any part of .fig enters the middle band of the window.
+    const band = new IntersectionObserver((entries) => {
+      if (entries.some((en) => en.isIntersecting)) {
+        band.disconnect();
+        if (!started) play();
+      }
+    }, { rootMargin: '-40% 0px -40% 0px', threshold: 0 });
+    band.observe(fig);
+    // Pauses while no part of the card is visible; resumes only what this observer paused.
+    new IntersectionObserver((entries) => {
+      const seen = entries.some((en) => en.isIntersecting);
+      if (!seen && timer !== undefined) { halt(); parked = true; }
+      else if (seen && parked) play();
+    }, { threshold: 0 }).observe(card);
   }
 }
 
-function mount(): void {
+// root: where to look for cards, the whole page by default.
+function mount(root: ParentNode = document): void {
   const dataEl = document.getElementById('diagrams');
   if (!dataEl) return;
   const data: unknown = JSON.parse(dataEl.textContent ?? ''); // ts-gate-ok: page-supplied figure specs, validated per figure below
-  document.querySelectorAll('figure[data-fx-flow]').forEach((fig) => {
-    const spec = field(data, fig.getAttribute('data-fx-flow') ?? '');
+  root.querySelectorAll('.ctl[data-fx-flow]').forEach((ctl) => {
+    const card = ctl.closest('figure.card');
+    const fig = card?.querySelector('.fig');
+    if (!card || !fig) return;
+    const spec = field(data, ctl.getAttribute('data-fx-flow') ?? '');
     const errors = validateFigure(spec);
     if (errors.length || !isFigure(spec)) { fig.textContent = `Figure is invalid: ${errors.join('; ')}`; return; }
-    mountFigure(fig, spec);
+    mountFigure(card, fig, ctl, spec);
   });
 }
 

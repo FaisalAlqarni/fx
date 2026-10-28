@@ -12,7 +12,7 @@ const ev = [{ path: 'app/x.rb', lines: '1-4', symbol: 'Link' }];
 const TEXT = 'A link expires after 30 days.';
 const corr = (item: string, before: string, after: string) => ({ id: `c-${item.replace(/\W/g, '-')}`, date: '2026-10-28', item, before, after, reason: 'stale', evidence: [{ owner: '2026-10-28' }] });
 
-type Tweak = { b1?: string; api?: string; extra?: object[] };
+type Tweak = { b1?: string; api?: string; extra?: object[]; turn?: number };
 const model = (f: Fx, t: Tweak = {}): void => {
   f.fragment('meta', { schemaVersion: 2, meta: { roots: [{ id: 'backend' }] } });
   f.fragment('level0', {
@@ -26,7 +26,7 @@ const model = (f: Fx, t: Tweak = {}): void => {
   ] });
   f.fragment('flows', { sequences: [{ id: 'turn', title: 'Turn', chapter: 's2',
     participants: [{ id: 'api', label: 'API', look: 'service', evidence: ev }, { id: 'db', label: 'DB', look: 'service', evidence: ev }],
-    messages: [{ n: 1, from: 'api', to: 'db', label: 'Reads', evidence: ev }] }] });
+    messages: Array.from({ length: t.turn ?? 1 }, (_, i) => ({ n: i + 1, from: i % 2 ? 'db' : 'api', to: i % 2 ? 'api' : 'db', label: `Reads ${i + 1}`, evidence: ev })) }] });
   f.floor();
 };
 const setup = (): Fx => { const f = sfFixture(); model(f); f.commit('host', 'fragments'); return f; };
@@ -153,5 +153,43 @@ const changed = (before: ReturnType<typeof snap>, after: ReturnType<typeof snap>
   const r = only(f, 'store:links-table');
   assert.deepStrictEqual(r.rebuilt.docs, ['docs/system/stores.md', ...ALWAYS]);
   assert.ok(fs.readFileSync(path.join(f.host, 'docs/system/stores.md'), 'utf8').includes('| short_links |'));
+}
+// --only rewrites index.html; a figure it did not render keeps its card link from the deep pages on disk.
+const deepLink = (f: Fx, key: string): string => {
+  const page = fs.readFileSync(path.join(f.host, 'docs/system-flow/index.html'), 'utf8');
+  const c = new RegExp(`<figure class="card" id="fig-${key}">[\\s\\S]*?</figure>`).exec(page)?.[0] ?? '';
+  return /<a class="deep" [^>]*>[^<]*<\/a>/.exec(c)?.[0] ?? `no card ${key}`;
+};
+{
+  const f = setup();
+  const r = f.run(['build', '--prefer', 'cheap']);
+  assert.strictEqual(r.status, 0, `${r.stdout}${r.stderr}`);
+  const before = fs.readFileSync(path.join(f.host, 'docs/system-flow/index.html'), 'utf8');
+  model(f, { b1: 'A link expires after 60 days.' });
+  f.fragment('corrections', { corrections: [corr('bullet:b1', TEXT, 'A link expires after 60 days.')] });
+  const o = only(f, 'bullet:b1', '--prefer', 'cheap');
+  assert.deepStrictEqual(o.rebuilt.figures, []);
+  assert.notStrictEqual(fs.readFileSync(path.join(f.host, 'docs/system-flow/index.html'), 'utf8'), before, 'index.html rewritten');
+  assert.strictEqual(deepLink(f, 'seq-turn'), '<a class="deep" href="diagrams/seq-turn.html">Open full diagram</a>');
+}
+{
+  // A fake archify that writes each page it is given. Turn has 9 messages, so it is paged: seq-turn, then seq-turn-p2
+  // (the first page keeps the bare name; the brief's seq-turn-p1 is the wording error the controller's ruling names).
+  const f = sfFixture();
+  model(f, { turn: 9 });
+  f.commit('host', 'fragments');
+  const fake = path.join(f.base, 'fake');
+  fs.mkdirSync(path.join(fake, 'bin'), { recursive: true });
+  fs.writeFileSync(path.join(fake, 'bin', 'archify.mjs'), `import fs from 'node:fs';
+const a = process.argv.slice(2);
+fs.writeFileSync(a[a.indexOf('--receipt') + 1], '{}');
+fs.writeFileSync(a[3], '<!doctype html><html><body>archify page</body></html>');
+`);
+  const r = f.run(['build', '--archify', fake]);
+  assert.strictEqual(r.status, 0, `${r.stdout}${r.stderr}`);
+  assert.ok(fs.existsSync(path.join(f.host, 'docs/system-flow/diagrams/seq-turn-p2.html')), 'turn is paged');
+  assert.strictEqual(deepLink(f, 'seq-turn'), '<a class="deep" href="diagrams/seq-turn.html">Open in archify</a>', 'the full build');
+  only(f, 'bullet:b1');
+  assert.strictEqual(deepLink(f, 'seq-turn'), '<a class="deep" href="diagrams/seq-turn.html">Open in archify</a>', 'the --only build');
 }
 process.stdout.write('system-flow-only.test.js: OK\n');

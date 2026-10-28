@@ -19,7 +19,7 @@ references tree. fx's own kit files sit beside this file.
 | `fx-tokens-1.css` | fx | 0.7.0 |  |  | `5039daa841abe2b61dd062da9ff80c7408d2098c3d06b6eae502c7d81ea8b4d8` |  |
 | `fx-map-1.js` | fx | 0.7.0 |  |  | `5270743f34aa8baa67f4bc9a1ac6cb117236c06aef5aab46aeeb21bb210fb04b` |  |
 | `fx-map-2.js` | fx | 0.9.0 |  |  | `353b0cb4f3d73fe1916e8b39a3990cdf50f600cd18594fb515c2d660e3b10f01` |  |
-| `fx-flow-2.js` | fx | 0.9.0 |  |  | `26d7caa56b13ea84a6b42e8773988773ef496441ffa42f50d70bc10c1d640697` |  |
+| `fx-flow-2.js` | fx | 0.9.0 |  |  | `25d37366d263296df6201b9ea12662a749eef8e3b3d139f05f35f9791d82f4a2` |  |
 
 React and React DOM are MIT and share one licence file. React Flow is MIT. elkjs is
 EPL-2.0. Each licence is carried verbatim in fx's `vendor/` folder.
@@ -85,4 +85,4 @@ evidence; the side panel shows it. `fxMap.validateMapData` reports a missing roo
 level, a node that opens a missing level, and an edge that names a missing node; the
 page shows those messages in place of the map.
 
-`fx-map-2.js` reads the same block with these additions: each level has `groups` (`{ id, label, members, groups? }`), each node has `primary` (false draws it faded as a context node), each edge has `mode` (`sync` or `async`), and evidence of another root is written `@<root id>/<path>`. It also reports a group that names a missing node. `fx-flow-2.js` reads `<script type="application/json" id="diagrams">`, an object of figure specs keyed by figure key, and fills each `<figure data-fx-flow="<key>">`: a box figure from `nodes` and `edges`, a lifeline sequence from `lanes` and `rows`.
+`fx-map-2.js` reads the same block with these additions: each level has `groups` (`{ id, label, members, groups? }`), each node has `primary` (false draws it faded as a context node), each edge has `mode` (`sync` or `async`), and evidence of another root is written `@<root id>/<path>`. It also reports a group that names a missing node. `fx-flow-2.js` reads `<script type="application/json" id="diagrams">`, an object of figure specs keyed by figure key, and fills each card `figure.card` holding `div.fig` and `div.ctl[data-fx-flow="<key>"]`: it draws the figure at 1:1 into `.fig` (a box figure from `nodes` and `edges`, a lifeline sequence from `lanes` and `rows`) and puts the player's buttons, narration and count before the bar's `a.deep`.

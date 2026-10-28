@@ -114,6 +114,12 @@ const reason = (o: { diagrams: Diag[] }, name: string): Diag => o.diagrams.find(
       '--repo-root', f.host, '--quality', 'showcase', '--receipt', path.join(f.host, D, `${c.name}.receipt.json`), '--json'], c.name);
   }
   assert.deepStrictEqual(fs.readdirSync(path.join(f.host, D)).filter((n) => n.endsWith('.delivery-pending.json')), [], 'no pending marker outlives the build (A22)');
+  // The card links the first page of each deep diagram and names archify as its renderer.
+  const page = read(f, `${SITE}/index.html`);
+  for (const [key, first] of [['seq-turn', 'seq-turn'], ['level-engine', 'arch-engine']] as const) {
+    const card = new RegExp(`<figure class="card" id="fig-${key}">[\\s\\S]*?</figure>`).exec(page)?.[0] ?? '';
+    assert.ok(card.includes(`<a class="deep" href="diagrams/${first}.html">Open in archify</a>`), `${key} card: ${card}`);
+  }
 }
 
 { // A second build keeps archify: it clears the browser-check evidence of the pages it rewrote with the theme block

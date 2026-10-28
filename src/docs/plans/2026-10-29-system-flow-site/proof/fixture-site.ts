@@ -1,12 +1,35 @@
 // Run: node docs/plans/2026-10-29-system-flow-site/proof/fixture-site.js
 // Builds the fixture model that meets the prose floor (goodSet) with --prefer cheap, under os.tmpdir(),
-// and prints the site folder for page-check.js.
+// and prints the site folder for page-check.js. An area fragment adds a 6-participant sequence `wide`
+// (wider than a phone, so it scrolls sideways) and a level diagram `tall` (taller than a 600 px window).
+import * as fs from 'fs';
 import * as path from 'path';
 import { sfFixture } from '../../../../tests/helpers/sf-fixture.js';
 
 const f = sfFixture();
 f.fxJson({});
 f.goodSet();
+const evidence = [{ path: 'app/x.rb', lines: '1-4', symbol: 'Link#expired?' }];
+const lanes = ['client', 'edge', 'api', 'queue', 'worker', 'mail'];
+const tall = ['t1', 't2', 't3', 't4', 't5', 't6', 't7'];
+f.fragment('proof', {
+  sequences: [{
+    id: 'wide', title: 'A wide hand-off', chapter: 's1', summary: 'The request passes through six parts from the client to the mailer.',
+    participants: lanes.map((id) => ({ id, label: `Part ${id}`, look: id === 'mail' ? 'external' : 'service', evidence })),
+    messages: lanes.slice(1).map((to, i) => ({ n: i + 1, from: lanes[i], to, label: `Hands the request to ${to}.`, evidence })),
+  }],
+  levels: { diagrams: [{
+    id: 'tall', level: 1, parent: 'system', title: 'A tall chain', summary: 'Seven parts pass a job down one column from the first to the last.', groups: [],
+    nodes: tall.map((id) => ({ id, label: `Step ${id}`, kind: 'backend', look: 'service', role: 'Passes the job on', evidence })),
+    edges: tall.slice(1).map((to, i) => ({ from: tall[i], to, label: 'passes', evidence })),
+    layout: Object.fromEntries(tall.map((id, row) => [id, { col: 0, row }])),
+  }] },
+});
+// The tall diagram is drawn in s1.
+const file = path.join(f.host, 'docs/system-flow/model/fragments/chapters.json');
+const chapters = JSON.parse(fs.readFileSync(file, 'utf8')) as { sections: { id: string; diagrams?: string[] }[] }; // ts-gate-ok: the fixture's own fragment
+for (const s of chapters.sections) if (s.id === 's1') s.diagrams = [...(s.diagrams ?? []), 'tall'];
+f.fragment('chapters', chapters);
 const r = f.run(['build', '--prefer', 'cheap']);
 if (r.status !== 0) {
   process.stderr.write(`fixture-site: build exited ${r.status}\n${r.stdout}${r.stderr}`);

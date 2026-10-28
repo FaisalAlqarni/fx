@@ -102,6 +102,11 @@ const block = (page2, id) => {
   assert.ok(m, id);
   return (0, import_json.parseJson)(m[1] ?? "");
 };
+const card = (page2, key) => {
+  const all = [...page2.matchAll(new RegExp(`<figure class="card" id="fig-${key}">([\\s\\S]*?)</figure>`, "g"))];
+  assert.strictEqual(all.length, 1, `one card for ${key}`);
+  return all[0]?.[1] ?? "";
+};
 const sandbox = (file) => {
   const ctx = {};
   vm.runInNewContext(fs.readFileSync(path.join(KIT, file), "utf8"), ctx);
@@ -146,12 +151,12 @@ const page = read(f, `${SITE}/index.html`);
 {
   const s1 = chapter(page, "ch-05-s1");
   assert.ok(/<p class="eyebrow">[\s\S]*?Where do links expire\?[\s\S]*?<\/p>\s*<h2>/.test(s1), "the question opens the chapter");
-  assert.strictEqual(page.split('<figure data-fx-flow="level-engine">').length - 1, 1);
-  assert.ok(chapter(page, "ch-02-start-parts").includes('<figure data-fx-flow="level-engine">'));
+  assert.strictEqual(page.split('<figure class="card" id="fig-level-engine">').length - 1, 1);
+  assert.ok(chapter(page, "ch-02-start-parts").includes('<figure class="card" id="fig-level-engine">'));
   for (const id of ["ch-05-s1", "ch-06-s2"]) {
     const c = chapter(page, id);
     assert.ok(c.includes('href="#ch-02-start-parts"') && c.includes("Drawn in chapter 02"), id);
-    assert.ok(!c.includes('data-fx-flow="level-engine"'), id);
+    assert.ok(!c.includes("fig-level-engine"), id);
   }
 }
 {
@@ -189,11 +194,52 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">\u0645\u0631\u062D\u06
   for (const [k, spec] of Object.entries(figs)) assert.strictEqual(JSON.stringify(flow?.validateFigure?.(spec)), "[]", k);
 }
 {
-  for (const d of ["arch-engine", "seq-turn", "flow-first"]) assert.ok(chapter(page, "ch-05-s1").includes(`href="diagrams/${d}.html"`), `chapter s1 links ${d}`);
+  for (const [key, d] of [["level-engine", "arch-engine"], ["seq-turn", "seq-turn"], ["flow-first", "flow-first"]]) {
+    assert.ok(card(page, key).includes(`<a class="deep" href="diagrams/${d}.html">`), `card ${key} links ${d}`);
+  }
+  assert.ok(!page.includes("Deep diagrams:"), "no Deep diagrams: comma list");
   const written = fs.readdirSync(path.join(f.host, SITE, "diagrams")).filter((n) => n.endsWith(".html"));
   assert.ok(written.length >= 3, written.join(","));
   for (const n of written) assert.ok(page.includes(`href="diagrams/${n}"`), `index.html links ${n}`);
   assert.ok(!/<(?:iframe|embed|object)\b[^>]*diagrams\//i.test(page), "index.html embeds a deep diagram");
+}
+{
+  const model = (0, import_json.parseJson)(read(f, `${SITE}/model/system-model.json`));
+  const want = new Map([
+    ...model.levels.diagrams.map((d) => [`level-${d.id}`, [d.title, d.summary]]),
+    ...model.sequences.map((q) => [`seq-${q.id}`, [`Sequence: ${q.title}`, q.summary ?? ""]]),
+    ...model.storeFlows.map((x) => [`flow-${x.id}`, [`Store flow: ${x.trigger}`, x.summary ?? ""]])
+  ]);
+  const keys = Object.keys(block(page, "diagrams"));
+  assert.ok(keys.length >= 4, keys.join(","));
+  const strip2 = (h) => h.replace(/<[^>]*>/g, "");
+  for (const key of keys) {
+    const c = card(page, key);
+    const [title, summary] = want.get(key) ?? ["", ""];
+    assert.strictEqual(strip2(/^\s*<h3>([\s\S]*?)<\/h3>/.exec(c)?.[1] ?? "").replace(/&lt;/g, "<").replace(/&gt;/g, ">"), title, `${key} title`);
+    assert.strictEqual(strip2(/<p class="cap">([\s\S]*?)<\/p>/.exec(c)?.[1] ?? ""), summary, `${key} caption`);
+    assert.ok(/<div class="fig" role="region" tabindex="0" aria-label="[^"]+"><noscript>This figure needs JavaScript\. The link below opens the full diagram\.<\/noscript><\/div>/.test(c), `${key} scroller`);
+    const ctl = new RegExp(`<div class="ctl" data-fx-flow="${key}">([\\s\\S]*?)</div>`).exec(c)?.[1] ?? "";
+    assert.strictEqual((ctl.match(/<a class="deep" /g) ?? []).length, 1, `${key} bar holds one deep link`);
+  }
+}
+{
+  const g = setup();
+  const r = g.run(["build", "--prefer", "cheap"]);
+  assert.strictEqual(r.status, 0, `${r.stdout}${r.stderr}`);
+  assert.ok(card(read(g, `${SITE}/index.html`), "seq-turn").includes('<a class="deep" href="diagrams/seq-turn.html">Open full diagram</a>'));
+}
+{
+  const g = setup();
+  const old = "<!doctype html>\n<!-- fx-system-flow generated: edit the model, then rebuild -->\nold page\n";
+  g.put("host", `${SITE}/index.html`, old);
+  g.put("host", `${SITE}/diagrams/src`, "a file where the spec folder goes");
+  const frags = () => fs.readdirSync(path.join(g.host, SITE, "model", "fragments")).sort().map((n) => read(g, `${SITE}/model/fragments/${n}`));
+  const before = frags();
+  const r = g.run(["build", "--prefer", "cheap"]);
+  assert.notStrictEqual(r.status, 0, "the build fails");
+  assert.strictEqual(read(g, `${SITE}/index.html`), old, "index.html unchanged");
+  assert.deepStrictEqual(frags(), before, "no stamps written");
 }
 {
   const g = setup({ questions: true });

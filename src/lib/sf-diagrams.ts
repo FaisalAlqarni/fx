@@ -9,6 +9,7 @@ import type { FxJson } from './types.js';
 import type { Diagram, Evidence, FigureSpec, FigureStep, FileEvidence, Model, StoreFlow } from './sf-model.js';
 import type { Root } from './sf-evidence.js';
 import { escapeHtml } from './sf-page.js';
+import { GENERATED } from './sf-markdown.js';
 import { shortLabel } from './sf-layout.js';
 
 type Obj = Record<string, unknown>;
@@ -317,6 +318,7 @@ export function svgPage(d: DeepDiagram, figure: FigureSpec, page: number): strin
   // The head script is page-template.html's: it applies the theme index.html stored under fx-theme (same origin).
   // Node text is 13 px: the svg never shrinks below 12/13 of its width, and a narrow screen scrolls it in .scroll.
   return `<!doctype html>
+${GENERATED}
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">

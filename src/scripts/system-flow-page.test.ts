@@ -55,6 +55,11 @@ const read = (f: Fx, rel: string): string => fs.readFileSync(path.join(f.host, r
 const build = (f: Fx) => { const r = f.run(['build']); assert.strictEqual(r.status, 0, `build exits 0\n${r.stdout}${r.stderr}`); return parseJson(r.stdout) as { pageBytes: number | null }; };
 const chapter = (page: string, id: string): string => { const at = page.search(new RegExp(`<section [^>]*id="${id}"`)); assert.ok(at >= 0, id); const end = page.indexOf('<section', at + 1); return page.slice(at, end < 0 ? undefined : end); };
 const block = (page: string, id: string): unknown => { const m = new RegExp(`<script type="application/json" id="${id}">([\\s\\S]*?)</script>`).exec(page); assert.ok(m, id); return parseJson(m[1] ?? ''); };
+const card = (page: string, key: string): string => {
+  const all = [...page.matchAll(new RegExp(`<figure class="card" id="fig-${key}">([\\s\\S]*?)</figure>`, 'g'))];
+  assert.strictEqual(all.length, 1, `one card for ${key}`);
+  return all[0]?.[1] ?? '';
+};
 const sandbox = (file: string): Record<string, { [k: string]: (x: unknown) => unknown }> => {
   const ctx: Record<string, unknown> = {};
   vm.runInNewContext(fs.readFileSync(path.join(KIT, file), 'utf8'), ctx);
@@ -110,12 +115,12 @@ const page = read(f, `${SITE}/index.html`);
 {
   const s1 = chapter(page, 'ch-05-s1');
   assert.ok(/<p class="eyebrow">[\s\S]*?Where do links expire\?[\s\S]*?<\/p>\s*<h2>/.test(s1), 'the question opens the chapter');
-  assert.strictEqual(page.split('<figure data-fx-flow="level-engine">').length - 1, 1);
-  assert.ok(chapter(page, 'ch-02-start-parts').includes('<figure data-fx-flow="level-engine">'));
+  assert.strictEqual(page.split('<figure class="card" id="fig-level-engine">').length - 1, 1);
+  assert.ok(chapter(page, 'ch-02-start-parts').includes('<figure class="card" id="fig-level-engine">'));
   for (const id of ['ch-05-s1', 'ch-06-s2']) {
     const c = chapter(page, id);
     assert.ok(c.includes('href="#ch-02-start-parts"') && c.includes('Drawn in chapter 02'), id);
-    assert.ok(!c.includes('data-fx-flow="level-engine"'), id);
+    assert.ok(!c.includes('fig-level-engine'), id);
   }
 }
 
@@ -163,14 +168,64 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">مرحبا</span>'));
   for (const [k, spec] of Object.entries(figs)) assert.strictEqual(JSON.stringify(flow?.validateFigure?.(spec)), '[]', k);
 }
 
-// Every deep page is linked from a chapter (task 07 moves the links into the cards).
+// Every deep page is linked from its figure's card; no chapter carries the old comma list.
 {
-  for (const d of ['arch-engine', 'seq-turn', 'flow-first']) assert.ok(chapter(page, 'ch-05-s1').includes(`href="diagrams/${d}.html"`), `chapter s1 links ${d}`);
+  for (const [key, d] of [['level-engine', 'arch-engine'], ['seq-turn', 'seq-turn'], ['flow-first', 'flow-first']] as const) {
+    assert.ok(card(page, key).includes(`<a class="deep" href="diagrams/${d}.html">`), `card ${key} links ${d}`);
+  }
+  assert.ok(!page.includes('Deep diagrams:'), 'no Deep diagrams: comma list');
   const written = fs.readdirSync(path.join(f.host, SITE, 'diagrams')).filter((n) => n.endsWith('.html'));
   assert.ok(written.length >= 3, written.join(','));
   for (const n of written) assert.ok(page.includes(`href="diagrams/${n}"`), `index.html links ${n}`);
   // ADR 0066 decision 3: a deep diagram is linked, never embedded, so the site never depends on archify.
   assert.ok(!/<(?:iframe|embed|object)\b[^>]*diagrams\//i.test(page), 'index.html embeds a deep diagram');
+}
+
+// Cards: every inline figure is one card holding its title, the model summary, the scroller and the bar with one deep link.
+{
+  const model = parseJson(read(f, `${SITE}/model/system-model.json`)) as {
+    levels: { diagrams: { id: string; title: string; summary: string }[] };
+    sequences: { id: string; title: string; summary?: string }[]; storeFlows: { id: string; trigger: string; summary?: string }[];
+  };
+  const want = new Map<string, [string, string]>([
+    ...model.levels.diagrams.map((d): [string, [string, string]] => [`level-${d.id}`, [d.title, d.summary]]),
+    ...model.sequences.map((q): [string, [string, string]] => [`seq-${q.id}`, [`Sequence: ${q.title}`, q.summary ?? '']]),
+    ...model.storeFlows.map((x): [string, [string, string]] => [`flow-${x.id}`, [`Store flow: ${x.trigger}`, x.summary ?? '']]),
+  ]);
+  const keys = Object.keys(block(page, 'diagrams') as object);
+  assert.ok(keys.length >= 4, keys.join(','));
+  const strip = (h: string): string => h.replace(/<[^>]*>/g, '');
+  for (const key of keys) {
+    const c = card(page, key);
+    const [title, summary] = want.get(key) ?? ['', ''];
+    assert.strictEqual(strip(/^\s*<h3>([\s\S]*?)<\/h3>/.exec(c)?.[1] ?? '').replace(/&lt;/g, '<').replace(/&gt;/g, '>'), title, `${key} title`);
+    assert.strictEqual(strip(/<p class="cap">([\s\S]*?)<\/p>/.exec(c)?.[1] ?? ''), summary, `${key} caption`);
+    assert.ok(/<div class="fig" role="region" tabindex="0" aria-label="[^"]+"><noscript>This figure needs JavaScript\. The link below opens the full diagram\.<\/noscript><\/div>/.test(c), `${key} scroller`);
+    const ctl = new RegExp(`<div class="ctl" data-fx-flow="${key}">([\\s\\S]*?)</div>`).exec(c)?.[1] ?? '';
+    assert.strictEqual((ctl.match(/<a class="deep" /g) ?? []).length, 1, `${key} bar holds one deep link`);
+  }
+}
+
+// Link label by renderer: --prefer cheap draws SVG pages, and the card says so.
+{
+  const g = setup();
+  const r = g.run(['build', '--prefer', 'cheap']);
+  assert.strictEqual(r.status, 0, `${r.stdout}${r.stderr}`);
+  assert.ok(card(read(g, `${SITE}/index.html`), 'seq-turn').includes('<a class="deep" href="diagrams/seq-turn.html">Open full diagram</a>'));
+}
+
+// All or nothing (ruling C11): a build that fails in the deep diagram step leaves index.html as it was and stamps nothing.
+{
+  const g = setup();
+  const old = '<!doctype html>\n<!-- fx-system-flow generated: edit the model, then rebuild -->\nold page\n';
+  g.put('host', `${SITE}/index.html`, old);
+  g.put('host', `${SITE}/diagrams/src`, 'a file where the spec folder goes');
+  const frags = (): string[] => fs.readdirSync(path.join(g.host, SITE, 'model', 'fragments')).sort().map((n) => read(g, `${SITE}/model/fragments/${n}`));
+  const before = frags();
+  const r = g.run(['build', '--prefer', 'cheap']);
+  assert.notStrictEqual(r.status, 0, 'the build fails');
+  assert.strictEqual(read(g, `${SITE}/index.html`), old, 'index.html unchanged');
+  assert.deepStrictEqual(frags(), before, 'no stamps written');
 }
 
 // Design, Renderers (Page): Open questions, Corrections, Coverage and the store tables hold their content.

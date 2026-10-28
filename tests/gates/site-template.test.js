@@ -47,6 +47,18 @@ assert.ok(
   "at 900px and up, #menu-bar::details-content is shown inside @supports selector(::details-content)"
 );
 assert.ok(css.includes("@media (max-width: 899.98px)"), "a narrow block below 900px exists");
+assert.ok(rule(".card") !== "", "a .card rule exists");
+assert.ok(!/(?:^|;)\s*overflow(?:-x|-y)?\s*:/.test(rule(".card")), ".card holds no overflow declaration");
+for (const part of ["position:sticky", "bottom:0"]) assert.ok(rule(".ctl").includes(part), `.ctl rule holds ${part}`);
+assert.ok(rule(".fig").includes("overflow-x:auto"), ".fig rule holds overflow-x:auto");
+const px = (body, prop) => Number(new RegExp(`(?:^|;)${prop}:(\\d+(?:\\.\\d+)?)px`).exec(body)?.[1] ?? 0);
+assert.ok(px(rule(".ctl button.play"), "min-inline-size") >= 84, "button.play is at least 84px wide");
+assert.ok((px(rule(".ctl button"), "min-block-size") || px(rule("button"), "min-block-size")) >= 36, "every bar button is at least 36px tall");
+assert.deepStrictEqual(
+  [...css.matchAll(/(?:^|\n|\})([^{}]*svg[^{}]*)\{([^}]*)\}/g)].filter((m) => /(?:max-)?width:100%|(?:max-)?inline-size:100%/.test(m[2] ?? "")).map((m) => m[1]),
+  [],
+  "no rule shrinks an svg to its box"
+);
 const TOKENS = /* @__PURE__ */ new Set(["--paper", "--panel", "--ink", "--muted", "--rule", "--code", "--accent", "--accent-tint", "--warn", "--alert", "--violet", "--info", "--info-tint"]);
 const bodies = [...css.matchAll(/\{([^{}]*)\}/g)].map((m) => m[1] ?? "");
 assert.deepStrictEqual(bodies.filter((b) => /#[0-9a-fA-F]{3,8}\b|\b(?:rgb|hsl)a?\(/.test(b)), [], "no colour literal in a rule");

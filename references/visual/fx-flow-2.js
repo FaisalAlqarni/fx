@@ -34,7 +34,7 @@
     return { stroke: l.stroke, "stroke-width": 1.6, style: `fill:${l.tint ? `color-mix(in srgb, ${l.tint} 14%, var(--panel))` : "var(--panel)"}`, ...l.dash ? { "stroke-dasharray": l.dash } : {} };
   };
   const SVG_NS = "http://www.w3.org/2000/svg";
-  const STEP_MS = 2200;
+  const STEP_MS = 1600;
   const TOKEN_MS = 900;
   function svg(tag, attrs, parent) {
     const el = document.createElementNS(SVG_NS, tag);
@@ -42,22 +42,25 @@
     parent?.appendChild(el);
     return el;
   }
-  function button(label, onClick) {
+  function button(cls, text, onClick, label) {
     const b = document.createElement("button");
     b.type = "button";
-    b.textContent = label;
+    b.className = cls;
+    b.textContent = text;
+    if (label !== void 0) b.setAttribute("aria-label", label);
     b.addEventListener("click", onClick);
     return b;
   }
-  function mountFigure(host, spec) {
+  const REST = "Press Play, or step with Next.";
+  function mountFigure(card, fig, ctl, spec) {
     const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-    host.textContent = "";
+    fig.textContent = "";
     const root = svg("svg", {
       viewBox: `0 0 ${spec.width} ${spec.height}`,
       width: spec.width,
+      height: spec.height,
       role: "img",
-      "aria-label": spec.key,
-      style: "max-inline-size:100%;block-size:auto;display:block"
+      "aria-label": card.querySelector("h3")?.textContent ?? spec.key
     });
     const defs = svg("defs", {}, root);
     const marker = svg("marker", { id: `${spec.key}-arrow`, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, defs);
@@ -132,12 +135,17 @@
       }
     }
     const token = svg("circle", { r: 6, fill: "var(--accent)", opacity: 0 }, root);
-    const status = document.createElement("p");
-    status.setAttribute("aria-live", "polite");
+    const narr = document.createElement("span");
+    narr.className = "narr";
+    narr.setAttribute("aria-live", "polite");
     const counter = document.createElement("span");
+    counter.className = "count";
+    const last = spec.steps.length - 1;
     let at = -1;
     let timer;
     let frame;
+    let started = false;
+    let parked = false;
     function moveToken(step) {
       if (frame !== void 0) cancelAnimationFrame(frame);
       const path = step ? edgePaths.get(step.edges[0] ?? "") : void 0;
@@ -156,6 +164,16 @@
         if (k < 1) frame = requestAnimationFrame(tick);
       };
       frame = requestAnimationFrame(tick);
+    }
+    function follow(step) {
+      const a = step ? arrows.get(step.edges[0] ?? "") : void 0;
+      if (!a || fig.scrollWidth <= fig.clientWidth) return;
+      const f = fig.getBoundingClientRect();
+      const boxes = a.els.map((el) => el.getBoundingClientRect());
+      const left = Math.min(...boxes.map((b) => b.left)) - f.left + fig.scrollLeft;
+      const right = Math.max(...boxes.map((b) => b.right)) - f.left + fig.scrollLeft;
+      if (left >= fig.scrollLeft && right <= fig.scrollLeft + fig.clientWidth) return;
+      fig.scrollTo({ left: Math.max(0, (left + right) / 2 - fig.clientWidth / 2), behavior: reduced ? "instant" : "smooth" });
     }
     function paint() {
       const seen = /* @__PURE__ */ new Set();
@@ -176,80 +194,94 @@
       }
       for (const [id, el] of nodeEls) el.setAttribute("opacity", all || seen.has(id) ? "1" : "0.35");
       const step = spec.steps[at];
-      counter.textContent = at < 0 ? `Step 0 of ${spec.steps.length}` : `Step ${at + 1} of ${spec.steps.length}`;
-      status.textContent = step ? step.caption : "Press Play or Next to step through.";
+      counter.textContent = `${at + 1} / ${spec.steps.length}`;
+      narr.textContent = step ? step.caption : REST;
       if (step?.where) {
         const code = document.createElement("code");
         code.textContent = step.where;
-        status.append(" ", code);
+        narr.append(" ", code);
       }
       moveToken(step);
+      follow(step);
     }
     function go(i) {
-      at = Math.max(-1, Math.min(spec.steps.length - 1, i));
+      at = Math.max(-1, Math.min(last, i));
       paint();
     }
-    function stop() {
+    function halt() {
       if (timer !== void 0) clearInterval(timer);
       timer = void 0;
       playBtn.textContent = "Play";
     }
     function play() {
-      if (at >= spec.steps.length - 1) go(-1);
+      started = true;
+      parked = false;
+      halt();
+      go(at >= last ? 0 : at + 1);
+      if (at >= last) return;
       playBtn.textContent = "Pause";
       timer = window.setInterval(() => {
-        if (at >= spec.steps.length - 1) {
-          stop();
-          return;
-        }
         go(at + 1);
+        if (at >= last) halt();
       }, STEP_MS);
-      go(at + 1);
     }
-    const playBtn = button("Play", () => timer === void 0 ? play() : stop());
-    const bar = document.createElement("div");
-    bar.setAttribute("role", "group");
-    bar.setAttribute("aria-label", `${spec.key} controls`);
-    bar.append(
-      button("Back", () => {
-        stop();
-        go(at - 1);
-      }),
-      playBtn,
-      button("Next", () => {
-        stop();
-        go(at + 1);
-      }),
-      button("Reset", () => {
-        stop();
-        go(-1);
-      }),
-      counter
-    );
-    host.append(root, bar, status);
+    const by = (f) => () => {
+      started = true;
+      parked = false;
+      f();
+    };
+    const playBtn = button("play", "Play", () => timer === void 0 ? play() : by(halt)());
+    const back = button("back", "\u2039", by(() => {
+      halt();
+      go(at - 1);
+    }), "Back");
+    const next = button("next", "\u203A", by(() => {
+      halt();
+      go(at + 1);
+    }), "Next");
+    const reset = button("reset", "Reset", by(() => {
+      halt();
+      go(-1);
+    }));
+    if (spec.steps.length === 0) for (const b of [playBtn, next, reset]) b.disabled = true;
+    ctl.setAttribute("role", "group");
+    ctl.setAttribute("aria-label", `${card.querySelector("h3")?.textContent ?? spec.key} controls`);
+    const deep = ctl.querySelector("a.deep");
+    for (const el of [playBtn, back, next, reset, narr, counter]) ctl.insertBefore(el, deep);
+    fig.append(root);
     paint();
-    if (!reduced && typeof IntersectionObserver === "function") {
-      const io = new IntersectionObserver((entries) => {
-        if (entries.some((en) => en.isIntersecting) && at < 0 && timer === void 0) {
-          play();
-          io.disconnect();
+    if (!reduced && spec.steps.length > 0 && typeof IntersectionObserver === "function") {
+      const band = new IntersectionObserver((entries) => {
+        if (entries.some((en) => en.isIntersecting)) {
+          band.disconnect();
+          if (!started) play();
         }
-      }, { threshold: 0.6 });
-      io.observe(host);
+      }, { rootMargin: "-40% 0px -40% 0px", threshold: 0 });
+      band.observe(fig);
+      new IntersectionObserver((entries) => {
+        const seen = entries.some((en) => en.isIntersecting);
+        if (!seen && timer !== void 0) {
+          halt();
+          parked = true;
+        } else if (seen && parked) play();
+      }, { threshold: 0 }).observe(card);
     }
   }
-  function mount() {
+  function mount(root = document) {
     const dataEl = document.getElementById("diagrams");
     if (!dataEl) return;
     const data = JSON.parse(dataEl.textContent ?? "");
-    document.querySelectorAll("figure[data-fx-flow]").forEach((fig) => {
-      const spec = field(data, fig.getAttribute("data-fx-flow") ?? "");
+    root.querySelectorAll(".ctl[data-fx-flow]").forEach((ctl) => {
+      const card = ctl.closest("figure.card");
+      const fig = card?.querySelector(".fig");
+      if (!card || !fig) return;
+      const spec = field(data, ctl.getAttribute("data-fx-flow") ?? "");
       const errors = validateFigure(spec);
       if (errors.length || !isFigure(spec)) {
         fig.textContent = `Figure is invalid: ${errors.join("; ")}`;
         return;
       }
-      mountFigure(fig, spec);
+      mountFigure(card, fig, ctl, spec);
     });
   }
   Reflect.set(globalThis, "fxFlow", { validateFigure, mount });

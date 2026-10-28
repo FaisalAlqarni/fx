@@ -29,6 +29,19 @@ assert.ok(/@media \(min-width: 900px\)\s*\{\s*@supports selector\(::details-cont
   'at 900px and up, #menu-bar::details-content is shown inside @supports selector(::details-content)');
 assert.ok(css.includes('@media (max-width: 899.98px)'), 'a narrow block below 900px exists');
 
+// Cards: the bar sticks to the window while any part of its card is on screen, so the card must not be a scroll
+// container; the figure scrolls sideways in .fig at 1:1, never shrunk.
+assert.ok(rule('.card') !== '', 'a .card rule exists');
+assert.ok(!/(?:^|;)\s*overflow(?:-x|-y)?\s*:/.test(rule('.card')), '.card holds no overflow declaration');
+for (const part of ['position:sticky', 'bottom:0']) assert.ok(rule('.ctl').includes(part), `.ctl rule holds ${part}`);
+assert.ok(rule('.fig').includes('overflow-x:auto'), '.fig rule holds overflow-x:auto');
+const px = (body: string, prop: string): number => Number(new RegExp(`(?:^|;)${prop}:(\\d+(?:\\.\\d+)?)px`).exec(body)?.[1] ?? 0);
+assert.ok(px(rule('.ctl button.play'), 'min-inline-size') >= 84, 'button.play is at least 84px wide');
+// A .ctl button rule's own floor wins; without one, the page-wide button rule applies.
+assert.ok((px(rule('.ctl button'), 'min-block-size') || px(rule('button'), 'min-block-size')) >= 36, 'every bar button is at least 36px tall');
+assert.deepStrictEqual([...css.matchAll(/(?:^|\n|\})([^{}]*svg[^{}]*)\{([^}]*)\}/g)].filter((m) => /(?:max-)?width:100%|(?:max-)?inline-size:100%/.test(m[2] ?? '')).map((m) => m[1]), [],
+  'no rule shrinks an svg to its box');
+
 // Colours come only from fx token names, so theme.css themes the page.
 const TOKENS = new Set(['--paper', '--panel', '--ink', '--muted', '--rule', '--code', '--accent', '--accent-tint', '--warn', '--alert', '--violet', '--info', '--info-tint']);
 const bodies = [...css.matchAll(/\{([^{}]*)\}/g)].map((m) => m[1] ?? '');

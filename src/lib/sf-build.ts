@@ -17,7 +17,8 @@ import { depth, readPlan } from './sf-estimate.js';
 import type { Depth } from './sf-estimate.js';
 import type { Coverage } from './sf-coverage.js';
 import { layoutAll } from './sf-layout.js';
-import { renderPage } from './sf-page.js';
+import { deepBase, renderPage } from './sf-page.js';
+import type { DeepPage } from './sf-page.js';
 import { applyThemeBlock, deepDiagrams, findArchify, hasArchify, outsideRefs, pickLine, runArchify, svgPage } from './sf-diagrams.js';
 import type { ArchifyRun, DeepDiagram } from './sf-diagrams.js';
 import { detectTheme, themeCss } from './sf-theme.js';
@@ -254,11 +255,6 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
     fs.copyFileSync(path.join(REFERENCES, dir, name), dest);
     result.written.push(rel);
   }
-  const template = fs.readFileSync(path.join(REFERENCES, 'system-flow', 'site-template.html'), 'utf8');
-  const html = renderPage({ model: checked.model, figures: laid.figures, coverage: cov, theme, roots: checked.roots, template });
-  writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'index.html'), html, hasMarker, result);
-  if (!result.collisions.includes(path.posix.join(opts.site, 'index.html'))) result.pageBytes = Buffer.byteLength(html);
-
   // Saved choices plus this build's flags, in memory; .fx.json is written at the end.
   const saved = checked.config?.diagrams ?? {};
   const flags = opts.flags ?? {};
@@ -371,6 +367,20 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
     }
     for (const d of shown) result.diagrams.push({ name: d.name, renderer, reason: line.slice(g0.name.length + 2) });
   }
+
+  // The page follows the deep diagrams, so each card's link names its renderer. A figure this build did not render
+  // (--only) reads its first page from disk: an SVG page carries the generated marker, an archify page does not.
+  const deep: DeepPage[] = [...result.diagrams];
+  for (const f of laid.figures) {
+    const base = deepBase(f.key);
+    if (deep.some((d) => d.name === base || d.name === `${base}-p1`)) continue;
+    const name = [base, `${base}-p1`].find((n) => fs.existsSync(path.join(opts.hostRoot, pages, `${n}.html`)));
+    if (name !== undefined) deep.push({ name, renderer: hasMarker(fs.readFileSync(path.join(opts.hostRoot, pages, `${name}.html`), 'utf8')) ? 'svg' : 'archify' });
+  }
+  const template = fs.readFileSync(path.join(REFERENCES, 'system-flow', 'site-template.html'), 'utf8');
+  const html = renderPage({ model: checked.model, figures: laid.figures, coverage: cov, theme, roots: checked.roots, template, deep });
+  writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'index.html'), html, hasMarker, result);
+  if (!result.collisions.includes(path.posix.join(opts.site, 'index.html'))) result.pageBytes = Buffer.byteLength(html);
 
   // A generated file that a hand-written one blocks leaves the outputs incomplete: not ok, and nothing stamped.
   if (result.collisions.length) {

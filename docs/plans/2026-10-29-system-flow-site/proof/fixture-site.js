@@ -22,11 +22,40 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
   mod
 ));
+var fs = __toESM(require("fs"));
 var path = __toESM(require("path"));
 var import_sf_fixture = require("../../../../tests/helpers/sf-fixture.js");
 const f = (0, import_sf_fixture.sfFixture)();
 f.fxJson({});
 f.goodSet();
+const evidence = [{ path: "app/x.rb", lines: "1-4", symbol: "Link#expired?" }];
+const lanes = ["client", "edge", "api", "queue", "worker", "mail"];
+const tall = ["t1", "t2", "t3", "t4", "t5", "t6", "t7"];
+f.fragment("proof", {
+  sequences: [{
+    id: "wide",
+    title: "A wide hand-off",
+    chapter: "s1",
+    summary: "The request passes through six parts from the client to the mailer.",
+    participants: lanes.map((id) => ({ id, label: `Part ${id}`, look: id === "mail" ? "external" : "service", evidence })),
+    messages: lanes.slice(1).map((to, i) => ({ n: i + 1, from: lanes[i], to, label: `Hands the request to ${to}.`, evidence }))
+  }],
+  levels: { diagrams: [{
+    id: "tall",
+    level: 1,
+    parent: "system",
+    title: "A tall chain",
+    summary: "Seven parts pass a job down one column from the first to the last.",
+    groups: [],
+    nodes: tall.map((id) => ({ id, label: `Step ${id}`, kind: "backend", look: "service", role: "Passes the job on", evidence })),
+    edges: tall.slice(1).map((to, i) => ({ from: tall[i], to, label: "passes", evidence })),
+    layout: Object.fromEntries(tall.map((id, row) => [id, { col: 0, row }]))
+  }] }
+});
+const file = path.join(f.host, "docs/system-flow/model/fragments/chapters.json");
+const chapters = JSON.parse(fs.readFileSync(file, "utf8"));
+for (const s of chapters.sections) if (s.id === "s1") s.diagrams = [...s.diagrams ?? [], "tall"];
+f.fragment("chapters", chapters);
 const r = f.run(["build", "--prefer", "cheap"]);
 if (r.status !== 0) {
   process.stderr.write(`fixture-site: build exited ${r.status}

@@ -15,7 +15,12 @@ export const wrapArabic = (escaped: string): string =>
   escaped.replace(new RegExp(`${AR}(?:[ \\u00A0]+${AR})*`, 'g'), (run) => `<span lang="ar" dir="rtl">${run}</span>`);
 const t = (s: string | undefined): string => wrapArabic(escapeHtml(s ?? ''));
 
-type Input = { model: Model; figures: FigureSpec[]; coverage: Coverage; theme: Theme; roots: Map<string, EvRoot>; template: string };
+// deep: the renderer of each deep diagram page, from this build or, for a figure it did not render, from the pages on disk.
+export type DeepPage = { name: string; renderer: 'archify' | 'svg' };
+type Input = { model: Model; figures: FigureSpec[]; coverage: Coverage; theme: Theme; roots: Map<string, EvRoot>; template: string; deep: DeepPage[] };
+
+// The deep diagram page name of a figure key: a level diagram's page is arch-<id>; a sequence or flow keeps its key.
+export const deepBase = (key: string): string => key.replace(/^level-/, 'arch-');
 
 const nn = (i: number): string => String(i).padStart(2, '0');
 const chapterId = (i: number, s: Section): string => `ch-${nn(i + 1)}-${s.id}`;
@@ -73,9 +78,18 @@ export function renderPage(input: Input): string {
       return e === undefined ? '' : ` <code class="at">${escapeHtml(where(e) + (e.lines === undefined ? '' : `:${e.lines}`))}</code>`;
     };
     if ((s.bullets ?? []).length > 0) parts.push(`<ul class="facts">${(s.bullets ?? []).map((b) => `<li>${t(b.text)}${at(b)}</li>`).join('')}</ul>`);
-    const figure = (key: string, title: string): void => {
+    const figure = (key: string, title: string, summary: string | undefined, prefix = ''): void => {
       if (claim(key, i)) {
-        parts.push(`<h3>${t(title)}</h3><figure data-fx-flow="${escapeHtml(key)}"></figure>`);
+        const base = deepBase(key);
+        const page = input.deep.find((d) => d.name === base) ?? input.deep.find((d) => d.name === `${base}-p1`);
+        const label = page?.renderer === 'archify' ? 'Open in archify' : 'Open full diagram';
+        parts.push([
+          `<figure class="card" id="fig-${escapeHtml(key)}">`,
+          `<h3>${t(prefix + title)}</h3><p class="cap">${t(summary)}</p>`,
+          `<div class="fig" role="region" tabindex="0" aria-label="${escapeHtml(title)}, scrolls sideways"><noscript>This figure needs JavaScript. The link below opens the full diagram.</noscript></div>`,
+          `<div class="ctl" data-fx-flow="${escapeHtml(key)}"><a class="deep" href="diagrams/${escapeHtml(page?.name ?? base)}.html">${label}</a></div>`,
+          '</figure>',
+        ].join('\n'));
         // Arrows the layout left out of the figure; the map still draws them.
         const left = input.figures.find((f) => f.key === key)?.notDrawn ?? [];
         if (left.length > 0) parts.push(`<p class="not-drawn">Arrows not drawn here (the map shows them): ${left.map((id) => escapeHtml(id.slice(id.indexOf(':') + 1).replace(/#\d+$/, '').replace('>', ' to '))).join(', ')}.</p>`);
@@ -89,11 +103,9 @@ export function renderPage(input: Input): string {
     const diagrams = model.levels.diagrams.filter((d) => (s.diagrams ?? []).includes(d.id));
     const seqs = sectionSeqs(s);
     const flows = sectionFlows(s);
-    for (const d of diagrams) figure(`level-${d.id}`, d.title);
-    for (const q of seqs) figure(`seq-${q.id}`, q.title);
-    for (const f of flows) figure(`flow-${f.id}`, f.trigger);
-    const deep = [...diagrams.map((d) => [`diagrams/arch-${d.id}.html`, d.title]), ...seqs.map((q) => [`diagrams/seq-${q.id}.html`, q.title]), ...flows.map((f) => [`diagrams/flow-${f.id}.html`, f.trigger])];
-    if (deep.length > 0) parts.push(`<p>Deep diagrams: ${deep.map(([href, title]) => `<a href="${href}">${t(title)}</a>`).join(', ')}</p>`);
+    for (const d of diagrams) figure(`level-${d.id}`, d.title, d.summary);
+    for (const q of seqs) figure(`seq-${q.id}`, q.title, q.summary, 'Sequence: ');
+    for (const f of flows) figure(`flow-${f.id}`, f.trigger, f.summary, 'Store flow: ');
     for (const f of flows) {
       parts.push(`<h4>Store flow: ${t(f.trigger)}</h4>`, table(`Store flow: ${f.trigger}`, ['#', 'Actor', 'Op', 'Store', 'Key', 'When', 'Evidence'], f.steps.map((st) => [String(st.n), t(st.actor), t(st.op), t(st.store), t(st.key), t(st.when), evCell(st)])));
     }
