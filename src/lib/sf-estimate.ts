@@ -5,8 +5,10 @@ import { parseJson } from './json.js';
 import { validate } from './sf-schema.js';
 import type { Item, Model, Problem } from './sf-model.js';
 
-// One table of guesses; proof run (a) replaces them with measured values.
-export const ESTIMATE = { calibrated: false, tokensPerFile: 6000, tokensPerFigure: 15000, controllerTokens: 300000, minutesPerFile: 0.4, minutesPerFigure: 1.5, controllerMinutes: 20, parallel: 4 };
+// Measured by proof run (a), Shamel.Backend on 2026-10-28: 12,813,063 tokens and 20.3 minutes against 1,158,000 and
+// 43 from the first guesses. One run cannot split per-file from per-figure cost, so every guess scaled by the same
+// ratio (tokens 11.07, minutes 0.47).
+export const ESTIMATE = { calibrated: true, measuredOn: '2026-10-28', tokensPerFile: 66000, tokensPerFigure: 166000, controllerTokens: 3320000, minutesPerFile: 0.2, minutesPerFigure: 0.7, controllerMinutes: 9.4, parallel: 4 };
 export type Plan = { areas: { id: string; root: string; files: number; filesToRead: number; levels: number; diagrams: number; sequences: number; storeFlows: number }[]; chapters: number };
 
 const count = { type: 'integer', minimum: 0 };
@@ -49,7 +51,7 @@ export function estimate(plan: Plan) {
     areas: areas.map((a) => ({ ...a, minutes: round(a.minutes) })),
     total: { tokens: sum((a) => a.tokens) + c.controllerTokens, minutes: round(c.controllerMinutes + sum((a) => a.minutes) / lanes) },
     constants: c,
-    note: c.calibrated ? 'constants measured' : 'constants are guesses until proof run (a) calibrates them',
+    note: c.calibrated ? `constants measured on ${c.measuredOn}` : 'constants are guesses until proof run (a) calibrates them',
     warnings: plan.areas.filter((a) => a.files > 400).map((a) => `area ${a.id} has ${a.files} files; split it into sub-areas of at most 400`),
   };
 }

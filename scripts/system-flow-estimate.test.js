@@ -39,22 +39,27 @@ function estimate(plan) {
 {
   const { r, out } = estimate({ areas: [area("A", 120, 10, 2, 2, 1, 0), area("B", 300, 20, 1, 1, 0, 1)], chapters: 4 });
   assert.strictEqual(r.status, 0, r.stderr);
-  assert.deepStrictEqual(out.areas, [{ id: "A", tokens: 105e3, minutes: 8.5 }, { id: "B", tokens: 15e4, minutes: 11 }]);
-  assert.deepStrictEqual(out.total, { tokens: 555e3, minutes: 29.8 });
-  assert.strictEqual(out.constants.calibrated, false);
-  assert.strictEqual(out.note, "constants are guesses until proof run (a) calibrates them");
+  assert.deepStrictEqual(out.areas, [{ id: "A", tokens: 1158e3, minutes: 4.1 }, { id: "B", tokens: 1652e3, minutes: 5.4 }]);
+  assert.deepStrictEqual(out.total, { tokens: 613e4, minutes: 14.2 });
+  assert.strictEqual(out.constants.calibrated, true);
+  assert.strictEqual(out.note, "constants measured on 2026-10-28");
   assert.deepStrictEqual(out.warnings, []);
 }
 {
   const { out } = estimate({ areas: [area("A", 5e3, 10, 2, 2, 1, 0)], chapters: 1 });
-  assert.deepStrictEqual(out.areas, [{ id: "A", tokens: 105e3, minutes: 8.5 }]);
+  assert.deepStrictEqual(out.areas, [{ id: "A", tokens: 1158e3, minutes: 4.1 }]);
   assert.deepStrictEqual(out.warnings, ["area A has 5000 files; split it into sub-areas of at most 400"]);
-  assert.strictEqual(out.total.minutes, 28.5, "one area runs alone");
+  assert.strictEqual(out.total.minutes, 13.5, "one area runs alone");
 }
 {
   const { out } = estimate({ areas: ["a", "b", "c", "d", "e", "f"].map((i) => area(i, 10, 10, 1, 0, 0, 0)), chapters: 1 });
-  assert.deepStrictEqual(out.areas[0], { id: "a", tokens: 6e4, minutes: 4 });
-  assert.strictEqual(out.total.minutes, 26);
+  assert.deepStrictEqual(out.areas[0], { id: "a", tokens: 66e4, minutes: 2 });
+  assert.strictEqual(out.total.minutes, 12.4);
+}
+{
+  const { out } = estimate({ areas: [area("mobile-api", 30, 20, 2, 4, 3, 0), area("core", 66, 28, 3, 5, 2, 1), area("twk-framework", 88, 35, 2, 5, 1, 3)], chapters: 9 });
+  assert.ok(Math.abs(out.total.tokens / 12813063 - 1) <= 0.1, `tokens ${out.total.tokens}`);
+  assert.ok(Math.abs(out.total.minutes / (1217 / 60) - 1) <= 0.1, `minutes ${out.total.minutes}`);
 }
 {
   const { f, r } = estimate({ areas: [{ id: "A", root: "backend", files: 1, levels: 1, diagrams: 0, sequences: 0, storeFlows: 0 }], chapters: 1 });
