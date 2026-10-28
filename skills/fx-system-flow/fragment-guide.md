@@ -32,6 +32,9 @@ Merge concatenates arrays and unions the `stores` tables. The controller owns
   areas never collide. Diagram, sequence and store flow ids take the same
   prefix (`engine-l2-delivery`). The one exception is the controller's
   `level0.json`: its diagram is `level0` and its nodes are `l0-<area id>`.
+- A sequence or store flow id never ends in `-p` and digits (`-p2`, `-p10`):
+  a deep diagram's later pages are named `<id>-p<n>`, so `check` rejects such
+  an id. Write `engine-seq-pay-step` rather than `engine-seq-pay-p2`.
 - An edge links nodes of its own diagram: `from` and `to` are node ids in the
   diagram that holds the edge. To show a part of another diagram, add a
   context node (`"primary": false`) to this one and link to that.
