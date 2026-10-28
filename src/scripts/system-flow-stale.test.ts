@@ -158,6 +158,28 @@ const editX = (f: Fx, edit: (lines: string[]) => string[]): string => {
   assert.deepStrictEqual(handles(r), []);
 }
 
+// A ref or a verified value is never read by git as an option.
+{
+  const f = setup();
+  const target = path.join(f.base, 'written.txt');
+  const viaDiff = f.run(['query', '--diff', `--output=${target}`]);
+  assert.strictEqual(viaDiff.status, 1, viaDiff.stdout);
+  assert.ok(viaDiff.stderr.startsWith('system-flow: query: '), viaDiff.stderr);
+  assert.ok(!fs.existsSync(target), '--diff value written as a file');
+  const viaBase = f.run(['query', '--diff', 'main', '--base', `guide=--output=${target}`]);
+  assert.strictEqual(viaBase.status, 1, viaBase.stdout);
+  assert.ok(!fs.existsSync(target), '--base value written as a file');
+  const l0 = frag(f, 'level0');
+  l0.levels.diagrams[0].nodes[0].verified.backend = `--output=${target}`;
+  f.fragment('level0', l0);
+  for (const cmd of [['stale'], ['query', '--diff', 'main'], ['verify', 'node:link']]) {
+    const r = f.run(cmd);
+    assert.strictEqual(r.status, 1, `${cmd.join(' ')}\n${r.stdout}`);
+    assert.ok(r.stderr.includes('is not a 40-character commit'), r.stderr);
+  }
+  assert.ok(!fs.existsSync(target), 'verified value written as a file');
+}
+
 // verify
 {
   const f = setup();

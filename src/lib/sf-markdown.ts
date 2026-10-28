@@ -2,6 +2,7 @@
 // Text from the model is escaped for the place it lands; evidence lines use docs-index's format.
 import * as path from 'path';
 import { execFileSync } from 'child_process';
+import { COMMIT } from './sf-evidence.js';
 import type { Root } from './sf-evidence.js';
 import type { Coverage } from './sf-coverage.js';
 import type { Evidence, Evidenced, Model, Section, Sequence, StoreFlow } from './sf-model.js';
@@ -71,7 +72,7 @@ function oldestVerified(items: Evidenced[], roots: Map<string, Root>, hostId: st
   if (shas.length === 0) return host?.head ?? null;
   for (const sha of shas) {
     if (!ages.has(sha)) {
-      try { ages.set(sha, Number(execFileSync('git', ['rev-list', '--count', sha], { cwd: host?.dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }))); } catch { ages.set(sha, null); }
+      try { if (!COMMIT.test(sha)) throw new Error('not a commit id'); ages.set(sha, Number(execFileSync('git', ['rev-list', '--count', sha], { cwd: host?.dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }))); } catch { ages.set(sha, null); }
     }
   }
   if (shas.some((s) => ages.get(s) === null)) return null;

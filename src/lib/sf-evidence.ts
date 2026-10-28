@@ -14,6 +14,16 @@ const git = (dir: string, args: string[]): string | null => {
   try { return execFileSync('git', args, { cwd: dir, encoding: 'utf8', maxBuffer: 1 << 28, stdio: ['ignore', 'pipe', 'ignore'] }); } catch { return null; }
 };
 
+export const COMMIT = /^[0-9a-f]{40}$/;
+
+// The one way a ref from the CLI or a fragment reaches git: a ref with a dash first or white space is refused,
+// the rest is resolved to a full commit id, so git never sees the caller's text as an option.
+export function resolveCommit(dir: string, ref: string): string | null {
+  if (ref === '' || /^-|[\s\0]/.test(ref)) return null;
+  const sha = git(dir, ['rev-parse', '--verify', '--quiet', '--end-of-options', `${ref}^{commit}`])?.trim();
+  return sha !== undefined && COMMIT.test(sha) ? sha : null;
+}
+
 export function resolveRoots(hostRoot: string, meta: Meta, fx: FxJson['system_flow']): { roots: Map<string, Root>; problems: Problem[] } {
   const roots = new Map<string, Root>();
   const problems: Problem[] = [];

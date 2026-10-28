@@ -6,7 +6,7 @@ import { parseJson } from './json.js';
 import { checkPath } from './doc-index.js';
 import { collect, itemsOf, loadFragments, mergeFragments } from './sf-model.js';
 import type { Evidenced, Evidence, Fragment, Item, ItemKind, Verified } from './sf-model.js';
-import { resolveRoots } from './sf-evidence.js';
+import { COMMIT, resolveCommit, resolveRoots } from './sf-evidence.js';
 import type { Root } from './sf-evidence.js';
 import { systemFlowConfig } from './sf-build.js';
 
@@ -26,7 +26,10 @@ export function loadModelItems(hostRoot: string, site: string): { items: Item[];
   const merged = mergeFragments(loaded.fragments);
   const bad = [...loaded.problems, ...merged.problems].find((p) => p.level === 'error');
   if (bad) throw new Error(`${bad.file}:${bad.pointer}: ${bad.message}`);
-  return { items: itemsOf(merged.model), roots: resolveRoots(hostRoot, merged.model.meta, systemFlowConfig(hostRoot).config).roots, fragmentsDir };
+  const items = itemsOf(merged.model);
+  // A verified value is a commit id, so none can start with a dash or reach git as an option.
+  for (const i of items) for (const [id, v] of Object.entries(i.verified ?? {})) if (!COMMIT.test(v)) throw new Error(`${i.file}: ${i.handle}: verified ${id} is not a 40-character commit`);
+  return { items, roots: resolveRoots(hostRoot, merged.model.meta, systemFlowConfig(hostRoot).config).roots, fragmentsDir };
 }
 
 // A query path is host-relative or `@<root id>/<path>`; a folder matches what lies under it, and an evidence folder matches what lies under it.
@@ -44,7 +47,9 @@ export function queryPaths(items: Item[], paths: string[], hostId: string): { ha
 }
 
 export function changedPaths(root: Root, base: string): { changed: string[]; added: string[] } {
-  const text = git(root.dir, ['diff', '--no-renames', '--name-status', `${base}...HEAD`]);
+  const sha = resolveCommit(root.dir, base);
+  if (sha === null) throw new Error(`${base} is not a commit in root ${root.id}`);
+  const text = git(root.dir, ['diff', '--no-renames', '--name-status', `${sha}...HEAD`, '--']);
   if (text === null) throw new Error(`cannot diff ${base}...HEAD in root ${root.id}`);
   const changed: string[] = [];
   const added: string[] = [];
