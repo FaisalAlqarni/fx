@@ -4,6 +4,8 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import { parseJson } from '../lib/json.js';
+import { renderRules } from '../lib/sf-markdown.js';
+import type { Model } from '../lib/sf-model.js';
 import { sfFixture } from '../tests/helpers/sf-fixture.js';
 
 type Fx = ReturnType<typeof sfFixture>;
@@ -115,5 +117,19 @@ assert.strictEqual(setup({ adrStatus: 'Partly superseded by 0002' }).run(['check
   const r = setup({ ruleAdrRoot: 'nope' }).run(['check']);
   assert.strictEqual(r.status, 1, r.stdout);
   assert.ok(r.stderr.trimEnd().endsWith('rule r1: ADR names root nope, not in meta.roots'), r.stderr);
+}
+{ // An ADR path that could leave its link target is refused, as an evidence path is (final review N3)
+  for (const bad of ['docs/adr/x) <img src=x onerror=alert(1)>.md', 'docs/adr/a b.md', 'docs/adr/a`b.md', '/etc/adr.md', 'docs/../adr.md']) {
+    const f = setup({ ruleAdr: bad });
+    if (!bad.startsWith('/') && !bad.includes('..')) { f.put('host', bad, '# X\n\nStatus: accepted\n'); f.commit('host', 'adr'); }
+    const r = f.run(['check']);
+    assert.strictEqual(r.status, 1, `${bad}: ${r.stdout}`);
+    assert.ok(r.stderr.includes(`rule r1: ADR ${bad}: `), r.stderr);
+  }
+}
+{ // The ADR link target is percent-encoded, ( and ) included, so no path closes the link
+  const model = { rules: [{ id: 'r1', text: 'Use X.', adr: { path: 'docs/adr/a(b)%.md' } }] } as unknown as Model;
+  const md = renderRules(model, new Map(), 'backend', 'docs/system').text;
+  assert.ok(md.includes('](../adr/a%28b%29%25.md))'), md);
 }
 console.log('system-flow-coverage.test.js: ok');

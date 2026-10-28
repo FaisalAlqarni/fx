@@ -1,4 +1,5 @@
 // Structure rules for `system-flow check`: caps, references, evidence, dash ban.
+import * as path from 'path';
 import { collect, originOf, parseHandle } from './sf-model.js';
 import type { Item, ItemKind, Model, Problem } from './sf-model.js';
 import { adrStatus } from './doc-evidence.js';
@@ -113,6 +114,11 @@ export function checkRuleAdrs(model: Model, roots: Map<string, Root>): Problem[]
   const hostId = [...roots.values()].find((r) => r.host)?.id ?? '';
   for (const r of model.rules) {
     if (!r.adr) continue;
+    // The path becomes a Markdown link target in rules-in-force.md, so it is held to the evidence path rules.
+    const p = r.adr.path;
+    const bad = /[\s()<>`]/.test(p) ? 'path with whitespace, ( ) < > or a backtick cannot be written as a link'
+      : path.isAbsolute(p) || p.split('/').includes('..') ? 'path must be relative to its root and hold no .. segment' : null;
+    if (bad !== null) { out.push({ ...originOf(r), message: `rule ${r.id}: ADR ${p}: ${bad}`, level: 'error' }); continue; }
     const root = roots.get(r.adr.root ?? hostId);
     if (!root) { out.push({ ...originOf(r), message: `rule ${r.id}: ADR names root ${r.adr.root}, not in meta.roots`, level: 'error' }); continue; }
     if (root.missing || root.refused !== undefined) continue;

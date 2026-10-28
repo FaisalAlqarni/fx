@@ -26,6 +26,7 @@ var assert = __toESM(require("assert"));
 var fs = __toESM(require("fs"));
 var path = __toESM(require("path"));
 var import_json = require("../lib/json.js");
+var import_sf_markdown = require("../lib/sf-markdown.js");
 var import_sf_fixture = require("../tests/helpers/sf-fixture.js");
 const ev = (p, lines, symbol, root) => [{ ...root === void 0 ? {} : { root }, path: p, lines, symbol }];
 const lines30 = Array.from({ length: 30 }, (_, i) => i === 0 ? "class Sweep" : `  # line ${i + 1}`).join("\n") + "\n";
@@ -157,5 +158,22 @@ assert.strictEqual(setup({ adrStatus: "Partly superseded by 0002" }).run(["check
   const r = setup({ ruleAdrRoot: "nope" }).run(["check"]);
   assert.strictEqual(r.status, 1, r.stdout);
   assert.ok(r.stderr.trimEnd().endsWith("rule r1: ADR names root nope, not in meta.roots"), r.stderr);
+}
+{
+  for (const bad of ["docs/adr/x) <img src=x onerror=alert(1)>.md", "docs/adr/a b.md", "docs/adr/a`b.md", "/etc/adr.md", "docs/../adr.md"]) {
+    const f = setup({ ruleAdr: bad });
+    if (!bad.startsWith("/") && !bad.includes("..")) {
+      f.put("host", bad, "# X\n\nStatus: accepted\n");
+      f.commit("host", "adr");
+    }
+    const r = f.run(["check"]);
+    assert.strictEqual(r.status, 1, `${bad}: ${r.stdout}`);
+    assert.ok(r.stderr.includes(`rule r1: ADR ${bad}: `), r.stderr);
+  }
+}
+{
+  const model = { rules: [{ id: "r1", text: "Use X.", adr: { path: "docs/adr/a(b)%.md" } }] };
+  const md = (0, import_sf_markdown.renderRules)(model, /* @__PURE__ */ new Map(), "backend", "docs/system").text;
+  assert.ok(md.includes("](../adr/a%28b%29%25.md))"), md);
 }
 console.log("system-flow-coverage.test.js: ok");

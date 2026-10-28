@@ -90,6 +90,8 @@ function oldestVerified(items: Evidenced[], roots: Map<string, Root>, hostId: st
 }
 
 const posix = (p: string): string => p.split(path.sep).join('/');
+// encodeURIComponent leaves ( and ) alone, and either can end a Markdown link target.
+const linkTarget = (p: string): string => p.split('/').map((s) => encodeURIComponent(s).replace(/[()]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`)).join('/');
 
 export function renderMarkdown(model: Model, roots: Map<string, Root>, hostId: string, markdownRoot: string, site = 'docs/system-flow'): { path: string; text: string }[] {
   const ages = new Map<string, number | null>();
@@ -171,7 +173,7 @@ export function renderRules(model: Model, roots: Map<string, Root>, hostId: stri
   const body = ['# Rules in force', ''];
   for (const r of model.rules) {
     const adr = r.adr === undefined ? '' : (r.adr.root ?? hostId) === hostId
-      ? ` ([${prose(r.adr.path)}](${posix(path.relative(markdownRoot, r.adr.path))}))`
+      ? ` ([${prose(r.adr.path)}](${linkTarget(posix(path.relative(markdownRoot, r.adr.path)))}))`
       : ` (@${prose(r.adr.root ?? '')}/${prose(r.adr.path)})`;
     body.push(`- ${r.id}: ${prose(r.text)}${adr}${r.decision === undefined ? '' : ` ${prose(r.decision)}`}`);
     const line = evidenceLine(r.evidence ?? [], hostId);
