@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "fx",
-      "version": "0.8.0",
+      "version": "0.8.2",
       "source": {
         "source": "local",
         "path": "./"
