@@ -104,14 +104,21 @@ trims it. A trim changes the plan file; run `system-flow estimate` again and
 show the new totals. In a MkDocs repo, apply the `nav` and `exclude_docs` lines
 only when the owner answered yes to that question.
 
+**After approval, before any dispatch,** write `chapters.json` and `level0.json`
+as planning.md's Shared ids section says, and run
+`system-flow check --fragment <file>` on each until it exits 0. They fix the
+ids both sides use: the section ids, the level-0 diagram and node ids, and the
+level-1 diagram id `<area id>-l1` each area owns.
+
 ### 3. Investigate
 
 Dispatch one subagent per approved area, **at most 4 at a time**; start the
 next area when one returns. Each prompt holds, in this order: the full text of
 `../../skills/fx-system-flow/area-brief.md`, the full text of
 `../../skills/fx-system-flow/fragment-guide.md`, the area's slice of the plan
-(its entry in the plan file, its chapters with their questions, its sequence
-and store flow candidates), the roots from `detect`, the absolute path of the
+(its entry in the plan file, its chapters with their section ids and
+questions, its sequence and store flow candidates, the level-0 diagram id and
+its own level-1 diagram id), the roots from `detect`, the absolute path of the
 fragment it owns (`<site>/model/fragments/<area id>.json`) and the absolute
 path of the CLI with `--root <host root>`. Rewrite each relative path in the
 pasted text to the absolute path it resolves to from the sidecar's own folder,
@@ -120,18 +127,16 @@ since a subagent has no skill base directory.
 A subagent returns when `system-flow check --fragment <its file>` exits 0, or
 after its 2 fix rounds. Collect its open questions and its depth line.
 
-While subagents run, the controller writes its own fragments, each checked with
-`system-flow check --fragment <file>` until it exits 0:
+When an area returns, set `children: "<area id>-l1"` on its level-0 node in
+`level0.json`, and add the area's diagrams to the `diagrams` of the chapters
+that show them in `chapters.json`; check both with `--fragment`.
 
-- `level0.json`: the level-0 diagram, one node per area, its `children` naming
-  the area's level-1 diagram.
-- `chapters.json`: the chapters from the approved plan, each with its reader's
-  question, and the Coverage chapter's `covers` where the plan named them.
-- `rules.json`: the Rules in force. List every ADR in every root's ADR folder
-  whose status does not open with Superseded, Deprecated or Ignored. Write one
-  rule per numbered decision, summarised in one sentence, with `adr` and
-  `decision` (the number, or the lead phrase of an unnumbered ADR), and the
-  ADR's own evidence lines when it has them.
+While subagents run, the controller writes `rules.json`, the Rules in force,
+checked the same way. List every ADR in every root's ADR folder whose status
+does not open with Superseded, Deprecated or Ignored. Write one rule per
+numbered decision, summarised in one sentence, with `adr` and `decision` (the
+number, or the lead phrase of an unnumbered ADR), and the ADR's own evidence
+lines when it has them.
 
 ### 4. Build the draft
 

@@ -73,9 +73,14 @@ for (const name of ['fx-critique', 'fx-grill', 'fx-handoff', 'fx-pr', 'fx-retro'
     'questions. Answer one at a time, skip, or take the recommended answer for every question.']) {
     assert.ok(lane.includes(s), `fx-system-flow SKILL.md says ${s}`);
   }
+  // The shared ids exist before any area runs: chapters and level 0 are written
+  // and checked in the planning pass, ahead of the dispatch in step 3.
+  const planStep = lane.indexOf('### 2. Plan'), dispatch = lane.indexOf('### 3. Investigate');
+  const sharedAt = lane.indexOf('`chapters.json` and `level0.json`');
+  assert.ok(planStep >= 0 && sharedAt > planStep && sharedAt < dispatch, 'fx-system-flow writes chapters.json and level0.json in step 2, before the dispatch');
   const sidecar: Record<string, string[]> = {
-    'planning.md': ['filesToRead', 'levels', 'meta.roots'],
-    'area-brief.md': ['level 3', '8 to 12 primary nodes', 'context nodes'],
+    'planning.md': ['filesToRead', 'levels', 'meta.roots', 'before any area is dispatched', '<area id>-l1'],
+    'area-brief.md': ['level 3', '8 to 12 primary nodes', 'context nodes', '<area id>-l1', 'section ids'],
     'fragment-guide.md': ['starts with its area id', '<kind>:<id>'],
     'interview.md': ['Every question carries a recommended answer'],
     'check-and-report.md': ['depth', 'planned'],

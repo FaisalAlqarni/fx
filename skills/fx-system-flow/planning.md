@@ -73,9 +73,31 @@ minutes per area and in total, its `note` on the constants, and `warnings`.
 
 Check each with `system-flow check --fragment <file>` until it exits 0.
 
+## Shared ids
+
+Written after the owner approves, before any area is dispatched, so every
+area's `check --fragment` finds the ids it names. Check each file with
+`system-flow check --fragment <file>` until it exits 0.
+
+- `chapters.json`: one section per approved chapter: `id`, `title`, its
+  reader's `question`, and `covers` naming inventory ids where the plan named
+  them. No `diagrams`, `sequences` or `storeFlows` yet: those ids do not exist
+  until the areas write them. Areas name a section id in each sequence's and
+  store flow's `chapter`.
+- `level0.json`: the level-0 diagram, id `level0`, `level: 0`, with
+  `levels.root` set to `level0`. One node per area, id `l0-<area id>`, each
+  with at least one edge (to another area, or to a context node such as the
+  users) and no `children` yet. Nodes and edges carry evidence from the
+  planning reads, or `unconfirmed` with a question. Each area writes its level-1
+  diagram as `<area id>-l1` with `parent: "level0"`; the lane sets the
+  level-0 node's `children` to it when the area returns.
+
+Each area's slice carries its section ids, `level0` and `<area id>-l1`.
+
 ## The planning message
 
-One message, then stop:
+One message, then stop. The shared ids above are written only after the
+owner approves.
 
 1. What `detect` found: docs config, theme source, archify folder or "none:
    every deep diagram is SVG", the site and Markdown folders, the roots.

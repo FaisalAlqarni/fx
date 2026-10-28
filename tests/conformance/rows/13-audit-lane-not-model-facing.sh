@@ -50,7 +50,7 @@ case "$HARNESS" in
     # own, carries a skill deny for each of the nine lanes and for nothing
     # else. (2) The skill list the built-in `build` agent sees, meaning
     # skill.list minus what build's rules deny, holds none of the nine. On the
-    # plugin route skill.list holds all 20, so (2) has something to hide; on
+    # plugin route skill.list holds all 23, so (2) has something to hide; on
     # the installer route the lanes are never linked and (2) holds trivially.
     # A user-defined agent in opencode.json is applied after plugin
     # transforms and gets no rule (probe 11, ADR-0026), so it is not checked.

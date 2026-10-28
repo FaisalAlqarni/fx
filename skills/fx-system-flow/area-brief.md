@@ -9,8 +9,17 @@ into your prompt. You investigate one area of a system and write one fragment.
   `<site>/model/fragments/<area id>.json`. Write no other file. Read other
   fragments only to reuse an id.
 - Your slice: the area id, its root, `filesToRead`, the planned `levels`,
-  `diagrams`, `sequences` and `storeFlows`, the chapters with their reader's
-  questions, the sequence and store flow candidates.
+  `diagrams`, `sequences` and `storeFlows`, the chapters with their section ids
+  and reader's questions, the sequence and store flow candidates, the level-0
+  diagram id `level0` and your level-1 diagram id `<area id>-l1`.
+
+## Ids you are given
+
+- Your level-1 diagram is `<area id>-l1`, with `"parent": "level0"`. Use that
+  id exactly; the controller links the level-0 node to it.
+- Each sequence's and store flow's `chapter` is one of the section ids in your
+  slice. Never invent a section id.
+- Your other ids start with `<area id>-`, as the fragment guide says.
 
 You never invoke `/fx:fx-system-flow`, never commit, never edit code in any
 root.
@@ -53,7 +62,9 @@ root.
 ## Check
 
 Run `<cli> --root <host root> check --fragment <your file>` until it exits 0.
-It prints problems as `<file>:<pointer>: <message>`. Fix each from the code.
+It prints problems as `<file>:<pointer>: <message>`. Fix each problem in your
+file from the code. A problem naming another file is not yours: list it in
+your return and leave that file alone.
 
 At most 2 fix rounds after your first full write. An item still failing after
 round 2: set `"unconfirmed": true`, remove its evidence, add a question for it,
