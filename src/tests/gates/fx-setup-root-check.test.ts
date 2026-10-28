@@ -86,6 +86,59 @@ const out = JSON.parse(ok.stdout); // ts-gate-ok: the test parses output it just
 assert.strictEqual(out.written.length, 6, 'all six roles planted on a fresh CODEX_HOME');
 assert.strictEqual(out.audit.present.length, 6, 'and audited present');
 assert.ok('hooksTrusted' in out, 'and hook trust reported');
+assert.strictEqual(out.catalog.skipped, 'no third-party model in config.toml and no slug named', 'no Codex config: the catalog step reports why it did nothing');
+
+// OpenRouter config: the same command writes the profile and reports it; a failing
+// `codex` is reported under catalog.error and the roles still print.
+const OR_CFG = 'model = "anthropic/claude-haiku-4.5"\nmodel_provider = "openrouter"\n';
+function runWithCodex(label: string, stubBody: string, extraEnv: Record<string, string> = {}, cfg = OR_CFG) {
+  const dir = fs.mkdtempSync(path.join(s, 'or-'));
+  const home = path.join(dir, 'codex-home');
+  fs.mkdirSync(home);
+  fs.writeFileSync(path.join(home, 'config.toml'), cfg);
+  const bin = path.join(dir, 'bin');
+  fs.mkdirSync(bin);
+  fs.writeFileSync(path.join(bin, 'codex'), `#!/usr/bin/env node\n${stubBody}\n`, { mode: 0o755 });
+  const env = { ...process.env, HOME: s, TMPDIR: s, CODEX_HOME: home, ...extraEnv, PATH: `${bin}${path.delimiter}${process.env.PATH ?? ''}` };
+  const r = spawnSync('bash', ['-c', withBase(command, skillDir(root))], { cwd: repo, env, encoding: 'utf8' });
+  assert.strictEqual(r.status, 0, `${label}: exits 0 (${r.stderr})`);
+  return { home, out: JSON.parse(r.stdout) }; // ts-gate-ok: the test parses output it just produced
+}
+const haikuEntry = { slug: 'anthropic/claude-haiku-4.5', display_name: 'Claude Haiku 4.5', context_window: 200000, max_context_window: 200000, include_skills_usage_instructions: false, apply_patch_tool_type: null, base_instructions: 'BASE', model_messages: { instructions_template: 'BASE' }, shell_type: 'unified_exec', visibility: 'list' };
+{
+  const r = runWithCodex('openrouter', `console.log(${JSON.stringify(JSON.stringify({ models: [haikuEntry] }))});`);
+  assert.strictEqual(r.out.catalog.profile, 'fx-openrouter');
+  assert.strictEqual(r.out.catalog.command, 'codex --profile fx-openrouter');
+  assert.ok(fs.existsSync(path.join(r.home, 'fx-openrouter.config.toml')), 'the profile file is written');
+  assert.strictEqual(fs.readFileSync(path.join(r.home, 'config.toml'), 'utf8'), OR_CFG, 'config.toml is byte-identical');
+}
+{
+  const r = runWithCodex('codex fails', 'process.exit(1);');
+  assert.ok(typeof r.out.catalog.error === 'string' && r.out.catalog.error.length > 0, 'catalog.error carries the message');
+  assert.strictEqual(r.out.written.length, 6, 'the roles are still planted and printed');
+}
+
+// A model the user names reaches setupCatalog through FX_CODEX_SLUGS.
+{
+  const r = runWithCodex('named slug', `console.log(${JSON.stringify(JSON.stringify({ models: [] }))});`, { FX_CODEX_SLUGS: 'anthropic/claude-haiku-4.5' }, '');
+  assert.strictEqual(r.out.catalog.profile, 'fx-custom');
+  assert.deepStrictEqual(r.out.catalog.slugs, ['anthropic/claude-haiku-4.5']);
+}
+
+// The report wording for the Codex catalog is asserted, so a rewrite cannot drop a statement.
+{
+  const sec = (/^## [^\n]*Codex[^\n]*\n[\s\S]*?(?=^## )/m.exec(md) ?? [''])[0].replace(/\s+/g, ' ');
+  assert.ok(sec.includes('FX_CODEX_SLUGS'), 'the Codex section was found');
+  for (const [what, re] of [
+    ['the profile replaces the remote model list', /replaces Codex's remote model list/],
+    ['the cloned window is a guess', /272000\) is Codex's guess/],
+    ['kept, refused and error leave config.toml alone', /`kept`, `refused` or `error`[\s\S]*Never edit `config\.toml`/],
+    ['the Anthropic limit on OpenRouter', /`anthropic\/`[\s\S]*heredoc/],
+    ['FX_CODEX_SLUGS', /FX_CODEX_SLUGS/],
+    ['left, on every run', /`left`, on every run/],
+    ['FX_CODEX_SLUGS is single-quoted', /FX_CODEX_SLUGS[^.]*single-quoted/],
+  ] as const) assert.ok(re.test(sec), `section 6 says: ${what}`);
+}
 
 // A path holding shell metacharacters reaches node unexpanded.
 const odd = path.join(s, 'we$HOME`id`"ird');

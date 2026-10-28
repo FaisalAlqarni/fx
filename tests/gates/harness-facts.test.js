@@ -46,6 +46,14 @@ function fact(file, heading) {
 fact("claude-code.md", "Model tiers");
 fact("codex.md", "Subagent dispatch");
 assert.ok(fact("codex.md", "User prompts").startsWith("READ "), "the Codex prompt output fact is READ, not MEASURED");
+fact("codex.md", "Skill trigger rules");
+fact("codex.md", "Model catalog and profiles");
+fact("codex.md", "Hook trust");
+assert.ok(fact("codex.md", "Tool vocabulary").includes("anthropic/"), "the Codex Tool vocabulary fact names the anthropic/ case");
+assert.ok(
+  !fs.readFileSync(path.join(dir, "codex.md"), "utf8").includes("Edits go through `apply_patch`."),
+  "codex.md no longer says every edit goes through apply_patch"
+);
 fact("opencode.md", "Subagent dispatch");
 fact("opencode-v2.md", "Subagent dispatch");
 const guard = fact("opencode-v2.md", "Shell guard");

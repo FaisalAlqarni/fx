@@ -207,6 +207,46 @@ row "echo '$ok'; exit 0"
   || { echo "FAIL: a second live_run overwrote the first log: $(ls "$LOGS")"; fails=1; }
 mv "$T/95.off" "$T/rows/95-probe.sh"; rm -f "$T/rows/95-probe.sh.keep"
 
+# Codex rows under OpenRouter run the shape a user gets: the generator writes the
+# fx profile into the scratch CODEX_HOME before the session, and the session is
+# `codex --profile fx-openrouter exec`. The jail's /tmp is a tmpfs, so the stub
+# reports what it saw on stdout, which the kept log holds.
+cxstub() {  # cxstub <debug models exit code>
+  cat > "$FAKE/bin/codex" <<STUB
+#!/bin/sh
+case "\$1" in
+  debug) [ $1 -eq 0 ] || { echo "stub: models list failed" >&2; exit $1; }
+         echo '{"models":[{"slug":"anthropic/claude-haiku-4.5","display_name":"h","context_window":200000,"base_instructions":"x"}]}'; exit 0 ;;
+  plugin) exit 0 ;;
+esac
+echo '{"type":"session_meta","payload":{"id":"t0"}}'
+echo "ARGS: \$*"
+echo "PROFILE_LINE2: \$(sed -n 2p "\$CODEX_HOME/fx-openrouter.config.toml")"
+if grep -q model_catalog_json "\$CODEX_HOME/config.toml"; then echo "CONFIG_HAS_CATALOG"; fi
+exit 0
+STUB
+  chmod +x "$FAKE/bin/codex"
+  rm -f "$LOGS"/*
+  out="$(env PATH="$FAKE/bin:$PATH" HOME="$FAKE" FX_REAL_HOME="$FAKE" FX_CONFORMANCE_ROWS="$T/rows" FX_CONFORMANCE_LOGS="$LOGS" \
+    FX_LIVE_PROVIDER=openrouter FX_LIVE_MODEL=openrouter/anthropic/claude-haiku-4.5 OPENROUTER_API_KEY=$KEY bash tests/conformance/run.sh codex 2>&1)"; rc=$?
+}
+cxstub 0
+check '^PASS  95' "a Codex row with a working generator is not a PASS"
+cxlog="$(cat "$LOGS/95-probe-codex.log" 2>/dev/null)"
+grep -q '^ARGS: --profile fx-openrouter exec ' <<<"$cxlog" || { echo "FAIL: codex was not started as 'codex --profile fx-openrouter exec': $(grep ARGS <<<"$cxlog")"; fails=1; }
+grep -q '^PROFILE_LINE2: model_catalog_json = ' <<<"$cxlog" || { echo "FAIL: the scratch CODEX_HOME held no fx-openrouter.config.toml with model_catalog_json on line 2"; fails=1; }
+grep -q CONFIG_HAS_CATALOG <<<"$cxlog" && { echo "FAIL: the scratch config.toml gained model_catalog_json"; fails=1; }
+cxstub 1
+check '^FAIL  95' "a failed catalog generator is not a FAIL"
+check 'codex catalog setup failed' "the failed generator is not named"
+# The generator runs with the key in its environment, so a failure's text is
+# scanned like a log: a key in it is withheld, never printed.
+sed -i 's|echo "stub: models list failed" >&2|echo "stub: models list failed, token $OPENROUTER_API_KEY" >\&2|' "$FAKE/bin/codex"
+out="$(env PATH="$FAKE/bin:$PATH" HOME="$FAKE" FX_REAL_HOME="$FAKE" FX_CONFORMANCE_ROWS="$T/rows" FX_CONFORMANCE_LOGS="$LOGS" \
+  FX_LIVE_PROVIDER=openrouter FX_LIVE_MODEL=openrouter/anthropic/claude-haiku-4.5 OPENROUTER_API_KEY=$KEY bash tests/conformance/run.sh codex 2>&1)"
+check 'codex catalog setup failed' "a generator failure that printed the key is not named"
+grep -q "$KEY" <<<"$out" && { echo "FAIL: the generator's failure text printed the key"; fails=1; }
+
 # run.sh: the re-run on the fallback, and a second 75.
 r75() { rm -f "$LOGS"/*; out="$(env FX_CONFORMANCE_ROWS="$T/rows75" FX_CONFORMANCE_LOGS="$LOGS" FX_LIVE_PROVIDER=openrouter "$@" bash tests/conformance/run.sh codex 2>&1)"; rc=$?; }
 r75

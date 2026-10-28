@@ -17,6 +17,12 @@ for (const h of ['codex', 'opencode', 'opencode-v2', 'claude-code']) {
 }
 assert.ok(JSON.stringify(or.providerSetup('codex', or.MODELS.primary).files).includes('OPENROUTER_API_KEY'),
   'codex reads the key from the environment');
+{
+  // The profile is a separate file the runner generates per row; config.toml never names a catalog.
+  const cfg = or.providerSetup('codex', 'anthropic/claude-haiku-4.5').files['.codex/config.toml'] ?? '';
+  assert.ok(cfg !== '' && !cfg.includes('model_catalog_json'), 'codex config.toml has no model_catalog_json');
+  assert.ok(!cfg.includes('profile'), 'codex config.toml selects no profile');
+}
 assert.strictEqual(or.providerSetup('claude-code', or.MODELS.claude).env.ANTHROPIC_BASE_URL, 'https://openrouter.ai/api');
 // A headless `opencode run` has no one to answer the question tool, and a session
 // that calls it ends "Session interrupted: shutdown" (task 13, rows 04 and 15).

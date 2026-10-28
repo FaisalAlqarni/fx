@@ -13,8 +13,7 @@ reason it stays short.
 
 <EXTREMELY-IMPORTANT>
 If there is even a 1% chance a lane applies to what you are about to do, you
-MUST invoke it with {{SKILL_TOOL}} **before any response**, including before
-a clarifying question and before reading a single file.
+MUST invoke it with {{SKILL_TOOL}} **before any response**, {{ORDER}}
 
 A lane that applies is not a suggestion. You do not get to decide it is
 unnecessary because the work looks small, because you remember roughly what it

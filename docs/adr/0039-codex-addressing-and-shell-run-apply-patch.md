@@ -1,5 +1,7 @@
 # Codex lanes are addressed as `$fx:fx-<name>`, and the hook lane-checks a patch run through the shell
 
+Status: accepted. Amended by 0065.
+
 ## Context
 
 Two Codex behaviors surfaced while the live rows ran on Codex 0.155.1 for the `opencode-v2` branch. Neither is OpenCode work, and ADR-0020 had carried the first one as an in-place edit.

@@ -118,7 +118,7 @@ async function main() {
       const r = await (0, import_hook_env.runHook)(HOOK, { hook_event_name: "SubagentStart", session_id: "s1", agent_id: "a1", agent_type: "fx-lens-security", cwd: tmp }, e);
       assert.strictEqual(r.code, 0, r.err);
       const golden = fs.readFileSync(path.join(ROOT, "tests", "gates", "fixtures", "hook-golden", "codex-subagent-start.expected.txt"), "utf8");
-      assert.strictEqual(r.out, golden);
+      assert.strictEqual((0, import_hook_env.rootToToken)(r.out, ROOT), golden);
       const lines = journal(dirs, "s1__a1");
       assert.strictEqual(lines.length, 1);
       assert.strictEqual(get(lines[0], "kind"), "prompt");

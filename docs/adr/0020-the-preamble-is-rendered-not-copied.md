@@ -1,5 +1,7 @@
 # The preamble is rendered, not copied
 
+Status: accepted. Amended by 0065.
+
 `PREAMBLE.md` is one file injected verbatim on every runtime. Its opening
 imperative names the lanes concretely, invoke `fx:fx-tdd`, and warns that a
 bare `fx-tdd` may not resolve at all.

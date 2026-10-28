@@ -1,14 +1,15 @@
 # Codex
 
 Harness knowledge. ADR 0016. True of the runtime executing the session, in
-any repository. Measured against Codex CLI 0.155.1.
+any repository. Measured against Codex CLI 0.155.1; sections dated 2026-10-28 against 0.164.0.
 
 Nothing here is load-bearing before a lane is invoked: ADR 0020.
 
 ## Tool vocabulary
 
 No `Read`, `Grep` or `Glob` tool exists. Everything goes through the shell.
-Edits go through `apply_patch`.
+
+MEASURED 2026-10-28 on Codex CLI 0.164.0: the `apply_patch` tool exists only when the model's catalog entry sets `apply_patch_tool_type` (`CX:core/src/tools/spec_plan.rs:1409-1412`; only `freeform` exists in 0.164, and `function` fails with "unknown variant `function`, expected `freeform`", run `ap2-function`). Over OpenRouter an `openai/` model receives the tool (run `ap5-gpt-tools`) and an `anthropic/` model does not (run `ap4-tools`: Haiku's tool list has no `apply_patch`). There its edits arrive as a shell `apply_patch` command, which fx sees (ADR 0039), or as heredocs, which fx does not see, by decision (owner accepted 2026-10-28, ADR 0065).
 
 A shell call arrives at a hook as `tool_name: "Bash"`, with the command at
 `tool_input.command`. The `exec_command` tool reaches hooks under that name
@@ -24,6 +25,18 @@ tool, so such commands skip the git guard and the hard rules.
 Whether `write_stdin` reaches PreToolUse, and whether a tty `exec_command` is
 allowed, is not known; Codex's sandbox may still stop the command. A live run
 settles it, and it is on the owner's live-run list.
+
+## Skill trigger rules
+
+MEASURED 2026-10-28 on Codex CLI 0.164.0: Codex appends its "How to use skills" trigger rules only when the model's catalog entry has `include_skills_usage_instructions: true` (`CX:ext/skills/src/fragments.rs:21-33`). OpenRouter's `/models` entries have it off (run `m0-base`: 471 models, Haiku's flag false). The profile catalog that fx-setup writes turns it on (runs `p3b-prof` and `a3-haiku-1..3`; with no catalog the block rendered 0 times, run `p0-base`).
+
+## Model catalog and profiles
+
+MEASURED 2026-10-28 on Codex CLI 0.164.0: `model_catalog_json` replaces the remote model list for the process (`CX:model-provider/src/provider.rs:396-406`; run `m1-top` lists 1 model). Profiles in 0.164 are files, `$CODEX_HOME/<name>.config.toml`, selected with `--profile <name>` (`CX:config/src/loader/mod.rs:131`, `CX:core/src/config/mod.rs:270`). The legacy `[profiles.x]` table plus `profile = "x"` is rejected at startup (run `p2-prof`). `codex --profile <name> debug models` is rejected ("--profile only applies to runtime commands"); `--profile <name> debug prompt-input` works and shows the skills block.
+
+## Hook trust
+
+MEASURED 2026-10-28 on Codex CLI 0.164.0: hooks fire in `codex exec` without `--dangerously-bypass-hook-trust` once they are trusted the way `/hooks` trusts them (run `h1-trusted`: all 7 fx hooks went from `untrusted` to `trusted` and the preamble was present; control `h0-untrusted`: preamble absent).
 
 ## Hook decisions
 

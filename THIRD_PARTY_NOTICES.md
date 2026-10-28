@@ -22,3 +22,11 @@ Released files copied unchanged from the npm packages, with the SHA-256 of each 
 | React DOM | 18.3.1 | MIT | `references/vendor/LICENSE-react` |
 | React Flow | 11.11.4 | MIT | `references/vendor/LICENSE-reactflow` |
 | elkjs | 0.9.3 | EPL-2.0 | `references/vendor/LICENSE-elkjs` |
+
+## Vendored Codex data
+
+The licence text sits beside the data file in `codex/`, not in `references/vendor/`, which the visual-kit gate reserves for the bundles.
+
+| File | Source | Licence | Copyright | Licence file |
+|---|---|---|---|---|
+| `codex/fallback-model-info.json` | openai/codex `rust-v0.164.0`: the fallback `ModelInfo` from `codex-rs/models-manager/src/model_info.rs` (`model_info_from_slug`) and the text of `codex-rs/models-manager/prompt.md`. | Apache-2.0 | Copyright 2025 OpenAI | `codex/LICENSE` |

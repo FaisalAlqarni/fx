@@ -31,6 +31,7 @@ var hook_env_exports = {};
 __export(hook_env_exports, {
   applyScratchEnv: () => applyScratchEnv,
   readDecisionLog: () => readDecisionLog,
+  rootToToken: () => rootToToken,
   runHook: () => runHook,
   scratchHookEnv: () => scratchHookEnv
 });
@@ -100,10 +101,14 @@ function runHook(file, payload, env, opts = {}) {
     child.stdin.end();
   });
 }
+function rootToToken(text, root) {
+  return [fs.realpathSync(root), root].reduce((out, from) => out.split(from).join("<root>"), text);
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   applyScratchEnv,
   readDecisionLog,
+  rootToToken,
   runHook,
   scratchHookEnv
 });

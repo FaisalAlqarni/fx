@@ -11,7 +11,10 @@ import { HARNESSES, render } from './preamble';
 
 const FIXTURES = path.join(__dirname, '..', 'tests', 'gates', 'fixtures', 'plan-state');
 const RECORD = process.argv.includes('--record');
-function check(got: string | null, name: string, label: string): void {
+// The Codex render names the plugin root; fixtures hold <root> instead.
+const ROOT = path.resolve(__dirname, '..');
+function check(raw: string | null, name: string, label: string): void {
+  const got = raw === null ? null : [fs.realpathSync(ROOT), ROOT].reduce((out, r) => out.split(r).join('<root>'), raw);
   const file = path.join(FIXTURES, 'expected', name);
   if (RECORD) fs.writeFileSync(file, got ?? '');
   else assert.strictEqual(got, fs.readFileSync(file, 'utf8'), label);

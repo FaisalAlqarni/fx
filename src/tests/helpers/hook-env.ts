@@ -77,3 +77,8 @@ export function runHook(
     child.stdin.end();
   });
 }
+
+// Golden fixtures hold <root> where the plugin root is; swap the real path in, given and realpath.
+export function rootToToken(text: string, root: string): string {
+  return [fs.realpathSync(root), root].reduce((out, from) => out.split(from).join('<root>'), text);
+}

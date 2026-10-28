@@ -77,8 +77,9 @@ fs.rmSync(dir, { recursive: true, force: true });
 // could land with part 2 above the opening imperative: one render, one
 // handler. Task 25 (ADR 0021) makes that render a bootstrap: it makes the
 // model invoke the lane that carries the rules, and routing lives in the
-// skill descriptions. Two budgets: the bootstrap alone stays under 3,400
-// characters (the design target, which keeps it a bootstrap), and the worst
+// skill descriptions. Two budgets: the bootstrap alone stays under 3,700
+// characters (the design target, which keeps it a bootstrap; it was 3,400 before
+// the Codex render named two absolute lane paths), and the worst
 // case, a repo.md and three plans with ledgers and long slugs (describePlans
 // names at most three), stays under 9,000, Claude Code's per-hook limit of
 // 10,000 with margin.
@@ -118,7 +119,7 @@ const INTRO = 'The single canonical preamble. Injected into every session **and 
       assert.ok(text.includes('### Standing rulings recorded in this repository'), `${harness}: the rulings block renders`);
       assert.ok(text.length < 9000, `${harness}: worst-case render is ${text.length} chars, must be under 9,000`);
       const alone = render({ harness, cwd: empty });
-      assert.ok(alone.length < 3400, `${harness}: the bootstrap alone is ${alone.length} chars, must be under 3,400`);
+      assert.ok(alone.length < 3700, `${harness}: the bootstrap alone is ${alone.length} chars, must be under 3,700`);
       assert.strictEqual((text.match(/^## .*$/m) || [''])[0], '## Invoking a lane is not optional',
         `${harness}: the opening imperative is the first section`);
       assert.ok(text.startsWith(`# fx\n\n${INTRO}\n\n---\n\n## Invoking a lane is not optional\n`),
@@ -226,7 +227,7 @@ const INTRO = 'The single canonical preamble. Injected into every session **and 
 {
   const cx = render({ harness: 'codex' });
   assert.ok(!/Never\s+`?Read`?\s+a\s+`?SKILL\.md/i.test(cx), 'codex must not forbid reading SKILL.md');
-  assert.match(cx, /read the lane's `SKILL\.md` in full/i, 'codex is told to read the lane\'s SKILL.md in full');
+  assert.match(cx, /by reading the lane's `SKILL\.md` in full/, 'codex is told to read the lane\'s SKILL.md in full');
   assert.ok(!/the `\$name` form/.test(cx), 'codex is not told to invoke with the user-only $name syntax');
   for (const harness of ['claude-code', 'opencode']) {
     assert.match(render({ harness }), /Never `Read` a `SKILL\.md`/, `${harness}: the never-read rule stays where a Skill tool exists`);
@@ -339,3 +340,25 @@ const INTRO = 'The single canonical preamble. Injected into every session **and 
 }
 
 console.log('preamble.test.js: OK');
+
+// ---- Codex ordering clause and absolute lane paths (ADR 0065) ----
+{
+  const cx = render({ harness: 'codex' });
+  assert.ok(!cx.includes('before reading a single file'), 'codex does not tell the model to invoke before reading any file');
+  assert.ok(cx.includes('That `SKILL.md` is the first file you read, before any\nfile in the repository.'), 'codex says the lane file is the first read');
+  const m = /`([^`]*\/skills\/fx-brainstorm\/SKILL\.md)`/.exec(cx);
+  assert.ok(m, 'codex names the fx-brainstorm SKILL.md path');
+  const lanePath = m[1] as string;
+  assert.ok(path.isAbsolute(lanePath), `the lane path is absolute: ${lanePath}`);
+  assert.ok(fs.existsSync(lanePath), `the named lane file exists: ${lanePath}`);
+  assert.ok(cx.includes('`$fx:fx-tdd`') && cx.includes('The user types a lane as'), 'codex keeps $fx:fx-tdd as the user syntax');
+  for (const harness of HARNESSES) {
+    const t = render({ harness });
+    assert.strictEqual(t.split('\n')[0], '# fx', `${harness}: first line is unchanged`);
+    assert.ok(!t.includes('{{'), `${harness}: no unrendered slot`);
+  }
+  for (const harness of ['claude-code', 'opencode', 'opencode-v2']) {
+    assert.ok(render({ harness }).includes('including before\na clarifying question and before reading a single file.'), `${harness}: ordering clause unchanged`);
+  }
+  console.log('codex ordering and paths: passed');
+}

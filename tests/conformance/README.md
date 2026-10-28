@@ -167,6 +167,11 @@ OPENROUTER_API_KEY=... FX_LIVE_PROVIDER=openrouter bash tests/conformance/run.sh
   models fail there). `FX_LIVE_MODEL=openrouter/<id>` picks another for the
   three non-Claude harnesses. OpenCode v1 needs its own 1.18.x binary first on
   `PATH`.
+- Codex profile: under OpenRouter, each Codex row first runs
+  `lib/codex-catalog.js setup` in the jail with the key, which writes
+  `fx-openrouter.config.toml` and its catalog into the scratch `CODEX_HOME`, and
+  the session starts as `codex --profile fx-openrouter exec`. The scratch
+  `config.toml` never gains `model_catalog_json`.
 - No credential copy: the scratch home holds the provider's config and never
   `.credentials.json` or Codex's `auth.json`, so a session cannot run on the
   owner's subscription. Only `live.sh` turns the provider path on: the jail
