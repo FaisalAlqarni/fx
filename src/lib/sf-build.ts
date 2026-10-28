@@ -9,6 +9,8 @@ import type { Root } from './sf-evidence.js';
 import { renderMarkdown, renderReadme, GENERATED } from './sf-markdown.js';
 import { checkRules } from './sf-rules.js';
 import { layoutAll } from './sf-layout.js';
+import { detectTheme, themeCss } from './sf-theme.js';
+import type { Theme } from './sf-theme.js';
 import type { Evidenced, Fragment, Item, LayoutLine, Model, Problem } from './sf-model.js';
 import { collect, itemsOf, loadFragments, mergeFragments, originOf, planStamps, stampVerified } from './sf-model.js';
 import type { FxJson } from './types.js';
@@ -17,6 +19,7 @@ export type BuildResult = {
   ok: boolean; problems: Problem[]; written: string[]; collisions: string[];
   diagrams: { name: string; renderer: 'archify' | 'svg'; reason: string }[];
   layout: LayoutLine[]; pageBytes: number | null;
+  theme: { source: string; kind: string; fallbacks: Theme['fallbacks'] } | null; // null until the build reaches the theme step
 };
 
 // .fx.json is read through parseFxJson; only problems under system_flow are this command's.
@@ -71,8 +74,8 @@ function writeGenerated(root: string, rel: string, text: string, isOurs: (old: s
   r.written.push(rel);
 }
 
-export async function build(opts: { hostRoot: string; site: string; markdown: string; only?: string[]; archify?: string }): Promise<BuildResult> {
-  const result: BuildResult = { ok: false, problems: [], written: [], collisions: [], diagrams: [], layout: [], pageBytes: null };
+export async function build(opts: { hostRoot: string; site: string; markdown: string; docsDir?: string | null; only?: string[]; archify?: string }): Promise<BuildResult> {
+  const result: BuildResult = { ok: false, problems: [], written: [], collisions: [], diagrams: [], layout: [], pageBytes: null, theme: null };
   const checked = checkModel(opts.hostRoot, opts.site, 'build');
   result.problems = checked.problems;
   if (checked.problems.some((p) => p.level === 'error')) return result;
@@ -108,6 +111,11 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'model', 'system-model.json'), `${JSON.stringify({ generated: true, ...checked.model }, null, 2)}\n`, isGeneratedJson, result);
 
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'model', 'layout-report.json'), `${JSON.stringify(laid.report, null, 2)}\n`, () => true, result);
+
+  // Re-read from the repo on every build, so a change to its CSS reaches the site.
+  const theme = detectTheme(opts.hostRoot, opts.docsDir ?? null);
+  result.theme = { source: theme.source, kind: theme.kind, fallbacks: theme.fallbacks };
+  writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'assets', 'theme.css'), themeCss(theme), (old) => old.startsWith('/* fx '), result);
 
   // Last step, only when everything above succeeded (a write error above throws before this line).
   stampVerified(path.join(opts.hostRoot, opts.site, 'model', 'fragments'), stamps);

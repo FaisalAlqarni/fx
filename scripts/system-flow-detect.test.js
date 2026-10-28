@@ -48,7 +48,7 @@ const mkdocs = (f, body = "docs_dir: docs\ntheme:\n  name: material\n") => {
   assert.deepStrictEqual(d.docsConfig, { kind: "mkdocs", path: "mkdocs.yml", docsDir: "docs" });
   assert.deepStrictEqual(d.mkdocs?.excludeDocs, ["system-flow/README.md", "system-flow/model/", "system-flow/diagrams/src/"]);
   assert.deepStrictEqual(d.mkdocs?.nav, ["- System flow: system-flow/index.html", "- System docs: system/index.md"]);
-  assert.strictEqual(d.theme, null);
+  assert.deepStrictEqual(d.theme, { source: "fx", kind: "fx" });
 }
 {
   const f = (0, import_sf_fixture.sfFixture)();

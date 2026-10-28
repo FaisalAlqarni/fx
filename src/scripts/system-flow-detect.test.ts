@@ -26,7 +26,7 @@ const mkdocs = (f: Fx, body = 'docs_dir: docs\ntheme:\n  name: material\n'): voi
   assert.deepStrictEqual(d.docsConfig, { kind: 'mkdocs', path: 'mkdocs.yml', docsDir: 'docs' });
   assert.deepStrictEqual(d.mkdocs?.excludeDocs, ['system-flow/README.md', 'system-flow/model/', 'system-flow/diagrams/src/']);
   assert.deepStrictEqual(d.mkdocs?.nav, ['- System flow: system-flow/index.html', '- System docs: system/index.md']);
-  assert.strictEqual(d.theme, null);
+  assert.deepStrictEqual(d.theme, { source: 'fx', kind: 'fx' });
 }
 { // hand-written Markdown, and the generated marker
   const f = sfFixture();

@@ -49,6 +49,7 @@ run system-flow-evidence.test.js node scripts/system-flow-evidence.test.js
 run system-flow-build.test.js node scripts/system-flow-build.test.js
 run system-flow-layout.test.js node scripts/system-flow-layout.test.js
 run system-flow-detect.test.js node scripts/system-flow-detect.test.js
+run system-flow-theme.test.js node scripts/system-flow-theme.test.js
 run compile-brief.test.js  node skills/fx-implement/scripts/compile-brief.test.js
 run brief-size.test.js     node tests/gates/brief-size.test.js
 run skill-size.test.js node tests/gates/skill-size.test.js

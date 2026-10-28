@@ -7,12 +7,13 @@ import { systemFlowConfig } from './sf-build.js';
 import { resolveRoots } from './sf-evidence.js';
 import type { Problem } from './sf-model.js';
 import { GENERATED } from './sf-markdown.js';
+import { detectTheme } from './sf-theme.js';
 
 export type Detected = {
   docsConfig: { kind: 'mkdocs' | 'docusaurus' | 'vitepress' | null; path: string | null; docsDir: string | null };
   output: { site: string; markdown: string };
   mkdocs: { nav: string[]; excludeDocs: string[] } | null;
-  theme: { source: string; kind: string } | null; // null until task 07
+  theme: { source: string; kind: string };
   roots: { id: string; path: string; dir: string; git: boolean; remote: string | null; head: string | null }[]; // [0] is the host; path is relative to the host root
 };
 
@@ -23,7 +24,7 @@ export function rootId(folder: string): string {
 const first = (root: string, names: string[]): string | undefined => names.find((n) => fs.existsSync(path.join(root, n)));
 
 // shortcut: docs_dir is read with a line match, not a YAML parser; a docs_dir set inside a flow mapping is missed.
-function docsConfig(host: string): Detected['docsConfig'] {
+export function docsConfig(host: string): Detected['docsConfig'] {
   if (fs.existsSync(path.join(host, 'mkdocs.yml'))) {
     const m = /^docs_dir:\s*["']?([^"'#\s]+)/m.exec(fs.readFileSync(path.join(host, 'mkdocs.yml'), 'utf8'));
     return { kind: 'mkdocs', path: 'mkdocs.yml', docsDir: path.posix.normalize(m?.[1] ?? 'docs').replace(/\/$/, '') };
@@ -91,15 +92,16 @@ export function detect(hostRoot: string, repos: string[]): { detected: Detected;
   const { roots } = resolveRoots(hostRoot, { roots: [...listed.keys()].map((id) => ({ id })) }, { roots: given });
   const rootList = [...roots.values()].map((r) => ({ id: r.id, path: listed.get(r.id) as string, dir: r.dir, git: r.git, remote: r.remote, head: r.head }));
 
+  const theme = detectTheme(hostRoot, dc.docsDir);
   const rel = (p: string): string => (base === '' ? p : path.posix.relative(base, p));
   const site = rel(output.site);
   const mkdocs = dc.kind === 'mkdocs'
     ? { nav: [`- System flow: ${site}/index.html`, `- System docs: ${rel(output.markdown)}/index.md`], excludeDocs: [`${site}/README.md`, `${site}/model/`, `${site}/diagrams/src/`] }
     : null;
-  return { detected: { docsConfig: dc, output, mkdocs, theme: null, roots: rootList }, problems };
+  return { detected: { docsConfig: dc, output, mkdocs, theme: { source: theme.source, kind: theme.kind }, roots: rootList }, problems };
 }
 
-// Replaces system_flow.output and adds roots not listed yet; every other key stays.
+// Replaces system_flow.output and system_flow.theme and adds roots not listed yet; every other key stays.
 export function writeFxJson(hostRoot: string, d: Detected): void {
   const file = path.join(hostRoot, '.fx.json');
   const doc = (fs.existsSync(file) ? parseJson(fs.readFileSync(file, 'utf8')) : {}) as Record<string, unknown>;
@@ -107,6 +109,7 @@ export function writeFxJson(hostRoot: string, d: Detected): void {
   const roots = (sf.roots ?? {}) as Record<string, string>;
   for (const r of d.roots.slice(1)) if (roots[r.id] === undefined) roots[r.id] = r.path;
   sf.output = d.output;
+  sf.theme = d.theme;
   if (Object.keys(roots).length > 0) sf.roots = roots;
   doc.system_flow = sf;
   fs.writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);

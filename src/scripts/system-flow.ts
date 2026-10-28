@@ -4,7 +4,7 @@ import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { build, checkModel, systemFlowConfig } from '../lib/sf-build.js';
 import { itemsOf } from '../lib/sf-model.js';
-import { detect, writeFxJson } from '../lib/sf-detect.js';
+import { detect, docsConfig, writeFxJson } from '../lib/sf-detect.js';
 
 const USAGE = 'system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build | detect [--repo <path>]... [--write]';
 const usage = (): never => { process.stderr.write(`${USAGE}\n`); process.exit(2); };
@@ -69,7 +69,7 @@ function check(): void {
 async function buildCmd(): Promise<void> {
   const root = hostRoot();
   const output = systemFlowConfig(root).config?.output;
-  const result = await build({ hostRoot: root, site: opts.site ?? output?.site ?? 'docs/system-flow', markdown: opts.markdown ?? output?.markdown ?? 'docs/system' });
+  const result = await build({ hostRoot: root, site: opts.site ?? output?.site ?? 'docs/system-flow', markdown: opts.markdown ?? output?.markdown ?? 'docs/system', docsDir: docsConfig(root).docsDir });
   report(result.problems);
   if (!result.ok) process.exit(1);
   process.stdout.write(`${JSON.stringify(result)}\n`);

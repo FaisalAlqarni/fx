@@ -93,7 +93,7 @@ function check() {
 async function buildCmd() {
   const root = hostRoot();
   const output = (0, import_sf_build.systemFlowConfig)(root).config?.output;
-  const result = await (0, import_sf_build.build)({ hostRoot: root, site: opts.site ?? output?.site ?? "docs/system-flow", markdown: opts.markdown ?? output?.markdown ?? "docs/system" });
+  const result = await (0, import_sf_build.build)({ hostRoot: root, site: opts.site ?? output?.site ?? "docs/system-flow", markdown: opts.markdown ?? output?.markdown ?? "docs/system", docsDir: (0, import_sf_detect.docsConfig)(root).docsDir });
   report(result.problems);
   if (!result.ok) process.exit(1);
   process.stdout.write(`${JSON.stringify(result)}
