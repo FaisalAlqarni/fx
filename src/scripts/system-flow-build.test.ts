@@ -86,7 +86,7 @@ assert.strictEqual(setup().run(['nope']).status, 2);
   const head = f.git('host', 'rev-parse', 'HEAD');
   const guideHead = f.git('guide', 'rev-parse', 'HEAD');
   const result = built(f);
-  assert.deepStrictEqual([result.ok, result.collisions, result.diagrams, (result.layout as { key: string }[]).map((l) => l.key), typeof result.pageBytes], [true, [], [], ['level-system', 'seq-turn', 'flow-first'], 'number']);
+  assert.deepStrictEqual([result.ok, result.collisions, (result.diagrams as { name: string }[]).map((d) => d.name), (result.layout as { key: string }[]).map((l) => l.key), typeof result.pageBytes], [true, [], ['arch-system', 'seq-turn', 'flow-first'], ['level-system', 'seq-turn', 'flow-first'], 'number']);
   assert.ok(result.written.includes('docs/system/s1.md'), result.written.join(','));
 
   const s1 = lines(f, 'docs/system/s1.md');

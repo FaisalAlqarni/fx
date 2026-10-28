@@ -253,7 +253,7 @@ assert.deepStrictEqual(
   (0, import_sf_schema.validate)({ $schema: "s", $id: "i", title: "t", description: "d", $defs: { a: { type: "string" } }, $ref: "#/$defs/a" }, 1),
   [{ pointer: "", message: "expected string" }]
 );
-assert.throws(() => (0, import_sf_schema.validate)({ type: "string", minLength: 1 }, "x"), /unsupported schema keyword minLength/);
+assert.deepStrictEqual((0, import_sf_schema.validate)({ type: "string", format: "email" }, "x"), [{ pointer: "", message: "unsupported keyword format" }]);
 assert.throws(() => (0, import_sf_schema.validate)({ $ref: "#/$defs/missing" }, "x"), /cannot resolve \$ref #\/\$defs\/missing/);
 fails(
   "a node carrying constructor",

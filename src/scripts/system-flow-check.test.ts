@@ -207,7 +207,7 @@ assert.strictEqual(parseHandle('node:'), null, 'no id');
 assert.deepStrictEqual(
   validate({ $schema: 's', $id: 'i', title: 't', description: 'd', $defs: { a: { type: 'string' } }, $ref: '#/$defs/a' }, 1),
   [{ pointer: '', message: 'expected string' }]);
-assert.throws(() => validate({ type: 'string', minLength: 1 }, 'x'), /unsupported schema keyword minLength/);
+assert.deepStrictEqual(validate({ type: 'string', format: 'email' }, 'x'), [{ pointer: '', message: 'unsupported keyword format' }]);
 assert.throws(() => validate({ $ref: '#/$defs/missing' }, 'x'), /cannot resolve \$ref #\/\$defs\/missing/);
 
 // Property names inherited from Object.prototype are checked like any other key.

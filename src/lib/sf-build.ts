@@ -12,6 +12,7 @@ import { coverage } from './sf-coverage.js';
 import type { Coverage } from './sf-coverage.js';
 import { layoutAll } from './sf-layout.js';
 import { renderPage } from './sf-page.js';
+import { deepDiagrams, pickLine, svgPage } from './sf-diagrams.js';
 import { detectTheme, themeCss } from './sf-theme.js';
 import type { Theme } from './sf-theme.js';
 import type { Evidenced, Fragment, Item, LayoutLine, Model, Problem } from './sf-model.js';
@@ -152,6 +153,19 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   const html = renderPage({ model: checked.model, figures: laid.figures, coverage: cov, theme, roots: checked.roots, template });
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'index.html'), html, hasMarker, result);
   if (!result.collisions.includes(path.posix.join(opts.site, 'index.html'))) result.pageBytes = Buffer.byteLength(html);
+
+  // Archify is not wired yet: every deep diagram is an fx page, said once per diagram in the result.
+  const pages = path.posix.join(opts.site, 'diagrams');
+  const generatedJson = (old: string): boolean => { try { return parseJson(old) !== null; } catch { return false; } };
+  for (const d of deepDiagrams(checked.model, laid.figures, checked.roots, checked.config?.diagrams?.pageLimits ?? {})) {
+    const figure = laid.figures.find((f) => f.key === (d.source.startsWith('diagram:') ? `level-${d.source.slice(8)}` : d.source.startsWith('seq:') ? `seq-${d.source.slice(4)}` : `flow-${d.source.slice(5)}`));
+    if (!figure) throw new Error(`no figure for ${d.name}`);
+    const page = Number(/-p(\d+)$/.exec(d.name)?.[1] ?? 1);
+    writeGenerated(opts.hostRoot, path.posix.join(pages, `${d.name}.html`), svgPage(d, figure, page), () => true, result);
+    writeGenerated(opts.hostRoot, path.posix.join(pages, 'src', `${d.name}.json`), `${JSON.stringify(d.spec, null, 2)}\n`, generatedJson, result);
+    const line = pickLine(d.name, d.kind === 'sequence' ? 'animated SVG' : 'static SVG', 'archify not installed');
+    result.diagrams.push({ name: d.name, renderer: 'svg', reason: line.slice(d.name.length + 2) });
+  }
 
   // Last step, only when everything above succeeded (a write error above throws before this line).
   stampVerified(path.join(opts.hostRoot, opts.site, 'model', 'fragments'), stamps);
