@@ -168,4 +168,12 @@ const pr = spawnSync(cmd, ['--root', prob, 'build'], { encoding: 'utf8' });
 assert.strictEqual(pr.status, 0);
 assert.strictEqual(pr.stderr.trim(), 'docs/a.md:2: malformed evidence line: Evidence: nonsense');
 
+// A system-flow generated doc is left to system-flow stale, which checks it per root (final fix: fixer B ledger).
+{
+  const g = tmp('generated');
+  put(g, 'docs/system/s1.md', '# Links\n\n- A fact.\n  Evidence: `app/x.rb:1` `X`\n\n<!-- fx-system-flow generated: edit the model, then rebuild -->\n');
+  put(g, 'docs/guide.md', 'A fact.\nEvidence: `app/x.rb:1` `X`\n');
+  assert.deepStrictEqual(buildIndex(g).claims.map((c) => c.doc), ['docs/guide.md']);
+}
+
 console.log('doc-index tests passed');

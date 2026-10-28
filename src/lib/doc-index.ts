@@ -5,6 +5,7 @@ import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { parseJson } from './json.js';
 import { Claim, Problem, isAdrPath, parseDoc } from './doc-evidence.js';
+import { GENERATED } from './sf-markdown.js';
 
 export type DocIndex = { version: 1; claims: Claim[]; problems: Problem[]; verified: Record<string, string | null> };
 export type Stale = { claim: Claim; verdict: 'free' | 'recheck' | 'skip'; reason: 'unchanged' | 'changed' | 'shifted' | 'deleted' | 'unverified' | 'owner' | 'superseded' | 'other-root' };
@@ -29,7 +30,10 @@ function listDocs(root: string): string[] {
 export function buildIndex(root: string): DocIndex {
   const index = emptyIndex();
   for (const doc of listDocs(root)) {
-    const parsed = parseDoc(doc, fs.readFileSync(path.join(root, doc), 'utf8'));
+    const text = fs.readFileSync(path.join(root, doc), 'utf8');
+    // A system-flow generated doc is checked by system-flow stale, per root; docs-index leaves it alone.
+    if (text.includes(GENERATED)) continue;
+    const parsed = parseDoc(doc, text);
     index.claims.push(...parsed.claims);
     index.problems.push(...parsed.problems);
     index.verified[doc] = parsed.verified;
