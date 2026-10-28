@@ -177,6 +177,8 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">مرحبا</span>'));
   const written = fs.readdirSync(path.join(f.host, SITE, 'diagrams')).filter((n) => n.endsWith('.html'));
   assert.ok(written.length >= 3, written.join(','));
   for (const n of written) assert.ok(page.includes(`href="diagrams/${n}"`), `index.html links ${n}`);
+  // ADR 0066 decision 3: a deep diagram is linked, never embedded, so the site never depends on archify.
+  assert.ok(!/<(?:iframe|embed|object)\b[^>]*diagrams\//i.test(page), 'index.html embeds a deep diagram');
 }
 
 // Design, Renderers (Page): Open questions, Corrections, Coverage and the store tables hold their content.

@@ -18,6 +18,10 @@ disable-model-invocation: true
 - **`cheap`, `fast` or `detailed`**: the archify preference, passed to every
   build as `--prefer <value>`. `cheap` renders every deep diagram as SVG.
 
+The site page draws its own figures (inline SVG, animated step players, the
+React Flow map). archify diagrams are separate pages the site links to, never
+embedded, so a site is complete without archify.
+
 **This skill's own files.** Every path below that starts `../../` resolves from
 the base directory this skill is given when it is invoked, never from the
 user's repository. The CLI is `node <fx>/scripts/system-flow`, where `<fx>` is

@@ -2,6 +2,10 @@
 
 archify draws detailed, interactive diagrams. Use it only when it is installed.
 
+An archify diagram is always its own page, reached from a link. A page never embeds
+one: the page draws its own figures with static or animated SVG and, for a map,
+React Flow, so archify stays optional and a page never breaks without it.
+
 ## Choose the diagram per diagram
 
 - **archify:** detailed, interactive or many-level diagrams.

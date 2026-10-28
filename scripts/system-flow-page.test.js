@@ -199,6 +199,7 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">\u0645\u0631\u062D\u06
   const written = fs.readdirSync(path.join(f.host, SITE, "diagrams")).filter((n) => n.endsWith(".html"));
   assert.ok(written.length >= 3, written.join(","));
   for (const n of written) assert.ok(page.includes(`href="diagrams/${n}"`), `index.html links ${n}`);
+  assert.ok(!/<(?:iframe|embed|object)\b[^>]*diagrams\//i.test(page), "index.html embeds a deep diagram");
 }
 {
   const g = setup({ questions: true });
