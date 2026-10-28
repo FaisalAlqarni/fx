@@ -234,3 +234,43 @@ Task 14: complete (commits ad4dd8a..f6c1d59, review clean after the attribution 
 Task 12: fix round 1/5: controller re-review (3 lines): 1 addressed, 0 open
 Task 12: cost unavailable (no transcript recorded)
 Task 12: complete (commits c66b2e9..ad4dd8a and ea595fb, with the precedence hunk in f6c1d59; review clean after 1 fix round)
+Task 16: dispatched b1ab861 2026-10-28T12:58:44+03:00
+Task 16: implementer a3974e24f83045394 (sonnet). Waiting on it. Frontier after it: 15 (06, 09, 10, 12, 13, 14 complete), then 17 (10, 12, 13).
+Task 16: DONE b1ab861..815ac07 per implementer.
+Task 15: dispatched 815ac07 2026-10-28T13:13:13+03:00 (opus, Capable because: authoring the lane an agent follows, under the size cap and lane gates)
+Task 16: reviewer af138b2bf9d2be4ab. Task 15: implementer a7f9f8f0356dcbfee (opus). Waiting on both.
+Task 16: minor (deferred): an unparseable HEAD fragment is skipped silently in headModel, hiding its changed facts.
+Task 16: minor (deferred): corrections check is skipped without a message when no root is the host.
+Task 16: minor (deferred): parallel-edge handles are positional, so reordering same-pair edges falsely demands corrections.
+Task 16: minor (deferred): no test for a first build with no HEAD or no fragments at HEAD.
+Task 16: minor (deferred): a duplicate handle at HEAD collapses in the comparison map, last one wins.
+Task 16: review 0/0/5 spec ✅; ⚠️ (CLI not run by the reviewer) accepted, exit gate reruns.
+Task 16: cost unavailable (no transcript recorded)
+Task 16: complete (commits b1ab861..815ac07, review clean)
+Waiting: task 15 implementer; task 17 next.
+Task 15: DONE_WITH_CONCERNS 815ac07..dc03b54, check-all ALL GREEN per implementer. Concerns: fx-authoring pressure tests not run (only the gate text tests check the wording); conformance rows 09, 13, 14 updated for the lane count.
+Task 17: dispatched dc03b54 2026-10-28T13:28:38+03:00
+Task 15: reviewer a4cb040380cc54a8b (opus, Capable because: lane wording becomes agent behaviour). Task 17: implementer a0fb500870a94f6ac (sonnet). Waiting on both.
+Task 15: minor (deferred): area-brief.md gives no rule for a check problem that names another fragment file.
+Task 15: minor (deferred): conformance row 13 comment still says skill.list holds all 20 skills.
+Task 15: review 0/1/2 spec ❌ (areas dispatched before chapters.json and level0.json exist; shared ids unset). ⚠️ confirmed: the report shows no fx-authoring invocation, only skipped pressure tests; carried into the fix round.
+Task 15: confirmed ⚠️: no record that fx-authoring was invoked
+Task 15: fix round 1 dispatched to a7f9f8f0356dcbfee at dc03b54.
+Task 15: fix round 1 DONE_WITH_CONCERNS dc03b54..6132e9b (fx-authoring invoked at task start per implementer; pressure tests not run; archify test red from task 17's uncommitted sf-build.ts). Dispatched re-review (over 20 lines).
+Task 15: fix round 1/5 (2 addressed, 0 open: none; commits dc03b54..6132e9b)
+Task 15: minor (deferred): planning.md Shared ids names no id for a level-0 context node, so a single-area plan has the writer invent one.
+Task 15: minor (deferred): fragment-guide.md Ids says every node id starts with its area id, but level-0 nodes are `l0-<area id>`.
+Task 15: the l0-<area id> against fragment-guide id rule minor is a lane self-contradiction an area agent will meet in task 20; the final review must triage it as fix-before-proof.
+Task 15: cost unavailable (no transcript recorded)
+Task 15: complete (commits 815ac07..6132e9b, review clean after 1 fix round)
+Task 17: DONE_WITH_CONCERNS 6132e9b..c8cd60a, test_scope ALL GREEN per implementer. Concern: --only does not rewrite coverage.md and rules-in-force.md (rules only for a rule: handle).
+Task 17: reviewer dispatched (sonnet). Waiting on it; tasks 18 and 19 both wait for 17.
+Task 17: minor (deferred): coverage.md stays stale after build --only while coverage.json is still rewritten; document in fx-docs.
+Task 17: minor (deferred): no test passes an edge handle with colons and > to build --only.
+Task 17: review 0/1/2 spec ❌ (--only stamps every unverified item, not only rebuilt ones); stale coverage.md after --only is a Minor.
+Task 17: fix round 1 dispatched to a0fb500870a94f6ac at c8cd60a.
+Ruling: tasks 18 and 19 run at the same time once task 17's fix lands: task 18 writes only proof/, results.md and a scratch folder and changes no source, task 19 writes skills, docs/adr and one gate test; both commit by path. Why: they share no file, and task 18 is mostly long CLI runs. Cost if wrong: a mixed commit, caught by each task's review package.
+Task 17: fix round 1/5: controller re-review (7 lines): 1 addressed, 0 open
+Task 17: minor (deferred): items inside a container named by --only (section:, diagram:, seq:, flow:) are rebuilt but not stamped verified.
+Task 17: cost unavailable (no transcript recorded)
+Task 17: complete (commits 6132e9b..49141e1, review clean after 1 fix round)
