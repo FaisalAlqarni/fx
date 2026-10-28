@@ -346,7 +346,7 @@
     "section": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "title", "question"],
+      "required": ["id"],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
         "title": { "type": "string" },

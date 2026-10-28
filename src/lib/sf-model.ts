@@ -137,17 +137,62 @@ function recordOrigin(v: unknown, file: string, pointer: string): void {
 }
 export const originOf = (o: object) => origin.get(o) ?? { file: '', pointer: '' };
 
+// Where each scalar field of a merged section was written.
+const fieldOrigins = new WeakMap<object, Map<string, { file: string; pointer: string }>>();
+export const fieldOrigin = (section: object, field: 'lead' | 'notOwned' | 'title' | 'question') => fieldOrigins.get(section)?.get(field);
+
+const isChapters = (file: string): boolean => path.basename(file) === 'chapters.json';
+
+// chapters.json declares every section and fixes the order; any other fragment adds to a declared one.
+// Arrays concatenate into a new array that holds the same bullet objects, so a stamp reaches the fragment that wrote the bullet.
+function mergeSections(fragments: Fragment[]): { sections: Section[]; problems: Problem[] } {
+  const byId = new Map<string, Section>();
+  const problems: Problem[] = [];
+  const sectionsOf = (f: Fragment): Section[] => (Array.isArray(f.data.sections) ? f.data.sections as Section[] : []);
+  for (const f of fragments.filter((x) => isChapters(x.file))) {
+    sectionsOf(f).forEach((decl, i) => {
+      const at = { file: f.file, pointer: `/sections/${i}` };
+      const first = byId.get(decl.id);
+      if (first !== undefined) { problems.push({ ...at, message: `section ${decl.id} is also defined in ${originOf(first).file}`, level: 'error' }); return; }
+      const merged: Section = { ...decl };
+      origin.set(merged, at);
+      fieldOrigins.set(merged, new Map(Object.keys(decl).map((k) => [k, { file: f.file, pointer: `${at.pointer}/${k}` }])));
+      byId.set(decl.id, merged);
+    });
+  }
+  for (const f of fragments.filter((x) => !isChapters(x.file))) {
+    sectionsOf(f).forEach((add, i) => {
+      const at = { file: f.file, pointer: `/sections/${i}` };
+      const into = byId.get(add.id);
+      if (into === undefined) { problems.push({ ...at, message: `section ${add.id} is not declared in chapters.json`, level: 'error' }); return; }
+      const written = fieldOrigins.get(into) as Map<string, { file: string; pointer: string }>;
+      for (const [k, v] of Object.entries(add)) {
+        if (k === 'id') continue;
+        const target = into as unknown as Record<string, unknown>;
+        const cur = target[k];
+        if (Array.isArray(cur) && Array.isArray(v)) target[k] = [...cur, ...v];
+        else if (cur === undefined) { target[k] = v; written.set(k, { file: f.file, pointer: `${at.pointer}/${k}` }); }
+        else problems.push({ file: f.file, pointer: `${at.pointer}/${k}`, message: `section ${add.id} ${k} is also set in ${written.get(k)?.file ?? ''}`, level: 'error' });
+      }
+    });
+  }
+  return { sections: [...byId.values()], problems };
+}
+
 export function mergeFragments(fragments: Fragment[]): { model: Model; problems: Problem[]; origin: Map<string, { file: string; pointer: string }> } {
   const model = emptyModel();
   for (const f of fragments) {
     recordOrigin(f.data, f.file, '');
-    mergeInto(model as unknown as Record<string, unknown>, f.data);
+    const { sections: _sections, ...rest } = f.data;
+    mergeInto(model as unknown as Record<string, unknown>, rest);
   }
+  const secs = mergeSections(fragments);
+  model.sections = secs.sections;
   // An unconfirmed item may have had its evidence removed, key and all; every reader expects an array.
   for (const { o } of collect(model)) (o as Evidenced).evidence ??= [];
   const origin = new Map<string, { file: string; pointer: string }>();
   for (const { handle, o } of declared(model)) if (!origin.has(handle)) origin.set(handle, originOf(o));
-  return { model, problems: duplicates(model), origin };
+  return { model, problems: [...secs.problems, ...duplicates(model)], origin };
 }
 
 // Every declared handle with its object: items plus the structural kinds.

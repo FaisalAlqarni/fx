@@ -20,6 +20,9 @@ const ARABIC = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/;
 export function checkRules(model: Model, origin: Origin): Problem[] {
   const out: Problem[] = [];
   const at = (o: object, message: string, level: 'error' | 'warning' = 'error'): void => { out.push({ ...originOf(o), message, level }); };
+  for (const s of model.sections) {
+    for (const f of ['title', 'question'] as const) if (s[f] === undefined) at(s, `section ${s.id}: ${f} missing`);
+  }
   const entries = collect(model);
   const idOf = new Map<object, Item>(entries.map(({ o, item }) => [o, item]));
   const diagrams = new Map(model.levels.diagrams.map((d) => [d.id, d]));

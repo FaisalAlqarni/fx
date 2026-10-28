@@ -85,10 +85,10 @@ verdict("no change", committed(), 0);
 }
 {
   const f = committed();
-  f.fragment("chapters", { sections: [{ id: "s1", title: "Links", question: "Q?" }] });
-  f.fragment("engine", { sections: [{ id: "s2", title: "Engine", question: "Q?", bullets: [bullet()] }] });
+  f.fragment("chapters", { sections: [{ id: "s1", title: "Links", question: "Q?" }, { id: "s2", title: "Engine", question: "Q?" }] });
+  f.fragment("engine", { sections: [{ id: "s2", bullets: [bullet()] }] });
   verdict("moved, unchanged", f, 0);
-  f.fragment("engine", { sections: [{ id: "s2", title: "Engine", question: "Q?", bullets: [bullet("A link expires after 60 days.")] }] });
+  f.fragment("engine", { sections: [{ id: "s2", bullets: [bullet("A link expires after 60 days.")] }] });
   verdict("moved and changed", f, 1, new RegExp(`^${F}/engine\\.json:/sections/0/bullets/0: bullet:b1 changed since HEAD`, "m"));
 }
 {
@@ -127,7 +127,7 @@ verdict("no change", committed(), 0);
 }
 {
   const f = committed();
-  f.fragment("extra", { sections: [{ id: "s9", title: "New", question: "Q?", bullets: [{ id: "b9", text: "New fact.", evidence: ev }] }] });
+  f.fragment("extra", { sections: [{ id: "s1", bullets: [{ id: "b9", text: "New fact.", evidence: ev }] }] });
   verdict("untracked fragment", f, 0);
 }
 {

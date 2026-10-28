@@ -332,4 +332,18 @@ assert.strictEqual(setup().run(["nope"]).status, 2);
   const doc = read(f, "docs/system/s1.md");
   assert.ok(doc.includes("| Reads \\[here\\](javascript:alert(1)) |"), doc);
 }
+{
+  const f = (0, import_sf_fixture.sfFixture)();
+  f.goodSet();
+  f.fragment("links", { sections: [{ id: "s1", lead: "Links expire. The job checks them.", bullets: [{ id: "b2", text: "Expired links answer 410.", evidence: ev("app/x.rb", "4", "expired?") }] }] });
+  built(f);
+  const model = (0, import_json.parseJson)(read(f, "docs/system-flow/model/system-model.json"));
+  assert.strictEqual(model.sections.length, 1);
+  assert.deepStrictEqual([model.sections[0].id, model.sections[0].title, model.sections[0].lead], ["s1", "Links", "Links expire. The job checks them."]);
+  assert.deepStrictEqual(model.sections[0].bullets.map((b) => b.id), ["b1", "b2"]);
+  const links = (0, import_json.parseJson)(read(f, `${F}/links.json`));
+  assert.ok(links.sections[0].bullets[0].verified, "b2 stamped in links.json");
+  const chapters = (0, import_json.parseJson)(read(f, `${F}/chapters.json`));
+  assert.deepStrictEqual(chapters.sections[0].bullets.map((b) => b.id), ["b1"], "chapters.json gains no b2");
+}
 console.log("system-flow-build.test.js: ok");

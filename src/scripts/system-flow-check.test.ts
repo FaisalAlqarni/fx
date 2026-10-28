@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { spawnSync } from 'child_process';
 import { parseJson } from '../lib/json.js';
-import { handleOf, mergeFragments, parseHandle } from '../lib/sf-model.js';
+import { fieldOrigin, handleOf, mergeFragments, originOf, parseHandle } from '../lib/sf-model.js';
 import { validate } from '../lib/sf-schema.js';
 import { sfFixture } from '../tests/helpers/sf-fixture.js';
 
@@ -55,7 +55,7 @@ fails('an unknown key', (f) => f.fragment('level0', level0({ colour: 'red' })),
   /^docs\/system-flow\/model\/fragments\/level0\.json:\/levels\/diagrams\/0\/nodes\/0: property colour not allowed$/m);
 
 fails('a section with no question', (f) => f.fragment('chapters', { sections: [{ id: 's1', title: 'Links' }] }),
-  /chapters\.json:\/sections\/0: required property question missing$/m);
+  /chapters\.json:\/sections\/0: section s1: question missing$/m);
 
 fails('an edge mode out of the enum', (f) => f.fragment('level0', level0({}, { mode: 'maybe' })),
   /\/levels\/diagrams\/0\/edges\/0\/mode: value "maybe" not in enum$/m);
@@ -357,6 +357,79 @@ passes('a term and a code map entry', (f) => f.fragment('glossary', { glossary: 
   const r = f.run(['check']);
   assert.strictEqual(r.status, 1);
   assert.ok(r.stderr.split('\n').includes(`${F}/glossary.json:/glossary/0/evidence/0: glossary term link: a folder entry is allowed only on catalogue and inventory entries`), r.stderr);
+}
+
+
+// Sections merge across fragments: chapters.json declares, an area fragment adds.
+const b2 = { id: 'b2', text: 'Expired links answer 410.', evidence: [{ path: 'app/x.rb', lines: '4', symbol: 'expired?' }] };
+const area = (f: Fx, section: object): void => f.fragment('links', { sections: [{ id: 's1', ...section }] });
+const stderrOf = (f: Fx, args: string[] = ['check']): { status: number | null; stderr: string } => f.run(args);
+{
+  const f = sfFixture();
+  f.goodSet();
+  area(f, { lead: 'Links expire. The job checks them.', bullets: [b2] });
+  const r = f.run(['check']);
+  assert.strictEqual(r.status, 0, r.stderr);
+  const m = mergeFragments(['meta', 'level0', 'chapters', 'links'].map((n) => ({ file: `${F}/${n}.json`, data: parseJson(fs.readFileSync(path.join(f.host, F, `${n}.json`), 'utf8')) as Record<string, unknown> }))).model;
+  assert.strictEqual(m.sections.length, 1);
+  assert.strictEqual(fieldOrigin(m.sections[0]!, 'lead')?.file, `${F}/links.json`);
+  assert.strictEqual(originOf(m.sections[0]!).file, `${F}/chapters.json`);
+  assert.strictEqual(originOf(m.sections[0]!.bullets![1]!).file, `${F}/links.json`);
+}
+{
+  const f = sfFixture();
+  f.goodSet();
+  f.fragment('chapters', { sections: [{ id: 's1', title: 'Links', question: 'Q?' }, { id: 's2', title: 'More', question: 'Q2?' }] });
+  f.fragment('links', { sections: [{ id: 's2', lead: 'Two.' }, { id: 's1', lead: 'One.' }] });
+  const r = f.run(['check']);
+  assert.strictEqual(r.status, 0, r.stderr);
+  const m = mergeFragments(['chapters', 'links'].map((n) => ({ file: `${F}/${n}.json`, data: parseJson(fs.readFileSync(path.join(f.host, F, `${n}.json`), 'utf8')) as Record<string, unknown> }))).model;
+  assert.deepStrictEqual(m.sections.map((s) => [s.id, s.lead]), [['s1', 'One.'], ['s2', 'Two.']]);
+}
+{
+  const f = sfFixture();
+  f.goodSet();
+  f.fragment('chapters', { sections: [{ id: 's1', title: 'Links', question: 'Q?', lead: 'First.' }] });
+  area(f, { lead: 'Second.' });
+  const r = stderrOf(f);
+  assert.strictEqual(r.status, 1);
+  assert.strictEqual(r.stderr, `${F}/links.json:/sections/0/lead: section s1 lead is also set in ${F}/chapters.json\n`);
+}
+{
+  const f = sfFixture();
+  f.goodSet();
+  f.fragment('links', { sections: [{ id: 's9', lead: 'X.' }] });
+  const r = stderrOf(f);
+  assert.strictEqual(r.status, 1);
+  assert.strictEqual(r.stderr, `${F}/links.json:/sections/0: section s9 is not declared in chapters.json\n`);
+}
+{
+  const f = sfFixture();
+  f.goodSet();
+  f.fragment('chapters', { sections: [{ id: 's1', title: 'Links', question: 'Q?' }, { id: 's3', question: 'Why?' }] });
+  const r = stderrOf(f);
+  assert.strictEqual(r.status, 1);
+  assert.strictEqual(r.stderr, `${F}/chapters.json:/sections/1: section s3: title missing\n`);
+}
+{
+  const f = sfFixture();
+  f.goodSet();
+  f.fragment('links', level0({ id: 'link' }));
+  const r = stderrOf(f);
+  assert.strictEqual(r.status, 1);
+  assert.match(r.stderr, new RegExp(`links\\.json:.*: node link is also defined in ${F}/level0\\.json`));
+}
+{
+  const f = sfFixture();
+  f.goodSet();
+  area(f, { lead: 'Links expire.', bullets: [b2] });
+  const r = f.run(['check', '--fragment', `${F}/links.json`]);
+  assert.strictEqual(r.status, 0, r.stderr);
+  area(f, { lead: 'Links expire.', bullets: [{ ...b2, evidence: [{ path: 'app/x.rb', lines: '40-50', symbol: 'expired?' }] }] });
+  f.fragment('level0', level0({}, {}));
+  const bad = f.run(['check', '--fragment', `${F}/links.json`]);
+  assert.strictEqual(bad.status, 1);
+  assert.ok(bad.stderr.split('\n').filter((l) => l !== '').every((l) => l.startsWith(`${F}/links.json:`)), bad.stderr);
 }
 
 process.stdout.write('system-flow-check.test.js: OK\n');

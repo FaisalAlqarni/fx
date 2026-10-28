@@ -342,4 +342,20 @@ assert.strictEqual(setup().run(['nope']).status, 2);
   assert.ok(doc.includes('| Reads \\[here\\](javascript:alert(1)) |'), doc);
 }
 
+// A bullet an area fragment adds reaches the chapter, and its stamp lands in that fragment (task 02).
+{
+  const f = sfFixture();
+  f.goodSet();
+  f.fragment('links', { sections: [{ id: 's1', lead: 'Links expire. The job checks them.', bullets: [{ id: 'b2', text: 'Expired links answer 410.', evidence: ev('app/x.rb', '4', 'expired?') }] }] });
+  built(f);
+  const model = parseJson(read(f, 'docs/system-flow/model/system-model.json')) as { sections: { id: string; title: string; lead: string; bullets: { id: string }[] }[] };
+  assert.strictEqual(model.sections.length, 1);
+  assert.deepStrictEqual([model.sections[0]!.id, model.sections[0]!.title, model.sections[0]!.lead], ['s1', 'Links', 'Links expire. The job checks them.']);
+  assert.deepStrictEqual(model.sections[0]!.bullets.map((b) => b.id), ['b1', 'b2']);
+  const links = parseJson(read(f, `${F}/links.json`)) as { sections: { bullets: { verified?: unknown }[] }[] };
+  assert.ok(links.sections[0]!.bullets[0]!.verified, 'b2 stamped in links.json');
+  const chapters = parseJson(read(f, `${F}/chapters.json`)) as { sections: { bullets: { id: string }[] }[] };
+  assert.deepStrictEqual(chapters.sections[0]!.bullets.map((b) => b.id), ['b1'], 'chapters.json gains no b2');
+}
+
 console.log('system-flow-build.test.js: ok');
