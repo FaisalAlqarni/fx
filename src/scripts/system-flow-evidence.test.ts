@@ -3,6 +3,7 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
+import { spawnSync } from 'child_process';
 import { parseJson } from '../lib/json.js';
 import { sfFixture } from '../tests/helpers/sf-fixture.js';
 
@@ -66,6 +67,27 @@ fails('bad lines on a folder', [good], `${F}/inventory.json:/inventory/0/evidenc
   const f = setup([good, { root: 'guide', path: 'README.md', lines: '1`x', symbol: 'Guide' }], undefined, { guide: '../nowhere' });
   const r = f.run(['check']);
   assert.ok(r.stderr.includes(`node:link: guide/README.md:1\`x Guide: ${LINES}`), `bad lines in a missing root\n${r.stderr}`);
+}
+
+// git failures name git's own words, once per root (final fix A12).
+{ // A root git cannot read HEAD in (unborn here; safe.directory is the same path) is one error, not file missing per entry
+  const entry = { root: 'empty', path: 'README.md', lines: '1', symbol: 'Guide' };
+  const f = setup([good, entry, entry], [{ id: 'backend' }, { id: 'empty' }], { empty: '../empty' });
+  const dir = path.join(f.base, 'empty');
+  fs.mkdirSync(dir);
+  assert.strictEqual(spawnSync('git', ['init', '-q'], { cwd: dir }).status, 0);
+  const r = f.run(['check']);
+  assert.strictEqual(r.status, 1, r.stdout);
+  const lines = r.stderr.trim().split('\n');
+  assert.strictEqual(lines.length, 1, r.stderr);
+  assert.ok(lines[0]?.startsWith('.fx.json:/system_flow/roots/empty: root empty: git cannot read HEAD: fatal:'), r.stderr);
+}
+{ // A failed git status is an error, not an empty list of changed files
+  const f = setup([good]);
+  fs.writeFileSync(path.join(f.host, '.git', 'index'), 'not an index');
+  const r = f.run(['check']);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(/root backend: git status failed: (error|fatal):/.test(r.stderr), r.stderr);
 }
 
 // A folder entry: allowed on an inventory entry, not on a node.

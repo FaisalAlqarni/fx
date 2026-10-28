@@ -35,7 +35,7 @@ export function loadModelItems(hostRoot: string, site: string): { items: Item[];
 
 // stale and verify read every root from git at HEAD; a root they cannot read is an error, never an empty list.
 export function unusableRoots(roots: Map<string, Root>): string[] {
-  return [...roots.values()].flatMap((r) => (r.missing ? [`root ${r.id} not found at ${r.dir}`] : !r.git ? [`root ${r.id} at ${r.dir} is not a git root`] : !r.head ? [`root ${r.id} at ${r.dir} has no commit at HEAD`] : []));
+  return [...roots.values()].flatMap((r) => (r.missing ? [`root ${r.id} not found at ${r.dir}`] : !r.git ? [`root ${r.id} at ${r.dir} is not a git root`] : !r.head ? [`root ${r.id}: git cannot read HEAD: ${r.refused ?? 'no commit'}`] : []));
 }
 
 // A query path is host-relative or `@<root id>/<path>`; a folder matches what lies under it, and an evidence folder matches what lies under it.

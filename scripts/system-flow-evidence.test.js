@@ -25,6 +25,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 var assert = __toESM(require("assert"));
 var fs = __toESM(require("fs"));
 var path = __toESM(require("path"));
+var import_child_process = require("child_process");
 var import_json = require("../lib/json.js");
 var import_sf_fixture = require("../tests/helpers/sf-fixture.js");
 const F = "docs/system-flow/model/fragments";
@@ -90,6 +91,25 @@ fails(
   const r = f.run(["check"]);
   assert.ok(r.stderr.includes(`node:link: guide/README.md:1\`x Guide: ${LINES}`), `bad lines in a missing root
 ${r.stderr}`);
+}
+{
+  const entry = { root: "empty", path: "README.md", lines: "1", symbol: "Guide" };
+  const f = setup([good, entry, entry], [{ id: "backend" }, { id: "empty" }], { empty: "../empty" });
+  const dir = path.join(f.base, "empty");
+  fs.mkdirSync(dir);
+  assert.strictEqual((0, import_child_process.spawnSync)("git", ["init", "-q"], { cwd: dir }).status, 0);
+  const r = f.run(["check"]);
+  assert.strictEqual(r.status, 1, r.stdout);
+  const lines = r.stderr.trim().split("\n");
+  assert.strictEqual(lines.length, 1, r.stderr);
+  assert.ok(lines[0]?.startsWith(".fx.json:/system_flow/roots/empty: root empty: git cannot read HEAD: fatal:"), r.stderr);
+}
+{
+  const f = setup([good]);
+  fs.writeFileSync(path.join(f.host, ".git", "index"), "not an index");
+  const r = f.run(["check"]);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(/root backend: git status failed: (error|fatal):/.test(r.stderr), r.stderr);
 }
 const inventory = (p) => (f) => f.fragment("inventory", { inventory: [{ id: "inv", kind: "store", name: "N", evidence: [{ path: p }] }] });
 passes("folder on inventory", [good], inventory("app/"));

@@ -8,12 +8,18 @@ import { KIND_WORD } from './sf-rules.js';
 import { originOf } from './sf-model.js';
 import type { FxJson } from './types.js';
 
-// `missing` marks a root meta.roots names whose folder is not there: reported once, its entries skipped.
-export type Root = { id: string; dir: string; git: boolean; head: string | null; remote: string | null; host: boolean; missing?: boolean };
+// `missing` marks a root meta.roots names whose folder is not there, `refused` a git root whose HEAD git cannot read
+// (unborn, safe.directory): each is reported once and its entries skipped.
+export type Root = { id: string; dir: string; git: boolean; head: string | null; remote: string | null; host: boolean; missing?: boolean; refused?: string };
 
-const git = (dir: string, args: string[]): string | null => {
-  try { return execFileSync('git', args, { cwd: dir, encoding: 'utf8', maxBuffer: 1 << 28, stdio: ['ignore', 'pipe', 'ignore'] }); } catch { return null; }
+// git's output, or its first stderr line when it fails, so a refusal is reported in git's own words.
+const gitRun = (dir: string, args: string[]): { out: string } | { err: string } => {
+  try { return { out: execFileSync('git', args, { cwd: dir, encoding: 'utf8', maxBuffer: 1 << 28, stdio: ['ignore', 'pipe', 'pipe'] }) }; } catch (e) {
+    const stderr = String((e as { stderr?: unknown }).stderr ?? '').trim();
+    return { err: stderr.split('\n')[0] || (e as Error).message.split('\n')[0] || 'git failed' };
+  }
 };
+const git = (dir: string, args: string[]): string | null => { const r = gitRun(dir, args); return 'out' in r ? r.out : null; };
 
 export const COMMIT = /^[0-9a-f]{40}$/;
 
@@ -55,10 +61,14 @@ export function resolveRoots(hostRoot: string, meta: Meta, fx: FxJson['system_fl
     }
     const isGit = fs.existsSync(path.join(dir, '.git'));
     if (!isGit) problems.push({ file: '.fx.json', pointer, message: `root ${r.id}: no git: stale and archify sources unavailable`, level: 'warning' });
+    const head = isGit ? gitRun(dir, ['rev-parse', '--verify', 'HEAD']) : null;
+    const refused = head !== null && 'err' in head ? head.err : undefined;
+    if (refused !== undefined) problems.push({ file: '.fx.json', pointer, message: `root ${r.id}: git cannot read HEAD: ${refused}`, level: 'error' });
     roots.set(r.id, {
       id: r.id, dir, git: isGit, host: i === 0,
-      head: isGit ? git(dir, ['rev-parse', 'HEAD'])?.trim() ?? null : null,
+      head: head !== null && 'out' in head ? head.out.trim() : null,
       remote: address(isGit ? git(dir, ['remote', 'get-url', 'origin'])?.trim() ?? r.remote : r.remote),
+      ...(refused === undefined ? {} : { refused }),
     });
   });
   return { roots, problems };
@@ -66,7 +76,7 @@ export function resolveRoots(hostRoot: string, meta: Meta, fx: FxJson['system_fl
 
 // Per process: the tracked file list and the dirty file list of each git root, and each file read.
 const tracked = new Map<string, Set<string>>();
-const dirty = new Map<string, Set<string>>();
+const dirty = new Map<string, Set<string> | string>();
 const reads = new Map<string, string | null>();
 
 const trackedIn = (root: Root): Set<string> => {
@@ -74,9 +84,13 @@ const trackedIn = (root: Root): Set<string> => {
   if (!s) tracked.set(root.dir, s = new Set((root.head ? git(root.dir, ['ls-tree', '-r', '--name-only', 'HEAD']) ?? '' : '').split('\n').filter(Boolean)));
   return s;
 };
-const dirtyIn = (root: Root): Set<string> => {
+// The changed files, or git's error: a failed status must not read as "nothing changed".
+const dirtyIn = (root: Root): Set<string> | string => {
   let s = dirty.get(root.dir);
-  if (!s) dirty.set(root.dir, s = new Set((git(root.dir, ['status', '--porcelain', '-z', '--untracked-files=no']) ?? '').split('\0').filter((l) => l.length > 3).map((l) => l.slice(3))));
+  if (s === undefined) {
+    const r = gitRun(root.dir, ['status', '--porcelain', '-z', '--untracked-files=no']);
+    dirty.set(root.dir, s = 'err' in r ? r.err : new Set(r.out.split('\0').filter((l) => l.length > 3).map((l) => l.slice(3))));
+  }
   return s;
 };
 
@@ -141,7 +155,7 @@ export function verifyEvidence(items: Item[], roots: Map<string, Root>, mode: 'c
       if (/[\s`]/.test(e.path)) return fail('path with whitespace or a backtick cannot be written as an evidence line');
       if (e.symbol?.includes('`')) return fail('symbol with a backtick cannot be written as an evidence line');
       if (path.isAbsolute(e.path) || e.path.split('/').includes('..')) return fail('path must be relative to its root and hold no .. segment');
-      if (root.missing) return;
+      if (root.missing || root.refused !== undefined) return;
       if (e.path.endsWith('/')) {
         if (item.kind !== 'catalogue' && item.kind !== 'inventory') return fail(`${KIND_WORD[item.kind]} ${item.id}: a folder entry is allowed only on catalogue and inventory entries`, true);
         if (!folderExists(root, e.path)) fail('folder missing');
@@ -154,7 +168,11 @@ export function verifyEvidence(items: Item[], roots: Map<string, Root>, mode: 'c
       if (cited === null) return fail(`range outside file (${countLines(text)} lines)`);
       const last = e.symbol.split(/#|\.|::|\//).pop() ?? '';
       if (!cited.includes(e.symbol) && !(last !== '' && cited.includes(last))) return fail('symbol not in cited lines');
-      if (root.git && dirtyIn(root).has(e.path) && !warned.has(`${rootId}\0${e.path}`)) {
+      const changed = root.git ? dirtyIn(root) : new Set<string>();
+      if (typeof changed === 'string') {
+        if (!warned.has(`${rootId}\0`)) out.push({ file: '.fx.json', pointer: `/system_flow/roots/${rootId}`, message: `root ${rootId}: git status failed: ${changed}`, level: 'error' });
+        warned.add(`${rootId}\0`);
+      } else if (changed.has(e.path) && !warned.has(`${rootId}\0${e.path}`)) {
         warned.add(`${rootId}\0${e.path}`);
         out.push({ ...at, message: `${item.handle}: ${shown}: ${e.path} has uncommitted changes`, level: mode === 'build' ? 'error' : 'warning' });
       }
