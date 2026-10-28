@@ -274,3 +274,74 @@ Task 17: fix round 1/5: controller re-review (7 lines): 1 addressed, 0 open
 Task 17: minor (deferred): items inside a container named by --only (section:, diagram:, seq:, flow:) are rebuilt but not stamped verified.
 Task 17: cost unavailable (no transcript recorded)
 Task 17: complete (commits 6132e9b..49141e1, review clean after 1 fix round)
+Task 18: dispatched 4f6918f 2026-10-28T13:42:00+03:00
+Task 19: dispatched 4f6918f 2026-10-28T13:42:00+03:00
+Task 18: implementer ad35e54a0d7e53a1b. Task 19: implementer ac2a2030205e6f7f0. Waiting on both.
+Task 19: DONE 4f6918f..ae1f0a9, check-all ALL GREEN per implementer; ADR 0066 written by hand per ruling 30, no 0065 row.
+Task 19: reviewer a33f7ef38a0dd1e78 (opus). Coverage audit dispatched (opus, read-only), findings findings/coverage-audit.md. Waiting on task 18, task 19 review and the audit.
+Task 18: DONE_WITH_CONCERNS ae1f0a9..2e8be2a. detect, check (0 warnings), build --archify and the flagless rebuild exit 0; flagless diagrams deep-equal; layout crossings 0, width at most 860; archify copy unchanged. archify rendered 0 of 5 deep diagrams, all fell back to SVG; visual check not run (no browser in the subagent), 6 pages named in results.md.
+Ruling: task 18's five outside-task findings are load-bearing for tasks 20 and 21 (a proof run that renders no archify diagram measures nothing), so one fix task, "18a", runs before task 18 completes: (1) runArchify runs finalize calls one at a time (archify's delivery lock rejects concurrent calls in one folder); (2) a root with no remote omits meta.repository or uses archify's local-only link mode, whichever archify 3.2.0's schema allows, never the root id as a URL; (3) the CLI keeps component sublabels and participant labels inside archify's measured limits by wrapping or truncating with an ellipsis and records the change in diagrams[].reason, which supersedes ruling 15 in part; (4) task 20 and 21 prep copy archify with cp -rL; (5) fragment-guide.md says a flow step actor must be a node id. Then task 18's smoke run is repeated in a new scratch folder (smoke-<date>-2). Why: the smoke run exists to catch exactly this before the expensive runs. Cost if wrong: a fix round of churn, caught by 18a's review and the rerun.
+Task 18a: dispatched 2e8be2a 2026-10-28T13:48:43+03:00 (task file .fx/2026-10-28-system-flow/18a-task.md, controller-written from the ruling)
+Task 18a: task file copied to docs/plans/2026-10-28-system-flow/tasks/18a-smoke-fixes.md so it is committed with the plan.
+Task 18a: implementer ab04704bc762fc5d3 (opus). Waiting on 18a, task 19 review and the coverage audit.
+Task 19: minor (deferred): fx-docs build --only does not say that handles are comma-separated or passed as repeated --only.
+Task 19: minor (deferred): fx-docs model path says "every root" but ignores query's unbased roots and --base.
+Task 19: minor (deferred): fx-docs never verifies the inventory entries it adds, so stale lists them as unverified.
+Task 19: minor (deferred): docs-lanes asserts the bare word "added", which pins nothing.
+Task 19: review 0/1/4 spec ✅, plan-mandated 1: in a model repo the Markdown path step 4 still writes a hand-written doc for an engine the model path just inventoried.
+Ruling: task 19's plan-mandated finding is fixed, not kept: step 4 of fx-docs' Markdown path runs only in a repo without a system model. Why: design, the model is the record and generated Markdown replaces hand-written system docs; two records of one fact drift. Cost if wrong: a model repo loses hand-written engine pages it wanted, caught by task 20's proof run.
+Task 19: fix round 1 dispatched to ac2a2030205e6f7f0 at 2e8be2a.
+Task 19: fix round 1/5: controller re-review (2 lines): 1 addressed, 0 open
+Task 19: cost unavailable (no transcript recorded)
+Task 19: complete (commits 4f6918f..ae1f0a9 and 2c8e3bf, review clean after 1 fix round)
+Coverage audit: 14 gaps (G1 to G14) and 10 unstated rules (R1 to R10), findings docs/plans/2026-10-28-system-flow/findings/coverage-audit.md.
+Ruling: coverage audit routing. A fix task 18b, after 18a, carries: G1 (test and if missing fill the page NAV with the chapter list and the deep diagram list, and each Markdown doc's link to its figure in the site), G3 (dropped arrows named under the figure and in step captions), G4 (content assertions for Open questions, Corrections, Coverage and the store tables), G11 (archify output pages load nothing outside the site, asserted), G13 (a section with a folder gets its own index.md), R2 (one id rule in fragment-guide.md and planning.md that admits l0-<area id> level-0 nodes), R3 (fragment-guide.md: an edge links nodes of its own diagram), and design.md text amendments for G7 (an unfit figure fails the build; the owner decides through layout hints), G10 (the receipt path is reported, not parsed), R1, R4 to R10, and the schema location. Tasks 20 and 21 carry G2, G5, G6, G8, G9 and G14 as results.md checklist rows (nav write, kit interactivity in the visual check, inventory and rules.json, rerun choices, tokens against the estimate, fx-docs branch mode after a code change); G12 is cleared by task 19's review. Why: everything a test can carry gets a test before the expensive runs; what needs a real session is checked in the run it already has. Cost if wrong: a screen-side gap reaches the proof runs, caught by their visual check and results review.
+Task 18a: DONE_WITH_CONCERNS 2c8e3bf..67bde3c; archify validate --quality showcase accepts all five fitted specs from a no-remote fixture. Concerns: component labels fitted too; evidence card title now Evidence; a no-remote root loses sources links.
+Task 18b: dispatched 67bde3c 2026-10-28T14:05:39+03:00
+Task 18a: reviewer a3e64a54d11999eb0. Task 18b: implementer a1c8eee99a34add72 (sonnet). Waiting on both; task 18's smoke rerun follows 18a and 18b.
+Task 18a: minor (deferred): missing-remote loss of sources links is not recorded in diagrams[].reason.
+Task 18a: minor (deferred): fit() can split grapheme clusters (combining marks, ZWJ) since it cuts by code point.
+Task 18a: minor (deferred): label-fit tests use only Latin text, so wide-character and Arabic counting is unasserted.
+Task 18a: review 0/0/3 spec ✅; ⚠️ (check-all not run) goes to the exit gate. Label fitting and the Evidence title judged necessary.
+Task 18a: cost unavailable (no transcript recorded)
+Task 18a: complete (commits 2c8e3bf..67bde3c, review clean)
+Waiting: task 18b implementer; then the task 18 smoke rerun.
+Task 18b: DONE_WITH_CONCERNS 67bde3c..acb9eb4, check-all ALL GREEN per implementer. G1, G13 and G3 captions were already true (tests pass first run); code or text changed for G3 list, G4, G11, R2, R3; dropped arrows listed by the page, not the kit.
+Task 18: smoke rerun dispatched to the task 18 implementer (ad35e54a0d7e53a1b) at acb9eb4, new scratch folder smoke-<date>-2.
+Task 18b: minor (deferred): outsideRefs misses CSS url()/@import, srcset and ../ escapes.
+Task 18b: minor (deferred): G11 test covers only the unpaged page, not a -pN leak.
+Task 18b: minor (deferred): R3 sentence not added to the design's caps paragraph.
+Task 18b: minor (deferred): planning.md level-0 bullet has one over-long line.
+Task 18b: review 0/0/4 spec ✅ (first-run tests judged to depend on named lines).
+Task 18b: cost unavailable (no transcript recorded)
+Task 18b: complete (commits 67bde3c..acb9eb4, review clean)
+Waiting: task 18 smoke rerun.
+Task 18: smoke rerun (smoke-20261028-4) DONE_WITH_CONCERNS acb9eb4..506fdcf: detect, check, build --archify and flagless rebuild exit 0, flagless diagrams deep-equal, layout fine, no outside writes; archify passed both architecture diagrams but the CLI kept 0 of 5 archify pages. Visual check not run (no browser).
+Ruling: a second fix task 18c, resumed on task 18a's implementer (it holds archify's source context): (1) outsideRefs flags only loads (src, srcset, link href, CSS url and @import, and ../ escapes, which also closes task 18b's minors), never an anchor href such as archify's credit link; (2) every sequence and flow page meets archify's delivery viewport-height rule, read from archify's source, so short last pages and 3-step flows pass; (3) one failed page no longer leaves stray pages or overwrites earlier receipts: retry pages and receipts get distinct names and the CLI removes its own stale page files for that diagram before writing the fallback. The level-0 id rule stays lane-only (minor). Then the smoke run repeats once more. Why: the proof runs need archify pages that render. Cost if wrong: another smoke round, caught by the rerun.
+Task 18: minor (deferred): check does not enforce the level-0 id rule from fragment-guide.md; it is lane-only.
+Task 18c: dispatched 506fdcf 2026-10-28T14:19:31+03:00 (resumed on ab04704bc762fc5d3)
+Task 20: prep dispatched 506fdcf 2026-10-28T14:19:48+03:00 (steps 1 and 2 only, parallel with 18c: prep writes only proof/ files and a scratch folder)
+Task 20: prep implementer a1a879fb4ddbcf59b (sonnet). Waiting on task 18c (ab04704bc762fc5d3) and task 20 prep.
+Task 20: prep DONE 506fdcf..cb724c4: compare-evidence.py with a self-check (RED then pass; 105 reference items, 141 entries), run-a.md, run folder /tmp/claude-1000/sf-build/proof-a-20261028-1 (scratch copy bd0fac1, home/.claude with 0600 credentials and archify via cp -rL, tmp). Prep not reviewed yet; its review runs with the results step.
+Task 20: parked: run step needs the session controller. Commands: docs/plans/2026-10-28-system-flow/proof/run-a.md steps 1 to 3 (claude -p --plugin-dir /development/fx/.worktrees/system-flow on /tmp/claude-1000/sf-build/proof-a-20261028-1/Shamel.Backend, then --resume <session_id> twice), then copy the transcript to the run folder as transcript.jsonl and hand it to the results step; delete the credential copy with find /tmp/claude-1000/sf-build/proof-a-20261028-1/home/.claude/.credentials.json -delete after the results step. Run only after task 18c and its smoke rerun are complete, so the plugin dir holds the archify fixes.
+Task 18c: DONE_WITH_CONCERNS cb724c4..1e26404; real archify finalize passes the 2-message page and 3-step flow (744x480); outside-load scan clean on real archify pages. Concern: diagram names such as seq-a and seq-a-p2 collide with paging and the stale-file cleanup could remove the other diagram's pages.
+Task 18: second smoke rerun dispatched to ad35e54a0d7e53a1b at 1e26404.
+Task 18c: reviewer a4fd24e71f8c3181c. Waiting on the 18c review and the second smoke rerun.
+Task 18: second smoke rerun DONE ed0ed72: archify rendered and kept 5 of 5 deep diagrams, receipts pass in four stages, one fx-theme block each, flagless rebuild deep-equal, layout fine, no outside writes; visual check not run (no browser in subagents), 6 pages named in results.md. Task 18 review dispatched over its own files only (proof/prepare-scratch, smoke-fragments, results.md).
+Task 18: minor (deferred): results.md summarizes detect, build and git status output instead of pasting the raw command output.
+Task 18: minor (deferred): the smoke run folder is scratch only, so the recorded layout and receipt lines cannot be reproduced from the repo.
+Task 18: review 0/0/2 spec ✅; prepare-scratch run twice by the reviewer (exit 0 then 1, one commit).
+Task 18: visual check not run: no browser in any subagent; the controller runs it per references/visual/visual-check.md on the 6 pages results.md names (smoke-20261028-5) before task 20's run step.
+Task 18: cost unavailable (no transcript recorded)
+Task 18: complete (commits 2e8be2a, 506fdcf, ed0ed72 for its own files; fixes in 18a, 18b, 18c; review clean; visual check owed by the controller)
+Task 18c: minor (deferred): retry pages keep the final names; only receipts got distinct retry names, against the ruling wording.
+Task 18c: minor (deferred): archify delivery fail with exit code 0 is still judged ok by exit code and file presence.
+Task 18c: minor (deferred): scripts/check-all was not run by the implementer.
+Task 18c: review 0/1/3: cleanup prefix match deletes another diagram's pages (ids a and a-p2); ⚠️ viewport numbers not checked against archify's source, carried into the fix round.
+Task 18c: confirmed ⚠️: viewport numbers 1.55, 1346, 126, 900 not checked against archify's source
+Task 18c: fix round 1 dispatched to ab04704bc762fc5d3 at ed0ed72 (check rejects sequence and flow ids ending -p<digits>; cleanup matches exact names).
+Exit gate trial 1: check-all at ed0ed72 exit 1, 417 lines read: every gate passed up to no-rm-in-shell-c.test.js, which failed because check-generated saw lib/sf-build.js drift from src/ while task 18c's fix round was editing src/lib/sf-build.ts in the same tree. Not a branch failure; check-all reruns after the fix commits.
+Task 18c: fix round 1/5: controller re-review (4 lines): 2 addressed, 0 open
+Task 18c: minor (deferred): fragment-guide.md does not state that sequence and flow ids may not end in -p and digits; agents learn it from the check error.
+Task 18c: cost unavailable (no transcript recorded)
+Task 18c: complete (commits cb724c4..1e26404 and 1297459, review clean after 1 fix round)
