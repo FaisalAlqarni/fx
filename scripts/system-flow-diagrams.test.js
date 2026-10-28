@@ -25,6 +25,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 var assert = __toESM(require("assert"));
 var fs = __toESM(require("fs"));
 var path = __toESM(require("path"));
+var vm = __toESM(require("vm"));
 var import_json = require("../lib/json.js");
 var import_sf_layout = require("../lib/sf-layout.js");
 var import_sf_schema = require("../lib/sf-schema.js");
@@ -238,6 +239,27 @@ function rest() {
     assert.ok(items.length > 0, n);
     assert.ok(items.every((m) => !/^\s*\d+\.\s/.test(m[2] ?? "")), `${n}: no item text starts with its own number: ${items[0]?.[2]}`);
     assert.strictEqual(items[0]?.[1], ` value="${first}"`, `${n}: the first item is number ${first}`);
+  }
+  {
+    const tpl = fs.readFileSync(path.join(__dirname, "..", "references", "visual", "page-template.html"), "utf8");
+    const key = /localStorage\.setItem\("([^"]+)"/.exec(tpl)?.[1];
+    assert.ok(key, "the page template stores the theme");
+    for (const n of ["arch-engine", "seq-turn"]) {
+      const html = read(f, `${D}/${n}.html`);
+      const code = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join("\n");
+      const run = (stored) => {
+        const attrs = {};
+        const document = { documentElement: { setAttribute: (k, v) => {
+          attrs[k] = v;
+        } } };
+        const localStorage = { getItem: (k) => stored[k] ?? null };
+        vm.runInNewContext(code, { document, localStorage });
+        return attrs;
+      };
+      assert.strictEqual(run({ [key]: "dark" })["data-theme"], "dark", `${n}: stored dark applies`);
+      assert.strictEqual(run({ [key]: "light" })["data-theme"], "light", `${n}: stored light applies`);
+      assert.strictEqual(run({})["data-theme"], void 0, `${n}: nothing stored leaves the system setting`);
+    }
   }
   for (const n of ["arch-engine", "seq-turn"]) {
     const html = read(f, `${D}/${n}.html`);

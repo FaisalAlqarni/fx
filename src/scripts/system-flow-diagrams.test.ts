@@ -3,6 +3,7 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as vm from 'vm';
 import { parseJson } from '../lib/json.js';
 import { layoutAll } from '../lib/sf-layout.js';
 import type { Model } from '../lib/sf-model.js';
@@ -220,6 +221,28 @@ for (const [n, first] of [['seq-turn', 1], ['seq-turn-p2', 9], ['flow-first', 1]
   assert.ok(items.length > 0, n);
   assert.ok(items.every((m) => !/^\s*\d+\.\s/.test(m[2] ?? '')), `${n}: no item text starts with its own number: ${items[0]?.[2]}`);
   assert.strictEqual(items[0]?.[1], ` value="${first}"`, `${n}: the first item is number ${first}`);
+}
+
+// A static diagram page applies the theme the reader picked on index.html: it reads the key the page template writes,
+// and with nothing stored it sets no theme, so the system setting decides.
+{
+  const tpl = fs.readFileSync(path.join(__dirname, '..', 'references', 'visual', 'page-template.html'), 'utf8');
+  const key = /localStorage\.setItem\("([^"]+)"/.exec(tpl)?.[1];
+  assert.ok(key, 'the page template stores the theme');
+  for (const n of ['arch-engine', 'seq-turn']) {
+    const html = read(f, `${D}/${n}.html`);
+    const code = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join('\n');
+    const run = (stored: Record<string, string>): Record<string, string> => {
+      const attrs: Record<string, string> = {};
+      const document = { documentElement: { setAttribute: (k: string, v: string) => { attrs[k] = v; } } };
+      const localStorage = { getItem: (k: string) => stored[k] ?? null };
+      vm.runInNewContext(code, { document, localStorage });
+      return attrs;
+    };
+    assert.strictEqual(run({ [key]: 'dark' })['data-theme'], 'dark', `${n}: stored dark applies`);
+    assert.strictEqual(run({ [key]: 'light' })['data-theme'], 'light', `${n}: stored light applies`);
+    assert.strictEqual(run({})['data-theme'], undefined, `${n}: nothing stored leaves the system setting`);
+  }
 }
 
 // A narrow screen keeps the diagram's 13 px text at 12 px or more: the svg never shrinks below 12/13 of its drawn

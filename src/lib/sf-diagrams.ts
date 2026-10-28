@@ -206,6 +206,7 @@ export function svgPage(d: DeepDiagram, figure: FigureSpec, page: number): strin
     ? mine.flatMap((n) => { const c = figure.steps[n - 1]?.caption; return c ? [`<li value="${n}">${escapeHtml(c.startsWith(`${n}. `) ? c.slice(`${n}. `.length) : c)}</li>`] : []; })
     : figure.steps.flatMap((s) => (s.caption ? [`<li>${escapeHtml(s.caption)}</li>`] : []));
   const title = escapeHtml(spec.meta.title);
+  // The head script is page-template.html's: it applies the theme index.html stored under fx-theme (same origin).
   // Node text is 13 px: the svg never shrinks below 12/13 of its width, and a narrow screen scrolls it in .scroll.
   return `<!doctype html>
 <html lang="en" dir="ltr">
@@ -215,6 +216,7 @@ export function svgPage(d: DeepDiagram, figure: FigureSpec, page: number): strin
 <title>${title}</title>
 <link rel="stylesheet" href="../assets/fx-tokens-1.css">
 <link rel="stylesheet" href="../assets/theme.css">
+<script>try{var t=localStorage.getItem("fx-theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <style>
 body{margin:0;padding:1.5rem;background:var(--paper);color:var(--ink);font:16px/1.5 system-ui,sans-serif}
 a{color:var(--accent)}
