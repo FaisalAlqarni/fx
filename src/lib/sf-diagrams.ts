@@ -353,8 +353,12 @@ export async function runArchify(dir: string, jobs: { name: string; kind: 'archi
     fs.rmSync(j.check, { force: true });
     const args = [path.join(dir, 'bin', 'archify.mjs'), 'finalize', j.kind, j.spec, j.out, '--repo-root', j.repoRoot, '--quality', 'showcase', '--receipt', receipt, '--json'];
     let stdout = '', stderr = '', timedOut = false, settled = false;
-    const child = spawn(process.execPath, args, { stdio: ['ignore', 'pipe', 'pipe'] });
-    const timer = setTimeout(() => { timedOut = true; child.kill('SIGKILL'); }, timeoutS * 1000);
+    // Its own process group: archify's stages inherit these pipes, so the timeout kills the group, not one process.
+    const child = spawn(process.execPath, args, { stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+    const timer = setTimeout(() => {
+      timedOut = true;
+      try { process.kill(-(child.pid as number), 'SIGKILL'); } catch { child.kill('SIGKILL'); }
+    }, timeoutS * 1000);
     child.stdout.on('data', (b: Buffer) => { stdout += b.toString(); });
     child.stderr.on('data', (b: Buffer) => { stderr += b.toString(); });
     const done = (code: number | null, error?: Error): void => {
@@ -367,6 +371,8 @@ export async function runArchify(dir: string, jobs: { name: string; kind: 'archi
     };
     child.on('error', (e) => done(null, e));
     child.on('close', (code) => done(code));
+    // After a kill, a stray holder of the pipes must not keep the build waiting for 'close'.
+    child.on('exit', (code) => { if (timedOut) done(code); });
   });
   for (const j of jobs) await one(j);
   return results;

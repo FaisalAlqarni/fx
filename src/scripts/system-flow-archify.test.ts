@@ -38,7 +38,9 @@ const conflict = process.env.FAKE_EVIDENCE === '1' && fs.existsSync(evidence);
 const bad = conflict || fails.some((n) => name === n || name.startsWith(n + '-p')) || (type === 'sequence' && messages > max);
 // archify leaves a pending marker beside a page whose delivery it did not finish.
 fs.writeFileSync(path.join(path.dirname(out), name + '.delivery-pending.json'), '{}');
-if (process.env.FAKE_HANG === name) await new Promise((r) => setTimeout(r, 60000));
+// archify runs its own stages with inherited stdio, so a hung stage holds the build's pipes open after archify dies.
+if (process.env.FAKE_HANG_CHILD === name) (await import('node:child_process')).spawn(process.execPath, ['-e', 'setTimeout(() => {}, 30000)'], { stdio: 'inherit' });
+if (process.env.FAKE_HANG === name || process.env.FAKE_HANG_CHILD === name) await new Promise((r) => setTimeout(r, 60000));
 const receipt = a[a.indexOf('--receipt') + 1];
 fs.mkdirSync(path.dirname(receipt), { recursive: true });
 if (process.env.FAKE_NORECEIPT !== name) fs.writeFileSync(receipt, JSON.stringify({ name, ok: !bad }));
@@ -228,6 +230,15 @@ const varOf = (css: string, name: string): string[] => [...css.matchAll(new RegE
   const o = ok(f, ['--archify', fake(f, 'fake'), '--archify-timeout', '1'], { FAKE_HANG: 'arch-engine' });
   assert.deepStrictEqual(reason(o, 'arch-engine'), { name: 'arch-engine', renderer: 'svg', reason: 'static SVG, archify timed out after 1 s' });
   assert.strictEqual(reason(o, 'arch-system').renderer, 'archify');
+}
+
+{ // The timeout kills archify's whole process group: a stage holding the inherited streams does not stall the build
+  const f = setup();
+  const t0 = Date.now();
+  const o = ok(f, ['--archify', fake(f, 'fake'), '--archify-timeout', '2'], { FAKE_HANG_CHILD: 'arch-engine' });
+  const elapsed = (Date.now() - t0) / 1000;
+  assert.strictEqual(reason(o, 'arch-engine').reason, 'static SVG, archify timed out after 2 s');
+  assert.ok(elapsed < 15, `the build returned ${elapsed} s after a 2 s timeout; a 30 s stage outlived the kill`);
 }
 
 { // A failure keeps archify's --json result and the last 20 lines of its stderr; a missing receipt says so
