@@ -115,10 +115,12 @@ const page = read(f, `${SITE}/index.html`);
   assert.ok(refs.every((r) => r.startsWith("assets/")), refs.join(","));
   const names = new Set(refs.map((r) => r.slice("assets/".length)));
   for (const n of names) assert.ok(fs.existsSync(path.join(f.host, SITE, "assets", n)), n);
-  assert.deepStrictEqual([...names].sort(), ["elkjs-0.9.3.bundled.js", "fx-flow-1.js", "fx-map-2.js", "fx-tokens-1.css", "react-18.3.1.production.min.js", "react-dom-18.3.1.production.min.js", "reactflow-11.11.4.min.js", "reactflow-11.11.4.style.css", "theme.css"]);
+  assert.deepStrictEqual([...names].sort(), ["elkjs-0.9.3.bundled.js", "fx-flow-2.js", "fx-map-2.js", "fx-tokens-1.css", "react-18.3.1.production.min.js", "react-dom-18.3.1.production.min.js", "reactflow-11.11.4.min.js", "reactflow-11.11.4.style.css", "theme.css"]);
   assert.ok(!page.replace(/xmlns(:\w+)?="http:\/\/www\.w3\.org\/[^"]*"/g, "").match(/https?:\/\//), "no network url");
   for (const l of ["LICENSE-react", "LICENSE-reactflow", "LICENSE-elkjs"]) assert.ok(fs.existsSync(path.join(f.host, SITE, "assets", l)), l);
   assert.ok(!fs.existsSync(path.join(f.host, SITE, "assets", "fx-map-1.js")));
+  assert.ok(fs.existsSync(path.join(f.host, SITE, "assets", "fx-flow-2.js")), "fx-flow-2.js copied");
+  assert.ok(!page.includes("fx-flow-1"), "no fx-flow-1 on the page");
 }
 {
   const tables = page.match(/<table>/g) ?? [];
@@ -187,7 +189,7 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">\u0645\u0631\u062D\u06
   assert.strictEqual(JSON.stringify(sandbox("fx-map-2.js").fxMap?.validateMapData?.(block(page, "map-data"))), "[]");
   const figs = block(page, "diagrams");
   assert.deepStrictEqual(Object.keys(figs).sort(), ["flow-first", "level-engine", "seq-floor-visit", "seq-turn"]);
-  const flow = sandbox("fx-flow-1.js").fxFlow;
+  const flow = sandbox("fx-flow-2.js").fxFlow;
   for (const [k, spec] of Object.entries(figs)) assert.strictEqual(JSON.stringify(flow?.validateFigure?.(spec)), "[]", k);
 }
 {

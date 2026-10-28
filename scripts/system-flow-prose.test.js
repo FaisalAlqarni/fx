@@ -291,7 +291,7 @@ ${r.stdout}${r.stderr}`);
   assert.strictEqual(out.prose.chapters.length, 5);
   assert.strictEqual(out.prose.averageWords, 124);
   assert.strictEqual(out.prose.glossary, 15);
-  assert.strictEqual(out.prose.lifelines, 0);
+  assert.strictEqual(out.prose.lifelines, 1);
   assert.deepStrictEqual(out.problems.filter((p) => p.message.includes(WORDS)), [], "no prose warning");
 }
 fails("an en dash in a lead", s1((s) => {

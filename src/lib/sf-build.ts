@@ -109,7 +109,7 @@ const REFERENCES = path.join(__dirname, '..', 'references');
 // Site assets by the copy rule: the kit beside the template, the libraries and their licences from vendor/.
 // fx-map-1.js is left out: the site page loads fx-map-2.js.
 const ASSETS: [string, string][] = [
-  ...['fx-tokens-1.css', 'fx-map-2.js', 'fx-flow-1.js'].map((n): [string, string] => [n, 'visual']),
+  ...['fx-tokens-1.css', 'fx-map-2.js', 'fx-flow-2.js'].map((n): [string, string] => [n, 'visual']),
   ...['react-18.3.1.production.min.js', 'react-dom-18.3.1.production.min.js', 'reactflow-11.11.4.min.js', 'reactflow-11.11.4.style.css', 'elkjs-0.9.3.bundled.js', 'LICENSE-react', 'LICENSE-reactflow', 'LICENSE-elkjs'].map((n): [string, string] => [n, 'vendor']),
 ];
 
@@ -158,7 +158,7 @@ function selectOnly(model: Model, items: Item[], only: string[], hostId: string)
   return { unknown, selected: sel, figures, sections, components: has('catalogue'), stores: has('store') };
 }
 
-// Lays out every figure; each one over 1 crossing or 860 px is an error at the fragment that defines it.
+// Lays out every figure; each box figure over 1 crossing or 860 px is an error at the fragment that defines it (a sequence never is).
 export async function layoutChecked(model: Model): Promise<{ figures: FigureSpec[]; report: LayoutLine[]; unfit: Problem[] }> {
   const laid = await layoutAll(model);
   const owners = new Map<string, object>([

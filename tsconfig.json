@@ -11,5 +11,5 @@
     "types": ["node"]
   },
   "include": ["src"],
-  "exclude": ["src/skills/fx-brainstorm/scripts/helper.ts", "src/references/visual/fx-map-1.ts", "src/references/visual/fx-map-2.ts", "src/references/visual/fx-flow-1.ts"]
+  "exclude": ["src/skills/fx-brainstorm/scripts/helper.ts", "src/references/visual/fx-map-1.ts", "src/references/visual/fx-map-2.ts", "src/references/visual/fx-flow-2.ts"]
 }

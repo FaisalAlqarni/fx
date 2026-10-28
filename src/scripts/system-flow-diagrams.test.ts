@@ -346,6 +346,32 @@ for (const n of ['arch-engine', 'seq-turn']) {
   assert.strictEqual(err, '');
 }
 
+// The SVG fallback draws a sequence from the lifeline geometry: one <line per lane, one numbered arrow per message,
+// 8 messages a page, a reply dashed.
+{
+  const g = sfFixture();
+  g.goodSet();
+  const file = path.join(g.host, SITE, 'model', 'fragments', 'app.json');
+  const app = parseJson(fs.readFileSync(file, 'utf8')) as { sequences: { messages: Obj[] }[] };
+  const turn = app.sequences[0];
+  assert.ok(turn);
+  for (let n = 6; n <= 9; n++) turn.messages.push({ n, from: n % 2 ? 'db' : 'api', to: n % 2 ? 'api' : 'db', label: `Message ${n}.`, evidence: ev('app/y.rb', '1', 'Y') });
+  g.fragment('app', app);
+  g.commit('host', 'nine');
+  const r = g.run(['build', '--prefer', 'cheap']);
+  assert.strictEqual(r.status, 0, `${r.stdout}${r.stderr}`);
+  const p1 = read(g, `${D}/seq-turn.html`), p2 = read(g, `${D}/seq-turn-p2.html`);
+  const count = (html: string, re: RegExp): number => html.match(re)?.length ?? 0;
+  assert.strictEqual(count(p1, /<line\b/g), 4, 'one lifeline per lane');
+  assert.strictEqual(count(p1, /<g class="msg[ "]/g), 8);
+  assert.strictEqual(count(p2, /<g class="msg[ "]/g), 1);
+  assert.ok(/<g class="msg[^"]*"><path[^>]*stroke-dasharray/.test(p1), 'the reply arrow is dashed');
+  assert.ok(/<g class="msg[^"]*"><path[^>]*>[\s\S]*?<tspan[^>]*font-weight="bold">1<\/tspan>/.test(p1), 'arrows carry their number');
+  // The step list: each caption without its Step prefix, then where.
+  const first = /<li\b[^>]*>([\s\S]*?)<\/li>/.exec(p1)?.[1] ?? '';
+  assert.ok(first.includes('app/x.rb:') && !first.includes('Step 1:'), first);
+}
+
 // Rebuild leaves every diagram byte the same.
 {
   const snap = (): Record<string, string> => Object.fromEntries(fs.readdirSync(path.join(f.host, D), { recursive: true, withFileTypes: false } as never).filter((n) => String(n).includes('.')).map((n) => [String(n), read(f, `${D}/${String(n)}`)]));

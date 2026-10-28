@@ -174,27 +174,102 @@ async function main() {
   }
   {
     const f = setup(chain());
+    const seq = (n, extra = []) => ({
+      id: `w${n}`,
+      title: `Width ${n}`,
+      chapter: "s1",
+      summary: `A sequence of ${n} participants passes one call along.`,
+      participants: Array.from({ length: n }, (_, k) => ({ id: `p-${k + 1}`, label: `Part ${k + 1}`, look: "service", evidence: ev })),
+      messages: [...Array.from({ length: n - 1 }, (_, k) => ({ n: k + 1, from: `p-${k + 1}`, to: `p-${k + 2}`, label: `Call ${k + 1}`, evidence: ev })), ...extra]
+    });
+    const long = "Reads the session token from the cache, then refreshes it for the caller";
+    const w4 = seq(4);
+    w4.messages[0] = { ...w4.messages[0], label: long.slice(0, 60) };
+    w4.messages[1] = { ...w4.messages[1], short: "POST /prompts" };
+    w4.messages.push({ n: 4, from: "p-4", to: "p-4", label: "Checks its own quota before it answers anyone", evidence: ev });
+    f.fragment("flows", { sequences: [w4, seq(6), seq(8), seq(9), seq(12)] });
+    f.commit("host", "sequences");
+    built(f);
+    const model = mergedModel(f);
+    const figs = (await (0, import_sf_layout.layoutAll)(model)).figures;
+    const fig = (k) => {
+      const x = figs.find((y) => y.key === k);
+      assert.ok(x, k);
+      return x;
+    };
+    const table = [4, 6, 8, 9, 12].map((n) => {
+      const x = fig(`seq-w${n}`);
+      const l = x.lanes ?? [];
+      return [l.length, (l[1]?.x ?? 0) - (l[0]?.x ?? 0), x.width];
+    });
+    assert.deepStrictEqual(table, [[4, 180, 748], [6, 138, 856], [8, 104, 860], [9, 104, 964], [12, 104, 1276]]);
+    for (const [n, yes] of [[4, "no"], [6, "no"], [8, "no"], [9, "yes"], [12, "yes"]]) {
+      const line = (0, import_sf_layout.reportLine)(entry(f, `seq-w${n}`));
+      assert.ok(line.startsWith(`seq-w${n} `) && line.includes(` lifelines participants=${n} messages=`) && line.endsWith(`scrolls at 860: ${yes}`), line);
+    }
+    for (const l of report(f).filter((x) => x.key.startsWith("seq-"))) assert.strictEqual(l.crossings, 0, l.key);
+    const w = fig("seq-w4");
+    assert.deepStrictEqual([w.nodes, w.edges, w.groups], [[], [], []]);
+    const row = (n) => w.rows?.find((r) => r.id === `w4#${n}`);
+    assert.strictEqual(row(2)?.text, "POST /prompts");
+    const cut = row(1)?.text ?? "";
+    assert.ok(cut.length > 0 && cut.length <= 26, cut);
+    const self = row(4)?.label;
+    assert.ok(row(4)?.self && self && self.x + self.w <= 734 && self.x >= 14, JSON.stringify(row(4)));
+  }
+  {
+    const f = setup(chain());
     f.fragment("flows", {
       sequences: [{
-        id: "trip",
-        title: "Trip",
+        id: "rows",
+        title: "Rows",
         chapter: "s1",
-        summary: "The api reads the link and the token in turn.",
-        participants: ["api", "db", "cache"].map((id) => ({ id, label: id.toUpperCase(), look: "service", evidence: ev })),
+        summary: "The first part calls the second, which calls itself and answers.",
+        participants: ["a", "b"].map((id) => ({ id, label: id.toUpperCase(), look: "service", evidence: ev })),
         messages: [
-          { n: 1, from: "api", to: "db", label: "Reads link", evidence: ev },
-          { n: 2, from: "api", to: "cache", label: "Reads token", evidence: ev },
-          { n: 3, from: "db", to: "api", label: "Returns row", evidence: [{ path: "app/x.rb", lines: "4", symbol: "expired?" }] },
-          { n: 4, from: "cache", to: "db", label: "Warms", evidence: ev }
+          { n: 1, from: "a", to: "b", label: "Asks", mode: "async", evidence: ev },
+          { n: 2, from: "b", to: "b", label: "Thinks", evidence: ev },
+          { n: 3, from: "b", to: "a", label: "Answers", evidence: ev }
         ]
       }]
     });
     f.commit("host", "sequence");
     built(f);
-    const fig = await figure(f, "seq-trip");
-    assert.deepStrictEqual([fig.nodes.length, fig.edges.length, fig.steps.length], [3, 3, 4]);
-    assert.ok(fig.edges.some((x) => x.label?.text === "1, 3"), JSON.stringify(fig.edges.map((x) => x.label?.text)));
-    assert.ok(fig.steps[2]?.caption.includes("app/x.rb:4"), fig.steps[2]?.caption);
+    const fig = await figure(f, "seq-rows");
+    assert.deepStrictEqual(fig.rows?.map((r) => [r.y, r.self, r.mode]), [[72, false, "async"], [112, true, "sync"], [168, false, "sync"]]);
+    assert.strictEqual(fig.height, 232);
+  }
+  {
+    const f = setup(chain());
+    built(f);
+    const fig = await figure(f, "seq-turn");
+    const r = (n) => fig.rows?.find((x) => x.id === `turn#${n}`);
+    assert.deepStrictEqual([r(4)?.reply, r(4)?.leaves, r(5)?.reply, r(5)?.leaves], [false, true, true, false]);
+    assert.deepStrictEqual(fig.steps[0], { edges: ["turn#1"], nodes: ["client", "api"], caption: "Step 1: Client to Service: The client opens a link.", where: "app/x.rb:1-4" });
+    assert.deepStrictEqual(fig.lanes?.map((l) => [l.id, l.look, l.title]), [["client", "client", "Client"], ["api", "service", "Service"], ["db", "store", "Store"], ["mail", "external", "Mailer"]]);
+    assert.ok(fig.lanes?.every((l) => l.lines.length >= 1 && l.lines.length <= 2 && l.w === 168), JSON.stringify(fig.lanes));
+  }
+  {
+    const f = setup(chain());
+    const app = (0, import_json.parseJson)(fs.readFileSync(path.join(f.host, F, "app.json"), "utf8"));
+    const m1 = app.sequences[0]?.messages[0];
+    assert.ok(m1);
+    m1.label = "Sends the prompt?";
+    f.fragment("app", app);
+    f.commit("host", "relabel");
+    built(f);
+    const caption = (await figure(f, "seq-turn")).steps[0]?.caption ?? "";
+    assert.ok(caption.endsWith(": Sends the prompt."), caption);
+  }
+  {
+    const role40 = "Keeps every link and its expiry date too";
+    assert.strictEqual(role40.length, 40);
+    const f = setup({ id: "system", level: 0, nodes: [{ ...node("link"), role: "Expires a link", look: "client" }, { ...node("db"), role: role40, kind: "database", look: "store" }], edges: [edge("link", "db")] });
+    built(f);
+    const fig = await figure(f, "level-system");
+    assert.deepStrictEqual(fig.nodes.map((n) => [n.id, n.sub, n.look]), [["link", "Expires a link", "client"], ["db", "database", "store"]]);
+    assert.deepStrictEqual(fig.steps[0]?.where, "app/x.rb:1-4");
+    assert.ok(!fig.steps[0]?.caption.includes("app/x.rb"), fig.steps[0]?.caption);
   }
   {
     const f = setup({ id: "system", level: 0, nodes: [node("api"), node("db")], edges: [edge("api", "db")] });
@@ -214,7 +289,7 @@ async function main() {
     f.commit("host", "flow");
     built(f);
     const fig = await figure(f, "flow-first");
-    assert.deepStrictEqual(fig.nodes.map((n) => [n.id, n.store]), [["api", false], ["sql", true], ["cache", true]]);
+    assert.deepStrictEqual(fig.nodes.map((n) => [n.id, n.store, n.look]), [["api", false, "service"], ["sql", true, "store"], ["cache", true, "store"]]);
     assert.deepStrictEqual(fig.edges.map((x) => x.label?.text).sort(), ["read", "write"]);
   }
   {

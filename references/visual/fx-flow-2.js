@@ -1,4 +1,4 @@
-// generated from src/references/visual/fx-flow-1.ts by scripts/build: edit there, not here
+// generated from src/references/visual/fx-flow-2.ts by scripts/build: edit there, not here
 "use strict";
 (() => {
   const MAX_WIDTH = 860;
@@ -11,16 +11,28 @@
   }
   function validateFigure(spec) {
     if (!isFigure(spec)) return ["figure needs key, width, height, nodes, edges, groups and steps"];
+    const lifeline = isArr(spec.lanes) && isArr(spec.rows);
     const out = [];
-    const edges = new Set(spec.edges.map((e) => e.id));
-    const nodes = new Set(spec.nodes.map((n) => n.id));
+    const edges = new Set((lifeline ? spec.rows ?? [] : spec.edges).map((e) => e.id));
+    const nodes = new Set((lifeline ? spec.lanes ?? [] : spec.nodes).map((n) => n.id));
     spec.steps.forEach((s, i) => {
-      for (const e of s.edges) if (!edges.has(e)) out.push(`figure ${spec.key}: step ${i} names a missing edge ${e}`);
+      for (const e of s.edges) if (!edges.has(e)) out.push(`figure ${spec.key}: step ${i} names a missing ${lifeline ? "row" : "edge"} ${e}`);
       for (const n of s.nodes) if (!nodes.has(n)) out.push(`figure ${spec.key}: step ${i} names a missing node ${n}`);
     });
-    if (spec.width > MAX_WIDTH) out.push(`figure ${spec.key}: wider than ${MAX_WIDTH} px`);
+    if (!lifeline && spec.width > MAX_WIDTH) out.push(`figure ${spec.key}: wider than ${MAX_WIDTH} px`);
     return out;
   }
+  const LOOK = {
+    service: { stroke: "var(--accent)" },
+    store: { stroke: "var(--ink)" },
+    client: { stroke: "var(--info)", tint: "var(--info)" },
+    external: { stroke: "var(--muted)", dash: "5 4", tint: "var(--muted)" },
+    security: { stroke: "var(--violet)" }
+  };
+  const lookAttrs = (look) => {
+    const l = LOOK[look] ?? LOOK.service;
+    return { stroke: l.stroke, "stroke-width": 1.6, style: `fill:${l.tint ? `color-mix(in srgb, ${l.tint} 14%, var(--panel))` : "var(--panel)"}`, ...l.dash ? { "stroke-dasharray": l.dash } : {} };
+  };
   const SVG_NS = "http://www.w3.org/2000/svg";
   const STEP_MS = 2200;
   const TOKEN_MS = 900;
@@ -50,50 +62,74 @@
     const defs = svg("defs", {}, root);
     const marker = svg("marker", { id: `${spec.key}-arrow`, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, defs);
     svg("path", { d: "M0 0L10 5L0 10z", fill: "var(--muted)" }, marker);
-    for (const g of spec.groups) {
-      svg("rect", { x: g.x, y: g.y, width: g.w, height: g.h, rx: 12, fill: "none", stroke: "var(--muted)", "stroke-dasharray": "5 4" }, root);
-      svg("text", { x: g.x + 10, y: g.y + 16, fill: "var(--muted)", "font-size": 12 }, root).textContent = g.label;
-    }
-    const edgeEls = /* @__PURE__ */ new Map();
+    const open = svg("marker", { id: `${spec.key}-open`, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, defs);
+    svg("path", { d: "M0 0L10 5L0 10", fill: "none", stroke: "var(--muted)", "stroke-width": 1.6 }, open);
+    const arrows = /* @__PURE__ */ new Map();
     const edgePaths = /* @__PURE__ */ new Map();
-    for (const e of spec.edges) {
-      const els = [];
-      const p = svg("path", {
-        d: e.d,
-        fill: "none",
-        stroke: "var(--muted)",
-        "stroke-width": 1.6,
-        "marker-end": `url(#${spec.key}-arrow)`,
-        ...e.mode === "async" ? { "stroke-dasharray": "6 4" } : {}
-      }, root);
-      els.push(p);
-      if (p instanceof SVGGeometryElement) edgePaths.set(e.id, p);
-      if (e.label) {
-        els.push(svg("rect", { x: e.label.x, y: e.label.y, width: e.label.w, height: e.label.h, rx: 4, fill: "var(--panel)" }, root));
-        const t = svg("text", { x: e.label.x + e.label.w / 2, y: e.label.y + e.label.h / 2 + 4, "text-anchor": "middle", fill: "var(--ink)", "font-size": 12 }, root);
-        t.textContent = e.label.text;
+    const nodeEls = /* @__PURE__ */ new Map();
+    const arrow = (id, d, attrs, rest, label, text, anchor) => {
+      const p = svg("path", { d, fill: "none", stroke: rest[0], "stroke-width": rest[1], ...attrs }, root);
+      const els = [p];
+      let t = null;
+      if (label) {
+        els.push(svg("rect", { x: label.x, y: label.y, width: label.w, height: label.h, rx: 4, fill: "var(--panel)" }, root));
+        t = svg("text", { x: anchor === "middle" ? label.x + label.w / 2 : label.x + 6, y: label.y + label.h - 4, "text-anchor": anchor, fill: "var(--ink)", "font-size": 12 }, root);
+        text(t);
         els.push(t);
       }
-      edgeEls.set(e.id, els);
-    }
-    const nodeEls = /* @__PURE__ */ new Map();
-    for (const n of spec.nodes) {
-      const g = svg("g", {}, root);
-      svg("rect", {
-        x: n.x,
-        y: n.y,
-        width: n.w,
-        height: n.h,
-        rx: n.store ? 4 : 10,
-        fill: "var(--panel)",
-        stroke: n.primary ? "var(--accent)" : "var(--muted)",
-        "stroke-width": 1.6,
-        ...n.primary ? {} : { "stroke-dasharray": "5 4" }
-      }, g);
-      n.lines.forEach((line, i) => {
-        svg("text", { x: n.x + n.w / 2, y: n.y + n.h / 2 + (i - (n.lines.length - 1) / 2) * 15 + 4, "text-anchor": "middle", fill: "var(--ink)", "font-size": 13 }, g).textContent = line;
-      });
-      nodeEls.set(n.id, g);
+      if (p instanceof SVGGeometryElement) edgePaths.set(id, p);
+      arrows.set(id, { path: p, label: t, rest, els });
+    };
+    if (spec.lanes && spec.rows) {
+      for (const l of spec.lanes) {
+        const g = svg("g", {}, root);
+        svg("title", {}, g).textContent = l.title;
+        svg("rect", { x: l.x - l.w / 2, y: 14, width: l.w, height: 44, rx: 8, ...lookAttrs(l.look) }, g);
+        l.lines.forEach((line, i) => {
+          svg("text", { x: l.x, y: 36 + (i - (l.lines.length - 1) / 2) * 15 + 4, "text-anchor": "middle", fill: "var(--ink)", "font-size": 13 }, g).textContent = line;
+        });
+        svg("line", { x1: l.x, y1: 58, x2: l.x, y2: spec.height - 12, stroke: "var(--rule)", "stroke-width": 1.2, "stroke-dasharray": "4 4" }, g);
+        nodeEls.set(l.id, g);
+      }
+      for (const r of spec.rows) {
+        const y = r.y + 28;
+        arrow(r.id, r.self ? `M${r.x1} ${y}h28v20h-28` : `M${r.x1} ${y}H${r.x2}`, {
+          "marker-end": `url(#${spec.key}-${r.mode === "async" ? "open" : "arrow"})`,
+          ...r.reply ? { "stroke-dasharray": "6 4" } : {}
+        }, r.leaves ? ["var(--warn)", 2.4] : ["var(--muted)", 1.6], r.label, (t) => {
+          svg("tspan", { "font-weight": "bold" }, t).textContent = String(r.n);
+          t.appendChild(document.createTextNode(` ${r.text}`));
+        }, "start");
+      }
+    } else {
+      for (const g of spec.groups) {
+        svg("rect", { x: g.x, y: g.y, width: g.w, height: g.h, rx: 12, fill: "none", stroke: "var(--muted)", "stroke-dasharray": "5 4" }, root);
+        svg("text", { x: g.x + 10, y: g.y + 16, fill: "var(--muted)", "font-size": 12 }, root).textContent = g.label;
+      }
+      for (const e of spec.edges) {
+        arrow(
+          e.id,
+          e.d,
+          { "marker-end": `url(#${spec.key}-arrow)`, ...e.mode === "async" ? { "stroke-dasharray": "6 4" } : {} },
+          ["var(--muted)", 1.6],
+          e.label,
+          (t) => {
+            t.textContent = e.label?.text ?? "";
+          },
+          "middle"
+        );
+      }
+      for (const n of spec.nodes) {
+        const g = svg("g", {}, root);
+        svg("rect", { x: n.x, y: n.y, width: n.w, height: n.h, rx: n.store ? 4 : 10, ...lookAttrs(n.look), ...n.primary ? {} : { stroke: "var(--muted)", "stroke-dasharray": "5 4" } }, g);
+        if (n.look === "store") svg("path", { d: `M${n.x} ${n.y + 8}h${n.w}`, stroke: "var(--ink)", "stroke-width": 1.2 }, g);
+        const top = n.y + n.h / 2 - ((n.lines.length - 1) * 15.5 + 15) / 2 + 4;
+        n.lines.forEach((line, i) => {
+          svg("text", { x: n.x + n.w / 2, y: top + i * 15.5, "text-anchor": "middle", fill: "var(--ink)", "font-size": 13.5 }, g).textContent = line;
+        });
+        if (n.sub) svg("text", { x: n.x + n.w / 2, y: top + n.lines.length * 15.5, "text-anchor": "middle", fill: "var(--muted)", "font-size": 12 }, g).textContent = n.sub;
+        nodeEls.set(n.id, g);
+      }
     }
     const token = svg("circle", { r: 6, fill: "var(--accent)", opacity: 0 }, root);
     const status = document.createElement("p");
@@ -132,14 +168,21 @@
         }
       });
       const all = at < 0;
-      for (const [id, els] of edgeEls) for (const el of els) {
-        el.setAttribute("opacity", all || seen.has(id) ? "1" : "0.25");
-        if (el.tagName === "path") el.setAttribute("stroke", lit.has(id) ? "var(--accent)" : "var(--muted)");
+      for (const [id, a] of arrows) {
+        for (const el of a.els) el.setAttribute("opacity", all || seen.has(id) ? "1" : "0.25");
+        a.path.setAttribute("stroke", lit.has(id) ? "var(--accent)" : a.rest[0]);
+        a.path.setAttribute("stroke-width", String(lit.has(id) ? 2.8 : a.rest[1]));
+        a.label?.setAttribute("font-weight", lit.has(id) ? "bold" : "normal");
       }
       for (const [id, el] of nodeEls) el.setAttribute("opacity", all || seen.has(id) ? "1" : "0.35");
       const step = spec.steps[at];
       counter.textContent = at < 0 ? `Step 0 of ${spec.steps.length}` : `Step ${at + 1} of ${spec.steps.length}`;
       status.textContent = step ? step.caption : "Press Play or Next to step through.";
+      if (step?.where) {
+        const code = document.createElement("code");
+        code.textContent = step.where;
+        status.append(" ", code);
+      }
       moveToken(step);
     }
     function go(i) {

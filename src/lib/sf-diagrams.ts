@@ -6,7 +6,7 @@ import * as path from 'path';
 import { spawn } from 'child_process';
 import type { Theme } from './sf-theme.js';
 import type { FxJson } from './types.js';
-import type { Diagram, Evidence, FigureSpec, FileEvidence, Model, StoreFlow } from './sf-model.js';
+import type { Diagram, Evidence, FigureSpec, FigureStep, FileEvidence, Model, StoreFlow } from './sf-model.js';
 import type { Root } from './sf-evidence.js';
 import { escapeHtml } from './sf-page.js';
 import { shortLabel } from './sf-layout.js';
@@ -256,6 +256,40 @@ export const pickLine = (name: string, label: 'archify architecture' | 'archify 
 // ---------------------------------------------------------------- SVG fallback
 const STEP_SECONDS = 1.2;
 
+type Anim = (id: string) => string;
+const marker = (async: boolean): string => `url(#${async ? 'open' : 'arrow'})`;
+
+function boxSvg(figure: FigureSpec, anim: Anim): { width: number; height: number; body: string } {
+  const groups = figure.groups.map((g) => `<rect x="${g.x}" y="${g.y}" width="${g.w}" height="${g.h}" rx="12" class="group"/><text x="${g.x + 10}" y="${g.y + 16}" class="muted">${escapeHtml(g.label)}</text>`).join('');
+  const edges = figure.edges.map((e) => {
+    const label = e.label ? `<rect x="${e.label.x}" y="${e.label.y}" width="${e.label.w}" height="${e.label.h}" rx="4" class="chip"/><text x="${e.label.x + e.label.w / 2}" y="${e.label.y + e.label.h / 2 + 4}" text-anchor="middle">${escapeHtml(e.label.text)}</text>` : '';
+    return `<path d="${escapeHtml(e.d)}" class="edge${e.mode === 'async' ? ' async' : ''}" marker-end="${marker(false)}"${anim(e.id)}/>${label}`;
+  }).join('');
+  const nodes = figure.nodes.map((n) => `<g><rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="8" class="node${n.primary ? '' : ' ctx'}"/>${n.lines.map((l, i) => `<text x="${n.x + n.w / 2}" y="${n.y + n.h / 2 + (i - (n.lines.length - 1) / 2) * 15 + 4}" text-anchor="middle" class="ink">${escapeHtml(l)}</text>`).join('')}</g>`).join('');
+  return { width: figure.width, height: figure.height, body: `${groups}${edges}${nodes}` };
+}
+
+// The page's rows from the lifeline geometry, moved up so the page's first row sits where row 1 does (y 72).
+function lifelineSvg(figure: FigureSpec, mine: Set<number>, anim: Anim): { width: number; height: number; body: string } {
+  const rows = (figure.rows ?? []).filter((r) => mine.has(r.n));
+  const first = rows[0], last = rows[rows.length - 1];
+  const shift = (first?.y ?? 72) - 72;
+  const height = last ? last.y - shift + (last.self ? 56 : 40) + 24 : 96;
+  const lanes = (figure.lanes ?? []).map((l) => {
+    const x0 = l.x - l.w / 2;
+    const text = l.lines.map((t, i) => `<text x="${l.x}" y="${36 + (i - (l.lines.length - 1) / 2) * 15 + 4}" text-anchor="middle">${escapeHtml(t)}</text>`).join('');
+    return `<g><title>${escapeHtml(l.title)}</title><rect x="${x0}" y="14" width="${l.w}" height="44" rx="8" class="lane ${l.look}"/>${text}</g><line x1="${l.x}" y1="58" x2="${l.x}" y2="${height - 12}" class="life"/>`;
+  }).join('');
+  const msgs = rows.map((r) => {
+    const y = r.y - shift + 28;
+    const d = r.self ? `M${r.x1} ${y}h28v20h-28` : `M${r.x1} ${y}H${r.x2}`;
+    const l = { ...r.label, y: r.label.y - shift };
+    return `<g class="msg${r.reply ? ' reply' : ''}${r.leaves ? ' leaves' : ''}"><path d="${d}" class="edge${r.leaves ? ' leaves' : ''}"${r.reply ? ' stroke-dasharray="6 4"' : ''} marker-end="${marker(r.mode === 'async')}"${anim(r.id)}/>`
+      + `<rect x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}" rx="4" class="chip"/><text x="${l.x + 6}" y="${l.y + l.h - 4}" font-size="12"><tspan font-weight="bold">${r.n}</tspan> ${escapeHtml(r.text)}</text></g>`;
+  }).join('');
+  return { width: figure.width, height, body: `${lanes}${msgs}` };
+}
+
 export function svgPage(d: DeepDiagram, figure: FigureSpec, page: number): string {
   const spec = d.spec as { meta: { title: string }; messages?: { id: string }[] };
   const animated = d.kind === 'sequence';
@@ -264,22 +298,21 @@ export function svgPage(d: DeepDiagram, figure: FigureSpec, page: number): strin
   const total = Math.max(1, mine.length) * STEP_SECONDS;
   const stepOf = new Map<string, number>();
   mine.forEach((n, j) => { for (const e of figure.steps[n - 1]?.edges ?? []) if (!stepOf.has(e)) stepOf.set(e, j); });
+  // The rest colour and width come from the arrow's class, so a leaving call returns to --warn after its step.
   const keyframes = [...new Set(stepOf.values())].map((j) => {
     const a = (j / mine.length) * 100, b = ((j + 1) / mine.length) * 100;
-    return `@keyframes step${j}{0%,${a.toFixed(2)}%{stroke:var(--muted);stroke-width:1.6}${(a + 0.01).toFixed(2)}%,${b.toFixed(2)}%{stroke:var(--accent);stroke-width:3}${(b + 0.01).toFixed(2)}%,100%{stroke:var(--muted);stroke-width:1.6}}`;
+    const rest = 'stroke:var(--rest);stroke-width:var(--rest-w)';
+    return `@keyframes step${j}{0%,${a.toFixed(2)}%{${rest}}${(a + 0.01).toFixed(2)}%,${b.toFixed(2)}%{stroke:var(--accent);stroke-width:2.8}${(b + 0.01).toFixed(2)}%,100%{${rest}}}`;
   }).join('');
-  const groups = figure.groups.map((g) => `<rect x="${g.x}" y="${g.y}" width="${g.w}" height="${g.h}" rx="12" class="group"/><text x="${g.x + 10}" y="${g.y + 16}" class="muted">${escapeHtml(g.label)}</text>`).join('');
-  const edges = figure.edges.map((e) => {
-    const j = stepOf.get(e.id);
-    const style = j === undefined ? '' : ` style="animation:step${j} ${total}s linear infinite"`;
-    const label = e.label ? `<rect x="${e.label.x}" y="${e.label.y}" width="${e.label.w}" height="${e.label.h}" rx="4" class="chip"/><text x="${e.label.x + e.label.w / 2}" y="${e.label.y + e.label.h / 2 + 4}" text-anchor="middle">${escapeHtml(e.label.text)}</text>` : '';
-    return `<path d="${escapeHtml(e.d)}" class="edge${e.mode === 'async' ? ' async' : ''}" marker-end="url(#arrow)"${style}/>${label}`;
-  }).join('');
-  const nodes = figure.nodes.map((n) => `<g><rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="8" class="node${n.primary ? '' : ' ctx'}"/>${n.lines.map((l, i) => `<text x="${n.x + n.w / 2}" y="${n.y + n.h / 2 + (i - (n.lines.length - 1) / 2) * 15 + 4}" text-anchor="middle" class="ink">${escapeHtml(l)}</text>`).join('')}</g>`).join('');
-  // A sequence caption starts with its message number, which the list already shows as the item's value.
-  const items = animated
-    ? mine.flatMap((n) => { const c = figure.steps[n - 1]?.caption; return c ? [`<li value="${n}">${escapeHtml(c.startsWith(`${n}. `) ? c.slice(`${n}. `.length) : c)}</li>`] : []; })
-    : figure.steps.flatMap((s) => (s.caption ? [`<li>${escapeHtml(s.caption)}</li>`] : []));
+  const anim = (id: string): string => { const j = stepOf.get(id); return j === undefined ? '' : ` style="animation:step${j} ${total}s linear infinite"`; };
+  const { width, height, body } = figure.lanes && figure.rows ? lifelineSvg(figure, new Set(mine), anim) : boxSvg(figure, anim);
+  // The list numbers each step, so a caption's own `Step <n>: ` or `<n>. ` goes; the step's code follows it.
+  const item = (s: FigureStep | undefined, n?: number): string[] => {
+    if (!s?.caption) return [];
+    const text = n === undefined ? s.caption : s.caption.replace(new RegExp(`^(?:Step ${n}: |${n}\\. )`), '');
+    return [`<li${n === undefined ? '' : ` value="${n}"`}>${escapeHtml(text)}${s.where ? ` <code>${escapeHtml(s.where)}</code>` : ''}</li>`];
+  };
+  const items = animated ? mine.flatMap((n) => item(figure.steps[n - 1], n)) : figure.steps.flatMap((s) => item(s));
   const title = escapeHtml(spec.meta.title);
   // The head script is page-template.html's: it applies the theme index.html stored under fx-theme (same origin).
   // Node text is 13 px: the svg never shrinks below 12/13 of its width, and a narrow screen scrolls it in .scroll.
@@ -300,7 +333,10 @@ svg{max-inline-size:100%;block-size:auto;background:var(--panel);border:1px soli
 svg text{font-size:13px;fill:var(--ink)} svg .muted{fill:var(--muted);font-size:12px}
 .node{fill:var(--panel);stroke:var(--ink);stroke-width:1.4} .node.ctx{stroke:var(--muted);stroke-dasharray:5 4}
 .group{fill:none;stroke:var(--muted);stroke-dasharray:5 4} .chip{fill:var(--panel)}
-.edge{fill:none;stroke:var(--muted);stroke-width:1.6} .edge.async{stroke-dasharray:6 4}
+.edge{fill:none;--rest:var(--muted);--rest-w:1.6;stroke:var(--rest);stroke-width:var(--rest-w)} .edge.async{stroke-dasharray:6 4}
+.lane{fill:var(--panel);stroke:var(--ink);stroke-width:1.4} .lane.client{stroke:var(--info)} .lane.security{stroke:var(--violet)}
+.lane.external{stroke:var(--muted);stroke-dasharray:5 4;fill:color-mix(in srgb,var(--muted) 14%,var(--panel))}
+.life{stroke:var(--rule);stroke-width:1.2;stroke-dasharray:4 4} .msg .edge.leaves{--rest:var(--warn);--rest-w:2.4}
 ${keyframes}
 @media (prefers-reduced-motion:reduce){.edge{animation:none!important}}
 </style>
@@ -309,9 +345,9 @@ ${keyframes}
 <p><a href="../index.html">Back to the system page</a></p>
 <h1>${title}</h1>
 ${d.pages > 1 ? `<p>Page ${page} of ${d.pages}</p>\n` : ''}<div class="scroll">
-<svg role="img" aria-label="${title}" viewBox="0 0 ${figure.width} ${figure.height}" width="${figure.width}" height="${figure.height}" style="min-inline-size:${Math.ceil((figure.width * 12) / 13)}px" xmlns="http://www.w3.org/2000/svg">
-<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker></defs>
-${groups}${edges}${nodes}
+<svg role="img" aria-label="${title}" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" style="min-inline-size:${Math.ceil((width * 12) / 13)}px" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker><marker id="open" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10" fill="none" stroke="var(--muted)" stroke-width="1.6"/></marker></defs>
+${body}
 </svg>
 </div>
 <ol>

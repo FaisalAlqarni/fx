@@ -183,7 +183,7 @@ export function renderPage(input: Input): string {
     .replace(/<section id="map">[\s\S]*?<\/section>\n*/, '')
     .replace(slot('CHAPTERS'), () => [explore, ...sections, ...fixed].join('\n'))
     .replace(/<!-- slot: MAP_DATA[\s\S]*?-->\s*<script type="application\/json" id="map-data">[\s\S]*?<\/script>/, () => `<script type="application/json" id="map-data">${inlineJson(mapData)}</script>`)
-    .replace(slot('DIAGRAMS'), () => `<script type="application/json" id="diagrams">${inlineJson(figures)}</script>\n<script src="../_assets/fx-flow-1.js"></script>`)
+    .replace(slot('DIAGRAMS'), () => `<script type="application/json" id="diagrams">${inlineJson(figures)}</script>\n<script src="../_assets/fx-flow-2.js"></script>`)
     .replace(/fx-map-1\.js/g, 'fx-map-2.js')
     .replace(/<link rel="stylesheet" href="..\/_assets\/fx-tokens-1\.css">/, (m) => `${m}\n<link rel="stylesheet" href="../_assets/theme.css">`)
     .replace('details.ev"', 'details.ev, details.evidence"')

@@ -92,7 +92,7 @@ function kit(extra: Record<string, string> = {}, bytes = 'elk bytes'): string {
 const dir = path.join(repo, 'references', 'visual');
 const shown = fs.readdirSync(dir).sort();
 assert.deepStrictEqual(shown, [
-  'archify-adapter.md', 'fx-flow-1.js', 'fx-map-1.js', 'fx-map-2.js', 'fx-tokens-1.css', 'page-template.html',
+  'archify-adapter.md', 'fx-flow-2.js', 'fx-map-1.js', 'fx-map-2.js', 'fx-tokens-1.css', 'page-template.html',
   'svg-animated.md', 'svg-static.md', 'visual-assets.md', 'visual-check.md',
 ]);
 for (const part of ['<!-- slot: NAV', '<!-- slot: DIAGRAMS']) assert.ok(fs.readFileSync(path.join(dir, 'page-template.html'), 'utf8').includes(part), `page-template.html holds ${part}`);
@@ -106,7 +106,7 @@ assert.deepStrictEqual(kitErrors(repo, [...shown.filter((n) => n !== 'visual-ass
 const tableText = fs.readFileSync(path.join(repo, TABLE), 'utf8');
 const listed = rows(repo).map((r) => r.file).sort();
 assert.deepStrictEqual(listed, [
-  'elkjs-0.9.3.bundled.js', 'fx-flow-1.js', 'fx-map-1.js', 'fx-map-2.js', 'fx-tokens-1.css', 'react-18.3.1.production.min.js',
+  'elkjs-0.9.3.bundled.js', 'fx-flow-2.js', 'fx-map-1.js', 'fx-map-2.js', 'fx-tokens-1.css', 'react-18.3.1.production.min.js',
   'react-dom-18.3.1.production.min.js', 'reactflow-11.11.4.min.js', 'reactflow-11.11.4.style.css',
 ]);
 const licences = [...tableText.matchAll(/`(LICENSE-[\w-]+)`/g)].map((m) => m[1]);
@@ -249,7 +249,9 @@ assert.deepStrictEqual(plain(map2.validateMapData(data([{ ...m2l0, nodes: [gnode
   ['level l0: edge api -> ext names a missing node']);
 
 interface FxFlow { validateFigure(s: unknown): string[] }
-const flow = load('fx-flow-1.js').fxFlow as FxFlow;
+const flow = load('fx-flow-2.js').fxFlow as FxFlow;
+assert.ok(!fs.existsSync(path.join(dir, 'fx-flow-1.js')), 'fx-flow-1.js is gone');
+assert.ok(!tableText.includes('fx-flow-1.js'), 'the table has no fx-flow-1.js row');
 const fig = (over: object = {}) => ({
   key: 'seq-turn', kind: 'sequence', width: 400, height: 200, direction: 'DOWN',
   nodes: [{ id: 'a', x: 0, y: 0, w: 100, h: 40, lines: ['A'], kind: 'service', primary: true, store: false }],
@@ -259,7 +261,16 @@ const fig = (over: object = {}) => ({
 assert.deepStrictEqual(plain(flow.validateFigure(fig())), []);
 assert.deepStrictEqual(plain(flow.validateFigure(fig({ steps: [{ edges: ['e9'], nodes: ['a'], caption: 'c' }] }))), ['figure seq-turn: step 0 names a missing edge e9']);
 assert.deepStrictEqual(plain(flow.validateFigure(fig({ steps: [{ edges: ['e1'], nodes: ['zz'], caption: 'c' }] }))), ['figure seq-turn: step 0 names a missing node zz']);
-assert.deepStrictEqual(plain(flow.validateFigure(fig({ width: 900 }))), ['figure seq-turn: wider than 860 px']);
+assert.deepStrictEqual(plain(flow.validateFigure(fig({ key: 'level-l0', kind: 'level', width: 900 }))), ['figure level-l0: wider than 860 px']);
+// A lifeline spec: lanes and rows in place of nodes and edges; a step names a row id. It may be wider than 860 px.
+const lifeline = (over: object = {}) => ({
+  key: 'seq-turn', kind: 'sequence', width: 964, height: 136, direction: 'DOWN', nodes: [], edges: [], groups: [], notDrawn: [],
+  lanes: [{ id: 'client', x: 104, w: 168, lines: ['Client'], title: 'Client', look: 'client' }, { id: 'api', x: 284, w: 168, lines: ['Service'], title: 'Service', look: 'service' }],
+  rows: [{ id: 'turn#1', n: 1, y: 72, from: 'client', to: 'api', x1: 104, x2: 284, self: false, mode: 'sync', reply: false, leaves: false, text: 'Opens a link', label: { x: 110, y: 80, w: 100, h: 16 } }],
+  steps: [{ edges: ['turn#1'], nodes: ['client', 'api'], caption: 'Step 1: Client to Service: Opens a link.', where: 'app/x.rb:1-4' }], ...over,
+});
+assert.deepStrictEqual(plain(flow.validateFigure(lifeline())), []);
+assert.deepStrictEqual(plain(flow.validateFigure(lifeline({ steps: [{ edges: ['turn#9'], nodes: ['client', 'api'], caption: 'c', where: null }] }))), ['figure seq-turn: step 0 names a missing row turn#9']);
 
 // mount with stand-ins for React, ReactDOM and React Flow, and an ELK whose layout fails:
 // the canvas shows an error in place of the "Laying out" message.

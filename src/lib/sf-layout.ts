@@ -1,7 +1,7 @@
 // Figure layout with the vendored elkjs, ported from system-flow's build-page.mjs: the variant
 // search, the crossing count from ELK's routed sections, node hits, arrow dropping and figure specs.
 import * as path from 'path';
-import type { Diagram, Evidence, FigureSpec, LayoutLine, Model } from './sf-model.js';
+import type { Diagram, Evidence, FigureSpec, FigureStep, LayoutLine, Look, Model } from './sf-model.js';
 
 type Pt = [number, number];
 type Seg = [Pt, Pt];
@@ -38,19 +38,22 @@ function ruleShort(label: string, max = 26): string {
 export function shortLabel(label: string, short?: string): string { return short ?? ruleShort(label); }
 
 // ---------------------------------------------------------------- figure inputs
-type FNode = { id: string; label: string; kind: string; primary: boolean; store: boolean };
+type FNode = { id: string; label: string; kind: string; sub: string; look: Look; primary: boolean; store: boolean };
 type FEdge = { id: string; from: string; to: string; label: string; mode: 'sync' | 'async' };
 type FGroup = { id: string; label: string; members: string[]; groups: string[] };
 type Input = {
   key: string; kind: FigureSpec['kind']; nodes: FNode[]; edges: FEdge[]; groups: FGroup[];
   hints?: Record<string, { col: number; row: number }>;
-  steps: (drawn: Set<string>, order: string[]) => FigureSpec['steps'];
+  steps: (drawn: Set<string>, order: string[]) => FigureStep[];
 };
 
-const where = (evidence: Evidence[]): string => {
+// A step's code: the first file evidence as path:lines, else path.
+const where = (evidence: Evidence[]): string | null => {
   const e = evidence.find((x) => 'path' in x);
-  return e && 'path' in e ? ` ${e.path}:${e.lines ?? ''}` : '';
+  return e && 'path' in e ? (e.lines ? `${e.path}:${e.lines}` : e.path) : null;
 };
+// The node's second line: its role while that fits, else its kind.
+const subOf = (role: string, kind: string): string => (role.length <= 26 ? role : kind);
 
 // Derived edge ids: <diagram>:<from>><to>, with #2, #3 for a repeated pair.
 function edgeIds(d: Diagram): string[] {
@@ -68,7 +71,7 @@ function levelInput(d: Diagram): Input {
   const edges = d.edges.map((e, i): FEdge => ({ id: ids[i] ?? '', from: e.from, to: e.to, label: shortLabel(e.label, e.short), mode: e.mode ?? 'sync' }));
   return {
     key: `level-${d.id}`, kind: 'level',
-    nodes: d.nodes.map((n) => ({ id: n.id, label: n.label, kind: n.kind, primary: n.primary !== false, store: false })),
+    nodes: d.nodes.map((n) => ({ id: n.id, label: n.label, kind: n.kind, sub: subOf(n.role, n.kind), look: n.look, primary: n.primary !== false, store: false })),
     edges, groups: d.groups.map((g) => ({ id: g.id, label: g.label, members: g.members, groups: g.groups ?? [] })),
     ...(d.layout ? { hints: d.layout } : {}),
     steps: (drawn, order) => order.flatMap((id) => {
@@ -76,29 +79,7 @@ function levelInput(d: Diagram): Input {
       const outs = d.edges.map((e, i) => ({ e, id: ids[i] ?? '' })).filter((x) => x.e.from === id);
       if (!n || (n.primary === false && !outs.length)) return [];
       const to = outs.map((x) => `; to ${label.get(x.e.to) ?? x.e.to}: ${x.e.label}${drawn.has(x.id) ? '' : ' (arrow not drawn)'}`).join('');
-      return [{ edges: outs.filter((x) => drawn.has(x.id)).map((x) => x.id), nodes: [id], caption: `${n.label}${n.primary === false ? ' (in another diagram)' : ''}: ${n.role}${where(n.evidence)}${to}` }];
-    }),
-  };
-}
-
-// Messages between one pair fold into one arrow labelled with their step numbers.
-function sequenceInput(q: Model['sequences'][number]): Input {
-  const label = new Map(q.participants.map((p) => [p.id, p.label]));
-  const pairs = new Map<string, FEdge & { ns: number[] }>();
-  for (const m of q.messages) {
-    if (m.from === m.to) continue;
-    const k = [m.from, m.to].sort().join('|');
-    const p = pairs.get(k) ?? { id: `${q.id}:${m.from}>${m.to}`, from: m.from, to: m.to, label: '', mode: m.mode ?? 'sync', ns: [] };
-    p.ns.push(m.n);
-    pairs.set(k, p);
-  }
-  const edges = [...pairs.values()].map(({ ns, ...e }) => ({ ...e, label: ruleShort(ns.join(', ')) }));
-  return {
-    key: `seq-${q.id}`, kind: 'sequence', groups: [], edges,
-    nodes: q.participants.map((p) => ({ id: p.id, label: p.label, kind: p.kind ?? 'service', primary: true, store: false })),
-    steps: (drawn) => q.messages.map((m) => {
-      const e = pairs.get([m.from, m.to].sort().join('|'));
-      return { edges: e && drawn.has(e.id) ? [e.id] : [], nodes: [...new Set([m.from, m.to])], caption: `${m.n}. ${label.get(m.from) ?? m.from} to ${label.get(m.to) ?? m.to}: ${m.label}${where(m.evidence)}${e && !drawn.has(e.id) ? ' (arrow not drawn)' : ''}` };
+      return [{ edges: outs.filter((x) => drawn.has(x.id)).map((x) => x.id), nodes: [id], caption: `${n.label}${n.primary === false ? ' (in another diagram)' : ''}: ${n.role}${to}`, where: where(n.evidence) }];
     }),
   };
 }
@@ -115,11 +96,11 @@ function flowInput(f: Model['storeFlows'][number]): Input {
   }
   return {
     key: `flow-${f.id}`, kind: 'flow', groups: [],
-    nodes: [...actors.map((id) => ({ id, label: id, kind: 'actor', primary: true, store: false })), ...stores.map((id) => ({ id, label: id, kind: 'store', primary: true, store: true }))],
+    nodes: [...actors.map((id): FNode => ({ id, label: id, kind: 'actor', sub: 'actor', look: 'service', primary: true, store: false })), ...stores.map((id): FNode => ({ id, label: id, kind: 'store', sub: 'store', look: 'store', primary: true, store: true }))],
     edges: [...pairs.values()].map((p) => ({ id: p.id, from: p.from, to: p.to, label: p.ops.size > 1 ? 'read, write' : [...p.ops].join(''), mode: 'sync' })),
     steps: (drawn) => f.steps.map((s) => {
       const id = pairs.get(`${s.actor}|${s.store}`)?.id ?? '';
-      return { edges: drawn.has(id) ? [id] : [], nodes: [s.actor, s.store], caption: `${s.n}. ${s.actor} ${s.op} ${s.store}${s.key ? ` ${s.key}` : ''}${s.when ? ` (${s.when})` : ''}${where(s.evidence)}${drawn.has(id) ? '' : ' (arrow not drawn)'}` };
+      return { edges: drawn.has(id) ? [id] : [], nodes: [s.actor, s.store], caption: `${s.n}. ${s.actor} ${s.op} ${s.store}${s.key ? ` ${s.key}` : ''}${s.when ? ` (${s.when})` : ''}${drawn.has(id) ? '' : ' (arrow not drawn)'}`, where: where(s.evidence) };
     }),
   };
 }
@@ -385,7 +366,7 @@ async function figureOf(input: Input): Promise<{ spec: FigureSpec; line: LayoutL
   const order = [...lay.rects.entries()].sort(([, p], [, q]) => (lay.dir === 'RIGHT' ? p.x - q.x || p.y - q.y : p.y - q.y || p.x - q.x)).map(([id]) => id);
   const spec: FigureSpec = {
     key: input.key, kind: input.kind, width: Math.ceil(lay.W), height: Math.ceil(lay.H), direction: lay.dir,
-    nodes: input.nodes.map((n) => { const r = lay.rects.get(n.id) ?? { x: 0, y: 0, w: 0, h: 0, lines: [] }; return { id: n.id, ...round(r), lines: r.lines, kind: n.kind, primary: n.primary, store: n.store }; }),
+    nodes: input.nodes.map((n) => { const r = lay.rects.get(n.id) ?? { x: 0, y: 0, w: 0, h: 0, lines: [] }; return { id: n.id, ...round(r), lines: r.lines, sub: n.sub, look: n.look, kind: n.kind, primary: n.primary, store: n.store }; }),
     edges: edges.map((e) => {
       const l = labels.get(e.id);
       return { id: e.id, d: roundedPath((lay.routes.get(e.id) ?? []).map(([x, y]): Pt => [r1(x), r1(y)])), mode: e.mode, label: l ? { ...round(l), text: l.lines.join(' ') } : null };
@@ -401,26 +382,77 @@ async function figureOf(input: Input): Promise<{ spec: FigureSpec; line: LayoutL
   return { spec, line, ...(lay.elkError === undefined ? {} : { elkError: lay.elkError }) };
 }
 
+// ---------------------------------------------------------------- lifelines
+// A sequence is a grid, laid out here without ELK: participant boxes 44 px tall at y 14, one row per message.
+const ROW0 = 72, ROW = 40, SELF_ROW = 56, ARROW_DY = 28, MARGIN = 14, LABEL_H = 16, LABEL_CW = 7; // 12 px text, room for the bold active label
+
+// At most 2 lines of the label at 13 px within the box; the second line ends in an ellipsis when the label runs on.
+function laneLines(label: string, w: number): string[] {
+  const n = Math.max(4, Math.floor((w - 12) / CW));
+  const lines = wrapText(label, n).flatMap((l) => (l.length > n ? [l.slice(0, n)] : [l]));
+  const all = label.split(/\s+/).join(' ');
+  if (lines.length <= 2 && lines.join(' ') === all) return lines;
+  const two = lines.slice(0, 2);
+  const last = two[two.length - 1] ?? '';
+  two[two.length - 1] = `${(last.length >= n ? last.slice(0, n - 1) : last).trimEnd()}\u2026`;
+  return two;
+}
+const endStop = (s: string): string => `${s.trim().replace(/[.!?]+$/, '')}.`;
+
+export function lifelines(q: Model['sequences'][number]): { spec: FigureSpec; line: LayoutLine } {
+  const n = q.participants.length;
+  const c = Math.min(180, Math.max(104, Math.floor(832 / n)));
+  const width = n * c + 2 * MARGIN;
+  const lanes = q.participants.map((p, k) => ({ id: p.id, x: MARGIN + c * k + c / 2, w: c - 12, lines: laneLines(p.label, c - 12), title: p.label, look: p.look }));
+  const lane = new Map(lanes.map((l) => [l.id, l]));
+  const name = (id: string): string => lane.get(id)?.title ?? id;
+  let y = ROW0;
+  const rows = q.messages.map((m) => {
+    const x1 = lane.get(m.from)?.x ?? 0, x2 = lane.get(m.to)?.x ?? 0, self = m.from === m.to, reply = m.reply === true;
+    const text = shortLabel(m.label, m.short);
+    const w = Math.ceil((`${m.n} ${text}`.length) * LABEL_CW + 12);
+    // From the calling lifeline toward the arrow's end; shifted inward so it never passes the figure's edge.
+    const want = x2 < x1 ? x1 - 6 - w : x1 + 6;
+    const label = { x: Math.round(Math.max(MARGIN, Math.min(want, width - MARGIN - w))), y: y + ARROW_DY - 4 - LABEL_H, w, h: LABEL_H };
+    const row = { id: `${q.id}#${m.n}`, n: m.n, y, from: m.from, to: m.to, x1, x2, self, mode: m.mode ?? 'sync', reply, leaves: lane.get(m.to)?.look === 'external' && !reply, text, label };
+    y += self ? SELF_ROW : ROW;
+    return row;
+  });
+  const height = y + 24;
+  const steps = q.messages.map((m): FigureStep => ({
+    edges: [`${q.id}#${m.n}`], nodes: [m.from, m.to], caption: `Step ${m.n}: ${name(m.from)} to ${name(m.to)}: ${endStop(m.label)}`, where: where(m.evidence),
+  }));
+  const spec: FigureSpec = { key: `seq-${q.id}`, kind: 'sequence', width, height, direction: 'DOWN', nodes: [], edges: [], groups: [], lanes, rows, steps, notDrawn: [] };
+  const line: LayoutLine = { key: spec.key, width, height, direction: 'DOWN', crossings: 0, nodeHits: 0, nodes: n, arrows: rows.length, notDrawn: 0, unlabelled: 0, participants: n, messages: rows.length, scrolls: width > MAX_W };
+  return { spec, line };
+}
+
 export function reportLine(l: LayoutLine): string {
+  if (l.participants !== undefined) return `${l.key} ${l.width}x${l.height} lifelines participants=${l.participants} messages=${l.messages ?? 0} scrolls at ${MAX_W}: ${l.scrolls ? 'yes' : 'no'}`;
   return `${l.key} ${l.width}x${l.height} ${l.direction} crossings=${l.crossings} hits=${l.nodeHits} nodes=${l.nodes} arrows=${l.arrows} notDrawn=${l.notDrawn} unlabelled=${l.unlabelled}`;
 }
 
 // Every inline figure: each level diagram, each sequence and each store flow, in model order.
 // A figure ELK could not lay out at all is unfit with `elk` set: an ELK error, not a figure to split.
 export async function layoutAll(model: Model): Promise<{ figures: FigureSpec[]; report: LayoutLine[]; unfit: { key: string; line: string; elk?: string }[] }> {
-  const inputs = [...model.levels.diagrams.map(levelInput), ...model.sequences.map(sequenceInput), ...model.storeFlows.map(flowInput)];
   const figures: FigureSpec[] = [], report: LayoutLine[] = [], unfit: { key: string; line: string; elk?: string }[] = [];
-  for (const input of inputs) {
-    let laid: Awaited<ReturnType<typeof figureOf>>;
-    try { laid = await figureOf(input); } catch (e) {
-      if (!(e instanceof ElkError)) throw e;
-      unfit.push({ key: input.key, line: '', elk: e.message });
-      continue;
+  const boxes = async (inputs: Input[]): Promise<void> => {
+    for (const input of inputs) {
+      let laid: Awaited<ReturnType<typeof figureOf>>;
+      try { laid = await figureOf(input); } catch (e) {
+        if (!(e instanceof ElkError)) throw e;
+        unfit.push({ key: input.key, line: '', elk: e.message });
+        continue;
+      }
+      const { spec, line, elkError } = laid;
+      figures.push(spec);
+      report.push(line);
+      if (line.crossings > MAX_CROSS || line.width > MAX_W) unfit.push({ key: line.key, line: reportLine(line), ...(elkError === undefined ? {} : { elk: `ELK rejected some variants: ${elkError}` }) });
     }
-    const { spec, line, elkError } = laid;
-    figures.push(spec);
-    report.push(line);
-    if (line.crossings > MAX_CROSS || line.width > MAX_W) unfit.push({ key: line.key, line: reportLine(line), ...(elkError === undefined ? {} : { elk: `ELK rejected some variants: ${elkError}` }) });
-  }
+  };
+  await boxes(model.levels.diagrams.map(levelInput));
+  // A sequence is never unfit here: 9 to 12 participants scroll inside the card, and the check caps the count.
+  for (const q of model.sequences) { const { spec, line } = lifelines(q); figures.push(spec); report.push(line); }
+  await boxes(model.storeFlows.map(flowInput));
   return { figures, report, unfit };
 }

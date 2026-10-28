@@ -111,7 +111,7 @@ const dir = path.join(repo, "references", "visual");
 const shown = fs.readdirSync(dir).sort();
 assert.deepStrictEqual(shown, [
   "archify-adapter.md",
-  "fx-flow-1.js",
+  "fx-flow-2.js",
   "fx-map-1.js",
   "fx-map-2.js",
   "fx-tokens-1.css",
@@ -129,7 +129,7 @@ const tableText = fs.readFileSync(path.join(repo, TABLE), "utf8");
 const listed = rows(repo).map((r) => r.file).sort();
 assert.deepStrictEqual(listed, [
   "elkjs-0.9.3.bundled.js",
-  "fx-flow-1.js",
+  "fx-flow-2.js",
   "fx-map-1.js",
   "fx-map-2.js",
   "fx-tokens-1.css",
@@ -243,7 +243,9 @@ assert.deepStrictEqual(
   plain(map2.validateMapData(data([{ ...m2l0, nodes: [gnode("api")] }, m2l1]))),
   ["level l0: edge api -> ext names a missing node"]
 );
-const flow = load("fx-flow-1.js").fxFlow;
+const flow = load("fx-flow-2.js").fxFlow;
+assert.ok(!fs.existsSync(path.join(dir, "fx-flow-1.js")), "fx-flow-1.js is gone");
+assert.ok(!tableText.includes("fx-flow-1.js"), "the table has no fx-flow-1.js row");
 const fig = (over = {}) => ({
   key: "seq-turn",
   kind: "sequence",
@@ -260,7 +262,24 @@ const fig = (over = {}) => ({
 assert.deepStrictEqual(plain(flow.validateFigure(fig())), []);
 assert.deepStrictEqual(plain(flow.validateFigure(fig({ steps: [{ edges: ["e9"], nodes: ["a"], caption: "c" }] }))), ["figure seq-turn: step 0 names a missing edge e9"]);
 assert.deepStrictEqual(plain(flow.validateFigure(fig({ steps: [{ edges: ["e1"], nodes: ["zz"], caption: "c" }] }))), ["figure seq-turn: step 0 names a missing node zz"]);
-assert.deepStrictEqual(plain(flow.validateFigure(fig({ width: 900 }))), ["figure seq-turn: wider than 860 px"]);
+assert.deepStrictEqual(plain(flow.validateFigure(fig({ key: "level-l0", kind: "level", width: 900 }))), ["figure level-l0: wider than 860 px"]);
+const lifeline = (over = {}) => ({
+  key: "seq-turn",
+  kind: "sequence",
+  width: 964,
+  height: 136,
+  direction: "DOWN",
+  nodes: [],
+  edges: [],
+  groups: [],
+  notDrawn: [],
+  lanes: [{ id: "client", x: 104, w: 168, lines: ["Client"], title: "Client", look: "client" }, { id: "api", x: 284, w: 168, lines: ["Service"], title: "Service", look: "service" }],
+  rows: [{ id: "turn#1", n: 1, y: 72, from: "client", to: "api", x1: 104, x2: 284, self: false, mode: "sync", reply: false, leaves: false, text: "Opens a link", label: { x: 110, y: 80, w: 100, h: 16 } }],
+  steps: [{ edges: ["turn#1"], nodes: ["client", "api"], caption: "Step 1: Client to Service: Opens a link.", where: "app/x.rb:1-4" }],
+  ...over
+});
+assert.deepStrictEqual(plain(flow.validateFigure(lifeline())), []);
+assert.deepStrictEqual(plain(flow.validateFigure(lifeline({ steps: [{ edges: ["turn#9"], nodes: ["client", "api"], caption: "c", where: null }] }))), ["figure seq-turn: step 0 names a missing row turn#9"]);
 const textOf = (n) => typeof n === "string" ? n : Array.isArray(n) ? n.map(textOf).join("") : n !== null && typeof n === "object" && "children" in n ? textOf(n.children) : "";
 function mountWith(layout) {
   const state = [];

@@ -258,16 +258,23 @@ export function collect(model: Model): { item: Item; o: object }[] {
   return out;
 }
 
-// Shared by the layout step (task 05) and the browser kit (task 08).
-export type LayoutLine = { key: string; width: number; height: number; direction: 'RIGHT' | 'DOWN'; crossings: number; nodeHits: number; nodes: number; arrows: number; notDrawn: number; unlabelled: number };
+// Shared by the layout step and the browser kit (fx-flow-2.ts copies the shape).
+// Sequence lines carry participants, messages and scrolls; crossings do not apply to them (always 0).
+export type LayoutLine = { key: string; width: number; height: number; direction: 'RIGHT' | 'DOWN'; crossings: number; nodeHits: number; nodes: number; arrows: number; notDrawn: number; unlabelled: number; participants?: number; messages?: number; scrolls?: boolean };
+// A lifeline participant: x is the lane centre, w the box width; lines at most 2, cut with an ellipsis, title the full label.
+export type FigureLane = { id: string; x: number; w: number; lines: string[]; title: string; look: Look };
+// One message: y is the row top (the arrow sits at y + 28); x1 and x2 are the calling and called lane centres.
+export type FigureRow = { id: string; n: number; y: number; from: string; to: string; x1: number; x2: number; self: boolean; mode: 'sync' | 'async'; reply: boolean; leaves: boolean; text: string; label: { x: number; y: number; w: number; h: number } };
+export type FigureStep = { edges: string[]; nodes: string[]; caption: string; where: string | null }; // caption holds no evidence; where is `path:lines`
 export type FigureSpec = {
   key: string; // level-<diagram id> | seq-<sequence id> | flow-<flow id>
   kind: 'level' | 'sequence' | 'flow';
   width: number; height: number; direction: 'RIGHT' | 'DOWN';
-  nodes: { id: string; x: number; y: number; w: number; h: number; lines: string[]; kind: string; primary: boolean; store: boolean }[];
+  nodes: { id: string; x: number; y: number; w: number; h: number; lines: string[]; sub: string; look: Look; kind: string; primary: boolean; store: boolean }[];
   edges: { id: string; d: string; mode: 'sync' | 'async'; label: { x: number; y: number; w: number; h: number; text: string } | null }[];
   groups: { id: string; label: string; x: number; y: number; w: number; h: number }[];
-  steps: { edges: string[]; nodes: string[]; caption: string }[]; // caption is plain text holding the first evidence `path:lines`
+  lanes?: FigureLane[]; rows?: FigureRow[]; // a sequence only, with nodes, edges and groups empty; a step's edges name rows
+  steps: FigureStep[];
   notDrawn: string[]; // edge ids
 };
 
