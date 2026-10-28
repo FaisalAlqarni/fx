@@ -376,6 +376,8 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
     if (deep.some((d) => d.name === base || d.name === `${base}-p1`)) continue;
     const name = [base, `${base}-p1`].find((n) => fs.existsSync(path.join(opts.hostRoot, pages, `${n}.html`)));
     if (name !== undefined) deep.push({ name, renderer: hasMarker(fs.readFileSync(path.join(opts.hostRoot, pages, `${name}.html`), 'utf8')) ? 'svg' : 'archify' });
+    // renderPage still links <base>.html; the warning keeps that dead link from passing unseen.
+    else result.problems.push({ file: '', pointer: '', level: 'warning', message: `figure ${f.key}: no deep page ${path.posix.join(pages, `${base}.html`)}; its card links a missing page until a build renders it` });
   }
   const template = fs.readFileSync(path.join(REFERENCES, 'system-flow', 'site-template.html'), 'utf8');
   const html = renderPage({ model: checked.model, figures: laid.figures, coverage: cov, theme, roots: checked.roots, template, deep });

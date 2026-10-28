@@ -192,4 +192,18 @@ fs.writeFileSync(a[3], '<!doctype html><html><body>archify page</body></html>');
   only(f, 'bullet:b1');
   assert.strictEqual(deepLink(f, 'seq-turn'), '<a class="deep" href="diagrams/seq-turn.html">Open in archify</a>', 'the --only build');
 }
+{
+  // A first build run with --only: no deep page is on disk, so each card links a page that does not exist, and the build says so.
+  const f = setup();
+  const r = f.run(['build', '--prefer', 'cheap', '--only', 'bullet:b1']);
+  assert.strictEqual(r.status, 0, `${r.stdout}${r.stderr}`);
+  const out = parseJson(r.stdout) as { problems: { file: string; pointer: string; message: string; level: string }[] };
+  assert.strictEqual(deepLink(f, 'seq-turn'), '<a class="deep" href="diagrams/seq-turn.html">Open full diagram</a>');
+  const missing = out.problems.filter((p) => p.level === 'warning' && p.message.includes('no deep page')).map((p) => p.message).sort();
+  assert.deepStrictEqual(missing, [
+    'figure level-engine: no deep page docs/system-flow/diagrams/arch-engine.html; its card links a missing page until a build renders it',
+    'figure seq-floor-visit: no deep page docs/system-flow/diagrams/seq-floor-visit.html; its card links a missing page until a build renders it',
+    'figure seq-turn: no deep page docs/system-flow/diagrams/seq-turn.html; its card links a missing page until a build renders it',
+  ]);
+}
 process.stdout.write('system-flow-only.test.js: OK\n');
