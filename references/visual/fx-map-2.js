@@ -237,6 +237,8 @@
             nodes: shown.nodes,
             edges: shown.edges,
             fitView: true,
+            fitViewOptions: { padding: 0.1 },
+            minZoom: 0.2,
             nodesDraggable: false,
             nodesConnectable: false,
             onNodeClick: (_e, n) => setSel({ kind: "node", id: n.id }),

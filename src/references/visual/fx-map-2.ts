@@ -218,7 +218,7 @@ function mount(host: Element, data: MapData): void {
       h('div', { className: 'fxm-body' },
         h('div', { className: 'fxm-canvas' }, shown
           ? h(RF.default, {
-            key: curId, nodes: shown.nodes, edges: shown.edges, fitView: true, nodesDraggable: false, nodesConnectable: false,
+            key: curId, nodes: shown.nodes, edges: shown.edges, fitView: true, fitViewOptions: { padding: 0.1 }, minZoom: 0.2, nodesDraggable: false, nodesConnectable: false,
             onNodeClick: (_e: unknown, n: { id: string }) => setSel({ kind: 'node', id: n.id }),
             onEdgeClick: (_e: unknown, ed: { id: string }) => setSel({ kind: 'edge', id: ed.id }),
             onPaneClick: () => setSel(null),
