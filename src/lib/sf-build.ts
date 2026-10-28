@@ -354,6 +354,11 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
     for (const d of shown) result.diagrams.push({ name: d.name, renderer, reason: line.slice(g0.name.length + 2) });
   }
 
+  // A generated file that a hand-written one blocks leaves the outputs incomplete: not ok, and nothing stamped.
+  if (result.collisions.length) {
+    result.problems.push(...result.collisions.map((rel): Problem => ({ file: '', pointer: '', message: `${rel} exists without the generated marker; move it, or set system_flow.output.markdown, then rebuild`, level: 'error' })));
+    return result;
+  }
   // Last step, only when everything above succeeded (a write error above throws before this line).
   stampVerified(opts.hostRoot, path.join(opts.hostRoot, opts.site, 'model', 'fragments'), stamps);
   if (opts.flags) saveChoices(opts.hostRoot, { prefer, pageLimits: limits, svg: svgNames });

@@ -153,15 +153,17 @@ assert.strictEqual(setup().run(['nope']).status, 2);
   assert.ok(read(f, 'docs/system/s1.md').includes(`<!-- fx-docs verified: ${c0} -->`));
 }
 
-// A hand-written doc is never overwritten, and the collision is listed.
+// A hand-written doc is never overwritten; the collision fails the build, is listed, and no stamp is written (A7).
 {
   const f = setup();
   f.put('host', 'docs/system/s1.md', '# Mine\n\nHand written.\n');
   f.commit('host', 'hand written doc');
-  const r = built(f);
+  const before = fs.readFileSync(path.join(f.host, F, 'level0.json'), 'utf8');
+  const r = f.run(['build']);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.strictEqual(r.stderr, 'system-flow: build: docs/system/s1.md exists without the generated marker; move it, or set system_flow.output.markdown, then rebuild\n');
   assert.strictEqual(read(f, 'docs/system/s1.md'), '# Mine\n\nHand written.\n');
-  assert.deepStrictEqual(r.collisions, ['docs/system/s1.md']);
-  assert.ok(fs.existsSync(path.join(f.host, 'docs/system/components.md')));
+  assert.strictEqual(fs.readFileSync(path.join(f.host, F, 'level0.json'), 'utf8'), before, 'no stamps');
 }
 
 // An uncommitted cited file stops the build and nothing changes.
