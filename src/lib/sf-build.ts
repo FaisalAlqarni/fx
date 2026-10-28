@@ -5,6 +5,7 @@ import * as path from 'path';
 import { parseJson } from './json.js';
 import { parseFxJson } from './fx-json.js';
 import { resolveRoots, verifyEvidence } from './sf-evidence.js';
+import { checkCorrections, headModel } from './sf-corrections.js';
 import type { Root } from './sf-evidence.js';
 import { renderCoverage, renderMarkdown, renderReadme, renderRules, GENERATED } from './sf-markdown.js';
 import { checkRuleAdrs, checkRules } from './sf-rules.js';
@@ -70,6 +71,11 @@ export function checkModel(hostRoot: string, site: string, mode: 'check' | 'buil
     if (only !== undefined && !loaded.fragments.some((f) => f.file === only)) throw new Error(`no fragment ${only}`);
     if (only !== undefined) items = items.filter((i) => i.file === only);
     problems.push(...resolved.problems, ...checkRuleAdrs(merged.model, resolved.roots), ...verifyEvidence(items, resolved.roots, mode));
+    const host = [...resolved.roots.values()].find((r) => r.host);
+    if (host) {
+      const head = headModel(host, path.join(hostRoot, site, 'model', 'fragments'));
+      problems.push(...checkCorrections(head.items, head.model, itemsOf(merged.model), merged.model));
+    }
     if (only !== undefined) problems = problems.filter((p) => p.file === only || p.file === '.fx.json');
   }
   return { config: cfg.config, fragments: loaded.fragments, model: merged.model, items, roots, origin: merged.origin, problems };
