@@ -18,6 +18,8 @@ references tree. fx's own kit files sit beside this file.
 | `elkjs-0.9.3.bundled.js` | elkjs | 0.9.3 | `elkjs/lib/elk.bundled.js` | `https://registry.npmjs.org/elkjs/-/elkjs-0.9.3.tgz` | `b0745abd7f23cd91690a1587e377edbe19fd7233c783300290936720546216d4` | `LICENSE-elkjs` |
 | `fx-tokens-1.css` | fx | 0.7.0 |  |  | `5039daa841abe2b61dd062da9ff80c7408d2098c3d06b6eae502c7d81ea8b4d8` |  |
 | `fx-map-1.js` | fx | 0.7.0 |  |  | `5270743f34aa8baa67f4bc9a1ac6cb117236c06aef5aab46aeeb21bb210fb04b` |  |
+| `fx-map-2.js` | fx | 0.8.0 |  |  | `3dfcc4fe0af320b16507afa945df2e7d4464a6a20133d1be2aceeb87e016d75f` |  |
+| `fx-flow-1.js` | fx | 0.8.0 |  |  | `352bf9e5845c05229f59bfaf4593eb2584478ad6a65520d3009fa506180da226` |  |
 
 React and React DOM are MIT and share one licence file. React Flow is MIT. elkjs is
 EPL-2.0. Each licence is carried verbatim in fx's `vendor/` folder.
@@ -28,8 +30,9 @@ EPL-2.0. Each licence is carried verbatim in fx's `vendor/` folder.
 |---|---|---|---|
 | Report | `docs/plans/_assets/` | `docs/plans/<slug>/<page>.html` | `../_assets/` |
 | Docs page | `docs/html/_assets/` | `docs/html/<section>/<page>.html` | `../_assets/` |
+| System flow site | `<site>/assets/` | `<site>/index.html` and `<site>/diagrams/<name>.html` | `assets/` from the page, `../assets/` from a diagram page |
 
-A page loads `../_assets/<name>` and nothing else: no CDN, no host, no other path.
+A page loads `../_assets/<name>` and nothing else: no CDN, no host, no other path. The system flow site is the one exception: its folder is `assets/`, as the row says.
 
 ## Copy rule
 
@@ -40,8 +43,9 @@ Before writing a page, copy the files it loads into the output root:
    that name is already there.** The kit files come from the folder beside this file,
    the libraries from fx's `vendor/` folder.
 3. Copy the `LICENSE-*` file of each copied library beside it, under the same rule.
+4. In a system flow site, `theme.css` is generated from the repository's design language and written into `assets/`; it is never copied from fx.
 
-A page with no map copies only `fx-tokens-1.css`. The map needs all seven files;
+A page with no map copies only `fx-tokens-1.css`. The map needs the five library files and one map file (`fx-map-1.js` or `fx-map-2.js`); `fx-flow-1.js` needs no library;
 elkjs alone is about 1.6 MB, so copy it only for a page that has a map.
 
 ## Missing-file rule
@@ -80,3 +84,5 @@ A node with `children` opens the level of that id. Every node and edge carries i
 evidence; the side panel shows it. `fxMap.validateMapData` reports a missing root
 level, a node that opens a missing level, and an edge that names a missing node; the
 page shows those messages in place of the map.
+
+`fx-map-2.js` reads the same block with these additions: each level has `groups` (`{ id, label, members, groups? }`), each node has `primary` (false draws it faded as a context node), each edge has `mode` (`sync` or `async`), and evidence of another root is written `@<root id>/<path>`. It also reports a group that names a missing node. `fx-flow-1.js` reads `<script type="application/json" id="diagrams">`, an object of figure specs keyed by figure key, and fills each `<figure data-fx-flow="<key>">`.

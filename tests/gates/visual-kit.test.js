@@ -111,7 +111,9 @@ const dir = path.join(repo, "references", "visual");
 const shown = fs.readdirSync(dir).sort();
 assert.deepStrictEqual(shown, [
   "archify-adapter.md",
+  "fx-flow-1.js",
   "fx-map-1.js",
+  "fx-map-2.js",
   "fx-tokens-1.css",
   "page-template.html",
   "svg-animated.md",
@@ -119,6 +121,7 @@ assert.deepStrictEqual(shown, [
   "visual-assets.md",
   "visual-check.md"
 ]);
+for (const part of ["<!-- slot: NAV", "<!-- slot: DIAGRAMS"]) assert.ok(fs.readFileSync(path.join(dir, "page-template.html"), "utf8").includes(part), `page-template.html holds ${part}`);
 const REPORT = "skills/fx-architecture/HTML-REPORT.md";
 const PAGE_LANES = [REPORT, "skills/fx-docs/html-pages.md", "skills/fx-audit/SKILL.md"];
 assert.deepStrictEqual(kitErrors(repo, [...shown.filter((n) => n !== "visual-assets.md").map((n) => `references/visual/${n}`), ...PAGE_LANES]), []);
@@ -126,7 +129,9 @@ const tableText = fs.readFileSync(path.join(repo, TABLE), "utf8");
 const listed = rows(repo).map((r) => r.file).sort();
 assert.deepStrictEqual(listed, [
   "elkjs-0.9.3.bundled.js",
+  "fx-flow-1.js",
   "fx-map-1.js",
+  "fx-map-2.js",
   "fx-tokens-1.css",
   "react-18.3.1.production.min.js",
   "react-dom-18.3.1.production.min.js",
@@ -209,6 +214,48 @@ assert.deepStrictEqual(
 );
 assert.deepStrictEqual(plain(fxMap.validateMapData({ root: "zz", levels: [] })), ["root level zz missing"]);
 assert.deepStrictEqual(plain(fxMap.levelPath(data([l0, l1]), "l1-api")), ["l0", "l1-api"]);
+function load(name) {
+  const c = vm.createContext({});
+  vm.runInContext(fs.readFileSync(path.join(dir, name), "utf8"), c);
+  return c;
+}
+const map2 = load("fx-map-2.js").fxMap;
+const ctxNode = (id) => ({ ...node(id), primary: false, children: void 0 });
+const gnode = (id) => ({ ...node(id), primary: true });
+const glevel = { id: "l0", title: "System", groups: [{ id: "g", label: "G", members: ["api", "ghost"] }], nodes: [gnode("api")], edges: [] };
+assert.deepStrictEqual(plain(map2.validateMapData(data([glevel]))), ["level l0: group g names a missing node ghost"]);
+const m2l0 = {
+  id: "l0",
+  title: "System",
+  groups: [],
+  nodes: [{ ...gnode("api"), children: "l1-api" }, ctxNode("ext")],
+  edges: [{ from: "api", to: "ext", label: "calls", mode: "async", evidence: [] }]
+};
+const m2l1 = { id: "l1-api", title: "API", groups: [], nodes: [gnode("x")], edges: [] };
+assert.deepStrictEqual(plain(map2.validateMapData(data([m2l0, m2l1]))), []);
+assert.deepStrictEqual(plain(map2.levelPath(data([m2l0, m2l1]), "l1-api")), ["l0", "l1-api"]);
+assert.deepStrictEqual(
+  plain(map2.validateMapData(data([{ ...m2l0, nodes: [gnode("api")] }, m2l1]))),
+  ["level l0: edge api -> ext names a missing node"]
+);
+const flow = load("fx-flow-1.js").fxFlow;
+const fig = (over = {}) => ({
+  key: "seq-turn",
+  kind: "sequence",
+  width: 400,
+  height: 200,
+  direction: "DOWN",
+  nodes: [{ id: "a", x: 0, y: 0, w: 100, h: 40, lines: ["A"], kind: "service", primary: true, store: false }],
+  edges: [{ id: "e1", d: "M0 0L10 10", mode: "sync", label: null }],
+  groups: [],
+  steps: [{ edges: ["e1"], nodes: ["a"], caption: "a.rb:1" }],
+  notDrawn: [],
+  ...over
+});
+assert.deepStrictEqual(plain(flow.validateFigure(fig())), []);
+assert.deepStrictEqual(plain(flow.validateFigure(fig({ steps: [{ edges: ["e9"], nodes: ["a"], caption: "c" }] }))), ["figure seq-turn: step 0 names a missing edge e9"]);
+assert.deepStrictEqual(plain(flow.validateFigure(fig({ steps: [{ edges: ["e1"], nodes: ["zz"], caption: "c" }] }))), ["figure seq-turn: step 0 names a missing node zz"]);
+assert.deepStrictEqual(plain(flow.validateFigure(fig({ width: 900 }))), ["figure seq-turn: wider than 860 px"]);
 const textOf = (n) => typeof n === "string" ? n : Array.isArray(n) ? n.map(textOf).join("") : n !== null && typeof n === "object" && "children" in n ? textOf(n.children) : "";
 function mountWith(layout) {
   const state = [];
