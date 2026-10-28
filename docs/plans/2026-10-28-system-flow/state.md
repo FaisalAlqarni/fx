@@ -91,3 +91,16 @@ Task 01: minor (deferred): brief 02 (.fx/2026-10-28-system-flow/briefs/02.md:113
 Task 01: cost unavailable (no transcript recorded)
 Task 01: complete (commits 0749988..abf752f, review clean after 3 fix rounds)
 Task 01: guarantee: check-all ALL GREEN at abf752f per the implementer's round 3 report (748 lines read).
+Task 03: DONE_WITH_CONCERNS abf752f..5f8487e (check-all ALL GREEN per implementer). Concerns are observations: optional Root.missing, task 01 fixture line gains output.markdown, fx-json test RED not captured separately; passed to the reviewer.
+Task 03: reviewer dispatched (sonnet), findings findings/03-review.md, security named-risk check added since the verifier reads agent-supplied paths.
+Task 04: dispatched 5f8487e 2026-10-28T11:06:12+03:00
+Task 04: implementer a5c1b53dda83043cc (sonnet). Waiting: task 03 review (af6e26aa08b71243d) and task 04 implementer.
+Task 03: minor (deferred): fx-json test written without its own captured RED run.
+Task 03: review 0/1/1, Important: non-git root evidence paths with .. escape the root in sf-evidence.ts readCited and folderExists (missed security tripwire). Fix round 1 to the original implementer; security lens dispatched on the task diff per the missed-tripwire rule.
+Task 03: security lens not dispatched after all: its tripwire cell (auth, secrets, routes, request-param records, user-supplied URL, string-built SQL or shell) does not match a file path from a fragment; the branch pass can run it. Fix round 1 dispatched to aad0776005eb22346 at 5f8487e.
+Task 03: fix round 1/5: controller re-review (15 lines): 1 addressed, 0 open
+Task 03: test_scope after the fix did not finish because task 04's uncommitted files were in the tree; the evidence and rules tests pass per the fix report. The exit gate's check-all covers it.
+Task 03: cost unavailable (no transcript recorded)
+Task 03: complete (commits abf752f..3e85a0a, review clean after 1 fix round)
+Waiting: task 04 implementer (a5c1b53dda83043cc); task 06 is on the frontier but implementers run serially.
+Task 04: DONE_WITH_CONCERNS 3e85a0a..e289dab, test_scope ALL GREEN per implementer. Concerns: build test written after the code (RED shown only as exit 2 against the old CLI), only and archify flags accepted and ignored (tasks 12 and 17 own them), partial writes survive a mid-build failure. Passed to the reviewer.
