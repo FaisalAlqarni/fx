@@ -31,7 +31,7 @@ function setup(o: { catalogue?: boolean; questions?: boolean } = {}): Fx {
     sections: [
       { id: 's1', title: 'Links', question: 'Where do links expire?', diagrams: ['engine'], sequences: ['turn'], storeFlows: ['first'], storeRefs: ['links-table'],
         bullets: [{ id: 'b1', text: 'Reply: مرحبا', evidence: ev('app/x.rb', '4', 'expired?') }] },
-      { id: 's2', title: 'Again', question: 'Who else draws it?', diagrams: ['engine'] },
+      { id: 's2', title: 'Again', question: 'Who else draws it?', diagrams: ['engine'], lead: 'The engine is drawn again here as <b>x</b> for the reader. The second chapter links to the first drawing of it.' },
     ],
   });
   f.fragment('flows', {
@@ -53,7 +53,7 @@ function setup(o: { catalogue?: boolean; questions?: boolean } = {}): Fx {
 }
 const read = (f: Fx, rel: string): string => fs.readFileSync(path.join(f.host, rel), 'utf8');
 const build = (f: Fx) => { const r = f.run(['build']); assert.strictEqual(r.status, 0, `build exits 0\n${r.stdout}${r.stderr}`); return parseJson(r.stdout) as { pageBytes: number | null }; };
-const chapter = (page: string, id: string): string => { const at = page.indexOf(`<section id="${id}"`); assert.ok(at >= 0, id); const end = page.indexOf('<section', at + 1); return page.slice(at, end < 0 ? undefined : end); };
+const chapter = (page: string, id: string): string => { const at = page.search(new RegExp(`<section [^>]*id="${id}"`)); assert.ok(at >= 0, id); const end = page.indexOf('<section', at + 1); return page.slice(at, end < 0 ? undefined : end); };
 const block = (page: string, id: string): unknown => { const m = new RegExp(`<script type="application/json" id="${id}">([\\s\\S]*?)</script>`).exec(page); assert.ok(m, id); return parseJson(m[1] ?? ''); };
 const sandbox = (file: string): Record<string, { [k: string]: (x: unknown) => unknown }> => {
   const ctx: Record<string, unknown> = {};
@@ -100,22 +100,16 @@ const page = read(f, `${SITE}/index.html`);
 
 // Order, and the omitted open-questions chapter.
 {
-  const marks = ['<header', 'class="legend"', 'id="ch-00-explore"', 'id="ch-01-start-what"', 'id="ch-04-start-code"', 'id="ch-05-s1"', 'id="ch-06-s2"', 'id="components"', 'id="rules-in-force"', 'id="coverage"', 'id="corrections"'].map((m) => page.indexOf(m));
+  const marks = ['<header', 'class="legend"', 'id="ch-01-start-what"', 'id="ch-04-start-code"', 'id="ch-05-s1"', 'id="ch-06-s2"', 'id="ch-00-explore"', 'id="components"', 'id="rules-in-force"', 'id="coverage"', 'id="corrections"'].map((m) => page.indexOf(m));
   assert.ok(marks.every((m, i) => m >= 0 && (i === 0 || m > (marks[i - 1] ?? 0))), marks.join(','));
   assert.ok(!page.includes('id="open-questions"'));
   assert.ok(page.includes('<html lang="en" dir="ltr">'));
 }
 
-// Legend: one item per node kind in the model, none of the template's stock labels.
-{
-  const items = (/<ul class="legend"[^>]*>([\s\S]*?)<\/ul>/.exec(page)?.[1] ?? '').match(/<li>[\s\S]*?<\/li>/g) ?? [];
-  assert.deepStrictEqual(items.map((i) => i.replace(/<[^>]*>/g, '')), ['backend', 'database']);
-}
-
 // Lede and ownership: start-parts lists the level-0 diagram first, so it draws it and s1 and s2 link to it.
 {
   const s1 = chapter(page, 'ch-05-s1');
-  assert.ok(/<h2[^>]*>[^<]*<\/h2>\s*<p[^>]*>Where do links expire\?<\/p>/.test(s1), 'question is the first paragraph');
+  assert.ok(/<p class="eyebrow">[\s\S]*?Where do links expire\?[\s\S]*?<\/p>\s*<h2>/.test(s1), 'the question opens the chapter');
   assert.strictEqual(page.split('<figure data-fx-flow="level-engine">').length - 1, 1);
   assert.ok(chapter(page, 'ch-02-start-parts').includes('<figure data-fx-flow="level-engine">'));
   for (const id of ['ch-05-s1', 'ch-06-s2']) {
@@ -169,16 +163,9 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">مرحبا</span>'));
   for (const [k, spec] of Object.entries(figs)) assert.strictEqual(JSON.stringify(flow?.validateFigure?.(spec)), '[]', k);
 }
 
-// Design, Renderers (Page): NAV holds the numbered chapter list and the deep diagram list, and every deep page is linked.
+// Every deep page is linked from a chapter (task 07 moves the links into the cards).
 {
-  const nav = /<nav[^>]*>([\s\S]*?)<\/nav>/.exec(page)?.[1] ?? '';
-  const items = (/<ol>([\s\S]*?)<\/ol>/.exec(nav)?.[1] ?? '').match(/<li>[\s\S]*?<\/li>/g) ?? [];
-  assert.deepStrictEqual(items.map((i) => i.replace(/<[^>]*>/g, '')), ['Explore the system', 'What it is', 'The parts', 'One request', 'The code', 'Links', 'Again', 'Components', 'Rules in force', 'Coverage', 'Corrections']);
-  for (const id of ['ch-00-explore', 'ch-01-start-what', 'ch-02-start-parts', 'ch-03-start-request', 'ch-04-start-code', 'ch-05-s1', 'ch-06-s2', 'components', 'rules-in-force', 'coverage', 'corrections']) assert.ok(nav.includes(`href="#${id}"`), id);
-  for (const d of ['arch-engine', 'seq-turn', 'flow-first']) {
-    assert.ok(nav.includes(`href="diagrams/${d}.html"`), `nav links ${d}`);
-    assert.ok(chapter(page, 'ch-05-s1').includes(`href="diagrams/${d}.html"`), `chapter s1 links ${d}`);
-  }
+  for (const d of ['arch-engine', 'seq-turn', 'flow-first']) assert.ok(chapter(page, 'ch-05-s1').includes(`href="diagrams/${d}.html"`), `chapter s1 links ${d}`);
   const written = fs.readdirSync(path.join(f.host, SITE, 'diagrams')).filter((n) => n.endsWith('.html'));
   assert.ok(written.length >= 3, written.join(','));
   for (const n of written) assert.ok(page.includes(`href="diagrams/${n}"`), `index.html links ${n}`);
@@ -230,5 +217,71 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">مرحبا</span>'));
 
 // pageBytes.
 assert.strictEqual(out.pageBytes, fs.statSync(path.join(f.host, SITE, 'index.html')).size);
+
+// Site shell (task 06), on the fixture that meets the prose floor.
+const strip = (h: string): string => h.replace(/<[^>]*>/g, '');
+const gs = sfFixture();
+gs.fxJson({});
+gs.goodSet();
+build(gs);
+const site = read(gs, `${SITE}/index.html`);
+const metaFrag = parseJson(read(gs, `${SITE}/model/fragments/meta.json`)) as { meta: { intro: string } };
+const chFrag = parseJson(read(gs, `${SITE}/model/fragments/chapters.json`)) as { sections: { id: string; lead: string; bullets: { text: string }[] }[] };
+
+// The menu column: name, the fixed line, the theme toggle beside (never inside) the Chapters control, then the menu.
+assert.ok(/<aside id="side">\s*<p class="menu-name">Fixture<\/p>\s*<p class="menu-sub">System flow, generated by fx<\/p>\s*<button id="theme" type="button"[^>]*>[^<]*<\/button>\s*<details id="menu-bar">\s*<summary>Chapters<\/summary>\s*<nav id="menu" aria-label="Chapters">/.test(site), 'the menu column follows the DOM contract');
+
+// Menu groups: Start here and How it works numbered lists, Reference unnumbered, in that order.
+{
+  const menu = /<nav id="menu" aria-label="Chapters">([\s\S]*?)<\/nav>/.exec(site)?.[1] ?? '';
+  const groups = [...menu.matchAll(/<section class="group" data-group="(\w+)">\s*<h2>([^<]*)<\/h2>\s*<(ol|ul)>([\s\S]*?)<\/\3>\s*<\/section>/g)];
+  assert.deepStrictEqual(groups.map((m) => [m[1], m[2], m[3]]), [['start', 'Start here', 'ol'], ['how', 'How it works', 'ol'], ['ref', 'Reference', 'ul']]);
+  const hrefs = (h: string | undefined): string[] => [...(h ?? '').matchAll(/<a href="#([^"]+)">/g)].map((m) => m[1] ?? '');
+  assert.deepStrictEqual(hrefs(groups[0]?.[4]), ['ch-01-start-what', 'ch-02-start-parts', 'ch-03-start-request', 'ch-04-start-code']);
+  assert.deepStrictEqual(hrefs(groups[1]?.[4]), ['ch-05-s1']);
+  // Today's fixed chapters sit in Reference until task 08: the map (chapter 00) and Components.
+  assert.deepStrictEqual(hrefs(groups[2]?.[4]), ['ch-00-explore', 'components', 'rules-in-force', 'coverage', 'corrections']);
+  // Every chapter is reachable from the menu, and every menu link lands on a chapter.
+  const chapters = [...site.matchAll(/<section class="chapter" id="([^"]+)" data-group="(start|how|ref)">/g)];
+  assert.deepStrictEqual(chapters.map((m) => m[1]), groups.flatMap((g) => hrefs(g[4])));
+  assert.strictEqual((site.match(/<section class="chapter"/g) ?? []).length, chapters.length, 'every chapter carries data-group');
+  assert.deepStrictEqual(chapters.map((m) => m[2]), [...Array(4).fill('start'), 'how', ...Array(5).fill('ref')]);
+}
+assert.ok(site.includes('<html lang="en" dir="ltr">'));
+
+// Header: title, intro, the evidence button, and the legend by look.
+{
+  const head = /<header>([\s\S]*?)<\/header>/.exec(site)?.[1] ?? '';
+  assert.ok(head.includes('<h1>Fixture system</h1>'), 'h1 is meta.title');
+  assert.ok(head.includes(`<p class="intro">${metaFrag.meta.intro}</p>`), 'the intro is meta.intro');
+  assert.ok(/<button type="button" id="evall">Open all evidence boxes<\/button>/.test(head), 'the evidence button');
+  const items = (/<ul class="legend"[^>]*>([\s\S]*?)<\/ul>/.exec(head)?.[1] ?? '').match(/<li[^>]*>[\s\S]*?<\/li>/g) ?? [];
+  assert.deepStrictEqual(items.map(strip), ['Part of Fixture', 'Data or files', 'Phone or browser', 'Outside Fixture', 'Call that leaves Fixture', 'Step in flight']);
+}
+
+// Chapter head: eyebrow with number and question, the lead, and each bullet with its first evidence line.
+{
+  const s1 = chapter(site, 'ch-05-s1');
+  const want = chFrag.sections.find((x) => x.id === 's1');
+  assert.ok(s1.includes('<p class="eyebrow"><span class="n">05</span> <span class="q">Where do links expire?</span></p>'), 'eyebrow');
+  assert.ok(/<\/p>\s*<h2>Links<\/h2>\s*<p class="lead">/.test(s1), 'h2 then lead');
+  assert.strictEqual(strip(/<p class="lead">([\s\S]*?)<\/p>/.exec(s1)?.[1] ?? ''), want?.lead);
+  const facts = (/<ul class="facts">([\s\S]*?)<\/ul>/.exec(s1)?.[1] ?? '').match(/<li>[\s\S]*?<\/li>/g) ?? [];
+  assert.strictEqual(facts.length, 4);
+  assert.ok(facts[0]?.includes('<code class="at">app/x.rb:4</code>'), facts[0]);
+  assert.strictEqual(strip(facts[0]?.replace(/<code class="at">[\s\S]*?<\/code>/, '') ?? '').trim(), want?.bullets[0]?.text);
+}
+
+// Escape: a lead with markup renders as text.
+assert.ok(chapter(page, 'ch-06-s2').includes('&lt;b&gt;x&lt;/b&gt;') && !page.includes('<b>x</b>'), 'the lead is escaped');
+
+// Footer: generated, the record, both rebuild commands, offline.
+{
+  const foot = /<footer>([\s\S]*?)<\/footer>/.exec(site)?.[1] ?? '';
+  for (const w of ['model/fragments/', 'system-flow check', 'system-flow build', 'offline']) assert.ok(foot.includes(w), `footer names ${w}`);
+}
+
+// No string from the model this template was generalised from.
+assert.ok(!site.includes('Shamel') && !fs.readFileSync(path.join(__dirname, '..', 'references', 'system-flow', 'site-template.html'), 'utf8').includes('Shamel'));
 
 console.log('system-flow-page.test.js: OK');

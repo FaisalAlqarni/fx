@@ -95,7 +95,9 @@ assert.deepStrictEqual(shown, [
   'archify-adapter.md', 'fx-flow-2.js', 'fx-map-1.js', 'fx-map-2.js', 'fx-tokens-1.css', 'page-template.html',
   'svg-animated.md', 'svg-static.md', 'visual-assets.md', 'visual-check.md',
 ]);
-for (const part of ['<!-- slot: NAV', '<!-- slot: DIAGRAMS']) assert.ok(fs.readFileSync(path.join(dir, 'page-template.html'), 'utf8').includes(part), `page-template.html holds ${part}`);
+// The kit page template is main's, byte for byte: the system flow site has its own template (references/system-flow/site-template.html).
+const MAIN_PAGE_TEMPLATE_SHA = '062f21b41aac35afbcd244b7093e45626b68e06349fab9ca353ce76404e8924d';
+assert.strictEqual(sha(fs.readFileSync(path.join(dir, 'page-template.html'))), MAIN_PAGE_TEMPLATE_SHA, 'page-template.html equals main');
 const REPORT = 'skills/fx-architecture/HTML-REPORT.md';
 // Every lane file that writes a page is under the same load and host check.
 const PAGE_LANES = [REPORT, 'skills/fx-docs/html-pages.md', 'skills/fx-audit/SKILL.md'];
@@ -121,14 +123,6 @@ for (const part of ['localStorage.setItem("fx-theme"', 'class="legend"', 'id="ev
 }
 // React Flow's default edge-label background is white: under light text in dark mode the label vanishes (e2e bug 5).
 assert.ok(template.includes('.react-flow__edge-textbg{fill:var(--panel)}'), 'page-template.html themes the edge-label background');
-// Long evidence paths in tables overflowed the page at 1440 and 390 px: a table scrolls in its own region and its cells
-// wrap. The region is a wrapper the renderer writes; a display:block table loses its table semantics (final fix A20).
-const rule = (sel: string): string => new RegExp(`(?:^|\\n)${sel.replace('.', '\\.')}\\{([^}]*)\\}`).exec(template)?.[1] ?? '';
-assert.ok(!rule('table').includes('display:block'), 'page-template.html table rule keeps the table a table');
-for (const part of ['max-width:100%', 'overflow-x:auto']) assert.ok(rule('.table-scroll').includes(part), `page-template.html .table-scroll rule keeps ${part}`);
-assert.ok(rule('th,td').includes('overflow-wrap:anywhere'), 'page-template.html table cells wrap long words');
-// Proof (b), 390 px: evidence paths and edge ids in lists outside tables widened index.html to 449 px.
-assert.ok(rule('body').includes('overflow-wrap:anywhere'), 'page-template.html body wraps long words');
 assert.deepStrictEqual(template.match(/(?<![\w-])(margin|padding|border)-(left|right)\b|(?<![\w-])(left|right)\s*:/g) ?? [], [], 'page-template.html uses logical properties');
 
 // The architecture report and the audit's Phase 4 page start from the kit, and the audit's

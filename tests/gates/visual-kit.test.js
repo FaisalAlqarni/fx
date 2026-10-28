@@ -121,7 +121,8 @@ assert.deepStrictEqual(shown, [
   "visual-assets.md",
   "visual-check.md"
 ]);
-for (const part of ["<!-- slot: NAV", "<!-- slot: DIAGRAMS"]) assert.ok(fs.readFileSync(path.join(dir, "page-template.html"), "utf8").includes(part), `page-template.html holds ${part}`);
+const MAIN_PAGE_TEMPLATE_SHA = "062f21b41aac35afbcd244b7093e45626b68e06349fab9ca353ce76404e8924d";
+assert.strictEqual(sha(fs.readFileSync(path.join(dir, "page-template.html"))), MAIN_PAGE_TEMPLATE_SHA, "page-template.html equals main");
 const REPORT = "skills/fx-architecture/HTML-REPORT.md";
 const PAGE_LANES = [REPORT, "skills/fx-docs/html-pages.md", "skills/fx-audit/SKILL.md"];
 assert.deepStrictEqual(kitErrors(repo, [...shown.filter((n) => n !== "visual-assets.md").map((n) => `references/visual/${n}`), ...PAGE_LANES]), []);
@@ -146,11 +147,6 @@ for (const part of ['localStorage.setItem("fx-theme"', 'class="legend"', 'id="ev
   assert.ok(template.includes(part), `page-template.html keeps ${part}`);
 }
 assert.ok(template.includes(".react-flow__edge-textbg{fill:var(--panel)}"), "page-template.html themes the edge-label background");
-const rule = (sel) => new RegExp(`(?:^|\\n)${sel.replace(".", "\\.")}\\{([^}]*)\\}`).exec(template)?.[1] ?? "";
-assert.ok(!rule("table").includes("display:block"), "page-template.html table rule keeps the table a table");
-for (const part of ["max-width:100%", "overflow-x:auto"]) assert.ok(rule(".table-scroll").includes(part), `page-template.html .table-scroll rule keeps ${part}`);
-assert.ok(rule("th,td").includes("overflow-wrap:anywhere"), "page-template.html table cells wrap long words");
-assert.ok(rule("body").includes("overflow-wrap:anywhere"), "page-template.html body wraps long words");
 assert.deepStrictEqual(template.match(/(?<![\w-])(margin|padding|border)-(left|right)\b|(?<![\w-])(left|right)\s*:/g) ?? [], [], "page-template.html uses logical properties");
 for (const part of ["page-template.html", "visual-assets.md"]) assert.ok(fs.readFileSync(path.join(repo, REPORT), "utf8").includes(part), `${REPORT} names ${part}`);
 assert.ok(

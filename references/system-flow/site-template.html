@@ -1,0 +1,210 @@
+<!doctype html>
+<!--
+  fx system flow site template. Read by `system-flow build` only, never copied into a repository.
+  - Slot markers: TITLE, NAME, HEADER, LEGEND, MENU, CHAPTERS, MAP_DATA, DIAGRAMS, SITE_INDEX,
+    FOOTER. The build fills every one, HTML-escaping every repository string and writing every
+    less-than sign inside inline JSON as <.
+  - Loads only ../_assets/<name> files that references/visual/visual-assets.md lists; the build
+    rewrites ../_assets/ to the site's assets/ folder and adds theme.css after fx-tokens-1.css.
+  - Colours come only from fx token names, so theme.css themes the page. Logical properties
+    throughout, so dir="rtl" mirrors the layout.
+  - Menu: 240px sticky column at 900px and up; below it a sticky top bar whose "Chapters"
+    control is a <details>, so the list opens without JavaScript.
+-->
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><!-- slot: TITLE --></title>
+<script>try{var t=localStorage.getItem("fx-theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="../_assets/fx-tokens-1.css">
+<link rel="stylesheet" href="../_assets/reactflow-11.11.4.style.css">
+<style>
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.6 "Avenir Next","Seravek","Gill Sans",system-ui,sans-serif;overflow-wrap:anywhere}
+.wrap{display:grid;grid-template-columns:240px minmax(0,900px);gap:40px;max-inline-size:1228px;margin-inline:auto;padding-inline:24px}
+#side{position:sticky;top:0;align-self:start;max-block-size:100vh;block-size:100vh;display:flex;flex-direction:column;padding-block:32px 16px}
+.menu-name{margin:0 8px;font:800 19px/1.25 "Iowan Old Style","Charter",Georgia,serif}
+.menu-sub{margin:2px 8px 12px;font-size:13px;color:var(--muted)}
+#theme{align-self:start;margin:0 8px 12px}
+#menu-bar{display:flex;flex-direction:column;min-block-size:0;flex:0 1 auto}
+#menu-bar>summary{cursor:pointer;font:600 14px system-ui,sans-serif;color:var(--ink);background:var(--panel);border:1.5px solid var(--rule);border-radius:999px;padding:6px 16px;margin:0 8px;inline-size:max-content}
+#menu{overflow:auto;counter-reset:c;min-block-size:0;block-size:100%;overscroll-behavior:contain}
+#menu h2{font:700 12px/1.4 system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:16px 8px 4px}
+#menu ol,#menu ul{list-style:none;margin:0;padding:0}
+#menu ol li{counter-increment:c}
+#menu a{display:flex;gap:10px;padding:5px 8px;border-radius:6px;color:var(--muted);text-decoration:none;font-size:15px;line-height:1.35}
+#menu ol a::before{content:counter(c,decimal-leading-zero);font:600 12px/1.9 "SF Mono",Menlo,Consolas,monospace;color:var(--accent)}
+#menu a:hover,#menu a[aria-current]{color:var(--ink);background:var(--accent-tint)}
+@media (min-width: 900px){
+@supports selector(::details-content){
+#menu-bar::details-content{content-visibility:visible;display:block;min-block-size:0;flex:0 1 auto}
+#menu-bar>summary{display:none}
+}
+}
+main{padding-block:40px 120px;min-inline-size:0}
+header h1{font:800 clamp(40px,6vw,72px)/1 "Iowan Old Style","Charter",Georgia,serif;letter-spacing:-.02em;margin:24px 0 18px}
+header p{max-inline-size:62ch;color:var(--muted);margin:0 0 14px}
+header .intro{font-size:19px;color:var(--ink)}
+h2{font:800 36px/1.1 "Iowan Old Style","Charter",Georgia,serif;margin:0 0 14px;letter-spacing:-.01em}
+h3{font:700 15px/1.3 system-ui,sans-serif;margin:22px 0 6px;color:var(--accent)}
+p{max-inline-size:70ch;margin:0 0 12px}
+section.chapter{padding-block-start:86px}
+.eyebrow{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin:0 0 6px}
+.eyebrow .n{font:200 56px/1 "Iowan Old Style","Charter",Georgia,serif;color:var(--accent)}
+.eyebrow .q{font-weight:700;color:var(--accent)}
+.lead{font-size:19px;color:var(--muted)}
+code{font:13.5px/1.5 "SF Mono",Menlo,Consolas,monospace;background:var(--code);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.facts{margin:0 0 14px;padding-inline-start:22px;max-inline-size:74ch}
+.facts li{margin-block-end:10px}
+.facts code.at{display:block;background:none;padding:0;font-size:12.5px;color:var(--muted)}
+table{border-collapse:collapse;font-size:14px}
+.table-scroll{max-width:100%;overflow-x:auto;margin:8px 0 16px}
+th,td{text-align:start;vertical-align:top;padding:6px 10px;border-block-end:1px solid var(--rule);overflow-wrap:anywhere;min-inline-size:6ch}
+th{color:var(--accent)}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--alert);outline-offset:2px}
+button{font:600 14px system-ui,sans-serif;color:var(--ink);background:var(--panel);border:1.5px solid var(--rule);border-radius:999px;padding:6px 16px;min-block-size:36px;cursor:pointer}
+button:hover,#menu-bar>summary:hover{border-color:var(--accent)}
+.toolrow{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;padding:0;margin:22px 0 0;list-style:none;font-size:14px;color:var(--muted)}
+.legend li{display:flex;align-items:center;gap:7px}
+.sw{inline-size:22px;block-size:14px;border-radius:4px;border:2px solid var(--accent);background:var(--panel)}
+.sw.store{border-color:var(--ink);border-radius:2px;border-block-start-width:5px}
+.sw.client{border-color:var(--info);background:var(--info-tint)}
+.sw.external{border-style:dashed;border-color:var(--muted)}
+.sw.security{border-color:var(--violet)}
+.sw.leaves{block-size:0;border:0;border-block-start:2.4px solid var(--warn);border-radius:0;background:none}
+.sw.step{inline-size:14px;block-size:14px;border:0;border-radius:50%;background:var(--accent)}
+details.evidence{margin-block-start:16px;border:1px solid var(--rule);border-radius:12px;background:var(--panel);padding:0 14px}
+details.evidence>summary{cursor:pointer;padding:10px 0;font-weight:700;font-size:15px}
+details.evidence h4{margin:12px 0 4px;font:700 13px system-ui,sans-serif;color:var(--accent);text-transform:uppercase;letter-spacing:.03em}
+details.evidence ul{margin:4px 0 12px;padding-inline-start:20px;font-size:14px}
+.not-drawn{color:var(--muted);font-size:15px}
+footer{margin-block-start:80px;color:var(--muted);font-size:14px}
+[lang=ar]{font-family:"Geeza Pro","Al Bayan","SF Arabic",sans-serif}
+figure[data-fx-flow]{margin:16px 0;max-inline-size:100%;overflow-x:auto}
+figure[data-fx-flow] [role=group]{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-block-start:8px}
+.fxm-bar{display:flex;flex-wrap:wrap;gap:6px;margin-block-end:8px}
+.fxm-bar button[aria-current]{background:var(--accent);color:var(--paper);border-color:var(--accent)}
+.fxm-body{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px}
+.fxm-canvas{block-size:520px;border:1px solid var(--rule);border-radius:12px;background:var(--panel);overflow:hidden}
+.fxm-panel{border:1px solid var(--rule);border-radius:12px;background:var(--panel);padding:10px 14px;font-size:14.5px;max-block-size:520px;overflow:auto}
+.fxm-panel h4{margin:0 0 2px}.fxm-panel h5{margin:10px 0 2px;color:var(--accent)}
+.fxm-panel ul{padding-inline-start:18px;margin:4px 0}
+.fxm-group{font-size:12px;color:var(--muted);padding:2px 8px}
+.fxm-muted{color:var(--muted)}
+.fxm-node{text-align:start;font-size:13px;line-height:1.3;color:var(--ink)}
+.fxm-kind{color:var(--muted);font-size:12px}
+.fxm-label{font-weight:700;font-size:14px}
+.fxm-open{font-size:12px;font-weight:700;color:var(--paper);background:var(--accent);border-radius:999px;padding:0 8px}
+.react-flow__node{background:var(--panel);color:var(--ink);border:1.6px solid var(--accent);border-radius:10px;padding:6px 8px}
+.react-flow__edge-path{stroke:var(--muted)}
+.react-flow__edge-text{fill:var(--ink)}
+.react-flow__edge-textbg{fill:var(--panel)}
+.react-flow__controls-button{background:var(--panel);color:var(--ink);border-block-end:1px solid var(--rule)}
+.react-flow__controls-button svg{fill:var(--ink)}
+@media (max-width: 899.98px){
+.wrap{display:block;padding:0}
+#side{flex-direction:row;align-items:center;gap:10px;z-index:20;block-size:auto;max-block-size:none;padding:0 16px;background:var(--paper);border-block-end:1px solid var(--rule)}
+.menu-name{flex:1 1 auto;min-inline-size:0;margin:0;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.menu-sub{display:none}
+#theme{flex:none;align-self:center;margin:0}
+#menu-bar{flex:none;display:block}
+#menu-bar>summary{display:flex;align-items:center;block-size:48px;margin:0;border:0;border-radius:0;background:none;padding:0 4px}
+#menu-bar>summary::after{content:"";inline-size:7px;block-size:7px;border-inline-end:2px solid currentColor;border-block-end:2px solid currentColor;transform:rotate(45deg);margin-inline-start:9px;margin-block-start:-4px}
+#menu-bar[open]>summary::after{transform:rotate(225deg);margin-block-start:4px}
+#menu{position:absolute;inset-inline:0;inset-block-start:100%;block-size:auto;max-block-size:calc(100vh - 100%);padding:4px 16px 16px;background:var(--paper);border-block-end:1px solid var(--rule)}
+main{padding:8px 16px 96px}
+section.chapter{padding-block-start:56px;scroll-margin-block-start:56px}
+h2{font-size:30px}
+.fxm-body{grid-template-columns:minmax(0,1fr)}
+.fxm-canvas{block-size:420px}
+}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<aside id="side">
+<p class="menu-name"><!-- slot: NAME --></p>
+<p class="menu-sub">System flow, generated by fx</p>
+<button id="theme" type="button" aria-label="Change theme">Theme</button>
+<details id="menu-bar">
+<summary>Chapters</summary>
+<nav id="menu" aria-label="Chapters">
+<!-- slot: MENU -->
+</nav>
+</details>
+</aside>
+<main>
+<header>
+<h1><!-- slot: TITLE --></h1>
+<!-- slot: HEADER -->
+<p>How to read this page: each chapter opens with the question it answers. Figures play when you scroll to them, and the bar under each figure steps, pauses and resets it. Terms link to the glossary. Each chapter's "Files and locations" box holds the evidence, and "Open in archify" opens the full diagram.</p>
+<div class="toolrow"><button type="button" id="evall">Open all evidence boxes</button></div>
+<ul class="legend" aria-label="Legend">
+<!-- slot: LEGEND -->
+</ul>
+</header>
+<!-- slot: CHAPTERS -->
+<footer><!-- slot: FOOTER --></footer>
+</main>
+</div>
+<!-- slot: SITE_INDEX -->
+<!-- slot: MAP_DATA -->
+<script src="../_assets/react-18.3.1.production.min.js"></script>
+<script src="../_assets/react-dom-18.3.1.production.min.js"></script>
+<script src="../_assets/reactflow-11.11.4.min.js"></script>
+<script src="../_assets/elkjs-0.9.3.bundled.js"></script>
+<script src="../_assets/fx-map-2.js"></script>
+<!-- slot: DIAGRAMS -->
+<script>
+(function () {
+  var root = document.documentElement, btn = document.getElementById("theme");
+  function dark() { var t = root.getAttribute("data-theme"); return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; }
+  function paint() { btn.textContent = "Theme: " + (dark() ? "dark" : "light"); }
+  paint();
+  btn.addEventListener("click", function () {
+    var n = dark() ? "light" : "dark"; root.setAttribute("data-theme", n);
+    try { localStorage.setItem("fx-theme", n); } catch (e) {}
+    paint();
+  });
+  var ev = document.getElementById("evall"), all = false;
+  ev.addEventListener("click", function () {
+    all = !all;
+    document.querySelectorAll("details.evidence").forEach(function (d) { d.open = all; });
+    ev.textContent = all ? "Close all evidence boxes" : "Open all evidence boxes";
+  });
+
+  // Open at 900px and up, closed below; below it a chosen link or Escape closes the list and returns focus.
+  var bar = document.getElementById("menu-bar"), menu = document.getElementById("menu"), sum = bar.querySelector("summary");
+  var wide = matchMedia('(min-width: 900px)');
+  function fit() { bar.open = wide.matches; }
+  fit();
+  wide.addEventListener("change", fit);
+  // Focus moves after the link's own navigation, which would otherwise take it back to the body.
+  function close() { if (wide.matches || !bar.open) return; bar.open = false; setTimeout(function () { sum.focus({ preventScroll: true }); }, 0); }
+  menu.addEventListener("click", function (e) { if (e.target.closest("a")) close(); });
+  bar.addEventListener("keydown", function (e) { if (e.key === "Escape") close(); });
+
+  // Scroll spy: the chapter in the middle band; the menu centres its link by scrolling itself, never the page.
+  var links = new Map();
+  menu.querySelectorAll('a[href^="#"]').forEach(function (a) { links.set(a.getAttribute("href").slice(1), a); });
+  if (!("IntersectionObserver" in window)) return;
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (x) {
+      var a = x.isIntersecting && links.get(x.target.id);
+      if (!a) return;
+      links.forEach(function (l) { l.removeAttribute("aria-current"); });
+      a.setAttribute("aria-current", "location");
+      var m = menu.getBoundingClientRect(), r = a.getBoundingClientRect();
+      menu.scrollTop += r.top - m.top - (m.height - r.height) / 2;
+    });
+  }, { rootMargin: "-40% 0px -55% 0px" });
+  document.querySelectorAll("section.chapter").forEach(function (s) { io.observe(s); });
+})();
+</script>
+</body>
+</html>

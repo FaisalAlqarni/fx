@@ -254,7 +254,7 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
     fs.copyFileSync(path.join(REFERENCES, dir, name), dest);
     result.written.push(rel);
   }
-  const template = fs.readFileSync(path.join(REFERENCES, 'visual', 'page-template.html'), 'utf8');
+  const template = fs.readFileSync(path.join(REFERENCES, 'system-flow', 'site-template.html'), 'utf8');
   const html = renderPage({ model: checked.model, figures: laid.figures, coverage: cov, theme, roots: checked.roots, template });
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'index.html'), html, hasMarker, result);
   if (!result.collisions.includes(path.posix.join(opts.site, 'index.html'))) result.pageBytes = Buffer.byteLength(html);
