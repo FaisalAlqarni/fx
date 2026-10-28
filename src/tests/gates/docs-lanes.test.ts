@@ -137,6 +137,19 @@ assert.ok(/^## Branch pass$/m.test(raw(finalReview)), `${finalReview}: the branc
   all('interview.md', ['at least 100 words', 'goes back to its writer']);
   all('SKILL.md', ['system-flow migrate', 'Bring the prose up to date', 'glossary.json', 'only on a clean working tree', 'git restore -- <site>/model/fragments']);
   for (const f of ['area-brief.md', 'planning.md']) all(f, ['fx-humanize', 'before returning']);
+  // C9: the sentences that carry the single words above, so a stray mention cannot satisfy the gate.
+  all('planning.md', ['The agent that writes chapter prose, leads, bullets, captions, glossary definitions and code-map lines invokes `fx-humanize` on it before returning.',
+    'The controller does the same for the Start here prose and the glossary it writes.']);
+  all('area-brief.md', ['invoke it on the chapter prose, leads, bullets, captions, glossary candidates and code-map lines before returning.',
+    'Every node and participant carries `look`; every message carries `label`',
+    '`short` (the code-ish name on the arrow), and `reply` set to `true` on a reply.',
+    'one `codeMap` entry for each folder of your area that a newcomer opens first: `root`, `path` (a folder ending in `/`), `owns` (one sentence) and evidence']);
+  all('fragment-guide.md', ['`look` is required on every node and participant.',
+    '| `service` | code of this system: a service, job, worker, controller |', '| `store` | a database, cache, queue or file store |',
+    '| `client` | a browser, phone app or other caller of the system |', '| `external` | a system outside this one |',
+    '| `security` | an identity or access check |']);
+  all('check-and-report.md', ['words per chapter (id, words, lead sentences, bullets), the average words per chapter, the glossary size and the lifelines drawn inline.',
+    '**Prose:** a block beside Depth, from `BuildResult.prose`']);
   has(docs, 'every node or participant it adds carries `look`', 'fx-docs sets look on what it adds');
   has(docs, 'Bring the prose up to date', 'fx-docs points a prose floor failure to the rerun choice');
   has(docs, 'system-flow migrate', 'fx-docs names the migrate hint it stops on');
