@@ -63,10 +63,11 @@ minutes per area and in total, its `note` on the constants, and `warnings`.
 
 ## Fragments written now
 
-- `meta.json`: `meta.title`, `meta.date`, `meta.purpose`, and `meta.roots`
-  copied from `detect`'s `roots` ids in the same order, host first, each
-  with its `remote` when `detect` printed one. Evidence in another root names
-  that id.
+- `meta.json`: top-level `"schemaVersion": 1` (check rejects the fragment
+  without it), then `meta.title`, `meta.date`, `meta.purpose`, and
+  `meta.roots` copied from `detect`'s `roots` ids in the same order, host
+  first, each with its `remote` when `detect` printed one. Evidence in another
+  root names that id.
 - `inventory.json`: every engine, flow, store, job and integration found in
   the code, each with evidence (a folder entry ending in `/` is allowed here).
   `build` marks each entry covered or not covered.
