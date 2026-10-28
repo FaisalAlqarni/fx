@@ -24,6 +24,11 @@ for (const part of ['position:sticky', 'top:0', 'max-block-size:100vh']) assert.
 assert.ok(rule('#menu').includes('overflow:auto'), '#menu rule holds overflow:auto');
 assert.ok(rule('.wrap').includes('grid-template-columns:240px'), 'the menu column is 240px');
 assert.ok(tpl.includes('<details id="menu-bar">'), '#menu-bar carries no open attribute');
+// The filter is the first child of the menu, so the phone panel holds it with the list; its count is announced.
+assert.ok(/<nav id="menu" aria-label="Chapters">\s*<input id="filter" type="search" aria-label="Filter chapters, parts, terms"[^>]*>/.test(tpl), 'input#filter opens nav#menu');
+assert.ok(/<p id="filter-count" aria-live="polite"[^>]*><\/p>/.test(tpl), 'p#filter-count is a polite live region');
+for (const part of ['"site-index"', '" matches"', '"Nothing matches"', '"li"', '"Escape"']) assert.ok(tpl.includes(part), `the filter script holds ${part}`);
+assert.ok(rule('a.term') !== '', 'an a.term rule exists');
 assert.ok(tpl.includes("matchMedia('(min-width: 900px)')"), 'the script follows the 900px query');
 assert.ok(/@media \(min-width: 900px\)\s*\{\s*@supports selector\(::details-content\)\s*\{[^}]*#menu-bar::details-content\{[^}]*content-visibility:visible[^}]*display:block/.test(css),
   'at 900px and up, #menu-bar::details-content is shown inside @supports selector(::details-content)');

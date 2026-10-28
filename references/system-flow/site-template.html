@@ -8,6 +8,8 @@
     rewrites ../_assets/ to the site's assets/ folder and adds theme.css after fx-tokens-1.css.
   - Colours come only from fx token names, so theme.css themes the page. Logical properties
     throughout, so dir="rtl" mirrors the layout.
+  - Filter: input#filter and the polite p#filter-count open nav#menu; the script reads the SITE_INDEX
+    JSON block and builds every added item with textContent.
   - Menu: 240px sticky column at 900px and up; below it a sticky top bar whose "Chapters"
     control is a <details>, so the list opens without JavaScript.
 -->
@@ -37,6 +39,13 @@ body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.6 "Avenir Nex
 #menu a{display:flex;gap:10px;padding:5px 8px;border-radius:6px;color:var(--muted);text-decoration:none;font-size:15px;line-height:1.35}
 #menu ol a::before{content:counter(c,decimal-leading-zero);font:600 12px/1.9 "SF Mono",Menlo,Consolas,monospace;color:var(--accent)}
 #menu a:hover,#menu a[aria-current]{color:var(--ink);background:var(--accent-tint)}
+#filter{display:block;inline-size:calc(100% - 16px);margin:4px 8px 0;font:15px system-ui,sans-serif;color:var(--ink);background:var(--panel);border:1.5px solid var(--rule);border-radius:8px;padding:6px 10px;min-block-size:36px}
+#filter-count{margin:4px 8px 0;font-size:13px;color:var(--muted)}
+#filter-count:empty{display:none}
+#menu li.part,#menu li.term{counter-increment:none}
+#menu li.part a,#menu li.term a{padding-inline-start:30px;font-size:14px}
+#menu li.part a::before,#menu li.term a::before{content:none}
+#menu .g{font:700 11px/1.9 "SF Mono",Menlo,Consolas,monospace;color:var(--accent)}
 @media (min-width: 900px){
 @supports selector(::details-content){
 #menu-bar::details-content{content-visibility:visible;display:block;min-block-size:0;flex:0 1 auto}
@@ -82,6 +91,16 @@ details.evidence>summary{cursor:pointer;padding:10px 0;font-weight:700;font-size
 details.evidence h4{margin:12px 0 4px;font:700 13px system-ui,sans-serif;color:var(--accent);text-transform:uppercase;letter-spacing:.03em}
 details.evidence ul{margin:4px 0 12px;padding-inline-start:20px;font-size:14px}
 .not-drawn{color:var(--muted);font-size:15px}
+.note{color:var(--muted);font-size:15px}
+.not-owned{margin:0 0 14px;padding-inline-start:22px;max-inline-size:74ch}
+.not-owned li{margin-block-end:10px}
+.not-owned code.at{display:block;background:none;padding:0;font-size:12.5px;color:var(--muted)}
+a.term{color:inherit;text-decoration:underline dotted;text-underline-offset:3px}
+a.term:hover{color:var(--accent)}
+.tag{display:inline-block;font-size:12px;line-height:1.6;padding:0 8px;border-radius:999px;background:var(--accent-tint);color:var(--ink);white-space:nowrap}
+table.glossary tr{scroll-margin-block-start:72px}
+table.glossary tr:target{background:var(--accent-tint)}
+table.code-map td:last-child,table.stores td:first-child{white-space:nowrap}
 footer{margin-block-start:80px;color:var(--muted);font-size:14px}
 [lang=ar]{font-family:"Geeza Pro","Al Bayan","SF Arabic",sans-serif}
 .card{margin:20px 0;border:1px solid var(--rule);border-radius:12px;background:var(--panel)}
@@ -145,6 +164,8 @@ h2{font-size:30px}
 <details id="menu-bar">
 <summary>Chapters</summary>
 <nav id="menu" aria-label="Chapters">
+<input id="filter" type="search" aria-label="Filter chapters, parts, terms" placeholder="Filter" autocomplete="off">
+<p id="filter-count" aria-live="polite"></p>
 <!-- slot: MENU -->
 </nav>
 </details>
@@ -199,6 +220,48 @@ h2{font-size:30px}
   function close() { if (wide.matches || !bar.open) return; bar.open = false; setTimeout(function () { sum.focus({ preventScroll: true }); }, 0); }
   menu.addEventListener("click", function (e) { if (e.target.closest("a")) close(); });
   bar.addEventListener("keydown", function (e) { if (e.key === "Escape") close(); });
+
+  // Filter: chapters match on title, question and lead, Reference items on their name; matching parts show under the
+  // chapter that draws them and matching terms under the glossary. Built with textContent, never markup from the index.
+  var filter = document.getElementById("filter"), fcount = document.getElementById("filter-count");
+  var idxEl = document.getElementById("site-index");
+  var idx = idxEl ? JSON.parse(idxEl.textContent) : { chapters: [], parts: [], terms: [] };
+  var info = {};
+  idx.chapters.forEach(function (c) { info[c.id] = [c.title, c.question, c.lead].join(" ").toLowerCase(); });
+  function item(cls, href, label, mark) {
+    var li = document.createElement("li"), a = document.createElement("a");
+    li.className = cls; a.setAttribute("href", href);
+    if (mark) { var g = document.createElement("span"); g.className = "g"; g.textContent = mark; a.appendChild(g); }
+    a.appendChild(document.createTextNode(label));
+    li.appendChild(a);
+    return li;
+  }
+  function narrow() {
+    var q = filter.value.trim().toLowerCase(), n = 0, under = {};
+    menu.querySelectorAll("ul.sub").forEach(function (u) { u.remove(); });
+    if (q) {
+      idx.parts.forEach(function (p) { if (p.label.toLowerCase().indexOf(q) >= 0) (under[p.chapter] = under[p.chapter] || []).push(item("part", "#" + p.chapter, p.label)); });
+      under.glossary = idx.terms.filter(function (t) { return [t.term].concat(t.aliases).some(function (w) { return w.toLowerCase().indexOf(q) >= 0; }); })
+        .map(function (t) { return item("term", "#term-" + t.id, t.term, "G"); });
+    }
+    menu.querySelectorAll("section.group").forEach(function (g) {
+      var any = false;
+      g.querySelectorAll(":scope > ol > li, :scope > ul > li").forEach(function (li) {
+        var id = li.querySelector("a").getAttribute("href").slice(1), subs = under[id] || [];
+        var own = !q || (info[id] || li.textContent.toLowerCase()).indexOf(q) >= 0;
+        if (q && own) n++;
+        n += subs.length;
+        if (subs.length) { var u = document.createElement("ul"); u.className = "sub"; subs.forEach(function (x) { u.appendChild(x); }); li.appendChild(u); }
+        li.hidden = !own && subs.length === 0;
+        any = any || !li.hidden;
+      });
+      g.hidden = !any;
+    });
+    fcount.textContent = !q ? "" : n === 0 ? "Nothing matches" : n + (n === 1 ? " match" : " matches");
+  }
+  filter.addEventListener("input", narrow);
+  // A first Escape empties the box and keeps the panel open; with the box empty, Escape reaches the bar and closes it.
+  filter.addEventListener("keydown", function (e) { if (e.key === "Escape" && filter.value) { e.preventDefault(); e.stopPropagation(); filter.value = ""; narrow(); } });
 
   // Scroll spy: the chapter in the middle band; the menu centres its link by scrolling itself, never the page.
   var links = new Map();

@@ -28,8 +28,8 @@ const chapterId = (i: number, s: Section): string => `ch-${nn(i + 1)}-${s.id}`;
 const group = (s: Section): 'start' | 'how' => (s.role === undefined ? 'how' : 'start');
 
 // Each table scrolls inside its own region, named for screen readers and reachable by keyboard; the table stays a table.
-const table = (label: string, head: string[], rows: string[][]): string =>
-  `<div class="table-scroll" role="region" aria-label="${escapeHtml(label)}" tabindex="0"><table><thead><tr>${head.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+const table = (label: string, head: string[], rows: string[][], cls = ''): string =>
+  `<div class="table-scroll" role="region" aria-label="${escapeHtml(label)}" tabindex="0"><table${cls === '' ? '' : ` class="${cls}"`}><thead><tr>${head.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 
 export function renderPage(input: Input): string {
   const { model, roots } = input;
@@ -39,6 +39,34 @@ export function renderPage(input: Input): string {
     'path' in e ? `<code>${escapeHtml(where(e) + (e.lines === undefined ? '' : `:${e.lines}`))}</code>${e.symbol === undefined ? '' : ` ${escapeHtml(e.symbol)}`}`
       : `owner ${escapeHtml(e.owner)}`)).join(' ');
   const evCell = (o: Evidenced): string => evCodes(o.evidence) + (o.unconfirmed ? ' <strong>unconfirmed</strong>' : '');
+
+  // Term links: the first use per chapter of each term or alias, longest first, whole words, case-insensitive,
+  // on escaped text and never inside a tag, a code span or a link.
+  const forms = model.glossary.flatMap((g) => [g.term, ...(g.aliases ?? [])].map((w) => ({ id: g.id, w: escapeHtml(w) })))
+    .filter((x) => x.w !== '').sort((a, b) => b.w.length - a.w.length);
+  const termOf = new Map<string, string>();
+  for (const x of forms) if (!termOf.has(x.w.toLowerCase())) termOf.set(x.w.toLowerCase(), x.id);
+  const meaning = new Map(model.glossary.map((g) => [g.id, escapeHtml(g.meaning)]));
+  // `&` and `#` before a match would put it inside an entity such as &amp; or &#39;.
+  const termRe = forms.length === 0 ? null
+    : new RegExp(`(?<![\\p{L}\\p{N}_&#])(?:${forms.map((x) => x.w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})(?![\\p{L}\\p{N}_])`, 'giu');
+  const linkTerms = (html: string, seen: Set<string>): string => {
+    if (termRe === null) return html;
+    let inside = 0;
+    return html.split(/(<[^>]*>)/).map((part) => {
+      if (part.startsWith('<')) {
+        if (/^<(?:code|a)[\s>]/.test(part)) inside++;
+        else if (/^<\/(?:code|a)>/.test(part)) inside--;
+        return part;
+      }
+      return inside > 0 ? part : part.replace(termRe, (m) => {
+        const id = termOf.get(m.toLowerCase());
+        if (id === undefined || seen.has(id)) return m;
+        seen.add(id);
+        return `<a class="term" href="#term-${escapeHtml(id)}" title="${meaning.get(id) ?? ''}">${m}</a>`;
+      });
+    }).join('');
+  };
 
   // The first section to list a figure draws it; later ones link to it.
   const drawnBy = new Map<string, number>();
@@ -64,20 +92,42 @@ export function renderPage(input: Input): string {
     return rows.length === 0 ? '' : `<h4>${escapeHtml(kind)}</h4>${table(kind, ['Name', 'Role', 'Owner', 'Connects', 'Evidence'], rows.map((c) => [t(c.name), t(c.role), t(c.owner), t((c.connects ?? []).join(', ')), evCell(c)]))}`;
   };
 
+  // Chapter 04's own content: one row per non-empty store kind with the chapters that show it, the notation
+  // note, then the code map by root, each folder with its first file evidence as where to start reading.
+  const codeChapter = (): string => {
+    const stores = Object.entries(model.stores).filter(([, rows]) => rows.length > 0).map(([kind, rows]) => {
+      const ids = new Set((rows as { id: string }[]).map((r) => r.id));
+      const shown = model.sections.map((s, i) => ({ s, i })).filter(({ s }) => (s.storeRefs ?? []).some((r) => ids.has(r)) || sectionFlows(s).some((f) => f.steps.some((st) => st.store === kind)));
+      return [escapeHtml(kind), String(rows.length), shown.map(({ s, i }) => `<a href="#${chapterId(i, s)}">${t(s.title)}</a>`).join(', ')];
+    });
+    const out = [stores.length === 0 ? '' : table('Where data lives', ['Store kind', 'Rows', 'Shown in'], stores, 'stores'),
+      ...(model.meta.conventions ?? []).map((n) => `<p class="note">${t(n)}</p>`)];
+    for (const root of [...new Set(model.codeMap.map((c) => c.root))]) {
+      out.push(`<h3>${escapeHtml(root)}</h3>`, table(`Code map: ${root}`, ['Folder', 'What it owns', 'Start reading at'], model.codeMap.filter((c) => c.root === root).map((c) => {
+        const first = c.evidence.find((e): e is FileEvidence => 'path' in e && !e.path.endsWith('/'));
+        return [t(c.path), t(c.owns), first === undefined ? '' : evCodes([first])];
+      }), 'code-map'));
+    }
+    return out.join('\n');
+  };
+
   const chapterHtml = (s: Section, i: number): string => {
     const id = chapterId(i, s);
+    const seen = new Set<string>();
+    const lt = (html: string): string => linkTerms(html, seen);
     const parts: string[] = [
       `<section class="chapter" id="${id}" data-group="${group(s)}">`,
       `<p class="eyebrow"><span class="n">${nn(i + 1)}</span> <span class="q">${t(s.question)}</span></p>`,
       `<h2>${t(s.title)}</h2>`,
     ];
-    if (s.lead !== undefined) parts.push(`<p class="lead">${t(s.lead)}</p>`);
+    if (s.lead !== undefined) parts.push(`<p class="lead">${lt(t(s.lead))}</p>`);
     // Each bullet shows its first file evidence; the full list stays in the chapter's evidence box.
     const at = (b: Evidenced): string => {
       const e = (b.evidence ?? []).find((x): x is FileEvidence => 'path' in x);
       return e === undefined ? '' : ` <code class="at">${escapeHtml(where(e) + (e.lines === undefined ? '' : `:${e.lines}`))}</code>`;
     };
-    if ((s.bullets ?? []).length > 0) parts.push(`<ul class="facts">${(s.bullets ?? []).map((b) => `<li>${t(b.text)}${at(b)}</li>`).join('')}</ul>`);
+    if ((s.bullets ?? []).length > 0) parts.push(`<ul class="facts">${(s.bullets ?? []).map((b) => `<li>${lt(t(b.text) + at(b))}</li>`).join('')}</ul>`);
+    if ((s.notOwned ?? []).length > 0) parts.push(`<h3>Not owned here</h3><ul class="not-owned">${(s.notOwned ?? []).map((b) => `<li>${lt(t(b.text) + at(b))}</li>`).join('')}</ul>`);
     const figure = (key: string, title: string, summary: string | undefined, prefix = ''): void => {
       if (claim(key, i)) {
         const base = deepBase(key);
@@ -85,7 +135,7 @@ export function renderPage(input: Input): string {
         const label = page?.renderer === 'archify' ? 'Open in archify' : 'Open full diagram';
         parts.push([
           `<figure class="card" id="fig-${escapeHtml(key)}">`,
-          `<h3>${t(prefix + title)}</h3><p class="cap">${t(summary)}</p>`,
+          `<h3>${t(prefix + title)}</h3><p class="cap">${lt(t(summary))}</p>`,
           `<div class="fig" role="region" tabindex="0" aria-label="${escapeHtml(title)}, scrolls sideways"><noscript>This figure needs JavaScript. The link below opens the full diagram.</noscript></div>`,
           `<div class="ctl" data-fx-flow="${escapeHtml(key)}"><a class="deep" href="diagrams/${escapeHtml(page?.name ?? base)}.html">${label}</a></div>`,
           '</figure>',
@@ -106,6 +156,8 @@ export function renderPage(input: Input): string {
     for (const d of diagrams) figure(`level-${d.id}`, d.title, d.summary);
     for (const q of seqs) figure(`seq-${q.id}`, q.title, q.summary, 'Sequence: ');
     for (const f of flows) figure(`flow-${f.id}`, f.trigger, f.summary, 'Store flow: ');
+    if (s.role === 'parts') parts.push('<div id="map"><div id="map-root"><noscript>The map needs JavaScript. The chapters hold the same facts.</noscript></div></div>', ...CAT_KINDS.map((k) => catTable(k, null)));
+    if (s.role === 'code') parts.push(codeChapter());
     for (const f of flows) {
       parts.push(`<h4>Store flow: ${t(f.trigger)}</h4>`, table(`Store flow: ${f.trigger}`, ['#', 'Actor', 'Op', 'Store', 'Key', 'When', 'Evidence'], f.steps.map((st) => [String(st.n), t(st.actor), t(st.op), t(st.store), t(st.key), t(st.when), evCell(st)])));
     }
@@ -139,27 +191,27 @@ export function renderPage(input: Input): string {
   };
 
   const sections = model.sections.map(chapterHtml);
-  // Reference chapters, unnumbered. Until the map moves into chapter 02 (task 08), chapter 00 is the first of them.
+  // Reference chapters, unnumbered.
   const fixed: { id: string; title: string; html: string }[] = [];
   const fixedChapter = (id: string, title: string, question: string, body: string): void => {
     fixed.push({ id, title, html: `<section class="chapter" id="${id}" data-group="ref">\n<p class="eyebrow"><span class="q">${question}</span></p>\n<h2>${title}</h2>\n${body}\n</section>` });
   };
-  fixedChapter('ch-00-explore', 'Explore the system', 'What sits inside each part?', '<div id="map-root"><noscript>The map needs JavaScript. The chapters hold the same facts.</noscript></div>');
-  const catalogue = CAT_KINDS.map((k) => catTable(k, null)).join('');
-  if (catalogue !== '') fixedChapter('components', 'Components', 'Which queues, gateways, schedulers and other parts sit around the engines?', catalogue);
+  const glossary = [...model.glossary].sort((a, b) => a.term.toLowerCase().localeCompare(b.term.toLowerCase()));
+  fixedChapter('glossary', 'Glossary', 'What do the words on this page mean?',
+    `<p>The words this site uses, in the meaning the code gives them. ${glossary.length} terms.</p>` +
+    `<div class="table-scroll" role="region" aria-label="Glossary" tabindex="0"><table class="glossary"><thead><tr>${['Term', 'Tag', 'Meaning', 'Evidence'].map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${
+      glossary.map((g) => `<tr id="term-${escapeHtml(g.id)}"><td>${t(g.term)}</td><td><span class="tag">${escapeHtml(g.tag)}</span></td><td>${t(g.meaning)}</td><td>${evCell(g)}</td></tr>`).join('')}</tbody></table></div>`);
   fixedChapter('rules-in-force', 'Rules in force', 'Which decisions must every change respect?', model.rules.length === 0 ? '<p>No rules are listed.</p>'
     : `<ul class="facts">${model.rules.map((r) => `<li>${t(r.text)}${r.adr === undefined ? '' : ` (<code>${escapeHtml(where(r.adr))}</code>)`}${r.decision === undefined ? '' : ` ${t(r.decision)}`} ${evCell(r)}</li>`).join('')}</ul>`);
   const title = new Map(model.sections.map((s, i) => [s.id, { s, i }]));
+  const unknown = model.questions.length === 0 ? ''
+    : `<h3>Not known yet</h3><ul class="facts">${model.questions.map((q) => `<li>${t(q.text)}${q.answer === undefined ? '' : ` Answer: ${t(q.answer)}`}${q.recommended === undefined ? '' : ` Recommended: ${t(q.recommended)}`}${(q.items ?? []).length === 0 ? '' : ` Items: ${(q.items ?? []).map((h) => `<code>${escapeHtml(h)}</code>`).join(' ')}`}</li>`).join('')}</ul>`;
   fixedChapter('coverage', 'Coverage', 'Which parts of the repository do the chapters cover?',
     table('Coverage by kind', ['Kind', 'Covered', 'Total'], Object.entries(input.coverage.counts).map(([k, c]) => [escapeHtml(k), String(c.covered), String(c.total)])) +
     table('Coverage entries', ['Kind', 'Name', 'Chapter'], input.coverage.entries.map((e) => {
       const hit = e.chapter === null ? undefined : title.get(e.chapter);
       return [escapeHtml(e.kind), t(e.name), hit === undefined ? 'not covered' : `<a href="#${chapterId(hit.i, hit.s)}">${t(hit.s.title)}</a>`];
-    })));
-  if (model.questions.length > 0) {
-    fixedChapter('open-questions', 'Open questions', 'What does the model not yet know?',
-      `<ul class="facts">${model.questions.map((q) => `<li>${t(q.text)}${q.answer === undefined ? '' : ` Answer: ${t(q.answer)}`}${q.recommended === undefined ? '' : ` Recommended: ${t(q.recommended)}`}${(q.items ?? []).length === 0 ? '' : ` Items: ${(q.items ?? []).map((h) => `<code>${escapeHtml(h)}</code>`).join(' ')}`}</li>`).join('')}</ul>`);
-  }
+    })) + unknown);
   fixedChapter('corrections', 'Corrections', 'What was changed after the first draft?', model.corrections.length === 0 ? '<p>No corrections are recorded.</p>'
     : table('Corrections', ['Date', 'Item', 'Before', 'After', 'Reason'], model.corrections.map((c) => [escapeHtml(c.date), t(c.item), t(c.before), t(c.after), escapeHtml(c.reason)])));
 
@@ -175,6 +227,18 @@ export function renderPage(input: Input): string {
     })),
   };
   const figures = Object.fromEntries(input.figures.filter((f) => drawnBy.has(f.key)).map((f) => [f.key, f]));
+  // The menu filter's index: each chapter, each part with the chapter that draws its diagram (else Start here's parts chapter), each term.
+  const partsAt = model.sections.findIndex((s) => s.role === 'parts');
+  const partsId = partsAt < 0 ? '' : chapterId(partsAt, model.sections[partsAt] as Section);
+  const siteIndex = {
+    chapters: model.sections.map((s, i) => ({ n: nn(i + 1), id: chapterId(i, s), title: s.title, question: s.question, lead: s.lead ?? '' })),
+    parts: model.levels.diagrams.flatMap((d) => {
+      const at = drawnBy.get(`level-${d.id}`);
+      const home = at === undefined ? undefined : model.sections[at];
+      return d.nodes.map((n) => ({ label: n.label, chapter: at === undefined || home === undefined ? partsId : chapterId(at, home) }));
+    }),
+    terms: model.glossary.map((g) => ({ id: g.id, term: g.term, aliases: g.aliases ?? [] })),
+  };
 
   const links = (list: { id: string; title: string }[]): string => list.map((c) => `<li><a href="#${c.id}">${c.title}</a></li>`).join('');
   const listed = model.sections.map((s, i) => ({ id: chapterId(i, s), title: t(s.title), group: group(s) }));
@@ -214,7 +278,7 @@ export function renderPage(input: Input): string {
     .replace(slot('MENU'), () => menu)
     .replace(slot('CHAPTERS'), () => [...sections, ...fixed.map((f) => f.html)].join('\n'))
     .replace(slot('FOOTER'), () => footer)
-    .replace(/<!-- slot: SITE_INDEX -->\n/, '')
+    .replace(slot('SITE_INDEX'), () => `<script type="application/json" id="site-index">${inlineJson(siteIndex)}</script>`)
     .replace(slot('MAP_DATA'), () => `<script type="application/json" id="map-data">${inlineJson(mapData)}</script>`)
     .replace(slot('DIAGRAMS'), () => `<script type="application/json" id="diagrams">${inlineJson(figures)}</script>\n<script src="../_assets/fx-flow-2.js"></script>`)
     .replace(/<link rel="stylesheet" href="..\/_assets\/fx-tokens-1\.css">/, (m) => `${m}\n<link rel="stylesheet" href="../_assets/theme.css">`)

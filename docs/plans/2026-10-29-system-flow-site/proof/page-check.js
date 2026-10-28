@@ -69,6 +69,16 @@ const box = (page, sel) => page.evaluate((s) => {
   const r = el.getBoundingClientRect();
   return { top: r.top, width: r.width, height: r.height };
 }, sel);
+const menuState = (page) => page.evaluate(() => {
+  const shown = (e) => e.closest("[hidden]") === null;
+  const all = (s) => [...document.querySelectorAll(s)].filter(shown);
+  return {
+    chapters: all("#menu li:not(.part):not(.term) > a").map((a) => a.getAttribute("href") ?? ""),
+    parts: all("#menu li.part").map((li) => ({ text: li.textContent ?? "", under: li.closest("li:not(.part)")?.querySelector("a")?.getAttribute("href") ?? "" })),
+    terms: all("#menu li.term a").map((a) => a.getAttribute("href") ?? ""),
+    count: document.getElementById("filter-count")?.textContent ?? ""
+  };
+});
 const bar = (page, key) => page.evaluate((k) => {
   const ctl = document.querySelector(`#fig-${k} .ctl`);
   if (!ctl) return null;
@@ -223,6 +233,52 @@ async function main() {
       const opens = await n.page.isVisible('#menu a[href="#ch-01-start-what"]');
       await n.ctx.close();
       record("noScript", shown && closed && opens, `1440: ${shown ? how : "link not reachable"}; 390: closed at load ${closed}, summary shows the link ${opens}`);
+    }
+    {
+      const lines = { filterTerm: [], filterPart: [], filterNone: [], filterClear: [], termLink: [] };
+      const failed2 = /* @__PURE__ */ new Set();
+      const say = (name, pass, detail) => {
+        lines[name]?.push(detail);
+        if (!pass) failed2.add(name);
+      };
+      for (const [w, h] of [[1440, 900], [390, 844]]) {
+        const { page, ctx, errors } = await open(browser, w, h);
+        if (await isOpen(page) === false) await page.click("#menu-bar > summary");
+        const start = await menuState(page);
+        await page.fill("#filter", "link");
+        const term = await menuState(page);
+        say(
+          "filterTerm",
+          term.chapters.includes("#ch-05-s1") && term.terms.includes("#term-link") && /^\d+ matches$/.test(term.count),
+          `${w}: chapters ${term.chapters.join(" ")}; terms ${term.terms.join(" ")}; count "${term.count}"`
+        );
+        await page.fill("#filter", "database");
+        const part = await menuState(page);
+        say("filterPart", part.parts.some((p) => p.text.trim() === "Database" && p.under === "#ch-02-start-parts"), `${w}: parts ${JSON.stringify(part.parts)}`);
+        await page.fill("#filter", "zzzz");
+        const none = await menuState(page);
+        say("filterNone", none.count === "Nothing matches" && none.chapters.length === 0, `${w}: count "${none.count}", chapters ${none.chapters.length}`);
+        await page.fill("#filter", "link");
+        await page.press("#filter", "Escape");
+        const clear = await menuState(page);
+        const all = await page.evaluate(() => [...document.querySelectorAll("#menu li.part, #menu li.term")].length);
+        say(
+          "filterClear",
+          clear.chapters.join() === start.chapters.join() && start.chapters.length > 5 && all === 0,
+          `${w}: ${clear.chapters.length} of ${start.chapters.length} chapter links back; li.part and li.term left ${all}`
+        );
+        if (await isOpen(page) === true && w < 900) await page.click("#menu-bar > summary");
+        await page.click("#ch-05-s1 a.term");
+        await page.waitForTimeout(1e3);
+        const row = await page.evaluate(() => {
+          const r = document.getElementById("term-link")?.getBoundingClientRect();
+          return r === void 0 ? null : { top: Math.round(r.top), bottom: Math.round(r.bottom), inView: r.top >= 0 && r.bottom <= window.innerHeight };
+        });
+        say("termLink", row !== null && row.inView, `${w}: #term-link at ${row?.top}..${row?.bottom}`);
+        consoleErrors.push(...errors.map((e) => `${w} filter: ${e}`));
+        await ctx.close();
+      }
+      for (const [name, l] of Object.entries(lines)) record(name, l.length === 2 && !failed2.has(name), l.join("; "));
     }
     {
       const { page, ctx, errors } = await open(browser, 1440, 900, true, "reduce");

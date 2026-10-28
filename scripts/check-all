@@ -52,6 +52,7 @@ run system-flow-detect.test.js node scripts/system-flow-detect.test.js
 run system-flow-theme.test.js node scripts/system-flow-theme.test.js
 run system-flow-coverage.test.js node scripts/system-flow-coverage.test.js
 run system-flow-page.test.js node scripts/system-flow-page.test.js
+run system-flow-site.test.js node scripts/system-flow-site.test.js
 run system-flow-diagrams.test.js node scripts/system-flow-diagrams.test.js
 run system-flow-archify.test.js node scripts/system-flow-archify.test.js
 run system-flow-stale.test.js node scripts/system-flow-stale.test.js

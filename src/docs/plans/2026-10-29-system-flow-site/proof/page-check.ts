@@ -1,7 +1,7 @@
 // Run: NODE_PATH=<PW>/node_modules PLAYWRIGHT_BROWSERS_PATH=<PW>/browsers node docs/plans/2026-10-29-system-flow-site/proof/page-check.js <index.html> <out.json>
 // Opens a built system flow site in Chromium and checks the page shell: the sticky menu, the scroll spy,
 // the phone top bar, a resize across 900px, the menu without JavaScript, page width, theme, evidence
-// and console errors; then the figure cards and the fx-flow-2 player: the buttons, autoplay, pause and
+// and console errors; the menu filter and a term link; then the figure cards and the fx-flow-2 player: the buttons, autoplay, pause and
 // resume, the bar staying on screen, sideways scrolling, label size and a figure with no steps. Writes one JSON object of named checks, each { pass, detail }; exits 1 when any fails.
 import * as fs from 'fs';
 import * as path from 'path';
@@ -14,7 +14,7 @@ type Rect = { top: number; bottom: number; width: number; height: number };
 type El = {
   getBoundingClientRect(): Rect; getAttribute(n: string): string | null; hasAttribute(n: string): boolean; scrollTop: number; scrollHeight: number; clientHeight: number; open: boolean;
   textContent: string | null; className: string; disabled: boolean; scrollLeft: number; scrollWidth: number; clientWidth: number; id: string; innerHTML: string;
-  querySelector(s: string): El | null; querySelectorAll(s: string): Iterable<El>; append(e: El): void;
+  querySelector(s: string): El | null; querySelectorAll(s: string): Iterable<El>; append(e: El): void; closest(s: string): El | null;
 };
 declare const getComputedStyle: (e: El) => { fontSize: string };
 declare const fxFlow: { mount(root?: El): void };
@@ -31,6 +31,8 @@ type Page = {
   setViewportSize(s: { width: number; height: number }): Promise<void>;
   waitForTimeout(ms: number): Promise<void>;
   click(sel: string): Promise<void>;
+  fill(sel: string, value: string): Promise<void>;
+  press(sel: string, key: string): Promise<void>;
   isVisible(sel: string): Promise<boolean>;
   on(ev: string, fn: (x: { type?: () => string; text?: () => string; message?: string }) => void): void;
 };
@@ -77,6 +79,18 @@ const box = (page: Page, sel: string) => page.evaluate((s: string) => {
   const r = el.getBoundingClientRect();
   return { top: r.top, width: r.width, height: r.height };
 }, sel);
+// The menu as the filter left it: chapter links not hidden, parts with the chapter link they sit under, terms with their link, the count line.
+type MenuState = { chapters: string[]; parts: { text: string; under: string }[]; terms: string[]; count: string };
+const menuState = (page: Page): Promise<MenuState> => page.evaluate(() => {
+  const shown = (e: El): boolean => e.closest('[hidden]') === null;
+  const all = (s: string): El[] => [...document.querySelectorAll(s)].filter(shown);
+  return {
+    chapters: all('#menu li:not(.part):not(.term) > a').map((a) => a.getAttribute('href') ?? ''),
+    parts: all('#menu li.part').map((li) => ({ text: li.textContent ?? '', under: li.closest('li:not(.part)')?.querySelector('a')?.getAttribute('href') ?? '' })),
+    terms: all('#menu li.term a').map((a) => a.getAttribute('href') ?? ''),
+    count: document.getElementById('filter-count')?.textContent ?? '',
+  };
+});
 // The player's bar of one card: count, narration, the play button's text and aria-pressed, and the disabled buttons.
 type Bar = { count: string; narr: string; play: string; pressed: boolean; disabled: string[] };
 const bar = (page: Page, key: string): Promise<Bar | null> => page.evaluate((k: string) => {
@@ -221,6 +235,44 @@ async function main(): Promise<void> {
       const opens = await n.page.isVisible('#menu a[href="#ch-01-start-what"]');
       await n.ctx.close();
       record('noScript', shown && closed && opens, `1440: ${shown ? how : 'link not reachable'}; 390: closed at load ${closed}, summary shows the link ${opens}`);
+    }
+    // The menu filter and a term link, at both widths; below 900px the Chapters control opens the panel that holds the filter.
+    {
+      const lines: Record<string, string[]> = { filterTerm: [], filterPart: [], filterNone: [], filterClear: [], termLink: [] };
+      const failed = new Set<string>();
+      const say = (name: string, pass: boolean, detail: string): void => { lines[name]?.push(detail); if (!pass) failed.add(name); };
+      for (const [w, h] of [[1440, 900], [390, 844]] as const) {
+        const { page, ctx, errors } = await open(browser, w, h);
+        if ((await isOpen(page)) === false) await page.click('#menu-bar > summary');
+        const start = await menuState(page);
+        await page.fill('#filter', 'link');
+        const term = await menuState(page);
+        say('filterTerm', term.chapters.includes('#ch-05-s1') && term.terms.includes('#term-link') && /^\d+ matches$/.test(term.count),
+          `${w}: chapters ${term.chapters.join(' ')}; terms ${term.terms.join(' ')}; count "${term.count}"`);
+        await page.fill('#filter', 'database');
+        const part = await menuState(page);
+        say('filterPart', part.parts.some((p) => p.text.trim() === 'Database' && p.under === '#ch-02-start-parts'), `${w}: parts ${JSON.stringify(part.parts)}`);
+        await page.fill('#filter', 'zzzz');
+        const none = await menuState(page);
+        say('filterNone', none.count === 'Nothing matches' && none.chapters.length === 0, `${w}: count "${none.count}", chapters ${none.chapters.length}`);
+        await page.fill('#filter', 'link');
+        await page.press('#filter', 'Escape');
+        const clear = await menuState(page);
+        const all = await page.evaluate(() => [...document.querySelectorAll('#menu li.part, #menu li.term')].length);
+        say('filterClear', clear.chapters.join() === start.chapters.join() && start.chapters.length > 5 && all === 0,
+          `${w}: ${clear.chapters.length} of ${start.chapters.length} chapter links back; li.part and li.term left ${all}`);
+        if ((await isOpen(page)) === true && w < 900) await page.click('#menu-bar > summary');
+        await page.click('#ch-05-s1 a.term');
+        await page.waitForTimeout(1000);
+        const row = await page.evaluate(() => {
+          const r = document.getElementById('term-link')?.getBoundingClientRect();
+          return r === undefined ? null : { top: Math.round(r.top), bottom: Math.round(r.bottom), inView: r.top >= 0 && r.bottom <= window.innerHeight };
+        });
+        say('termLink', row !== null && row.inView, `${w}: #term-link at ${row?.top}..${row?.bottom}`);
+        consoleErrors.push(...errors.map((e) => `${w} filter: ${e}`));
+        await ctx.close();
+      }
+      for (const [name, l] of Object.entries(lines)) record(name, l.length === 2 && !failed.has(name), l.join('; '));
     }
     // The player with reduced motion on, 1440 x 900, on fig-seq-turn (5 steps). Nothing plays on its own here.
     {

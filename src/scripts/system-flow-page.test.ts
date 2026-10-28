@@ -105,7 +105,7 @@ const page = read(f, `${SITE}/index.html`);
 
 // Order, and the omitted open-questions chapter.
 {
-  const marks = ['<header', 'class="legend"', 'id="ch-01-start-what"', 'id="ch-04-start-code"', 'id="ch-05-s1"', 'id="ch-06-s2"', 'id="ch-00-explore"', 'id="components"', 'id="rules-in-force"', 'id="coverage"', 'id="corrections"'].map((m) => page.indexOf(m));
+  const marks = ['<header', 'class="legend"', 'id="ch-01-start-what"', 'id="ch-04-start-code"', 'id="ch-05-s1"', 'id="ch-06-s2"', 'id="glossary"', 'id="rules-in-force"', 'id="coverage"', 'id="corrections"'].map((m) => page.indexOf(m));
   assert.ok(marks.every((m, i) => m >= 0 && (i === 0 || m > (marks[i - 1] ?? 0))), marks.join(','));
   assert.ok(!page.includes('id="open-questions"'));
   assert.ok(page.includes('<html lang="en" dir="ltr">'));
@@ -135,14 +135,14 @@ const page = read(f, `${SITE}/index.html`);
   assert.ok(/<li[^>]*>[^]*?Database[^]*?unconfirmed/.test(box[2] ?? ''), 'unconfirmed marked');
 }
 
-// Components: one table for the kind; none without a catalogue.
+// Components (task 08: in chapter 02): one table for the kind; none without a catalogue.
 {
-  const c = chapter(page, 'components');
+  const c = chapter(page, 'ch-02-start-parts');
   assert.strictEqual(c.split('<table').length - 1, 1);
   assert.ok(c.includes('Main queue'));
   const g = setup({ catalogue: false });
   build(g);
-  assert.ok(!read(g, `${SITE}/index.html`).includes('id="components"'));
+  assert.ok(!chapter(read(g, `${SITE}/index.html`), 'ch-02-start-parts').includes('<table'));
 }
 
 // Escape: body entity form, JSON < form, and the data still parses back.
@@ -161,7 +161,6 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">مرحبا</span>'));
 
 // Kit validators accept the inline data.
 {
-  assert.strictEqual(JSON.stringify(sandbox('fx-map-2.js').fxMap?.validateMapData?.(block(page, 'map-data'))), '[]');
   const figs = block(page, 'diagrams') as Record<string, unknown>;
   assert.deepStrictEqual(Object.keys(figs).sort(), ['flow-first', 'level-engine', 'seq-floor-visit', 'seq-turn']);
   const flow = sandbox('fx-flow-2.js').fxFlow;
@@ -233,7 +232,7 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">مرحبا</span>'));
   const g = setup({ questions: true });
   build(g);
   const pg = read(g, `${SITE}/index.html`);
-  const q = chapter(pg, 'open-questions');
+  const q = chapter(pg, 'coverage');
   for (const want of ['Who prunes expired links?', 'The nightly job.', 'node:api']) assert.ok(q.includes(want), want);
   const cells = (/<tbody><tr>([\s\S]*?)<\/tr>/.exec(chapter(pg, 'corrections'))?.[1] ?? '').split('</td><td>').map((c) => c.replace(/<[^>]*>/g, ''));
   assert.deepStrictEqual(cells, ['2026-10-01', 'bullet:b1', 'Links never expire.', 'Links expire.', 'owner']);
@@ -294,13 +293,12 @@ assert.ok(/<aside id="side">\s*<p class="menu-name">Fixture<\/p>\s*<p class="men
   const hrefs = (h: string | undefined): string[] => [...(h ?? '').matchAll(/<a href="#([^"]+)">/g)].map((m) => m[1] ?? '');
   assert.deepStrictEqual(hrefs(groups[0]?.[4]), ['ch-01-start-what', 'ch-02-start-parts', 'ch-03-start-request', 'ch-04-start-code']);
   assert.deepStrictEqual(hrefs(groups[1]?.[4]), ['ch-05-s1']);
-  // Today's fixed chapters sit in Reference until task 08: the map (chapter 00) and Components.
-  assert.deepStrictEqual(hrefs(groups[2]?.[4]), ['ch-00-explore', 'components', 'rules-in-force', 'coverage', 'corrections']);
+  assert.deepStrictEqual(hrefs(groups[2]?.[4]), ['glossary', 'rules-in-force', 'coverage', 'corrections']);
   // Every chapter is reachable from the menu, and every menu link lands on a chapter.
   const chapters = [...site.matchAll(/<section class="chapter" id="([^"]+)" data-group="(start|how|ref)">/g)];
   assert.deepStrictEqual(chapters.map((m) => m[1]), groups.flatMap((g) => hrefs(g[4])));
   assert.strictEqual((site.match(/<section class="chapter"/g) ?? []).length, chapters.length, 'every chapter carries data-group');
-  assert.deepStrictEqual(chapters.map((m) => m[2]), [...Array(4).fill('start'), 'how', ...Array(5).fill('ref')]);
+  assert.deepStrictEqual(chapters.map((m) => m[2]), [...Array(4).fill('start'), 'how', ...Array(4).fill('ref')]);
 }
 assert.ok(site.includes('<html lang="en" dir="ltr">'));
 
