@@ -175,4 +175,17 @@ exec ${real} "$@"
   assert.strictEqual(one.status, 0, one.stderr);
   assert.strictEqual(f.run(["check"]).status, 1);
 }
+{
+  const f = setup([good]);
+  f.fragment("engine", { sequences: [{ id: "turn", title: "Turn", chapter: "s1", participants: [], messages: [] }] });
+  f.put("host", `${F}/other.json`, '{ "sections": [ half written');
+  f.fragment("broken", { sections: [{ id: "x" }] });
+  const one = f.run(["check", "--fragment", `${F}/engine.json`]);
+  assert.strictEqual(one.status, 0, one.stderr);
+  const w = (0, import_json.parseJson)(one.stdout).warnings;
+  assert.ok(w.some((x) => x.startsWith(`${F}/other.json:`)) && w.some((x) => x.startsWith(`${F}/broken.json:`)), w.join("\n"));
+  const own = f.run(["check", "--fragment", `${F}/other.json`]);
+  assert.strictEqual(own.status, 1, "its own parse error still fails it");
+  assert.ok(own.stderr.startsWith(`${F}/other.json:`), own.stderr);
+}
 console.log("system-flow-evidence.test.js: ok");

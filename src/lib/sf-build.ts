@@ -61,16 +61,19 @@ export function checkModel(hostRoot: string, site: string, mode: 'check' | 'buil
   const cfg = systemFlowConfig(hostRoot);
   const loaded = loadFragments(path.join(hostRoot, site, 'model', 'fragments'), hostRoot);
   const merged = mergeFragments(loaded.fragments);
-  let problems = [...cfg.problems, ...loaded.problems, ...merged.problems];
+  // With a fragment, only its items are verified and reported; the rest supply the ids it names, and another
+  // fragment that fails to load (an area agent still writing it) is a warning, so parallel agents do not block each other.
+  const only = fragment === undefined ? undefined : path.relative(hostRoot, path.resolve(hostRoot, fragment));
+  const others = (p: Problem): Problem => (only !== undefined && p.file !== only && p.file !== '.fx.json' ? { ...p, level: 'warning' } : p);
+  let problems = [...cfg.problems, ...loaded.problems, ...merged.problems].map(others);
   let items = itemsOf(merged.model);
   let roots = new Map<string, Root>();
-  if (problems.length === 0) {
-    problems = checkRules(merged.model, merged.origin);
+  if (only !== undefined && !loaded.fragments.some((f) => f.file === only) && !problems.some((p) => p.file === only)) throw new Error(`no fragment ${only}`);
+  if (!problems.some((p) => p.level === 'error')) {
+    const early = problems;
+    problems = [...early, ...checkRules(merged.model, merged.origin)];
     const resolved = resolveRoots(hostRoot, merged.model.meta, cfg.config);
     roots = resolved.roots;
-    // With a fragment, only its items are verified and reported; the rest supply the ids it names.
-    const only = fragment === undefined ? undefined : path.relative(hostRoot, path.resolve(hostRoot, fragment));
-    if (only !== undefined && !loaded.fragments.some((f) => f.file === only)) throw new Error(`no fragment ${only}`);
     if (only !== undefined) items = items.filter((i) => i.file === only);
     problems.push(...resolved.problems, ...checkRuleAdrs(merged.model, resolved.roots), ...verifyEvidence(items, resolved.roots, mode));
     const host = [...resolved.roots.values()].find((r) => r.host);
@@ -78,7 +81,7 @@ export function checkModel(hostRoot: string, site: string, mode: 'check' | 'buil
       const head = headModel(host, path.join(hostRoot, site, 'model', 'fragments'));
       problems.push(...checkCorrections(head.items, head.model, itemsOf(merged.model), merged.model));
     }
-    if (only !== undefined) problems = problems.filter((p) => p.file === only || p.file === '.fx.json');
+    if (only !== undefined) problems = [...early, ...problems.slice(early.length).filter((p) => p.file === only || p.file === '.fx.json')];
   }
   return { config: cfg.config, fragments: loaded.fragments, model: merged.model, items, roots, origin: merged.origin, problems };
 }
