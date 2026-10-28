@@ -159,6 +159,11 @@ export function renderPage(input: Input): string {
     `<p>Roots: ${rootList}. Model date: ${escapeHtml(model.meta.date ?? 'not recorded')}.</p>`,
   ].join('\n');
 
+  // One item per node kind the page draws; the swatch class follows the kit's four looks.
+  const SWATCH: Record<string, string> = { client: ' info', outside: ' outside', external: ' outside', check: ' check', security: ' check' };
+  const kinds = [...new Set(model.levels.diagrams.flatMap((d) => d.nodes.map((n) => n.kind)))];
+  const legend = kinds.map((k) => `<li><span class="sw${SWATCH[k] ?? ''}"></span>${escapeHtml(k)}</li>`).join('\n');
+
   const slot = (name: string): RegExp => new RegExp(`<!-- slot: ${name}[\\s\\S]*?-->`);
   const pageTitle = escapeHtml(model.meta.title ?? 'System');
   // Replacement functions, not strings: repository text may hold `$&`.
@@ -167,7 +172,7 @@ export function renderPage(input: Input): string {
     .replace(/<!doctype html>/i, (m) => `${m}\n<!-- fx-system-flow generated: edit the model, then rebuild -->`)
     .replace(/<!-- slot: TITLE -->/g, () => pageTitle)
     .replace(/<p><!-- slot: LEAD[\s\S]*?--><\/p>/, () => lead)
-    .replace(slot('LEGEND'), () => '')
+    .replace(/(<ul class="legend"[^>]*>)[\s\S]*?<\/ul>/, (_m, open: string) => `${open}\n${legend}\n</ul>`)
     .replace(slot('NAV'), () => nav)
     .replace(/<section id="map">[\s\S]*?<\/section>\n*/, '')
     .replace(slot('CHAPTERS'), () => [explore, ...sections, ...fixed].join('\n'))

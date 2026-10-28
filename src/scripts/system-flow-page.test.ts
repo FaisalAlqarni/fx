@@ -93,6 +93,12 @@ const page = read(f, `${SITE}/index.html`);
   assert.ok(page.includes('<html lang="en" dir="ltr">'));
 }
 
+// Legend: one item per node kind in the model, none of the template's stock labels.
+{
+  const items = (/<ul class="legend"[^>]*>([\s\S]*?)<\/ul>/.exec(page)?.[1] ?? '').match(/<li>[\s\S]*?<\/li>/g) ?? [];
+  assert.deepStrictEqual(items.map((i) => i.replace(/<[^>]*>/g, '')), ['backend', 'database']);
+}
+
 // Lede and ownership.
 {
   const s1 = chapter(page, 'ch-01-s1');

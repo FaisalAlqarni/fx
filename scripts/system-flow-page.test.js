@@ -132,6 +132,10 @@ const page = read(f, `${SITE}/index.html`);
   assert.ok(page.includes('<html lang="en" dir="ltr">'));
 }
 {
+  const items = (/<ul class="legend"[^>]*>([\s\S]*?)<\/ul>/.exec(page)?.[1] ?? "").match(/<li>[\s\S]*?<\/li>/g) ?? [];
+  assert.deepStrictEqual(items.map((i) => i.replace(/<[^>]*>/g, "")), ["backend", "database"]);
+}
+{
   const s1 = chapter(page, "ch-01-s1");
   assert.ok(/<h2[^>]*>[^<]*<\/h2>\s*<p[^>]*>Where do links expire\?<\/p>/.test(s1), "question is the first paragraph");
   assert.strictEqual(page.split('<figure data-fx-flow="level-engine">').length - 1, 1);
