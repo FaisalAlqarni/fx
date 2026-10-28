@@ -130,6 +130,19 @@ ${r.stdout}`);
   miss("dotdot in a git root", { path: "app/../app/x.rb", lines: "1", symbol: "Link" }, "backend/app/../app/x.rb:1 Link", msg);
 }
 {
+  const f = setup([{ root: "plain", path: "leak.txt", lines: "1", symbol: "Secret" }], [{ id: "backend" }, { id: "plain" }], { plain: "../plain" });
+  fs.writeFileSync(path.join(f.base, "secret.txt"), "Secret\n");
+  fs.symlinkSync(path.join(f.base, "secret.txt"), path.join(f.plain, "leak.txt"));
+  fs.symlinkSync(f.base, path.join(f.plain, "up"));
+  const r = f.run(["check"]);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(r.stderr.includes("node:link: plain/leak.txt:1 Secret: file missing"), r.stderr);
+  const dir = setup([good], [{ id: "backend" }, { id: "plain" }], { plain: "../plain" });
+  fs.symlinkSync(dir.base, path.join(dir.plain, "up"));
+  dir.fragment("inventory", { inventory: [{ id: "inv", kind: "store", name: "N", evidence: [{ root: "plain", path: "up/host/" }] }] });
+  assert.ok(dir.run(["check"]).stderr.includes("inventory:inv: plain/up/host/: folder missing"), "a folder through a link is missing too");
+}
+{
   const f = setup([{ root: "guide", path: "README.md", lines: "1", symbol: "Guide" }, { root: "guide", path: "README.md", lines: "1", symbol: "Guide" }], void 0, { guide: "../nowhere" });
   const r = f.run(["check"]);
   assert.strictEqual(r.status, 1);

@@ -111,6 +111,21 @@ fails('folder on a node', [{ path: 'app/' }], `${NODE0}: node link: a folder ent
   miss('dotdot in a git root', { path: 'app/../app/x.rb', lines: '1', symbol: 'Link' }, 'backend/app/../app/x.rb:1 Link', msg);
 }
 
+// A symlink in a plain root that points outside it reads as missing: nothing outside the root is read (A6).
+{
+  const f = setup([{ root: 'plain', path: 'leak.txt', lines: '1', symbol: 'Secret' }], [{ id: 'backend' }, { id: 'plain' }], { plain: '../plain' });
+  fs.writeFileSync(path.join(f.base, 'secret.txt'), 'Secret\n');
+  fs.symlinkSync(path.join(f.base, 'secret.txt'), path.join(f.plain, 'leak.txt'));
+  fs.symlinkSync(f.base, path.join(f.plain, 'up'));
+  const r = f.run(['check']);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(r.stderr.includes('node:link: plain/leak.txt:1 Secret: file missing'), r.stderr);
+  const dir = setup([good], [{ id: 'backend' }, { id: 'plain' }], { plain: '../plain' });
+  fs.symlinkSync(dir.base, path.join(dir.plain, 'up'));
+  dir.fragment('inventory', { inventory: [{ id: 'inv', kind: 'store', name: 'N', evidence: [{ root: 'plain', path: 'up/host/' }] }] });
+  assert.ok(dir.run(['check']).stderr.includes('inventory:inv: plain/up/host/: folder missing'), 'a folder through a link is missing too');
+}
+
 // A missing root is one line however many entries cite it.
 {
   const f = setup([{ root: 'guide', path: 'README.md', lines: '1', symbol: 'Guide' }, { root: 'guide', path: 'README.md', lines: '1', symbol: 'Guide' }], undefined, { guide: '../nowhere' });

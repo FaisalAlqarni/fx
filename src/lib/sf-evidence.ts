@@ -94,10 +94,14 @@ const dirtyIn = (root: Root): Set<string> | string => {
   return s;
 };
 
-// The one place an evidence path meets a root's folder: null when it is absolute or leaves the root.
+// The one place an evidence path meets a root's folder: null when it is absolute or leaves the root,
+// by .. or through a symlink (security review S6), so nothing outside the root is read or even tested.
 const inside = (root: Root, rel: string): string | null => {
   const full = path.resolve(root.dir, rel);
-  return !path.isAbsolute(rel) && full.startsWith(root.dir + path.sep) ? full : null;
+  if (path.isAbsolute(rel) || !full.startsWith(root.dir + path.sep)) return null;
+  let real: string, base: string;
+  try { real = fs.realpathSync(full); base = fs.realpathSync(root.dir); } catch { return full; } // missing: the caller says so
+  return real.startsWith(base + path.sep) ? full : null;
 };
 
 export function readCited(root: Root, file: string): string | null {
