@@ -53,6 +53,9 @@ const evCell = (e: Evidenced, hostId: string): string => escapeCell(evidenceItem
 
 const table = (head: string[], rows: string[][]): string[] => [`| ${head.join(' | ')} |`, `|${head.map(() => ' --- |').join('')}`, ...rows.map((r) => `| ${r.join(' | ')} |`)];
 
+// A figure's one-line caption in italics; the underscores are escaped by prose() only as far as the text needs.
+const caption = (summary: string | undefined): string[] => (summary === undefined ? [] : [`_${prose(summary)}_`]);
+
 // A prefix, so an id that is a Mermaid keyword (end, loop, alt, note) is still a participant.
 const pid = (id: string): string => `p_${id}`;
 function sequenceBlock(q: Sequence, hostId: string): string[] {
@@ -60,6 +63,7 @@ function sequenceBlock(q: Sequence, hostId: string): string[] {
   const arrow = (m: { mode?: string }): string => (m.mode === 'async' ? '-)' : '->>');
   return [
     `### ${prose(q.title)}`, '',
+    ...caption(q.summary), // directly above the fence
     '```mermaid', 'sequenceDiagram',
     ...q.participants.map((p) => `    participant ${pid(p.id)} as ${escapeMermaid(p.label)}`),
     ...q.messages.map((m) => `    ${pid(m.from)}${arrow(m)}${pid(m.to)}: ${escapeMermaid(m.label)}`),
@@ -69,7 +73,7 @@ function sequenceBlock(q: Sequence, hostId: string): string[] {
 }
 function flowBlock(fl: StoreFlow, hostId: string): string[] {
   return [
-    `### ${prose(fl.id)}`, '', `Trigger: ${prose(fl.trigger)}`, '',
+    `### ${prose(fl.id)}`, '', ...caption(fl.summary).flatMap((c) => [c, '']), `Trigger: ${prose(fl.trigger)}`, '',
     ...table(['#', 'Actor', 'Op', 'Store', 'Key', 'When', 'Evidence'], fl.steps.map((s) => [String(s.n), cell(s.actor), s.op, s.store, cell(s.key), cell(s.when), evCell(s, hostId)])), '',
   ];
 }
@@ -93,6 +97,30 @@ const posix = (p: string): string => p.split(path.sep).join('/');
 // encodeURIComponent leaves ( and ) alone, and either can end a Markdown link target.
 const linkTarget = (p: string): string => p.split('/').map((s) => encodeURIComponent(s).replace(/[()]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`)).join('/');
 
+// The code chapter: one row per store kind with the chapters that show it, the notation note, then the code map by root.
+function codeBlocks(model: Model, hostId: string): string[] {
+  const title = new Map(model.sections.map((s) => [s.id, s.title]));
+  const stores = Object.entries(model.stores).map(([kind, rows]) => {
+    const ids = new Set((rows as { id: string }[]).map((r) => r.id));
+    const shown = model.sections.filter((s) => (s.storeRefs ?? []).some((r) => ids.has(r)) || model.storeFlows.some((f) => f.chapter === s.id && f.steps.some((st) => st.store === kind)));
+    return [kind, String(ids.size), cell(shown.map((s) => title.get(s.id)).join(', '))];
+  });
+  const out = ['## Where data lives', '', ...table(['Store kind', 'Rows', 'Shown in'], stores), ''];
+  const notes = model.meta.conventions ?? [];
+  if (notes.length > 0) out.push(...notes.map((n) => `- ${prose(n)}`), '');
+  const roots = [...new Set(model.codeMap.map((c) => c.root))];
+  if (model.codeMap.length === 0) return out;
+  out.push('## Code map', '');
+  for (const root of roots) {
+    const rows = model.codeMap.filter((c) => c.root === root).map((c) => {
+      const first = c.evidence.find((e) => 'path' in e && !e.path.endsWith('/'));
+      return [cell(c.path), cell(c.owns), first === undefined ? '' : escapeCell(evidenceItems([first], hostId)[0] ?? '')];
+    });
+    out.push(`### ${prose(root)}`, '', ...table(['Folder', 'What it owns', 'Start reading at'], rows), '');
+  }
+  return out;
+}
+
 export function renderMarkdown(model: Model, roots: Map<string, Root>, hostId: string, markdownRoot: string, site = 'docs/system-flow'): { path: string; text: string }[] {
   const ages = new Map<string, number | null>();
   const docs: { path: string; text: string }[] = [];
@@ -108,17 +136,30 @@ export function renderMarkdown(model: Model, roots: Map<string, Root>, hostId: s
     const sequences = model.sequences.filter((q) => q.chapter === s.id);
     const flows = model.storeFlows.filter((f) => f.chapter === s.id);
     const bullets = s.bullets ?? [];
-    const body = [`# ${prose(s.title)}`, '', prose(s.question), ''];
+    const body = [`# ${prose(s.title)}`, '', prose(s.question), '', ...(s.lead === undefined ? [] : [prose(s.lead), ''])];
     for (const b of bullets) {
       const line = evidenceLine(b.evidence ?? [], hostId);
       body.push(`- ${prose(b.text)}${line === '' && b.unconfirmed ? ' (unconfirmed)' : ''}`);
       if (line !== '') body.push(`  ${line}`);
     }
     if (bullets.length > 0) body.push('');
+    const notOwned = s.notOwned ?? [];
+    if (notOwned.length > 0) {
+      body.push('## Not owned here', '');
+      for (const b of notOwned) {
+        body.push(`- ${prose(b.text)}`);
+        const line = evidenceLine(b.evidence ?? [], hostId);
+        if (line !== '') body.push(`  ${line}`);
+      }
+      body.push('');
+    }
+    if (s.role === 'code') body.push(...codeBlocks(model, hostId));
+    const diagrams = model.levels.diagrams.filter((d) => (s.diagrams ?? []).includes(d.id));
+    if (diagrams.length > 0) body.push('## Diagrams', '', ...diagrams.flatMap((d) => [`### ${prose(d.title)}`, '', ...caption(d.summary).flatMap((c) => [c, ''])]));
     if (sequences.length > 0) body.push('## Sequences', '', ...sequences.flatMap((q) => sequenceBlock(q, hostId)));
     if (flows.length > 0) body.push('## Store flows', '', ...flows.flatMap((f) => flowBlock(f, hostId)));
     body.push(`[Figures for this chapter in the site](${siteLink(dir)}#${s.id})`);
-    emit(secPath(s), body, [...bullets, ...sequences.flatMap((q) => [...q.participants, ...q.messages]), ...flows.flatMap((f) => f.steps)]);
+    emit(secPath(s), body, [...bullets, ...notOwned, ...(s.role === 'code' ? model.codeMap : []), ...sequences.flatMap((q) => [...q.participants, ...q.messages]), ...flows.flatMap((f) => f.steps)]);
   }
 
   const catalogue = ['stream', 'gateway', 'queue', 'scheduler', 'cache', 'integration', 'component'].flatMap((kind) => {
@@ -149,8 +190,9 @@ export function renderMarkdown(model: Model, roots: Map<string, Root>, hostId: s
       ...extra,
     ], []);
   };
-  indexOf(markdownRoot, model.sections, ['- [Components](components.md)', '- [Stores](stores.md)']);
-  for (const folder of new Set(model.sections.flatMap((s) => (s.folder === undefined ? [] : [s.folder])))) {
+  const folders = [...new Set(model.sections.flatMap((s) => (s.folder === undefined ? [] : [s.folder])))];
+  indexOf(markdownRoot, model.sections, [...folders.map((f) => `- [${prose(f)}](${linkTarget(f)}/index.md)`), '- [Glossary](glossary.md)', '- [Components](components.md)', '- [Stores](stores.md)']);
+  for (const folder of folders) {
     indexOf(posix(path.join(markdownRoot, folder)), model.sections.filter((s) => s.folder === folder), []);
   }
   return docs;
@@ -198,4 +240,21 @@ export function renderReadme(): string {
     '',
     GENERATED,
   ].join('\n')}\n`;
+}
+
+// glossary.md: a table row per term, sorted by term, then the terms' evidence lines (a table cannot hold one that docs-index reads).
+export function renderGlossary(model: Model, roots: Map<string, Root>, hostId: string, markdownRoot: string): { path: string; text: string } {
+  const terms = [...model.glossary].sort((a, b) => a.term.toLowerCase().localeCompare(b.term.toLowerCase()));
+  const body = [
+    '# Glossary', '', `The words this site uses, in the meaning the code gives them. ${terms.length} terms.`, '',
+    ...table(['Term', 'Tag', 'Meaning', 'Evidence'], terms.map((t) => [cell(t.term), t.tag, cell(t.meaning), evCell(t, hostId)])), '',
+    '## Evidence', '',
+  ];
+  for (const t of terms) {
+    body.push(`- ${prose(t.term)}`);
+    const line = evidenceLine(t.evidence ?? [], hostId);
+    if (line !== '') body.push(`  ${line}`);
+  }
+  const sha = oldestVerified(terms, roots, hostId, new Map());
+  return { path: posix(path.join(markdownRoot, 'glossary.md')), text: `${[...body, '', GENERATED, ...(sha === null ? [] : [`<!-- fx-docs verified: ${sha} -->`])].join('\n')}\n` };
 }

@@ -7,7 +7,7 @@ import { parseFxJson } from './fx-json.js';
 import { resolveRoots, verifyEvidence } from './sf-evidence.js';
 import { checkCorrections, headModel } from './sf-corrections.js';
 import type { Root } from './sf-evidence.js';
-import { renderCoverage, renderMarkdown, renderReadme, renderRules, GENERATED } from './sf-markdown.js';
+import { renderCoverage, renderGlossary, renderMarkdown, renderReadme, renderRules, GENERATED } from './sf-markdown.js';
 import { checkRuleAdrs, checkRules } from './sf-rules.js';
 import { checkProse, proseStats } from './sf-prose.js';
 import type { Prose } from './sf-prose.js';
@@ -229,8 +229,9 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'model', 'coverage.json'), `${JSON.stringify({ generated: true, ...cov }, null, 2)}\n`, isGeneratedJson, result);
   const covDoc = renderCoverage(checked.model, cov, opts.markdown);
   const rules = renderRules(checked.model, checked.roots, hostId, opts.markdown);
-  // coverage.md and rules-in-force.md are cheap and summarise the whole model: every build rewrites them.
-  for (const d of [covDoc, rules]) {
+  const glossary = renderGlossary(checked.model, checked.roots, hostId, opts.markdown);
+  // coverage.md, rules-in-force.md and glossary.md are cheap and summarise the whole model: every build rewrites them.
+  for (const d of [covDoc, rules, glossary]) {
     writeGenerated(opts.hostRoot, d.path, d.text, hasMarker, result);
     result.rebuilt.docs.push(d.path);
   }

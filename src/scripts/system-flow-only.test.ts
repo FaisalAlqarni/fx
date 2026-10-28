@@ -31,8 +31,8 @@ const model = (f: Fx, t: Tweak = {}): void => {
 };
 const setup = (): Fx => { const f = sfFixture(); model(f); f.commit('host', 'fragments'); return f; };
 
-// Rewritten by every --only build: the indexes (the Start here folder has its own), coverage.md and rules-in-force.md (final fix A16).
-const ALWAYS = ['docs/system/index.md', 'docs/system/start-here/index.md', 'docs/system/coverage.md', 'docs/system/rules-in-force.md'];
+// Rewritten by every --only build: the indexes (the Start here folder has its own), coverage.md, rules-in-force.md and glossary.md (final fix A16).
+const ALWAYS = ['docs/system/index.md', 'docs/system/start-here/index.md', 'docs/system/coverage.md', 'docs/system/rules-in-force.md', 'docs/system/glossary.md'];
 const GEN = ['docs/system/s1.md', 'docs/system/s2.md', 'docs/system-flow/diagrams/seq-turn.html', 'docs/system-flow/diagrams/arch-engine.html', 'docs/system-flow/index.html'];
 const snap = (f: Fx): Record<string, { text: string; mtime: number }> => Object.fromEntries(GEN.map((r) => {
   const file = path.join(f.host, r);

@@ -62,7 +62,7 @@ const setup = () => {
   f.commit("host", "fragments");
   return f;
 };
-const ALWAYS = ["docs/system/index.md", "docs/system/start-here/index.md", "docs/system/coverage.md", "docs/system/rules-in-force.md"];
+const ALWAYS = ["docs/system/index.md", "docs/system/start-here/index.md", "docs/system/coverage.md", "docs/system/rules-in-force.md", "docs/system/glossary.md"];
 const GEN = ["docs/system/s1.md", "docs/system/s2.md", "docs/system-flow/diagrams/seq-turn.html", "docs/system-flow/diagrams/arch-engine.html", "docs/system-flow/index.html"];
 const snap = (f) => Object.fromEntries(GEN.map((r) => {
   const file = path.join(f.host, r);
