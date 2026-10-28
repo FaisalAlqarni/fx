@@ -314,4 +314,22 @@ assert.strictEqual(setup().run(["nope"]).status, 2);
   assert.strictEqual(r.status, 1, r.stdout);
   for (const [n, text] of Object.entries(before)) assert.strictEqual(fs.readFileSync(path.join(f.host, F, `${n}.json`), "utf8"), text, `${n} unchanged`);
 }
+{
+  const f = setup();
+  f.commit("host", "model");
+  const real = path.join(f.base, "fx-real.json");
+  fs.renameSync(path.join(f.host, ".fx.json"), real);
+  fs.symlinkSync(real, path.join(f.host, ".fx.json"));
+  const before = Object.fromEntries(["chapters", "flows", "level0"].map((n) => [n, fs.readFileSync(path.join(f.host, F, `${n}.json`), "utf8")]));
+  const r = f.run(["build", "--prefer", "cheap"]);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(r.stderr.includes("refusing to write through a symlink: .fx.json"), r.stderr);
+  for (const [n, text] of Object.entries(before)) assert.strictEqual(fs.readFileSync(path.join(f.host, F, `${n}.json`), "utf8"), text, `${n} unstamped`);
+}
+{
+  const f = setup({ label: "Reads [here](javascript:alert(1))" });
+  built(f);
+  const doc = read(f, "docs/system/s1.md");
+  assert.ok(doc.includes("| Reads \\[here\\](javascript:alert(1)) |"), doc);
+}
 console.log("system-flow-build.test.js: ok");
