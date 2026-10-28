@@ -1,0 +1,178 @@
+// generated from src/scripts/system-flow-page.test.ts by scripts/build: edit there, not here
+"use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var assert = __toESM(require("assert"));
+var fs = __toESM(require("fs"));
+var path = __toESM(require("path"));
+var vm = __toESM(require("vm"));
+var import_json = require("../lib/json.js");
+var import_sf_fixture = require("../tests/helpers/sf-fixture.js");
+const SITE = "docs/system-flow";
+const KIT = path.join(__dirname, "..", "references", "visual");
+const ev = (p, lines, symbol) => [{ path: p, lines, symbol }];
+const LABEL = "<script>alert(1)</script>";
+function setup(o = {}) {
+  const f2 = (0, import_sf_fixture.sfFixture)();
+  f2.fxJson({});
+  f2.fragment("meta", { schemaVersion: 1, meta: { title: "Fixture", purpose: "A fixture system.", roots: [{ id: "backend" }] } });
+  f2.fragment("level0", {
+    levels: { root: "engine", diagrams: [{
+      id: "engine",
+      level: 0,
+      title: "Engine",
+      summary: "The engine.",
+      groups: [],
+      nodes: [
+        { id: "api", label: LABEL, kind: "backend", role: "Takes calls", evidence: ev("app/x.rb", "1-4", "Link") },
+        { id: "db", label: "Database", kind: "database", role: "Stores rows", evidence: [], unconfirmed: true }
+      ],
+      edges: [{ from: "api", to: "db", label: "reads", evidence: ev("app/y.rb", "1-2", "Y") }]
+    }] }
+  });
+  f2.fragment("chapters", {
+    sections: [
+      {
+        id: "s1",
+        title: "Links",
+        question: "Where do links expire?",
+        diagrams: ["engine"],
+        sequences: ["turn"],
+        storeFlows: ["first"],
+        bullets: [{ id: "b1", text: "Reply: \u0645\u0631\u062D\u0628\u0627", evidence: ev("app/x.rb", "4", "expired?") }]
+      },
+      { id: "s2", title: "Again", question: "Who else draws it?", diagrams: ["engine"] }
+    ]
+  });
+  f2.fragment("flows", {
+    sequences: [{
+      id: "turn",
+      title: "Turn",
+      chapter: "s1",
+      participants: [{ id: "api", label: "API", evidence: ev("app/x.rb", "1", "Link") }, { id: "db", label: "DB", evidence: ev("app/y.rb", "1", "Y") }],
+      messages: [{ n: 1, from: "api", to: "db", label: "Reads link", evidence: ev("app/x.rb", "4", "expired?") }, { n: 2, from: "db", to: "api", label: "Returns row", evidence: ev("app/y.rb", "1", "Y") }]
+    }],
+    stores: { sql: [{ id: "links-table", table: "links", evidence: ev("app/y.rb", "1", "Y") }] },
+    storeFlows: [{ id: "first", trigger: "A link is opened", chapter: "s1", steps: [{ n: 1, actor: "api", op: "read", store: "sql", key: "links:{id}", evidence: ev("app/x.rb", "4", "expired?") }] }]
+  });
+  if (o.catalogue !== false) f2.fragment("catalogue", { catalogue: [{ id: "q1", kind: "queue", name: "Main queue", role: "Holds jobs", evidence: ev("app/y.rb", "1", "Y") }] });
+  f2.fragment("rules", { rules: [{ id: "r1", text: "Links expire.", evidence: ev("app/x.rb", "4", "expired?") }] });
+  f2.fragment("inventory", { inventory: [{ id: "job-a", kind: "job", name: "Job A", evidence: ev("app/x.rb", "1-4", "Link") }, { id: "job-b", kind: "job", name: "Job B", evidence: ev("app/y.rb", "1", "Y") }] });
+  f2.fragment("corrections", { corrections: [{ id: "c1", date: "2026-10-01", item: "bullet:b1", reason: "owner" }] });
+  return f2;
+}
+const read = (f2, rel) => fs.readFileSync(path.join(f2.host, rel), "utf8");
+const build = (f2) => {
+  const r = f2.run(["build"]);
+  assert.strictEqual(r.status, 0, `build exits 0
+${r.stdout}${r.stderr}`);
+  return (0, import_json.parseJson)(r.stdout);
+};
+const chapter = (page2, id) => {
+  const at = page2.indexOf(`<section id="${id}"`);
+  assert.ok(at >= 0, id);
+  const end = page2.indexOf("<section", at + 1);
+  return page2.slice(at, end < 0 ? void 0 : end);
+};
+const block = (page2, id) => {
+  const m = new RegExp(`<script type="application/json" id="${id}">([\\s\\S]*?)</script>`).exec(page2);
+  assert.ok(m, id);
+  return (0, import_json.parseJson)(m[1] ?? "");
+};
+const sandbox = (file) => {
+  const ctx = {};
+  vm.runInNewContext(fs.readFileSync(path.join(KIT, file), "utf8"), ctx);
+  return ctx;
+};
+const f = setup();
+const out = build(f);
+const page = read(f, `${SITE}/index.html`);
+{
+  const refs = [...page.matchAll(/\s(?:src|href)="([^"]*)"/g)].map((m) => m[1] ?? "").filter((r) => !r.startsWith("#") && !r.startsWith("diagrams/"));
+  assert.ok(refs.every((r) => r.startsWith("assets/")), refs.join(","));
+  const names = new Set(refs.map((r) => r.slice("assets/".length)));
+  for (const n of names) assert.ok(fs.existsSync(path.join(f.host, SITE, "assets", n)), n);
+  assert.deepStrictEqual([...names].sort(), ["elkjs-0.9.3.bundled.js", "fx-flow-1.js", "fx-map-2.js", "fx-tokens-1.css", "react-18.3.1.production.min.js", "react-dom-18.3.1.production.min.js", "reactflow-11.11.4.min.js", "reactflow-11.11.4.style.css", "theme.css"]);
+  assert.ok(!page.replace(/xmlns(:\w+)?="http:\/\/www\.w3\.org\/[^"]*"/g, "").match(/https?:\/\//), "no network url");
+  for (const l of ["LICENSE-react", "LICENSE-reactflow", "LICENSE-elkjs"]) assert.ok(fs.existsSync(path.join(f.host, SITE, "assets", l)), l);
+  assert.ok(!fs.existsSync(path.join(f.host, SITE, "assets", "fx-map-1.js")));
+}
+{
+  const g = setup();
+  g.put("host", `${SITE}/assets/fx-tokens-1.css`, "/* mine */");
+  g.put("host", `${SITE}/assets/theme.css`, "/* fx stale */");
+  build(g);
+  assert.strictEqual(read(g, `${SITE}/assets/fx-tokens-1.css`), "/* mine */");
+  assert.notStrictEqual(read(g, `${SITE}/assets/theme.css`), "/* fx stale */");
+}
+{
+  const marks = ["<header", 'class="legend"', 'id="ch-00-explore"', 'id="ch-01-s1"', 'id="ch-02-s2"', 'id="components"', 'id="rules-in-force"', 'id="coverage"', 'id="corrections"'].map((m) => page.indexOf(m));
+  assert.ok(marks.every((m, i) => m >= 0 && (i === 0 || m > (marks[i - 1] ?? 0))), marks.join(","));
+  assert.ok(!page.includes('id="open-questions"'));
+  assert.ok(page.includes('<html lang="en" dir="ltr">'));
+}
+{
+  const s1 = chapter(page, "ch-01-s1");
+  assert.ok(/<h2[^>]*>[^<]*<\/h2>\s*<p[^>]*>Where do links expire\?<\/p>/.test(s1), "question is the first paragraph");
+  assert.strictEqual(page.split('<figure data-fx-flow="level-engine">').length - 1, 1);
+  assert.ok(s1.includes('<figure data-fx-flow="level-engine">'));
+  const s2 = chapter(page, "ch-02-s2");
+  assert.ok(s2.includes('href="#ch-01-s1"') && s2.includes("Drawn in chapter 01"));
+  assert.ok(!s2.includes("data-fx-flow"));
+}
+{
+  const s1 = chapter(page, "ch-01-s1");
+  assert.strictEqual(s1.split('<details class="evidence">').length - 1, 1);
+  const box = /<details class="evidence"><summary>Files and locations \((\d+)\)<\/summary>([\s\S]*?)<\/details>/.exec(s1);
+  assert.ok(box, "evidence box");
+  assert.strictEqual(Number(box[1]), (box[2]?.match(/<li/g) ?? []).length);
+  for (const h of ["Facts", "Diagram: Engine", "Sequence: Turn", "Store flow: A link is opened"]) assert.ok((box[2] ?? "").includes(`>${h}<`), h);
+  assert.ok(/<li[^>]*>[^]*?Database[^]*?unconfirmed/.test(box[2] ?? ""), "unconfirmed marked");
+}
+{
+  const c = chapter(page, "components");
+  assert.strictEqual(c.split("<table").length - 1, 1);
+  assert.ok(c.includes("Main queue"));
+  const g = setup({ catalogue: false });
+  build(g);
+  assert.ok(!read(g, `${SITE}/index.html`).includes('id="components"'));
+}
+{
+  assert.ok(page.includes("&lt;script&gt;alert(1)&lt;/script&gt;"));
+  assert.ok(!page.includes("<script>alert") && page.split("</script").length === page.split("<script").length);
+  for (const id of ["map-data", "diagrams"]) {
+    const m = new RegExp(`<script type="application/json" id="${id}">([\\s\\S]*?)</script>`).exec(page);
+    assert.ok(m?.[1]?.includes("\\u003cscript>alert(1)\\u003c/script>"), id);
+    assert.ok(JSON.stringify((0, import_json.parseJson)(m?.[1] ?? "")).includes(LABEL.replace(/"/g, '\\"')) || JSON.stringify((0, import_json.parseJson)(m?.[1] ?? "")).includes(LABEL), id);
+  }
+}
+assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">\u0645\u0631\u062D\u0628\u0627</span>'));
+{
+  assert.strictEqual(JSON.stringify(sandbox("fx-map-2.js").fxMap?.validateMapData?.(block(page, "map-data"))), "[]");
+  const figs = block(page, "diagrams");
+  assert.deepStrictEqual(Object.keys(figs).sort(), ["flow-first", "level-engine", "seq-turn"]);
+  const flow = sandbox("fx-flow-1.js").fxFlow;
+  for (const [k, spec] of Object.entries(figs)) assert.strictEqual(JSON.stringify(flow?.validateFigure?.(spec)), "[]", k);
+}
+assert.strictEqual(out.pageBytes, fs.statSync(path.join(f.host, SITE, "index.html")).size);
+console.log("system-flow-page.test.js: OK");

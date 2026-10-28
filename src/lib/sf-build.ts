@@ -11,6 +11,7 @@ import { checkRuleAdrs, checkRules } from './sf-rules.js';
 import { coverage } from './sf-coverage.js';
 import type { Coverage } from './sf-coverage.js';
 import { layoutAll } from './sf-layout.js';
+import { renderPage } from './sf-page.js';
 import { detectTheme, themeCss } from './sf-theme.js';
 import type { Theme } from './sf-theme.js';
 import type { Evidenced, Fragment, Item, LayoutLine, Model, Problem } from './sf-model.js';
@@ -77,6 +78,14 @@ function writeGenerated(root: string, rel: string, text: string, isOurs: (old: s
   r.written.push(rel);
 }
 
+const REFERENCES = path.join(__dirname, '..', 'references');
+// Site assets by the copy rule: the kit beside the template, the libraries and their licences from vendor/.
+// fx-map-1.js is left out: the site page loads fx-map-2.js.
+const ASSETS: [string, string][] = [
+  ...['fx-tokens-1.css', 'fx-map-2.js', 'fx-flow-1.js'].map((n): [string, string] => [n, 'visual']),
+  ...['react-18.3.1.production.min.js', 'react-dom-18.3.1.production.min.js', 'reactflow-11.11.4.min.js', 'reactflow-11.11.4.style.css', 'elkjs-0.9.3.bundled.js', 'LICENSE-react', 'LICENSE-reactflow', 'LICENSE-elkjs'].map((n): [string, string] => [n, 'vendor']),
+];
+
 export async function build(opts: { hostRoot: string; site: string; markdown: string; docsDir?: string | null; only?: string[]; archify?: string }): Promise<BuildResult> {
   const result: BuildResult = { ok: false, problems: [], written: [], collisions: [], diagrams: [], layout: [], pageBytes: null, coverage: null, theme: null };
   const checked = checkModel(opts.hostRoot, opts.site, 'build');
@@ -126,6 +135,23 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   const theme = detectTheme(opts.hostRoot, opts.docsDir ?? null);
   result.theme = { source: theme.source, kind: theme.kind, fallbacks: theme.fallbacks };
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'assets', 'theme.css'), themeCss(theme), (old) => old.startsWith('/* fx '), result);
+
+  // A missing source file stops the build before the page is written.
+  for (const [name, dir] of ASSETS) {
+    if (!fs.existsSync(path.join(REFERENCES, dir, name))) throw new Error(`fx asset missing: references/${dir}/${name}`);
+  }
+  for (const [name, dir] of ASSETS) {
+    const rel = path.posix.join(opts.site, 'assets', name);
+    const dest = path.join(opts.hostRoot, rel);
+    if (fs.existsSync(dest)) continue;
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(path.join(REFERENCES, dir, name), dest);
+    result.written.push(rel);
+  }
+  const template = fs.readFileSync(path.join(REFERENCES, 'visual', 'page-template.html'), 'utf8');
+  const html = renderPage({ model: checked.model, figures: laid.figures, coverage: cov, theme, roots: checked.roots, template });
+  writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'index.html'), html, hasMarker, result);
+  if (!result.collisions.includes(path.posix.join(opts.site, 'index.html'))) result.pageBytes = Buffer.byteLength(html);
 
   // Last step, only when everything above succeeded (a write error above throws before this line).
   stampVerified(path.join(opts.hostRoot, opts.site, 'model', 'fragments'), stamps);
