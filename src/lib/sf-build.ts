@@ -123,7 +123,7 @@ function saveChoices(hostRoot: string, c: DiagramFlags): void {
 
 // What `--only` selects: arguments with a handle prefix are handles, the rest are paths (items citing them).
 // Returns the unknown handles, or the figure keys, section docs and flags that hold the selection.
-function selectOnly(model: Model, items: Item[], only: string[], hostId: string): { unknown: string[]; selected: Set<string>; figures: Set<string>; sections: Set<string>; components: boolean; rules: boolean } {
+function selectOnly(model: Model, items: Item[], only: string[], hostId: string): { unknown: string[]; selected: Set<string>; figures: Set<string>; sections: Set<string>; components: boolean; stores: boolean } {
   const given = only.filter((a) => parseHandle(a) !== null);
   const sel = new Set([...given, ...queryPaths(items, only.filter((a) => parseHandle(a) === null), hostId).map((i) => i.handle)]);
   const containers = new Set([...model.sections.map((s) => `section:${s.id}`), ...model.levels.diagrams.map((d) => `diagram:${d.id}`), ...model.sequences.map((q) => `seq:${q.id}`), ...model.storeFlows.map((f) => `flow:${f.id}`)]);
@@ -149,7 +149,7 @@ function selectOnly(model: Model, items: Item[], only: string[], hostId: string)
     if (sel.has(`section:${s.id}`) || own.some((h) => sel.has(h)) || sectionItems(model, s.id).some((i) => sel.has(i.handle))) sections.add(s.id);
   }
   const has = (prefix: string): boolean => [...sel].some((h) => parseHandle(h)?.prefix === prefix);
-  return { unknown, selected: sel, figures, sections, components: has('catalogue'), rules: has('rule') };
+  return { unknown, selected: sel, figures, sections, components: has('catalogue'), stores: has('store') };
 }
 
 // Lays out every figure; each one over 1 crossing or 860 px is an error at the fragment that defines it.
@@ -199,8 +199,11 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
 
   const hasMarker = (old: string): boolean => old.includes(GENERATED);
   const docs = renderMarkdown(checked.model, checked.roots, hostId, opts.markdown, opts.site);
-  // The first docs are the sections, in model order; components.md follows them.
-  const wanted = (i: number): boolean => picked === null || (i < checked.model.sections.length ? picked.sections.has((checked.model.sections[i] as { id: string }).id) : picked.components && (docs[i] as { path: string }).path.endsWith('/components.md'));
+  // The first docs are the sections, in model order; components.md and stores.md follow, then the index docs,
+  // which list every section and so are rewritten by every build.
+  const sectionCount = checked.model.sections.length;
+  const wanted = (i: number): boolean => picked === null || (i < sectionCount ? picked.sections.has((checked.model.sections[i] as { id: string }).id)
+    : i === sectionCount ? picked.components : i === sectionCount + 1 ? picked.stores : true);
   docs.forEach((doc, i) => {
     if (!wanted(i)) return;
     result.rebuilt.docs.push(doc.path);
@@ -214,13 +217,10 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'model', 'coverage.json'), `${JSON.stringify({ generated: true, ...cov }, null, 2)}\n`, isGeneratedJson, result);
   const covDoc = renderCoverage(checked.model, cov, opts.markdown);
   const rules = renderRules(checked.model, checked.roots, hostId, opts.markdown);
-  if (picked === null) {
-    writeGenerated(opts.hostRoot, covDoc.path, covDoc.text, hasMarker, result);
-    result.rebuilt.docs.push(covDoc.path);
-  }
-  if (picked === null || picked.rules) {
-    writeGenerated(opts.hostRoot, rules.path, rules.text, hasMarker, result);
-    result.rebuilt.docs.push(rules.path);
+  // coverage.md and rules-in-force.md are cheap and summarise the whole model: every build rewrites them.
+  for (const d of [covDoc, rules]) {
+    writeGenerated(opts.hostRoot, d.path, d.text, hasMarker, result);
+    result.rebuilt.docs.push(d.path);
   }
   result.rebuilt.figures = laid.figures.map((f) => f.key).filter((k) => picked === null || picked.figures.has(k));
 

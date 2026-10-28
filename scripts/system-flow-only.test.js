@@ -61,6 +61,7 @@ const setup = () => {
   f.commit("host", "fragments");
   return f;
 };
+const ALWAYS = ["docs/system/index.md", "docs/system/coverage.md", "docs/system/rules-in-force.md"];
 const GEN = ["docs/system/s1.md", "docs/system/s2.md", "docs/system-flow/diagrams/seq-turn.html", "docs/system-flow/diagrams/arch-engine.html", "docs/system-flow/index.html"];
 const snap = (f) => Object.fromEntries(GEN.map((r) => {
   const file = path.join(f.host, r);
@@ -95,7 +96,7 @@ const changed = (before, after, rel) => {
   model(f, { b1: "A link expires after 60 days." });
   f.fragment("corrections", { corrections: [corr("bullet:b1", TEXT, "A link expires after 60 days.")] });
   const r = only(f, "bullet:b1");
-  assert.deepStrictEqual(r.rebuilt, { docs: ["docs/system/s1.md"], figures: [], diagrams: [] });
+  assert.deepStrictEqual(r.rebuilt, { docs: ["docs/system/s1.md", ...ALWAYS], figures: [], diagrams: [] });
   const after = snap(f);
   changed(before, after, "docs/system/s1.md");
   for (const rel of ["docs/system/s2.md", "docs/system-flow/diagrams/seq-turn.html", "docs/system-flow/diagrams/arch-engine.html"]) same(before, after, rel, "bullet:b1");
@@ -105,9 +106,9 @@ const changed = (before, after, rel) => {
   assert.deepStrictEqual(Object.values(snap(f)).map((x) => x.text), Object.values(again).map((x) => x.text), "repeat gives the same bytes");
   const q = (0, import_json.parseJson)(f.run(["query", "app/x.rb"]).stdout);
   assert.ok(q.items.length > 0);
-  assert.deepStrictEqual(only(f, "app/x.rb").rebuilt, { docs: ["docs/system/s1.md", "docs/system/s2.md"], figures: ["level-engine", "seq-turn"], diagrams: ["arch-engine", "seq-turn"] });
-  assert.deepStrictEqual(only(f, "bullet:b1,bullet:b2").rebuilt.docs, ["docs/system/s1.md", "docs/system/s2.md"]);
-  assert.deepStrictEqual(only(f, "bullet:b1", "--only", "bullet:b2").rebuilt.docs, ["docs/system/s1.md", "docs/system/s2.md"]);
+  assert.deepStrictEqual(only(f, "app/x.rb").rebuilt, { docs: ["docs/system/s1.md", "docs/system/s2.md", ...ALWAYS], figures: ["level-engine", "seq-turn"], diagrams: ["arch-engine", "seq-turn"] });
+  assert.deepStrictEqual(only(f, "bullet:b1,bullet:b2").rebuilt.docs, ["docs/system/s1.md", "docs/system/s2.md", ...ALWAYS]);
+  assert.deepStrictEqual(only(f, "bullet:b1", "--only", "bullet:b2").rebuilt.docs, ["docs/system/s1.md", "docs/system/s2.md", ...ALWAYS]);
 }
 {
   const f = setup();
@@ -116,15 +117,15 @@ const changed = (before, after, rel) => {
   f.fragment("corrections", { corrections: [corr("node:api", "API", "Gateway")] });
   const before = snap(f);
   const r = only(f, "node:api");
-  assert.deepStrictEqual(r.rebuilt, { docs: ["docs/system/s1.md"], figures: ["level-engine"], diagrams: ["arch-engine"] });
+  assert.deepStrictEqual(r.rebuilt, { docs: ["docs/system/s1.md", ...ALWAYS], figures: ["level-engine"], diagrams: ["arch-engine"] });
   same(before, snap(f), "docs/system-flow/diagrams/seq-turn.html", "node:api");
 }
 {
   const f = setup();
   full(f);
-  assert.deepStrictEqual(only(f, "seq:turn").rebuilt, { docs: ["docs/system/s2.md"], figures: ["seq-turn"], diagrams: ["seq-turn"] });
-  assert.deepStrictEqual(only(f, "diagram:engine").rebuilt, { docs: ["docs/system/s1.md"], figures: ["level-engine"], diagrams: ["arch-engine"] });
-  assert.deepStrictEqual(only(f, "section:s2").rebuilt, { docs: ["docs/system/s2.md"], figures: [], diagrams: [] });
+  assert.deepStrictEqual(only(f, "seq:turn").rebuilt, { docs: ["docs/system/s2.md", ...ALWAYS], figures: ["seq-turn"], diagrams: ["seq-turn"] });
+  assert.deepStrictEqual(only(f, "diagram:engine").rebuilt, { docs: ["docs/system/s1.md", ...ALWAYS], figures: ["level-engine"], diagrams: ["arch-engine"] });
+  assert.deepStrictEqual(only(f, "section:s2").rebuilt, { docs: ["docs/system/s2.md", ...ALWAYS], figures: [], diagrams: [] });
 }
 {
   const f = (0, import_sf_fixture.sfFixture)();
@@ -177,5 +178,16 @@ const changed = (before, after, rel) => {
   const [s1, s2] = chapters().sections;
   assert.deepStrictEqual(s1?.bullets[0]?.verified, { backend: head }, "selected item stamped");
   assert.strictEqual(s2?.bullets[0]?.verified, void 0, "item outside --only not stamped");
+}
+{
+  const f = setup();
+  f.fragment("stores", { stores: { sql: [{ id: "links-table", table: "links", evidence: ev }] } });
+  f.commit("host", "stores");
+  full(f);
+  f.fragment("stores", { stores: { sql: [{ id: "links-table", table: "short_links", evidence: ev }] } });
+  f.fragment("corrections", { corrections: [corr("store:links-table", "links", "short_links")] });
+  const r = only(f, "store:links-table");
+  assert.deepStrictEqual(r.rebuilt.docs, ["docs/system/stores.md", ...ALWAYS]);
+  assert.ok(fs.readFileSync(path.join(f.host, "docs/system/stores.md"), "utf8").includes("| short_links |"));
 }
 process.stdout.write("system-flow-only.test.js: OK\n");
