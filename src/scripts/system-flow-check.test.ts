@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { spawnSync } from 'child_process';
 import { parseJson } from '../lib/json.js';
-import { handleOf, parseHandle } from '../lib/sf-model.js';
+import { handleOf, mergeFragments, parseHandle } from '../lib/sf-model.js';
 import { validate } from '../lib/sf-schema.js';
 import { sfFixture } from '../tests/helpers/sf-fixture.js';
 
@@ -209,5 +209,27 @@ assert.deepStrictEqual(
   [{ pointer: '', message: 'expected string' }]);
 assert.throws(() => validate({ type: 'string', minLength: 1 }, 'x'), /unsupported schema keyword minLength/);
 assert.throws(() => validate({ $ref: '#/$defs/missing' }, 'x'), /cannot resolve \$ref #\/\$defs\/missing/);
+
+// Property names inherited from Object.prototype are checked like any other key.
+fails('a node carrying constructor', (f) => f.fragment('level0', level0({ constructor: 1 })),
+  /level0\.json:\/levels\/diagrams\/0\/nodes\/0: property constructor not allowed$/m);
+fails('a node carrying toString', (f) => f.fragment('level0', level0({ toString: 'x' })),
+  /level0\.json:\/levels\/diagrams\/0\/nodes\/0: property toString not allowed$/m);
+{
+  const f = sfFixture();
+  f.goodSet();
+  f.put('host', `${F}/x.json`, '{ "__proto__": { "polluted": "yes" } }\n');
+  const r = f.run(['check']);
+  assert.strictEqual(r.status, 1, `a top-level __proto__ key: exits 1\n${r.stderr}`);
+  assert.match(r.stderr, /^docs\/system-flow\/model\/fragments\/x\.json:: property __proto__ not allowed$/m);
+}
+assert.deepStrictEqual(validate({ required: ['toString'] }, {}), [{ pointer: '', message: 'required property toString missing' }]);
+assert.throws(() => validate({ $ref: '#/$defs/constructor', $defs: {} }, 'x'), /cannot resolve \$ref #\/\$defs\/constructor/);
+// mergeFragments never writes through a __proto__ key onto Object.prototype.
+{
+  const data = parseJson('{ "__proto__": { "polluted": "yes" } }') as Record<string, unknown>;
+  mergeFragments([{ file: 'x.json', data }]);
+  assert.strictEqual(({} as Record<string, unknown>).polluted, undefined, 'Object.prototype is untouched');
+}
 
 process.stdout.write('system-flow-check.test.js: OK\n');

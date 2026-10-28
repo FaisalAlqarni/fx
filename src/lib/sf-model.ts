@@ -105,7 +105,9 @@ const emptyModel = (): Model => ({
 // Arrays concatenate, objects merge key by key, and the first scalar wins.
 function mergeInto(into: Record<string, unknown>, from: Record<string, unknown>): void {
   for (const [k, v] of Object.entries(from)) {
-    const cur = into[k];
+    // A JSON "__proto__" key is an own property; writing through it would reach Object.prototype.
+    if (k === '__proto__') continue;
+    const cur = Object.hasOwn(into, k) ? into[k] : undefined;
     if (Array.isArray(cur) && Array.isArray(v)) into[k] = [...cur, ...v];
     else if (isObject(cur) && isObject(v)) mergeInto(cur, v);
     else if (cur === undefined || cur === '') into[k] = v;

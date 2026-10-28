@@ -255,4 +255,30 @@ assert.deepStrictEqual(
 );
 assert.throws(() => (0, import_sf_schema.validate)({ type: "string", minLength: 1 }, "x"), /unsupported schema keyword minLength/);
 assert.throws(() => (0, import_sf_schema.validate)({ $ref: "#/$defs/missing" }, "x"), /cannot resolve \$ref #\/\$defs\/missing/);
+fails(
+  "a node carrying constructor",
+  (f) => f.fragment("level0", level0({ constructor: 1 })),
+  /level0\.json:\/levels\/diagrams\/0\/nodes\/0: property constructor not allowed$/m
+);
+fails(
+  "a node carrying toString",
+  (f) => f.fragment("level0", level0({ toString: "x" })),
+  /level0\.json:\/levels\/diagrams\/0\/nodes\/0: property toString not allowed$/m
+);
+{
+  const f = (0, import_sf_fixture.sfFixture)();
+  f.goodSet();
+  f.put("host", `${F}/x.json`, '{ "__proto__": { "polluted": "yes" } }\n');
+  const r = f.run(["check"]);
+  assert.strictEqual(r.status, 1, `a top-level __proto__ key: exits 1
+${r.stderr}`);
+  assert.match(r.stderr, /^docs\/system-flow\/model\/fragments\/x\.json:: property __proto__ not allowed$/m);
+}
+assert.deepStrictEqual((0, import_sf_schema.validate)({ required: ["toString"] }, {}), [{ pointer: "", message: "required property toString missing" }]);
+assert.throws(() => (0, import_sf_schema.validate)({ $ref: "#/$defs/constructor", $defs: {} }, "x"), /cannot resolve \$ref #\/\$defs\/constructor/);
+{
+  const data = (0, import_json.parseJson)('{ "__proto__": { "polluted": "yes" } }');
+  (0, import_sf_model.mergeFragments)([{ file: "x.json", data }]);
+  assert.strictEqual({}.polluted, void 0, "Object.prototype is untouched");
+}
 process.stdout.write("system-flow-check.test.js: OK\n");

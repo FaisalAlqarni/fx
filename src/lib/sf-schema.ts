@@ -27,10 +27,11 @@ export function validate(schema: object, value: unknown): SchemaError[] {
     // JSON Schema counts code points, so an emoji is one character.
     if (typeof s.maxLength === 'number' && typeof v === 'string' && [...v].length > s.maxLength) errors.push({ pointer, message: `longer than ${s.maxLength} characters` });
     if (isObject(v)) {
-      for (const k of (s.required ?? []) as string[]) if (!(k in v)) errors.push({ pointer, message: `required property ${k} missing` });
+      for (const k of (s.required ?? []) as string[]) if (!Object.hasOwn(v, k)) errors.push({ pointer, message: `required property ${k} missing` });
       const props = (s.properties ?? {}) as Record<string, Schema>;
       for (const [k, child] of Object.entries(v)) {
-        const ps = props[k];
+        // Own properties only: an inherited name such as constructor is not a schema property.
+        const ps = Object.hasOwn(props, k) ? props[k] : undefined;
         if (ps) walk(ps, child, `${pointer}/${k}`);
         else if (s.additionalProperties === false) errors.push({ pointer, message: `property ${k} not allowed` });
       }
@@ -52,7 +53,7 @@ const isObject =(v: unknown): v is Record<string, unknown> => typeof v === 'obje
 
 function resolve(root: Schema, ref: string): Schema {
   const name = ref.startsWith('#/$defs/') ? ref.slice('#/$defs/'.length) : undefined;
-  const target = name === undefined ? undefined : (root.$defs as Record<string, Schema> | undefined)?.[name];
+  const target = name === undefined ? undefined : isObject(root.$defs) && Object.hasOwn(root.$defs, name) ? (root.$defs[name] as Schema) : undefined;
   if (!target) throw new Error(`schema: cannot resolve $ref ${ref}`);
   return target;
 }
