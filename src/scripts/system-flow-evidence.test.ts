@@ -63,6 +63,21 @@ passes('folder on inventory', [good], inventory('app/'));
 fails('folder missing on inventory', [good], `${F}/inventory.json:/inventory/0/evidence/0: inventory:inv: backend/nope/: folder missing`, inventory('nope/'));
 fails('folder on a node', [{ path: 'app/' }], `${NODE0}: node link: a folder entry is allowed only on catalogue and inventory entries`);
 
+// A path that leaves its root is rejected before any read, in git and plain roots alike.
+{
+  const msg = 'path must be relative to its root and hold no .. segment';
+  const plain = (e: Ev, line: string): void => {
+    const f = setup([e], [{ id: 'backend' }, { id: 'plain' }], { plain: '../plain' });
+    f.put('plain', '../secret.txt', 'Secret\n');
+    const r = f.run(['check']);
+    assert.strictEqual(r.status, 1, `${line}\n${r.stdout}`);
+    assert.ok(r.stderr.split('\n').includes(`${NODE0}: node:link: ${line}: ${msg}`), r.stderr);
+  };
+  plain({ root: 'plain', path: '../secret.txt', lines: '1', symbol: 'Secret' }, 'plain/../secret.txt:1 Secret');
+  plain({ root: 'plain', path: '/etc/passwd', lines: '1', symbol: 'root' }, 'plain//etc/passwd:1 root');
+  miss('dotdot in a git root', { path: 'app/../app/x.rb', lines: '1', symbol: 'Link' }, 'backend/app/../app/x.rb:1 Link', msg);
+}
+
 // A missing root is one line however many entries cite it.
 {
   const f = setup([{ root: 'guide', path: 'README.md', lines: '1', symbol: 'Guide' }, { root: 'guide', path: 'README.md', lines: '1', symbol: 'Guide' }], undefined, { guide: '../nowhere' });

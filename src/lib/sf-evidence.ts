@@ -53,12 +53,21 @@ const dirtyIn = (root: Root): Set<string> => {
   return s;
 };
 
+// The one place an evidence path meets a root's folder: null when it is absolute or leaves the root.
+const inside = (root: Root, rel: string): string | null => {
+  const full = path.resolve(root.dir, rel);
+  return !path.isAbsolute(rel) && full.startsWith(root.dir + path.sep) ? full : null;
+};
+
 export function readCited(root: Root, file: string): string | null {
   const key = `${root.dir}\0${file}`;
   if (reads.has(key)) return reads.get(key) ?? null;
   let text: string | null;
   if (root.git) text = trackedIn(root).has(file) ? git(root.dir, ['show', `HEAD:${file}`]) : null;
-  else text = fs.existsSync(path.join(root.dir, file)) && fs.statSync(path.join(root.dir, file)).isFile() ? fs.readFileSync(path.join(root.dir, file), 'utf8') : null;
+  else {
+    const full = inside(root, file);
+    text = full !== null && fs.existsSync(full) && fs.statSync(full).isFile() ? fs.readFileSync(full, 'utf8') : null;
+  }
   reads.set(key, text);
   return text;
 }
@@ -66,7 +75,8 @@ export function readCited(root: Root, file: string): string | null {
 const folderExists = (root: Root, dir: string): boolean => {
   const bare = dir.replace(/\/+$/, '');
   if (root.git) return [...trackedIn(root)].some((f) => f.startsWith(`${bare}/`));
-  return fs.existsSync(path.join(root.dir, bare)) && fs.statSync(path.join(root.dir, bare)).isDirectory();
+  const full = inside(root, bare);
+  return full !== null && fs.existsSync(full) && fs.statSync(full).isDirectory();
 };
 
 // Every range is inside 1..count and in order; returns the union of the cited lines, or null.
@@ -101,6 +111,7 @@ export function verifyEvidence(items: Item[], roots: Map<string, Root>, mode: 'c
       if (/[*{]/.test(e.path)) return fail('path with * or { is not allowed');
       if (/[\s`]/.test(e.path)) return fail('path with whitespace or a backtick cannot be written as an evidence line');
       if (e.symbol?.includes('`')) return fail('symbol with a backtick cannot be written as an evidence line');
+      if (path.isAbsolute(e.path) || e.path.split('/').includes('..')) return fail('path must be relative to its root and hold no .. segment');
       if (root.missing) return;
       if (e.path.endsWith('/')) {
         if (item.kind !== 'catalogue' && item.kind !== 'inventory') return fail(`${KIND_WORD[item.kind]} ${item.id}: a folder entry is allowed only on catalogue and inventory entries`, true);
