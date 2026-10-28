@@ -120,7 +120,7 @@ function saveChoices(hostRoot: string, c: DiagramFlags): void {
 
 // What `--only` selects: arguments with a handle prefix are handles, the rest are paths (items citing them).
 // Returns the unknown handles, or the figure keys, section docs and flags that hold the selection.
-function selectOnly(model: Model, items: Item[], only: string[], hostId: string): { unknown: string[]; figures: Set<string>; sections: Set<string>; components: boolean; rules: boolean } {
+function selectOnly(model: Model, items: Item[], only: string[], hostId: string): { unknown: string[]; selected: Set<string>; figures: Set<string>; sections: Set<string>; components: boolean; rules: boolean } {
   const given = only.filter((a) => parseHandle(a) !== null);
   const sel = new Set([...given, ...queryPaths(items, only.filter((a) => parseHandle(a) === null), hostId).map((i) => i.handle)]);
   const containers = new Set([...model.sections.map((s) => `section:${s.id}`), ...model.levels.diagrams.map((d) => `diagram:${d.id}`), ...model.sequences.map((q) => `seq:${q.id}`), ...model.storeFlows.map((f) => `flow:${f.id}`)]);
@@ -146,7 +146,7 @@ function selectOnly(model: Model, items: Item[], only: string[], hostId: string)
     if (sel.has(`section:${s.id}`) || own.some((h) => sel.has(h)) || sectionItems(model, s.id).some((i) => sel.has(i.handle))) sections.add(s.id);
   }
   const has = (prefix: string): boolean => [...sel].some((h) => parseHandle(h)?.prefix === prefix);
-  return { unknown, figures, sections, components: has('catalogue'), rules: has('rule') };
+  return { unknown, selected: sel, figures, sections, components: has('catalogue'), rules: has('rule') };
 }
 
 export async function build(opts: { hostRoot: string; site: string; markdown: string; docsDir?: string | null; only?: string[]; archify?: string; flags?: DiagramFlags }): Promise<BuildResult> {
@@ -168,7 +168,8 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   result.depth = depth(checked.model, checked.items, plan.plan, checked.origin);
 
   // The stamps are applied in memory only; the fragments change at the very end.
-  const stamps = planStamps(checked.items, checked.roots);
+  // With --only, only the named items are stamped: the rest were not re-read.
+  const stamps = planStamps(picked === null ? checked.items : checked.items.filter((i) => picked.selected.has(i.handle)), checked.roots);
   for (const { item, o } of collect(checked.model)) {
     const add = stamps.get(item.handle);
     if (add) (o as Evidenced).verified = { ...(o as Evidenced).verified, ...add };

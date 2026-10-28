@@ -124,4 +124,18 @@ const changed = (before: ReturnType<typeof snap>, after: ReturnType<typeof snap>
   assert.strictEqual(r.status, 1, 'a bad range fails the check first');
   assert.deepStrictEqual(snap(f), before, 'nothing written');
 }
+{
+  // An unverified item outside --only stays unverified; the selected one is stamped.
+  const f = setup();
+  const head = f.git('host', 'rev-parse', 'HEAD');
+  full(f);
+  const chapters = (): { sections: { bullets: { id: string; verified?: Record<string, string> }[] }[] } => parseJson(fs.readFileSync(path.join(f.host, 'docs/system-flow/model/fragments/chapters.json'), 'utf8')) as never;
+  const strip = chapters();
+  for (const s of strip.sections) for (const b of s.bullets) delete b.verified;
+  f.fragment('chapters', strip);
+  only(f, 'bullet:b1');
+  const [s1, s2] = chapters().sections;
+  assert.deepStrictEqual(s1?.bullets[0]?.verified, { backend: head }, 'selected item stamped');
+  assert.strictEqual(s2?.bullets[0]?.verified, undefined, 'item outside --only not stamped');
+}
 process.stdout.write('system-flow-only.test.js: OK\n');
