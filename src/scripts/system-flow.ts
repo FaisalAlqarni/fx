@@ -5,7 +5,7 @@ import { execFileSync } from 'child_process';
 import { build, checkModel, layoutChecked, systemFlowConfig } from '../lib/sf-build.js';
 import type { DiagramFlags } from '../lib/sf-build.js';
 import { itemsOf, originOf, parseHandle } from '../lib/sf-model.js';
-import { changedPaths, diffBases, loadModelItems, queryPaths, staleItems, verifyItems } from '../lib/sf-stale.js';
+import { changedPaths, diffBases, loadModelItems, queryPaths, staleItems, unusableRoots, verifyItems } from '../lib/sf-stale.js';
 import { estimate, readPlan } from '../lib/sf-estimate.js';
 import { detect, docsConfig, writeFxJson } from '../lib/sf-detect.js';
 
@@ -155,15 +155,23 @@ function queryCmd(): void {
   print({ items: [...found.values()], bases, unbased, added });
 }
 
+const refuseUnusable = (roots: Parameters<typeof unusableRoots>[0]): void => {
+  const bad = unusableRoots(roots);
+  for (const m of bad) process.stderr.write(`system-flow: ${cmd}: ${m}\n`);
+  if (bad.length) process.exit(1);
+};
+
 function staleCmd(): void {
   const root = hostRoot();
   const { items, roots } = loadModelItems(root, siteOf(root));
+  refuseUnusable(roots);
   print({ roots: staleItems(items, roots) });
 }
 
 function verifyCmd(): void {
   const root = hostRoot();
   const { roots, fragmentsDir } = loadModelItems(root, siteOf(root));
+  refuseUnusable(roots);
   print({ verified: verifyItems(fragmentsDir, verifyAll ? 'all' : queried, roots) });
 }
 

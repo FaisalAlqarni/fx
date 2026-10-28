@@ -190,14 +190,22 @@ function queryCmd() {
   }
   print({ items: [...found.values()], bases, unbased, added });
 }
+const refuseUnusable = (roots) => {
+  const bad = (0, import_sf_stale.unusableRoots)(roots);
+  for (const m of bad) process.stderr.write(`system-flow: ${cmd}: ${m}
+`);
+  if (bad.length) process.exit(1);
+};
 function staleCmd() {
   const root = hostRoot();
   const { items, roots } = (0, import_sf_stale.loadModelItems)(root, siteOf(root));
+  refuseUnusable(roots);
   print({ roots: (0, import_sf_stale.staleItems)(items, roots) });
 }
 function verifyCmd() {
   const root = hostRoot();
   const { roots, fragmentsDir } = (0, import_sf_stale.loadModelItems)(root, siteOf(root));
+  refuseUnusable(roots);
   print({ verified: (0, import_sf_stale.verifyItems)(fragmentsDir, verifyAll ? "all" : queried, roots) });
 }
 async function buildCmd() {

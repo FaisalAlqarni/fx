@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { parseJson } from './json.js';
 import { systemFlowConfig } from './sf-build.js';
-import { resolveRoots } from './sf-evidence.js';
+import { resolveRoots, rootsBase } from './sf-evidence.js';
 import type { Problem } from './sf-model.js';
 import { findArchify } from './sf-diagrams.js';
 import { GENERATED } from './sf-markdown.js';
@@ -16,7 +16,7 @@ export type Detected = {
   mkdocs: { nav: string[]; excludeDocs: string[] } | null;
   theme: { source: string; kind: string };
   archify: { dir: string; version: string | null; via: string } | null; // null when the saved preference is cheap or nothing is found
-  roots: { id: string; path: string; dir: string; git: boolean; remote: string | null; head: string | null }[]; // [0] is the host; path is relative to the host root
+  roots: { id: string; path: string; dir: string; git: boolean; remote: string | null; head: string | null }[]; // [0] is the host; path is relative to the main working tree
 };
 
 export function rootId(folder: string): string {
@@ -78,18 +78,20 @@ export function detect(hostRoot: string, repos: string[]): { detected: Detected;
   const hostId = rootId(hostRoot);
   listed.set(hostId, '.');
   seen.set(hostRoot, hostId);
-  const add = (id: string, shown: string, p: string): void => {
-    const dir = path.resolve(hostRoot, p);
+  // .fx.json roots are relative to the main working tree; a --repo path is relative to the host root.
+  const rootBase = rootsBase(hostRoot);
+  const add = (id: string, shown: string, p: string, from: string): void => {
+    const dir = path.resolve(from, p);
     if (seen.has(dir)) return;
     if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) { problems.push(err(`no folder at ${shown}`)); return; }
     const other = [...listed].find(([k]) => k === id);
     if (other) { problems.push(err(`roots ${other[1]} and ${shown} both map to id ${id}; rename one in .fx.json system_flow.roots`)); return; }
-    listed.set(id, path.relative(hostRoot, dir) || '.');
+    listed.set(id, path.relative(rootBase, dir) || '.');
     given[id] = listed.get(id) as string;
     seen.set(dir, id);
   };
-  for (const [id, p] of Object.entries(cfg.config?.roots ?? {})) add(id, p, p);
-  for (const r of repos) add(rootId(r), r, r);
+  for (const [id, p] of Object.entries(cfg.config?.roots ?? {})) add(id, p, p, rootBase);
+  for (const r of repos) add(rootId(r), r, r, hostRoot);
 
   const { roots } = resolveRoots(hostRoot, { roots: [...listed.keys()].map((id) => ({ id })) }, { roots: given });
   const rootList = [...roots.values()].map((r) => ({ id: r.id, path: listed.get(r.id) as string, dir: r.dir, git: r.git, remote: r.remote, head: r.head }));

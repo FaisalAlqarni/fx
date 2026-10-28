@@ -29,7 +29,13 @@ export function loadModelItems(hostRoot: string, site: string): { items: Item[];
   const items = itemsOf(merged.model);
   // A verified value is a commit id, so none can start with a dash or reach git as an option.
   for (const i of items) for (const [id, v] of Object.entries(i.verified ?? {})) if (!COMMIT.test(v)) throw new Error(`${i.file}: ${i.handle}: verified ${id} is not a 40-character commit`);
-  return { items, roots: resolveRoots(hostRoot, merged.model.meta, systemFlowConfig(hostRoot).config).roots, fragmentsDir };
+  const { roots } = resolveRoots(hostRoot, merged.model.meta, systemFlowConfig(hostRoot).config);
+  return { items, roots, fragmentsDir };
+}
+
+// stale and verify read every root from git at HEAD; a root they cannot read is an error, never an empty list.
+export function unusableRoots(roots: Map<string, Root>): string[] {
+  return [...roots.values()].flatMap((r) => (r.missing ? [`root ${r.id} not found at ${r.dir}`] : !r.git ? [`root ${r.id} at ${r.dir} is not a git root`] : !r.head ? [`root ${r.id} at ${r.dir} has no commit at HEAD`] : []));
 }
 
 // A query path is host-relative or `@<root id>/<path>`; a folder matches what lies under it, and an evidence folder matches what lies under it.
@@ -94,7 +100,7 @@ function worstOf(root: Root, sha: string, e: { path: string; lines?: string }): 
   return worst;
 }
 
-// Lists only items to recheck. A root that is missing, not a git root or without a commit is skipped.
+// Lists only items to recheck. The caller refuses a root that is missing, not a git root or without a commit (unusableRoots).
 export function staleItems(items: Item[], roots: Map<string, Root>): Record<string, { handle: string; reason: StaleReason }[]> {
   const hostId = hostIdOf(roots);
   const out: Record<string, { handle: string; reason: StaleReason }[]> = {};

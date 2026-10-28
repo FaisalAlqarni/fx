@@ -29,12 +29,20 @@ export function resolveCommit(dir: string, ref: string): string | null {
 const address = (remote: string | undefined): string | null =>
   remote !== undefined && (/^(?!file:)[a-z][a-z0-9+.-]*:\/\//i.test(remote) || /^[^/\s@]+@[^/\s:]+:/.test(remote)) ? remote : null;
 
+// The folder relative roots resolve from: the main working tree when the host is a linked worktree
+// (fx-docs runs in <repo>/.worktrees/<slug>, where ../<id> points nowhere), else the host itself.
+export function rootsBase(hostRoot: string): string {
+  const out = git(hostRoot, ['rev-parse', '--path-format=absolute', '--git-common-dir', '--git-dir'])?.trim().split('\n');
+  return out?.length === 2 && out[0] !== out[1] ? path.dirname(out[0] as string) : hostRoot;
+}
+
 export function resolveRoots(hostRoot: string, meta: Meta, fx: FxJson['system_flow']): { roots: Map<string, Root>; problems: Problem[] } {
   const roots = new Map<string, Root>();
   const problems: Problem[] = [];
+  const base = rootsBase(hostRoot);
   meta.roots.forEach((r, i) => {
     const mapped = i === 0 ? hostRoot : (fx?.roots ?? {})[r.id];
-    const dir = path.resolve(hostRoot, mapped ?? path.join('..', r.id));
+    const dir = path.resolve(base, mapped ?? path.join('..', r.id));
     const pointer = `/system_flow/roots/${r.id}`;
     if (!fs.existsSync(dir)) {
       problems.push({ file: '.fx.json', pointer, message: `root ${r.id} not found at ${dir}`, level: 'error' });

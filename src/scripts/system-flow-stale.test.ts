@@ -223,4 +223,31 @@ const editX = (f: Fx, edit: (lines: string[]) => string[]): string => {
   assert.strictEqual(f.run(['verify']).status, 2);
 }
 
+// Roots from a linked worktree: relative roots resolve from the main working tree (final fix A1).
+{
+  const f = setup();
+  f.git('host', 'worktree', 'add', '-q', '.worktrees/x', '-b', 'x');
+  const wt = path.join(f.host, '.worktrees', 'x');
+  const runIn = (args: string[]) => spawnSync(process.execPath, [path.join(__dirname, 'system-flow'), '--root', wt, ...args], { encoding: 'utf8', env: f.env() });
+  const d = runIn(['detect']);
+  assert.strictEqual(d.status, 0, d.stderr);
+  assert.strictEqual(out(d).roots[1].dir, f.guide, 'detect finds ../guide beside the main working tree');
+  assert.deepStrictEqual(handles(runIn(['query', '@guide/README.md'])), ['bullet:b2']);
+  const s = runIn(['stale']);
+  assert.strictEqual(s.status, 0, s.stderr);
+  assert.deepStrictEqual(out(s).roots, { backend: [], guide: [] });
+  const b = runIn(['build', '--only', 'bullet:b2']);
+  assert.strictEqual(b.status, 0, b.stderr);
+}
+// A root stale or verify cannot read is an error, never an empty list.
+{
+  const f = setup();
+  f.fxJson({ system_flow: { roots: { guide: '../nowhere' } } });
+  for (const cmd of [['stale'], ['verify', 'node:link']]) {
+    const r = f.run(cmd);
+    assert.strictEqual(r.status, 1, `${cmd[0]}: ${r.stdout}`);
+    assert.ok(r.stderr.includes('root guide not found'), r.stderr);
+  }
+}
+
 console.log('system-flow-stale.test.js: OK');
