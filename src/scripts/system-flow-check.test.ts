@@ -232,6 +232,19 @@ assert.throws(() => validate({ $ref: '#/$defs/constructor', $defs: {} }, 'x'), /
   assert.strictEqual(({} as Record<string, unknown>).polluted, undefined, 'Object.prototype is untouched');
 }
 
+// Layout hints have a shape: col and row, non-negative integers, nothing else (final fix A24).
+{
+  for (const [hint, msg] of [[{ col: -1, row: 0 }, '/layout/link/col: less than 0'], [{ col: 1.5, row: 0 }, '/layout/link/col: expected integer'], [{ col: 0 }, '/layout/link: required property row missing'], [{ col: 0, row: 0, x: 1 }, '/layout/link: property x not allowed']] as const) {
+    const f = sfFixture();
+    f.goodSet();
+    const l0 = parseJson(fs.readFileSync(path.join(f.host, F, 'level0.json'), 'utf8')) as { levels: { diagrams: Record<string, unknown>[] } };
+    (l0.levels.diagrams[0] as Record<string, unknown>).layout = { link: hint, db: { col: 1, row: 0 } };
+    f.fragment('level0', l0);
+    const r = f.run(['check']);
+    assert.strictEqual(r.status, 1, `${JSON.stringify(hint)}\n${r.stdout}`);
+    assert.ok(r.stderr.includes(`level0.json:/levels/diagrams/0${msg}`), r.stderr);
+  }
+}
 // An ELK failure is reported as ELK's, with its message, never as "split it" (final fix A9).
 {
   const f = sfFixture();

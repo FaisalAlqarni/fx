@@ -282,6 +282,19 @@ assert.throws(() => (0, import_sf_schema.validate)({ $ref: "#/$defs/constructor"
   assert.strictEqual({}.polluted, void 0, "Object.prototype is untouched");
 }
 {
+  for (const [hint, msg] of [[{ col: -1, row: 0 }, "/layout/link/col: less than 0"], [{ col: 1.5, row: 0 }, "/layout/link/col: expected integer"], [{ col: 0 }, "/layout/link: required property row missing"], [{ col: 0, row: 0, x: 1 }, "/layout/link: property x not allowed"]]) {
+    const f = (0, import_sf_fixture.sfFixture)();
+    f.goodSet();
+    const l0 = (0, import_json.parseJson)(fs.readFileSync(path.join(f.host, F, "level0.json"), "utf8"));
+    l0.levels.diagrams[0].layout = { link: hint, db: { col: 1, row: 0 } };
+    f.fragment("level0", l0);
+    const r = f.run(["check"]);
+    assert.strictEqual(r.status, 1, `${JSON.stringify(hint)}
+${r.stdout}`);
+    assert.ok(r.stderr.includes(`level0.json:/levels/diagrams/0${msg}`), r.stderr);
+  }
+}
+{
   const f = (0, import_sf_fixture.sfFixture)();
   f.goodSet();
   f.commit("host", "model");

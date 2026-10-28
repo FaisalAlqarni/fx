@@ -92,7 +92,14 @@
         "groups": { "type": "array", "items": { "$ref": "#/$defs/group" } },
         "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
         "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } },
-        "layout": { "description": "Node id to a { col, row } grid cell.", "type": "object" }
+        "layout": {
+          "description": "Node id to a { col, row } grid cell.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object", "additionalProperties": false, "required": ["col", "row"],
+            "properties": { "col": { "type": "integer", "minimum": 0 }, "row": { "type": "integer", "minimum": 0 } }
+          }
+        }
       }
     },
     "node": {
