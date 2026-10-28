@@ -87,3 +87,37 @@ Task 05: cost unavailable (no transcript recorded)
 Task 05: complete (commits 3e2b47a..9a08ac8, review clean). Files: sf-model, sf-layout, sf-diagrams, sf-build, sf-page, fx-flow-2.ts (fx-flow-1 removed), scripts/build, tsconfigs, visual-assets.md, visual-kit gate, four tests, built JS.
 Blocked: 06 waits on 09 (both edit src/lib/sf-build.ts and scripts/check-all).
 Owner change (2026-10-29, via session controller): task 10 file now requires area-brief.md and planning.md to say the chapter-prose writer invokes fx-humanize before returning, and the controller does the same for Start here prose; docs-lanes asserts 'fx-humanize' and 'before returning' in both files; one new acceptance line. Task 10's brief is compiled from the file as it stands at dispatch. The humanize-gate branch is out of scope here.
+Task 06: dispatched 1216d7d 2026-10-29T00:54:24+03:00
+Task 09: review base is 4c7ec11 (the controller's ledger commit landed between 9a08ac8 and task 09's commit).
+Task 09: reviewer agent acfd7ca52b0564566 dispatched. Task 06: implementer agent adba2a1da5bce3059 (opus, Capable because: new template, menu contract, gate and Playwright script).
+Task 09: minor (deferred): glossary evidence is printed in both the table cell and the ## Evidence list (required by parseDoc, but doubled)
+Task 09: minor (deferred): a diagram without a summary renders a bare ### heading under ## Diagrams
+Task 09: minor (deferred): glossary sort assertion reuses the implementation's comparator, so it is tautological
+Task 09: minor (deferred): glossary row assertion rejects any meaning containing the word Evidence
+Task 09: ⚠️ resolved by controller: the elided section-merge code is task 02's (reviewed clean); the folder-index code is unchanged context. No gap.
+Task 09: cost unavailable (no transcript recorded)
+Task 09: complete (commits 4c7ec11..1216d7d, review clean). Files: sf-markdown.ts, sf-build.ts glossary.md write, markdown test, system-flow-only test adjustment, check-all line, built JS.
+Note (session controller, 2026-10-29): fx main is a423fdd (0.8.2) with subagent-wait and humanize-gate merged. This controller does not merge main into system-flow; the session controller merges it before the final review. Branch version stays 0.9.0.
+Task 06: ran test_all (rule): scripts/check-all passed as a test_scope path (ALL GREEN). Rules file now says it again.
+Task 06: reviewer agent a1ba4263acc963b44 dispatched. Blocked: 07 waits on 06's review (07 edits the same sf-page.ts, template and page-check; a fix round would collide). Nothing else on the frontier.
+Task 06: minor (deferred): system-flow-diagrams.test.ts:310 reads the theme key from the kit page template; point it at the site template.
+Task 06: minor (deferred): header order is intro, roots/date/count, then how-to-read; the design puts how-to-read before roots.
+Task 06: minor (deferred): button#theme aria-label "Change theme" does not contain its visible text "Theme: dark/light".
+Task 06: minor (deferred): menu group h2s precede the page h1 in DOM order, so the heading list has no h1 first.
+Task 06: minor (deferred): page-check.ts launches bundled Chromium only; add an optional executable path so the ::details-content path can run, and fix the brief's dom-reference line for task 11.
+Task 06: ⚠️ resolved by reviewer probe: the ::details-content path checked in /usr/bin/google-chrome 145 (list shown with JavaScript off at 1440, summary hidden). page-check.js itself runs on <PW> Chromium 130 only.
+Ruling: the /// <reference lib="dom" /> line in proof scripts is dropped; module-local declarations type the in-page code. Why: the ts-toolchain gate forbids it (reviewer confirmed). Cost if wrong: none at runtime, caught by check-types.
+Task 06: cost unavailable (no transcript recorded)
+Task 06: complete (commits 1216d7d..2534415, review clean). Files: references/system-flow/site-template.html, sf-page.ts, sf-build.ts, page-template.html restored to main, visual-kit gate, site-template gate, page test, proof fixture-site.ts and page-check.ts, check-all line, built JS.
+Task 07: dispatched 2534415 2026-10-29T01:16:50+03:00
+Task 07: implementer agent a9c593574ab09ca52 (opus, Capable because: player, write reorder with all-or-nothing, Playwright). Blocked: 08 waits on 07; 10 and 11 wait on 08.
+Task 07: reviewer agent ae0da334a0ff95806 and fx-lens-silent-failure agent a4f4e73d429f7ed57 dispatched (tripwire: silent-failure in src/lib/sf-build.ts --only fallback link). Lens reply to be saved at findings/07-lens-silent-failure.md.
+Task 07: lens silent-failure: 1 Important (sf-build.ts:377-379 --only with no deep page on disk links a missing page and reports nothing); enters the fix loop with the review's findings.
+Task 07: minor (deferred): C11 test asserts only a non-zero status; pin the failure to the deep step with a stderr check.
+Task 07: minor (deferred): the `-p1` first-page lookup in sf-build.ts and sf-page.ts is unreachable from the build's own names; remove after the plan wording is fixed.
+Task 07: minor (deferred): manual Back/Next permanently disables autoplay and resume for that figure, which the brief did not specify; `mount(root)` is a test-only hook.
+Task 07: fix round 1/5 dispatched to implementer a9c593574ab09ca52 (resume); open: lens [Important] sf-build.ts:377-379. FIX_BASE a7142ce 2026-10-29T01:40:59+03:00
+Task 07: fix round 1/5 (1 addressed, 0 open: none; commits a7142ce..8c7c456)
+Task 07: minor (deferred): missing-deep-page warning shows only in the stdout JSON, not on stderr
+Task 07: cost unavailable (no transcript recorded)
+Task 07: complete (commits 2534415..8c7c456, review clean after fix round 1). Files: sf-page.ts cards, fx-flow-2.ts player (checksum row updated), sf-build.ts write order and --only deep lookup with a missing-page warning, sf-diagrams svgPage marker, site template, page/only/archify tests, site-template and visual-kit gates, page-check (30 checks), built JS.
