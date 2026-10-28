@@ -33,7 +33,7 @@ export type BuildResult = {
   diagrams: { name: string; renderer: 'archify' | 'svg'; reason: string }[];
   layout: LayoutLine[]; pageBytes: number | null;
   coverage: Coverage['counts'] | null;
-  theme: { source: string; kind: string; fallbacks: Theme['fallbacks'] } | null; // null until the build reaches the theme step
+  theme: { source: string; kind: string; fallbacks: Theme['fallbacks']; candidates: NonNullable<Theme['candidates']> } | null; // null until the build reaches the theme step
   depth: ReturnType<typeof depth> | null; // null until the check passes; areas is empty without model/plan.json
   rebuilt: { docs: string[]; figures: string[]; diagrams: string[] }; // a full build lists everything; --only lists what holds the given items
 };
@@ -231,7 +231,7 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
 
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'model', 'layout-report.json'), `${JSON.stringify(laid.report, null, 2)}\n`, () => true, result);
 
-  result.theme = { source: theme.source, kind: theme.kind, fallbacks: theme.fallbacks };
+  result.theme = { source: theme.source, kind: theme.kind, fallbacks: theme.fallbacks, candidates: theme.candidates ?? [] };
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'assets', 'theme.css'), themeCss(theme), (old) => old.startsWith('/* fx '), result);
 
   // A missing source file stops the build before the page is written.

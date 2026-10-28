@@ -129,4 +129,16 @@ const TEAL = '    - scheme: default\n      primary: teal\n      accent: teal\n  
   assert.strictEqual(r.status, 1, r.stdout);
   assert.ok(r.stderr.includes('system_flow.theme names app/gone.css (app-css), which gives no theme now'), r.stderr);
 }
+{ // Candidates seen and why each was set aside, in the build result (final fix A14)
+  const big = `:root { --ink:#111111; }\n/* ${'x'.repeat(1_000_001)} */\n`;
+  const f = make({ 'docs/assets/big.css': big, 'brand.json': '{ "accent": ', 'tailwind.config.js': "module.exports = { theme: { colors: { accent: '#abcd' } } };\n" });
+  const r = f.run(['build']);
+  assert.strictEqual(r.status, 0, r.stderr);
+  const t = (parseJson(r.stdout) as { theme: { kind: string; candidates: { source: string; kind: string; why: string }[] } }).theme;
+  assert.strictEqual(t.kind, 'fx', 'a 4-digit hex is no colour');
+  const why = Object.fromEntries(t.candidates.map((c) => [c.source, c.why]));
+  assert.strictEqual(why['docs/assets/big.css'], 'over 1 MB, not read');
+  assert.ok(why['brand.json']?.startsWith('invalid JSON: '), JSON.stringify(t.candidates));
+  assert.strictEqual(why['tailwind.config.js'], 'no accent colour');
+}
 console.log('system-flow-theme.test.js: OK');

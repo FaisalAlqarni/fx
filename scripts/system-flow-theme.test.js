@@ -157,4 +157,18 @@ ${TEAL}`), "docs/assets/docs.css": css("", "") });
   assert.strictEqual(r.status, 1, r.stdout);
   assert.ok(r.stderr.includes("system_flow.theme names app/gone.css (app-css), which gives no theme now"), r.stderr);
 }
+{
+  const big = `:root { --ink:#111111; }
+/* ${"x".repeat(1000001)} */
+`;
+  const f = make({ "docs/assets/big.css": big, "brand.json": '{ "accent": ', "tailwind.config.js": "module.exports = { theme: { colors: { accent: '#abcd' } } };\n" });
+  const r = f.run(["build"]);
+  assert.strictEqual(r.status, 0, r.stderr);
+  const t = (0, import_json.parseJson)(r.stdout).theme;
+  assert.strictEqual(t.kind, "fx", "a 4-digit hex is no colour");
+  const why = Object.fromEntries(t.candidates.map((c) => [c.source, c.why]));
+  assert.strictEqual(why["docs/assets/big.css"], "over 1 MB, not read");
+  assert.ok(why["brand.json"]?.startsWith("invalid JSON: "), JSON.stringify(t.candidates));
+  assert.strictEqual(why["tailwind.config.js"], "no accent colour");
+}
 console.log("system-flow-theme.test.js: OK");

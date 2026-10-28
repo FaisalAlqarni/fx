@@ -8,7 +8,7 @@ import { parseJson } from './json.js';
 
 export const SLOTS = ['--paper', '--panel', '--ink', '--muted', '--rule', '--code', '--accent', '--accent-tint', '--warn', '--alert', '--violet', '--info', '--info-tint'] as const;
 type Values = Record<string, string>;
-export type Theme = { source: string; kind: 'docs-css' | 'mkdocs-material' | 'tailwind' | 'app-css' | 'brand' | 'fx'; light: Values; dark: Values; fonts: { text: string | null; code: string | null }; fallbacks: { theme: 'light' | 'dark'; slot: string; against: string; ratio: number; used: string }[] };
+export type Theme = { source: string; kind: 'docs-css' | 'mkdocs-material' | 'tailwind' | 'app-css' | 'brand' | 'fx'; light: Values; dark: Values; fonts: { text: string | null; code: string | null }; candidates?: Candidate[]; fallbacks: { theme: 'light' | 'dark'; slot: string; against: string; ratio: number; used: string }[] };
 
 // The values of fx-tokens-1.css.
 const FX_LIGHT: Values = { '--paper': '#f6f7f9', '--panel': '#ffffff', '--ink': '#14181f', '--muted': '#5b6472', '--rule': '#e3e7ee', '--code': '#eef2f7', '--accent': '#0f766e', '--accent-tint': '#dcf0ed', '--warn': '#a16207', '--alert': '#b45309', '--violet': '#7c3aed', '--info': '#2563eb', '--info-tint': '#e3ecfd' };
@@ -102,23 +102,30 @@ function walk(root: string, dir: string, depth: number, out: string[] = []): str
   }
   return out;
 }
-const read = (root: string, rel: string): string => {
+// Each candidate set aside and why, for the build result; detectTheme resets it.
+export type Candidate = { source: string; kind: Theme['kind']; why: string };
+let seen: Candidate[] = [];
+const reject = (source: string, kind: Theme['kind'], why: string): void => { if (!seen.some((c) => c.source === source)) seen.push({ source, kind, why }); };
+const read = (root: string, rel: string, kind: Theme['kind'] = 'app-css'): string => {
   const f = path.join(root, rel);
-  return fs.statSync(f).size > 1_000_000 ? '' : fs.readFileSync(f, 'utf8');
+  if (fs.statSync(f).size <= 1_000_000) return fs.readFileSync(f, 'utf8');
+  reject(rel, kind, 'over 1 MB, not read');
+  return '';
 };
 // A file this module wrote or the kit ships starts with this.
 const OURS = '/* fx ';
-const cssFiles = (root: string, dir: string): { rel: string; text: string }[] =>
-  walk(root, dir, 6).filter((p) => p.endsWith('.css')).map((rel) => ({ rel, text: read(root, rel) })).filter((f) => !f.text.startsWith(OURS));
+const cssFiles = (root: string, dir: string, kind: Theme['kind'] = 'app-css'): { rel: string; text: string }[] =>
+  walk(root, dir, 6).filter((p) => p.endsWith('.css')).map((rel) => ({ rel, text: read(root, rel, kind) })).filter((f) => !f.text.startsWith(OURS));
 
 // ---- sources
 
 type Pick = { source: string; kind: Theme['kind']; light: Values; dark: Values };
 
 function docsCss(root: string, docsDir: string): Pick | null {
-  for (const f of cssFiles(root, docsDir)) {
+  for (const f of cssFiles(root, docsDir, 'docs-css')) {
     const t = cssTheme(f.text);
     if (hasCore(t.light) && Object.keys(t.dark).length > 0) return { source: f.rel, kind: 'docs-css', ...t };
+    if (f.text !== '') reject(f.rel, 'docs-css', hasCore(t.light) ? 'no dark values' : 'no ink, paper and accent colours');
   }
   return null;
 }
@@ -173,9 +180,12 @@ function tailwind(root: string): Pick | null {
   const add = (name: string, value: string): void => { const s = slotOf(name); if (s && light[s] === undefined) light[s] = norm(value); };
   const cfg = ['tailwind.config.js', 'tailwind.config.cjs', 'tailwind.config.mjs', 'tailwind.config.ts'].find((n) => fs.existsSync(path.join(root, n)));
   if (cfg) {
-    const text = read(root, cfg);
-    for (const m of text.matchAll(new RegExp(`['"]?${TAILWIND_NAMES}['"]?\\s*:\\s*(?:['"](#[0-9a-fA-F]{3,6})['"]|\\{[^}]*?DEFAULT\\s*:\\s*['"](#[0-9a-fA-F]{3,6})['"])`, 'g'))) add(m[1] ?? '', m[2] ?? m[3] ?? '');
+    const text = read(root, cfg, 'tailwind');
+    // A 3 or 6 digit hex only: a 4 or 5 digit value is no colour (it gave NaN in rgba()).
+    const hex = '(#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3}))';
+    for (const m of text.matchAll(new RegExp(`['"]?${TAILWIND_NAMES}['"]?\\s*:\\s*(?:['"]${hex}['"]|\\{[^}]*?DEFAULT\\s*:\\s*['"]${hex}['"])`, 'g'))) add(m[1] ?? '', m[2] ?? m[3] ?? '');
     if (light['--accent']) return { source: cfg, kind: 'tailwind', light, dark: {} };
+    reject(cfg, 'tailwind', 'no accent colour');
     for (const k of Object.keys(light)) delete light[k];
   }
   for (const f of cssFiles(root, '.').filter((c) => c.text.includes('@theme'))) {
@@ -206,12 +216,14 @@ function jsonColours(v: unknown, key: string, out: Values): void {
 }
 const BRAND_FILES = new Set(['design-tokens.json', 'tokens.json', 'brand.json', 'brand.css']);
 function brandFile(root: string, rel: string): Pick | null {
-  const text = read(root, rel);
-  if (text.startsWith(OURS)) return null;
+  const text = read(root, rel, 'brand');
+  if (text === '' || text.startsWith(OURS)) return null;
   const light: Values = {};
   if (rel.endsWith('.css')) Object.assign(light, cssTheme(text).light);
-  else { try { jsonColours(parseJson(text), '', light); } catch { return null; } }
-  return light['--accent'] ? { source: rel, kind: 'brand', light, dark: {} } : null;
+  else { try { jsonColours(parseJson(text), '', light); } catch (e) { reject(rel, 'brand', `invalid JSON: ${(e as Error).message.split('\n')[0]}`); return null; } }
+  if (light['--accent']) return { source: rel, kind: 'brand', light, dark: {} };
+  reject(rel, 'brand', 'no accent colour');
+  return null;
 }
 function brand(root: string): Pick | null {
   const files = walk(root, '.', 4).filter((p) => BRAND_FILES.has(path.posix.basename(p)) || (/(^|\/)brand(ing)?\//.test(p) && /\.(css|json)$/.test(p)));
@@ -238,7 +250,8 @@ const PAIRS: [string, string, number][] = [['--ink', '--paper', 4.5], ['--ink', 
 
 // With `chosen` (.fx.json system_flow.theme), that source is read and nothing else is tried.
 export function detectTheme(hostRoot: string, docsDir: string | null, chosen?: { source: string; kind: Theme['kind'] }): Theme {
-  const yml = fs.existsSync(path.join(hostRoot, 'mkdocs.yml')) ? read(hostRoot, 'mkdocs.yml') : '';
+  seen = [];
+  const yml = fs.existsSync(path.join(hostRoot, 'mkdocs.yml')) ? read(hostRoot, 'mkdocs.yml', 'mkdocs-material') : '';
   const fromChoice = chosen === undefined ? undefined : chosenPick(hostRoot, docsDir ?? 'docs', yml, chosen);
   if (chosen !== undefined && !fromChoice) throw new Error(`.fx.json system_flow.theme names ${chosen.source} (${chosen.kind}), which gives no theme now; fix it, or remove the key to detect again`);
   const pick = fromChoice ?? docsCss(hostRoot, docsDir ?? 'docs') ?? material(yml) ?? tailwind(hostRoot) ?? appCss(hostRoot) ?? brand(hostRoot)
@@ -257,7 +270,7 @@ export function detectTheme(hostRoot: string, docsDir: string | null, chosen?: {
       fell.add(slot);
     }
   }
-  return { source: pick.source, kind: pick.kind, light, dark, fonts: mkdocsFonts(yml), fallbacks };
+  return { source: pick.source, kind: pick.kind, light, dark, fonts: mkdocsFonts(yml), candidates: seen.filter((c) => c.source !== pick.source), fallbacks };
 }
 
 export function themeCss(t: Theme): string {
