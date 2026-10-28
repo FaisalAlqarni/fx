@@ -77,10 +77,10 @@ function fake(f, dir) {
 function setup(extraSeqs = 0) {
   const f = (0, import_sf_fixture.sfFixture)();
   f.fxJson({});
-  f.fragment("meta", { schemaVersion: 1, meta: { roots: [{ id: "backend" }] } });
+  f.fragment("meta", { schemaVersion: 2, meta: { roots: [{ id: "backend" }] } });
   const nodes = [
-    { id: "api", label: "API", kind: "backend", role: "Takes calls", evidence: ev("app/x.rb", "1-4", "Link") },
-    { id: "db", label: "Database", kind: "database", role: "Stores rows", evidence: ev("app/y.rb", "1-2", "Y") }
+    { id: "api", label: "API", kind: "backend", look: "service", role: "Takes calls", evidence: ev("app/x.rb", "1-4", "Link") },
+    { id: "db", label: "Database", kind: "database", look: "service", role: "Stores rows", evidence: ev("app/y.rb", "1-2", "Y") }
   ];
   f.fragment("level0", { levels: { root: "system", diagrams: [
     {
@@ -90,8 +90,8 @@ function setup(extraSeqs = 0) {
       summary: "All.",
       groups: [],
       nodes: [
-        { id: "engine", label: "Engine", kind: "backend", role: "Runs", children: "engine", evidence: ev("app/x.rb", "1-4", "Link") },
-        { id: "store", label: "Store", kind: "database", role: "Keeps", evidence: ev("app/y.rb", "1", "Y") }
+        { id: "engine", label: "Engine", kind: "backend", look: "service", role: "Runs", children: "engine", evidence: ev("app/x.rb", "1-4", "Link") },
+        { id: "store", label: "Store", kind: "database", look: "service", role: "Keeps", evidence: ev("app/y.rb", "1", "Y") }
       ],
       edges: [{ from: "engine", to: "store", label: "writes", evidence: ev("app/y.rb", "1", "Y") }]
     },
@@ -107,7 +107,7 @@ function setup(extraSeqs = 0) {
     }
   ] } });
   f.fragment("chapters", { sections: [{ id: "s1", title: "Links", question: "Where?", diagrams: ["system", "engine"], bullets: [{ id: "b1", text: "x", evidence: ev("app/x.rb", "4", "expired?") }] }] });
-  const parts = [{ id: "api", label: "API", evidence: ev("app/x.rb", "1", "Link") }, { id: "db", label: "DB", evidence: ev("app/y.rb", "1", "Y") }];
+  const parts = [{ id: "api", label: "API", look: "service", evidence: ev("app/x.rb", "1", "Link") }, { id: "db", label: "DB", look: "service", evidence: ev("app/y.rb", "1", "Y") }];
   const seq = (id, n) => ({
     id,
     title: id,

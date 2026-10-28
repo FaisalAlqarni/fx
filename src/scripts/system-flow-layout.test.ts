@@ -18,7 +18,7 @@ const ev = [{ path: 'app/x.rb', lines: '1-4', symbol: 'Link' }];
 // `arch:dense 604x327 LR cross=1 hits=0 nodes=6 arrows=7 notDrawn=2 unlabeled=0`.
 const K33_CAP = 2;
 
-const node = (id: string, label = `Node ${id}`) => ({ id, label, kind: 'backend', role: `Role of ${id}`, evidence: ev });
+const node = (id: string, label = `Node ${id}`) => ({ id, label, kind: 'backend', look: 'service', role: `Role of ${id}`, evidence: ev });
 const edge = (from: string, to: string, label = `${from} to ${to}`, extra: Record<string, unknown> = {}) => ({ from, to, label, evidence: ev, ...extra });
 type Diagram = { id: string; level: number; parent?: string; title?: string; summary?: string; groups?: unknown[]; nodes: unknown[]; edges: unknown[]; layout?: unknown };
 const diagram = (d: Diagram) => ({ title: d.id, summary: `The ${d.id} diagram.`, groups: [], ...d });
@@ -185,7 +185,7 @@ async function main(): Promise<void> {
     f.fragment('flows', {
       sequences: [{
         id: 'turn', title: 'Turn', chapter: 's1',
-        participants: ['api', 'db', 'cache'].map((id) => ({ id, label: id.toUpperCase(), evidence: ev })),
+        participants: ['api', 'db', 'cache'].map((id) => ({ id, label: id.toUpperCase(), look: 'service', evidence: ev })),
         messages: [
           { n: 1, from: 'api', to: 'db', label: 'Reads link', evidence: ev },
           { n: 2, from: 'api', to: 'cache', label: 'Reads token', evidence: ev },

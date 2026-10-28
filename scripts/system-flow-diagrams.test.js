@@ -46,17 +46,17 @@ function setup() {
   f2.commit("host", "api");
   f2.git("host", "remote", "add", "origin", "https://example.com/acme/app.git");
   f2.fxJson({});
-  f2.fragment("meta", { schemaVersion: 1, meta: { roots: [{ id: "backend" }, { id: "guide" }] } });
+  f2.fragment("meta", { schemaVersion: 2, meta: { roots: [{ id: "backend" }, { id: "guide" }] } });
   f2.fxJson({ system_flow: { roots: { guide: "../guide" } } });
   const nodes = (extra = []) => [
-    { id: "api", label: "<b>", kind: "backend", role: "Takes calls", evidence: [
+    { id: "api", label: "<b>", kind: "backend", look: "service", role: "Takes calls", evidence: [
       { path: "app/api.rb", lines: "10-42", symbol: "Api#call" },
       { path: "app/api.rb", lines: "50", symbol: "Api#log" },
       { path: "app/api.rb", lines: "51", symbol: LONG },
       { path: "app/y.rb", lines: "1", symbol: "Y" }
     ] },
-    { id: "db", label: "Database", kind: "database", role: "Stores rows", evidence: ev("app/y.rb", "1-2", "Y") },
-    { id: "2fa", label: "Second factor", kind: "security", role: "Checks codes", evidence: ev("app/x.rb", "4", "expired?") },
+    { id: "db", label: "Database", kind: "database", look: "service", role: "Stores rows", evidence: ev("app/y.rb", "1-2", "Y") },
+    { id: "2fa", label: "Second factor", kind: "security", look: "service", role: "Checks codes", evidence: ev("app/x.rb", "4", "expired?") },
     ...extra
   ];
   f2.fragment("level0", { levels: { root: "system", diagrams: [
@@ -67,8 +67,8 @@ function setup() {
       summary: "All.",
       groups: [],
       nodes: [
-        { id: "engine", label: "Engine", kind: "backend", role: "Runs", children: "engine", evidence: ev("app/x.rb", "1-4", "Link") },
-        { id: "store", label: "Store", kind: "database", role: "Keeps", evidence: ev("app/y.rb", "1", "Y") }
+        { id: "engine", label: "Engine", kind: "backend", look: "service", role: "Runs", children: "engine", evidence: ev("app/x.rb", "1-4", "Link") },
+        { id: "store", label: "Store", kind: "database", look: "service", role: "Keeps", evidence: ev("app/y.rb", "1", "Y") }
       ],
       edges: [{ from: "engine", to: "store", label: "writes", evidence: ev("app/y.rb", "1", "Y") }]
     },
@@ -90,7 +90,7 @@ function setup() {
       id: "turn",
       title: "Turn",
       chapter: "s1",
-      participants: [{ id: "api", label: "API", evidence: ev("app/x.rb", "1", "Link") }, { id: "db", label: "DB", evidence: ev("app/y.rb", "1", "Y") }, { id: "aux", label: "Aux", evidence: ev("app/y.rb", "1", "Y") }],
+      participants: [{ id: "api", label: "API", look: "service", evidence: ev("app/x.rb", "1", "Link") }, { id: "db", label: "DB", look: "service", evidence: ev("app/y.rb", "1", "Y") }, { id: "aux", label: "Aux", look: "service", evidence: ev("app/y.rb", "1", "Y") }],
       messages: msgs
     }],
     stores: { sql: [{ id: "links-table", table: "links", evidence: ev("app/y.rb", "1", "Y") }] },
@@ -172,7 +172,7 @@ const { out, err } = build(f);
 {
   const g = setup();
   const lvl = (0, import_json.parseJson)(fs.readFileSync(path.join(g.host, `${SITE}/model/fragments/level0.json`), "utf8"));
-  lvl.levels.diagrams[1].nodes.push({ id: "cache", label: "Cache", kind: "cloud", role: "Holds", evidence: ev("app/y.rb", "1", "Y") });
+  lvl.levels.diagrams[1].nodes.push({ id: "cache", label: "Cache", kind: "cloud", look: "service", role: "Holds", evidence: ev("app/y.rb", "1", "Y") });
   lvl.levels.diagrams[1].edges.push({ from: "api", to: "cache", label: "caches", evidence: ev("app/y.rb", "1", "Y") });
   g.fragment("level0", lvl);
   const fl = (0, import_json.parseJson)(fs.readFileSync(path.join(g.host, `${SITE}/model/fragments/flows.json`), "utf8"));

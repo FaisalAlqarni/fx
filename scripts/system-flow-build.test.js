@@ -35,7 +35,7 @@ const ev = (p, lines2, symbol, root) => [{ ...root === void 0 ? {} : { root }, p
 function setup(t = {}) {
   const f = (0, import_sf_fixture.sfFixture)();
   f.goodSet();
-  f.fragment("meta", { schemaVersion: 1, meta: { roots: [{ id: "backend" }, { id: "guide" }] } });
+  f.fragment("meta", { schemaVersion: 2, meta: { roots: [{ id: "backend" }, { id: "guide" }] } });
   f.fxJson({ system_flow: { roots: { guide: "../guide" } } });
   f.fragment("chapters", {
     sections: [{
@@ -54,7 +54,7 @@ function setup(t = {}) {
       id: "turn",
       title: "Turn",
       chapter: "s1",
-      participants: [{ id: "api", label: t.api ?? "API", evidence: ev("app/x.rb", "1", "Link") }, { id: "db", label: "DB", evidence: ev("app/y.rb", "1", "Y") }],
+      participants: [{ id: "api", label: t.api ?? "API", look: "service", evidence: ev("app/x.rb", "1", "Link") }, { id: "db", label: "DB", look: "service", evidence: ev("app/y.rb", "1", "Y") }],
       messages: [
         { n: 1, from: "api", to: "db", label: t.label ?? "Reads link", evidence: ev("app/x.rb", "4", "expired?") },
         { n: 2, from: "db", to: "api", label: "Returns row", mode: "async", evidence: ev("app/y.rb", "1", "Y") }

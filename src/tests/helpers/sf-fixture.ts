@@ -35,15 +35,15 @@ export function sfFixture() {
   const fragment = (name: string, data: unknown): void => put('host', `docs/system-flow/model/fragments/${name}.json`, `${JSON.stringify(data, null, 2)}\n`);
   const fxJson = (data: unknown): void => put('host', '.fx.json', `${JSON.stringify(data, null, 2)}\n`);
   const goodSet = (): void => {
-    fragment('meta', { schemaVersion: 1, meta: { roots: [{ id: 'backend' }] } });
+    fragment('meta', { schemaVersion: 2, meta: { roots: [{ id: 'backend' }] } });
     fragment('level0', {
       levels: {
         root: 'system',
         diagrams: [{
           id: 'system', level: 0, title: 'System', summary: 'The whole system.', groups: [],
           nodes: [
-            { id: 'link', label: 'Link', kind: 'backend', role: 'Expires links', evidence: ev('app/x.rb', '1-4', 'Link#expired?') },
-            { id: 'db', label: 'Database', kind: 'database', role: 'Stores links', evidence: ev('app/y.rb', '1-2', 'Y') },
+            { id: 'link', label: 'Link', kind: 'backend', look: 'service', role: 'Expires links', evidence: ev('app/x.rb', '1-4', 'Link#expired?') },
+            { id: 'db', label: 'Database', kind: 'database', look: 'store', role: 'Stores links', evidence: ev('app/y.rb', '1-2', 'Y') },
           ],
           edges: [{ from: 'link', to: 'db', label: 'reads', evidence: ev('app/y.rb', '1-2', 'Y') }],
         }],

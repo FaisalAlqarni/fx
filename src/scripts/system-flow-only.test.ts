@@ -14,10 +14,10 @@ const corr = (item: string, before: string, after: string) => ({ id: `c-${item.r
 
 type Tweak = { b1?: string; api?: string; extra?: object[] };
 const model = (f: Fx, t: Tweak = {}): void => {
-  f.fragment('meta', { schemaVersion: 1, meta: { roots: [{ id: 'backend' }] } });
+  f.fragment('meta', { schemaVersion: 2, meta: { roots: [{ id: 'backend' }] } });
   f.fragment('level0', {
     levels: { root: 'engine', diagrams: [{ id: 'engine', level: 0, title: 'Engine', summary: 'S', groups: [],
-      nodes: [{ id: 'api', label: t.api ?? 'API', kind: 'backend', role: 'R', evidence: ev }, { id: 'db', label: 'Db', kind: 'database', role: 'R', evidence: ev }, ...(t.extra ?? [])],
+      nodes: [{ id: 'api', label: t.api ?? 'API', kind: 'backend', look: 'service', role: 'R', evidence: ev }, { id: 'db', label: 'Db', kind: 'database', look: 'service', role: 'R', evidence: ev }, ...(t.extra ?? [])],
       edges: [{ from: 'api', to: 'db', label: 'reads', evidence: ev }] }] },
   });
   f.fragment('chapters', { sections: [
@@ -25,7 +25,7 @@ const model = (f: Fx, t: Tweak = {}): void => {
     { id: 's2', title: 'Turns', question: 'Q?', bullets: [{ id: 'b2', text: 'Second.', evidence: ev }] },
   ] });
   f.fragment('flows', { sequences: [{ id: 'turn', title: 'Turn', chapter: 's2',
-    participants: [{ id: 'api', label: 'API', evidence: ev }, { id: 'db', label: 'DB', evidence: ev }],
+    participants: [{ id: 'api', label: 'API', look: 'service', evidence: ev }, { id: 'db', label: 'DB', look: 'service', evidence: ev }],
     messages: [{ n: 1, from: 'api', to: 'db', label: 'Reads', evidence: ev }] }] });
 };
 const setup = (): Fx => { const f = sfFixture(); model(f); f.commit('host', 'fragments'); return f; };
@@ -95,9 +95,9 @@ const changed = (before: ReturnType<typeof snap>, after: ReturnType<typeof snap>
 }
 {
   const f = sfFixture();
-  model(f, { extra: [{ id: 'turn', label: 'Turn', kind: 'backend', role: 'R', evidence: ev }] });
+  model(f, { extra: [{ id: 'turn', label: 'Turn', kind: 'backend', look: 'service', role: 'R', evidence: ev }] });
   f.fragment('level0', { levels: { root: 'engine', diagrams: [{ id: 'engine', level: 0, title: 'Engine', summary: 'S', groups: [],
-    nodes: [{ id: 'api', label: 'API', kind: 'backend', role: 'R', evidence: ev }, { id: 'turn', label: 'Turn', kind: 'backend', role: 'R', evidence: ev }],
+    nodes: [{ id: 'api', label: 'API', kind: 'backend', look: 'service', role: 'R', evidence: ev }, { id: 'turn', label: 'Turn', kind: 'backend', look: 'service', role: 'R', evidence: ev }],
     edges: [{ from: 'api', to: 'turn', label: 'x', evidence: ev }] }] } });
   f.commit('host', 'fragments');
   full(f);

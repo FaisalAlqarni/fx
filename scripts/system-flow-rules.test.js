@@ -27,7 +27,7 @@ var import_json = require("../lib/json.js");
 var import_sf_fixture = require("../tests/helpers/sf-fixture.js");
 const F = "docs/system-flow/model/fragments";
 const ev = [{ path: "app/x.rb", lines: "1-4", symbol: "Link" }];
-const node = (id, extra = {}) => ({ id, label: id, kind: "backend", role: "R", evidence: ev, ...extra });
+const node = (id, extra = {}) => ({ id, label: id, kind: "backend", look: "service", role: "R", evidence: ev, ...extra });
 const edge = (from, to, extra = {}) => ({ from, to, label: "l", evidence: ev, ...extra });
 const diagram = (id, nodes, edges, extra = {}) => ({ id, level: 0, title: id, summary: "S", groups: [], nodes, edges, ...extra });
 const levels = (...diagrams) => ({ levels: { root: "system", diagrams } });
@@ -66,7 +66,7 @@ const withParts = (extra, bare) => (f) => {
   f.fragment("level0", levels(diagram("system", [node("api", { ...extra.node }), node("db")], [edge("api", "db", { ...extra.edge })], { groups: [{ id: "g1", label: "G", members: ["api"], evidence: e, ...extra.group }] })));
   f.fragment("chapters", {
     sections: [{ id: "s1", title: "T", question: "Q?", bullets: [{ id: "b1", text: "t", evidence: e, ...extra.bullet }] }],
-    sequences: [{ id: "turn", title: "T", chapter: "s1", participants: [{ id: "api", label: "A", evidence: e, ...extra.seq }, { id: "db", label: "D", evidence: e }], messages: [{ n: 1, from: "api", to: "db", label: "m", evidence: e, ...extra.msg }] }],
+    sequences: [{ id: "turn", title: "T", chapter: "s1", participants: [{ id: "api", label: "A", look: "service", evidence: e, ...extra.seq }, { id: "db", label: "D", look: "service", evidence: e }], messages: [{ n: 1, from: "api", to: "db", label: "m", evidence: e, ...extra.msg }] }],
     stores: { sql: [{ id: "sql-links", evidence: e, ...extra.store }] },
     storeFlows: [{ id: "first", trigger: "t", chapter: "s1", steps: [{ n: 1, actor: "api", op: "read", store: "sql", evidence: e, ...extra.step }] }],
     catalogue: [{ id: "q-mail", kind: "queue", name: "Mail", evidence: e, ...extra.cat }],
@@ -113,7 +113,7 @@ fails("edge to a missing node", (f) => f.fragment("level0", levels(system([...ba
 const seq = (msg, step = {}) => (f) => {
   f.fragment("chapters", {
     sections: [{ id: "s1", title: "T", question: "Q?" }],
-    sequences: [{ id: "turn", title: "T", chapter: "s1", participants: [{ id: "api", label: "A", evidence: ev }], messages: [{ n: 1, from: "api", to: "api", label: "m", evidence: ev }, { n: 3, from: "api", to: "api", label: "m", evidence: ev, ...msg }] }],
+    sequences: [{ id: "turn", title: "T", chapter: "s1", participants: [{ id: "api", label: "A", look: "service", evidence: ev }], messages: [{ n: 1, from: "api", to: "api", label: "m", evidence: ev }, { n: 3, from: "api", to: "api", label: "m", evidence: ev, ...msg }] }],
     storeFlows: [{ id: "first", trigger: "t", chapter: "s1", steps: [{ n: 2, actor: "api", op: "read", store: "sql", evidence: ev, ...step }] }]
   });
   f.fragment("level0", levels(system([node("link"), node("db"), node("api")], [edge("link", "db"), edge("api", "db")])));

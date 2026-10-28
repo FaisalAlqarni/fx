@@ -48,7 +48,7 @@ const fails = (why: string, change: (f: Fx) => void, line: RegExp): void => {
   assert.match(r.stderr, line, why);
 };
 const level0 = (node: object, edge: object = {}) => ({
-  levels: { root: 'system', diagrams: [{ id: 'system', level: 0, title: 'System', summary: 'S', groups: [], nodes: [{ id: 'link', label: 'Link', kind: 'backend', role: 'R', evidence: ev, ...node }, { id: 'db', label: 'Db', kind: 'database', role: 'R', evidence: ev }], edges: [{ from: 'link', to: 'db', label: 'reads', evidence: ev, ...edge }] }] },
+  levels: { root: 'system', diagrams: [{ id: 'system', level: 0, title: 'System', summary: 'S', groups: [], nodes: [{ id: 'link', label: 'Link', kind: 'backend', look: 'service', role: 'R', evidence: ev, ...node }, { id: 'db', label: 'Db', kind: 'database', look: 'service', role: 'R', evidence: ev }], edges: [{ from: 'link', to: 'db', label: 'reads', evidence: ev, ...edge }] }] },
 });
 
 fails('an unknown key', (f) => f.fragment('level0', level0({ colour: 'red' })),
@@ -67,7 +67,7 @@ fails('a node id with a capital', (f) => f.fragment('level0', level0({ id: 'Api'
   /\/levels\/diagrams\/0\/nodes\/0\/id: does not match \^\[a-z0-9\]\[a-z0-9-\]\*\$$/m);
 fails('a section folder that climbs out', (f) => f.fragment('chapters', { sections: [{ id: 's1', title: 'Links', question: 'Q?', folder: '../x' }] }),
   /\/sections\/0\/folder: does not match \^\[a-z0-9\]\[a-z0-9-\]\*\$$/m);
-fails('a root id with a capital', (f) => f.fragment('meta', { schemaVersion: 1, meta: { roots: [{ id: 'Guide' }] } }),
+fails('a root id with a capital', (f) => f.fragment('meta', { schemaVersion: 2, meta: { roots: [{ id: 'Guide' }] } }),
   /meta\.json:\/meta\/roots\/0\/id: does not match \^\[a-z0-9\]\[a-z0-9-\]\*\$$/m);
 
 fails('a boolean field given a string', (f) => f.fragment('level0', level0({ primary: 'yes' })),
@@ -77,8 +77,8 @@ fails('an integer field given a fraction', (f) => f.fragment('meta', { schemaVer
 fails('a fragment that is an array', (f) => f.fragment('x', []), /x\.json:: expected object$/m);
 fails('a fragment that is null', (f) => f.fragment('x', null), /x\.json:: expected object$/m);
 
-fails('a schemaVersion newer than the CLI', (f) => f.fragment('meta', { schemaVersion: 2, meta: { roots: [{ id: 'backend' }] } }),
-  /^docs\/system-flow\/model\/fragments\/meta\.json:\/schemaVersion: schemaVersion 2 is newer than this CLI \(1\)$/m);
+fails('a schemaVersion newer than the CLI', (f) => f.fragment('meta', { schemaVersion: 3, meta: { roots: [{ id: 'backend' }] } }),
+  /^docs\/system-flow\/model\/fragments\/meta\.json:\/schemaVersion: schemaVersion 3 is newer than this CLI \(2\)$/m);
 fails('meta.json with no schemaVersion', (f) => f.fragment('meta', { meta: { roots: [{ id: 'backend' }] } }),
   /meta\.json:: required property schemaVersion missing$/m);
 
@@ -97,7 +97,7 @@ fails('a fragment that is not JSON', (f) => f.put('host', `${F}/x.json`, '{'),
 
 // A diagram fragment for engine.json holding the given nodes and a node src, each given an edge from src (edges resolve inside their diagram).
 const engine = (extra: object, ...ids: string[]) => ({
-  levels: { diagrams: [{ id: 'engine', level: 1, title: 'Engine', summary: 'E', groups: [], nodes: [...ids, 'src'].map((id) => ({ id, label: id, kind: 'backend', role: 'R', evidence: ev })), edges: ids.map((id) => ({ from: 'src', to: id, label: 'calls', evidence: ev })) }] },
+  levels: { diagrams: [{ id: 'engine', level: 1, title: 'Engine', summary: 'E', groups: [], nodes: [...ids, 'src'].map((id) => ({ id, label: id, kind: 'backend', look: 'service', role: 'R', evidence: ev })), edges: ids.map((id) => ({ from: 'src', to: id, label: 'calls', evidence: ev })) }] },
   ...extra,
 });
 fails('node api in two fragments', (f) => { f.fragment('level0', level0({ id: 'api' }, { from: 'api' })); f.fragment('engine', engine({}, 'api')); },
@@ -143,7 +143,7 @@ passes('stores tables from two fragments', (f) => {
 fails('one store id in two tables', (f) => f.fragment('a', { stores: { sql: [{ id: 'links', evidence: ev }], cache: [{ id: 'links', evidence: ev }] } }),
   /^docs\/system-flow\/model\/fragments\/a\.json:\/stores\/cache\/0: store links is also defined in docs\/system-flow\/model\/fragments\/a\.json$/m);
 
-const api = { id: 'api', label: 'API', evidence: ev };
+const api = { id: 'api', label: 'API', look: 'service', evidence: ev };
 passes('a participant, message, flow step, catalogue, inventory and rule entry', (f) => f.fragment('engine', {
   sequences: [{ ...turnSeq, participants: [api], messages: [{ n: 1, from: 'api', to: 'api', label: 'loops', evidence: ev }] }],
   storeFlows: [{ id: 'save', trigger: 'A save', chapter: 's1', steps: [{ n: 1, actor: 'api', op: 'write', store: 'sql', evidence: ev }] }],
@@ -157,7 +157,7 @@ fails('one participant twice in a sequence', (f) => f.fragment('engine', { seque
 // The site comes from --site, else .fx.json system_flow.output.site, else docs/system-flow.
 {
   const f = sfFixture();
-  const meta = `${JSON.stringify({ schemaVersion: 1, meta: { roots: [{ id: 'backend' }] } })}\n`;
+  const meta = `${JSON.stringify({ schemaVersion: 2, meta: { roots: [{ id: 'backend' }] } })}\n`;
   f.put('host', 'site/model/fragments/meta.json', meta);
   f.fxJson({ system_flow: { output: { site: 'site', markdown: 'docs/system' } } });
   let r = f.run(['check']);
@@ -278,6 +278,85 @@ assert.throws(() => validate({ $ref: '#/$defs/constructor', $defs: {} }, 'x'), /
   const r = f.run(['check']);
   assert.strictEqual(r.status, 1, r.stdout);
   assert.ok(/^system-flow: check: \.fx\.json is not valid JSON: [^\n]+\n$/.test(r.stderr), r.stderr);
+}
+
+// Schema version 2: look, the new fields, and the version-1 hint.
+{
+  const f = sfFixture();
+  f.goodSet();
+  const bare = (name: string) => {
+    const l = parseJson(fs.readFileSync(path.join(f.host, F, `${name}.json`), 'utf8')) as ReturnType<typeof level0>;
+    for (const n of l.levels.diagrams[0]?.nodes ?? []) delete (n as { look?: string }).look;
+    return l;
+  };
+  f.fragment('meta', { schemaVersion: 1, meta: { roots: [{ id: 'backend' }] } });
+  f.fragment('level0', bare('level0'));
+  const r = f.run(['check']);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.strictEqual(r.stderr, [
+    `${F}/meta.json:/schemaVersion: schemaVersion 1: run system-flow migrate`,
+    `${F}/level0.json:: schemaVersion 1: run system-flow migrate`,
+    `${F}/chapters.json:: schemaVersion 1: run system-flow migrate`,
+  ].join('\n') + '\n', 'a version-1 set: one hint per fragment and no look problem');
+}
+{
+  const f = sfFixture();
+  f.goodSet();
+  f.fragment('chapters', { schemaVersion: 1, sections: [] });
+  const r = f.run(['check']);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.strictEqual(r.stderr, `${F}/chapters.json:/schemaVersion: schemaVersion 1: run system-flow migrate\n`, 'one stale fragment');
+}
+const L0 = 'docs/system-flow/model/fragments/level0.json:/levels/diagrams/0';
+{
+  const f = sfFixture();
+  f.goodSet();
+  const l = level0({});
+  delete (l.levels.diagrams[0]?.nodes[1] as { look?: string }).look;
+  f.fragment('level0', l);
+  const r = f.run(['check']);
+  assert.strictEqual(r.status, 1);
+  assert.ok(r.stderr.split('\n').includes(`${L0}/nodes/1: required property look missing`), r.stderr);
+}
+fails('a look out of the enum', (f) => f.fragment('level0', level0({ look: 'database' })),
+  /\/levels\/diagrams\/0\/nodes\/0\/look: value "database" not in enum$/m);
+fails('a participant with no look', (f) => f.fragment('engine', { sequences: [{ ...turnSeq, participants: [{ id: 'api', label: 'API', evidence: ev }] }] }),
+  /engine\.json:\/sequences\/0\/participants\/0: required property look missing$/m);
+fails('a message short label of 27 characters', (f) => f.fragment('engine', { sequences: [{ ...turnSeq, participants: [api], messages: [{ n: 1, from: 'api', to: 'api', label: 'l', short: 'x'.repeat(27), evidence: ev }] }] }),
+  /\/sequences\/0\/messages\/0\/short: longer than 26 characters$/m);
+
+// Glossary terms and code map entries are items.
+const term = { id: 'link', term: 'Link', tag: 'model', meaning: 'A short link.', evidence: ev };
+const codeEntry = { id: 'app', root: 'backend', path: 'app/', owns: 'The app.', evidence: [{ path: 'app/' }, { path: 'app/x.rb', lines: '1-4', symbol: 'Link' }] };
+fails('a glossary tag out of the enum', (f) => f.fragment('glossary', { glossary: [{ ...term, tag: 'thing' }] }),
+  /\/glossary\/0\/tag: value "thing" not in enum$/m);
+fails('a code map path with no trailing slash', (f) => f.fragment('glossary', { codeMap: [{ ...codeEntry, path: 'app' }] }),
+  /\/codeMap\/0\/path: does not match \^\(\?!\/\)\(\?:\[\^\/\]\+\/\)\+\$$/m);
+passes('a term and a code map entry', (f) => f.fragment('glossary', { glossary: [term], codeMap: [codeEntry] }), 6);
+{
+  const f = sfFixture();
+  f.goodSet();
+  f.fragment('glossary', { glossary: [term], codeMap: [codeEntry] });
+  const r = f.run(['query', 'app/x.rb']);
+  assert.strictEqual(r.status, 0, r.stderr);
+  const handles = (parseJson(r.stdout) as { items: { handle: string }[] }).items.map((i) => i.handle);
+  assert.ok(handles.includes('term:link') && handles.includes('code:app'), handles.join());
+}
+{
+  const f = sfFixture();
+  f.goodSet();
+  f.fragment('glossary', { glossary: [{ ...term, evidence: [{ path: 'app/x.rb', lines: '40-41', symbol: 'Link' }] }] });
+  const r = f.run(['check']);
+  assert.strictEqual(r.status, 1);
+  assert.ok(r.stderr.split('\n').includes(`${F}/glossary.json:/glossary/0/evidence/0: term:link: backend/app/x.rb:40-41 Link: range outside file (10 lines)`), r.stderr);
+}
+{
+  const f = sfFixture();
+  f.goodSet();
+  f.fragment('glossary', { glossary: [{ ...term, evidence: [{ path: 'app/' }] }] });
+  const r = f.run(['check']);
+  assert.strictEqual(r.status, 1);
+  assert.ok(r.stderr.split('\n').includes(`${F}/glossary.json:/glossary/0/evidence/0: glossary term link: a folder entry is allowed only on catalogue and inventory entries`), r.stderr);
 }
 
 process.stdout.write('system-flow-check.test.js: OK\n');

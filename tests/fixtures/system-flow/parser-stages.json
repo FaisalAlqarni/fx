@@ -21,6 +21,7 @@
         "id": "ps-orch",
         "label": "parser (orchestrator)",
         "kind": "backend",
+        "look": "service",
         "role": "Runs the checklist; on FAIL sends the fix list to the owner subagent; at most 2 fix rounds, then needs_human.",
         "primary": true,
         "evidence": [
@@ -35,6 +36,7 @@
         "id": "ps-intake",
         "label": "0 intake (5)",
         "kind": "backend",
+        "look": "service",
         "role": "00-intake.json: file inventory, framework fingerprint, sibling hashes, remote code list, mapping row.",
         "primary": true,
         "evidence": [
@@ -49,6 +51,7 @@
         "id": "ps-recon",
         "label": "1 recon (15)",
         "kind": "backend",
+        "look": "service",
         "role": "10-recon.json sections: provider, framework, environments, base_paths, language, header_sets, auth, error_contract; auth_signals first.",
         "primary": true,
         "evidence": [
@@ -63,6 +66,7 @@
         "id": "ps-flows",
         "label": "2 flows (30)",
         "kind": "backend",
+        "look": "service",
         "role": "20-flows.json, one validated step per call in the engine's skill vocabulary.",
         "primary": true,
         "evidence": [
@@ -77,6 +81,7 @@
         "id": "ps-security",
         "label": "3 security (8)",
         "kind": "security",
+        "look": "security",
         "role": "30-security.md: file and kind of shipped keys, never values.",
         "primary": true,
         "evidence": [
@@ -91,6 +96,7 @@
         "id": "ps-skill",
         "label": "4 skill (20)",
         "kind": "backend",
+        "look": "service",
         "role": "parser_draft_skill writes skill(.<service>).json and deployment.json; no environments or hosts in the skill; hosts and bundle credentials go to deployment.json.",
         "primary": true,
         "evidence": [
@@ -105,6 +111,7 @@
         "id": "ps-docs",
         "label": "5 docs (10)",
         "kind": "backend",
+        "look": "service",
         "role": "technical.md, business(.<service>).md (14 sections), mocks.md and mocks.json; labels copied, not translated.",
         "primary": true,
         "evidence": [
@@ -119,6 +126,7 @@
         "id": "ps-verify",
         "label": "6 verify (12)",
         "kind": "security",
+        "look": "security",
         "role": "Runs the 8 gates and judgement checks; writes 60-verify.md with ## Verdict: PASS or FAIL.",
         "primary": true,
         "evidence": [
@@ -133,6 +141,7 @@
         "id": "ps-smoke",
         "label": "Smoke gate",
         "kind": "security",
+        "look": "security",
         "role": "Draft upload to the Admin (no deployment.json), hostsIfNone, engine test-run in auto mode against the mocks, up to 60 device rounds.",
         "primary": true,
         "evidence": [
@@ -147,6 +156,7 @@
         "id": "ps-verdict",
         "label": "Verdict",
         "kind": "backend",
+        "look": "service",
         "role": "PASS -> passed; FAIL -> failed, or needs_human after 3 verify rounds; no verdict -> error. Batch-only gates are not enforced by the server.",
         "primary": true,
         "evidence": [

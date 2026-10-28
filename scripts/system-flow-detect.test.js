@@ -124,7 +124,7 @@ ${MARK}
   f.git("host", "remote", "add", "origin", "https://bot:s3cret@example.com/acme/app.git");
   assert.strictEqual(ok(f).roots[0]?.remote, "https://example.com/acme/app.git");
   f.goodSet();
-  f.fragment("meta", { schemaVersion: 1, meta: { roots: [{ id: "backend" }, { id: "plain", remote: "https://bot:s3cret@example.com/acme/plain.git" }] } });
+  f.fragment("meta", { schemaVersion: 2, meta: { roots: [{ id: "backend" }, { id: "plain", remote: "https://bot:s3cret@example.com/acme/plain.git" }] } });
   f.fxJson({ system_flow: { roots: { plain: "../plain" } } });
   const r = f.run(["check"]);
   assert.strictEqual(r.status, 1, r.stdout);

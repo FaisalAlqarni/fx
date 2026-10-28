@@ -11,15 +11,16 @@ export type OwnerEvidence = { owner: string; question?: string };
 export type Evidence = FileEvidence | OwnerEvidence;
 export type Verified = Record<string, string>; // root id -> 40-hex commit
 export type Evidenced = { evidence: Evidence[]; unconfirmed?: boolean; verified?: Verified };
-export type Node = Evidenced & { id: string; label: string; kind: string; role: string; children?: string; primary?: boolean };
+export type Look = 'service' | 'store' | 'client' | 'external' | 'security';
+export type Node = Evidenced & { id: string; label: string; kind: string; look: Look; role: string; children?: string; primary?: boolean };
 export type Edge = Evidenced & { from: string; to: string; label: string; short?: string; mode?: 'sync' | 'async' };
 export type Group = Evidenced & { id: string; label: string; members: string[]; groups?: string[] };
 export type Diagram = { id: string; level: 0 | 1 | 2 | 3; parent?: string; title: string; summary: string; groups: Group[]; nodes: Node[]; edges: Edge[]; layout?: Record<string, { col: number; row: number }> };
 export type Root = { id: string; label?: string; remote?: string };
-export type Meta = { title?: string; date?: string; purpose?: string; roots: Root[]; conventions?: string[] };
-export type Participant = Evidenced & { id: string; label: string; kind?: string; role?: string };
-export type Message = Evidenced & { n: number; from: string; to: string; label: string; mode?: 'sync' | 'async'; note?: string };
-export type Sequence = { id: string; title: string; chapter: string; participants: Participant[]; messages: Message[]; notes?: string[] };
+export type Meta = { title?: string; date?: string; purpose?: string; name?: string; intro?: string; roots: Root[]; conventions?: string[] };
+export type Participant = Evidenced & { id: string; label: string; look: Look; kind?: string; role?: string };
+export type Message = Evidenced & { n: number; from: string; to: string; label: string; short?: string; reply?: boolean; mode?: 'sync' | 'async'; note?: string };
+export type Sequence = { id: string; title: string; chapter: string; summary?: string; participants: Participant[]; messages: Message[]; notes?: string[] };
 export type SqlRow = Evidenced & { id: string; table?: string; database?: string; purpose?: string; writtenBy?: string; readBy?: string; when?: string };
 export type CacheRow = Evidenced & { id: string; pattern?: string; owner?: string; value?: string; ttl?: string; writtenBy?: string; readBy?: string; when?: string };
 export type MemoryRow = Evidenced & { id: string; owner?: string; name?: string; holds?: string; key?: string; lifetime?: string };
@@ -27,16 +28,18 @@ export type FilesRow = Evidenced & { id: string; owner?: string; path?: string; 
 export type Stores = { sql: SqlRow[]; cache: CacheRow[]; memory: MemoryRow[]; files: FilesRow[]; client: FilesRow[] };
 export type StoreName = keyof Stores;
 export type FlowStep = Evidenced & { n: number; actor: string; op: 'read' | 'write' | 'delete'; store: StoreName; key?: string; when?: string };
-export type StoreFlow = { id: string; trigger: string; chapter: string; steps: FlowStep[] };
+export type StoreFlow = { id: string; trigger: string; chapter: string; summary?: string; steps: FlowStep[] };
 export type CatalogueEntry = Evidenced & { id: string; kind: 'stream' | 'gateway' | 'queue' | 'scheduler' | 'cache' | 'integration' | 'component'; name: string; role?: string; owner?: string; connects?: string[] };
 export type Rule = Evidenced & { id: string; text: string; adr?: { root?: string; path: string }; decision?: string };
 export type InventoryEntry = Evidenced & { id: string; kind: 'engine' | 'flow' | 'store' | 'job' | 'integration'; name: string };
 export type Bullet = Evidenced & { id: string; text: string };
-export type Section = { id: string; title: string; question: string; folder?: string; bullets?: Bullet[]; diagrams?: string[]; sequences?: string[]; storeFlows?: string[]; storeRefs?: string[]; catalogueRefs?: string[]; covers?: string[] };
+export type Section = { id: string; title: string; question: string; role?: 'what' | 'parts' | 'request' | 'code'; lead?: string; notOwned?: Bullet[]; folder?: string; bullets?: Bullet[]; diagrams?: string[]; sequences?: string[]; storeFlows?: string[]; storeRefs?: string[]; catalogueRefs?: string[]; covers?: string[] };
+export type GlossaryTerm = Evidenced & { id: string; term: string; aliases?: string[]; tag: 'model' | 'service' | 'job' | 'store' | 'message' | 'external' | 'concept'; meaning: string };
+export type CodeMapEntry = Evidenced & { id: string; root: string; path: string; owns: string };
 export type Question = { id: string; text: string; recommended?: string; answer?: string; date?: string; items?: string[] };
 export type Correction = { id: string; date: string; item: string; before?: string; after?: string; reason: 'owner' | 'stale' | 'audit'; evidence?: Evidence[] };
-export type Model = { schemaVersion: 1; meta: Meta; levels: { root: string; diagrams: Diagram[] }; sequences: Sequence[]; stores: Stores; storeFlows: StoreFlow[]; catalogue: CatalogueEntry[]; rules: Rule[]; inventory: InventoryEntry[]; sections: Section[]; questions: Question[]; corrections: Correction[] };
-export type ItemKind = 'node' | 'edge' | 'group' | 'participant' | 'message' | 'sql' | 'cache' | 'memory' | 'files' | 'client' | 'step' | 'catalogue' | 'inventory' | 'rule' | 'bullet';
+export type Model = { schemaVersion: 2; meta: Meta; levels: { root: string; diagrams: Diagram[] }; sequences: Sequence[]; stores: Stores; storeFlows: StoreFlow[]; catalogue: CatalogueEntry[]; rules: Rule[]; inventory: InventoryEntry[]; sections: Section[]; questions: Question[]; corrections: Correction[]; glossary: GlossaryTerm[]; codeMap: CodeMapEntry[] };
+export type ItemKind = 'node' | 'edge' | 'group' | 'participant' | 'message' | 'sql' | 'cache' | 'memory' | 'files' | 'client' | 'step' | 'catalogue' | 'inventory' | 'rule' | 'bullet' | 'term' | 'code';
 export type Item = { id: string; kind: ItemKind; handle: string; evidence: Evidence[]; verified?: Verified; unconfirmed?: boolean; file: string; pointer: string };
 export type Problem = { file: string; pointer: string; message: string; level: 'error' | 'warning' };
 export type Fragment = { file: string; data: Record<string, unknown> };
@@ -47,7 +50,7 @@ export function handleOf(kind: ItemKind, id: string): string {
   return `${STORE_KINDS.includes(kind) ? 'store' : kind}:${id}`;
 }
 
-const PREFIXES = ['diagram', 'node', 'edge', 'group', 'seq', 'participant', 'message', 'flow', 'step', 'store', 'bullet', 'catalogue', 'inventory', 'rule', 'section', 'question', 'correction'];
+const PREFIXES = ['diagram', 'node', 'edge', 'group', 'seq', 'participant', 'message', 'flow', 'step', 'store', 'bullet', 'catalogue', 'inventory', 'rule', 'section', 'question', 'correction', 'term', 'code'];
 // The prefix ends at the first colon, so edge:engine:api>db is the edge engine:api>db.
 export function parseHandle(h: string): { prefix: string; id: string } | null {
   const at = h.indexOf(':');
@@ -56,7 +59,7 @@ export function parseHandle(h: string): { prefix: string; id: string } | null {
   return at > 0 && id !== '' && PREFIXES.includes(prefix) ? { prefix, id } : null;
 }
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 export const ID_PATTERN = '^[a-z0-9][a-z0-9-]*$';
 
 const SCHEMA_FILE = path.join(__dirname, '..', 'references', 'system-flow', 'system-model.schema.json');
@@ -66,6 +69,10 @@ const SCHEMA_FILE = path.join(__dirname, '..', 'references', 'system-flow', 'sys
 const NAMED = ['meta.json', 'level0.json', 'chapters.json', 'rules.json', 'inventory.json', 'questions.json', 'corrections.json'];
 const fragmentOrder = (names: string[]): string[] => [...NAMED.filter((n) => names.includes(n)), ...names.filter((n) => !NAMED.includes(n)).sort()];
 
+const readVersion = (file: string): unknown => {
+  try { return (parseJson(fs.readFileSync(file, 'utf8')) as { schemaVersion?: unknown } | null)?.schemaVersion; } catch { return undefined; }
+};
+
 // Only fragments that pass the schema come back, so merge never sees a malformed one.
 export function loadFragments(dir: string, hostRoot: string): { fragments: Fragment[]; problems: Problem[] } {
   const schema = parseJson(fs.readFileSync(SCHEMA_FILE, 'utf8')) as object;
@@ -74,6 +81,8 @@ export function loadFragments(dir: string, hostRoot: string): { fragments: Fragm
   if (!fs.existsSync(dir)) throw new Error(`no fragments folder at ${path.relative(hostRoot, dir)}`);
   const names = fs.readdirSync(dir).filter((n) => n.endsWith('.json'));
   if (!names.includes('meta.json')) problems.push({ file: path.relative(hostRoot, path.join(dir, 'meta.json')), pointer: '', message: 'file not found', level: 'error' });
+  // A version-1 meta.json makes every fragment a version-1 fragment, whatever it holds.
+  const metaV1 = names.includes('meta.json') && readVersion(path.join(dir, 'meta.json')) === 1;
   for (const name of fragmentOrder(names)) {
     const file = path.relative(hostRoot, path.join(dir, name));
     const text = fs.readFileSync(path.join(dir, name), 'utf8');
@@ -82,6 +91,10 @@ export function loadFragments(dir: string, hostRoot: string): { fragments: Fragm
       data = parseJson(text) as Record<string, unknown>;
     } catch (e) {
       problems.push({ file, pointer: '', message: `invalid JSON: ${(e as Error).message}`, level: 'error' });
+      continue;
+    }
+    if (isObject(data) && (metaV1 || data.schemaVersion === 1)) {
+      problems.push({ file, pointer: data.schemaVersion === 1 ? '/schemaVersion' : '', message: 'schemaVersion 1: run system-flow migrate', level: 'error' });
       continue;
     }
     const errors = validate(schema, data);
@@ -97,9 +110,9 @@ export function loadFragments(dir: string, hostRoot: string): { fragments: Fragm
 }
 
 const emptyModel = (): Model => ({
-  schemaVersion: 1, meta: { roots: [] }, levels: { root: '', diagrams: [] }, sequences: [],
+  schemaVersion: 2, meta: { roots: [] }, levels: { root: '', diagrams: [] }, sequences: [],
   stores: { sql: [], cache: [], memory: [], files: [], client: [] }, storeFlows: [], catalogue: [], rules: [],
-  inventory: [], sections: [], questions: [], corrections: [],
+  inventory: [], sections: [], questions: [], corrections: [], glossary: [], codeMap: [],
 });
 
 // Arrays concatenate, objects merge key by key, and the first scalar wins.
@@ -194,7 +207,9 @@ export function collect(model: Model): { item: Item; o: object }[] {
   for (const i of model.inventory) add('inventory', i.id, i);
   for (const r of model.rules) add('rule', r.id, r);
   for (const t of STORE_KINDS) for (const r of model.stores[t as StoreName]) add(t, r.id, r);
-  for (const s of model.sections) for (const b of s.bullets ?? []) add('bullet', b.id, b);
+  for (const s of model.sections) for (const b of [...(s.bullets ?? []), ...(s.notOwned ?? [])]) add('bullet', b.id, b);
+  for (const t of model.glossary) add('term', t.id, t);
+  for (const c of model.codeMap) add('code', c.id, c);
   return out;
 }
 

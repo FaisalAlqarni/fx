@@ -161,7 +161,7 @@ export function verifyEvidence(items: Item[], roots: Map<string, Root>, mode: 'c
       if (path.isAbsolute(e.path) || e.path.split('/').includes('..')) return fail('path must be relative to its root and hold no .. segment');
       if (root.missing || root.refused !== undefined) return;
       if (e.path.endsWith('/')) {
-        if (item.kind !== 'catalogue' && item.kind !== 'inventory') return fail(`${KIND_WORD[item.kind]} ${item.id}: a folder entry is allowed only on catalogue and inventory entries`, true);
+        if (item.kind !== 'catalogue' && item.kind !== 'inventory' && item.kind !== 'code') return fail(`${KIND_WORD[item.kind]} ${item.id}: a folder entry is allowed only on catalogue and inventory entries`, true);
         if (!folderExists(root, e.path)) fail('folder missing');
         return;
       }

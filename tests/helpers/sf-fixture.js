@@ -63,7 +63,7 @@ function sfFixture() {
   const fxJson = (data) => put("host", ".fx.json", `${JSON.stringify(data, null, 2)}
 `);
   const goodSet = () => {
-    fragment("meta", { schemaVersion: 1, meta: { roots: [{ id: "backend" }] } });
+    fragment("meta", { schemaVersion: 2, meta: { roots: [{ id: "backend" }] } });
     fragment("level0", {
       levels: {
         root: "system",
@@ -74,8 +74,8 @@ function sfFixture() {
           summary: "The whole system.",
           groups: [],
           nodes: [
-            { id: "link", label: "Link", kind: "backend", role: "Expires links", evidence: ev("app/x.rb", "1-4", "Link#expired?") },
-            { id: "db", label: "Database", kind: "database", role: "Stores links", evidence: ev("app/y.rb", "1-2", "Y") }
+            { id: "link", label: "Link", kind: "backend", look: "service", role: "Expires links", evidence: ev("app/x.rb", "1-4", "Link#expired?") },
+            { id: "db", label: "Database", kind: "database", look: "store", role: "Stores links", evidence: ev("app/y.rb", "1-2", "Y") }
           ],
           edges: [{ from: "link", to: "db", label: "reads", evidence: ev("app/y.rb", "1-2", "Y") }]
         }]

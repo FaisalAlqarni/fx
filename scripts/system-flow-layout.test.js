@@ -32,7 +32,7 @@ const SITE = "docs/system-flow";
 const F = `${SITE}/model/fragments`;
 const ev = [{ path: "app/x.rb", lines: "1-4", symbol: "Link" }];
 const K33_CAP = 2;
-const node = (id, label = `Node ${id}`) => ({ id, label, kind: "backend", role: `Role of ${id}`, evidence: ev });
+const node = (id, label = `Node ${id}`) => ({ id, label, kind: "backend", look: "service", role: `Role of ${id}`, evidence: ev });
 const edge = (from, to, label = `${from} to ${to}`, extra = {}) => ({ from, to, label, evidence: ev, ...extra });
 const diagram = (d) => ({ title: d.id, summary: `The ${d.id} diagram.`, groups: [], ...d });
 function setup(level0, extra = []) {
@@ -178,7 +178,7 @@ async function main() {
         id: "turn",
         title: "Turn",
         chapter: "s1",
-        participants: ["api", "db", "cache"].map((id) => ({ id, label: id.toUpperCase(), evidence: ev })),
+        participants: ["api", "db", "cache"].map((id) => ({ id, label: id.toUpperCase(), look: "service", evidence: ev })),
         messages: [
           { n: 1, from: "api", to: "db", label: "Reads link", evidence: ev },
           { n: 2, from: "api", to: "cache", label: "Reads token", evidence: ev },

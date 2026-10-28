@@ -35,7 +35,7 @@ const LABEL = "<script>alert(1)</script>";
 function setup(o = {}) {
   const f2 = (0, import_sf_fixture.sfFixture)();
   f2.fxJson({});
-  f2.fragment("meta", { schemaVersion: 1, meta: { title: "Fixture", purpose: "A fixture system.", roots: [{ id: "backend" }] } });
+  f2.fragment("meta", { schemaVersion: 2, meta: { title: "Fixture", purpose: "A fixture system.", roots: [{ id: "backend" }] } });
   f2.fragment("level0", {
     levels: { root: "engine", diagrams: [{
       id: "engine",
@@ -44,8 +44,8 @@ function setup(o = {}) {
       summary: "The engine.",
       groups: [],
       nodes: [
-        { id: "api", label: LABEL, kind: "backend", role: "Takes calls", evidence: ev("app/x.rb", "1-4", "Link") },
-        { id: "db", label: "Database", kind: "database", role: "Stores rows", evidence: [], unconfirmed: true }
+        { id: "api", label: LABEL, kind: "backend", look: "service", role: "Takes calls", evidence: ev("app/x.rb", "1-4", "Link") },
+        { id: "db", label: "Database", kind: "database", look: "service", role: "Stores rows", evidence: [], unconfirmed: true }
       ],
       edges: [{ from: "api", to: "db", label: "reads", evidence: ev("app/y.rb", "1-2", "Y") }]
     }] }
@@ -70,7 +70,7 @@ function setup(o = {}) {
       id: "turn",
       title: "Turn",
       chapter: "s1",
-      participants: [{ id: "api", label: "API", evidence: ev("app/x.rb", "1", "Link") }, { id: "db", label: "DB", evidence: ev("app/y.rb", "1", "Y") }],
+      participants: [{ id: "api", label: "API", look: "service", evidence: ev("app/x.rb", "1", "Link") }, { id: "db", label: "DB", look: "service", evidence: ev("app/y.rb", "1", "Y") }],
       messages: [{ n: 1, from: "api", to: "db", label: "Reads link", evidence: ev("app/x.rb", "4", "expired?") }, { n: 2, from: "db", to: "api", label: "Returns row", evidence: ev("app/y.rb", "1", "Y") }]
     }],
     stores: { sql: [{ id: "links-table", table: "links", evidence: ev("app/y.rb", "1", "Y") }] },
@@ -221,7 +221,7 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">\u0645\u0631\u062D\u06
 {
   const g = setup();
   const names = ["a1", "a2", "a3", "b1", "b2", "b3"];
-  const nodes = names.map((id) => ({ id, label: `Node ${id}`, kind: "backend", role: `Role of ${id}`, evidence: ev("app/x.rb", "1-4", "Link") }));
+  const nodes = names.map((id) => ({ id, label: `Node ${id}`, kind: "backend", look: "service", role: `Role of ${id}`, evidence: ev("app/x.rb", "1-4", "Link") }));
   const edges = ["a1", "a2", "a3"].flatMap((a) => ["b1", "b2", "b3"].map((b) => ({ from: a, to: b, label: `${a} to ${b}`, evidence: ev("app/y.rb", "1-2", "Y") })));
   g.fragment("level0", { levels: { root: "dense", diagrams: [{ id: "dense", level: 0, title: "Dense", summary: "K33.", groups: [], nodes, edges }] } });
   g.fragment("chapters", { sections: [{ id: "s1", title: "Dense", question: "Why so many?", diagrams: ["dense"] }] });

@@ -23,7 +23,7 @@ function setup(opts: { third?: boolean; twoEdges?: boolean } = {}): Fx {
   const f = sfFixture();
   f.put('host', 'app/x.rb', xrb());
   const roots = [{ id: 'backend' }, { id: 'guide' }, ...(opts.third ? [{ id: 'third' }] : [])];
-  f.fragment('meta', { schemaVersion: 1, meta: { roots } });
+  f.fragment('meta', { schemaVersion: 2, meta: { roots } });
   f.fxJson({ system_flow: { roots: { guide: '../guide', ...(opts.third ? { third: '../third' } : {}) } } });
   const edge = { from: 'link', to: 'db', label: 'reads', evidence: ev('app/y.rb', '1-2', 'Y') };
   f.fragment('level0', {
@@ -32,8 +32,8 @@ function setup(opts: { third?: boolean; twoEdges?: boolean } = {}): Fx {
       diagrams: [{
         id: 'system', level: 0, title: 'System', summary: 'The whole system.', groups: [],
         nodes: [
-          { id: 'link', label: 'Link', kind: 'backend', role: 'Expires links', evidence: ev('app/x.rb', '10-12', 'Link#expired?') },
-          { id: 'db', label: 'Database', kind: 'database', role: 'Stores links', unconfirmed: true, evidence: [] },
+          { id: 'link', label: 'Link', kind: 'backend', look: 'service', role: 'Expires links', evidence: ev('app/x.rb', '10-12', 'Link#expired?') },
+          { id: 'db', label: 'Database', kind: 'database', look: 'service', role: 'Stores links', unconfirmed: true, evidence: [] },
         ],
         edges: opts.twoEdges ? [edge, { ...edge, label: 'writes' }] : [edge],
       }],
@@ -283,6 +283,30 @@ const editX = (f: Fx, edit: (lines: string[]) => string[]): string => {
   assert.strictEqual(cites.status, 1, cites.stdout);
   assert.strictEqual(cites.stderr, `system-flow: verify: bullet:b2 cites root guide at ${f.plain}, which is not a git root\n`);
   assert.deepStrictEqual(fragBytes(f), before, 'nothing written');
+}
+
+// Glossary terms and code map entries are verified, stamped, queried and listed stale like any item.
+{
+  const f = setup();
+  const lines = ev('app/x.rb', '1-4', 'Link');
+  f.fragment('glossary', {
+    glossary: [{ id: 'link', term: 'Link', tag: 'model', meaning: 'A short link.', evidence: lines }],
+    codeMap: [{ id: 'app', root: 'backend', path: 'app/', owns: 'The app.', evidence: [{ path: 'app/' }, ...lines] }],
+  });
+  f.commit('host', 'glossary');
+  assert.strictEqual(f.run(['build']).status, 0);
+  f.commit('host', 'stamp');
+  const g = frag(f, 'glossary');
+  assert.ok(g.glossary[0].verified.backend && g.codeMap[0].verified.backend, 'build stamps both');
+  assert.deepStrictEqual(handles(f.run(['query', 'app/x.rb'])).filter((h) => /^(term|code):/.test(h)), ['code:app', 'term:link']);
+  assert.deepStrictEqual(stale(f).backend, []);
+  editX(f, (l) => l.map((x, i) => (i === 1 ? '  # edited' : x)));
+  const s = (stale(f).backend ?? []).map((x) => x.handle);
+  assert.ok(s.includes('term:link') && s.includes('code:app'), s.join());
+  const v = f.run(['verify', 'term:link']);
+  assert.strictEqual(v.status, 0, v.stderr);
+  assert.deepStrictEqual(out(v), { verified: ['term:link'] });
+  assert.strictEqual(f.run(['verify', 'thing:link']).status, 2);
 }
 
 console.log('system-flow-stale.test.js: OK');

@@ -31,7 +31,7 @@ const ev = [{ path: "app/x.rb", lines: "1-4", symbol: "Link" }];
 const TEXT = "A link expires after 30 days.";
 const corr = (item, before, after) => ({ id: `c-${item.replace(/\W/g, "-")}`, date: "2026-10-28", item, before, after, reason: "stale", evidence: [{ owner: "2026-10-28" }] });
 const model = (f, t = {}) => {
-  f.fragment("meta", { schemaVersion: 1, meta: { roots: [{ id: "backend" }] } });
+  f.fragment("meta", { schemaVersion: 2, meta: { roots: [{ id: "backend" }] } });
   f.fragment("level0", {
     levels: { root: "engine", diagrams: [{
       id: "engine",
@@ -39,7 +39,7 @@ const model = (f, t = {}) => {
       title: "Engine",
       summary: "S",
       groups: [],
-      nodes: [{ id: "api", label: t.api ?? "API", kind: "backend", role: "R", evidence: ev }, { id: "db", label: "Db", kind: "database", role: "R", evidence: ev }, ...t.extra ?? []],
+      nodes: [{ id: "api", label: t.api ?? "API", kind: "backend", look: "service", role: "R", evidence: ev }, { id: "db", label: "Db", kind: "database", look: "service", role: "R", evidence: ev }, ...t.extra ?? []],
       edges: [{ from: "api", to: "db", label: "reads", evidence: ev }]
     }] }
   });
@@ -51,7 +51,7 @@ const model = (f, t = {}) => {
     id: "turn",
     title: "Turn",
     chapter: "s2",
-    participants: [{ id: "api", label: "API", evidence: ev }, { id: "db", label: "DB", evidence: ev }],
+    participants: [{ id: "api", label: "API", look: "service", evidence: ev }, { id: "db", label: "DB", look: "service", evidence: ev }],
     messages: [{ n: 1, from: "api", to: "db", label: "Reads", evidence: ev }]
   }] });
 };
@@ -129,14 +129,14 @@ const changed = (before, after, rel) => {
 }
 {
   const f = (0, import_sf_fixture.sfFixture)();
-  model(f, { extra: [{ id: "turn", label: "Turn", kind: "backend", role: "R", evidence: ev }] });
+  model(f, { extra: [{ id: "turn", label: "Turn", kind: "backend", look: "service", role: "R", evidence: ev }] });
   f.fragment("level0", { levels: { root: "engine", diagrams: [{
     id: "engine",
     level: 0,
     title: "Engine",
     summary: "S",
     groups: [],
-    nodes: [{ id: "api", label: "API", kind: "backend", role: "R", evidence: ev }, { id: "turn", label: "Turn", kind: "backend", role: "R", evidence: ev }],
+    nodes: [{ id: "api", label: "API", kind: "backend", look: "service", role: "R", evidence: ev }, { id: "turn", label: "Turn", kind: "backend", look: "service", role: "R", evidence: ev }],
     edges: [{ from: "api", to: "turn", label: "x", evidence: ev }]
   }] } });
   f.commit("host", "fragments");

@@ -11,7 +11,7 @@ type Fx = ReturnType<typeof sfFixture>;
 
 const level0 = (label = 'API', purpose = 'Links', extra: object = {}) => ({
   levels: { root: 'system', diagrams: [{ id: 'system', level: 0, title: 'System', summary: 'S', groups: [],
-    nodes: [{ id: 'api', label, kind: 'backend', role: 'R', evidence: ev }, { id: 'db', label: 'Db', kind: 'database', role: 'R', evidence: ev }],
+    nodes: [{ id: 'api', label, kind: 'backend', look: 'service', role: 'R', evidence: ev }, { id: 'db', label: 'Db', kind: 'database', look: 'service', role: 'R', evidence: ev }],
     edges: [{ from: 'api', to: 'db', label: 'reads', evidence: ev }] }] },
   stores: { sql: [{ id: 'sql-links', table: 'links', purpose, evidence: ev }] },
   storeFlows: [{ id: 'first', trigger: 'T', chapter: 's1', steps: [{ n: 1, actor: 'api', op: 'read', store: 'sql', key: 'k', when: 'always', evidence: ev, ...extra }] }],
@@ -23,7 +23,7 @@ const corr = { id: 'c1', date: '2026-10-28', item: 'bullet:b1', before: 'A link 
 // A fixture whose fragments are committed at HEAD.
 const committed = (extra?: (f: Fx) => void): Fx => {
   const f = sfFixture();
-  f.fragment('meta', { schemaVersion: 1, meta: { roots: [{ id: 'backend' }] } });
+  f.fragment('meta', { schemaVersion: 2, meta: { roots: [{ id: 'backend' }] } });
   f.fragment('level0', level0());
   f.fragment('chapters', chapters([bullet()]));
   extra?.(f);
@@ -55,7 +55,7 @@ verdict('no change', committed(), 0);
   const l = level0();
   const d = l.levels.diagrams[0];
   if (d) { d.nodes.shift(); d.edges.length = 0; }
-  f.fragment('level0', { ...l, levels: { ...l.levels, diagrams: [{ ...d, nodes: [...(d?.nodes ?? []), { id: 'q', label: 'Q', kind: 'backend', role: 'R', evidence: ev }], edges: [{ from: 'q', to: 'db', label: 'x', evidence: ev }] }] } });
+  f.fragment('level0', { ...l, levels: { ...l.levels, diagrams: [{ ...d, nodes: [...(d?.nodes ?? []), { id: 'q', label: 'Q', kind: 'backend', look: 'service', role: 'R', evidence: ev }], edges: [{ from: 'q', to: 'db', label: 'x', evidence: ev }] }] } });
   verdict('removed node', f, 1, new RegExp(`^${F}/level0\\.json:/levels/diagrams/0/nodes/0: node:api removed since HEAD with no corrections entry$`, 'm'));
 }
 {
@@ -70,7 +70,7 @@ verdict('no change', committed(), 0);
   const turnSeq = { id: 'turn', title: 'Turn', chapter: 's1', participants: [], messages: [] };
   const withTurn = (label: string) => {
     const l = level0();
-    l.levels.diagrams[0]?.nodes.push({ id: 'turn', label, kind: 'backend', role: 'R', evidence: ev });
+    l.levels.diagrams[0]?.nodes.push({ id: 'turn', label, kind: 'backend', look: 'service', role: 'R', evidence: ev });
     l.levels.diagrams[0]?.edges.push({ from: 'api', to: 'turn', label: 'x', evidence: ev });
     return { ...l, sequences: [turnSeq] };
   };

@@ -81,7 +81,7 @@ function estimate(plan) {
 `);
 }
 const engine = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   levels: {
     root: "system",
     diagrams: [
@@ -93,10 +93,10 @@ const engine = {
         summary: "s",
         groups: [],
         nodes: [
-          { id: "a1", label: "A1", kind: "backend", role: "r", children: "engine-jobs", evidence: ev("app/x.rb", "1-4", "Link") },
-          { id: "a2", label: "A2", kind: "backend", role: "r", evidence: ev("app/x.rb", "1-4", "Link") },
-          { id: "a3", label: "A3", kind: "backend", role: "r", evidence: ev("app/x.rb", "1-4", "Link") },
-          { id: "ctx", label: "Ctx", kind: "external", role: "r", primary: false, evidence: ev("app/x.rb", "1-4", "Link") }
+          { id: "a1", label: "A1", kind: "backend", look: "service", role: "r", children: "engine-jobs", evidence: ev("app/x.rb", "1-4", "Link") },
+          { id: "a2", label: "A2", kind: "backend", look: "service", role: "r", evidence: ev("app/x.rb", "1-4", "Link") },
+          { id: "a3", label: "A3", kind: "backend", look: "service", role: "r", evidence: ev("app/x.rb", "1-4", "Link") },
+          { id: "ctx", label: "Ctx", kind: "external", look: "service", role: "r", primary: false, evidence: ev("app/x.rb", "1-4", "Link") }
         ],
         edges: [{ from: "a1", to: "a2", label: "e", evidence: ev("app/x.rb", "1-4", "Link") }, { from: "a2", to: "a3", label: "e", evidence: ev("app/x.rb", "1-4", "Link") }, { from: "a3", to: "ctx", label: "e", evidence: ev("app/x.rb", "1-4", "Link") }]
       },
@@ -107,7 +107,7 @@ const engine = {
         title: "Jobs",
         summary: "s",
         groups: [],
-        nodes: [{ id: "j1", label: "J1", kind: "job", role: "r", evidence: ev("app/x.rb", "1-4", "Link") }, { id: "j2", label: "J2", kind: "job", role: "r", evidence: ev("app/x.rb", "1-4", "Link") }],
+        nodes: [{ id: "j1", label: "J1", kind: "job", look: "service", role: "r", evidence: ev("app/x.rb", "1-4", "Link") }, { id: "j2", label: "J2", kind: "job", look: "service", role: "r", evidence: ev("app/x.rb", "1-4", "Link") }],
         edges: [{ from: "j1", to: "j2", label: "e", evidence: ev("app/x.rb", "1-4", "Link") }]
       }
     ]
@@ -116,7 +116,7 @@ const engine = {
     id: "turn",
     title: "Turn",
     chapter: "s1",
-    participants: [{ id: "p1", label: "P1", evidence: ev("app/x.rb", "1-4", "Link") }, { id: "p2", label: "P2", evidence: ev("app/x.rb", "1-4", "Link") }],
+    participants: [{ id: "p1", label: "P1", look: "service", evidence: ev("app/x.rb", "1-4", "Link") }, { id: "p2", label: "P2", look: "service", evidence: ev("app/x.rb", "1-4", "Link") }],
     messages: [1, 2, 3, 4].map((n) => ({ n, from: "p1", to: "p2", label: "m", evidence: ev("app/x.rb", "1-4", "Link") }))
   }]
 };

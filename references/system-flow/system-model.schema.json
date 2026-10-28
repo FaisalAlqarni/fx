@@ -34,12 +34,15 @@
     "inventory": { "type": "array", "items": { "$ref": "#/$defs/inventoryEntry" } },
     "sections": { "type": "array", "items": { "$ref": "#/$defs/section" } },
     "questions": { "type": "array", "items": { "$ref": "#/$defs/question" } },
-    "corrections": { "type": "array", "items": { "$ref": "#/$defs/correction" } }
+    "corrections": { "type": "array", "items": { "$ref": "#/$defs/correction" } },
+    "glossary": { "type": "array", "items": { "$ref": "#/$defs/glossaryTerm" } },
+    "codeMap": { "type": "array", "items": { "$ref": "#/$defs/codeMapEntry" } }
   },
   "$defs": {
     "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
     "texts": { "type": "array", "items": { "type": "string" } },
     "mode": { "type": "string", "enum": ["sync", "async"] },
+    "look": { "type": "string", "enum": ["service", "store", "client", "external", "security"] },
     "evidence": {
       "description": "A file entry (path, with root, lines, symbol) or an owner entry (owner, question). Which fields each needs is checked in code.",
       "type": "object",
@@ -63,6 +66,8 @@
         "title": { "type": "string" },
         "date": { "type": "string" },
         "purpose": { "type": "string" },
+        "name": { "type": "string" },
+        "intro": { "type": "string" },
         "roots": {
           "type": "array",
           "items": {
@@ -105,11 +110,12 @@
     "node": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "label", "kind", "role"],
+      "required": ["id", "label", "kind", "look", "role"],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
         "label": { "type": "string" },
         "kind": { "type": "string" },
+        "look": { "$ref": "#/$defs/look" },
         "role": { "type": "string" },
         "children": { "type": "string" },
         "primary": { "type": "boolean" },
@@ -155,6 +161,7 @@
         "id": { "$ref": "#/$defs/id" },
         "title": { "type": "string" },
         "chapter": { "type": "string" },
+        "summary": { "type": "string" },
         "participants": { "type": "array", "items": { "$ref": "#/$defs/participant" } },
         "messages": { "type": "array", "items": { "$ref": "#/$defs/message" } },
         "notes": { "$ref": "#/$defs/texts" }
@@ -163,10 +170,11 @@
     "participant": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "label"],
+      "required": ["id", "label", "look"],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
         "label": { "type": "string" },
+        "look": { "$ref": "#/$defs/look" },
         "kind": { "type": "string" },
         "role": { "type": "string" },
         "evidence": { "$ref": "#/$defs/evidenceList" },
@@ -183,6 +191,8 @@
         "from": { "type": "string" },
         "to": { "type": "string" },
         "label": { "type": "string" },
+        "short": { "type": "string", "maxLength": 26 },
+        "reply": { "type": "boolean" },
         "mode": { "$ref": "#/$defs/mode" },
         "note": { "type": "string" },
         "evidence": { "$ref": "#/$defs/evidenceList" },
@@ -265,6 +275,7 @@
         "id": { "$ref": "#/$defs/id" },
         "trigger": { "type": "string" },
         "chapter": { "type": "string" },
+        "summary": { "type": "string" },
         "steps": { "type": "array", "items": { "$ref": "#/$defs/flowStep" } }
       }
     },
@@ -341,7 +352,10 @@
         "title": { "type": "string" },
         "question": { "type": "string" },
         "folder": { "$ref": "#/$defs/id" },
+        "role": { "type": "string", "enum": ["what", "parts", "request", "code"] },
+        "lead": { "type": "string" },
         "bullets": { "type": "array", "items": { "$ref": "#/$defs/bullet" } },
+        "notOwned": { "type": "array", "items": { "$ref": "#/$defs/bullet" } },
         "diagrams": { "$ref": "#/$defs/texts" },
         "sequences": { "$ref": "#/$defs/texts" },
         "storeFlows": { "$ref": "#/$defs/texts" },
@@ -358,6 +372,35 @@
         "id": { "$ref": "#/$defs/id" },
         "text": { "type": "string" },
             "evidence": { "$ref": "#/$defs/evidenceList" },
+        "unconfirmed": { "$ref": "#/$defs/unconfirmed" },
+        "verified": { "$ref": "#/$defs/verified" }
+      }
+    },
+    "glossaryTerm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "term", "tag", "meaning"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "term": { "type": "string" },
+        "aliases": { "$ref": "#/$defs/texts" },
+        "tag": { "type": "string", "enum": ["model", "service", "job", "store", "message", "external", "concept"] },
+        "meaning": { "type": "string" },
+        "evidence": { "$ref": "#/$defs/evidenceList" },
+        "unconfirmed": { "$ref": "#/$defs/unconfirmed" },
+        "verified": { "$ref": "#/$defs/verified" }
+      }
+    },
+    "codeMapEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "root", "path", "owns"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "root": { "type": "string" },
+        "path": { "type": "string", "pattern": "^(?!/)(?:[^/]+/)+$" },
+        "owns": { "type": "string" },
+        "evidence": { "$ref": "#/$defs/evidenceList" },
         "unconfirmed": { "$ref": "#/$defs/unconfirmed" },
         "verified": { "$ref": "#/$defs/verified" }
       }

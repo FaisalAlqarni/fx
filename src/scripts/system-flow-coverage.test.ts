@@ -28,11 +28,11 @@ function setup(o: Opts = {}): Fx {
   f.commit('host', 'files');
   f.commit('guide', 'files');
   f.fxJson({ system_flow: { roots: { guide: '../guide' } } });
-  f.fragment('meta', { schemaVersion: 1, meta: { roots: [{ id: 'backend' }, { id: 'guide' }] } });
+  f.fragment('meta', { schemaVersion: 2, meta: { roots: [{ id: 'backend' }, { id: 'guide' }] } });
   f.fragment('level0', {
     levels: { root: 'system', diagrams: [{
       id: 'system', level: 0, title: 'System', summary: 'The whole system.', groups: [],
-      nodes: [{ id: 'ea', label: 'Ax', kind: 'backend', role: 'Engine A', evidence: ev('engines/a/app/x.rb', '1', 'Ax') }, { id: 'eb', label: 'Y', kind: 'backend', role: 'Y', evidence: ev('app/y.rb', '1', 'Y') }],
+      nodes: [{ id: 'ea', label: 'Ax', kind: 'backend', look: 'service', role: 'Engine A', evidence: ev('engines/a/app/x.rb', '1', 'Ax') }, { id: 'eb', label: 'Y', kind: 'backend', look: 'service', role: 'Y', evidence: ev('app/y.rb', '1', 'Y') }],
       edges: [{ from: 'ea', to: 'eb', label: 'calls', evidence: ev('app/y.rb', '1', 'Y') }, ...(o.bare ? [{ from: 'eb', to: 'ea', label: 'replies', unconfirmed: true }] : [])],
     }] },
   });

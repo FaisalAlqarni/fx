@@ -16,7 +16,7 @@ const good: Ev = { path: 'app/x.rb', lines: '1-4', symbol: 'Link#expired?' };
 const setup = (evidence: Ev[], roots: object[] = [{ id: 'backend' }, { id: 'guide' }], map: Record<string, string> = { guide: '../guide' }): Fx => {
   const f = sfFixture();
   f.goodSet();
-  f.fragment('meta', { schemaVersion: 1, meta: { roots } });
+  f.fragment('meta', { schemaVersion: 2, meta: { roots } });
   f.fxJson({ system_flow: { roots: map } });
   const l0 = parseJson(fs.readFileSync(path.join(f.host, F, 'level0.json'), 'utf8')) as { levels: { diagrams: { nodes: { evidence: Ev[] }[] }[] } };
   l0.levels.diagrams[0]!.nodes[0]!.evidence = evidence;
@@ -159,7 +159,7 @@ fails('folder on a node', [{ path: 'app/' }], `${NODE0}: node link: a folder ent
   fs.mkdirSync(shim);
   fs.writeFileSync(path.join(shim, 'git'), `#!/bin/sh\necho "$@" >> ${log}\nexec ${real} "$@"\n`, { mode: 0o755 });
   const diagrams = Array.from({ length: 5 }, (_, d) => {
-    const nodes = Array.from({ length: 10 }, (_, i) => ({ id: `n${d}-${i}`, label: 'N', kind: 'backend', role: 'R', evidence: [good] }));
+    const nodes = Array.from({ length: 10 }, (_, i) => ({ id: `n${d}-${i}`, label: 'N', kind: 'backend', look: 'service', role: 'R', evidence: [good] }));
     const edges = nodes.slice(1).map((n, i) => ({ from: nodes[i]!.id, to: n.id, label: 'l', evidence: [good] }));
     return { id: `d${d}`, level: 0, title: 'D', summary: 'D', groups: [], nodes, edges };
   });

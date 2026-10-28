@@ -35,7 +35,7 @@ const level0 = (label = "API", purpose = "Links", extra = {}) => ({
     title: "System",
     summary: "S",
     groups: [],
-    nodes: [{ id: "api", label, kind: "backend", role: "R", evidence: ev }, { id: "db", label: "Db", kind: "database", role: "R", evidence: ev }],
+    nodes: [{ id: "api", label, kind: "backend", look: "service", role: "R", evidence: ev }, { id: "db", label: "Db", kind: "database", look: "service", role: "R", evidence: ev }],
     edges: [{ from: "api", to: "db", label: "reads", evidence: ev }]
   }] },
   stores: { sql: [{ id: "sql-links", table: "links", purpose, evidence: ev }] },
@@ -46,7 +46,7 @@ const chapters = (bullets) => ({ sections: [{ id: "s1", title: "Links", question
 const corr = { id: "c1", date: "2026-10-28", item: "bullet:b1", before: "A link expires after 30 days.", after: "A link expires after 60 days.", reason: "stale", evidence: [{ owner: "2026-10-28" }] };
 const committed = (extra) => {
   const f = (0, import_sf_fixture.sfFixture)();
-  f.fragment("meta", { schemaVersion: 1, meta: { roots: [{ id: "backend" }] } });
+  f.fragment("meta", { schemaVersion: 2, meta: { roots: [{ id: "backend" }] } });
   f.fragment("level0", level0());
   f.fragment("chapters", chapters([bullet()]));
   extra?.(f);
@@ -80,7 +80,7 @@ verdict("no change", committed(), 0);
     d.nodes.shift();
     d.edges.length = 0;
   }
-  f.fragment("level0", { ...l, levels: { ...l.levels, diagrams: [{ ...d, nodes: [...d?.nodes ?? [], { id: "q", label: "Q", kind: "backend", role: "R", evidence: ev }], edges: [{ from: "q", to: "db", label: "x", evidence: ev }] }] } });
+  f.fragment("level0", { ...l, levels: { ...l.levels, diagrams: [{ ...d, nodes: [...d?.nodes ?? [], { id: "q", label: "Q", kind: "backend", look: "service", role: "R", evidence: ev }], edges: [{ from: "q", to: "db", label: "x", evidence: ev }] }] } });
   verdict("removed node", f, 1, new RegExp(`^${F}/level0\\.json:/levels/diagrams/0/nodes/0: node:api removed since HEAD with no corrections entry$`, "m"));
 }
 {
@@ -95,7 +95,7 @@ verdict("no change", committed(), 0);
   const turnSeq = { id: "turn", title: "Turn", chapter: "s1", participants: [], messages: [] };
   const withTurn = (label) => {
     const l = level0();
-    l.levels.diagrams[0]?.nodes.push({ id: "turn", label, kind: "backend", role: "R", evidence: ev });
+    l.levels.diagrams[0]?.nodes.push({ id: "turn", label, kind: "backend", look: "service", role: "R", evidence: ev });
     l.levels.diagrams[0]?.edges.push({ from: "api", to: "turn", label: "x", evidence: ev });
     return { ...l, sequences: [turnSeq] };
   };
