@@ -95,19 +95,19 @@ A rerun in a repo that already has a model offers three choices: refresh the sta
 
 ### The CLI
 
-One TypeScript CLI beside `docs-index`, built by `scripts/build` into an extensionless `scripts/system-flow`, run from the plugin, never copied into a repo. Every subcommand takes `--root <host root>` (default: the git top level), prints JSON on stdout and problems on stderr as `<file>:<pointer>: <message>`, and exits 0 on success, 1 on a failed check, 2 on usage.
+One TypeScript CLI beside `docs-index`, built by `scripts/build` into an extensionless `scripts/system-flow`, run from the plugin, never copied into a repo. Every subcommand takes `--root <host root>` (default: the git top level), prints JSON on stdout and problems on stderr as `<file>:<pointer>: <message>` (a problem with no file is `system-flow: <subcommand>: <message>`), and exits 0 on success, 1 on a failed check, 2 on usage.
 
 | Subcommand | What it does |
 |---|---|
 | `detect [--write]` | Docs config, output location, design language pick, evidence roots. `--write` saves the pick in `.fx.json`. |
-| `estimate <plan file>` | Tokens and wall-clock for the plan, per area and in total. |
+| `estimate <plan file>` | Tokens and wall-clock for the plan, per area and in total. The plan file is `plan.json`; after the run the report sets planned depth against built depth. |
 | `check [--fragment <file>]` | Merge, schema, cross-references, evidence verification, dash ban, caps, ADR status of every rule. With `--fragment`, one fragment plus the ids it references. |
 | `build [--only <item ids or paths>] [--archify <dir>]` | `check`, then layout, page, Markdown, deep diagrams, theme, README, coverage, layout report. `--only` rebuilds the Markdown docs, figures and deep diagrams that contain the given items; the page is always rewritten whole. |
 | `query <path>... \| --diff <base>` | Items whose evidence cites the given paths, or the paths changed between `<base>` and HEAD in each root. |
 | `stale` | Every item whose cited lines changed since the commit it was verified at, per root, with the reason (`shifted`, `changed`, `deleted`, `unverified`). |
 | `verify <item id>... \| --all` | Records the current HEAD of each cited root as the item's verified commit, after the agent has re-read it. |
 
-The CLI runs archify itself when `--archify <dir>` names an installed archify (the lane finds it and passes it): it writes each spec, then runs `node <dir>/bin/archify.mjs finalize <type> <spec> <out> --repo-root <root> --quality showcase --json`, at most 4 at a time, and reads the receipt. Without `--archify` it renders every deep diagram as SVG.
+The CLI runs archify itself when `--archify <dir>` names an installed archify (the lane finds it and passes it): it writes each spec, then runs `node <dir>/bin/archify.mjs finalize <type> <spec> <out> --repo-root <root> --quality showcase --receipt <site>/diagrams/<name>.receipt.json --json`, one at a time (archify's delivery lock rejects concurrent calls in one folder), and reports the receipt path without parsing it. Without `--archify` it renders every deep diagram as SVG.
 
 ### The model
 
@@ -127,7 +127,7 @@ Top level, `schemaVersion: 1`:
 | `questions[]` | `id`, `text`, `recommended`, `answer`, `date`, `items[]` |
 | `corrections[]` | `id`, `date`, `item`, `before`, `after`, `reason` (`owner`, `stale`, `audit`), `evidence[]` |
 
-Nodes: `id`, `label`, `kind`, `role`, `children`, `primary` (false draws a context node), `evidence[]`, `unconfirmed`. Edges: `from`, `to`, `label`, `short` (at most 26 characters), `mode` (`sync` or `async`), `evidence[]`, `unconfirmed`. Every item also carries `verified`: a map from root id to the 40-character commit it was last verified at, written only by `verify` and `build`.
+Nodes: `id`, `label`, `kind`, `role`, `children`, `primary` (false draws a context node), `evidence[]`, `unconfirmed`. Edges: `from`, `to`, `label`, `short` (at most 26 characters), `mode` (`sync` or `async`), `evidence[]`, `unconfirmed`. Every item also carries `verified`: a map from root id to the 40-character commit it was last verified at, written only by `verify` and `build`; `build` fills a root's value only when the item has none, so it never replaces one.
 
 Evidence entry:
 
@@ -140,13 +140,13 @@ Evidence entry:
 
 Additions over system-flow and why: `chapter` on store flows and sequences (system-flow hard-coded it in the build), `catalogue`, `rules`, `inventory`, `questions`, `corrections`, `verified`, `root` on evidence, and a required `question` on every section.
 
-**Versioning.** The schema is a JSON Schema file shipped beside the lane, and the CLI validates against it with its own subset validator (type, required, properties, additionalProperties false, items, enum, pattern, maxLength, `$ref`), so fx gains no runtime dependency and the schema has one copy. `check` rejects a model whose `schemaVersion` is higher than the CLI knows. A breaking change bumps the number and ships a migration in the CLI; version 1 has none.
+**Versioning.** The schema is a JSON Schema file at `references/system-flow/system-model.schema.json`, and the CLI validates against it with its own subset validator (type, required, properties, additionalProperties false, items, enum, pattern, maxLength, `$ref`), so fx gains no runtime dependency and the schema has one copy. `check` rejects a model whose `schemaVersion` is higher than the CLI knows. A breaking change bumps the number and ships a migration in the CLI; version 1 has none.
 
 **Caps checked by `check`:** at most 12 primary nodes per diagram; every node and edge has evidence unless `unconfirmed`; a node with `children` names an existing diagram whose `parent` is that node's diagram; no orphan node; every edge, message and flow step names existing ids; every section reference resolves; every chapter named by a sequence or flow exists; no em or en dash anywhere. Arabic script in a label is a warning naming the item, so a real product string passes and anything else gets fixed.
 
 ### Fragments and merge
 
-Fragments live in `<site>/model/fragments/`: `meta.json`, `level0.json`, `chapters.json`, `rules.json`, `inventory.json`, `questions.json`, `corrections.json`, and one `<area>.json` per area. Each holds any subset of the top-level keys. Merge concatenates arrays and unions `stores` tables; ids are global, and two fragments defining the same id is an error naming both files. The fragments are the record and are committed. `build` writes the merged result to `<site>/model/system-model.json`, marked generated, for readers and other tools; nothing reads it back.
+Fragments live in `<site>/model/fragments/`: `meta.json`, `level0.json`, `chapters.json`, `rules.json`, `inventory.json`, `questions.json`, `corrections.json`, and one `<area>.json` per area. Each holds any subset of the top-level keys. Merge concatenates arrays and unions `stores` tables; ids are unique per kind (node `turn` and sequence `turn` may coexist), and two fragments defining the same id of one kind is an error naming both files. Items are named `<kind>:<id>` in every argument, output, question and correction. The fragments are the record and are committed. `build` writes the merged result to `<site>/model/system-model.json`, marked generated, for readers and other tools; nothing reads it back.
 
 ### Evidence verifier
 
@@ -174,11 +174,11 @@ The layout report, written to `<site>/model/layout-report.json` and summarised o
 
 The inline player is a new kit file, `fx-flow-1.js` (TypeScript, built as a browser script): SVG from the figure spec, Back, Play or Pause, Next, Reset, a step counter and an `aria-live` caption naming the code for each step, a moving token, play when scrolled into view, reduced motion respected. The map moves to `fx-map-2.js` under the renaming rule, adding context nodes, groups and arrow mode; `fx-map-1.js` stays for existing pages.
 
-**Markdown.** One doc per section, in the section folder the plan chose (below), plus `components.md`, `stores.md`, `rules-in-force.md` and `coverage.md` in the Markdown root, and one `index.md` per section folder listing its chapters and linking the site. A doc holds the question as its lead sentence, each fact with its evidence line, a Mermaid sequence diagram and a numbered message table for each sequence, a step table for each store flow, and a link to the figure in the site. Evidence lines use docs-index's format; `"63,67-245"` becomes two items, and a path in another root is written `@<root id>/<path>`. Each doc ends with `<!-- fx-system-flow generated: edit the model, then rebuild -->` and the `fx-docs verified:` marker set to the oldest host-root `verified` commit among its items, so docs-index's stale check over-reports at worst. The renderer never overwrites a file that lacks the generated marker; it reports the collision, and the plan picks another name.
+**Markdown.** One doc per section, in the section folder the plan chose (below), plus `components.md`, `stores.md`, `rules-in-force.md` and `coverage.md` in the Markdown root, and one `index.md` per section folder listing its chapters and linking the site. Prose and table text escape `&`, `<` and `>`, so a repository string never becomes HTML in Markdown. A doc holds the question as its lead sentence, each fact with its evidence line, a Mermaid sequence diagram and a numbered message table for each sequence, a step table for each store flow, and a link to the figure in the site. Evidence lines use docs-index's format; `"63,67-245"` becomes two items, and a path in another root is written `@<root id>/<path>`. Each doc ends with `<!-- fx-system-flow generated: edit the model, then rebuild -->` and the `fx-docs verified:` marker set to the oldest host-root `verified` commit among its items, so docs-index's stale check over-reports at worst. The renderer never overwrites a file that lacks the generated marker; it reports the collision, and the plan picks another name.
 
 **Deep diagrams.** One per level diagram, sequence and store flow, in `<site>/diagrams/`, named `arch-<id>.html`, `seq-<id>.html` and `flow-<id>.html`, with continuation pages `-p2`, `-p3` when a sequence or flow has more than 8 messages. With archify: the spec goes to `<site>/diagrams/src/<name>.json` (architecture for levels, sequence for sequences and flows), with `sources` on every primary element filled from its evidence (at most 3 ranges, from the diagram's owning root: the root most of its evidence cites), `meta.repository` set to that root's remote and HEAD with `link_mode: "local-only"`, and evidence from other roots moved into the steps card. Without archify, or when archify fails for a diagram: an fx page with a static SVG for a level diagram, an animated SVG for a sequence or flow. The build prints one line per diagram with the pick and the reason, for example `seq-turn: archify sequence, 14 messages in 2 pages` or `arch-engine: static SVG, archify not installed`.
 
-**Theme.** `theme.css` sets fx's token names (`--paper --panel --ink --muted --rule --code --accent --accent-tint --warn --alert --violet --info --info-tint`) for light and dark from the detected source and loads after `fx-tokens-1.css`, so the kit file is never edited. Each archify output gets the same mapping as a block between `/* fx-theme:begin */` and `/* fx-theme:end */` markers, replaced on every build, which generalises system-flow's `apply-theme.mjs`.
+**Theme.** `theme.css` sets fx's token names (`--paper --panel --ink --muted --rule --code --accent --accent-tint --warn --alert --violet --info --info-tint`) for light and dark from the detected source and loads after `fx-tokens-1.css`, so the kit file is never edited. Each archify output gets the same mapping, onto archify's own variable names (`--text`, `--arrow`, `--lane-stroke` and the rest), as a block between `/* fx-theme:begin */` and `/* fx-theme:end */` markers, replaced on every build, which generalises system-flow's `apply-theme.mjs`.
 
 **README.** `<site>/README.md` in a few lines: what each folder holds, that `index.html`, `diagrams/`, `system-model.json` and the Markdown are generated, that the fragments are the record, and the two commands that rebuild (`system-flow check`, `system-flow build`) with the plugin path.
 
@@ -205,13 +205,14 @@ Silent, first hit wins, the source named in the report:
 
 Source names map onto fx's slots by role (background to `--paper`, surface to `--panel`, text to `--ink`, accent or primary to `--accent`, and so on). Every text and border pair is checked in both themes, text at WCAG AA 4.5:1 and borders at 3:1; a pair that fails falls back to fx's value for that slot and is listed. The pick is saved in `.fx.json` as `system_flow.theme` (`source`, `kind`), and the values are re-read on every build, so a change to the repo's CSS reaches the site.
 
-`.fx.json` gains one key:
+`.fx.json` gains one key. `diagrams` holds the rendering choices: `build` writes `prefer`, `pageLimits` and `svg` from its flags on success and reads them on every later build; `archify` is a folder the owner sets by hand. archify is found from `--archify`, else (unless `prefer` is `cheap`) `$CLAUDE_CONFIG_DIR/skills/archify`, `$HOME/.claude/skills/archify`, then `diagrams.archify`.
 
 ```json
 "system_flow": {
   "output": { "site": "docs/system-flow", "markdown": "docs/system" },
   "theme": { "source": "docs/assets/docs.css", "kind": "docs-css" },
-  "roots": { "guide": "../advantage-guide" }
+  "roots": { "guide": "../advantage-guide" },
+  "diagrams": { "prefer": "fast", "pageLimits": { "seq-turn": 5 }, "svg": ["arch-engine"], "archify": "tools/archify" }
 }
 ```
 
@@ -244,7 +245,7 @@ The report line becomes `Docs: <n> model items updated, <n> listed stale, <n> un
 ### What it replaces
 
 - **fx-docs section 6, the full run, and `full-run.md`:** replaced. On "document the system" fx-docs says in one line that the full run is `/fx:fx-system-flow` and that the owner types it. A lane cannot invoke a user-invoked command (ADR 0055).
-- **fx-docs section 7 and `html-pages.md`:** replaced by the site. Hand-written per-area pages in `docs/html/<area>/` are no longer written; existing ones are left as they are.
+- **fx-docs section 7 and `html-pages.md`:** replaced by the site in a repo with a model; a repo without one keeps the HTML pages. Hand-written per-area pages in `docs/html/<area>/` are no longer written; existing ones are left as they are.
 - **fx-docs section 4, branch mode:** gains the model path above; the Markdown path stays for repos without a model.
 - **fx-implement's first-run offer:** names `/fx:fx-system-flow` for the owner to type. The `docs_first_run: "declined"` key keeps its meaning.
 - **`archify-adapter.md`:** gains sources from evidence, the single-root rule, the theme block, and the 390 check; the per-diagram pick line stays.
@@ -272,7 +273,7 @@ ADR 0066, "A system model is the record for the system-flow site; its Markdown i
 | archify is not installed | Every deep diagram is SVG, said once in the report and once per diagram line. |
 | archify fails for one diagram | The CLI runs one fixed retry on its own: a sequence or store flow is rendered again at 5 messages per page. Still failing, or an architecture diagram (which has no page limit to lower), that diagram falls back to SVG and the receipt path is reported. No agent edits the spec between attempts. |
 | An archify page fails the 390 check | One retry with a sequence page limit of 5 messages; still failing, SVG for that diagram, reported. |
-| A figure cannot meet 1 crossing and 860 px after variants and arrow dropping | `build` exits 1 naming the figure and its best layout line. The controller splits the diagram (moves a group of nodes to a child level) or adds level-0 layout hints, at most 2 rounds, then reports the figure to the owner with its numbers and builds nothing for it until the owner decides. |
+| A figure cannot meet 1 crossing and 860 px after variants and arrow dropping | `build` exits 1 naming the figure and its best layout line. The controller splits the diagram (moves a group of nodes to a child level) or adds level-0 layout hints, at most 2 rounds, then reports the figure to the owner with its numbers. `build` stays stopped until the owner decides, through a layout hint or a split; no flag holds one figure back. |
 | A huge repo | The planning pass shows the estimate and the owner trims areas, levels or chapters before anything runs. An area over 400 files is split into sub-areas, one subagent each. The page is one file; its size is reported, and splitting it is out of scope until a proof run shows the need. |
 | A Markdown target without the generated marker | That file is left alone and listed; the plan renames the doc. |
 | A theme pair fails contrast | fx's value for that slot, listed in the report. |

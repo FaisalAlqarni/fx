@@ -79,9 +79,9 @@ for (const name of ['fx-critique', 'fx-grill', 'fx-handoff', 'fx-pr', 'fx-retro'
   const sharedAt = lane.indexOf('`chapters.json` and `level0.json`');
   assert.ok(planStep >= 0 && sharedAt > planStep && sharedAt < dispatch, 'fx-system-flow writes chapters.json and level0.json in step 2, before the dispatch');
   const sidecar: Record<string, string[]> = {
-    'planning.md': ['filesToRead', 'levels', 'meta.roots', 'before any area is dispatched', '<area id>-l1'],
+    'planning.md': ['filesToRead', 'levels', 'meta.roots', 'before any area is dispatched', '<area id>-l1', 'l0-<area id>', 'of its own diagram'],
     'area-brief.md': ['level 3', '8 to 12 primary nodes', 'context nodes', '<area id>-l1', 'section ids'],
-    'fragment-guide.md': ['starts with its area id', '<kind>:<id>'],
+    'fragment-guide.md': ['starts with its area id', '<kind>:<id>', 'l0-<area id>', 'links nodes of its own diagram'],
     'interview.md': ['Every question carries a recommended answer'],
     'check-and-report.md': ['depth', 'planned'],
   };

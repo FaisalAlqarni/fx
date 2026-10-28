@@ -30,7 +30,11 @@ Merge concatenates arrays and unions the `stores` tables. The controller owns
   coexist, two nodes `api` may not, in any two fragments.
 - Every node id starts with its area id and a dash (`engine-api`), so two
   areas never collide. Diagram, sequence and store flow ids take the same
-  prefix (`engine-l2-delivery`).
+  prefix (`engine-l2-delivery`). The one exception is the controller's
+  `level0.json`: its diagram is `level0` and its nodes are `l0-<area id>`.
+- An edge links nodes of its own diagram: `from` and `to` are node ids in the
+  diagram that holds the edge. To show a part of another diagram, add a
+  context node (`"primary": false`) to this one and link to that.
 - Derived ids, never declared: an edge is `<diagram id>:<from>><to>` (with
   `#2`, `#3` for a second and third edge between the same pair), a
   participant `<sequence id>.<participant id>`, a message

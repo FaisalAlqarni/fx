@@ -87,8 +87,10 @@ area's `check --fragment` finds the ids it names. Check each file with
 - `level0.json`: the level-0 diagram, id `level0`, `level: 0`, with
   `levels.root` set to `level0`. One node per area, id `l0-<area id>`, each
   with at least one edge (to another area, or to a context node such as the
-  users) and no `children` yet. Nodes and edges carry evidence from the
-  planning reads, or `unconfirmed` with a question. Each area writes its level-1
+  users) and no `children` yet. The `l0-` prefix is the one id form that does
+  not start with the area's own id (`fragment-guide.md`, Ids), and an edge
+  links nodes of its own diagram, so every level-0 edge ends on a level-0 node.
+  Nodes and edges carry evidence from the planning reads, or `unconfirmed` with a question. Each area writes its level-1
   diagram as `<area id>-l1` with `parent: "level0"`; the lane sets the
   level-0 node's `children` to it when the area returns.
 
