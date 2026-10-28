@@ -7,6 +7,7 @@ import type { DiagramFlags } from '../lib/sf-build.js';
 import { itemsOf, originOf, parseHandle } from '../lib/sf-model.js';
 import { changedPaths, diffBases, loadModelItems, queryPaths, staleItems, unusableRoots, verifyItems } from '../lib/sf-stale.js';
 import { estimate, readPlan } from '../lib/sf-estimate.js';
+import { verifyEvidence } from '../lib/sf-evidence.js';
 import { detect, docsConfig, writeFxJson } from '../lib/sf-detect.js';
 
 const USAGE = 'system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build [--only <handle|path>[,...]]... [--archify <dir>] [--archify-timeout <seconds>] [--prefer cheap|fast|detailed] [--page-limit <name>=<1-8>]... [--svg <name>]... | estimate <plan file> | detect [--repo <path>]... [--write] | query <path>... | query --diff <base> [--base <root id>=<ref>]... | stale | verify <handle>... | --all';
@@ -172,8 +173,11 @@ function staleCmd(): void {
 
 function verifyCmd(): void {
   const root = hostRoot();
-  const { roots, fragmentsDir } = loadModelItems(root, siteOf(root));
+  const { items, roots, fragmentsDir } = loadModelItems(root, siteOf(root));
   refuseUnusable(roots);
+  // A stamp says the evidence holds at HEAD, so it is checked as build checks it before anything is written.
+  const named = verifyAll ? items : items.filter((i) => queried.includes(i.handle));
+  if (report(verifyEvidence(named, roots, 'build')) > 0) process.exit(1);
   print({ verified: verifyItems(root, fragmentsDir, verifyAll ? 'all' : queried, roots) });
 }
 

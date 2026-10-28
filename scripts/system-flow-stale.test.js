@@ -241,6 +241,19 @@ ${r.stdout}`);
 }
 {
   const f = setup();
+  editX(f, (l) => l.map((x, i) => i === 10 ? "  def gone?" : x));
+  const before = fragBytes(f);
+  const r = f.run(["verify", "node:link"]);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(r.stderr.includes("node:link: backend/app/x.rb:10-12 Link#expired?: symbol not in cited lines"), r.stderr);
+  assert.deepStrictEqual(fragBytes(f), before, "nothing written");
+  f.put("host", "app/y.rb", "module Y\n  Z = 1\nend\n");
+  const dirty = f.run(["verify", "edge:system:link>db"]);
+  assert.strictEqual(dirty.status, 1, "an uncommitted cited file fails as in build");
+  assert.deepStrictEqual(fragBytes(f), before, "nothing written");
+}
+{
+  const f = setup();
   f.git("host", "worktree", "add", "-q", ".worktrees/x", "-b", "x");
   const wt = path.join(f.host, ".worktrees", "x");
   const runIn = (args) => (0, import_child_process.spawnSync)(process.execPath, [path.join(__dirname, "system-flow"), "--root", wt, ...args], { encoding: "utf8", env: f.env() });

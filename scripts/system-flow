@@ -29,6 +29,7 @@ var import_sf_build = require("../lib/sf-build.js");
 var import_sf_model = require("../lib/sf-model.js");
 var import_sf_stale = require("../lib/sf-stale.js");
 var import_sf_estimate = require("../lib/sf-estimate.js");
+var import_sf_evidence = require("../lib/sf-evidence.js");
 var import_sf_detect = require("../lib/sf-detect.js");
 const USAGE = "system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build [--only <handle|path>[,...]]... [--archify <dir>] [--archify-timeout <seconds>] [--prefer cheap|fast|detailed] [--page-limit <name>=<1-8>]... [--svg <name>]... | estimate <plan file> | detect [--repo <path>]... [--write] | query <path>... | query --diff <base> [--base <root id>=<ref>]... | stale | verify <handle>... | --all";
 const usage = () => {
@@ -206,8 +207,10 @@ function staleCmd() {
 }
 function verifyCmd() {
   const root = hostRoot();
-  const { roots, fragmentsDir } = (0, import_sf_stale.loadModelItems)(root, siteOf(root));
+  const { items, roots, fragmentsDir } = (0, import_sf_stale.loadModelItems)(root, siteOf(root));
   refuseUnusable(roots);
+  const named = verifyAll ? items : items.filter((i) => queried.includes(i.handle));
+  if (report((0, import_sf_evidence.verifyEvidence)(named, roots, "build")) > 0) process.exit(1);
   print({ verified: (0, import_sf_stale.verifyItems)(root, fragmentsDir, verifyAll ? "all" : queried, roots) });
 }
 async function buildCmd() {
