@@ -66,6 +66,14 @@ It prints problems as `<file>:<pointer>: <message>`. Fix each problem in your
 file from the code. A problem naming another file is not yours: list it in
 your return and leave that file alone.
 
+`check --fragment` also lays out your figures. A problem
+`figure <key> cannot meet 1 crossing and 860 px` means that diagram is too
+wide or too tangled for the page: split it one level down before you return.
+Move a group of its nodes into a new child diagram, give the node that stands
+for the group `children` naming it, and check again. The split keeps every
+arrow labelled on automatic layout, so leave `layout` unset. Splits sit outside
+the fix-round count.
+
 At most 2 fix rounds after your first full write. An item still failing after
 round 2: set `"unconfirmed": true`, remove its evidence, add a question for it,
 and list it in your return.

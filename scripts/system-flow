@@ -147,11 +147,18 @@ function estimateCmd() {
   if (plan === null) process.exit(1);
   print((0, import_sf_estimate.estimate)(plan));
 }
-function check() {
+async function check() {
   const root = hostRoot();
   const site = opts.site ?? (0, import_sf_build.systemFlowConfig)(root).config?.output?.site ?? "docs/system-flow";
   const checked = (0, import_sf_build.checkModel)(root, site, "check", fragmentArg);
   if (report(checked.problems) > 0) process.exit(1);
+  if (fragmentArg !== void 0) {
+    const only = path.relative(root, path.resolve(root, fragmentArg));
+    const own = (o) => (0, import_sf_model.originOf)(o).file === only;
+    const m = checked.model;
+    const mine = { ...m, levels: { ...m.levels, diagrams: m.levels.diagrams.filter(own) }, sequences: m.sequences.filter(own), storeFlows: m.storeFlows.filter(own) };
+    if (report((await (0, import_sf_build.layoutChecked)(mine)).unfit) > 0) process.exit(1);
+  }
   const warnings = checked.problems.map((p) => `${p.file}:${p.pointer}: ${p.message}`);
   process.stdout.write(`${JSON.stringify({ ok: true, fragments: checked.fragments.length, items: (0, import_sf_model.itemsOf)(checked.model).length, warnings })}
 `);

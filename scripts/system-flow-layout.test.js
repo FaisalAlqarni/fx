@@ -150,6 +150,17 @@ async function main() {
     assert.ok(crossings >= 2, hit[0]);
   }
   {
+    const at = { a: [0, 0], b: [1, 1], c: [0, 1], d: [1, 0], e: [2, 0], f: [3, 1], g: [2, 1], h: [3, 0], i: [0, 2], j: [1, 2] };
+    const layout = Object.fromEntries(Object.entries(at).map(([id, [col, row]]) => [id, { col, row }]));
+    const w = (id) => `w${id}`;
+    const wide = { id: "wide", level: 1, parent: "system", nodes: Object.keys(at).map((id) => node(w(id))), edges: [edge(w("a"), w("b")), edge(w("c"), w("d")), edge(w("e"), w("f")), edge(w("g"), w("h")), edge(w("i"), w("j"))], layout: Object.fromEntries(Object.entries(layout).map(([id, v]) => [w(id), v])) };
+    const f = setup(chain(), [wide]);
+    const r = f.run(["check", "--fragment", `${F}/area.json`]);
+    assert.strictEqual(r.status, 1, `${r.stdout}${r.stderr}`);
+    assert.match(r.stderr, /^docs\/system-flow\/model\/fragments\/area\.json:\/levels\/diagrams\/0: figure level-wide cannot meet 1 crossing and 860 px: level-wide .*; split it one level down$/m);
+    assert.strictEqual(f.run(["check", "--fragment", `${F}/level0.json`]).status, 0, "another fragment does not answer for it");
+  }
+  {
     const layout = { a: { col: 0, row: 0 }, b: { col: 1, row: 0 } };
     const f = setup({ id: "system", level: 0, nodes: [node("a"), node("b")], edges: [edge("a", "b"), edge("a", "a", "retries")], layout });
     built(f);

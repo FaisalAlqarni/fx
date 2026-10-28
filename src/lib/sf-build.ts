@@ -20,7 +20,7 @@ import { applyThemeBlock, deepDiagrams, findArchify, outsideRefs, pickLine, runA
 import type { DeepDiagram } from './sf-diagrams.js';
 import { detectTheme, themeCss } from './sf-theme.js';
 import type { Theme } from './sf-theme.js';
-import type { Evidenced, Fragment, Item, LayoutLine, Model, Problem } from './sf-model.js';
+import type { Evidenced, FigureSpec, Fragment, Item, LayoutLine, Model, Problem } from './sf-model.js';
 import { collect, itemsOf, loadFragments, mergeFragments, originOf, parseHandle, planStamps, stampVerified } from './sf-model.js';
 import type { FxJson } from './types.js';
 
@@ -149,6 +149,18 @@ function selectOnly(model: Model, items: Item[], only: string[], hostId: string)
   return { unknown, selected: sel, figures, sections, components: has('catalogue'), rules: has('rule') };
 }
 
+// Lays out every figure; each one over 1 crossing or 860 px is an error at the fragment that defines it.
+export async function layoutChecked(model: Model): Promise<{ figures: FigureSpec[]; report: LayoutLine[]; unfit: Problem[] }> {
+  const laid = await layoutAll(model);
+  const owners = new Map<string, object>([
+    ...model.levels.diagrams.map((d): [string, object] => [`level-${d.id}`, d]),
+    ...model.sequences.map((q): [string, object] => [`seq-${q.id}`, q]),
+    ...model.storeFlows.map((f): [string, object] => [`flow-${f.id}`, f]),
+  ]);
+  const unfit = laid.unfit.map((u): Problem => ({ ...originOf(owners.get(u.key) ?? {}), message: `figure ${u.key} cannot meet 1 crossing and 860 px: ${u.line}; split it one level down`, level: 'error' }));
+  return { figures: laid.figures, report: laid.report, unfit };
+}
+
 export async function build(opts: { hostRoot: string; site: string; markdown: string; docsDir?: string | null; only?: string[]; archify?: string; flags?: DiagramFlags }): Promise<BuildResult> {
   const result: BuildResult = { ok: false, problems: [], written: [], collisions: [], diagrams: [], layout: [], pageBytes: null, coverage: null, theme: null, depth: null, rebuilt: { docs: [], figures: [], diagrams: [] } };
   const checked = checkModel(opts.hostRoot, opts.site, 'build');
@@ -176,17 +188,9 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   }
 
   // Layout before any write: a figure over 1 crossing or 860 px fails the build with nothing written.
-  const laid = await layoutAll(checked.model);
+  const laid = await layoutChecked(checked.model);
   result.layout = laid.report;
-  const owners = new Map<string, object>([
-    ...checked.model.levels.diagrams.map((d): [string, object] => [`level-${d.id}`, d]),
-    ...checked.model.sequences.map((q): [string, object] => [`seq-${q.id}`, q]),
-    ...checked.model.storeFlows.map((f): [string, object] => [`flow-${f.id}`, f]),
-  ]);
-  for (const u of laid.unfit) {
-    const at = originOf(owners.get(u.key) ?? {});
-    result.problems.push({ ...at, message: `figure ${u.key} cannot meet 1 crossing and 860 px: ${u.line}`, level: 'error' });
-  }
+  result.problems.push(...laid.unfit);
   if (laid.unfit.length) return result;
 
   const hasMarker = (old: string): boolean => old.includes(GENERATED);

@@ -2,9 +2,9 @@
 // The system model CLI: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check | build
 import * as path from 'path';
 import { execFileSync } from 'child_process';
-import { build, checkModel, systemFlowConfig } from '../lib/sf-build.js';
+import { build, checkModel, layoutChecked, systemFlowConfig } from '../lib/sf-build.js';
 import type { DiagramFlags } from '../lib/sf-build.js';
-import { itemsOf, parseHandle } from '../lib/sf-model.js';
+import { itemsOf, originOf, parseHandle } from '../lib/sf-model.js';
 import { changedPaths, diffBases, loadModelItems, queryPaths, staleItems, verifyItems } from '../lib/sf-stale.js';
 import { estimate, readPlan } from '../lib/sf-estimate.js';
 import { detect, docsConfig, writeFxJson } from '../lib/sf-detect.js';
@@ -116,11 +116,19 @@ function estimateCmd(): void {
   print(estimate(plan));
 }
 
-function check(): void {
+async function check(): Promise<void> {
   const root = hostRoot();
   const site = opts.site ?? systemFlowConfig(root).config?.output?.site ?? 'docs/system-flow';
   const checked = checkModel(root, site, 'check', fragmentArg);
   if (report(checked.problems) > 0) process.exit(1);
+  // An area agent runs check --fragment before it returns: lay out that fragment's figures so it can split an unfit one.
+  if (fragmentArg !== undefined) {
+    const only = path.relative(root, path.resolve(root, fragmentArg));
+    const own = (o: object): boolean => originOf(o).file === only;
+    const m = checked.model;
+    const mine = { ...m, levels: { ...m.levels, diagrams: m.levels.diagrams.filter(own) }, sequences: m.sequences.filter(own), storeFlows: m.storeFlows.filter(own) };
+    if (report((await layoutChecked(mine)).unfit) > 0) process.exit(1);
+  }
   const warnings = checked.problems.map((p) => `${p.file}:${p.pointer}: ${p.message}`);
   process.stdout.write(`${JSON.stringify({ ok: true, fragments: checked.fragments.length, items: itemsOf(checked.model).length, warnings })}\n`);
 }
