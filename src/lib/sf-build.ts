@@ -8,8 +8,9 @@ import { resolveRoots, verifyEvidence } from './sf-evidence.js';
 import type { Root } from './sf-evidence.js';
 import { renderMarkdown, renderReadme, GENERATED } from './sf-markdown.js';
 import { checkRules } from './sf-rules.js';
+import { layoutAll } from './sf-layout.js';
 import type { Evidenced, Fragment, Item, LayoutLine, Model, Problem } from './sf-model.js';
-import { collect, itemsOf, loadFragments, mergeFragments, planStamps, stampVerified } from './sf-model.js';
+import { collect, itemsOf, loadFragments, mergeFragments, originOf, planStamps, stampVerified } from './sf-model.js';
 import type { FxJson } from './types.js';
 
 export type BuildResult = {
@@ -83,6 +84,20 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
     if (add) (o as Evidenced).verified = { ...(o as Evidenced).verified, ...add };
   }
 
+  // Layout before any write: a figure over 1 crossing or 860 px fails the build with nothing written.
+  const laid = await layoutAll(checked.model);
+  result.layout = laid.report;
+  const owners = new Map<string, object>([
+    ...checked.model.levels.diagrams.map((d): [string, object] => [`level-${d.id}`, d]),
+    ...checked.model.sequences.map((q): [string, object] => [`seq-${q.id}`, q]),
+    ...checked.model.storeFlows.map((f): [string, object] => [`flow-${f.id}`, f]),
+  ]);
+  for (const u of laid.unfit) {
+    const at = originOf(owners.get(u.key) ?? {});
+    result.problems.push({ ...at, message: `figure ${u.key} cannot meet 1 crossing and 860 px: ${u.line}`, level: 'error' });
+  }
+  if (laid.unfit.length) return result;
+
   const hostId = [...checked.roots.values()].find((r) => r.host)?.id ?? '';
   const hasMarker = (old: string): boolean => old.includes(GENERATED);
   for (const doc of renderMarkdown(checked.model, checked.roots, hostId, opts.markdown, opts.site)) {
@@ -91,6 +106,8 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'README.md'), renderReadme(), hasMarker, result);
   const isGeneratedJson = (old: string): boolean => { try { return (parseJson(old) as { generated?: unknown }).generated === true; } catch { return false; } };
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'model', 'system-model.json'), `${JSON.stringify({ generated: true, ...checked.model }, null, 2)}\n`, isGeneratedJson, result);
+
+  writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'model', 'layout-report.json'), `${JSON.stringify(laid.report, null, 2)}\n`, () => true, result);
 
   // Last step, only when everything above succeeded (a write error above throws before this line).
   stampVerified(path.join(opts.hostRoot, opts.site, 'model', 'fragments'), stamps);

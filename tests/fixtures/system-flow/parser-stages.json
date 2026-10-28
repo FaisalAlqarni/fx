@@ -1,0 +1,284 @@
+{
+  "systemFlowLine": {
+    "line": "arch:parser-stages 680x1092 TB cross=0 hits=0 nodes=10 arrows=10 notDrawn=0 unlabeled=6",
+    "width": 680,
+    "height": 1092,
+    "crossings": 0,
+    "nodeHits": 0,
+    "nodes": 10,
+    "arrows": 10,
+    "notDrawn": 0
+  },
+  "diagram": {
+    "id": "parser-stages",
+    "level": 2,
+    "parent": "parser",
+    "title": "Parser part: the stages of one parse",
+    "summary": "Seven phases by seven subagents under the orchestrator, then the verdict. Progress is read from files, not from the model.",
+    "groups": [],
+    "nodes": [
+      {
+        "id": "ps-orch",
+        "label": "parser (orchestrator)",
+        "kind": "backend",
+        "role": "Runs the checklist; on FAIL sends the fix list to the owner subagent; at most 2 fix rounds, then needs_human.",
+        "primary": true,
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      },
+      {
+        "id": "ps-intake",
+        "label": "0 intake (5)",
+        "kind": "backend",
+        "role": "00-intake.json: file inventory, framework fingerprint, sibling hashes, remote code list, mapping row.",
+        "primary": true,
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      },
+      {
+        "id": "ps-recon",
+        "label": "1 recon (15)",
+        "kind": "backend",
+        "role": "10-recon.json sections: provider, framework, environments, base_paths, language, header_sets, auth, error_contract; auth_signals first.",
+        "primary": true,
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      },
+      {
+        "id": "ps-flows",
+        "label": "2 flows (30)",
+        "kind": "backend",
+        "role": "20-flows.json, one validated step per call in the engine's skill vocabulary.",
+        "primary": true,
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      },
+      {
+        "id": "ps-security",
+        "label": "3 security (8)",
+        "kind": "security",
+        "role": "30-security.md: file and kind of shipped keys, never values.",
+        "primary": true,
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      },
+      {
+        "id": "ps-skill",
+        "label": "4 skill (20)",
+        "kind": "backend",
+        "role": "parser_draft_skill writes skill(.<service>).json and deployment.json; no environments or hosts in the skill; hosts and bundle credentials go to deployment.json.",
+        "primary": true,
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      },
+      {
+        "id": "ps-docs",
+        "label": "5 docs (10)",
+        "kind": "backend",
+        "role": "technical.md, business(.<service>).md (14 sections), mocks.md and mocks.json; labels copied, not translated.",
+        "primary": true,
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      },
+      {
+        "id": "ps-verify",
+        "label": "6 verify (12)",
+        "kind": "security",
+        "role": "Runs the 8 gates and judgement checks; writes 60-verify.md with ## Verdict: PASS or FAIL.",
+        "primary": true,
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      },
+      {
+        "id": "ps-smoke",
+        "label": "Smoke gate",
+        "kind": "security",
+        "role": "Draft upload to the Admin (no deployment.json), hostsIfNone, engine test-run in auto mode against the mocks, up to 60 device rounds.",
+        "primary": true,
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      },
+      {
+        "id": "ps-verdict",
+        "label": "Verdict",
+        "kind": "backend",
+        "role": "PASS -> passed; FAIL -> failed, or needs_human after 3 verify rounds; no verdict -> error. Batch-only gates are not enforced by the server.",
+        "primary": true,
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "ps-orch",
+        "to": "ps-intake",
+        "label": "task",
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      },
+      {
+        "from": "ps-intake",
+        "to": "ps-recon",
+        "label": "",
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      },
+      {
+        "from": "ps-recon",
+        "to": "ps-flows",
+        "label": "",
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      },
+      {
+        "from": "ps-flows",
+        "to": "ps-security",
+        "label": "",
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      },
+      {
+        "from": "ps-security",
+        "to": "ps-skill",
+        "label": "",
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      },
+      {
+        "from": "ps-skill",
+        "to": "ps-docs",
+        "label": "",
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      },
+      {
+        "from": "ps-docs",
+        "to": "ps-verify",
+        "label": "",
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      },
+      {
+        "from": "ps-verify",
+        "to": "ps-smoke",
+        "label": "gate 4",
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      },
+      {
+        "from": "ps-verify",
+        "to": "ps-orch",
+        "label": "FAIL: fix list",
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      },
+      {
+        "from": "ps-verify",
+        "to": "ps-verdict",
+        "label": "60-verify.md",
+        "evidence": [
+          {
+            "path": "app/x.rb",
+            "lines": "1-4",
+            "symbol": "Link"
+          }
+        ]
+      }
+    ]
+  }
+}
