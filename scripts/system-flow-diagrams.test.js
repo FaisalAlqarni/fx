@@ -233,6 +233,12 @@ function rest() {
     const seq = read(f, `${D}/seq-turn.html`);
     assert.ok(seq.includes("<animate") || seq.includes("@keyframes") && seq.includes("prefers-reduced-motion"));
   }
+  for (const [n, first] of [["seq-turn", 1], ["seq-turn-p2", 9], ["flow-first", 1]]) {
+    const items = [...read(f, `${D}/${n}.html`).matchAll(/<li\b([^>]*)>([^<]*)/g)];
+    assert.ok(items.length > 0, n);
+    assert.ok(items.every((m) => !/^\s*\d+\.\s/.test(m[2] ?? "")), `${n}: no item text starts with its own number: ${items[0]?.[2]}`);
+    assert.strictEqual(items[0]?.[1], ` value="${first}"`, `${n}: the first item is number ${first}`);
+  }
   for (const n of ["arch-engine", "seq-turn"]) {
     const html = read(f, `${D}/${n}.html`);
     const w = Number(/<svg\b[^>]*\swidth="(\d+)"/.exec(html)?.[1]);

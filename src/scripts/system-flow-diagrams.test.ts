@@ -214,6 +214,14 @@ assert.deepStrictEqual(validate({ type: 'string', format: 'email' }, 'x'), [{ po
   assert.ok(seq.includes('<animate') || (seq.includes('@keyframes') && seq.includes('prefers-reduced-motion')));
 }
 
+// A sequence page numbers each step once, by the list, and page 2 goes on from the message number.
+for (const [n, first] of [['seq-turn', 1], ['seq-turn-p2', 9], ['flow-first', 1]] as const) {
+  const items = [...read(f, `${D}/${n}.html`).matchAll(/<li\b([^>]*)>([^<]*)/g)];
+  assert.ok(items.length > 0, n);
+  assert.ok(items.every((m) => !/^\s*\d+\.\s/.test(m[2] ?? '')), `${n}: no item text starts with its own number: ${items[0]?.[2]}`);
+  assert.strictEqual(items[0]?.[1], ` value="${first}"`, `${n}: the first item is number ${first}`);
+}
+
 // A narrow screen keeps the diagram's 13 px text at 12 px or more: the svg never shrinks below 12/13 of its drawn
 // width, and it scrolls inside its own box so the page does not scroll sideways.
 for (const n of ['arch-engine', 'seq-turn']) {

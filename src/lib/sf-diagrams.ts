@@ -201,7 +201,10 @@ export function svgPage(d: DeepDiagram, figure: FigureSpec, page: number): strin
     return `<path d="${escapeHtml(e.d)}" class="edge${e.mode === 'async' ? ' async' : ''}" marker-end="url(#arrow)"${style}/>${label}`;
   }).join('');
   const nodes = figure.nodes.map((n) => `<g><rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="8" class="node${n.primary ? '' : ' ctx'}"/>${n.lines.map((l, i) => `<text x="${n.x + n.w / 2}" y="${n.y + n.h / 2 + (i - (n.lines.length - 1) / 2) * 15 + 4}" text-anchor="middle" class="ink">${escapeHtml(l)}</text>`).join('')}</g>`).join('');
-  const captions = (animated ? mine.map((n) => figure.steps[n - 1]?.caption) : figure.steps.map((s) => s.caption)).filter((c): c is string => !!c);
+  // A sequence caption starts with its message number, which the list already shows as the item's value.
+  const items = animated
+    ? mine.flatMap((n) => { const c = figure.steps[n - 1]?.caption; return c ? [`<li value="${n}">${escapeHtml(c.startsWith(`${n}. `) ? c.slice(`${n}. `.length) : c)}</li>`] : []; })
+    : figure.steps.flatMap((s) => (s.caption ? [`<li>${escapeHtml(s.caption)}</li>`] : []));
   const title = escapeHtml(spec.meta.title);
   // Node text is 13 px: the svg never shrinks below 12/13 of its width, and a narrow screen scrolls it in .scroll.
   return `<!doctype html>
@@ -235,7 +238,7 @@ ${groups}${edges}${nodes}
 </svg>
 </div>
 <ol>
-${captions.map((c) => `<li>${escapeHtml(c)}</li>`).join('\n')}
+${items.join('\n')}
 </ol>
 </body>
 </html>
