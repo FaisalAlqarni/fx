@@ -115,6 +115,15 @@ const { out, err } = build(f);
   assert.ok(JSON.stringify(spec(g, 'arch-engine').cards).includes('@backend/app/api.rb:10-42'), JSON.stringify(spec(g, 'arch-engine').cards));
 }
 
+// A local-path origin (a clone of a clone) is no remote address: archify rejects it as url-invalid, so the spec
+// carries no repository, exactly as with no remote.
+{
+  const g = setup();
+  g.git('host', 'remote', 'set-url', 'origin', g.guide);
+  build(g);
+  for (const n of fs.readdirSync(path.join(g.host, D, 'src'))) assert.ok(!('repository' in (parseJson(read(g, `${D}/src/${n}`)) as Obj).meta), n);
+}
+
 // Cross-root evidence goes to the steps card, not to sources.
 {
   const g = setup();

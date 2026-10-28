@@ -24,6 +24,11 @@ export function resolveCommit(dir: string, ref: string): string | null {
   return sha !== undefined && COMMIT.test(sha) ? sha : null;
 }
 
+// Only a network address (URL or scp-style git@host:path) is a remote: archify rejects a local path as url-invalid,
+// and a path names one machine's folders, so it never goes into the model.
+const address = (remote: string | undefined): string | null =>
+  remote !== undefined && (/^(?!file:)[a-z][a-z0-9+.-]*:\/\//i.test(remote) || /^[^/\s@]+@[^/\s:]+:/.test(remote)) ? remote : null;
+
 export function resolveRoots(hostRoot: string, meta: Meta, fx: FxJson['system_flow']): { roots: Map<string, Root>; problems: Problem[] } {
   const roots = new Map<string, Root>();
   const problems: Problem[] = [];
@@ -41,7 +46,7 @@ export function resolveRoots(hostRoot: string, meta: Meta, fx: FxJson['system_fl
     roots.set(r.id, {
       id: r.id, dir, git: isGit, host: i === 0,
       head: isGit ? git(dir, ['rev-parse', 'HEAD'])?.trim() ?? null : null,
-      remote: isGit ? git(dir, ['remote', 'get-url', 'origin'])?.trim() ?? r.remote ?? null : r.remote ?? null,
+      remote: address(isGit ? git(dir, ['remote', 'get-url', 'origin'])?.trim() ?? r.remote : r.remote),
     });
   });
   return { roots, problems };

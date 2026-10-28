@@ -154,6 +154,12 @@ const { out, err } = build(f);
 }
 {
   const g = setup();
+  g.git("host", "remote", "set-url", "origin", g.guide);
+  build(g);
+  for (const n of fs.readdirSync(path.join(g.host, D, "src"))) assert.ok(!("repository" in (0, import_json.parseJson)(read(g, `${D}/src/${n}`)).meta), n);
+}
+{
+  const g = setup();
   const lvl = (0, import_json.parseJson)(fs.readFileSync(path.join(g.host, `${SITE}/model/fragments/level0.json`), "utf8"));
   const api = lvl.levels.diagrams[1].nodes[0];
   api.evidence = [api.evidence[0], api.evidence[3], { root: "guide", path: "README.md", lines: "1", symbol: "Guide" }];

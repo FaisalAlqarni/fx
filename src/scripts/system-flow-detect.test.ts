@@ -85,6 +85,15 @@ const mkdocs = (f: Fx, body = 'docs_dir: docs\ntheme:\n  name: material\n'): voi
   assert.deepStrictEqual({ ...d.roots[0], dir: '' }, { id: 'host', path: '.', dir: '', git: true, remote: null, head: f.git('host', 'rev-parse', 'HEAD') });
   assert.deepStrictEqual(d.roots[1], { id: 'guide', path: '../guide', dir: f.guide, git: true, remote: null, head: f.git('guide', 'rev-parse', 'HEAD') });
 }
+{ // a local-path origin is no remote address, so detect prints none and no machine path reaches the model
+  const f = sfFixture();
+  f.fxJson({ system_flow: { roots: { guide: '../guide' } } });
+  f.git('guide', 'remote', 'add', 'origin', f.host);
+  f.git('host', 'remote', 'add', 'origin', 'git@example.com:acme/app.git');
+  const d = ok(f);
+  assert.strictEqual(d.roots[1]?.remote, null);
+  assert.strictEqual(d.roots[0]?.remote, 'git@example.com:acme/app.git');
+}
 { // --repo and --write
   const f = sfFixture();
   const d = ok(f, ['--repo', '../guide', '--repo', '../plain', '--write']);

@@ -112,6 +112,15 @@ ${MARK}
 }
 {
   const f = (0, import_sf_fixture.sfFixture)();
+  f.fxJson({ system_flow: { roots: { guide: "../guide" } } });
+  f.git("guide", "remote", "add", "origin", f.host);
+  f.git("host", "remote", "add", "origin", "git@example.com:acme/app.git");
+  const d = ok(f);
+  assert.strictEqual(d.roots[1]?.remote, null);
+  assert.strictEqual(d.roots[0]?.remote, "git@example.com:acme/app.git");
+}
+{
+  const f = (0, import_sf_fixture.sfFixture)();
   const d = ok(f, ["--repo", "../guide", "--repo", "../plain", "--write"]);
   assert.deepStrictEqual(d.roots[2], { id: "plain", path: "../plain", git: false, remote: null, head: null, dir: f.plain });
   const text = fs.readFileSync(path.join(f.host, ".fx.json"), "utf8");
