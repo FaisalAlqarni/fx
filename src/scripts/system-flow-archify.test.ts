@@ -36,6 +36,8 @@ const messages = (spec.messages || []).length;
 const evidence = path.join(path.dirname(out), name + '.browser-check.json');
 const conflict = process.env.FAKE_EVIDENCE === '1' && fs.existsSync(evidence);
 const bad = conflict || fails.some((n) => name === n || name.startsWith(n + '-p')) || (type === 'sequence' && messages > max);
+// archify leaves a pending marker beside a page whose delivery it did not finish.
+fs.writeFileSync(path.join(path.dirname(out), name + '.delivery-pending.json'), '{}');
 if (process.env.FAKE_HANG === name) await new Promise((r) => setTimeout(r, 60000));
 const receipt = a[a.indexOf('--receipt') + 1];
 fs.mkdirSync(path.dirname(receipt), { recursive: true });
@@ -108,6 +110,7 @@ const reason = (o: { diagrams: Diag[] }, name: string): Diag => o.diagrams.find(
     assert.deepStrictEqual(c.args, ['finalize', type, path.join(f.host, D, 'src', `${c.name}.json`), path.join(f.host, D, `${c.name}.html`),
       '--repo-root', f.host, '--quality', 'showcase', '--receipt', path.join(f.host, D, `${c.name}.receipt.json`), '--json'], c.name);
   }
+  assert.deepStrictEqual(fs.readdirSync(path.join(f.host, D)).filter((n) => n.endsWith('.delivery-pending.json')), [], 'no pending marker outlives the build (A22)');
 }
 
 { // A second build keeps archify: it clears the browser-check evidence of the pages it rewrote with the theme block

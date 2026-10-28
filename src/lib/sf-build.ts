@@ -315,6 +315,10 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   }
   for (const g of retried.values()) writeSpecs(g);
   const second = retried.size ? await runAll([...retried.values()], true) : new Map<string, Run[]>();
+  // archify leaves <page>.delivery-pending.json beside a page whose delivery it did not finish; every call has
+  // ended here (one at a time), so none is in flight and each marker is a leftover.
+  const pagesAbs = path.join(opts.hostRoot, pages);
+  if (live.length && fs.existsSync(pagesAbs)) for (const n of fs.readdirSync(pagesAbs)) if (n.endsWith('.delivery-pending.json')) fs.rmSync(writable(opts.hostRoot, path.join(pagesAbs, n)));
 
   const msgs = (g: DeepDiagram[]): number => g.reduce((n, d) => n + ((d.spec as { messages?: unknown[] }).messages?.length ?? 0), 0);
   for (const g of groups) {
