@@ -78,11 +78,12 @@ export function detect(hostRoot: string, repos: string[]): { detected: Detected;
   const listed = new Map<string, string>(); // id -> path relative to the host root
   const given: Record<string, string> = {};
   const seen = new Map<string, string>(); // resolved dir -> id
-  const hostId = rootId(hostRoot);
+  // .fx.json roots are relative to the main working tree; a --repo path is relative to the host root.
+  // The host id comes from the main working tree too, so a linked worktree's folder name never becomes it.
+  const rootBase = rootsBase(hostRoot);
+  const hostId = rootId(rootBase);
   listed.set(hostId, '.');
   seen.set(hostRoot, hostId);
-  // .fx.json roots are relative to the main working tree; a --repo path is relative to the host root.
-  const rootBase = rootsBase(hostRoot);
   const add = (id: string, shown: string, p: string, from: string): void => {
     const dir = path.resolve(from, p);
     if (seen.has(dir)) return;

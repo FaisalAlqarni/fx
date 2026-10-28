@@ -246,6 +246,7 @@ const editX = (f: Fx, edit: (lines: string[]) => string[]): string => {
   const d = runIn(['detect']);
   assert.strictEqual(d.status, 0, d.stderr);
   assert.strictEqual(out(d).roots[1].dir, f.guide, 'detect finds ../guide beside the main working tree');
+  assert.strictEqual(out(d).roots[0].id, 'host', 'the host id comes from the main working tree, not the worktree folder');
   assert.deepStrictEqual(handles(runIn(['query', '@guide/README.md'])), ['bullet:b2']);
   const s = runIn(['stale']);
   assert.strictEqual(s.status, 0, s.stderr);
