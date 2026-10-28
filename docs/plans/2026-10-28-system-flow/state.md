@@ -104,3 +104,25 @@ Task 03: cost unavailable (no transcript recorded)
 Task 03: complete (commits abf752f..3e85a0a, review clean after 1 fix round)
 Waiting: task 04 implementer (a5c1b53dda83043cc); task 06 is on the frontier but implementers run serially.
 Task 04: DONE_WITH_CONCERNS 3e85a0a..e289dab, test_scope ALL GREEN per implementer. Concerns: build test written after the code (RED shown only as exit 2 against the old CLI), only and archify flags accepted and ignored (tasks 12 and 17 own them), partial writes survive a mid-build failure. Passed to the reviewer.
+Task 04: reviewer dispatched (sonnet), findings findings/04-review.md.
+Task 06: dispatched 460bdd0 2026-10-28T11:15:17+03:00
+Task 06: implementer ab92dc322a3ba5f94 (sonnet). Waiting: task 04 review (ab755dcd26ab79e1e) and task 06 implementer.
+Task 04: minor (deferred): stampVerified writes fragments one by one, not atomically.
+Task 04: minor (deferred): prose escapes only ampersand, angle brackets; backticks and leading list or heading markers pass through.
+Task 04: minor (deferred): Mermaid participant ids and from/to are unescaped, an id like end would break the diagram.
+Task 04: minor (deferred): docs-index skips any host path starting with at-sign as other-root.
+Task 04: minor (deferred): rules-in-force.md and coverage.md are not generated yet.
+Task 04: review 0/1/5 spec ✅ (reviewer wrote "## Ledger", not "## Ledger lines"; 5 minors copied by line range, count matches). Open: Important 1, the build test was written after the code; escape, collision, marker and stamp-last assertions never seen failing. ⚠️ (second build changes no byte rests on reading) folds into the same fix: the mutation check runs the test.
+Ruling: task 04's fix round 1 is a mutation check, not new code: the implementer breaks the escape, stamp-last, collision and marker behaviours one at a time, shows the named assertion fail, restores, and records it in the report. It waits for task 06's implementer to finish because both rebuild the same tree. Cost if wrong: weak tests stay, caught by the controller re-review of the fix report.
+Task 04: fix round 1 (mutation check) dispatched to a5c1b53dda83043cc at 64a6c4e.
+Task 06: DONE 460bdd0..64a6c4e, test_scope ALL GREEN per implementer; untested: VitePress at host root, missing .fx.json root.
+Task 06: reviewer a69919b230580624a dispatched (sonnet), findings findings/06-review.md. Waiting: task 04 fix round 1 and task 06 review; next implementer waits for task 04's mutation round to leave the tree clean.
+Task 06: minor (deferred): an absolute mkdocs docs_dir would be written into .fx.json as an absolute output path.
+Task 06: minor (deferred): the detect tests do not pin that --write keeps system_flow.theme, diagrams and existing root paths.
+Task 06: review 0/0/2 spec ✅; ⚠️ (tests not re-run) accepted on the implementer's evidence, exit gate reruns them.
+Task 06: cost unavailable (no transcript recorded)
+Task 06: complete (commits 460bdd0..64a6c4e, review clean)
+Waiting: task 04 fix round 1 (mutation check); task 07 next once the tree is clean.
+Task 04: fix round 1/5: controller re-review (0 lines): 1 addressed, 0 open
+Task 04: cost unavailable (no transcript recorded)
+Task 04: complete (commits 3e85a0a..e289dab, review clean after 1 fix round; TDD order slip on record)
