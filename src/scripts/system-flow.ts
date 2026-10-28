@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { parseJson } from '../lib/json.js';
+import { checkRules } from '../lib/sf-rules.js';
 import { itemsOf, loadFragments, mergeFragments } from '../lib/sf-model.js';
 
 const USAGE = 'system-flow: usage: system-flow [--root <dir>] [--site <dir>] check';
@@ -33,10 +34,13 @@ function check(): void {
   const dir = path.join(root, site, 'model', 'fragments');
   const loaded = loadFragments(dir, root);
   const merged = mergeFragments(loaded.fragments);
-  const problems = [...loaded.problems, ...merged.problems];
-  for (const p of problems) process.stderr.write(`${p.file}:${p.pointer}: ${p.message}\n`);
-  if (problems.some((p) => p.level === 'error')) process.exit(1);
-  process.stdout.write(`${JSON.stringify({ ok: true, fragments: loaded.fragments.length, items: itemsOf(merged.model).length, warnings: [] })}\n`);
+  let problems = [...loaded.problems, ...merged.problems];
+  if (problems.length === 0) problems = checkRules(merged.model, merged.origin);
+  const errors = problems.filter((p) => p.level === 'error');
+  for (const p of errors) process.stderr.write(`${p.file}:${p.pointer}: ${p.message}\n`);
+  if (errors.length > 0) process.exit(1);
+  const warnings = problems.map((p) => `${p.file}:${p.pointer}: ${p.message}`);
+  process.stdout.write(`${JSON.stringify({ ok: true, fragments: loaded.fragments.length, items: itemsOf(merged.model).length, warnings })}\n`);
 }
 
 try { check(); } catch (e) {

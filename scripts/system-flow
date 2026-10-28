@@ -27,6 +27,7 @@ var fs = __toESM(require("fs"));
 var path = __toESM(require("path"));
 var import_child_process = require("child_process");
 var import_json = require("../lib/json.js");
+var import_sf_rules = require("../lib/sf-rules.js");
 var import_sf_model = require("../lib/sf-model.js");
 const USAGE = "system-flow: usage: system-flow [--root <dir>] [--site <dir>] check";
 const usage = () => {
@@ -55,11 +56,14 @@ function check() {
   const dir = path.join(root, site, "model", "fragments");
   const loaded = (0, import_sf_model.loadFragments)(dir, root);
   const merged = (0, import_sf_model.mergeFragments)(loaded.fragments);
-  const problems = [...loaded.problems, ...merged.problems];
-  for (const p of problems) process.stderr.write(`${p.file}:${p.pointer}: ${p.message}
+  let problems = [...loaded.problems, ...merged.problems];
+  if (problems.length === 0) problems = (0, import_sf_rules.checkRules)(merged.model, merged.origin);
+  const errors = problems.filter((p) => p.level === "error");
+  for (const p of errors) process.stderr.write(`${p.file}:${p.pointer}: ${p.message}
 `);
-  if (problems.some((p) => p.level === "error")) process.exit(1);
-  process.stdout.write(`${JSON.stringify({ ok: true, fragments: loaded.fragments.length, items: (0, import_sf_model.itemsOf)(merged.model).length, warnings: [] })}
+  if (errors.length > 0) process.exit(1);
+  const warnings = problems.map((p) => `${p.file}:${p.pointer}: ${p.message}`);
+  process.stdout.write(`${JSON.stringify({ ok: true, fragments: loaded.fragments.length, items: (0, import_sf_model.itemsOf)(merged.model).length, warnings })}
 `);
 }
 try {

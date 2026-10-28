@@ -137,7 +137,7 @@ ${r.stderr}`);
   }
 }
 const engine = (extra, ...ids) => ({
-  levels: { diagrams: [{ id: "engine", level: 1, title: "Engine", summary: "E", groups: [], nodes: ids.map((id) => ({ id, label: id, kind: "backend", role: "R", evidence: ev })), edges: ids.map((id) => ({ from: "link", to: id, label: "calls", evidence: ev })) }] },
+  levels: { diagrams: [{ id: "engine", level: 1, title: "Engine", summary: "E", groups: [], nodes: [...ids, "src"].map((id) => ({ id, label: id, kind: "backend", role: "R", evidence: ev })), edges: ids.map((id) => ({ from: "src", to: id, label: "calls", evidence: ev })) }] },
   ...extra
 });
 fails(
@@ -158,7 +158,7 @@ ${r.stderr}`);
   assert.strictEqual(out(r.stdout).items, items, `${why}: items`);
 };
 const turnSeq = { id: "turn", title: "Turn", chapter: "s1", participants: [], messages: [] };
-passes("node turn and sequence turn", (f) => f.fragment("engine", engine({ sequences: [turnSeq] }, "turn")), 6);
+passes("node turn and sequence turn", (f) => f.fragment("engine", engine({ sequences: [turnSeq] }, "turn")), 7);
 {
   const f = (0, import_sf_fixture.sfFixture)();
   f.goodSet();

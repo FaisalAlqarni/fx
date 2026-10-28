@@ -95,9 +95,9 @@ fails('a fragment that is not JSON', (f) => f.put('host', `${F}/x.json`, '{'),
   }
 }
 
-// A diagram fragment for engine.json holding the given nodes, each with an edge from link.
+// A diagram fragment for engine.json holding the given nodes and a node src, each given an edge from src (edges resolve inside their diagram).
 const engine = (extra: object, ...ids: string[]) => ({
-  levels: { diagrams: [{ id: 'engine', level: 1, title: 'Engine', summary: 'E', groups: [], nodes: ids.map((id) => ({ id, label: id, kind: 'backend', role: 'R', evidence: ev })), edges: ids.map((id) => ({ from: 'link', to: id, label: 'calls', evidence: ev })) }] },
+  levels: { diagrams: [{ id: 'engine', level: 1, title: 'Engine', summary: 'E', groups: [], nodes: [...ids, 'src'].map((id) => ({ id, label: id, kind: 'backend', role: 'R', evidence: ev })), edges: ids.map((id) => ({ from: 'src', to: id, label: 'calls', evidence: ev })) }] },
   ...extra,
 });
 fails('node api in two fragments', (f) => { f.fragment('level0', level0({ id: 'api' }, { from: 'api' })); f.fragment('engine', engine({}, 'api')); },
@@ -113,7 +113,7 @@ const passes = (why: string, change: (f: Fx) => void, items: number): void => {
   assert.strictEqual(out(r.stdout).items, items, `${why}: items`);
 };
 const turnSeq = { id: 'turn', title: 'Turn', chapter: 's1', participants: [], messages: [] };
-passes('node turn and sequence turn', (f) => f.fragment('engine', engine({ sequences: [turnSeq] }, 'turn')), 6);
+passes('node turn and sequence turn', (f) => f.fragment('engine', engine({ sequences: [turnSeq] }, 'turn')), 7);
 {
   const f = sfFixture();
   f.goodSet();

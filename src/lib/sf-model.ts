@@ -120,19 +120,21 @@ function recordOrigin(v: unknown, file: string, pointer: string): void {
   origin.set(v, { file, pointer });
   for (const [k, child] of Object.entries(v)) recordOrigin(child, file, `${pointer}/${k}`);
 }
-const originOf = (o: object) => origin.get(o) ?? { file: '', pointer: '' };
+export const originOf = (o: object) => origin.get(o) ?? { file: '', pointer: '' };
 
-export function mergeFragments(fragments: Fragment[]): { model: Model; problems: Problem[] } {
+export function mergeFragments(fragments: Fragment[]): { model: Model; problems: Problem[]; origin: Map<string, { file: string; pointer: string }> } {
   const model = emptyModel();
   for (const f of fragments) {
     recordOrigin(f.data, f.file, '');
     mergeInto(model as unknown as Record<string, unknown>, f.data);
   }
-  return { model, problems: duplicates(model) };
+  const origin = new Map<string, { file: string; pointer: string }>();
+  for (const { handle, o } of declared(model)) if (!origin.has(handle)) origin.set(handle, originOf(o));
+  return { model, problems: duplicates(model), origin };
 }
 
-// Ids are unique per kind: the second definition is the problem, naming the first one's file.
-function duplicates(model: Model): Problem[] {
+// Every declared handle with its object: items plus the structural kinds.
+function declared(model: Model): { handle: string; o: object }[] {
   const declared: { handle: string; o: object }[] = collect(model).map(({ item, o }) => ({ handle: item.handle, o }));
   const add = (prefix: string, list: { id: string }[]) => { for (const o of list) declared.push({ handle: `${prefix}:${o.id}`, o }); };
   add('diagram', model.levels.diagrams);
@@ -142,9 +144,14 @@ function duplicates(model: Model): Problem[] {
   add('question', model.questions);
   add('correction', model.corrections);
   add('root', model.meta.roots);
+  return declared;
+}
+
+// Ids are unique per kind: the second definition is the problem, naming the first one's file.
+function duplicates(model: Model): Problem[] {
   const seen = new Map<string, string>();
   const problems: Problem[] = [];
-  for (const { handle, o } of declared) {
+  for (const { handle, o } of declared(model)) {
     const first = seen.get(handle);
     const at = originOf(o);
     if (first === undefined) seen.set(handle, at.file);
@@ -157,7 +164,7 @@ export function itemsOf(model: Model): Item[] {
   return collect(model).map(({ item }) => item);
 }
 
-function collect(model: Model): { item: Item; o: object }[] {
+export function collect(model: Model): { item: Item; o: object }[] {
   const out: { item: Item; o: object }[] = [];
   const add = (kind: ItemKind, id: string, o: Evidenced): void => {
     out.push({ o, item: { id, kind, handle: handleOf(kind, id), evidence: o.evidence ?? [], verified: o.verified, unconfirmed: o.unconfirmed, ...originOf(o) } });
