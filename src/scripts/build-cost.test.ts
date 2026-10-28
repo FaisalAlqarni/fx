@@ -407,9 +407,18 @@ for (const [label, file] of [['missing', path.join(root, 'nope.jsonl')], ['empty
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bc-own-'));
   fs.mkdirSync(path.join(dir, '.fx'));
   fs.writeFileSync(path.join(dir, '.fx', 'transcript-path'), ctl + '\n');
-  const own = spawnSync(process.execPath, [BIN, '--json'], { encoding: 'utf8', cwd: dir });
+  // The slot is shared, so the file read is named, and one from another session is refused when this one's id is known (A11).
+  const env = (id?: string): NodeJS.ProcessEnv => { const e = { ...process.env }; delete e.CLAUDE_CODE_SESSION_ID; return id === undefined ? e : { ...e, CLAUDE_CODE_SESSION_ID: id }; };
+  const own = spawnSync(process.execPath, [BIN, '--json'], { encoding: 'utf8', cwd: dir, env: env('s1') });
   assert.strictEqual(own.status, 0, own.stderr);
   assert.deepStrictEqual(JSON.parse(own.stdout), r); // ts-gate-ok: the test parses output it just produced
+  assert.strictEqual(own.stderr, `build-cost: read ${ctl}\n`);
+  const unknown = spawnSync(process.execPath, [BIN, '--json'], { encoding: 'utf8', cwd: dir, env: env() });
+  assert.strictEqual(unknown.status, 0, unknown.stderr);
+  assert.strictEqual(unknown.stderr, `build-cost: read ${ctl}; cannot tell whether it is this session's (no CLAUDE_CODE_SESSION_ID)\n`);
+  const other = spawnSync(process.execPath, [BIN, '--json'], { encoding: 'utf8', cwd: dir, env: env('s9') });
+  assert.strictEqual(other.status, 2, other.stdout);
+  assert.strictEqual(other.stderr, `the recorded transcript ${ctl} belongs to session s1, not this session s9\n`);
   const none = spawnSync(process.execPath, [BIN, '--json'], { encoding: 'utf8', cwd: root });
   assert.strictEqual(none.status, 2);
   assert.ok(none.stderr.includes('no transcript recorded'), none.stderr);

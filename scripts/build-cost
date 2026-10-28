@@ -313,8 +313,16 @@ function main() {
     return;
   }
   const jsonOut = args.includes("--json");
-  const file = args.find((a) => a !== "--json") ?? recordedTranscript();
+  const given = args.find((a) => a !== "--json");
+  const file = given ?? recordedTranscript();
   if (!file) fail("no transcript recorded; usage: build-cost [<controller.jsonl>] [--json]");
+  if (given === void 0) {
+    const id = process.env.CLAUDE_CODE_SESSION_ID;
+    const owner = path.basename(file, ".jsonl");
+    if (id && owner !== id) fail(`the recorded transcript ${file} belongs to session ${owner}, not this session ${id}`);
+    process.stderr.write(`build-cost: read ${file}${id ? "" : "; cannot tell whether it is this session's (no CLAUDE_CODE_SESSION_ID)"}
+`);
+  }
   const records = readRecords(file);
   if (records === null) fail(`file not found: ${file}`);
   const assistantRecords = records.filter((r) => r.type === "assistant");

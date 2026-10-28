@@ -384,9 +384,17 @@ function main(): void {
     return;
   }
   const jsonOut = args.includes('--json');
-  // No file: the session's own transcript, as the SessionStart hook recorded it.
-  const file = args.find((a) => a !== '--json') ?? recordedTranscript();
+  // No file: the session's own transcript, as the SessionStart hook recorded it. The slot is shared by every session
+  // in the repository, so the file read is named, and another session's is refused when this one's id is known.
+  const given = args.find((a) => a !== '--json');
+  const file = given ?? recordedTranscript();
   if (!file) fail('no transcript recorded; usage: build-cost [<controller.jsonl>] [--json]');
+  if (given === undefined) {
+    const id = process.env.CLAUDE_CODE_SESSION_ID;
+    const owner = path.basename(file, '.jsonl');
+    if (id && owner !== id) fail(`the recorded transcript ${file} belongs to session ${owner}, not this session ${id}`);
+    process.stderr.write(`build-cost: read ${file}${id ? '' : "; cannot tell whether it is this session's (no CLAUDE_CODE_SESSION_ID)"}\n`);
+  }
 
   const records = readRecords(file);
   if (records === null) fail(`file not found: ${file}`);
