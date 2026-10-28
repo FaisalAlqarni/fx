@@ -232,6 +232,19 @@ assert.throws(() => validate({ $ref: '#/$defs/constructor', $defs: {} }, 'x'), /
   assert.strictEqual(({} as Record<string, unknown>).polluted, undefined, 'Object.prototype is untouched');
 }
 
+// An ELK failure is reported as ELK's, with its message, never as "split it" (final fix A9).
+{
+  const f = sfFixture();
+  f.goodSet();
+  f.commit('host', 'model');
+  const shim = path.join(f.base, 'elk.js');
+  const vendor = path.join(__dirname, '..', 'references', 'vendor', 'elkjs-0.9.3.bundled.js');
+  fs.writeFileSync(shim, `require.cache[${JSON.stringify(vendor)}] = { id: 'elk', loaded: true, exports: function () { return { layout: async () => { throw new Error('elk says no'); } }; } };\n`);
+  const r = spawnSync(process.execPath, ['--require', shim, path.join(__dirname, 'system-flow'), '--root', f.host, 'build'], { encoding: 'utf8', env: f.env() });
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(r.stderr.includes(': figure level-system: ELK error: ELK laid out no variant: elk says no'), r.stderr);
+  assert.ok(!r.stderr.includes('split it'), r.stderr);
+}
 // A bug (a TypeError, say) prints its stack; the CLI's own errors stay one line (final fix A10).
 {
   const f = sfFixture();

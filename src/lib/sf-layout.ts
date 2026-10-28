@@ -313,14 +313,18 @@ function hintLayout(input: Input, edges: FEdge[], hints: Record<string, { col: n
 }
 
 // system-flow's search: any variant at most 860 wide beats a wider one, then the lower score wins.
-async function layoutVariants(input: Input, edges: FEdge[]): Promise<Lay> {
+// ELK's own words for the first variant it rejected, kept for the report.
+export class ElkError extends Error {}
+async function layoutVariants(input: Input, edges: FEdge[]): Promise<Lay & { elkError?: string }> {
   if (input.hints) return hintLayout(input, edges, input.hints);
   let best: Lay | null = null;
+  let firstError: string | undefined;
   const better = (r: Lay, b: Lay | null): boolean => !b || ((r.W <= MAX_W) !== (b.W <= MAX_W) ? r.W <= MAX_W : r.score < b.score);
   const tryAll = async (vs: Variant[]): Promise<void> => {
     for (const v of vs) {
       let r: Lay;
-      try { r = await elkVariant(input, edges, v); } catch { continue; } // one variant ELK rejects; the others still compete
+      // One variant ELK rejects; the others still compete.
+      try { r = await elkVariant(input, edges, v); } catch (e) { firstError ??= String((e as Error)?.message ?? e).split('\n')[0]; continue; }
       if (better(r, best)) best = r;
     }
   };
@@ -331,12 +335,12 @@ async function layoutVariants(input: Input, edges: FEdge[]): Promise<Lay> {
   if (wide()) await tryAll([164, 144, 128].flatMap((nw) => dirs.flatMap((dir) => [0.4, 0.6, 1.0].flatMap((aspect) => [false, true].map((wrap) => ({ nw, dir, aspect, wrap, lw: 10 }))))));
   // A top-to-bottom layout with at most four or five boxes per row.
   if (wide()) await tryAll([164, 144].flatMap((nw) => [4, 5].map((bound): Variant => ({ nw, dir: 'DOWN', aspect: 1.0, lw: 10, bound }))));
-  if (!best) throw new Error(`${input.key}: ELK laid out no variant`);
-  return best;
+  if (!best) throw new ElkError(`ELK laid out no variant: ${firstError ?? 'no variant tried'}`);
+  return firstError === undefined ? best : { ...(best as Lay), elkError: firstError };
 }
 
 // While more than 1 crossing, leave out the arrow that crosses most others, never the last arrow of a box.
-async function layoutFigure(input: Input): Promise<{ lay: Lay; edges: FEdge[]; dropped: FEdge[] }> {
+async function layoutFigure(input: Input): Promise<{ lay: Lay & { elkError?: string }; edges: FEdge[]; dropped: FEdge[] }> {
   let edges = input.edges, lay = await layoutVariants(input, edges);
   const dropped: FEdge[] = [];
   while (lay.cross > MAX_CROSS && edges.length > 4) {
@@ -373,7 +377,7 @@ function placeLabels(lay: Lay, edges: FEdge[]): Map<string, (Rect & { lines: str
   return out;
 }
 
-async function figureOf(input: Input): Promise<{ spec: FigureSpec; line: LayoutLine }> {
+async function figureOf(input: Input): Promise<{ spec: FigureSpec; line: LayoutLine; elkError?: string }> {
   const { lay, edges, dropped } = await layoutFigure(input);
   const labels = placeLabels(lay, edges);
   const round = (r: Rect): Rect => ({ x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.w), h: Math.round(r.h) });
@@ -394,7 +398,7 @@ async function figureOf(input: Input): Promise<{ spec: FigureSpec; line: LayoutL
     key: spec.key, width: spec.width, height: spec.height, direction: spec.direction, crossings: lay.cross, nodeHits: lay.hits,
     nodes: spec.nodes.length, arrows: spec.edges.length, notDrawn: spec.notDrawn.length, unlabelled: spec.edges.filter((e) => !e.label).length,
   };
-  return { spec, line };
+  return { spec, line, ...(lay.elkError === undefined ? {} : { elkError: lay.elkError }) };
 }
 
 export function reportLine(l: LayoutLine): string {
@@ -402,14 +406,21 @@ export function reportLine(l: LayoutLine): string {
 }
 
 // Every inline figure: each level diagram, each sequence and each store flow, in model order.
-export async function layoutAll(model: Model): Promise<{ figures: FigureSpec[]; report: LayoutLine[]; unfit: { key: string; line: string }[] }> {
+// A figure ELK could not lay out at all is unfit with `elk` set: an ELK error, not a figure to split.
+export async function layoutAll(model: Model): Promise<{ figures: FigureSpec[]; report: LayoutLine[]; unfit: { key: string; line: string; elk?: string }[] }> {
   const inputs = [...model.levels.diagrams.map(levelInput), ...model.sequences.map(sequenceInput), ...model.storeFlows.map(flowInput)];
-  const figures: FigureSpec[] = [], report: LayoutLine[] = [], unfit: { key: string; line: string }[] = [];
+  const figures: FigureSpec[] = [], report: LayoutLine[] = [], unfit: { key: string; line: string; elk?: string }[] = [];
   for (const input of inputs) {
-    const { spec, line } = await figureOf(input);
+    let laid: Awaited<ReturnType<typeof figureOf>>;
+    try { laid = await figureOf(input); } catch (e) {
+      if (!(e instanceof ElkError)) throw e;
+      unfit.push({ key: input.key, line: '', elk: e.message });
+      continue;
+    }
+    const { spec, line, elkError } = laid;
     figures.push(spec);
     report.push(line);
-    if (line.crossings > MAX_CROSS || line.width > MAX_W) unfit.push({ key: line.key, line: reportLine(line) });
+    if (line.crossings > MAX_CROSS || line.width > MAX_W) unfit.push({ key: line.key, line: reportLine(line), ...(elkError === undefined ? {} : { elk: `ELK rejected some variants: ${elkError}` }) });
   }
   return { figures, report, unfit };
 }

@@ -284,6 +284,19 @@ assert.throws(() => (0, import_sf_schema.validate)({ $ref: "#/$defs/constructor"
 {
   const f = (0, import_sf_fixture.sfFixture)();
   f.goodSet();
+  f.commit("host", "model");
+  const shim = path.join(f.base, "elk.js");
+  const vendor = path.join(__dirname, "..", "references", "vendor", "elkjs-0.9.3.bundled.js");
+  fs.writeFileSync(shim, `require.cache[${JSON.stringify(vendor)}] = { id: 'elk', loaded: true, exports: function () { return { layout: async () => { throw new Error('elk says no'); } }; } };
+`);
+  const r = (0, import_child_process.spawnSync)(process.execPath, ["--require", shim, path.join(__dirname, "system-flow"), "--root", f.host, "build"], { encoding: "utf8", env: f.env() });
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(r.stderr.includes(": figure level-system: ELK error: ELK laid out no variant: elk says no"), r.stderr);
+  assert.ok(!r.stderr.includes("split it"), r.stderr);
+}
+{
+  const f = (0, import_sf_fixture.sfFixture)();
+  f.goodSet();
   const shim = path.join(f.base, "boom.js");
   fs.writeFileSync(shim, "require('fs').readdirSync = () => { throw new TypeError('boom'); };\n");
   const r = (0, import_child_process.spawnSync)(process.execPath, ["--require", shim, path.join(__dirname, "system-flow"), "--root", f.host, "check"], { encoding: "utf8", env: f.env() });

@@ -160,7 +160,8 @@ export async function layoutChecked(model: Model): Promise<{ figures: FigureSpec
     ...model.sequences.map((q): [string, object] => [`seq-${q.id}`, q]),
     ...model.storeFlows.map((f): [string, object] => [`flow-${f.id}`, f]),
   ]);
-  const unfit = laid.unfit.map((u): Problem => ({ ...originOf(owners.get(u.key) ?? {}), message: `figure ${u.key} cannot meet 1 crossing and 860 px: ${u.line}; split it one level down`, level: 'error' }));
+  const unfit = laid.unfit.map((u): Problem => ({ ...originOf(owners.get(u.key) ?? {}), level: 'error',
+    message: u.line === '' ? `figure ${u.key}: ELK error: ${u.elk}` : `figure ${u.key} cannot meet 1 crossing and 860 px: ${u.line}; split it one level down${u.elk === undefined ? '' : ` (${u.elk})`}` }));
   return { figures: laid.figures, report: laid.report, unfit };
 }
 
