@@ -2,20 +2,22 @@
 
 ## Smoke
 
-Task 18, rerun after tasks 18a and 18b (worktree HEAD acb9eb4). The CLI run as a process on a scratch copy of Shamel.Backend, with the real archify 3.2.0 copied (`cp -rL`) into a scratch `CLAUDE_CONFIG_DIR`. No lane was invoked. The source repository was only read. Run folder: `/tmp/claude-1000/sf-build/smoke-20261028-4` (a fresh folder; `-1` and `-2` hold the first attempt, `-3` a check-only pass before the fragment rename below). Commands were run as `scripts/scratch-env node scripts/system-flow --root <run>/Shamel.Backend <subcommand>` with `CLAUDE_CONFIG_DIR=<run>/claude-config`.
+archify render count: 5 of 5 deep diagrams rendered by archify and kept (both architecture diagrams, both pages of the sequence, the store flow).
 
-Outcome: every command exits 0 and `check` passes. archify now renders every diagram, and its own checks pass for 4 of the 5 diagram groups, but the CLI keeps none of the archify pages: 0 of 5 deep diagrams are archify in the final build. The three first-run defects are gone. Two new causes remain (below). No source was changed.
+Task 18, second rerun after task 18c (worktree HEAD 1e26404). The CLI run as a process on a scratch copy of Shamel.Backend, with the real archify 3.2.0 copied (`cp -rL`) into a scratch `CLAUDE_CONFIG_DIR`. No lane was invoked. The source repository was only read. Run folder: `/tmp/claude-1000/sf-build/smoke-20261028-5` (a fresh folder; `-1` to `-4` hold the earlier attempts). Commands were run as `scripts/scratch-env node scripts/system-flow --root <run>/Shamel.Backend <subcommand>` with `CLAUDE_CONFIG_DIR=<run>/claude-config`. No source was changed.
 
-### Fragments under the current rules
+Outcome: every command exits 0, `check` passes, every diagram is an archify page whose receipt reads `pass`, and the flagless rebuild matches. The visual check was not run (no browser).
 
-The 18b rule says the controller's diagram is `level0` and its nodes are `l0-<area id>`. `check` passed on the old fragments (diagram `system`, nodes `shamel-*`; run `-3`: `{"ok":true,"fragments":4,"items":59,"warnings":[]}`), so the rule is not enforced by `check`. The fragments were still renamed to follow the guide: diagram `system` to `level0`, nodes `shamel-<x>` to `l0-<x>`, the parent, `root` and section references to match, and the flow step actor `shamel-twk` to `l0-twk`. The other new rules (a flow step actor is a node id, an edge stays inside its diagram) already held.
+### Fragments
+
+The smoke fragments are those from the first rerun: the controller's diagram is `level0` with nodes `l0-<x>`, the area fragment is `api` with nodes `api-<x>`, and the flow step actors are `l0-twk`. They were copied unchanged from `proof/smoke-fragments/` and committed in the scratch copy.
 
 ### prepare-scratch
 
 First call:
 
 ```
-c879c0f5ae3a573b1d1deed15448984906f5526a
+cfded1c91b75025e7e2589a1f99c4aed0db73f15
 ```
 
 Second call with the same target:
@@ -25,7 +27,7 @@ prepare-scratch: target exists: <run>/Shamel.Backend
 exit 1
 ```
 
-`git log --oneline` after the second call: one line, `c879c0f scratch copy`. The fragments were committed afterwards as a second commit (`proof` identity).
+`git log --oneline` after the second call: one line, `cfded1c scratch copy`. The fragments were committed afterwards as a second commit (`proof` identity).
 
 ### detect
 
@@ -46,24 +48,19 @@ No symbol in the C# files failed the last-segment rule.
 
 | Diagram | renderer | reason |
 |---|---|---|
-| `arch-level0` | svg | static SVG, archify page loads outside the site: https://github.com/tt-a1i/archify |
-| `arch-api` | svg | static SVG, archify page loads outside the site: https://github.com/tt-a1i/archify |
-| `seq-api-prompt-answer` | svg | animated SVG, archify failed: docs/system-flow/diagrams/seq-api-prompt-answer-p3.receipt.json |
-| `seq-api-prompt-answer-p2` | svg | animated SVG, archify failed: docs/system-flow/diagrams/seq-api-prompt-answer-p3.receipt.json |
-| `flow-api-header-cache` | svg | animated SVG, archify failed: docs/system-flow/diagrams/flow-api-header-cache.receipt.json |
+| `arch-level0` | archify | archify architecture, 7 components, shortened: l0-mobile-app sublabel, l0-mobile-api sublabel, l0-legacy sublabel, l0-twk sublabel, l0-connector sublabel |
+| `arch-api` | archify | archify architecture, 7 components, shortened: api-channels sublabel, api-watcher sublabel |
+| `seq-api-prompt-answer` | archify | archify sequence, 12 messages in 2 pages, shortened: controller label |
+| `seq-api-prompt-answer-p2` | archify | archify sequence, 12 messages in 2 pages, shortened: controller label |
+| `flow-api-header-cache` | archify | archify sequence, 3 messages in 1 pages |
 
-archify output count: 0 of 5 kept (archify itself passed all four stages for both architecture diagrams and for two of the three retry pages of the sequence; see below).
+Receipts (`diagrams/<name>.receipt.json`): all five `ok: true`, `status: pass`, stages validate, deliver, check and browser-check all `pass`. No fallback, so no failure to quote. `diagrams/` holds only the five pages, their receipts, delivery and browser-check files and `src/`; no stray page.
 
-`fx-theme:begin` blocks: 0 in every page under `diagrams/`, because every final page is the CLI's SVG fallback. The condition "each archify output holds one block" cannot be tested while no archify output is kept.
+`fx-theme:begin` blocks (and `fx-theme:end`): exactly 1 in each of the five archify pages (`arch-level0`, `arch-api`, `seq-api-prompt-answer`, `seq-api-prompt-answer-p2`, `flow-api-header-cache`).
 
-Receipts quoted:
+Outside references: the only `http(s)://` attribute value in `index.html` and the five diagram pages is archify's credit link `href="https://github.com/tt-a1i/archify"` (5 occurrences, one per archify page); it is a hyperlink, not a load, and the build now keeps the pages.
 
-- `arch-level0.receipt.json` and `arch-api.receipt.json`: `ok: true`, `status: pass`, stages validate, deliver, check and browser-check all `pass`. No failure. The CLI discarded the page because of its own scan (`outsideRefs`, `src/lib/sf-build.ts:307`). The URL it reports is archify's credit link in `assets/template.html:5395`: `<a class="diagram-guide-credit" href="https://github.com/tt-a1i/archify" target="_blank" rel="noopener noreferrer">`. It is a hyperlink, not a loaded resource, and it is in every archify page.
-- `flow-api-header-cache.receipt.json`: `status: fail`, stage validate `not-run`, stage deliver `fail` with `exitCode: 0`, the inner receipt `ok: true`, `errors: 0`, `warnings: 1`. The warning that fails the delivery: `[composition/viewport-height] ... This 510x480 canvas (ratio 1.06) declares no intrinsic-height fit and is below the 1.55 wide ratio ... the page reaches 1393px before cards against 900px, a certain visual-check failure. Either compact vertical spacing so meta.viewBox height is at most 329 at this width, or spread content sideways so the width is at least 744 at this height`.
-- `seq-api-prompt-answer-p3.receipt.json` (the 5 messages per page retry gives pages of 5, 5 and 2): the same `composition/viewport-height` warning, same numbers (510x480, page 1393px), delivery `fail`. Pages 1 and 2 of that retry passed (`seq-api-prompt-answer.receipt.json`, `-p2` all four stages `pass`), but one failing page sends the whole sequence to SVG.
-- The first attempt's failure for the sequence (8 and 4 messages per page) was overwritten by the retry's receipts, which share names. Its cause is not recorded here; the final state is the receipts above.
-
-Stray file: `diagrams/seq-api-prompt-answer-p3.html` is a leftover archify page (it contains the credit link and the font credit links `https://github.com/JetBrains/JetBrainsMono`, `https://openfontlicense.org`) and no longer matches the SVG fallback pages beside it.
+Note on shortening: the build shortened 5 sublabels on `arch-level0`, 2 on `arch-api` and 1 sequence participant label to fit archify's measure. The model text is unchanged; only the archify spec carries the shorter text.
 
 ### No write outside the scratch copy
 
@@ -89,22 +86,18 @@ Model depth: 2 levels, 13 primary and 1 context node, 12 edges, 1 sequence (12 m
 
 ### Visual check
 
-Visual check: not run: no browser. This session has no browser tool. The controller runs it before task 20 starts, per `references/visual/visual-check.md`, at 1440 and 390, light and dark, on each page under `<run>/Shamel.Backend/docs/system-flow/`:
+Visual check: not run: no browser. This session has no browser tool. The controller runs it before task 20 starts, per `references/visual/visual-check.md`, at 1440 and 390, light and dark, on each page under `<run>/Shamel.Backend/docs/system-flow/`, archify outputs included:
 
 - `index.html`
-- `diagrams/arch-level0.html`
-- `diagrams/arch-api.html`
-- `diagrams/seq-api-prompt-answer.html`
-- `diagrams/seq-api-prompt-answer-p2.html`
-- `diagrams/flow-api-header-cache.html`
+- `diagrams/arch-level0.html` (archify)
+- `diagrams/arch-api.html` (archify)
+- `diagrams/seq-api-prompt-answer.html` (archify)
+- `diagrams/seq-api-prompt-answer-p2.html` (archify)
+- `diagrams/flow-api-header-cache.html` (archify)
 
-All are SVG fallback pages, so no archify output reaches the check. The stray `diagrams/seq-api-prompt-answer-p3.html` is an archify page; the controller may open it to see what archify drew for 2 messages. One static check was possible: a scan of `index.html` and the five fallback pages for `http(s)://` finds only the SVG namespace.
+archify's own browser check ran inside each `finalize` call and passed (stage `browser-check` `pass` in all five receipts); that is not the 1440 and 390 light and dark check above, and it does not replace it.
 
 ### Findings for task 20
 
-1. The outside-the-site scan flags archify's credit hyperlink. `outsideRefs` returns `https://github.com/tt-a1i/archify`, an `<a href>` in every archify page (`assets/template.html:5395`). A link is not a network request. With the scan as it stands, no architecture diagram can ever be kept. The scan should look at loaded resources only (`src`, stylesheet `href`, `@import`, CSS url references), not `<a href>` or text.
-2. archify's `composition/viewport-height` fails small sequence pages. A page with 2 messages, or a 3-step store flow, gets a 510x480 `viewBox`. archify fails delivery with exit code 0 (`status: fail`). The spec carries `meta.viewBox`; archify's own advice is to omit it for architecture, or make the canvas at most 329 high or at least 744 wide. The CLI's fixed 5 per page retry makes the problem likelier: it produced a 2-message last page. A sequence of 12 messages ends on a page of 4 (8 and 4) or 2 (5, 5 and 2).
-3. A failing page sends the whole sequence to SVG, though the other pages passed all four stages. Not a defect on its own, but with finding 2 it means any sequence whose last page is short falls back.
-4. Stale page: the failed retry leaves `seq-api-prompt-answer-p3.html` in `diagrams/` after the SVG fallback is written. The next reader sees a page that is in no diagram line.
-5. Receipt names are reused by the retry, so the first attempt's failure cannot be read afterwards.
-6. `check` does not enforce the 18b level-0 id rule (`level0`, `l0-<area id>`); a model with the old ids passes.
+1. `check` does not enforce the level-0 id rule (`level0`, `l0-<area id>`); a model with the old ids passes.
+2. The build shortens sublabels and labels in the archify spec only; the page and Markdown keep the long text. This is by design, and it means an archify page can show shorter text than the index page for the same node.
