@@ -113,6 +113,9 @@ passes('step actor is a node', seq({}, { actor: 'db' }));
 // Chapters and section references.
 fails('flow chapter', (f) => f.fragment('chapters', { sections: [{ id: 's1', title: 'T', question: 'Q?' }], storeFlows: [{ id: 'first', trigger: 't', chapter: 'nochapter', steps: [] }] }), 'chapters.json:/storeFlows/0: flow first names a missing chapter nochapter');
 fails('sequence chapter', (f) => f.fragment('chapters', { sections: [{ id: 's1', title: 'T', question: 'Q?' }], sequences: [{ id: 'turn', title: 'T', chapter: 'x', participants: [], messages: [] }] }), 'chapters.json:/sequences/0: sequence turn names a missing chapter x');
+// A deep diagram page name is <name>-p<n>; an id ending in -p<digits> would collide with another diagram's page.
+fails('sequence id ending -p2', (f) => f.fragment('chapters', { sections: [{ id: 's1', title: 'T', question: 'Q?' }], sequences: [{ id: 'turn-p2', title: 'T', chapter: 's1', participants: [], messages: [] }] }), 'chapters.json:/sequences/0: sequence turn-p2 ends in -p and digits, which deep diagram page names use');
+fails('flow id ending -p10', (f) => f.fragment('chapters', { sections: [{ id: 's1', title: 'T', question: 'Q?' }], storeFlows: [{ id: 'first-p10', trigger: 't', chapter: 's1', steps: [] }] }), 'chapters.json:/storeFlows/0: flow first-p10 ends in -p and digits, which deep diagram page names use');
 for (const [key, word] of [['diagrams', 'diagram'], ['sequences', 'sequence'], ['storeFlows', 'store flow'], ['storeRefs', 'store row'], ['catalogueRefs', 'catalogue entry'], ['covers', 'inventory entry']]) {
   fails(`section ${key}`, (f) => f.fragment('chapters', { sections: [{ id: 's1', title: 'T', question: 'Q?', [key as string]: ['gone'] }] }), `chapters.json:/sections/0: section s1 names a missing ${word} gone`);
 }

@@ -47,6 +47,8 @@ export function checkRules(model: Model, origin: Origin): Problem[] {
   }
 
   const sections = new Set(model.sections.map((s) => s.id));
+  // A sequence or flow page past the first is <name>-p<n>, so such an id would name another diagram's page.
+  const PAGED = /-p\d+$/;
   const actors = new Set(nodeIds);
   for (const q of model.sequences) {
     for (const p of q.participants) actors.add(p.id);
@@ -55,9 +57,11 @@ export function checkRules(model: Model, origin: Origin): Problem[] {
       for (const end of [m.from, m.to]) if (!here.has(end)) at(m, `message ${q.id}#${m.n} names a missing participant ${end}`);
     }
     if (!sections.has(q.chapter)) at(q, `sequence ${q.id} names a missing chapter ${q.chapter}`);
+    if (PAGED.test(q.id)) at(q, `sequence ${q.id} ends in -p and digits, which deep diagram page names use`);
   }
   for (const fl of model.storeFlows) {
     if (!sections.has(fl.chapter)) at(fl, `flow ${fl.id} names a missing chapter ${fl.chapter}`);
+    if (PAGED.test(fl.id)) at(fl, `flow ${fl.id} ends in -p and digits, which deep diagram page names use`);
     for (const st of fl.steps) if (!actors.has(st.actor)) at(st, `step ${fl.id}#${st.n} names a missing actor ${st.actor}`);
   }
 

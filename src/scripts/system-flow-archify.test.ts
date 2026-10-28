@@ -160,7 +160,12 @@ const varOf = (css: string, name: string): string[] => [...css.matchAll(new RegE
 
 { // A failed retry: no page or spec of the diagram outlives the fallback, and each attempt keeps its own receipt
   const f = setup();
+  // Files that only look like the diagram's: the cleanup takes <name>, <name>-p<digits> and nothing else.
+  const hand = [`${D}/seq-turn-notes.html`, `${D}/seq-turn-p2x.html`, `${D}/seq-turn-p.html`, `${D}/src/seq-turn.extra.json`];
+  for (const h of hand) { fs.mkdirSync(path.dirname(path.join(f.host, h)), { recursive: true }); fs.writeFileSync(path.join(f.host, h), 'hand'); }
   const o = ok(f, ['--archify', fake(f, 'fake')], { FAKE_FAIL: 'seq-turn-p2' });
+  for (const h of hand) assert.strictEqual(read(f, h), 'hand', h);
+  for (const h of hand) fs.renameSync(path.join(f.host, h), path.join(f.base, path.basename(h)));
   assert.deepStrictEqual(logOf(f).filter((c) => c.name.startsWith('seq-turn')).map((c) => `${c.name}:${c.messages}`).sort(),
     ['seq-turn-p2:5', 'seq-turn-p2:6', 'seq-turn-p3:4', 'seq-turn:5', 'seq-turn:8']);
   const mine = (dir: string, end: string): string[] => fs.readdirSync(path.join(f.host, dir)).filter((n) => n.startsWith('seq-turn') && n.endsWith(end)).sort();

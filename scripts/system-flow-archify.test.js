@@ -201,7 +201,14 @@ const varOf = (css, name) => [...css.matchAll(new RegExp(`${name}:\\s*([^;]+);`,
 }
 {
   const f = setup();
+  const hand = [`${D}/seq-turn-notes.html`, `${D}/seq-turn-p2x.html`, `${D}/seq-turn-p.html`, `${D}/src/seq-turn.extra.json`];
+  for (const h of hand) {
+    fs.mkdirSync(path.dirname(path.join(f.host, h)), { recursive: true });
+    fs.writeFileSync(path.join(f.host, h), "hand");
+  }
   const o = ok(f, ["--archify", fake(f, "fake")], { FAKE_FAIL: "seq-turn-p2" });
+  for (const h of hand) assert.strictEqual(read(f, h), "hand", h);
+  for (const h of hand) fs.renameSync(path.join(f.host, h), path.join(f.base, path.basename(h)));
   assert.deepStrictEqual(
     logOf(f).filter((c) => c.name.startsWith("seq-turn")).map((c) => `${c.name}:${c.messages}`).sort(),
     ["seq-turn-p2:5", "seq-turn-p2:6", "seq-turn-p3:4", "seq-turn:5", "seq-turn:8"]
