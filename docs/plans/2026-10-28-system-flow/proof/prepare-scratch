@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Copies <source> into a new folder <target>, makes it a git repo with one commit, prints HEAD.
+#     prepare-scratch <source> <target>
+# Refuses an existing target (exit 1). Deletes nothing.
+set -euo pipefail
+[ $# -eq 2 ] || { echo "usage: prepare-scratch <source> <target>" >&2; exit 2; }
+SRC="$1"; DST="$2"
+[ -d "$SRC" ] || { echo "prepare-scratch: source is not a folder: $SRC" >&2; exit 2; }
+[ ! -e "$DST" ] || { echo "prepare-scratch: target exists: $DST" >&2; exit 1; }
+mkdir -p "$DST"
+cp -r "$SRC"/. "$DST"/
+git -C "$DST" init -q
+git -C "$DST" add -A
+git -C "$DST" -c user.name=proof -c user.email=proof@local commit -q -m "scratch copy"
+git -C "$DST" rev-parse HEAD

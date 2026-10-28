@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "meta": {
+    "title": "Shamel Backend smoke model",
+    "date": "2026-10-28",
+    "purpose": "A small hand-written model used to smoke-test the system-flow CLI and archify on a real repository.",
+    "roots": [{ "id": "shamel-backend", "label": "Shamel.Backend" }]
+  }
+}

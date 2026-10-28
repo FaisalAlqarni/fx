@@ -1,0 +1,53 @@
+{
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Shamel Backend in its surroundings",
+      "question": "What sits between the mobile app and Shaheen?",
+      "diagrams": ["system"],
+      "bullets": [
+        { "id": "overview-b1", "text": "The Mobile API is the only host; the application core and the Shaheen connector are libraries inside it.",
+          "evidence": [{ "path": "src/APIs/MobileAPI/Program.cs", "lines": "78-80", "symbol": "AddApplication" }] },
+        { "id": "overview-b2", "text": "Requests for old Shamel routes are forwarded first and never reach the new pipeline.",
+          "evidence": [{ "path": "src/APIs/MobileAPI/Program.cs", "lines": "88-89", "symbol": "UseLegacyShamelForwarding" }] }
+      ]
+    },
+    {
+      "id": "api-answers",
+      "title": "One answer stream, three transports",
+      "question": "How do HTTP, SSE and SignalR clients get the same answer?",
+      "diagrams": ["api"],
+      "bullets": [
+        { "id": "api-answers-b1", "text": "Every transport runs AnswerChannelPump; none has a loop of its own.",
+          "evidence": [{ "path": "src/Core/Application/Client/AnswerChannelPump.cs", "lines": "7-10", "symbol": "AnswerChannelPump" }] },
+        { "id": "api-answers-b2", "text": "The watcher prefers a pushed stream and polls the connector when streaming is not supported.",
+          "evidence": [{ "path": "src/Core/Application/Client/AnswerWatcher.cs", "lines": "30-33", "symbol": "SupportsStreaming" }] }
+      ]
+    },
+    {
+      "id": "api-prompt",
+      "title": "From prompt to answer",
+      "question": "What happens between a prompt being posted and its answer being read?",
+      "sequences": ["api-prompt-answer"],
+      "bullets": [
+        { "id": "api-prompt-b1", "text": "Posting a prompt returns 202 with a link; the answer is a separate GET.",
+          "evidence": [{ "path": "src/APIs/MobileAPI/Controllers/v4/ConversationsController.cs", "lines": "79-80", "symbol": "Accepted" }] },
+        { "id": "api-prompt-b2", "text": "Identity comes from the JWT through ToClientContext, never from the request body.",
+          "evidence": [{ "path": "src/APIs/MobileAPI/Controllers/v4/ConversationsController.cs", "lines": "40", "symbol": "ToClientContext" }] }
+      ]
+    },
+    {
+      "id": "api-cache",
+      "title": "Response caching rules",
+      "question": "Where do the response caching rules come from and how long do they live?",
+      "storeFlows": ["api-header-cache"],
+      "storeRefs": ["api-header-caching-config", "api-header-caching-resources"],
+      "bullets": [
+        { "id": "api-cache-b1", "text": "Rules are read from dbo.HeaderCachingConfig, active rows only.",
+          "evidence": [{ "path": "src/External/TWK.Framework/Header/HeaderCachingConfigRepository.cs", "lines": "28-29", "symbol": "IsActive" }] },
+        { "id": "api-cache-b2", "text": "The list is held in a static field and reloaded every 24 hours.",
+          "evidence": [{ "path": "src/External/TWK.Framework/Header/HeaderCachingConfigCacheService.cs", "lines": "13-25", "symbol": "ElapsedDuration" }] }
+      ]
+    }
+  ]
+}

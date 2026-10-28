@@ -1,0 +1,100 @@
+{
+  "levels": {
+    "diagrams": [
+      {
+        "id": "api",
+        "level": 1,
+        "parent": "system",
+        "title": "Mobile API: one answer stream, three transports",
+        "summary": "The HTTP controller, the SSE endpoint and the SignalR hub all run the same pump over the same watcher.",
+        "groups": [],
+        "nodes": [
+          { "id": "api-controller", "label": "ConversationsController", "kind": "backend", "role": "Creates conversations and prompts, reads answers.",
+            "evidence": [{ "path": "src/APIs/MobileAPI/Controllers/v4/ConversationsController.cs", "lines": "21-22", "symbol": "ConversationsController" }] },
+          { "id": "api-hub", "label": "ConversationsHub", "kind": "backend", "role": "SignalR entry for the same answer stream.",
+            "evidence": [{ "path": "src/APIs/MobileAPI/Hubs/ConversationsHub.cs", "lines": "26", "symbol": "ConversationsHub" }] },
+          { "id": "api-pump", "label": "AnswerChannelPump", "kind": "backend", "role": "The one loop that drives every client transport.",
+            "evidence": [{ "path": "src/Core/Application/Client/AnswerChannelPump.cs", "lines": "10-17", "symbol": "AnswerChannelPump" }] },
+          { "id": "api-channels", "label": "Answer channels", "kind": "backend", "role": "HTTP, SSE and SignalR renderers of an answer event.",
+            "evidence": [{ "path": "src/APIs/MobileAPI/Channels/SseAnswerChannel.cs", "lines": "11", "symbol": "SseAnswerChannel" }] },
+          { "id": "api-watcher", "label": "AnswerWatcher", "kind": "backend", "role": "Streams from the connector when it can, polls when it cannot.",
+            "evidence": [{ "path": "src/Core/Application/Client/AnswerWatcher.cs", "lines": "16-20", "symbol": "AnswerWatcher" }] },
+          { "id": "api-errors", "label": "GlobalExceptionHandler", "kind": "backend", "role": "Turns unhandled exceptions into problem responses.",
+            "evidence": [{ "path": "src/APIs/MobileAPI/Infrastructure/GlobalExceptionHandler.cs", "lines": "14", "symbol": "GlobalExceptionHandler" }] },
+          { "id": "api-connector", "label": "Shaheen connector", "kind": "backend", "role": "Context: the interface the watcher asks.", "primary": false,
+            "evidence": [{ "path": "src/Core/Application/Abstractions/IShaheenConnector.cs", "lines": "11-12", "symbol": "IShaheenConnector" }] }
+        ],
+        "edges": [
+          { "from": "api-controller", "to": "api-pump", "label": "Runs the pump", "short": "RunAsync", "mode": "sync",
+            "evidence": [{ "path": "src/APIs/MobileAPI/Controllers/v4/ConversationsController.cs", "lines": "102-103", "symbol": "RunAsync" }] },
+          { "from": "api-hub", "to": "api-pump", "label": "Runs the pump", "short": "RunAsync", "mode": "sync",
+            "evidence": [{ "path": "src/APIs/MobileAPI/Hubs/ConversationsHub.cs", "lines": "48", "symbol": "RunAsync" }] },
+          { "from": "api-pump", "to": "api-channels", "label": "Writes each event", "short": "WriteAsync", "mode": "sync",
+            "evidence": [{ "path": "src/Core/Application/Client/AnswerChannelPump.cs", "lines": "26", "symbol": "WriteAsync" }] },
+          { "from": "api-pump", "to": "api-watcher", "label": "Reads events", "short": "WatchAsync", "mode": "sync",
+            "evidence": [{ "path": "src/Core/Application/Client/AnswerChannelPump.cs", "lines": "19", "symbol": "WatchAsync" }] },
+          { "from": "api-watcher", "to": "api-connector", "label": "Asks for the answer", "short": "GetAnswerAsync", "mode": "sync",
+            "evidence": [{ "path": "src/Core/Application/Client/AnswerWatcher.cs", "lines": "61-62", "symbol": "GetAnswerAsync" }] },
+          { "from": "api-controller", "to": "api-errors", "label": "Failures reach the handler", "short": "UseExceptionHandler", "mode": "sync",
+            "evidence": [{ "path": "src/APIs/MobileAPI/Program.cs", "lines": "126", "symbol": "UseExceptionHandler" }] }
+        ]
+      }
+    ]
+  },
+  "sequences": [
+    {
+      "id": "api-prompt-answer",
+      "title": "Send a prompt, then read its answer",
+      "chapter": "api-prompt",
+      "participants": [
+        { "id": "app", "label": "Mobile app", "kind": "client", "evidence": [{ "path": "src/APIs/MobileAPI/Controllers/v4/ConversationsController.cs", "lines": "19-21", "symbol": "ApiVersion" }] },
+        { "id": "controller", "label": "ConversationsController", "kind": "backend", "evidence": [{ "path": "src/APIs/MobileAPI/Controllers/v4/ConversationsController.cs", "lines": "21-22", "symbol": "ConversationsController" }] },
+        { "id": "sender", "label": "MediatR sender", "kind": "backend", "evidence": [{ "path": "src/APIs/MobileAPI/Controllers/v4/ConversationsController.cs", "lines": "21", "symbol": "ISender" }] },
+        { "id": "handler", "label": "CreatePromptHandler", "kind": "backend", "evidence": [{ "path": "src/Core/Application/Conversations/CreatePrompt/V4/CreatePromptHandler.cs", "lines": "8-9", "symbol": "CreatePromptHandler" }] },
+        { "id": "connector", "label": "Shaheen connector", "kind": "backend", "evidence": [{ "path": "src/Core/Application/Abstractions/IShaheenConnector.cs", "lines": "11-12", "symbol": "IShaheenConnector" }] },
+        { "id": "pump", "label": "AnswerChannelPump", "kind": "backend", "evidence": [{ "path": "src/Core/Application/Client/AnswerChannelPump.cs", "lines": "10-17", "symbol": "AnswerChannelPump" }] },
+        { "id": "watcher", "label": "AnswerWatcher", "kind": "backend", "evidence": [{ "path": "src/Core/Application/Client/AnswerWatcher.cs", "lines": "16-20", "symbol": "AnswerWatcher" }] },
+        { "id": "channel", "label": "HttpAnswerChannel", "kind": "backend", "evidence": [{ "path": "src/APIs/MobileAPI/Channels/HttpAnswerChannel.cs", "lines": "10", "symbol": "HttpAnswerChannel" }] }
+      ],
+      "messages": [
+        { "n": 1, "from": "app", "to": "controller", "label": "POST conversations/{id}/prompts", "mode": "sync", "evidence": [{ "path": "src/APIs/MobileAPI/Controllers/v4/ConversationsController.cs", "lines": "56-57", "symbol": "HttpPost" }] },
+        { "n": 2, "from": "controller", "to": "sender", "label": "Send CreatePromptCommand", "mode": "sync", "evidence": [{ "path": "src/APIs/MobileAPI/Controllers/v4/ConversationsController.cs", "lines": "76", "symbol": "Send" }] },
+        { "n": 3, "from": "sender", "to": "handler", "label": "Handle the command", "mode": "sync", "evidence": [{ "path": "src/Core/Application/Conversations/CreatePrompt/V4/CreatePromptHandler.cs", "lines": "11", "symbol": "Handle" }] },
+        { "n": 4, "from": "handler", "to": "connector", "label": "CreatePromptAsync", "mode": "sync", "evidence": [{ "path": "src/Core/Application/Conversations/CreatePrompt/V4/CreatePromptHandler.cs", "lines": "12", "symbol": "CreatePromptAsync" }] },
+        { "n": 5, "from": "connector", "to": "handler", "label": "Result of PromptAccepted", "mode": "sync", "evidence": [{ "path": "src/Core/Application/Abstractions/IShaheenConnector.cs", "lines": "14", "symbol": "PromptAccepted" }] },
+        { "n": 6, "from": "controller", "to": "app", "label": "202 Accepted with the answer link", "mode": "sync", "evidence": [{ "path": "src/APIs/MobileAPI/Controllers/v4/ConversationsController.cs", "lines": "79-80", "symbol": "Accepted" }] },
+        { "n": 7, "from": "app", "to": "controller", "label": "GET prompts/{id}/answer", "mode": "sync", "evidence": [{ "path": "src/APIs/MobileAPI/Controllers/v4/ConversationsController.cs", "lines": "89-90", "symbol": "HttpGet" }] },
+        { "n": 8, "from": "controller", "to": "pump", "label": "RunAsync with follow false", "mode": "sync", "evidence": [{ "path": "src/APIs/MobileAPI/Controllers/v4/ConversationsController.cs", "lines": "102-103", "symbol": "RunAsync" }] },
+        { "n": 9, "from": "pump", "to": "watcher", "label": "WatchAsync", "mode": "sync", "evidence": [{ "path": "src/Core/Application/Client/AnswerChannelPump.cs", "lines": "19", "symbol": "WatchAsync" }] },
+        { "n": 10, "from": "watcher", "to": "connector", "label": "GetAnswerAsync", "mode": "sync", "evidence": [{ "path": "src/Core/Application/Client/AnswerWatcher.cs", "lines": "61-62", "symbol": "GetAnswerAsync" }] },
+        { "n": 11, "from": "watcher", "to": "pump", "label": "AnswerEvent.Ready", "mode": "sync", "evidence": [{ "path": "src/Core/Application/Client/AnswerWatcher.cs", "lines": "74", "symbol": "Ready" }] },
+        { "n": 12, "from": "pump", "to": "channel", "label": "WriteAsync", "mode": "sync", "evidence": [{ "path": "src/Core/Application/Client/AnswerChannelPump.cs", "lines": "26", "symbol": "WriteAsync" }] }
+      ]
+    }
+  ],
+  "stores": {
+    "sql": [
+      { "id": "api-header-caching-config", "table": "dbo.HeaderCachingConfig", "database": "TWKCacheQueryConnection", "purpose": "Per-path response caching rules read by TWK middleware.", "writtenBy": "outside this repo", "readBy": "HeaderCachingConfigRepository", "when": "at start and every 24 hours",
+        "evidence": [{ "path": "src/External/TWK.Framework/Header/HeaderCachingConfigRepository.cs", "lines": "20-29", "symbol": "HeaderCachingConfig" }] }
+    ],
+    "memory": [
+      { "id": "api-header-caching-resources", "owner": "HeaderCachingConfigCacheService", "name": "_allResources", "holds": "all active caching rules", "key": "none, one static list", "lifetime": "process, refreshed every 24 hours",
+        "evidence": [{ "path": "src/External/TWK.Framework/Header/HeaderCachingConfigCacheService.cs", "lines": "7", "symbol": "_allResources" }] }
+    ]
+  },
+  "storeFlows": [
+    {
+      "id": "api-header-cache",
+      "trigger": "Service start and a 24 hour timer",
+      "chapter": "api-cache",
+      "steps": [
+        { "n": 1, "actor": "shamel-twk", "op": "read", "store": "sql", "key": "dbo.HeaderCachingConfig where IsActive = 1", "when": "on start and each timer tick",
+          "evidence": [{ "path": "src/External/TWK.Framework/Header/HeaderCachingConfigRepository.cs", "lines": "20-29", "symbol": "HeaderCachingConfig" }] },
+        { "n": 2, "actor": "shamel-twk", "op": "write", "store": "memory", "key": "_allResources", "when": "after the query returns",
+          "evidence": [{ "path": "src/External/TWK.Framework/Header/HeaderCachingConfigCacheService.cs", "lines": "41", "symbol": "_allResources" }] },
+        { "n": 3, "actor": "shamel-twk", "op": "read", "store": "memory", "key": "rule for the request path", "when": "on each GET under /api/",
+          "evidence": [{ "path": "src/External/TWK.Framework/Header/HeaderCachingMiddleware.cs", "lines": "47", "symbol": "FindHeaderCachingConfig" }] }
+      ]
+    }
+  ]
+}

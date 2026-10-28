@@ -1,0 +1,44 @@
+{
+  "levels": {
+    "root": "system",
+    "diagrams": [
+      {
+        "id": "system",
+        "level": 0,
+        "title": "Shamel Backend in its surroundings",
+        "summary": "The mobile app talks to the Mobile API, which hands prompts to Shaheen through one connector interface.",
+        "groups": [],
+        "nodes": [
+          { "id": "shamel-mobile-app", "label": "Tawakkalna mobile app", "kind": "client", "role": "Sends prompts and reads answers over HTTP, SSE or SignalR.",
+            "evidence": [{ "path": "src/APIs/MobileAPI/Controllers/v4/ConversationsController.cs", "lines": "19-21", "symbol": "ApiVersion" }] },
+          { "id": "shamel-mobile-api", "label": "Mobile API", "kind": "backend", "role": "ASP.NET host: security, header checks, controllers, SignalR hub.", "children": "api",
+            "evidence": [{ "path": "src/APIs/MobileAPI/Program.cs", "lines": "17-20", "symbol": "Program" }] },
+          { "id": "shamel-legacy", "label": "Legacy Shamel", "kind": "backend", "role": "Old Shamel routes are forwarded before anything else runs.",
+            "evidence": [{ "path": "src/APIs/MobileAPI/Infrastructure/LegacyShamelForwarding.cs", "lines": "15", "symbol": "LegacyShamelForwarding" }] },
+          { "id": "shamel-twk", "label": "TWK Framework", "kind": "library", "role": "Shared platform middleware such as the header validator.",
+            "evidence": [{ "path": "src/External/TWK.Framework/Header/HeaderValidatorMiddleware.cs", "lines": "17", "symbol": "HeaderValidatorMiddleware" }] },
+          { "id": "shamel-application", "label": "Application core", "kind": "backend", "role": "Command handlers and the answer watcher.",
+            "evidence": [{ "path": "src/Core/Application/DependencyInjection.cs", "lines": "41-42", "symbol": "IAnswerWatcher" }] },
+          { "id": "shamel-connector", "label": "Shaheen connector", "kind": "backend", "role": "One interface with HTTP, SSE, gRPC, WebSocket and mock implementations.",
+            "evidence": [{ "path": "src/Core/Application/Abstractions/IShaheenConnector.cs", "lines": "11-12", "symbol": "IShaheenConnector" }] },
+          { "id": "shamel-shaheen", "label": "Shaheen", "kind": "external", "role": "The AI framework that answers prompts.",
+            "evidence": [{ "path": "src/Core/Application/Shaheen/HttpShaheenConnector.cs", "lines": "15-16", "symbol": "HttpShaheenConnector" }] }
+        ],
+        "edges": [
+          { "from": "shamel-mobile-app", "to": "shamel-mobile-api", "label": "Prompts and answers", "short": "HTTP, SSE, SignalR", "mode": "sync",
+            "evidence": [{ "path": "src/APIs/MobileAPI/Controllers/v4/ConversationsController.cs", "lines": "19-21", "symbol": "ApiVersion" }] },
+          { "from": "shamel-mobile-api", "to": "shamel-legacy", "label": "Forwards old routes", "short": "forwards old routes", "mode": "sync",
+            "evidence": [{ "path": "src/APIs/MobileAPI/Program.cs", "lines": "89", "symbol": "UseLegacyShamelForwarding" }] },
+          { "from": "shamel-mobile-api", "to": "shamel-twk", "label": "Uses platform middleware", "short": "header validator", "mode": "sync",
+            "evidence": [{ "path": "src/APIs/MobileAPI/Program.cs", "lines": "137", "symbol": "UseHeaderValidator" }] },
+          { "from": "shamel-mobile-api", "to": "shamel-application", "label": "Sends commands", "short": "MediatR commands", "mode": "sync",
+            "evidence": [{ "path": "src/APIs/MobileAPI/Controllers/v4/ConversationsController.cs", "lines": "46", "symbol": "Send" }] },
+          { "from": "shamel-application", "to": "shamel-connector", "label": "Calls the connector", "short": "CreatePromptAsync", "mode": "sync",
+            "evidence": [{ "path": "src/Core/Application/Conversations/CreatePrompt/V4/CreatePromptHandler.cs", "lines": "12", "symbol": "CreatePromptAsync" }] },
+          { "from": "shamel-connector", "to": "shamel-shaheen", "label": "Calls Shaheen", "short": "HTTP to Shaheen", "mode": "sync",
+            "evidence": [{ "path": "src/Core/Application/Shaheen/HttpShaheenConnector.cs", "lines": "15-16", "symbol": "HttpShaheenConnector" }] }
+        ]
+      }
+    ]
+  }
+}
