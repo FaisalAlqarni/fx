@@ -20,8 +20,9 @@ command did wake a subagent controller every time.
 child outstanding does not strand you. So do not poll, do not sleep, and do not
 invent a bounded wait.
 
-**Subagent controller: the report file is your wake.** Every dispatch names a
-report path (`.fx/<slug>/reports/NN-*-report.md`). Before you end a turn with a
+**Subagent controller: the report file is your wake.** Every dispatch names the
+file its child writes: an implementer's report (`.fx/<slug>/reports/NN-*-report.md`),
+a reviewer's or lens's findings file (`docs/plans/<slug>/findings/NN-*.md`). Before you end a turn with a
 child outstanding, launch a tracked background command that exits when that
 file lands, and end the turn on it:
 
@@ -30,7 +31,7 @@ until [ -s .fx/<slug>/reports/NN-<name>-report.md ]; do sleep 30; done; echo REP
 ```
 
 Its exit wakes you; then read the report. One follower per outstanding child,
-each on its own report path.
+each on its own file.
 
 **Either way, you are idle.** The wake comes when the child finishes, which means every
 minute it runs is a minute you spent doing nothing, and a thirteen-task plan run
