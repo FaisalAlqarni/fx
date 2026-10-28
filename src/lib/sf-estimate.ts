@@ -5,10 +5,12 @@ import { parseJson } from './json.js';
 import { validate } from './sf-schema.js';
 import type { Item, Model, Problem } from './sf-model.js';
 
-// Measured by proof run (a), Shamel.Backend on 2026-10-28: 12,813,063 tokens and 20.3 minutes against 1,158,000 and
-// 43 from the first guesses. One run cannot split per-file from per-figure cost, so every guess scaled by the same
-// ratio (tokens 11.07, minutes 0.47).
-export const ESTIMATE = { calibrated: true, measuredOn: '2026-10-28', tokensPerFile: 66000, tokensPerFigure: 166000, controllerTokens: 3320000, minutesPerFile: 0.2, minutesPerFigure: 0.7, controllerMinutes: 9.4, parallel: 4 };
+// Refit on 2026-10-28 from proof runs (a) (Shamel.Backend: 3 areas, 83 files, 24 figures, 12,813,063 tokens, 20.3 min)
+// and (b) (four Advantage roots: 12 areas, 617 files, 77 figures, 49,415,523 tokens, 52.7 min). The controller's
+// tokens scale by area count (run (b): 25,209,303 over 12 areas). Two runs cannot split per-file from per-figure cost,
+// so that split keeps run (a)'s ratio and is unproven; both runs land within 11% of tokens and 2% of minutes.
+// archify runs one call at a time after the areas: 145 receipts in about 28 minutes on run (b)'s rebuild.
+export const ESTIMATE = { calibrated: true, measuredOn: '2026-10-28', tokensPerFile: 37000, tokensPerFigure: 93000, controllerTokensPerArea: 2100000, minutesPerFile: 0.2, minutesPerFigure: 0.7, controllerMinutes: 9.4, archifyMinutesPerPage: 0.2, parallel: 4 };
 export type Plan = { areas: { id: string; root: string; files: number; filesToRead: number; levels: number; diagrams: number; sequences: number; storeFlows: number }[]; chapters: number };
 
 const count = { type: 'integer', minimum: 0 };
@@ -47,11 +49,13 @@ export function estimate(plan: Plan) {
   const sum = (f: (a: { tokens: number; minutes: number }) => number): number => areas.reduce((n, a) => n + f(a), 0);
   const lanes = Math.max(1, Math.min(c.parallel, areas.length));
   const round = (n: number): number => Math.round(n * 10) / 10;
+  // One page per figure at least; a long sequence or flow adds pages the plan does not count.
+  const archifyMinutes = round(plan.areas.reduce((n, a) => n + a.diagrams + a.sequences + a.storeFlows, 0) * c.archifyMinutesPerPage);
   return {
     areas: areas.map((a) => ({ ...a, minutes: round(a.minutes) })),
-    total: { tokens: sum((a) => a.tokens) + c.controllerTokens, minutes: round(c.controllerMinutes + sum((a) => a.minutes) / lanes) },
+    total: { tokens: sum((a) => a.tokens) + c.controllerTokensPerArea * plan.areas.length, minutes: round(c.controllerMinutes + sum((a) => a.minutes) / lanes + archifyMinutes), archifyMinutes },
     constants: c,
-    note: c.calibrated ? `constants measured on ${c.measuredOn}` : 'constants are guesses until proof run (a) calibrates them',
+    note: c.calibrated ? `constants measured on ${c.measuredOn} from proof runs (a) and (b); the split between per-file and per-figure cost is unproven` : 'constants are guesses until proof run (a) calibrates them',
     warnings: plan.areas.filter((a) => a.files > 400).map((a) => `area ${a.id} has ${a.files} files; split it into sub-areas of at most 400`),
   };
 }

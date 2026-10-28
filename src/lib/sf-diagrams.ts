@@ -342,22 +342,31 @@ export function findArchify(hostRoot: string, env: NodeJS.ProcessEnv, fx: FxJson
 }
 
 // Runs `finalize` for each job, one at a time: archify's delivery lock rejects a second call in the same folder
-// (delivery/concurrent-attempt). Each job names its receipt (ruling 17).
-export async function runArchify(dir: string, jobs: { name: string; kind: 'architecture' | 'sequence'; spec: string; out: string; repoRoot: string; receipt: string }[]): Promise<{ name: string; ok: boolean; receipt: string | null }[]> {
-  const results: { name: string; ok: boolean; receipt: string | null }[] = [];
+// (delivery/concurrent-attempt). Each job names its receipt (ruling 17). A call past timeoutS is killed.
+export type ArchifyRun = { name: string; ok: boolean; receipt: string | null; timedOut: boolean; json: string; stderr: string };
+export async function runArchify(dir: string, jobs: { name: string; kind: 'architecture' | 'sequence'; spec: string; out: string; repoRoot: string; receipt: string }[], timeoutS = 600): Promise<ArchifyRun[]> {
+  const results: ArchifyRun[] = [];
   const one = (j: (typeof jobs)[number]): Promise<void> => new Promise((resolve) => {
     const receipt = j.receipt;
     // The build rewrites each page with its theme block after archify's browser check, so that check's evidence never
     // matches the page again and archify refuses to replace it (viewer/evidence-path-conflict) on the next build.
     fs.rmSync(j.out.replace(/\.html$/, '.browser-check.json'), { force: true });
     const args = [path.join(dir, 'bin', 'archify.mjs'), 'finalize', j.kind, j.spec, j.out, '--repo-root', j.repoRoot, '--quality', 'showcase', '--receipt', receipt, '--json'];
-    const done = (code: number | null): void => {
-      results[jobs.indexOf(j)] = { name: j.name, ok: code === 0 && fs.existsSync(j.out), receipt: fs.existsSync(receipt) ? receipt : null };
+    let stdout = '', stderr = '', timedOut = false, settled = false;
+    const child = spawn(process.execPath, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const timer = setTimeout(() => { timedOut = true; child.kill('SIGKILL'); }, timeoutS * 1000);
+    child.stdout.on('data', (b: Buffer) => { stdout += b.toString(); });
+    child.stderr.on('data', (b: Buffer) => { stderr += b.toString(); });
+    const done = (code: number | null, error?: Error): void => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (error) stderr += `${error.message}\n`;
+      results[jobs.indexOf(j)] = { name: j.name, ok: !timedOut && code === 0 && fs.existsSync(j.out), receipt: fs.existsSync(receipt) ? receipt : null, timedOut, json: stdout.trim(), stderr: stderr.trimEnd().split('\n').slice(-20).join('\n') };
       resolve();
     };
-    const child = spawn(process.execPath, args, { stdio: 'ignore' });
-    child.on('error', () => done(null));
-    child.on('close', done);
+    child.on('error', (e) => done(null, e));
+    child.on('close', (code) => done(code));
   });
   for (const j of jobs) await one(j);
   return results;

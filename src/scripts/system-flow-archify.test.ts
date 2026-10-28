@@ -36,9 +36,14 @@ const messages = (spec.messages || []).length;
 const evidence = path.join(path.dirname(out), name + '.browser-check.json');
 const conflict = process.env.FAKE_EVIDENCE === '1' && fs.existsSync(evidence);
 const bad = conflict || fails.some((n) => name === n || name.startsWith(n + '-p')) || (type === 'sequence' && messages > max);
+if (process.env.FAKE_HANG === name) await new Promise((r) => setTimeout(r, 60000));
 const receipt = a[a.indexOf('--receipt') + 1];
 fs.mkdirSync(path.dirname(receipt), { recursive: true });
-fs.writeFileSync(receipt, JSON.stringify({ name, ok: !bad }));
+if (process.env.FAKE_NORECEIPT !== name) fs.writeFileSync(receipt, JSON.stringify({ name, ok: !bad }));
+if (bad && process.env.FAKE_NOISY === '1') {
+  process.stdout.write(JSON.stringify({ ok: false, code: 'geometry/edge-through-node' }) + '\\n');
+  for (let i = 1; i <= 25; i++) process.stderr.write('err ' + i + '\\n');
+}
 if (!bad) fs.writeFileSync(out, '<!doctype html><html><head><style>:root{--bg:#000}</style></head><body><a href="#top">top</a><a class="diagram-guide-credit" href="https://github.com/tt-a1i/archify">archify</a><img src="data:image/png;base64,AA">' + (process.env.FAKE_LEAK === name ? '<script src="https://cdn.example/x.js"></script>' : '') + name + '</body></html>');
 if (!bad && process.env.FAKE_EVIDENCE === '1') fs.writeFileSync(evidence, '{}');
 fs.appendFileSync(process.env.FAKE_LOG, JSON.stringify({ args: a, name, messages, start, end: now() }) + '\\n');
@@ -213,6 +218,20 @@ const varOf = (css: string, name: string): string[] => [...css.matchAll(new RegE
   assert.strictEqual(logOf(f).filter((c) => c.name === 'arch-engine').length, 1);
   assert.ok(read(f, `${D}/arch-engine.html`).includes('<svg'));
   assert.deepStrictEqual(reason(o, 'arch-engine'), { name: 'arch-engine', renderer: 'svg', reason: `static SVG, archify failed: ${D}/arch-engine.receipt.json` });
+}
+
+{ // A hung archify call is killed at the timeout and that diagram falls back with the reason
+  const f = setup();
+  const o = ok(f, ['--archify', fake(f, 'fake'), '--archify-timeout', '1'], { FAKE_HANG: 'arch-engine' });
+  assert.deepStrictEqual(reason(o, 'arch-engine'), { name: 'arch-engine', renderer: 'svg', reason: 'static SVG, archify timed out after 1 s' });
+  assert.strictEqual(reason(o, 'arch-system').renderer, 'archify');
+}
+
+{ // A failure keeps archify's --json result and the last 20 lines of its stderr; a missing receipt says so
+  const f = setup();
+  const o = ok(f, ['--archify', fake(f, 'fake')], { FAKE_FAIL: 'arch-engine', FAKE_NOISY: '1', FAKE_NORECEIPT: 'arch-engine' });
+  const tail = Array.from({ length: 20 }, (_, i) => `err ${i + 6}`).join(' | ');
+  assert.strictEqual(reason(o, 'arch-engine').reason, `static SVG, archify failed: no receipt; result: {"ok":false,"code":"geometry/edge-through-node"}; stderr: ${tail}`);
 }
 
 { // Page limit

@@ -17,7 +17,7 @@ import type { Coverage } from './sf-coverage.js';
 import { layoutAll } from './sf-layout.js';
 import { renderPage } from './sf-page.js';
 import { applyThemeBlock, deepDiagrams, findArchify, outsideRefs, pickLine, runArchify, svgPage } from './sf-diagrams.js';
-import type { DeepDiagram } from './sf-diagrams.js';
+import type { ArchifyRun, DeepDiagram } from './sf-diagrams.js';
 import { detectTheme, themeCss } from './sf-theme.js';
 import type { Theme } from './sf-theme.js';
 import type { Evidenced, FigureSpec, Fragment, Item, LayoutLine, Model, Problem } from './sf-model.js';
@@ -161,7 +161,7 @@ export async function layoutChecked(model: Model): Promise<{ figures: FigureSpec
   return { figures: laid.figures, report: laid.report, unfit };
 }
 
-export async function build(opts: { hostRoot: string; site: string; markdown: string; docsDir?: string | null; only?: string[]; archify?: string; flags?: DiagramFlags }): Promise<BuildResult> {
+export async function build(opts: { hostRoot: string; site: string; markdown: string; docsDir?: string | null; only?: string[]; archify?: string; archifyTimeout?: number; flags?: DiagramFlags }): Promise<BuildResult> {
   const result: BuildResult = { ok: false, problems: [], written: [], collisions: [], diagrams: [], layout: [], pageBytes: null, coverage: null, theme: null, depth: null, rebuilt: { docs: [], figures: [], diagrams: [] } };
   const checked = checkModel(opts.hostRoot, opts.site, 'build');
   result.problems = checked.problems;
@@ -281,13 +281,17 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
 
   for (const g of groups) writeSpecs(g);
   const live = archify === undefined ? [] : groups.filter((g) => svgReason(g) === null);
-  type Run = { ok: boolean; receipt: string };
+  // why: the fallback reason of a failed call, from what archify left behind.
+  type Run = { ok: boolean; why: string };
+  const timeoutS = opts.archifyTimeout ?? 600;
   const runAll = async (gs: DeepDiagram[][], retry: boolean): Promise<Map<string, Run[]>> => {
-    const rs = await runArchify(archify as string, jobsOf(gs.flat(), retry));
+    const rs = await runArchify(archify as string, jobsOf(gs.flat(), retry), timeoutS);
     const byGroup = new Map<string, Run[]>();
     gs.flat().forEach((d, i) => {
-      const r = rs[i] as { ok: boolean };
-      byGroup.set(d.source, [...(byGroup.get(d.source) ?? []), { ok: r.ok, receipt: receiptOf(d, retry) }]);
+      const r = rs[i] as ArchifyRun;
+      const why = r.timedOut ? `archify timed out after ${timeoutS} s`
+        : `archify failed: ${r.receipt === null ? 'no receipt' : receiptOf(d, retry)}${r.json ? `; result: ${r.json}` : ''}${r.stderr ? `; stderr: ${r.stderr.split('\n').join(' | ')}` : ''}`;
+      byGroup.set(d.source, [...(byGroup.get(d.source) ?? []), { ok: r.ok, why }]);
     });
     return byGroup;
   };
@@ -326,7 +330,7 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
         : pickLine(g0.name, 'archify sequence', `${msgs(done)} messages in ${done.length} pages${tail}`);
     } else {
       const failed = (attempt as Run[]).map((r, i) => ({ r, i })).filter((x) => !x.r.ok).pop();
-      line = pickLine(g0.name, svgLabel(g), `archify failed: ${(failed as { r: Run }).r.receipt}`);
+      line = pickLine(g0.name, svgLabel(g), (failed as { r: Run }).r.why);
       writeSpecs(g);
     }
     // A page or spec of this diagram from an attempt not shown (a retry's -p3, say) is the build's own stale output.

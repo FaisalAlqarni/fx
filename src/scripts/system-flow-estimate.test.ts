@@ -18,35 +18,42 @@ function estimate(plan: unknown) {
   return { f, r, out: r.status === 0 ? (parseJson(r.stdout) as Obj) : {} };
 }
 
-// two areas, cost from filesToRead
+// two areas, cost from filesToRead; the controller per area; archify per figure page, run one at a time
 {
   const { r, out } = estimate({ areas: [area('A', 120, 10, 2, 2, 1, 0), area('B', 300, 20, 1, 1, 0, 1)], chapters: 4 });
   assert.strictEqual(r.status, 0, r.stderr);
-  assert.deepStrictEqual(out.areas, [{ id: 'A', tokens: 1158000, minutes: 4.1 }, { id: 'B', tokens: 1652000, minutes: 5.4 }]);
-  assert.deepStrictEqual(out.total, { tokens: 6130000, minutes: 14.2 });
+  assert.deepStrictEqual(out.areas, [{ id: 'A', tokens: 649000, minutes: 4.1 }, { id: 'B', tokens: 926000, minutes: 5.4 }]);
+  assert.deepStrictEqual(out.total, { tokens: 5775000, minutes: 15.2, archifyMinutes: 1 });
   assert.strictEqual(out.constants.calibrated, true);
-  assert.strictEqual(out.note, 'constants measured on 2026-10-28');
+  assert.strictEqual(out.note, 'constants measured on 2026-10-28 from proof runs (a) and (b); the split between per-file and per-figure cost is unproven');
   assert.deepStrictEqual(out.warnings, []);
 }
 // files does not drive cost, only the split warning
 {
   const { out } = estimate({ areas: [area('A', 5000, 10, 2, 2, 1, 0)], chapters: 1 });
-  assert.deepStrictEqual(out.areas, [{ id: 'A', tokens: 1158000, minutes: 4.1 }]);
+  assert.deepStrictEqual(out.areas, [{ id: 'A', tokens: 649000, minutes: 4.1 }]);
   assert.deepStrictEqual(out.warnings, ['area A has 5000 files; split it into sub-areas of at most 400']);
-  assert.strictEqual(out.total.minutes, 13.5, 'one area runs alone');
+  assert.strictEqual(out.total.minutes, 14.1, 'one area runs alone');
 }
 // parallel is capped by the area count and by 4
 {
   const { out } = estimate({ areas: ['a', 'b', 'c', 'd', 'e', 'f'].map((i) => area(i, 10, 10, 1, 0, 0, 0)), chapters: 1 });
-  assert.deepStrictEqual(out.areas[0], { id: 'a', tokens: 660000, minutes: 2 });
+  assert.deepStrictEqual(out.areas[0], { id: 'a', tokens: 370000, minutes: 2 });
   assert.strictEqual(out.total.minutes, 12.4);
 }
-// proof run (a), Shamel.Backend 2026-10-28: its plan reproduces the measured 12,813,063 tokens (120 requests, deduplicated
-// by request id) and 20.3 minutes of wall clock (117 + 765 + 335 s over the three headless steps) within 10%
+// Both proof runs reproduce within 12% of tokens and 10% of the lane's wall clock (archify minutes apart: the lane
+// runs measured almost no archify time). Run (a), Shamel.Backend: 12,813,063 tokens, 20.3 minutes.
 {
   const { out } = estimate({ areas: [area('mobile-api', 30, 20, 2, 4, 3, 0), area('core', 66, 28, 3, 5, 2, 1), area('twk-framework', 88, 35, 2, 5, 1, 3)], chapters: 9 });
-  assert.ok(Math.abs(out.total.tokens / 12813063 - 1) <= 0.1, `tokens ${out.total.tokens}`);
-  assert.ok(Math.abs(out.total.minutes / (1217 / 60) - 1) <= 0.1, `minutes ${out.total.minutes}`);
+  assert.ok(Math.abs(out.total.tokens / 12813063 - 1) <= 0.12, `tokens ${out.total.tokens}`);
+  assert.ok(Math.abs((out.total.minutes - out.total.archifyMinutes) / (1217 / 60) - 1) <= 0.1, `minutes ${out.total.minutes}`);
+}
+// Run (b), four Advantage roots: 12 areas, 617 files to read, 77 figures; 49,415,523 tokens, 52.7 minutes.
+{
+  const areas = Array.from({ length: 12 }, (_, i) => area(`a${i}`, 100, i === 11 ? 56 : 51, 2, i === 11 ? 11 : 6, 0, 0));
+  const { out } = estimate({ areas, chapters: 12 });
+  assert.ok(Math.abs(out.total.tokens / 49415523 - 1) <= 0.12, `tokens ${out.total.tokens}`);
+  assert.ok(Math.abs((out.total.minutes - out.total.archifyMinutes) / 52.7 - 1) <= 0.1, `minutes ${out.total.minutes}`);
 }
 // malformed and missing
 {
