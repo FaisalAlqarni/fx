@@ -1,6 +1,6 @@
 // Run: node lib/doc-evidence.test.js
 import * as assert from 'assert';
-import { parseDoc } from './doc-evidence.js';
+import { adrStatus, parseDoc } from './doc-evidence.js';
 
 const SHA = '3f2c1a9e0b7d4c6a8e1f2b3c4d5e6f708192a3b4';
 const PATH_DOC = [
@@ -76,5 +76,11 @@ for (const status of ['Status: Partly superseded by 0005: decisions 2 and 4', '#
 for (const status of ['Status: Deprecated', 'Status: Ignored', '## Status\n\nSuperseded']) {
   assert.strictEqual(parseDoc('docs/adr/0001-x.md', status + decision).claims[0]?.status, 'superseded', status);
 }
+
+// adrStatus is the one status test; the CLI's rule check shares it.
+assert.strictEqual(adrStatus('# T\n\nStatus: Superseded by 0002\n'), 'superseded');
+assert.strictEqual(adrStatus('# T\n\n## Status\n\nAccepted\n'), 'current');
+assert.strictEqual(adrStatus('# T\n\nStatus: Partly superseded by 0002\n'), 'current');
+assert.strictEqual(adrStatus('# T\n\nNo status line.\n'), 'current');
 
 console.log('doc-evidence tests passed');

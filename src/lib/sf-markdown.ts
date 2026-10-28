@@ -3,6 +3,7 @@
 import * as path from 'path';
 import { execFileSync } from 'child_process';
 import type { Root } from './sf-evidence.js';
+import type { Coverage } from './sf-coverage.js';
 import type { Evidence, Evidenced, Model, Section, Sequence, StoreFlow } from './sf-model.js';
 
 export const GENERATED = '<!-- fx-system-flow generated: edit the model, then rebuild -->';
@@ -141,6 +142,34 @@ export function renderMarkdown(model: Model, roots: Map<string, Root>, hostId: s
     indexOf(posix(path.join(markdownRoot, folder)), model.sections.filter((s) => s.folder === folder), []);
   }
   return docs;
+}
+
+// coverage.md: per-kind counts, then every inventory entry with its chapter or "not covered".
+export function renderCoverage(model: Model, cov: Coverage, markdownRoot: string): { path: string; text: string } {
+  const title = new Map(model.sections.map((s) => [s.id, s.title]));
+  const body = [
+    '# Coverage', '',
+    ...table(['Kind', 'Covered', 'Total'], Object.entries(cov.counts).map(([k, c]) => [k, String(c.covered), String(c.total)])), '',
+    ...table(['Kind', 'Name', 'Chapter'], cov.entries.map((e) => [e.kind, cell(e.name), e.chapter === null ? 'not covered' : cell(`${title.get(e.chapter) ?? e.chapter} (${e.chapter})`)])),
+    '', GENERATED,
+  ];
+  return { path: posix(path.join(markdownRoot, 'coverage.md')), text: `${body.join('\n')}\n` };
+}
+
+// rules-in-force.md: one entry per rule with a link to its ADR, the decision and the rule's evidence line.
+export function renderRules(model: Model, roots: Map<string, Root>, hostId: string, markdownRoot: string): { path: string; text: string } {
+  const body = ['# Rules in force', ''];
+  for (const r of model.rules) {
+    const adr = r.adr === undefined ? '' : (r.adr.root ?? hostId) === hostId
+      ? ` ([${linkText(r.adr.path)}](${posix(path.relative(markdownRoot, r.adr.path))}))`
+      : ` (@${r.adr.root}/${prose(r.adr.path)})`;
+    body.push(`- ${r.id}: ${prose(r.text)}${adr}${r.decision === undefined ? '' : ` ${prose(r.decision)}`}`);
+    const line = evidenceLine(r.evidence ?? [], hostId);
+    if (line !== '') body.push(`  ${line}`);
+  }
+  if (model.rules.length === 0) body.push('No rules are listed.');
+  const sha = oldestVerified(model.rules, roots, hostId, new Map());
+  return { path: posix(path.join(markdownRoot, 'rules-in-force.md')), text: `${[...body, '', GENERATED, ...(sha === null ? [] : [`<!-- fx-docs verified: ${sha} -->`])].join('\n')}\n` };
 }
 
 export function renderReadme(): string {

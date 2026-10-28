@@ -37,12 +37,8 @@ function statusText(lines: string[], fenced: boolean[]): string | null {
   return null;
 }
 
-// An ADR is a doc under a folder named adr or decisions.
-export const isAdrPath = (doc: string): boolean => doc.split('/').slice(0, -1).some((s) => s === 'adr' || s === 'decisions');
-
-export function parseDoc(doc: string, text: string): { claims: Claim[]; problems: Problem[]; verified: string | null } {
-  const lines = text.split('\n');
-  // A fence line counts as fenced, so claims never run across or into one.
+// A fence line counts as fenced, so claims never run across or into one.
+function fenceMask(lines: string[]): boolean[] {
   const fenced: boolean[] = [];
   let fence: string | null = null;
   for (const l of lines) {
@@ -50,10 +46,24 @@ export function parseDoc(doc: string, text: string): { claims: Claim[]; problems
     if (fence === null) { fenced.push(f !== null); if (f) fence = f[1] ?? null; }
     else { fenced.push(true); if (f && f[1] === fence) fence = null; }
   }
+  return fenced;
+}
+
+// Only a status that opens with Superseded, Deprecated or Ignored takes the whole ADR out of
+// force; "Partly superseded by" leaves its other decisions live. Shared by docs-index and system-flow.
+export function adrStatus(text: string): 'current' | 'superseded' {
+  const lines = text.split('\n');
+  return /^\W*(superseded|deprecated|ignored)\b/i.test(statusText(lines, fenceMask(lines)) ?? '') ? 'superseded' : 'current';
+}
+
+// An ADR is a doc under a folder named adr or decisions.
+export const isAdrPath = (doc: string): boolean => doc.split('/').slice(0, -1).some((s) => s === 'adr' || s === 'decisions');
+
+export function parseDoc(doc: string, text: string): { claims: Claim[]; problems: Problem[]; verified: string | null } {
+  const lines = text.split('\n');
+  const fenced = fenceMask(lines);
   const kind = isAdrPath(doc) ? 'adr' : 'doc';
-  // Only a status that opens with Superseded, Deprecated or Ignored takes the whole ADR out of
-  // force; "Partly superseded by" leaves its other decisions live.
-  const status = kind === 'adr' && /^\W*(superseded|deprecated|ignored)\b/i.test(statusText(lines, fenced) ?? '') ? 'superseded' : 'current';
+  const status = kind === 'adr' ? adrStatus(text) : 'current';
 
   const claims: Claim[] = [];
   const problems: Problem[] = [];

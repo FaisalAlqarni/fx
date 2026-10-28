@@ -1,6 +1,9 @@
 // Structure rules for `system-flow check`: caps, references, evidence, dash ban.
 import { collect, originOf, parseHandle } from './sf-model.js';
 import type { Item, ItemKind, Model, Problem } from './sf-model.js';
+import { adrStatus } from './doc-evidence.js';
+import { readCited } from './sf-evidence.js';
+import type { Root } from './sf-evidence.js';
 
 type Origin = Map<string, { file: string; pointer: string }>;
 
@@ -98,4 +101,19 @@ function dashes(v: unknown, file: string, pointer: string, out: Problem[]): void
     if (known.file !== '') { file = known.file; pointer = known.pointer; }
     for (const [k, child] of Object.entries(v)) dashes(child, file, `${pointer}/${k}`, out);
   }
+}
+
+// A rule fails when its ADR is gone or out of force (the status test docs-index applies).
+export function checkRuleAdrs(model: Model, roots: Map<string, Root>): Problem[] {
+  const out: Problem[] = [];
+  const hostId = [...roots.values()].find((r) => r.host)?.id ?? '';
+  for (const r of model.rules) {
+    if (!r.adr) continue;
+    const root = roots.get(r.adr.root ?? hostId);
+    if (!root || root.missing) continue;
+    const text = readCited(root, r.adr.path);
+    const why = text === null ? 'not found' : adrStatus(text) === 'superseded' ? 'is superseded' : null;
+    if (why !== null) out.push({ ...originOf(r), message: `rule ${r.id}: ADR ${r.adr.path} ${why}`, level: 'error' });
+  }
+  return out;
 }

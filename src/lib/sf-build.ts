@@ -6,8 +6,10 @@ import { parseJson } from './json.js';
 import { parseFxJson } from './fx-json.js';
 import { resolveRoots, verifyEvidence } from './sf-evidence.js';
 import type { Root } from './sf-evidence.js';
-import { renderMarkdown, renderReadme, GENERATED } from './sf-markdown.js';
-import { checkRules } from './sf-rules.js';
+import { renderCoverage, renderMarkdown, renderReadme, renderRules, GENERATED } from './sf-markdown.js';
+import { checkRuleAdrs, checkRules } from './sf-rules.js';
+import { coverage } from './sf-coverage.js';
+import type { Coverage } from './sf-coverage.js';
 import { layoutAll } from './sf-layout.js';
 import { detectTheme, themeCss } from './sf-theme.js';
 import type { Theme } from './sf-theme.js';
@@ -19,6 +21,7 @@ export type BuildResult = {
   ok: boolean; problems: Problem[]; written: string[]; collisions: string[];
   diagrams: { name: string; renderer: 'archify' | 'svg'; reason: string }[];
   layout: LayoutLine[]; pageBytes: number | null;
+  coverage: Coverage['counts'] | null;
   theme: { source: string; kind: string; fallbacks: Theme['fallbacks'] } | null; // null until the build reaches the theme step
 };
 
@@ -55,7 +58,7 @@ export function checkModel(hostRoot: string, site: string, mode: 'check' | 'buil
     const only = fragment === undefined ? undefined : path.relative(hostRoot, path.resolve(hostRoot, fragment));
     if (only !== undefined && !loaded.fragments.some((f) => f.file === only)) throw new Error(`no fragment ${only}`);
     if (only !== undefined) items = items.filter((i) => i.file === only);
-    problems.push(...resolved.problems, ...verifyEvidence(items, resolved.roots, mode));
+    problems.push(...resolved.problems, ...checkRuleAdrs(merged.model, resolved.roots), ...verifyEvidence(items, resolved.roots, mode));
     if (only !== undefined) problems = problems.filter((p) => p.file === only || p.file === '.fx.json');
   }
   return { config: cfg.config, fragments: loaded.fragments, model: merged.model, items, roots, origin: merged.origin, problems };
@@ -75,7 +78,7 @@ function writeGenerated(root: string, rel: string, text: string, isOurs: (old: s
 }
 
 export async function build(opts: { hostRoot: string; site: string; markdown: string; docsDir?: string | null; only?: string[]; archify?: string }): Promise<BuildResult> {
-  const result: BuildResult = { ok: false, problems: [], written: [], collisions: [], diagrams: [], layout: [], pageBytes: null, theme: null };
+  const result: BuildResult = { ok: false, problems: [], written: [], collisions: [], diagrams: [], layout: [], pageBytes: null, coverage: null, theme: null };
   const checked = checkModel(opts.hostRoot, opts.site, 'build');
   result.problems = checked.problems;
   if (checked.problems.some((p) => p.level === 'error')) return result;
@@ -109,6 +112,13 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'README.md'), renderReadme(), hasMarker, result);
   const isGeneratedJson = (old: string): boolean => { try { return (parseJson(old) as { generated?: unknown }).generated === true; } catch { return false; } };
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'model', 'system-model.json'), `${JSON.stringify({ generated: true, ...checked.model }, null, 2)}\n`, isGeneratedJson, result);
+  const cov = coverage(checked.model);
+  result.coverage = cov.counts;
+  writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'model', 'coverage.json'), `${JSON.stringify({ generated: true, ...cov }, null, 2)}\n`, isGeneratedJson, result);
+  const covDoc = renderCoverage(checked.model, cov, opts.markdown);
+  writeGenerated(opts.hostRoot, covDoc.path, covDoc.text, hasMarker, result);
+  const rules = renderRules(checked.model, checked.roots, hostId, opts.markdown);
+  writeGenerated(opts.hostRoot, rules.path, rules.text, hasMarker, result);
 
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'model', 'layout-report.json'), `${JSON.stringify(laid.report, null, 2)}\n`, () => true, result);
 
