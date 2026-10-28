@@ -109,3 +109,11 @@ The measured numbers, the checks and the calibration are in `proof/results-a.md`
 ## (b) Advantage, four roots
 
 The measured numbers, the checks and the seven defects the run found are in `proof/results-b.md`; the controller commands are in `proof/run-b.md`. Tokens 49,415,523 against an estimate of 56,824,000 (13.0% under) and wall clock 52.7 min against 53.7 min (2.0% under), both inside the 50% bar.
+
+## Accepted gaps and open questions
+
+The owner's standing rule is that the controller decides these; the controller accepted both gaps on 2026-10-28.
+
+- **G5, the kit's interactions in the visual check: accepted gap.** Neither proof run checked the map's toggles ("Show context nodes", "Show all arrows") or drill-down in a browser; the visual checks measured layout only.
+- **G8, the rerun choices: accepted gap.** Neither proof run exercised refresh stale, cover uncovered or full rebuild on a site that already had a model.
+- **Design Open Question 1, whether archify sequence pages pass the 390 px check:** answered by the controller's Playwright result on the archify sequence pages at 390, after the fix wave. Controller visual check after the fix wave: pending.

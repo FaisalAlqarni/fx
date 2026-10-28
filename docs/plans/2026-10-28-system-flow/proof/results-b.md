@@ -9,7 +9,9 @@ Run folder: `/tmp/claude-1000/sf-build/proof-b-20261028-1`, with scratch clones 
 | Tokens | 56,824,000 | 49,415,523 over 381 requests, deduplicated by request id, from the scratch transcript | 13.0% under |
 | Wall clock | 53.7 min | 52.7 min (3,159 s) | 2.0% under |
 
-Both land inside the 50% bar. The wall clock is the sum of the four steps, from the controller's UTC stamps:
+Both land inside the 50% bar. The estimate is the one in force on the run day: it predates defect 6 (area agents now split an unfit figure before returning, work its constants do not count) and the refit from runs (a) and (b) together that the final review asked for, so these errors measure the old constants, not the current ones.
+
+The wall clock is the sum of the four steps, from the controller's UTC stamps:
 
 | Step | From | To | Seconds |
 |---|---|---|---|
@@ -100,7 +102,7 @@ That cost about 7 minutes. The final layout report: 93 figures, every one at mos
 | Coverage lists every engine | pass | see Coverage |
 | Estimate within 50% | pass | tokens 13.0%, wall clock 2.0% |
 | Real repos unchanged | pass | the controller compared `git status --porcelain` of all four real repos with the step-1 snapshots in the run folder: no change |
-| Visual check, 1440 and 390, light and dark | failed in the lane run, fixed | the lane's headless Chrome check failed 180 views at 390 px. The controller's Playwright run on that build counted 179 views at 390 px. After the fixes and a rebuild (91 archify pages, 16 SVG), Playwright at a 390 by 844 viewport finds 0 of 216 views (108 pages, light and dark) wider than the viewport; the controller reruns the full check at both widths |
+| Visual check, 1440 and 390, light and dark | failed in the lane run; after the fixes, 390 overflow only measured | the lane's headless Chrome check failed 180 views at 390 px. The controller's Playwright run on that build counted 179 views at 390 px. Measured on 2026-10-28, after the fixes and a rebuild (91 archify pages, 16 SVG): Playwright at a 390 by 844 viewport, light and dark, checked one thing, page width, and found 0 of 216 views (108 pages) wider than the viewport. Not measured then: 1440, clipped content, and the kit's interactions. Controller visual check after the fix wave: pending |
 
 ## Defects the run found, and their fixes
 
