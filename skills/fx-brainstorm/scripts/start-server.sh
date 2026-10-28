@@ -138,7 +138,7 @@ if [[ "$FOREGROUND" != "true" && "$FORCE_BACKGROUND" != "true" ]]; then
   fi
 fi
 
-# Session files (server.log, server-info, .last-token) embed the session key —
+# Session files (server.log, server-info, .last-token) embed the session key, so
 # keep everything this script and the server create owner-only.
 umask 077
 
@@ -304,7 +304,7 @@ fi
 cd "$SCRIPT_DIR" || exit 1
 
 # Resolve the harness PID (grandparent of this script).
-# $PPID is the ephemeral shell the harness spawned to run us — it dies
+# $PPID is the ephemeral shell the harness spawned to run us. It dies
 # when this script exits. The harness itself is $PPID's parent.
 OWNER_PID="$(ps -o ppid= -p "$PPID" 2>/dev/null | tr -d ' ')"
 if [[ -z "$OWNER_PID" || "$OWNER_PID" == "1" ]]; then

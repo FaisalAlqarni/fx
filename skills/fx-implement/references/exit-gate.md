@@ -38,6 +38,13 @@ branch that cannot merge.
 
 Why: a suite can pass while the CI linter and scanner fail; only running the CI commands shows it.
 
+### Run the prose gate on the branch
+
+From the worktree, run
+`python3 -I <skill base directory>/../../scripts/check-prose --diff <MERGE_BASE>`
+and ledger `Exit gate: prose: <n> hits`. A hit blocks the completion claim
+like a failing test: send the hits to one fix subagent, then run it again.
+
 ### Classify every failing test
 
 When `test_all` fails, run each failing test alone with `test_one` on the

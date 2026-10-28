@@ -180,6 +180,6 @@ shrinks; implementation absorbs the wrappers"*. **Don't write "easier to
 maintain" or "cleaner code"**: those aren't in the glossary and don't earn
 their place.
 
-No hedging, no throat-clearing, no "it's worth noting that…". **If a sentence
+No hedging, no throat-clearing, no "it's worth noting that…". **If a sentence (prose-gate: quoting)
 could be a bullet, make it a bullet. If a bullet could be cut, cut it. If a
 term isn't in the glossary, reach for one that is before inventing a new one.**
