@@ -180,6 +180,20 @@ const { out, err } = build(f);
   assert.ok(s.messages.every((m) => ids.includes(m.from) && ids.includes(m.to)));
 }
 {
+  const g = setup();
+  const fl = (0, import_json.parseJson)(fs.readFileSync(path.join(g.host, `${SITE}/model/fragments/flows.json`), "utf8"));
+  fl.sequences[0].messages = fl.sequences[0].messages.slice(0, 10);
+  fl.storeFlows[0].steps = fl.storeFlows[0].steps.slice(0, 3);
+  g.fragment("flows", fl);
+  build(g);
+  assert.strictEqual(spec(g, "seq-turn-p2").messages.length, 2);
+  assert.strictEqual(spec(g, "flow-first").messages.length, 3);
+  for (const n of ["seq-turn", "seq-turn-p2", "flow-first"]) {
+    const [w, h] = spec(g, n).meta.viewBox;
+    assert.ok(w / h >= 1.55 || Math.round(1346 * h / w) + 126 <= 900, `${n} ${w}x${h}`);
+  }
+}
+{
   for (const n of fs.readdirSync(path.join(f.host, D, "src"))) {
     const s = (0, import_json.parseJson)(read(f, `${D}/src/${n}`));
     const sch = schema(s.diagram_type === "architecture" ? "architecture" : "sequence");

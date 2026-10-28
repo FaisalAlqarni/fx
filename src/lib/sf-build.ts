@@ -261,9 +261,12 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   const writeSpecs = (ds: DeepDiagram[]): void => {
     for (const d of ds) writeGenerated(opts.hostRoot, path.posix.join(pages, 'src', `${d.name}.json`), `${JSON.stringify(d.spec, null, 2)}\n`, generatedJson, result);
   };
-  const jobsOf = (ds: DeepDiagram[]) => ds.map((d) => ({
+  // The retry's receipts carry .retry, so the first attempt's receipts survive it.
+  const receiptOf = (d: DeepDiagram, retry: boolean): string => path.posix.join(pages, `${d.name}${retry ? '.retry' : ''}.receipt.json`);
+  const jobsOf = (ds: DeepDiagram[], retry: boolean) => ds.map((d) => ({
     name: d.name, kind: d.kind, spec: path.join(opts.hostRoot, pages, 'src', `${d.name}.json`),
     out: path.join(opts.hostRoot, pages, `${d.name}.html`), repoRoot: checked.roots.get(d.owningRoot)?.dir ?? opts.hostRoot,
+    receipt: path.join(opts.hostRoot, receiptOf(d, retry)),
   }));
   const bySource = new Map<string, DeepDiagram[]>();
   for (const d of all) bySource.set(d.source, [...(bySource.get(d.source) ?? []), d]);
@@ -275,16 +278,16 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   for (const g of groups) writeSpecs(g);
   const live = archify === undefined ? [] : groups.filter((g) => svgReason(g) === null);
   type Run = { ok: boolean; receipt: string };
-  const runAll = async (gs: DeepDiagram[][]): Promise<Map<string, Run[]>> => {
-    const rs = await runArchify(archify as string, jobsOf(gs.flat()));
+  const runAll = async (gs: DeepDiagram[][], retry: boolean): Promise<Map<string, Run[]>> => {
+    const rs = await runArchify(archify as string, jobsOf(gs.flat(), retry));
     const byGroup = new Map<string, Run[]>();
     gs.flat().forEach((d, i) => {
       const r = rs[i] as { ok: boolean };
-      byGroup.set(d.source, [...(byGroup.get(d.source) ?? []), { ok: r.ok, receipt: path.posix.join(pages, `${d.name}.receipt.json`) }]);
+      byGroup.set(d.source, [...(byGroup.get(d.source) ?? []), { ok: r.ok, receipt: receiptOf(d, retry) }]);
     });
     return byGroup;
   };
-  const first = live.length ? await runAll(live) : new Map<string, Run[]>();
+  const first = live.length ? await runAll(live, false) : new Map<string, Run[]>();
   // One fixed retry for a sequence or flow whose page limit is above 5; nothing edits the spec between attempts.
   const retried = new Map<string, DeepDiagram[]>();
   for (const g of live) {
@@ -295,7 +298,7 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
     }
   }
   for (const g of retried.values()) writeSpecs(g);
-  const second = retried.size ? await runAll([...retried.values()]) : new Map<string, Run[]>();
+  const second = retried.size ? await runAll([...retried.values()], true) : new Map<string, Run[]>();
 
   const msgs = (g: DeepDiagram[]): number => g.reduce((n, d) => n + ((d.spec as { messages?: unknown[] }).messages?.length ?? 0), 0);
   for (const g of groups) {
@@ -321,6 +324,13 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
       const failed = (attempt as Run[]).map((r, i) => ({ r, i })).filter((x) => !x.r.ok).pop();
       line = pickLine(g0.name, svgLabel(g), `archify failed: ${(failed as { r: Run }).r.receipt}`);
       writeSpecs(g);
+    }
+    // A page or spec of this diagram from an attempt not shown (a retry's -p3, say) is the build's own stale output.
+    const keep = new Set(shown.map((d) => d.name));
+    const page = new RegExp(`^${g0.name}(?:-p\\d+)?\\.(?:html|json)$`);
+    for (const dir of [pages, path.posix.join(pages, 'src')]) {
+      const abs = path.join(opts.hostRoot, dir);
+      if (fs.existsSync(abs)) for (const n of fs.readdirSync(abs)) if (page.test(n) && !keep.has(n.replace(/\.(?:html|json)$/, ''))) fs.rmSync(path.join(abs, n));
     }
     for (const d of shown) {
       if (renderer === 'svg') writeGenerated(opts.hostRoot, path.posix.join(pages, `${d.name}.html`), svgPage(d, figureOf(d), Number(/-p(\d+)$/.exec(d.name)?.[1] ?? 1)), () => true, result);

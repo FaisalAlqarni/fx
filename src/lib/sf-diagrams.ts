@@ -121,14 +121,17 @@ function sequencePages(base: string, title: string, parts: Part[], msgs: Msg[], 
     for (const x of parts) if (used.size < 2) used.add(x.id);
     const shown = parts.filter((x) => used.has(x.id));
     const name = p === 0 ? base : `${base}-p${p + 1}`;
-    const width = Math.max(480, 150 * shown.length + 60);
+    const height = Math.max(480, 180 + 56 * slice.length + 60);
+    // archify 3.2.0 gives an authored sequence viewBox no reader fit, and its delivery fails a canvas narrower than
+    // 1.55 times its height when the page outgrows 900 px (composition/viewport-height), so the canvas widens to 1.55.
+    const width = Math.max(480, 150 * shown.length + 60, Math.ceil(height * 1.55));
     // archify 3.2.0 on an authored viewBox: each box is max(86, min(190, round((width - 124) / count) - 24)) px, and a
     // label needs units * 6.8 px within it + 6 (participant-label-overflow).
     const box = Math.max(86, Math.min(190, Math.round((width - 124) / shown.length) - 24));
     const shortened: string[] = [];
     const spec = {
       schema_version: 1, diagram_type: 'sequence',
-      meta: { title: pages > 1 ? `${title} (page ${p + 1} of ${pages})` : title, output: `${name}.html`, quality_profile: 'showcase', ...(repo ? { repository: repo } : {}), viewBox: [width, Math.max(480, 180 + 56 * slice.length + 60)] },
+      meta: { title: pages > 1 ? `${title} (page ${p + 1} of ${pages})` : title, output: `${name}.html`, quality_profile: 'showcase', ...(repo ? { repository: repo } : {}), viewBox: [width, height] },
       participants: shown.map((x) => ({ id: aid(x.id), type: x.type, label: fit(x.label, Math.floor((box + 6) / 6.8), `${x.id} label`, shortened), ...(x.sources ? { sources: x.sources } : {}) })),
       messages: slice.map((m, i) => ({ id: `m${m.n}`, from: aid(m.from), to: aid(m.to), y: 180 + 56 * i, label: `${m.n}. ${m.label}`, ...(m.mode === 'async' ? { variant: 'dashed' } : {}), ...(m.note ? { note: m.note } : {}) })),
       ...(rest.length && p === 0 ? { cards: evCard(rest) } : {}),
@@ -255,11 +258,11 @@ export function findArchify(hostRoot: string, env: NodeJS.ProcessEnv, fx: FxJson
 }
 
 // Runs `finalize` for each job, one at a time: archify's delivery lock rejects a second call in the same folder
-// (delivery/concurrent-attempt). The receipt sits beside the output as <name>.receipt.json (ruling 17).
-export async function runArchify(dir: string, jobs: { name: string; kind: 'architecture' | 'sequence'; spec: string; out: string; repoRoot: string }[]): Promise<{ name: string; ok: boolean; receipt: string | null }[]> {
+// (delivery/concurrent-attempt). Each job names its receipt (ruling 17).
+export async function runArchify(dir: string, jobs: { name: string; kind: 'architecture' | 'sequence'; spec: string; out: string; repoRoot: string; receipt: string }[]): Promise<{ name: string; ok: boolean; receipt: string | null }[]> {
   const results: { name: string; ok: boolean; receipt: string | null }[] = [];
   const one = (j: (typeof jobs)[number]): Promise<void> => new Promise((resolve) => {
-    const receipt = path.join(path.dirname(j.out), `${j.name}.receipt.json`);
+    const receipt = j.receipt;
     const args = [path.join(dir, 'bin', 'archify.mjs'), 'finalize', j.kind, j.spec, j.out, '--repo-root', j.repoRoot, '--quality', 'showcase', '--receipt', receipt, '--json'];
     const done = (code: number | null): void => {
       results[jobs.indexOf(j)] = { name: j.name, ok: code === 0 && fs.existsSync(j.out), receipt: fs.existsSync(receipt) ? receipt : null };
@@ -273,9 +276,19 @@ export async function runArchify(dir: string, jobs: { name: string; kind: 'archi
   return results;
 }
 
-// A src or href that leaves the site: any scheme except data:, or a protocol-relative URL.
+// Loads that leave the site, for a page in <site>/diagrams/: src, srcset, a <link> href, CSS url() and @import.
+// An anchor href is a link, not a load (archify's credit link is in every page). Outside means any scheme but data:,
+// a // or root path, or a ../ that climbs above the site.
 export function outsideRefs(html: string): string[] {
-  return [...html.matchAll(/\b(?:src|href)\s*=\s*["']([^"']*)["']/gi)].map((m) => (m[1] ?? '').trim()).filter((u) => /^(?:\/\/|[a-z][a-z0-9+.-]*:)/i.test(u) && !/^data:/i.test(u));
+  const all = (re: RegExp): string[] => [...html.matchAll(re)].map((m) => m[1] ?? '');
+  const urls = [
+    ...all(/\bsrc\s*=\s*["']([^"']*)["']/gi),
+    ...all(/\bsrcset\s*=\s*["']([^"']*)["']/gi).flatMap((v) => v.split(',').map((x) => x.trim().split(/\s+/)[0] ?? '')),
+    ...all(/<link\b[^>]*?\bhref\s*=\s*["']([^"']*)["']/gi),
+    ...all(/url\(\s*["']?([^"')]*)["']?\s*\)/gi),
+    ...all(/@import\s+["']([^"']*)["']/gi),
+  ].map((u) => u.trim());
+  return urls.filter((u) => u && !/^data:/i.test(u) && (/^(?:\/|[a-z][a-z0-9+.-]*:)/i.test(u) || path.posix.normalize(`diagrams/${u}`).startsWith('../')));
 }
 
 // ---------------------------------------------------------------- theme block

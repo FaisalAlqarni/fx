@@ -65,7 +65,17 @@ Markdown only; an HTML page never loads it.
 - **The fixed retry.** A sequence or store flow that archify fails is rendered again
   at 5 messages per page. Still failing, or a failed architecture diagram, it falls
   back to SVG and the receipt path is reported. No agent edits the spec between
-  attempts.
+  attempts. The retry's receipts are named `<name>.retry.receipt.json`, so the first
+  attempt's receipts survive it, and the build removes its own pages and specs of
+  that diagram that the fallback does not use.
+- **Sequence canvases.** archify gives an authored sequence viewBox no reader fit and
+  fails delivery on a canvas narrower than 1.55 times its height
+  (`composition/viewport-height`), so every sequence and flow canvas is at least
+  that wide.
+- **Loads, not links.** A page that loads a file from outside the site (`src`,
+  `srcset`, a `<link>` href, CSS `url()` or `@import`, or a `../` above the site)
+  falls back to SVG. An anchor href, such as archify's credit link, is a link and
+  stays.
 - **The 390 check.** An archify page that fails the 390 px check is retried once with
   5 messages per page, then SVG.
 - **Saved choices.** `--page-limit <name>=<n>`, `--svg <name>` and `--prefer` are

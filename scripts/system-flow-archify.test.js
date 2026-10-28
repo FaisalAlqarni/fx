@@ -49,7 +49,7 @@ const bad = fails.some((n) => name === n || name.startsWith(n + '-p')) || (type 
 const receipt = a[a.indexOf('--receipt') + 1];
 fs.mkdirSync(path.dirname(receipt), { recursive: true });
 fs.writeFileSync(receipt, JSON.stringify({ name, ok: !bad }));
-if (!bad) fs.writeFileSync(out, '<!doctype html><html><head><style>:root{--bg:#000}</style></head><body><a href="#top">top</a><img src="data:image/png;base64,AA">' + (process.env.FAKE_LEAK === name ? '<script src="https://cdn.example/x.js"></script>' : '') + name + '</body></html>');
+if (!bad) fs.writeFileSync(out, '<!doctype html><html><head><style>:root{--bg:#000}</style></head><body><a href="#top">top</a><a class="diagram-guide-credit" href="https://github.com/tt-a1i/archify">archify</a><img src="data:image/png;base64,AA">' + (process.env.FAKE_LEAK === name ? '<script src="https://cdn.example/x.js"></script>' : '') + name + '</body></html>');
 fs.appendFileSync(process.env.FAKE_LOG, JSON.stringify({ args: a, name, messages, start, end: now() }) + '\\n');
 process.exit(bad ? 1 : 0);
 `;
@@ -197,7 +197,21 @@ const varOf = (css, name) => [...css.matchAll(new RegExp(`${name}:\\s*([^;]+);`,
     ["flow-first-p2:2", "flow-first:5", "flow-first:7"]
   );
   assert.ok(read(f, `${D}/flow-first.html`).includes("<svg"));
-  assert.deepStrictEqual(reason(o, "flow-first"), { name: "flow-first", renderer: "svg", reason: `animated SVG, archify failed: ${D}/flow-first-p2.receipt.json` });
+  assert.deepStrictEqual(reason(o, "flow-first"), { name: "flow-first", renderer: "svg", reason: `animated SVG, archify failed: ${D}/flow-first-p2.retry.receipt.json` });
+}
+{
+  const f = setup();
+  const o = ok(f, ["--archify", fake(f, "fake")], { FAKE_FAIL: "seq-turn-p2" });
+  assert.deepStrictEqual(
+    logOf(f).filter((c) => c.name.startsWith("seq-turn")).map((c) => `${c.name}:${c.messages}`).sort(),
+    ["seq-turn-p2:5", "seq-turn-p2:6", "seq-turn-p3:4", "seq-turn:5", "seq-turn:8"]
+  );
+  const mine = (dir, end) => fs.readdirSync(path.join(f.host, dir)).filter((n) => n.startsWith("seq-turn") && n.endsWith(end)).sort();
+  assert.deepStrictEqual(mine(D, ".html"), ["seq-turn-p2.html", "seq-turn.html"]);
+  for (const n of mine(D, ".html")) assert.ok(read(f, `${D}/${n}`).includes("<svg"), n);
+  assert.deepStrictEqual(mine(`${D}/src`, ".json"), ["seq-turn-p2.json", "seq-turn.json"]);
+  assert.deepStrictEqual(mine(D, ".receipt.json"), ["seq-turn-p2.receipt.json", "seq-turn-p2.retry.receipt.json", "seq-turn-p3.retry.receipt.json", "seq-turn.receipt.json", "seq-turn.retry.receipt.json"]);
+  assert.deepStrictEqual(reason(o, "seq-turn"), { name: "seq-turn", renderer: "svg", reason: `animated SVG, archify failed: ${D}/seq-turn-p2.retry.receipt.json` });
 }
 {
   const f = setup();
@@ -208,7 +222,8 @@ const varOf = (css, name) => [...css.matchAll(new RegExp(`${name}:\\s*([^;]+);`,
     assert.strictEqual(reason(o, n).renderer, "archify", n);
     assert.deepStrictEqual((0, import_sf_diagrams.outsideRefs)(read(f, `${D}/${n}.html`)), [], n);
   }
-  assert.deepStrictEqual((0, import_sf_diagrams.outsideRefs)(`<a href="//x.io/a"></a><link href='http://y'><img src="assets/a.png"><a href="#t"><img src="data:image/png;base64,AA">`), ["//x.io/a", "http://y"]);
+  const page = `<a href="//x.io/a"></a><a href="https://github.com/tt-a1i/archify">c</a><link rel="stylesheet" href='http://y'><img src="assets/a.png"><img src="data:image/png;base64,AA"><img srcset="a.png 1x, https://z.io/b.png 2x"><script src="../../up.js"></script><link rel="stylesheet" href="../assets/ok.css"><img src="/root.png"><style>@import "https://i.io/x.css"; @import url(../../w.css); .a{background:url(https://u.io/p.png)} .b{background:url("data:image/png;base64,AA")} .c{background:url('../assets/k.png')}</style>`;
+  assert.deepStrictEqual((0, import_sf_diagrams.outsideRefs)(page).sort(), ["../../up.js", "../../w.css", "/root.png", "http://y", "https://i.io/x.css", "https://u.io/p.png", "https://z.io/b.png"]);
 }
 {
   const f = setup();
