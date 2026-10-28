@@ -9,7 +9,7 @@ import { changedPaths, diffBases, loadModelItems, queryPaths, staleItems, verify
 import { estimate, readPlan } from '../lib/sf-estimate.js';
 import { detect, docsConfig, writeFxJson } from '../lib/sf-detect.js';
 
-const USAGE = 'system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build [--archify <dir>] [--prefer cheap|fast|detailed] [--page-limit <name>=<1-8>]... [--svg <name>]... | estimate <plan file> | detect [--repo <path>]... [--write] | query <path>... | query --diff <base> [--base <root id>=<ref>]... | stale | verify <handle>... | --all';
+const USAGE = 'system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build [--only <handle|path>[,...]]... [--archify <dir>] [--prefer cheap|fast|detailed] [--page-limit <name>=<1-8>]... [--svg <name>]... | estimate <plan file> | detect [--repo <path>]... [--write] | query <path>... | query --diff <base> [--base <root id>=<ref>]... | stale | verify <handle>... | --all';
 const usage = (): never => { process.stderr.write(`${USAGE}\n`); process.exit(2); };
 
 const args = process.argv.slice(2);
@@ -45,6 +45,7 @@ if (cmd === 'check' && args[0] === '--fragment') {
 }
 if (cmd === 'build') takeFlags(['--markdown']);
 let archifyArg: string | undefined;
+let onlyArg: string[] | undefined;
 const flags: DiagramFlags = {};
 if (cmd === 'build') {
   for (let a = args[0]; a !== undefined && a.startsWith('--'); a = args[0]) {
@@ -52,6 +53,7 @@ if (cmd === 'build') {
     const v = args.shift();
     if (v === undefined) usage();
     if (a === '--archify') archifyArg = path.resolve(v as string);
+    else if (a === '--only' && v !== '') onlyArg = [...(onlyArg ?? []), ...(v as string).split(',').filter((x) => x !== '')];
     else if (a === '--prefer' && (v === 'cheap' || v === 'fast' || v === 'detailed')) flags.prefer = v;
     else if (a === '--page-limit') {
       const m = /^([^=]+)=([1-8])$/.exec(v as string);
@@ -160,8 +162,9 @@ function verifyCmd(): void {
 async function buildCmd(): Promise<void> {
   const root = hostRoot();
   const output = systemFlowConfig(root).config?.output;
-  const result = await build({ hostRoot: root, site: opts.site ?? output?.site ?? 'docs/system-flow', markdown: opts.markdown ?? output?.markdown ?? 'docs/system', docsDir: docsConfig(root).docsDir, archify: archifyArg, flags: Object.keys(flags).length ? flags : undefined });
-  report(result.problems);
+  const result = await build({ hostRoot: root, site: opts.site ?? output?.site ?? 'docs/system-flow', markdown: opts.markdown ?? output?.markdown ?? 'docs/system', docsDir: docsConfig(root).docsDir, archify: archifyArg, only: onlyArg, flags: Object.keys(flags).length ? flags : undefined });
+  for (const p of result.problems.filter((x) => x.file === '' && x.level === 'error')) process.stderr.write(`system-flow: build: ${p.message}\n`);
+  report(result.problems.filter((x) => x.file !== ''));
   if (!result.ok) process.exit(1);
   process.stdout.write(`${JSON.stringify(result)}\n`);
 }

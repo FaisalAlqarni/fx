@@ -9,7 +9,8 @@ import { checkCorrections, headModel } from './sf-corrections.js';
 import type { Root } from './sf-evidence.js';
 import { renderCoverage, renderMarkdown, renderReadme, renderRules, GENERATED } from './sf-markdown.js';
 import { checkRuleAdrs, checkRules } from './sf-rules.js';
-import { coverage } from './sf-coverage.js';
+import { coverage, sectionItems } from './sf-coverage.js';
+import { queryPaths } from './sf-stale.js';
 import { depth, readPlan } from './sf-estimate.js';
 import type { Depth } from './sf-estimate.js';
 import type { Coverage } from './sf-coverage.js';
@@ -20,7 +21,7 @@ import type { DeepDiagram } from './sf-diagrams.js';
 import { detectTheme, themeCss } from './sf-theme.js';
 import type { Theme } from './sf-theme.js';
 import type { Evidenced, Fragment, Item, LayoutLine, Model, Problem } from './sf-model.js';
-import { collect, itemsOf, loadFragments, mergeFragments, originOf, planStamps, stampVerified } from './sf-model.js';
+import { collect, itemsOf, loadFragments, mergeFragments, originOf, parseHandle, planStamps, stampVerified } from './sf-model.js';
 import type { FxJson } from './types.js';
 
 // The diagram choices a build takes from its flags; they merge into .fx.json system_flow.diagrams on success.
@@ -34,6 +35,7 @@ export type BuildResult = {
   coverage: Coverage['counts'] | null;
   theme: { source: string; kind: string; fallbacks: Theme['fallbacks'] } | null; // null until the build reaches the theme step
   depth: ReturnType<typeof depth> | null; // null until the check passes; areas is empty without model/plan.json
+  rebuilt: { docs: string[]; figures: string[]; diagrams: string[] }; // a full build lists everything; --only lists what holds the given items
 };
 export type { Depth };
 
@@ -116,11 +118,49 @@ function saveChoices(hostRoot: string, c: DiagramFlags): void {
   fs.writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
 }
 
+// What `--only` selects: arguments with a handle prefix are handles, the rest are paths (items citing them).
+// Returns the unknown handles, or the figure keys, section docs and flags that hold the selection.
+function selectOnly(model: Model, items: Item[], only: string[], hostId: string): { unknown: string[]; figures: Set<string>; sections: Set<string>; components: boolean; rules: boolean } {
+  const given = only.filter((a) => parseHandle(a) !== null);
+  const sel = new Set([...given, ...queryPaths(items, only.filter((a) => parseHandle(a) === null), hostId).map((i) => i.handle)]);
+  const containers = new Set([...model.sections.map((s) => `section:${s.id}`), ...model.levels.diagrams.map((d) => `diagram:${d.id}`), ...model.sequences.map((q) => `seq:${q.id}`), ...model.storeFlows.map((f) => `flow:${f.id}`)]);
+  const known = new Set([...items.map((i) => i.handle), ...containers]);
+  const unknown = given.filter((h) => !known.has(h));
+  const owner = new Map<object, string>();
+  for (const d of model.levels.diagrams) for (const o of [...d.groups, ...d.nodes, ...d.edges]) owner.set(o, `level-${d.id}`);
+  for (const q of model.sequences) for (const o of [...q.participants, ...q.messages]) owner.set(o, `seq-${q.id}`);
+  for (const f of model.storeFlows) for (const o of f.steps) owner.set(o, `flow-${f.id}`);
+  const figures = new Set<string>();
+  for (const { item, o } of collect(model)) if (sel.has(item.handle) && owner.has(o)) figures.add(owner.get(o) as string);
+  for (const h of sel) {
+    const p = parseHandle(h);
+    if (p?.prefix === 'diagram') figures.add(`level-${p.id}`);
+    if (p?.prefix === 'seq') figures.add(`seq-${p.id}`);
+    if (p?.prefix === 'flow') figures.add(`flow-${p.id}`);
+  }
+  const sections = new Set<string>();
+  for (const s of model.sections) {
+    const own = [...model.levels.diagrams.filter((d) => (s.diagrams ?? []).includes(d.id)).map((d) => `diagram:${d.id}`),
+      ...model.sequences.filter((q) => (s.sequences ?? []).includes(q.id) || q.chapter === s.id).map((q) => `seq:${q.id}`),
+      ...model.storeFlows.filter((f) => (s.storeFlows ?? []).includes(f.id) || f.chapter === s.id).map((f) => `flow:${f.id}`)];
+    if (sel.has(`section:${s.id}`) || own.some((h) => sel.has(h)) || sectionItems(model, s.id).some((i) => sel.has(i.handle))) sections.add(s.id);
+  }
+  const has = (prefix: string): boolean => [...sel].some((h) => parseHandle(h)?.prefix === prefix);
+  return { unknown, figures, sections, components: has('catalogue'), rules: has('rule') };
+}
+
 export async function build(opts: { hostRoot: string; site: string; markdown: string; docsDir?: string | null; only?: string[]; archify?: string; flags?: DiagramFlags }): Promise<BuildResult> {
-  const result: BuildResult = { ok: false, problems: [], written: [], collisions: [], diagrams: [], layout: [], pageBytes: null, coverage: null, theme: null, depth: null };
+  const result: BuildResult = { ok: false, problems: [], written: [], collisions: [], diagrams: [], layout: [], pageBytes: null, coverage: null, theme: null, depth: null, rebuilt: { docs: [], figures: [], diagrams: [] } };
   const checked = checkModel(opts.hostRoot, opts.site, 'build');
   result.problems = checked.problems;
   if (checked.problems.some((p) => p.level === 'error')) return result;
+
+  const hostId = [...checked.roots.values()].find((r) => r.host)?.id ?? '';
+  const picked = opts.only === undefined ? null : selectOnly(checked.model, checked.items, opts.only, hostId);
+  if (picked && picked.unknown.length) {
+    result.problems.push(...picked.unknown.map((h): Problem => ({ file: '', pointer: '', message: `no item ${h}`, level: 'error' })));
+    return result;
+  }
 
   const planFile = path.join(opts.hostRoot, opts.site, 'model', 'plan.json');
   const plan = fs.existsSync(planFile) ? readPlan(planFile, path.posix.join(opts.site, 'model', 'plan.json')) : { plan: null, problems: [] };
@@ -148,11 +188,15 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   }
   if (laid.unfit.length) return result;
 
-  const hostId = [...checked.roots.values()].find((r) => r.host)?.id ?? '';
   const hasMarker = (old: string): boolean => old.includes(GENERATED);
-  for (const doc of renderMarkdown(checked.model, checked.roots, hostId, opts.markdown, opts.site)) {
+  const docs = renderMarkdown(checked.model, checked.roots, hostId, opts.markdown, opts.site);
+  // The first docs are the sections, in model order; components.md follows them.
+  const wanted = (i: number): boolean => picked === null || (i < checked.model.sections.length ? picked.sections.has((checked.model.sections[i] as { id: string }).id) : picked.components && (docs[i] as { path: string }).path.endsWith('/components.md'));
+  docs.forEach((doc, i) => {
+    if (!wanted(i)) return;
+    result.rebuilt.docs.push(doc.path);
     writeGenerated(opts.hostRoot, doc.path, doc.text, hasMarker, result);
-  }
+  });
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'README.md'), renderReadme(), hasMarker, result);
   const isGeneratedJson = (old: string): boolean => { try { return (parseJson(old) as { generated?: unknown }).generated === true; } catch { return false; } };
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'model', 'system-model.json'), `${JSON.stringify({ generated: true, ...checked.model }, null, 2)}\n`, isGeneratedJson, result);
@@ -160,9 +204,16 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   result.coverage = cov.counts;
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'model', 'coverage.json'), `${JSON.stringify({ generated: true, ...cov }, null, 2)}\n`, isGeneratedJson, result);
   const covDoc = renderCoverage(checked.model, cov, opts.markdown);
-  writeGenerated(opts.hostRoot, covDoc.path, covDoc.text, hasMarker, result);
   const rules = renderRules(checked.model, checked.roots, hostId, opts.markdown);
-  writeGenerated(opts.hostRoot, rules.path, rules.text, hasMarker, result);
+  if (picked === null) {
+    writeGenerated(opts.hostRoot, covDoc.path, covDoc.text, hasMarker, result);
+    result.rebuilt.docs.push(covDoc.path);
+  }
+  if (picked === null || picked.rules) {
+    writeGenerated(opts.hostRoot, rules.path, rules.text, hasMarker, result);
+    result.rebuilt.docs.push(rules.path);
+  }
+  result.rebuilt.figures = laid.figures.map((f) => f.key).filter((k) => picked === null || picked.figures.has(k));
 
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'model', 'layout-report.json'), `${JSON.stringify(laid.report, null, 2)}\n`, () => true, result);
 
@@ -200,8 +251,9 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   const pages = path.posix.join(opts.site, 'diagrams');
   const generatedJson = (old: string): boolean => { try { return parseJson(old) !== null; } catch { return false; } };
   const all = deepDiagrams(checked.model, laid.figures, checked.roots, limits);
+  const keyOf = (d: DeepDiagram): string => (d.source.startsWith('diagram:') ? `level-${d.source.slice(8)}` : d.source.startsWith('seq:') ? `seq-${d.source.slice(4)}` : `flow-${d.source.slice(5)}`);
   const figureOf = (d: DeepDiagram) => {
-    const figure = laid.figures.find((f) => f.key === (d.source.startsWith('diagram:') ? `level-${d.source.slice(8)}` : d.source.startsWith('seq:') ? `seq-${d.source.slice(4)}` : `flow-${d.source.slice(5)}`));
+    const figure = laid.figures.find((f) => f.key === keyOf(d));
     if (!figure) throw new Error(`no figure for ${d.name}`);
     return figure;
   };
@@ -214,7 +266,8 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   }));
   const bySource = new Map<string, DeepDiagram[]>();
   for (const d of all) bySource.set(d.source, [...(bySource.get(d.source) ?? []), d]);
-  const groups = [...bySource.values()];
+  const groups = [...bySource.values()].filter((g) => picked === null || picked.figures.has(keyOf(g[0] as DeepDiagram)));
+  result.rebuilt.diagrams = groups.flat().map((d) => d.name);
   const svgReason = (g: DeepDiagram[]): string | null => (prefer === 'cheap' && opts.archify === undefined ? 'preference cheap' : svgNames.includes((g[0] as DeepDiagram).name) ? 'owner or lane chose SVG' : archify === undefined ? 'archify not installed' : null);
   const svgLabel = (g: DeepDiagram[]): 'static SVG' | 'animated SVG' => ((g[0] as DeepDiagram).kind === 'sequence' ? 'animated SVG' : 'static SVG');
 
