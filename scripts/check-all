@@ -55,6 +55,7 @@ run system-flow-page.test.js node scripts/system-flow-page.test.js
 run system-flow-diagrams.test.js node scripts/system-flow-diagrams.test.js
 run system-flow-archify.test.js node scripts/system-flow-archify.test.js
 run system-flow-stale.test.js node scripts/system-flow-stale.test.js
+run system-flow-estimate.test.js node scripts/system-flow-estimate.test.js
 run compile-brief.test.js  node skills/fx-implement/scripts/compile-brief.test.js
 run brief-size.test.js     node tests/gates/brief-size.test.js
 run skill-size.test.js node tests/gates/skill-size.test.js

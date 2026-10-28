@@ -28,8 +28,9 @@ var import_child_process = require("child_process");
 var import_sf_build = require("../lib/sf-build.js");
 var import_sf_model = require("../lib/sf-model.js");
 var import_sf_stale = require("../lib/sf-stale.js");
+var import_sf_estimate = require("../lib/sf-estimate.js");
 var import_sf_detect = require("../lib/sf-detect.js");
-const USAGE = "system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build [--archify <dir>] [--prefer cheap|fast|detailed] [--page-limit <name>=<1-8>]... [--svg <name>]... | detect [--repo <path>]... [--write] | query <path>... | query --diff <base> [--base <root id>=<ref>]... | stale | verify <handle>... | --all";
+const USAGE = "system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build [--archify <dir>] [--prefer cheap|fast|detailed] [--page-limit <name>=<1-8>]... [--svg <name>]... | estimate <plan file> | detect [--repo <path>]... [--write] | query <path>... | query --diff <base> [--base <root id>=<ref>]... | stale | verify <handle>... | --all";
 const usage = () => {
   process.stderr.write(`${USAGE}
 `);
@@ -46,7 +47,7 @@ const takeFlags = (names) => {
 };
 takeFlags(["--root", "--site", "--markdown"]);
 const cmd = args.shift();
-if (cmd !== "check" && cmd !== "build" && cmd !== "detect" && cmd !== "query" && cmd !== "stale" && cmd !== "verify") usage();
+if (cmd !== "check" && cmd !== "build" && cmd !== "detect" && cmd !== "estimate" && cmd !== "query" && cmd !== "stale" && cmd !== "verify") usage();
 const repos = [];
 let write = false;
 if (cmd === "detect") {
@@ -56,6 +57,9 @@ if (cmd === "detect") {
     else usage();
   }
 }
+let planArg = "";
+if (cmd === "estimate") planArg = args.shift() ?? "";
+if (cmd === "estimate" && planArg === "") usage();
 let fragmentArg;
 if (cmd === "check" && args[0] === "--fragment") {
   args.shift();
@@ -133,6 +137,14 @@ function detectCmd() {
   process.stdout.write(`${JSON.stringify(detected)}
 `);
 }
+function estimateCmd() {
+  const { plan, problems } = (0, import_sf_estimate.readPlan)(path.resolve(planArg), planArg);
+  for (const p of problems) process.stderr.write(p.file === "" ? `system-flow: estimate: ${p.message}
+` : `${p.file}:${p.pointer}: ${p.message}
+`);
+  if (plan === null) process.exit(1);
+  print((0, import_sf_estimate.estimate)(plan));
+}
 function check() {
   const root = hostRoot();
   const site = opts.site ?? (0, import_sf_build.systemFlowConfig)(root).config?.output?.site ?? "docs/system-flow";
@@ -188,7 +200,7 @@ async function buildCmd() {
   process.stdout.write(`${JSON.stringify(result)}
 `);
 }
-(cmd === "build" ? buildCmd() : Promise.resolve().then({ detect: detectCmd, query: queryCmd, stale: staleCmd, verify: verifyCmd, check }[cmd])).catch((e) => {
+(cmd === "build" ? buildCmd() : Promise.resolve().then({ detect: detectCmd, estimate: estimateCmd, query: queryCmd, stale: staleCmd, verify: verifyCmd, check }[cmd])).catch((e) => {
   process.stderr.write(`system-flow: ${cmd}: ${e.message.split("\n")[0]}
 `);
   process.exit(1);

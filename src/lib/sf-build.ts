@@ -9,6 +9,8 @@ import type { Root } from './sf-evidence.js';
 import { renderCoverage, renderMarkdown, renderReadme, renderRules, GENERATED } from './sf-markdown.js';
 import { checkRuleAdrs, checkRules } from './sf-rules.js';
 import { coverage } from './sf-coverage.js';
+import { depth, readPlan } from './sf-estimate.js';
+import type { Depth } from './sf-estimate.js';
 import type { Coverage } from './sf-coverage.js';
 import { layoutAll } from './sf-layout.js';
 import { renderPage } from './sf-page.js';
@@ -30,7 +32,9 @@ export type BuildResult = {
   layout: LayoutLine[]; pageBytes: number | null;
   coverage: Coverage['counts'] | null;
   theme: { source: string; kind: string; fallbacks: Theme['fallbacks'] } | null; // null until the build reaches the theme step
+  depth: ReturnType<typeof depth> | null; // null until the check passes; areas is empty without model/plan.json
 };
+export type { Depth };
 
 // .fx.json is read through parseFxJson; only problems under system_flow are this command's.
 export function systemFlowConfig(root: string): { config: FxJson['system_flow']; problems: Problem[] } {
@@ -107,10 +111,15 @@ function saveChoices(hostRoot: string, c: DiagramFlags): void {
 }
 
 export async function build(opts: { hostRoot: string; site: string; markdown: string; docsDir?: string | null; only?: string[]; archify?: string; flags?: DiagramFlags }): Promise<BuildResult> {
-  const result: BuildResult = { ok: false, problems: [], written: [], collisions: [], diagrams: [], layout: [], pageBytes: null, coverage: null, theme: null };
+  const result: BuildResult = { ok: false, problems: [], written: [], collisions: [], diagrams: [], layout: [], pageBytes: null, coverage: null, theme: null, depth: null };
   const checked = checkModel(opts.hostRoot, opts.site, 'build');
   result.problems = checked.problems;
   if (checked.problems.some((p) => p.level === 'error')) return result;
+
+  const planFile = path.join(opts.hostRoot, opts.site, 'model', 'plan.json');
+  const plan = fs.existsSync(planFile) ? readPlan(planFile, path.posix.join(opts.site, 'model', 'plan.json')) : { plan: null, problems: [] };
+  if (plan.problems.length) { result.problems.push(...plan.problems); return result; }
+  result.depth = depth(checked.model, checked.items, plan.plan, checked.origin);
 
   // The stamps are applied in memory only; the fragments change at the very end.
   const stamps = planStamps(checked.items, checked.roots);
@@ -179,7 +188,8 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   const prefer = flags.prefer ?? saved.prefer;
   const limits = { ...saved.pageLimits, ...flags.pageLimits };
   const svgNames = [...new Set([...(saved.svg ?? []), ...(flags.svg ?? [])])].sort();
-  const archify = prefer === 'cheap' ? undefined : opts.archify ?? findArchify(opts.hostRoot, process.env, checked.config)?.dir;
+  // An explicit --archify wins over cheap; cheap only skips the lookup.
+  const archify = opts.archify ?? (prefer === 'cheap' ? undefined : findArchify(opts.hostRoot, process.env, checked.config)?.dir);
 
   const pages = path.posix.join(opts.site, 'diagrams');
   const generatedJson = (old: string): boolean => { try { return parseJson(old) !== null; } catch { return false; } };
@@ -199,7 +209,7 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   const bySource = new Map<string, DeepDiagram[]>();
   for (const d of all) bySource.set(d.source, [...(bySource.get(d.source) ?? []), d]);
   const groups = [...bySource.values()];
-  const svgReason = (g: DeepDiagram[]): string | null => (prefer === 'cheap' ? 'preference cheap' : svgNames.includes((g[0] as DeepDiagram).name) ? 'owner or lane chose SVG' : archify === undefined ? 'archify not installed' : null);
+  const svgReason = (g: DeepDiagram[]): string | null => (prefer === 'cheap' && opts.archify === undefined ? 'preference cheap' : svgNames.includes((g[0] as DeepDiagram).name) ? 'owner or lane chose SVG' : archify === undefined ? 'archify not installed' : null);
   const svgLabel = (g: DeepDiagram[]): 'static SVG' | 'animated SVG' => ((g[0] as DeepDiagram).kind === 'sequence' ? 'animated SVG' : 'static SVG');
 
   for (const g of groups) writeSpecs(g);

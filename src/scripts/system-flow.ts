@@ -6,9 +6,10 @@ import { build, checkModel, systemFlowConfig } from '../lib/sf-build.js';
 import type { DiagramFlags } from '../lib/sf-build.js';
 import { itemsOf, parseHandle } from '../lib/sf-model.js';
 import { changedPaths, diffBases, loadModelItems, queryPaths, staleItems, verifyItems } from '../lib/sf-stale.js';
+import { estimate, readPlan } from '../lib/sf-estimate.js';
 import { detect, docsConfig, writeFxJson } from '../lib/sf-detect.js';
 
-const USAGE = 'system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build [--archify <dir>] [--prefer cheap|fast|detailed] [--page-limit <name>=<1-8>]... [--svg <name>]... | detect [--repo <path>]... [--write] | query <path>... | query --diff <base> [--base <root id>=<ref>]... | stale | verify <handle>... | --all';
+const USAGE = 'system-flow: usage: system-flow [--root <dir>] [--site <dir>] [--markdown <dir>] check [--fragment <file>] | build [--archify <dir>] [--prefer cheap|fast|detailed] [--page-limit <name>=<1-8>]... [--svg <name>]... | estimate <plan file> | detect [--repo <path>]... [--write] | query <path>... | query --diff <base> [--base <root id>=<ref>]... | stale | verify <handle>... | --all';
 const usage = (): never => { process.stderr.write(`${USAGE}\n`); process.exit(2); };
 
 const args = process.argv.slice(2);
@@ -23,7 +24,7 @@ const takeFlags = (names: string[]): void => {
 };
 takeFlags(['--root', '--site', '--markdown']);
 const cmd = args.shift();
-if (cmd !== 'check' && cmd !== 'build' && cmd !== 'detect' && cmd !== 'query' && cmd !== 'stale' && cmd !== 'verify') usage();
+if (cmd !== 'check' && cmd !== 'build' && cmd !== 'detect' && cmd !== 'estimate' && cmd !== 'query' && cmd !== 'stale' && cmd !== 'verify') usage();
 const repos: string[] = [];
 let write = false;
 if (cmd === 'detect') {
@@ -33,6 +34,9 @@ if (cmd === 'detect') {
     else usage();
   }
 }
+let planArg = '';
+if (cmd === 'estimate') planArg = args.shift() ?? '';
+if (cmd === 'estimate' && planArg === '') usage();
 let fragmentArg: string | undefined;
 if (cmd === 'check' && args[0] === '--fragment') {
   args.shift();
@@ -103,6 +107,13 @@ function detectCmd(): void {
   process.stdout.write(`${JSON.stringify(detected)}\n`);
 }
 
+function estimateCmd(): void {
+  const { plan, problems } = readPlan(path.resolve(planArg), planArg);
+  for (const p of problems) process.stderr.write(p.file === '' ? `system-flow: estimate: ${p.message}\n` : `${p.file}:${p.pointer}: ${p.message}\n`);
+  if (plan === null) process.exit(1);
+  print(estimate(plan));
+}
+
 function check(): void {
   const root = hostRoot();
   const site = opts.site ?? systemFlowConfig(root).config?.output?.site ?? 'docs/system-flow';
@@ -155,7 +166,7 @@ async function buildCmd(): Promise<void> {
   process.stdout.write(`${JSON.stringify(result)}\n`);
 }
 
-(cmd === 'build' ? buildCmd() : Promise.resolve().then({ detect: detectCmd, query: queryCmd, stale: staleCmd, verify: verifyCmd, check }[cmd as 'check'])).catch((e: Error) => {
+(cmd === 'build' ? buildCmd() : Promise.resolve().then({ detect: detectCmd, estimate: estimateCmd, query: queryCmd, stale: staleCmd, verify: verifyCmd, check }[cmd as 'check'])).catch((e: Error) => {
   process.stderr.write(`system-flow: ${cmd}: ${e.message.split('\n')[0]}\n`);
   process.exit(1);
 });
