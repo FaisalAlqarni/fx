@@ -149,6 +149,7 @@ assert.ok(template.includes(".react-flow__edge-textbg{fill:var(--panel)}"), "pag
 const rule = (sel) => new RegExp(`(?:^|\\n)${sel}\\{([^}]*)\\}`).exec(template)?.[1] ?? "";
 for (const part of ["display:block", "overflow-x:auto"]) assert.ok(rule("table").includes(part), `page-template.html table rule keeps ${part}`);
 assert.ok(rule("th,td").includes("overflow-wrap:anywhere"), "page-template.html table cells wrap long words");
+assert.ok(rule("body").includes("overflow-wrap:anywhere"), "page-template.html body wraps long words");
 assert.deepStrictEqual(template.match(/(?<![\w-])(margin|padding|border)-(left|right)\b|(?<![\w-])(left|right)\s*:/g) ?? [], [], "page-template.html uses logical properties");
 for (const part of ["page-template.html", "visual-assets.md"]) assert.ok(fs.readFileSync(path.join(repo, REPORT), "utf8").includes(part), `${REPORT} names ${part}`);
 assert.ok(

@@ -125,6 +125,8 @@ assert.ok(template.includes('.react-flow__edge-textbg{fill:var(--panel)}'), 'pag
 const rule = (sel: string): string => new RegExp(`(?:^|\\n)${sel}\\{([^}]*)\\}`).exec(template)?.[1] ?? '';
 for (const part of ['display:block', 'overflow-x:auto']) assert.ok(rule('table').includes(part), `page-template.html table rule keeps ${part}`);
 assert.ok(rule('th,td').includes('overflow-wrap:anywhere'), 'page-template.html table cells wrap long words');
+// Proof (b), 390 px: evidence paths and edge ids in lists outside tables widened index.html to 449 px.
+assert.ok(rule('body').includes('overflow-wrap:anywhere'), 'page-template.html body wraps long words');
 assert.deepStrictEqual(template.match(/(?<![\w-])(margin|padding|border)-(left|right)\b|(?<![\w-])(left|right)\s*:/g) ?? [], [], 'page-template.html uses logical properties');
 
 // The architecture report and the audit's Phase 4 page start from the kit, and the audit's

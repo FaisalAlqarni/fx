@@ -339,6 +339,7 @@ function rest() {
     assert.ok(min >= Math.ceil(w * 12 / 13), `${n}: svg min-inline-size ${min} keeps text at 12 px for width ${w}`);
     assert.ok(/<div class="scroll">\s*<svg\b/.test(html), `${n}: svg sits in the scroll box`);
     assert.ok(/\.scroll\{[^}]*overflow-x:auto/.test(html), `${n}: the scroll box scrolls sideways`);
+    assert.ok(/(?:^|\n)body\{[^}]*overflow-wrap:anywhere/.test(html), `${n}: long words in the steps wrap`);
   }
   {
     assert.deepStrictEqual(out.diagrams.find((d) => d.name === "seq-turn"), { name: "seq-turn", renderer: "svg", reason: "animated SVG, archify not installed" });

@@ -334,6 +334,8 @@ for (const n of ['arch-engine', 'seq-turn']) {
   assert.ok(min >= Math.ceil((w * 12) / 13), `${n}: svg min-inline-size ${min} keeps text at 12 px for width ${w}`);
   assert.ok(/<div class="scroll">\s*<svg\b/.test(html), `${n}: svg sits in the scroll box`);
   assert.ok(/\.scroll\{[^}]*overflow-x:auto/.test(html), `${n}: the scroll box scrolls sideways`);
+  // Proof (b), 390 px: a step's file path is one long word, and unwrapped it widened the page to 619 px.
+  assert.ok(/(?:^|\n)body\{[^}]*overflow-wrap:anywhere/.test(html), `${n}: long words in the steps wrap`);
 }
 
 // Pick lines.

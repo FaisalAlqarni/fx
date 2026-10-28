@@ -293,7 +293,7 @@ export function svgPage(d: DeepDiagram, figure: FigureSpec, page: number): strin
 <link rel="stylesheet" href="../assets/theme.css">
 <script>try{var t=localStorage.getItem("fx-theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <style>
-body{margin:0;padding:1.5rem;background:var(--paper);color:var(--ink);font:16px/1.5 system-ui,sans-serif}
+body{margin:0;padding:1.5rem;background:var(--paper);color:var(--ink);font:16px/1.5 system-ui,sans-serif;overflow-wrap:anywhere}
 a{color:var(--accent)}
 .scroll{max-inline-size:100%;overflow-x:auto}
 svg{max-inline-size:100%;block-size:auto;background:var(--panel);border:1px solid var(--rule);border-radius:8px}
