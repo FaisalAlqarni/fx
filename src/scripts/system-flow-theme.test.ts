@@ -116,4 +116,17 @@ const TEAL = '    - scheme: default\n      primary: teal\n      accent: teal\n  
   f.put('host', 'docs/assets/docs.css', css('', '').replace('#0a7d6e', '#0b7a3e'));
   assert.ok(built(f).light.includes('--accent: #0b7a3e'));
 }
+{ // The theme saved in .fx.json wins; build detects only when the key is absent (final fix A21)
+  const f = make({ 'docs/assets/docs.css': css('', ''), 'app/assets/app.css': css('', '').replace('#0a7d6e', '#7a1f8f') });
+  f.fxJson({ system_flow: { theme: { source: 'app/assets/app.css', kind: 'app-css' } } });
+  const b = built(f);
+  assert.deepStrictEqual([b.kind, b.source], ['app-css', 'app/assets/app.css']);
+  assert.ok(b.light.includes('--accent: #7a1f8f'), b.light);
+  f.fxJson({ system_flow: { theme: { source: 'fx', kind: 'fx' } } });
+  assert.deepStrictEqual([built(f).kind], ['fx'], 'a saved fx theme is not replaced by the docs CSS');
+  f.fxJson({ system_flow: { theme: { source: 'app/gone.css', kind: 'app-css' } } });
+  const r = f.run(['build']);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(r.stderr.includes('system_flow.theme names app/gone.css (app-css), which gives no theme now'), r.stderr);
+}
 console.log('system-flow-theme.test.js: OK');

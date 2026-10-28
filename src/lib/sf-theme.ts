@@ -205,26 +205,43 @@ function jsonColours(v: unknown, key: string, out: Values): void {
   }
 }
 const BRAND_FILES = new Set(['design-tokens.json', 'tokens.json', 'brand.json', 'brand.css']);
+function brandFile(root: string, rel: string): Pick | null {
+  const text = read(root, rel);
+  if (text.startsWith(OURS)) return null;
+  const light: Values = {};
+  if (rel.endsWith('.css')) Object.assign(light, cssTheme(text).light);
+  else { try { jsonColours(parseJson(text), '', light); } catch { return null; } }
+  return light['--accent'] ? { source: rel, kind: 'brand', light, dark: {} } : null;
+}
 function brand(root: string): Pick | null {
   const files = walk(root, '.', 4).filter((p) => BRAND_FILES.has(path.posix.basename(p)) || (/(^|\/)brand(ing)?\//.test(p) && /\.(css|json)$/.test(p)));
-  for (const rel of files) {
-    const text = read(root, rel);
-    if (text.startsWith(OURS)) continue;
-    const light: Values = {};
-    if (rel.endsWith('.css')) Object.assign(light, cssTheme(text).light);
-    else { try { jsonColours(parseJson(text), '', light); } catch { continue; } }
-    if (light['--accent']) return { source: rel, kind: 'brand', light, dark: {} };
-  }
+  for (const rel of files) { const p = brandFile(root, rel); if (p) return p; }
   return null;
+}
+
+// The theme .fx.json names, read from its own source; null when that source gives no theme now.
+function chosenPick(root: string, docsDir: string, yml: string, c: { source: string; kind: Theme['kind'] }): Pick | null {
+  if (c.kind === 'fx') return { source: 'fx', kind: 'fx', light: {}, dark: {} };
+  if (c.kind === 'mkdocs-material') return material(yml);
+  if (c.kind === 'tailwind') { const t = tailwind(root); return t?.source === c.source ? t : null; }
+  if (c.kind === 'docs-css' && !c.source.startsWith(`${docsDir}/`)) return null;
+  const file = path.resolve(root, c.source);
+  if (!file.startsWith(root + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) return null;
+  if (c.kind === 'brand') return brandFile(root, c.source);
+  const t = cssTheme(read(root, c.source));
+  return hasCore(t.light) && Object.keys(t.dark).length > 0 ? { source: c.source, kind: c.kind, ...t } : null;
 }
 
 // ---- detection
 
 const PAIRS: [string, string, number][] = [['--ink', '--paper', 4.5], ['--ink', '--panel', 4.5], ['--muted', '--paper', 4.5], ['--accent', '--paper', 4.5], ['--accent', '--panel', 3]];
 
-export function detectTheme(hostRoot: string, docsDir: string | null): Theme {
+// With `chosen` (.fx.json system_flow.theme), that source is read and nothing else is tried.
+export function detectTheme(hostRoot: string, docsDir: string | null, chosen?: { source: string; kind: Theme['kind'] }): Theme {
   const yml = fs.existsSync(path.join(hostRoot, 'mkdocs.yml')) ? read(hostRoot, 'mkdocs.yml') : '';
-  const pick = docsCss(hostRoot, docsDir ?? 'docs') ?? material(yml) ?? tailwind(hostRoot) ?? appCss(hostRoot) ?? brand(hostRoot)
+  const fromChoice = chosen === undefined ? undefined : chosenPick(hostRoot, docsDir ?? 'docs', yml, chosen);
+  if (chosen !== undefined && !fromChoice) throw new Error(`.fx.json system_flow.theme names ${chosen.source} (${chosen.kind}), which gives no theme now; fix it, or remove the key to detect again`);
+  const pick = fromChoice ?? docsCss(hostRoot, docsDir ?? 'docs') ?? material(yml) ?? tailwind(hostRoot) ?? appCss(hostRoot) ?? brand(hostRoot)
     ?? { source: 'fx', kind: 'fx' as const, light: {}, dark: {} };
   const light = { ...FX_LIGHT, ...pick.light };
   const dark = { ...FX_DARK, ...pick.dark };

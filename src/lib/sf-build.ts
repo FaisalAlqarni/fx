@@ -198,6 +198,10 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   result.problems.push(...laid.unfit);
   if (laid.unfit.length) return result;
 
+  // Re-read from the repo on every build, so a change to its CSS reaches the site, before any write; the source saved in .fx.json
+  // system_flow.theme is the one read, and detection runs only when that key is absent.
+  const theme = detectTheme(opts.hostRoot, opts.docsDir ?? null, checked.config?.theme);
+
   const hasMarker = (old: string): boolean => old.includes(GENERATED);
   const docs = renderMarkdown(checked.model, checked.roots, hostId, opts.markdown, opts.site);
   // The first docs are the sections, in model order; components.md and stores.md follow, then the index docs,
@@ -227,8 +231,6 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
 
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'model', 'layout-report.json'), `${JSON.stringify(laid.report, null, 2)}\n`, () => true, result);
 
-  // Re-read from the repo on every build, so a change to its CSS reaches the site.
-  const theme = detectTheme(opts.hostRoot, opts.docsDir ?? null);
   result.theme = { source: theme.source, kind: theme.kind, fallbacks: theme.fallbacks };
   writeGenerated(opts.hostRoot, path.posix.join(opts.site, 'assets', 'theme.css'), themeCss(theme), (old) => old.startsWith('/* fx '), result);
 
