@@ -53,7 +53,41 @@ Ruling: briefs compile with the worktree's skills/fx-implement/scripts/compile-b
 Task 01: dispatched 0749988 2026-10-28T03:25:46+03:00
 Task 01: implementer agent a5c8da9a092eaa0b7 (opus, Capable because: foundational schema and fixture). Waiting on it; frontier empty (every task blocks on 01).
 Task 01: DONE_WITH_CONCERNS, commits 0749988..8b4284f. Completion notice reached the main session, not this controller; resumed by the coordinator.
-Ruling: task 01 concern 1: task 07's file line 40 held `url(` inside a code span, which check-prose counts as an open parenthesis; the controller reworded it to "`url` function" (plan text, no meaning change). Cost if wrong: none, caught by check-prose.
+Ruling: task 01 concern 1: task 07's file line 40 held a `url` call with an open parenthesis inside a code span, which check-prose counts as an open parenthesis; the controller reworded it to "`url` function" (plan text, no meaning change). Cost if wrong: none, caught by check-prose.
 Ruling: task 01 concern 2: evidence optional in the schema stands only because task 02 enforces "evidence unless unconfirmed" per evidenced kind (red-team finding 2); task 02's review must check every evidenced kind. Other concern-2 choices (rule.decision string, layout and verified as untyped objects, first scalar wins) stand. Cost if wrong: an unevidenced item passes, caught by task 02's review.
 Ruling: task 01 concern 3: the schema-subset validator throws on unsupported keywords; task 11 adds every keyword archify 3.2.0's schemas use (pre-flight item 13 lists them) or extends the skip list. Cost if wrong: task 11 fixture tests throw, caught by task 11's implementer.
 Ruling: fx main moved to 6e2d88b (0.8.0, codex-catalog merged with ADR 0065); this branch keeps ADR 0066 and the controller merges main into system-flow before the final review, resolving the version so the release gate passes (tasks 01 and 19). Cost if wrong: release-version gate fails, caught by the exit gate.
+Task 01: lens silent-failure not dispatched: the reported catches turn invalid JSON into exit-1 problems and print thrown errors, neither swallows, so the tripwire cell (a handler that swallows) does not match; the task reviewer may flag otherwise. Cost: unavailable (no transcript recorded). Review package .fx/01/review/0749988..8b4284f.diff.
+Task 02: dispatched eec4737 2026-10-28T10:36:43+03:00
+Task 02: implementer agent adb5dd8bab4584e35 (sonnet). Waiting: task 01 review (ad04607a79fd36205) and task 02 implementer outstanding; return channels docs/plans/2026-10-28-system-flow/findings/01-review.md and .fx/2026-10-28-system-flow/reports/02-structure-rules-and-caps-report.md.
+Task 01: minor (deferred): newer schemaVersion check runs only after schema errors are empty, so a v2 fragment with new keys reports property errors instead of the version message
+Task 01: minor (deferred): ID_PATTERN in sf-model.ts duplicates the schema pattern with no test tying them together
+Task 01: minor (deferred): misindented lines in system-model.schema.json (rule.adr, bullet.evidence, question.recommended) and the `isObject` arrow in sf-schema.ts
+Task 01: minor (deferred): isObject helper defined twice in sf-model.ts and sf-schema.ts
+Task 01: review 0/1/4, findings docs/plans/2026-10-28-system-flow/findings/01-review.md. Open: Important 1 (inherited keys such as constructor and __proto__ bypass additionalProperties and required; mergeInto can write onto Object.prototype). The ⚠️ (check-all not green) is resolved by the controller's task 07 text fix at eec4737; check-prose now passes.
+Ruling: task 01's fix round 1 waits for task 02's implementer to finish, then resumes task 01's implementer (a5c8da9a092eaa0b7) on the same files. Why: two writers on sf-model.ts at once would collide. Cost if wrong: task 02 builds briefly on the unfixed validator, caught by task 01's re-review.
+Task 01: fix round 1 dispatched to a5c8da9a092eaa0b7 at HEAD f55634a (fix base for re-review is f55634a).
+Task 02: DONE_WITH_CONCERNS eec4737..f55634a. Concern 1 (check-prose on controller files) fixed by the controller: lone parentheses in code spans in state.md and findings/01-review.md reworded. Concern 2 (task 01's engine() helper moved to a node inside its diagram, count 6 to 7) accepted under ruling 3.
+Task 02: reviewer a6a20b2c16eac1455 dispatched (sonnet), findings docs/plans/2026-10-28-system-flow/findings/02-review.md; lens none (Tripwires: none). Waiting: task 01 fix round 1 and task 02 review; no next implementer until task 01's fix lands (shared files).
+Task 02: minor (deferred): dash ban skips object keys and reports merged array index for primitive arrays from two fragments.
+Task 02: minor (deferred): Arabic warning covers only the label field, not role, title or name.
+Task 02: review 0/0/2 spec ✅. ⚠️ (test-scope and check-prose not re-run green) resolved: check-prose passes after the controller's ledger fix; test_scope runs at the exit gate. Store rows tested via the sql table, the other four share the same loop: accepted.
+Task 02: cost unavailable (no transcript recorded)
+Task 02: complete (commits eec4737..f55634a, review clean)
+Waiting: task 01 fix round 1 (a5c8da9a092eaa0b7); task 03 waits for it because both edit sf-model.ts.
+Task 01: fix round 1 DONE_WITH_CONCERNS f55634a..4ebe3b3: Important 1 fixed per the implementer; install-opencode gate fails "skill fx-system-flow linked" because skills/fx-system-flow/ has no SKILL.md until task 15.
+Ruling: tests/install/run.sh skips a skills folder that holds no SKILL.md, matching the installer, which already skips such folders; task 01's implementer makes the one-line change in the same fix series (tasks 01 and 15). Why: leaving check-all red until task 15 blinds 14 tasks' gates, and the plan's LOW risk says to add the exception the gate allows. Cost if wrong: a skill folder that loses its SKILL.md goes unnoticed by the install test, caught by the skill-size and user-invoked gates, which also iterate SKILL.md files.
+Task 01: fix round 2 dispatched (option b, run.sh) to a5c8da9a092eaa0b7 at 4ebe3b3; re-review covers f55634a..<round 2 head> as one scoped re-review of rounds 1 and 2. Waiting on it.
+Task 01: fix round 2 BLOCKED 4ebe3b3..27de8fa: run.sh skip landed, but conformance row 09 pins EXPECTED=22 and requires a SKILL.md in every skills folder, so check-all still fails on the bare skills/fx-system-flow/.
+Ruling: the model schema lives at references/system-flow/system-model.schema.json for good, not under skills/fx-system-flow/; every task that names the schema path uses the new one, and task 15's lane links it as ../../references/system-flow/system-model.schema.json. Task 01's implementer moves it, updates SCHEMA_FILE and every reference, and reverts its run.sh skip, which the move makes unnecessary; skills/fx-system-flow/ first appears with task 15's SKILL.md (tasks 01 and 15, every task naming the schema). Why: row 09 deliberately requires a SKILL.md per skills folder, and weakening it in six places is worse than a path change. Cost if wrong: the design's "schema beside the lane" wording is off by one folder, caught by task 15's review.
+Ruling: superseded: the run.sh skip ruling above; reverted by the schema move.
+Task 01: fix round 3 dispatched (schema move to references/system-flow/, revert run.sh) at 27de8fa. Waiting on it; a watcher tracks the commit.
+Task 01: fix rounds 1 to 3 DONE f55634a..abf752f; check-all ALL GREEN per the implementer. Scoped re-review dispatched over f55634a..abf752f.
+Task 03: dispatched abf752f 2026-10-28T10:52:37+03:00
+Task 03: implementer aad0776005eb22346 (sonnet). Waiting: task 01 re-review (aaabd878890ee5d4e) and task 03 implementer.
+Task 01: fix round 3/5 (1 addressed, 0 open: none; commits f55634a..abf752f)
+Task 01: minor (deferred): mergeInto drops a `__proto__` key silently; unreachable via the CLI because the validator rejects it first
+Task 01: minor (deferred): brief 02 (.fx/2026-10-28-system-flow/briefs/02.md:113) still names the old skills/fx-system-flow/ schema path, now references/system-flow/
+Task 01: cost unavailable (no transcript recorded)
+Task 01: complete (commits 0749988..abf752f, review clean after 3 fix rounds)
+Task 01: guarantee: check-all ALL GREEN at abf752f per the implementer's round 3 report (748 lines read).
