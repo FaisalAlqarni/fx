@@ -4,7 +4,7 @@
       "id": "overview",
       "title": "Shamel Backend in its surroundings",
       "question": "What sits between the mobile app and Shaheen?",
-      "diagrams": ["system"],
+      "diagrams": ["level0"],
       "bullets": [
         { "id": "overview-b1", "text": "The Mobile API is the only host; the application core and the Shaheen connector are libraries inside it.",
           "evidence": [{ "path": "src/APIs/MobileAPI/Program.cs", "lines": "78-80", "symbol": "AddApplication" }] },

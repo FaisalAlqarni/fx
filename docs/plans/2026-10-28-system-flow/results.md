@@ -2,126 +2,109 @@
 
 ## Smoke
 
-Task 18. The CLI (tasks 01 to 17) run as a process on a scratch copy of Shamel.Backend, with the real archify 3.2.0 copied into a scratch `CLAUDE_CONFIG_DIR`. No lane was invoked. Source repository read only. Scratch run folder: `/tmp/claude-1000/sf-build/smoke-20261028-1` (run 1). A second folder, `smoke-20261028-2`, repeats the run with a fake `origin` remote to separate one failure cause from another (see Findings).
+Task 18, rerun after tasks 18a and 18b (worktree HEAD acb9eb4). The CLI run as a process on a scratch copy of Shamel.Backend, with the real archify 3.2.0 copied (`cp -rL`) into a scratch `CLAUDE_CONFIG_DIR`. No lane was invoked. The source repository was only read. Run folder: `/tmp/claude-1000/sf-build/smoke-20261028-4` (a fresh folder; `-1` and `-2` hold the first attempt, `-3` a check-only pass before the fragment rename below). Commands were run as `scripts/scratch-env node scripts/system-flow --root <run>/Shamel.Backend <subcommand>` with `CLAUDE_CONFIG_DIR=<run>/claude-config`.
 
-Outcome: all commands exit 0 and `check` passes, but archify rendered none of the five deep diagrams. Every diagram fell back to SVG. Three CLI defects cause this. They are findings for task 20; no source was changed here.
+Outcome: every command exits 0 and `check` passes. archify now renders every diagram, and its own checks pass for 4 of the 5 diagram groups, but the CLI keeps none of the archify pages: 0 of 5 deep diagrams are archify in the final build. The three first-run defects are gone. Two new causes remain (below). No source was changed.
 
-Commands below are shortened; each was run as `scripts/scratch-env node scripts/system-flow --root <scratch>/Shamel.Backend <subcommand>` with `CLAUDE_CONFIG_DIR=<run folder>/claude-config`, `TMPDIR` in the scratchpad.
+### Fragments under the current rules
+
+The 18b rule says the controller's diagram is `level0` and its nodes are `l0-<area id>`. `check` passed on the old fragments (diagram `system`, nodes `shamel-*`; run `-3`: `{"ok":true,"fragments":4,"items":59,"warnings":[]}`), so the rule is not enforced by `check`. The fragments were still renamed to follow the guide: diagram `system` to `level0`, nodes `shamel-<x>` to `l0-<x>`, the parent, `root` and section references to match, and the flow step actor `shamel-twk` to `l0-twk`. The other new rules (a flow step actor is a node id, an edge stays inside its diagram) already held.
 
 ### prepare-scratch
 
-First run: `scripts/scratch-env proof/prepare-scratch /mnt/c/Users/Faisal/Downloads/Shamel.Backend <run>/Shamel.Backend`
+First call:
 
 ```
-22025856b2a6be0a12e65bbebedbf856f97643c8
-exit 0
+c879c0f5ae3a573b1d1deed15448984906f5526a
 ```
 
-Second run with the same target:
+Second call with the same target:
 
 ```
 prepare-scratch: target exists: <run>/Shamel.Backend
 exit 1
 ```
 
-`git log --oneline` after the second run: one line, `2202585 scratch copy`; `git status --porcelain` empty (copy unchanged). The fragments were committed afterwards as a second commit (`proof` identity), as step 3 asks.
-
-TDD note: `prepare-scratch` is a bash script whose tests are these recorded runs, as the task says.
+`git log --oneline` after the second call: one line, `c879c0f scratch copy`. The fragments were committed afterwards as a second commit (`proof` identity).
 
 ### detect
 
-`CLAUDE_CONFIG_DIR=<run>/claude-config`, archify copy under `skills/archify`. The first copy was a dangling symlink (`/home/faisal/.claude/skills/archify` points to `../../.agents/skills/archify`, and `cp -r` copies the link); `detect` then printed `"archify": null`. The copy was redone from the link's target (`/home/faisal/.agents/skills/archify`, read only) with `cp -r`. After that:
-
-| Field | Value | Pass |
-|---|---|---|
-| `archify.via` | `CLAUDE_CONFIG_DIR` | yes |
-| `archify.version` | `3.2.0` | yes |
-| `theme.source` | `docs/assets/docs.css` (`kind` `docs-css`) | yes |
-| `docsConfig.path` | `mkdocs.yml` (`docsDir` `docs`) | yes |
-| `output.site` | `docs/system-flow` | yes |
-| `output.markdown` | `docs/system` (no hand-written `.md` there, so no `docs/system-generated`) | yes |
-
-mkdocs edits proposed: nav `- System flow: system-flow/index.html`, `- System docs: system/index.md`; excludeDocs `system-flow/README.md`, `system-flow/model/`, `system-flow/diagrams/src/`.
+`archify` `{dir: <run>/claude-config/skills/archify, version: "3.2.0", via: "CLAUDE_CONFIG_DIR"}`; `theme` `{source: "docs/assets/docs.css", kind: "docs-css"}`; `docsConfig` `{kind: "mkdocs", path: "mkdocs.yml", docsDir: "docs"}`; `output` `{site: "docs/system-flow", markdown: "docs/system"}` (no hand-written `.md` in `docs/system/`, so no `docs/system-generated`). All as required.
 
 ### check
-
-Fragments: `proof/smoke-fragments/{meta,level0,api,chapters}.json`, copied to `docs/system-flow/model/fragments/` and committed. First attempt failed with `step api-header-cache#1 names a missing actor ...` (a flow step `actor` must be a node id, not a class name); the actors were changed to the node `shamel-twk`. Then:
 
 ```
 {"ok":true,"fragments":4,"items":59,"warnings":[]}
 exit 0
 ```
 
-`warnings` is empty. No symbol in the C# files failed the last-segment rule (no generic or `partial` finding).
+No symbol in the C# files failed the last-segment rule.
 
 ### build --archify
 
-`build --archify <run>/claude-config/skills/archify`: exit 0, `problems: []`, `collisions: []`, `pageBytes` 41616.
+`build --archify <run>/claude-config/skills/archify`: exit 0, `ok: true`, `problems: []`, `collisions: []`, `pageBytes` 41264.
 
 | Diagram | renderer | reason |
 |---|---|---|
-| `arch-system` | svg | static SVG, archify failed: docs/system-flow/diagrams/arch-system.receipt.json |
-| `arch-api` | svg | static SVG, archify failed: docs/system-flow/diagrams/arch-api.receipt.json |
+| `arch-level0` | svg | static SVG, archify page loads outside the site: https://github.com/tt-a1i/archify |
+| `arch-api` | svg | static SVG, archify page loads outside the site: https://github.com/tt-a1i/archify |
 | `seq-api-prompt-answer` | svg | animated SVG, archify failed: docs/system-flow/diagrams/seq-api-prompt-answer-p3.receipt.json |
 | `seq-api-prompt-answer-p2` | svg | animated SVG, archify failed: docs/system-flow/diagrams/seq-api-prompt-answer-p3.receipt.json |
 | `flow-api-header-cache` | svg | animated SVG, archify failed: docs/system-flow/diagrams/flow-api-header-cache.receipt.json |
 
-`fx-theme:begin` blocks: 0 in every output, since all five pages are the CLI's SVG fallback, not archify output. That condition (one block per archify output) is therefore not testable in this run.
+archify output count: 0 of 5 kept (archify itself passed all four stages for both architecture diagrams and for two of the three retry pages of the sequence; see below).
 
-Receipt failures (quoted from the receipts; paths shortened to `<S>`):
+`fx-theme:begin` blocks: 0 in every page under `diagrams/`, because every final page is the CLI's SVG fallback. The condition "each archify output holds one block" cannot be tested while no archify output is kept.
 
-1. All five diagrams, run 1 after the first build and every diagram but one in run 2, `stages.deliver.receipt.diagnostics[0]`:
-   `delivery/concurrent-attempt: Could not start delivery for "<S>/docs/system-flow/diagrams/arch-system.html": Another delivery attempt owns "<S>/docs/system-flow/diagrams/arch-system.html" through lock "<S>/docs/system-flow/diagrams/.archify-delivery-lock.json".`
-2. Run 1, `seq-api-prompt-answer-p3.receipt.json`, `stages.validate`:
-   `repository-evidence/url-invalid: /meta/repository/url must be a credential-free HTTP(S) or Git SSH repository address without query, fragment, or dot segments.`
-   The spec had `"repository": {"url": "shamel-backend", ...}`; the scratch copy has no remote, so the CLI wrote the root id as the url.
-3. Run 2 (fake `origin` added, url error gone), `arch-system.receipt.json`, 5 x `validate`:
-   `architecture/component-sublabel-overflow: Sublabel "Sends prompts and reads answers over HTTP, SSE or SignalR." needs ~209px at the 6px legible minimum, but component "shamel-mobile-app" provides 180px`
-   and `seq-api-prompt-answer-p3.receipt.json`, 2 x `validate`:
-   `sequence/participant-label-overflow: Label "AnswerChannelPump" (~116px) is wider than component "pump" (105px)`.
+Receipts quoted:
 
-The CLI's fixed retry produced `seq-api-prompt-answer-p3` (a 5-per-page rerun of the 12-message sequence: 5, 5, 2 messages), which also failed, so the fallback names the p3 receipt for both sequence pages. The p3 page itself is not written (no `seq-api-prompt-answer-p3.html`), which is correct.
+- `arch-level0.receipt.json` and `arch-api.receipt.json`: `ok: true`, `status: pass`, stages validate, deliver, check and browser-check all `pass`. No failure. The CLI discarded the page because of its own scan (`outsideRefs`, `src/lib/sf-build.ts:307`). The URL it reports is archify's credit link in `assets/template.html:5395`: `<a class="diagram-guide-credit" href="https://github.com/tt-a1i/archify" target="_blank" rel="noopener noreferrer">`. It is a hyperlink, not a loaded resource, and it is in every archify page.
+- `flow-api-header-cache.receipt.json`: `status: fail`, stage validate `not-run`, stage deliver `fail` with `exitCode: 0`, the inner receipt `ok: true`, `errors: 0`, `warnings: 1`. The warning that fails the delivery: `[composition/viewport-height] ... This 510x480 canvas (ratio 1.06) declares no intrinsic-height fit and is below the 1.55 wide ratio ... the page reaches 1393px before cards against 900px, a certain visual-check failure. Either compact vertical spacing so meta.viewBox height is at most 329 at this width, or spread content sideways so the width is at least 744 at this height`.
+- `seq-api-prompt-answer-p3.receipt.json` (the 5 messages per page retry gives pages of 5, 5 and 2): the same `composition/viewport-height` warning, same numbers (510x480, page 1393px), delivery `fail`. Pages 1 and 2 of that retry passed (`seq-api-prompt-answer.receipt.json`, `-p2` all four stages `pass`), but one failing page sends the whole sequence to SVG.
+- The first attempt's failure for the sequence (8 and 4 messages per page) was overwritten by the retry's receipts, which share names. Its cause is not recorded here; the final state is the receipts above.
+
+Stray file: `diagrams/seq-api-prompt-answer-p3.html` is a leftover archify page (it contains the credit link and the font credit links `https://github.com/JetBrains/JetBrainsMono`, `https://openfontlicense.org`) and no longer matches the SVG fallback pages beside it.
 
 ### No write outside the scratch copy
 
-- archify copy: stamp file touched before the build; `find <archify copy> -type f -newer <stamp>` printed 0 files; `sha256sum` of every file before the build and after both builds is identical (`cmp` reported no difference).
-- `git -C <scratch copy> status --porcelain` after the first build: only `docs/` paths (`docs/system-flow/...`, `docs/system/`). Three fragments show as modified (`api.json`, `chapters.json`, `level0.json`): the build wrote `verified` stamps into them. No `.fx.json` was written. Lines outside `docs/`: 0.
+- archify copy: stamp file touched before the build; `find <archify copy> -type f -newer <stamp>` printed 0 files; `sha256sum` of every file before the build, after it, and after the flagless build is identical (`cmp` silent).
+- `git -C <scratch copy> status --porcelain`: only `docs/` paths (`docs/system-flow/...`, `docs/system/`) plus the three fragments modified by `verified` stamps. Lines outside `docs/`: 0. No `.fx.json` written.
 
 ### Flagless rebuild
 
-`build` with the same `CLAUDE_CONFIG_DIR` and no flags: exit 0. `diagrams` deep-equals the first build's (`True`, compared with `python3 -I`): same five renderers and reasons.
+`build` with the same `CLAUDE_CONFIG_DIR` and no flags: exit 0, `problems: []`. `diagrams` deep-equals the first build's (`True`, compared with `python3 -I`): same five renderers and reasons.
 
 ### Layout
 
-`docs/system-flow/model/layout-report.json`, every figure at `crossings <= 1` and `width <= 860`:
+`docs/system-flow/model/layout-report.json`, every figure at `crossings <= 1` and `width <= 860`, no node hits, nothing dropped:
 
 ```
-level-system          width 689 height 928 crossings 0 nodeHits 0 nodes 7 arrows 6 notDrawn 0 unlabelled 0
-level-api             width 610 height 694 crossings 0 nodeHits 0 nodes 7 arrows 6 notDrawn 0 unlabelled 0
-seq-api-prompt-answer width 656 height 896 crossings 0 nodeHits 0 nodes 8 arrows 8 notDrawn 0 unlabelled 0
-flow-api-header-cache width 438 height 290 crossings 0 nodeHits 0 nodes 3 arrows 2 notDrawn 0 unlabelled 0
+level-level0          width 689 height 928 crossings 0 nodeHits 0 notDrawn 0
+level-api             width 610 height 694 crossings 0 nodeHits 0 notDrawn 0
+seq-api-prompt-answer width 656 height 896 crossings 0 nodeHits 0 notDrawn 0
+flow-api-header-cache width 438 height 290 crossings 0 nodeHits 0 notDrawn 0
 ```
 
-Model depth reported by the build: 2 levels, 13 primary and 1 context node, 12 edges, 1 sequence (12 messages), 2 store rows, 1 store flow, 4 chapters, 59 evidence entries, 17 files cited.
+Model depth: 2 levels, 13 primary and 1 context node, 12 edges, 1 sequence (12 messages), 2 store rows, 1 store flow, 4 chapters, 59 evidence entries, 17 files cited.
 
 ### Visual check
 
-Visual check: not run: no browser. This session has no browser tool. The controller runs it before task 20 starts, per `references/visual/visual-check.md`, at 1440 and 390, light and dark, on each of these pages under `<run>/Shamel.Backend/docs/system-flow/`:
+Visual check: not run: no browser. This session has no browser tool. The controller runs it before task 20 starts, per `references/visual/visual-check.md`, at 1440 and 390, light and dark, on each page under `<run>/Shamel.Backend/docs/system-flow/`:
 
 - `index.html`
-- `diagrams/arch-system.html`
+- `diagrams/arch-level0.html`
 - `diagrams/arch-api.html`
 - `diagrams/seq-api-prompt-answer.html`
 - `diagrams/seq-api-prompt-answer-p2.html`
 - `diagrams/flow-api-header-cache.html`
 
-All five diagram pages are SVG fallback pages, so there is no archify output to check. One static check was possible: a search for `http(s)://` in `index.html` and the diagram pages finds only the SVG namespace `http://www.w3.org/2000/svg`, no outside URL.
+All are SVG fallback pages, so no archify output reaches the check. The stray `diagrams/seq-api-prompt-answer-p3.html` is an archify page; the controller may open it to see what archify drew for 2 messages. One static check was possible: a scan of `index.html` and the five fallback pages for `http(s)://` finds only the SVG namespace.
 
 ### Findings for task 20
 
-1. Concurrent finalize calls collide on archify's delivery lock. `runArchify` (`src/lib/sf-diagrams.ts`, limit 4) starts up to four `finalize` processes at once, all writing into the same `diagrams/` folder. archify keeps one `.archify-delivery-lock.json` there, so all but one get `delivery/concurrent-attempt`. The CLI then falls back to SVG although the specs may be fine. Likely fix: run one finalize at a time per output folder (limit 1), or give each its own staging folder.
-2. A root without a remote gets `meta.repository.url` set to the root id. archify rejects it (`repository-evidence/url-invalid`). With `link_mode: "local-only"` the url still must be a valid address. A fix is to omit `repository`, or to write a fixed valid placeholder, when `remote` is null.
-3. Long `role` text and long labels fail archify's layout validation. Ruling 15 dropped the 35 and 80 character label limits, but archify's `validate` stage rejects a sublabel that needs more than 180 px (about 50 characters at the 6 px minimum) and a participant label wider than 105 px (about 15 characters). Either the CLI shortens or splits these strings, or `fragment-guide.md` must give the limits. The labels and roles in this model are written the natural way, so a real repository will hit this too.
-4. The three defects cannot be worked around without editing `src/`, and this task changes no source. After fixes for 1, 2 and 3, the build, the theme-block check and the archify visual check have to be run again.
-5. A `cp -r` of `/home/faisal/.claude/skills/archify` copies a dangling symlink. The instructions for step 2 should copy the link target, `cp -rL`.
-6. A flow step `actor` must be a node id (`check` error `names a missing actor`). `fragment-guide.md` says only `actor`; it should say it names a node.
+1. The outside-the-site scan flags archify's credit hyperlink. `outsideRefs` returns `https://github.com/tt-a1i/archify`, an `<a href>` in every archify page (`assets/template.html:5395`). A link is not a network request. With the scan as it stands, no architecture diagram can ever be kept. The scan should look at loaded resources only (`src`, stylesheet `href`, `@import`, CSS url references), not `<a href>` or text.
+2. archify's `composition/viewport-height` fails small sequence pages. A page with 2 messages, or a 3-step store flow, gets a 510x480 `viewBox`. archify fails delivery with exit code 0 (`status: fail`). The spec carries `meta.viewBox`; archify's own advice is to omit it for architecture, or make the canvas at most 329 high or at least 744 wide. The CLI's fixed 5 per page retry makes the problem likelier: it produced a 2-message last page. A sequence of 12 messages ends on a page of 4 (8 and 4) or 2 (5, 5 and 2).
+3. A failing page sends the whole sequence to SVG, though the other pages passed all four stages. Not a defect on its own, but with finding 2 it means any sequence whose last page is short falls back.
+4. Stale page: the failed retry leaves `seq-api-prompt-answer-p3.html` in `diagrams/` after the SVG fallback is written. The next reader sees a page that is in no diagram line.
+5. Receipt names are reused by the retry, so the first attempt's failure cannot be read afterwards.
+6. `check` does not enforce the 18b level-0 id rule (`level0`, `l0-<area id>`); a model with the old ids passes.
