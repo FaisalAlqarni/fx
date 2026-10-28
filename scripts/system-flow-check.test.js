@@ -281,4 +281,15 @@ assert.throws(() => (0, import_sf_schema.validate)({ $ref: "#/$defs/constructor"
   (0, import_sf_model.mergeFragments)([{ file: "x.json", data }]);
   assert.strictEqual({}.polluted, void 0, "Object.prototype is untouched");
 }
+{
+  const f = (0, import_sf_fixture.sfFixture)();
+  f.goodSet();
+  const shim = path.join(f.base, "boom.js");
+  fs.writeFileSync(shim, "require('fs').readdirSync = () => { throw new TypeError('boom'); };\n");
+  const r = (0, import_child_process.spawnSync)(process.execPath, ["--require", shim, path.join(__dirname, "system-flow"), "--root", f.host, "check"], { encoding: "utf8", env: f.env() });
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(r.stderr.startsWith("system-flow: check: boom\nTypeError: boom\n    at "), r.stderr);
+  const own = f.run(["check", "--fragment", "nope.json"]);
+  assert.strictEqual(own.stderr, "system-flow: check: no fragment nope.json\n");
+}
 process.stdout.write("system-flow-check.test.js: OK\n");

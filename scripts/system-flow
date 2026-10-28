@@ -227,5 +227,7 @@ async function buildCmd() {
 (cmd === "build" ? buildCmd() : Promise.resolve().then({ detect: detectCmd, estimate: estimateCmd, query: queryCmd, stale: staleCmd, verify: verifyCmd, check }[cmd])).catch((e) => {
   process.stderr.write(`system-flow: ${cmd}: ${e.message.split("\n")[0]}
 `);
+  if (!(e instanceof Error) || e.constructor !== Error) process.stderr.write(`${e?.stack ?? String(e)}
+`);
   process.exit(1);
 });

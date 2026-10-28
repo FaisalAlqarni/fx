@@ -232,4 +232,17 @@ assert.throws(() => validate({ $ref: '#/$defs/constructor', $defs: {} }, 'x'), /
   assert.strictEqual(({} as Record<string, unknown>).polluted, undefined, 'Object.prototype is untouched');
 }
 
+// A bug (a TypeError, say) prints its stack; the CLI's own errors stay one line (final fix A10).
+{
+  const f = sfFixture();
+  f.goodSet();
+  const shim = path.join(f.base, 'boom.js');
+  fs.writeFileSync(shim, "require('fs').readdirSync = () => { throw new TypeError('boom'); };\n");
+  const r = spawnSync(process.execPath, ['--require', shim, path.join(__dirname, 'system-flow'), '--root', f.host, 'check'], { encoding: 'utf8', env: f.env() });
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.ok(r.stderr.startsWith('system-flow: check: boom\nTypeError: boom\n    at '), r.stderr);
+  const own = f.run(['check', '--fragment', 'nope.json']);
+  assert.strictEqual(own.stderr, 'system-flow: check: no fragment nope.json\n');
+}
+
 process.stdout.write('system-flow-check.test.js: OK\n');

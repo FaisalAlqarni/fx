@@ -193,5 +193,7 @@ async function buildCmd(): Promise<void> {
 
 (cmd === 'build' ? buildCmd() : Promise.resolve().then({ detect: detectCmd, estimate: estimateCmd, query: queryCmd, stale: staleCmd, verify: verifyCmd, check }[cmd as 'check'])).catch((e: Error) => {
   process.stderr.write(`system-flow: ${cmd}: ${e.message.split('\n')[0]}\n`);
+  // The lib throws plain Errors for what it refuses; any other kind (TypeError, RangeError) is a bug: show where.
+  if (!(e instanceof Error) || e.constructor !== Error) process.stderr.write(`${(e as Error)?.stack ?? String(e)}\n`);
   process.exit(1);
 });
