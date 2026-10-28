@@ -8,7 +8,7 @@ import type { Item, Model, Problem } from './sf-model.js';
 // Refit on 2026-10-28 from proof runs (a) (Shamel.Backend: 3 areas, 83 files, 24 figures, 12,813,063 tokens, 20.3 min)
 // and (b) (four Advantage roots: 12 areas, 617 files, 77 figures, 49,415,523 tokens, 52.7 min). The controller's
 // tokens scale by area count (run (b): 25,209,303 over 12 areas). Two runs cannot split per-file from per-figure cost,
-// so that split keeps run (a)'s ratio and is unproven; both runs land within 11% of tokens and 2% of minutes.
+// so that split keeps run (a)'s ratio and is unproven; both runs land within 12% of tokens and 2% of minutes.
 // archify runs one call at a time after the areas: 145 receipts in about 28 minutes on run (b)'s rebuild.
 export const ESTIMATE = { calibrated: true, measuredOn: '2026-10-28', tokensPerFile: 37000, tokensPerFigure: 93000, controllerTokensPerArea: 2100000, minutesPerFile: 0.2, minutesPerFigure: 0.7, controllerMinutes: 9.4, archifyMinutesPerPage: 0.2, parallel: 4 };
 export type Plan = { areas: { id: string; root: string; files: number; filesToRead: number; levels: number; diagrams: number; sequences: number; storeFlows: number }[]; chapters: number };
