@@ -276,7 +276,7 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   const live = archify === undefined ? [] : groups.filter((g) => svgReason(g) === null);
   type Run = { ok: boolean; receipt: string };
   const runAll = async (gs: DeepDiagram[][]): Promise<Map<string, Run[]>> => {
-    const rs = await runArchify(archify as string, jobsOf(gs.flat()), 4);
+    const rs = await runArchify(archify as string, jobsOf(gs.flat()));
     const byGroup = new Map<string, Run[]>();
     gs.flat().forEach((d, i) => {
       const r = rs[i] as { ok: boolean };
@@ -307,9 +307,10 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
     if (skip !== null) line = pickLine(g0.name, svgLabel(g), skip);
     else if (attempt?.every((r) => r.ok)) {
       renderer = 'archify'; shown = done;
-      const tail = retried.has(g0.source) ? ', retried at 5 per page' : '';
+      const cut = [...new Set(done.flatMap((d) => d.shortened))];
+      const tail = `${retried.has(g0.source) ? ', retried at 5 per page' : ''}${cut.length ? `, shortened: ${cut.join(', ')}` : ''}`;
       line = g0.kind === 'architecture'
-        ? pickLine(g0.name, 'archify architecture', `${(g0.spec as { components: unknown[] }).components.length} components`)
+        ? pickLine(g0.name, 'archify architecture', `${(g0.spec as { components: unknown[] }).components.length} components${tail}`)
         : pickLine(g0.name, 'archify sequence', `${msgs(done)} messages in ${done.length} pages${tail}`);
     } else {
       const failed = (attempt as Run[]).map((r, i) => ({ r, i })).filter((x) => !x.r.ok).pop();

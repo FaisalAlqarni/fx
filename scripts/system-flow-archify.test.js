@@ -38,7 +38,9 @@ const a = process.argv.slice(2);
 const [, type, specPath, out] = a;
 const spec = JSON.parse(fs.readFileSync(specPath, 'utf8')); // ts-gate-ok: plain JS inside the fake
 const name = path.basename(out, '.html');
-const start = Date.now();
+// The monotonic clock, shared by every process on the machine; the wall clock can step back under WSL.
+const now = () => Number(process.hrtime.bigint() / 1000000n);
+const start = now();
 await new Promise((r) => setTimeout(r, Number(process.env.FAKE_SLEEP_MS || 0)));
 const fails = (process.env.FAKE_FAIL || '').split(',').filter(Boolean);
 const max = Number(process.env.FAKE_MAX_MSGS || 1e9);
@@ -48,7 +50,7 @@ const receipt = a[a.indexOf('--receipt') + 1];
 fs.mkdirSync(path.dirname(receipt), { recursive: true });
 fs.writeFileSync(receipt, JSON.stringify({ name, ok: !bad }));
 if (!bad) fs.writeFileSync(out, '<!doctype html><html><head><style>:root{--bg:#000}</style></head><body>' + name + '</body></html>');
-fs.appendFileSync(process.env.FAKE_LOG, JSON.stringify({ args: a, name, messages, start, end: Date.now() }) + '\\n');
+fs.appendFileSync(process.env.FAKE_LOG, JSON.stringify({ args: a, name, messages, start, end: now() }) + '\\n');
 process.exit(bad ? 1 : 0);
 `;
 function fake(f, dir) {
@@ -147,7 +149,7 @@ const reason = (o, name) => o.diagrams.find((d) => d.name === name);
   const calls = logOf(f);
   assert.strictEqual(calls.length, 9);
   const overlap = Math.max(...calls.map((c) => calls.filter((o) => o.start < c.end && c.start < o.end).length));
-  assert.ok(overlap <= 4 && overlap >= 2, `overlap ${overlap}`);
+  assert.strictEqual(overlap, 1, `overlap ${overlap}`);
 }
 const theme = (ink, accent) => {
   const v = (k) => Object.fromEntries(import_sf_theme.SLOTS.map((s) => [s, s === "--ink" ? ink : s === "--accent" ? accent : "#abcdef"]));
@@ -286,6 +288,40 @@ const detectOf = (f, env = {}) => (0, import_json.parseJson)(f.run(["detect"], e
   ok(f, ["--prefer", "cheap", "--archify", a]);
   assert.strictEqual(logOf(f).length, 10);
   assert.strictEqual(fxDoc(f).system_flow.diagrams.prefer, "cheap");
+}
+{
+  const f = setup();
+  const lvl = (0, import_json.parseJson)(read(f, `${SITE}/model/fragments/level0.json`));
+  const [api, db] = lvl.levels.diagrams[1].nodes;
+  const ROLE = "Sends prompts and reads answers over HTTP, SSE or SignalR to the backend.";
+  const LABEL = "Primary relational database cluster";
+  api.role = ROLE;
+  db.label = LABEL;
+  f.fragment("level0", lvl);
+  const fl = (0, import_json.parseJson)(read(f, `${SITE}/model/fragments/flows.json`));
+  const PART = "AnswerChannelPumpBackgroundWorker";
+  fl.sequences[0].participants[0].label = PART;
+  f.fragment("flows", fl);
+  const o = ok(f, ["--archify", fake(f, "fake")]);
+  const cutOf = (whole, got) => {
+    assert.ok(got.endsWith("...") && whole.startsWith(got.slice(0, -3)), got);
+  };
+  const arch = (0, import_json.parseJson)(read(f, `${D}/src/arch-engine.json`));
+  const c = (id) => arch.components.find((x) => x.id === id);
+  cutOf(ROLE, c("api").sublabel);
+  assert.ok([...c("api").sublabel].length * 3.6 <= c("api").size[0] - 8, c("api").sublabel);
+  cutOf(LABEL, c("db").label);
+  assert.ok([...c("db").label].length * 6.6 <= c("db").size[0] + 8, c("db").label);
+  for (const n of ["seq-turn", "seq-turn-p2"]) {
+    const seq = (0, import_json.parseJson)(read(f, `${D}/src/${n}.json`));
+    const box = Math.max(86, Math.min(190, Math.round((seq.meta.viewBox[0] - 124) / seq.participants.length) - 24));
+    const p = seq.participants.find((x) => x.id === "api");
+    cutOf(PART, p.label);
+    assert.ok([...p.label].length * 6.8 <= box + 6, `${n} ${p.label} ${box}`);
+  }
+  assert.strictEqual(reason(o, "arch-engine").reason, "archify architecture, 2 components, shortened: api sublabel, db label");
+  assert.strictEqual(reason(o, "seq-turn").reason, "archify sequence, 14 messages in 2 pages, shortened: api label");
+  assert.strictEqual(reason(o, "arch-system").reason, "archify architecture, 2 components");
 }
 {
   const f = setup();

@@ -43,6 +43,7 @@ function setup() {
 # ${LONG}
 `);
   f2.commit("host", "api");
+  f2.git("host", "remote", "add", "origin", "https://example.com/acme/app.git");
   f2.fxJson({});
   f2.fragment("meta", { schemaVersion: 1, meta: { roots: [{ id: "backend" }, { id: "guide" }] } });
   f2.fxJson({ system_flow: { roots: { guide: "../guide" } } });
@@ -130,13 +131,25 @@ const { out, err } = build(f);
 {
   const head = f.git("host", "rev-parse", "HEAD");
   const s = spec(f, "arch-engine");
-  assert.deepStrictEqual(s.meta.repository, { url: "backend", revision: head, link_mode: "local-only" });
+  assert.deepStrictEqual(s.meta.repository, { url: "https://example.com/acme/app.git", revision: head, link_mode: "local-only" });
   assert.strictEqual(s.meta.quality_profile, "showcase");
   assert.strictEqual(s.meta.output, "arch-engine.html");
   for (const n of fs.readdirSync(path.join(f.host, D, "src"))) assert.ok(!read(f, `${D}/src/${n}`).includes(f.base), n);
-  f.git("host", "remote", "add", "origin", "https://user:token@example.com/acme/app.git");
+  f.git("host", "remote", "set-url", "origin", "https://user:token@example.com/acme/app.git");
   build(f);
   assert.strictEqual(spec(f, "arch-engine").meta.repository.url, "https://example.com/acme/app.git");
+}
+{
+  const g = setup();
+  g.git("host", "remote", "remove", "origin");
+  build(g);
+  for (const n of fs.readdirSync(path.join(g.host, D, "src"))) {
+    const s = (0, import_json.parseJson)(read(g, `${D}/src/${n}`));
+    assert.ok(!("repository" in s.meta), n);
+    assert.ok([...s.components ?? [], ...s.participants ?? []].every((c) => !("sources" in c)), n);
+    assert.deepStrictEqual((0, import_sf_schema.validate)(schema(s.diagram_type === "architecture" ? "architecture" : "sequence"), s, refs), [], n);
+  }
+  assert.ok(JSON.stringify(spec(g, "arch-engine").cards).includes("@backend/app/api.rb:10-42"), JSON.stringify(spec(g, "arch-engine").cards));
 }
 {
   const g = setup();

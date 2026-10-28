@@ -48,7 +48,16 @@ Markdown only; an HTML page never loads it.
   steps card, never to `sources`.
 - **The single-root rule.** A spec describes one repository: the root most of
   its evidence cites. `meta.repository` is that root's remote and HEAD with
-  `link_mode: "local-only"`, and `--repo-root` is that root's folder.
+  `link_mode: "local-only"`, and `--repo-root` is that root's folder. archify takes
+  only a remote address as the url and checks `sources` through it, so a root with no
+  remote gets neither `meta.repository` nor `sources`; its evidence goes to the steps
+  card.
+- **Labels fit archify's measure.** archify draws node text on one line and rejects a
+  component label, component sublabel or participant label wider than its box. The
+  build cuts such a label in the spec to fit, ending it in `...`, and names each cut
+  in the diagram's reason (`shortened: api sublabel`).
+- **One finalize at a time.** archify locks the output folder during a delivery, so
+  the build runs its `finalize` calls one after another.
 - **The theme block.** After archify finishes, the build writes the page palette into
   the output between `/* fx-theme:begin */` and `/* fx-theme:end */`, mapped onto
   archify's own variable names, and replaces the block on every build. Never edit

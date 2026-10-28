@@ -23,6 +23,7 @@ function setup(): Fx {
   const f = sfFixture();
   f.put('host', 'app/api.rb', `${Array.from({ length: 49 }, (_, i) => (i === 9 ? '# Api#call' : `# line ${i + 1}`)).join('\n')}\n# Api#log\n# ${LONG}\n`);
   f.commit('host', 'api');
+  f.git('host', 'remote', 'add', 'origin', 'https://example.com/acme/app.git');
   f.fxJson({});
   f.fragment('meta', { schemaVersion: 1, meta: { roots: [{ id: 'backend' }, { id: 'guide' }] } });
   f.fxJson({ system_flow: { roots: { guide: '../guide' } } });
@@ -89,13 +90,28 @@ const { out, err } = build(f);
 {
   const head = f.git('host', 'rev-parse', 'HEAD');
   const s = spec(f, 'arch-engine');
-  assert.deepStrictEqual(s.meta.repository, { url: 'backend', revision: head, link_mode: 'local-only' });
+  assert.deepStrictEqual(s.meta.repository, { url: 'https://example.com/acme/app.git', revision: head, link_mode: 'local-only' });
   assert.strictEqual(s.meta.quality_profile, 'showcase');
   assert.strictEqual(s.meta.output, 'arch-engine.html');
   for (const n of fs.readdirSync(path.join(f.host, D, 'src'))) assert.ok(!read(f, `${D}/src/${n}`).includes(f.base), n);
-  f.git('host', 'remote', 'add', 'origin', 'https://user:token@example.com/acme/app.git');
+  f.git('host', 'remote', 'set-url', 'origin', 'https://user:token@example.com/acme/app.git');
   build(f);
   assert.strictEqual(spec(f, 'arch-engine').meta.repository.url, 'https://example.com/acme/app.git');
+}
+
+// A root with no remote: archify needs a remote address for meta.repository and meta.repository for sources,
+// so the spec carries neither and the evidence goes to the steps card.
+{
+  const g = setup();
+  g.git('host', 'remote', 'remove', 'origin');
+  build(g);
+  for (const n of fs.readdirSync(path.join(g.host, D, 'src'))) {
+    const s = parseJson(read(g, `${D}/src/${n}`)) as Obj;
+    assert.ok(!('repository' in s.meta), n);
+    assert.ok([...(s.components ?? []), ...(s.participants ?? [])].every((c: Obj) => !('sources' in c)), n);
+    assert.deepStrictEqual(validate(schema(s.diagram_type === 'architecture' ? 'architecture' : 'sequence'), s, refs), [], n);
+  }
+  assert.ok(JSON.stringify(spec(g, 'arch-engine').cards).includes('@backend/app/api.rb:10-42'), JSON.stringify(spec(g, 'arch-engine').cards));
 }
 
 // Cross-root evidence goes to the steps card, not to sources.

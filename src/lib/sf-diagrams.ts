@@ -11,7 +11,8 @@ import type { Root } from './sf-evidence.js';
 import { escapeHtml } from './sf-page.js';
 
 type Obj = Record<string, unknown>;
-export type DeepDiagram = { name: string; kind: 'architecture' | 'sequence'; source: string; spec: object; pages: number; owningRoot: string };
+// shortened: each label the spec cut to fit archify, as '<model id> <field>'.
+export type DeepDiagram = { name: string; kind: 'architecture' | 'sequence'; source: string; spec: object; pages: number; owningRoot: string; shortened: string[] };
 
 const PAGE_DEFAULT = 8;
 const COMPONENT_TYPES = ['frontend', 'backend', 'database', 'cloud', 'security', 'messagebus', 'external'];
@@ -22,6 +23,18 @@ const componentType = (kind: string): string => (COMPONENT_TYPES.includes(kind) 
 const cut = (s: string, n: number): string => [...s].slice(0, n).join('');
 
 const isFile = (e: Evidence): e is FileEvidence => 'path' in e;
+
+// archify 3.2.0 measures text in units, a full-width character counting 2 (textUnits). Everything from U+1100 up
+// counts 2 here: it over-counts some characters, so a fitted label is at worst shorter than it had to be.
+const units = (s: string): number => [...s].reduce((n, ch) => n + ((ch.codePointAt(0) ?? 0) >= 0x1100 ? 2 : 1), 0);
+// archify renders node text on one line and rejects what does not fit, so the spec carries a cut copy ending in "...".
+function fit(s: string, max: number, what: string, shortened: string[]): string {
+  if (units(s) <= max) return s;
+  let out = '';
+  for (const ch of s) { if (units(out + ch) + 3 > max) break; out += ch; }
+  shortened.push(what);
+  return `${out.trimEnd()}...`;
+}
 
 // The root most evidence entries cite; a tie goes to the host.
 function owningRoot(entries: Evidence[], roots: Map<string, Root>): string {
@@ -54,27 +67,35 @@ function sourcesOf(list: Evidence[], own: string, host: string, rest: string[], 
 // Credentials never reach a spec: userinfo is cut from a URL remote.
 const publicUrl = (remote: string): string => remote.replace(/^([a-z][a-z0-9+.-]*:\/\/)[^@/]*@/i, '$1');
 
-function repository(root: Root | undefined, id: string): Obj | undefined {
-  if (!root?.head) return undefined;
-  return { url: root.remote ? publicUrl(root.remote) : id, revision: root.head, link_mode: 'local-only' };
+// archify accepts only a remote address as the url (repository-evidence/url-invalid), so a root with no remote gets none.
+function repository(root: Root | undefined): Obj | undefined {
+  if (!root?.head || !root.remote) return undefined;
+  return { url: publicUrl(root.remote), revision: root.head, link_mode: 'local-only' };
 }
+// archify verifies sources only through meta.repository; without one, the owning root's evidence goes to the card too.
+const linked = (own: string, repo: Obj | undefined): string => (repo ? own : '');
 
-const evCard = (rest: string[]): Obj[] => (rest.length ? [{ dot: 'slate', title: 'Evidence in other roots', items: rest }] : []);
+const evCard = (rest: string[]): Obj[] => (rest.length ? [{ dot: 'slate', title: 'Evidence', items: rest }] : []);
 
 function architecture(d: Diagram, fig: FigureSpec, roots: Map<string, Root>): DeepDiagram {
   const host = [...roots.values()].find((r) => r.host)?.id ?? '';
   const all = [...d.nodes, ...d.edges, ...d.groups].flatMap((o) => o.evidence);
   const own = owningRoot(all, roots);
   const rest: string[] = [];
+  const repo = repository(roots.get(own));
   const byId = new Map(d.nodes.map((n) => [n.id, n]));
+  const shortened: string[] = [];
   const components = fig.nodes.map((n) => {
     const m = byId.get(n.id);
-    const sources = m && m.primary !== false ? sourcesOf(m.evidence, own, host, rest, m.label) : undefined;
-    return { id: aid(n.id), type: componentType(m?.kind ?? n.kind), label: m?.label ?? n.id, ...(m?.role ? { sublabel: m.role } : {}), ...(sources ? { sources } : {}), pos: [n.x, n.y], size: [n.w, n.h] };
+    const sources = m && m.primary !== false ? sourcesOf(m.evidence, linked(own, repo), host, rest, m.label) : undefined;
+    // archify 3.2.0: a label needs units * 6.6 px within width + 8 (component-label-overflow); a sublabel units * 6 px * 0.6
+    // within width - 8 at its 6 px minimum (component-sublabel-overflow).
+    const label = fit(m?.label ?? n.id, Math.floor((n.w + 8) / 6.6), `${n.id} label`, shortened);
+    const sublabel = m?.role ? fit(m.role, Math.floor((n.w - 8) / 3.6), `${n.id} sublabel`, shortened) : undefined;
+    return { id: aid(n.id), type: componentType(m?.kind ?? n.kind), label, ...(sublabel ? { sublabel } : {}), ...(sources ? { sources } : {}), pos: [n.x, n.y], size: [n.w, n.h] };
   });
   const known = new Set(d.nodes.map((n) => n.id));
   const boundaries = d.groups.flatMap((g) => { const wraps = g.members.filter((x) => known.has(x)).map(aid); return wraps.length ? [{ kind: 'region', label: g.label, wraps }] : []; });
-  const repo = repository(roots.get(own), own);
   const name = `arch-${d.id}`;
   const spec = {
     schema_version: 1, diagram_type: 'architecture',
@@ -84,7 +105,7 @@ function architecture(d: Diagram, fig: FigureSpec, roots: Map<string, Root>): De
     connections: d.edges.map((e) => ({ from: aid(e.from), to: aid(e.to), label: e.label, ...(e.mode === 'async' ? { variant: 'dashed' } : {}) })),
     ...(rest.length ? { cards: evCard(rest) } : {}),
   };
-  return { name, kind: 'architecture', source: `diagram:${d.id}`, spec, pages: 1, owningRoot: own };
+  return { name, kind: 'architecture', source: `diagram:${d.id}`, spec, pages: 1, owningRoot: own, shortened };
 }
 
 type Msg = { n: number; from: string; to: string; label: string; mode?: string; note?: string };
@@ -100,14 +121,19 @@ function sequencePages(base: string, title: string, parts: Part[], msgs: Msg[], 
     for (const x of parts) if (used.size < 2) used.add(x.id);
     const shown = parts.filter((x) => used.has(x.id));
     const name = p === 0 ? base : `${base}-p${p + 1}`;
+    const width = Math.max(480, 150 * shown.length + 60);
+    // archify 3.2.0 on an authored viewBox: each box is max(86, min(190, round((width - 124) / count) - 24)) px, and a
+    // label needs units * 6.8 px within it + 6 (participant-label-overflow).
+    const box = Math.max(86, Math.min(190, Math.round((width - 124) / shown.length) - 24));
+    const shortened: string[] = [];
     const spec = {
       schema_version: 1, diagram_type: 'sequence',
-      meta: { title: pages > 1 ? `${title} (page ${p + 1} of ${pages})` : title, output: `${name}.html`, quality_profile: 'showcase', ...(repo ? { repository: repo } : {}), viewBox: [Math.max(480, 150 * shown.length + 60), Math.max(480, 180 + 56 * slice.length + 60)] },
-      participants: shown.map((x) => ({ id: aid(x.id), type: x.type, label: x.label, ...(x.sources ? { sources: x.sources } : {}) })),
+      meta: { title: pages > 1 ? `${title} (page ${p + 1} of ${pages})` : title, output: `${name}.html`, quality_profile: 'showcase', ...(repo ? { repository: repo } : {}), viewBox: [width, Math.max(480, 180 + 56 * slice.length + 60)] },
+      participants: shown.map((x) => ({ id: aid(x.id), type: x.type, label: fit(x.label, Math.floor((box + 6) / 6.8), `${x.id} label`, shortened), ...(x.sources ? { sources: x.sources } : {}) })),
       messages: slice.map((m, i) => ({ id: `m${m.n}`, from: aid(m.from), to: aid(m.to), y: 180 + 56 * i, label: `${m.n}. ${m.label}`, ...(m.mode === 'async' ? { variant: 'dashed' } : {}), ...(m.note ? { note: m.note } : {}) })),
       ...(rest.length && p === 0 ? { cards: evCard(rest) } : {}),
     };
-    return { name, kind: 'sequence' as const, source, spec, pages, owningRoot: own };
+    return { name, kind: 'sequence' as const, source, spec, pages, owningRoot: own, shortened };
   });
 }
 
@@ -115,25 +141,27 @@ function sequence(q: Model['sequences'][number], roots: Map<string, Root>, limit
   const host = [...roots.values()].find((r) => r.host)?.id ?? '';
   const own = owningRoot([...q.participants, ...q.messages].flatMap((o) => o.evidence), roots);
   const rest: string[] = [];
-  const parts = q.participants.map((p): Part => ({ id: p.id, type: componentType(p.kind ?? ''), label: p.label, sources: sourcesOf(p.evidence, own, host, rest, p.label) }));
-  for (const m of q.messages) sourcesOf(m.evidence, own, host, rest, `message ${m.n}`);
-  return sequencePages(`seq-${q.id}`, q.title, parts, q.messages, own, repository(roots.get(own), own), rest, limit, `seq:${q.id}`);
+  const repo = repository(roots.get(own)), src = linked(own, repo);
+  const parts = q.participants.map((p): Part => ({ id: p.id, type: componentType(p.kind ?? ''), label: p.label, sources: sourcesOf(p.evidence, src, host, rest, p.label) }));
+  for (const m of q.messages) sourcesOf(m.evidence, src, host, rest, `message ${m.n}`);
+  return sequencePages(`seq-${q.id}`, q.title, parts, q.messages, own, repo, rest, limit, `seq:${q.id}`);
 }
 
 function flow(f: StoreFlow, model: Model, roots: Map<string, Root>, limit: number): DeepDiagram[] {
   const host = [...roots.values()].find((r) => r.host)?.id ?? '';
   const own = owningRoot(f.steps.flatMap((s) => s.evidence), roots);
   const rest: string[] = [];
+  const repo = repository(roots.get(own)), src = linked(own, repo);
   const nodes = new Map(model.levels.diagrams.flatMap((d) => d.nodes).map((n) => [n.id, n]));
-  for (const s of f.steps) sourcesOf(s.evidence, own, host, rest, `step ${s.n}`);
+  for (const s of f.steps) sourcesOf(s.evidence, src, host, rest, `step ${s.n}`);
   const actors = [...new Set(f.steps.map((s) => s.actor))], stores = [...new Set(f.steps.map((s) => s.store as string))];
   const parts: Part[] = [
-    ...actors.map((id): Part => { const n = nodes.get(id); return { id, type: componentType(n?.kind ?? ''), label: n?.label ?? id, sources: n ? sourcesOf(n.evidence, own, host, [], id) : undefined }; }),
+    ...actors.map((id): Part => { const n = nodes.get(id); return { id, type: componentType(n?.kind ?? ''), label: n?.label ?? id, sources: n ? sourcesOf(n.evidence, src, host, [], id) : undefined }; }),
     // Model ids are lowercase with no underscore, so S_<store> never equals an actor id.
     ...stores.map((id): Part => ({ id: `S_${id}`, type: 'database', label: id })),
   ];
   const msgs = f.steps.map((s): Msg => ({ n: s.n, from: s.actor, to: `S_${s.store}`, label: `${s.op}${s.key ? ` ${s.key}` : ''}`, ...(s.when ? { note: s.when } : {}) }));
-  return sequencePages(`flow-${f.id}`, f.trigger, parts, msgs, own, repository(roots.get(own), own), rest, limit, `flow:${f.id}`);
+  return sequencePages(`flow-${f.id}`, f.trigger, parts, msgs, own, repo, rest, limit, `flow:${f.id}`);
 }
 
 export function deepDiagrams(model: Model, figures: FigureSpec[], roots: Map<string, Root>, pageLimit: Record<string, number>): DeepDiagram[] {
@@ -226,8 +254,9 @@ export function findArchify(hostRoot: string, env: NodeJS.ProcessEnv, fx: FxJson
   return null;
 }
 
-// Runs `finalize` for each job, at most `limit` at a time. The receipt sits beside the output as <name>.receipt.json (ruling 17).
-export function runArchify(dir: string, jobs: { name: string; kind: 'architecture' | 'sequence'; spec: string; out: string; repoRoot: string }[], limit: 4): Promise<{ name: string; ok: boolean; receipt: string | null }[]> {
+// Runs `finalize` for each job, one at a time: archify's delivery lock rejects a second call in the same folder
+// (delivery/concurrent-attempt). The receipt sits beside the output as <name>.receipt.json (ruling 17).
+export async function runArchify(dir: string, jobs: { name: string; kind: 'architecture' | 'sequence'; spec: string; out: string; repoRoot: string }[]): Promise<{ name: string; ok: boolean; receipt: string | null }[]> {
   const results: { name: string; ok: boolean; receipt: string | null }[] = [];
   const one = (j: (typeof jobs)[number]): Promise<void> => new Promise((resolve) => {
     const receipt = path.join(path.dirname(j.out), `${j.name}.receipt.json`);
@@ -240,9 +269,8 @@ export function runArchify(dir: string, jobs: { name: string; kind: 'architectur
     child.on('error', () => done(null));
     child.on('close', done);
   });
-  let next = 0;
-  const worker = async (): Promise<void> => { while (next < jobs.length) await one(jobs[next++] as (typeof jobs)[number]); };
-  return Promise.all(Array.from({ length: Math.min(limit, jobs.length) }, worker)).then(() => results);
+  for (const j of jobs) await one(j);
+  return results;
 }
 
 // ---------------------------------------------------------------- theme block
