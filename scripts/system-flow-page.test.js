@@ -120,6 +120,13 @@ const page = read(f, `${SITE}/index.html`);
   assert.ok(!fs.existsSync(path.join(f.host, SITE, "assets", "fx-map-1.js")));
 }
 {
+  const tables = page.match(/<table>/g) ?? [];
+  const wrapped = [...page.matchAll(/<div class="table-scroll" role="region" aria-label="([^"]+)" tabindex="0"><table>/g)].map((m) => m[1]);
+  assert.ok(tables.length >= 4, `${tables.length} tables`);
+  assert.strictEqual(wrapped.length, tables.length, "every table is wrapped");
+  assert.ok(wrapped.includes("Store: sql") && wrapped.includes("Corrections"), wrapped.join(","));
+}
+{
   const g = setup();
   g.put("host", `${SITE}/assets/fx-tokens-1.css`, "/* mine */");
   g.put("host", `${SITE}/assets/theme.css`, "/* fx stale */");
@@ -207,8 +214,8 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">\u0645\u0631\u062D\u06
   for (const e of cov.entries) assert.ok(covHtml.includes(`>${e.name}<`), `coverage row ${e.name}`);
   for (const [k, c] of Object.entries(cov.counts)) assert.ok(covHtml.includes(`<td>${k}</td><td>${c.covered}</td><td>${c.total}</td>`), `coverage count ${k}`);
   const s1 = chapter(pg, "ch-01-s1");
-  assert.ok(/Store flow: A link is opened<\/h4>\s*<table>[\s\S]*?<td>1<\/td><td>api<\/td><td>read<\/td><td>sql<\/td><td>links:\{id\}<\/td>/.test(s1), "flow step row");
-  assert.ok(/Store: sql<\/h4>\s*<table>[\s\S]*?<td>links-table<\/td><td>links<\/td>/.test(s1), "storeRefs row");
+  assert.ok(/Store flow: A link is opened<\/h4>\s*<div class="table-scroll"[^>]*><table>[\s\S]*?<td>1<\/td><td>api<\/td><td>read<\/td><td>sql<\/td><td>links:\{id\}<\/td>/.test(s1), "flow step row");
+  assert.ok(/Store: sql<\/h4>\s*<div class="table-scroll"[^>]*><table>[\s\S]*?<td>links-table<\/td><td>links<\/td>/.test(s1), "storeRefs row");
 }
 {
   const g = setup();

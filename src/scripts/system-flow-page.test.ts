@@ -76,6 +76,15 @@ const page = read(f, `${SITE}/index.html`);
   assert.ok(!fs.existsSync(path.join(f.host, SITE, 'assets', 'fx-map-1.js')));
 }
 
+// Each table scrolls in its own labelled region a keyboard can reach; the template has no page-wide table rule (A20).
+{
+  const tables = page.match(/<table>/g) ?? [];
+  const wrapped = [...page.matchAll(/<div class="table-scroll" role="region" aria-label="([^"]+)" tabindex="0"><table>/g)].map((m) => m[1]);
+  assert.ok(tables.length >= 4, `${tables.length} tables`);
+  assert.strictEqual(wrapped.length, tables.length, 'every table is wrapped');
+  assert.ok(wrapped.includes('Store: sql') && wrapped.includes('Corrections'), wrapped.join(','));
+}
+
 // Copy rule: an existing kit file is kept, theme.css is rewritten.
 {
   const g = setup();
@@ -185,8 +194,8 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">مرحبا</span>'));
   for (const e of cov.entries) assert.ok(covHtml.includes(`>${e.name}<`), `coverage row ${e.name}`);
   for (const [k, c] of Object.entries(cov.counts)) assert.ok(covHtml.includes(`<td>${k}</td><td>${c.covered}</td><td>${c.total}</td>`), `coverage count ${k}`);
   const s1 = chapter(pg, 'ch-01-s1');
-  assert.ok(/Store flow: A link is opened<\/h4>\s*<table>[\s\S]*?<td>1<\/td><td>api<\/td><td>read<\/td><td>sql<\/td><td>links:\{id\}<\/td>/.test(s1), 'flow step row');
-  assert.ok(/Store: sql<\/h4>\s*<table>[\s\S]*?<td>links-table<\/td><td>links<\/td>/.test(s1), 'storeRefs row');
+  assert.ok(/Store flow: A link is opened<\/h4>\s*<div class="table-scroll"[^>]*><table>[\s\S]*?<td>1<\/td><td>api<\/td><td>read<\/td><td>sql<\/td><td>links:\{id\}<\/td>/.test(s1), 'flow step row');
+  assert.ok(/Store: sql<\/h4>\s*<div class="table-scroll"[^>]*><table>[\s\S]*?<td>links-table<\/td><td>links<\/td>/.test(s1), 'storeRefs row');
 }
 
 // Design, Layout: dropped arrows are listed under the figure; the map still holds every edge.

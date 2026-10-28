@@ -121,9 +121,11 @@ for (const part of ['localStorage.setItem("fx-theme"', 'class="legend"', 'id="ev
 }
 // React Flow's default edge-label background is white: under light text in dark mode the label vanishes (e2e bug 5).
 assert.ok(template.includes('.react-flow__edge-textbg{fill:var(--panel)}'), 'page-template.html themes the edge-label background');
-// Long evidence paths in tables overflowed the page at 1440 and 390 px: a table scrolls on its own and its cells wrap.
-const rule = (sel: string): string => new RegExp(`(?:^|\\n)${sel}\\{([^}]*)\\}`).exec(template)?.[1] ?? '';
-for (const part of ['display:block', 'overflow-x:auto']) assert.ok(rule('table').includes(part), `page-template.html table rule keeps ${part}`);
+// Long evidence paths in tables overflowed the page at 1440 and 390 px: a table scrolls in its own region and its cells
+// wrap. The region is a wrapper the renderer writes; a display:block table loses its table semantics (final fix A20).
+const rule = (sel: string): string => new RegExp(`(?:^|\\n)${sel.replace('.', '\\.')}\\{([^}]*)\\}`).exec(template)?.[1] ?? '';
+assert.ok(!rule('table').includes('display:block'), 'page-template.html table rule keeps the table a table');
+for (const part of ['max-width:100%', 'overflow-x:auto']) assert.ok(rule('.table-scroll').includes(part), `page-template.html .table-scroll rule keeps ${part}`);
 assert.ok(rule('th,td').includes('overflow-wrap:anywhere'), 'page-template.html table cells wrap long words');
 // Proof (b), 390 px: evidence paths and edge ids in lists outside tables widened index.html to 449 px.
 assert.ok(rule('body').includes('overflow-wrap:anywhere'), 'page-template.html body wraps long words');

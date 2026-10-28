@@ -20,8 +20,9 @@ type Input = { model: Model; figures: FigureSpec[]; coverage: Coverage; theme: T
 const nn = (i: number): string => String(i).padStart(2, '0');
 const chapterId = (i: number, s: Section): string => `ch-${nn(i + 1)}-${s.id}`;
 
-const table = (head: string[], rows: string[][]): string =>
-  `<table><thead><tr>${head.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+// Each table scrolls inside its own region, named for screen readers and reachable by keyboard; the table stays a table.
+const table = (label: string, head: string[], rows: string[][]): string =>
+  `<div class="table-scroll" role="region" aria-label="${escapeHtml(label)}" tabindex="0"><table><thead><tr>${head.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 
 export function renderPage(input: Input): string {
   const { model, roots } = input;
@@ -48,12 +49,12 @@ export function renderPage(input: Input): string {
   const storeTable = (kind: string, ids: Set<string> | null): string => {
     const rows = model.stores[kind as keyof Model['stores']].filter((r) => ids === null || ids.has(r.id));
     const cols = storeCols[kind] ?? [];
-    return rows.length === 0 ? '' : `<h4>Store: ${escapeHtml(kind)}</h4>${table(['Id', ...cols.map(([h]) => h), 'Evidence'], rows.map((r) => [t(r.id), ...cols.map(([, k]) => t((r as unknown as Record<string, string | undefined>)[k])), evCell(r)]))}`;
+    return rows.length === 0 ? '' : `<h4>Store: ${escapeHtml(kind)}</h4>${table(`Store: ${kind}`, ['Id', ...cols.map(([h]) => h), 'Evidence'], rows.map((r) => [t(r.id), ...cols.map(([, k]) => t((r as unknown as Record<string, string | undefined>)[k])), evCell(r)]))}`;
   };
   const CAT_KINDS = ['stream', 'gateway', 'queue', 'scheduler', 'cache', 'integration', 'component'];
   const catTable = (kind: string, ids: Set<string> | null): string => {
     const rows = model.catalogue.filter((c) => c.kind === kind && (ids === null || ids.has(c.id)));
-    return rows.length === 0 ? '' : `<h4>${escapeHtml(kind)}</h4>${table(['Name', 'Role', 'Owner', 'Connects', 'Evidence'], rows.map((c) => [t(c.name), t(c.role), t(c.owner), t((c.connects ?? []).join(', ')), evCell(c)]))}`;
+    return rows.length === 0 ? '' : `<h4>${escapeHtml(kind)}</h4>${table(kind, ['Name', 'Role', 'Owner', 'Connects', 'Evidence'], rows.map((c) => [t(c.name), t(c.role), t(c.owner), t((c.connects ?? []).join(', ')), evCell(c)]))}`;
   };
 
   const chapterHtml = (s: Section, i: number): string => {
@@ -82,7 +83,7 @@ export function renderPage(input: Input): string {
     const deep = [...diagrams.map((d) => [`diagrams/arch-${d.id}.html`, d.title]), ...seqs.map((q) => [`diagrams/seq-${q.id}.html`, q.title]), ...flows.map((f) => [`diagrams/flow-${f.id}.html`, f.trigger])];
     if (deep.length > 0) parts.push(`<p>Deep diagrams: ${deep.map(([href, title]) => `<a href="${href}">${t(title)}</a>`).join(', ')}</p>`);
     for (const f of flows) {
-      parts.push(`<h4>Store flow: ${t(f.trigger)}</h4>`, table(['#', 'Actor', 'Op', 'Store', 'Key', 'When', 'Evidence'], f.steps.map((st) => [String(st.n), t(st.actor), t(st.op), t(st.store), t(st.key), t(st.when), evCell(st)])));
+      parts.push(`<h4>Store flow: ${t(f.trigger)}</h4>`, table(`Store flow: ${f.trigger}`, ['#', 'Actor', 'Op', 'Store', 'Key', 'When', 'Evidence'], f.steps.map((st) => [String(st.n), t(st.actor), t(st.op), t(st.store), t(st.key), t(st.when), evCell(st)])));
     }
     const refs = new Set(s.storeRefs ?? []);
     if (refs.size > 0) for (const kind of Object.keys(storeCols)) parts.push(storeTable(kind, refs));
@@ -126,8 +127,8 @@ export function renderPage(input: Input): string {
     : `<ul class="facts">${model.rules.map((r) => `<li>${t(r.text)}${r.adr === undefined ? '' : ` (<code>${escapeHtml(where(r.adr))}</code>)`}${r.decision === undefined ? '' : ` ${t(r.decision)}`} ${evCell(r)}</li>`).join('')}</ul>`);
   const title = new Map(model.sections.map((s, i) => [s.id, { s, i }]));
   fixedChapter('coverage', 'Coverage', 'Which parts of the repository do the chapters cover?',
-    table(['Kind', 'Covered', 'Total'], Object.entries(input.coverage.counts).map(([k, c]) => [escapeHtml(k), String(c.covered), String(c.total)])) +
-    table(['Kind', 'Name', 'Chapter'], input.coverage.entries.map((e) => {
+    table('Coverage by kind', ['Kind', 'Covered', 'Total'], Object.entries(input.coverage.counts).map(([k, c]) => [escapeHtml(k), String(c.covered), String(c.total)])) +
+    table('Coverage entries', ['Kind', 'Name', 'Chapter'], input.coverage.entries.map((e) => {
       const hit = e.chapter === null ? undefined : title.get(e.chapter);
       return [escapeHtml(e.kind), t(e.name), hit === undefined ? 'not covered' : `<a href="#${chapterId(hit.i, hit.s)}">${t(hit.s.title)}</a>`];
     })));
@@ -136,7 +137,7 @@ export function renderPage(input: Input): string {
       `<ul class="facts">${model.questions.map((q) => `<li>${t(q.text)}${q.answer === undefined ? '' : ` Answer: ${t(q.answer)}`}${q.recommended === undefined ? '' : ` Recommended: ${t(q.recommended)}`}${(q.items ?? []).length === 0 ? '' : ` Items: ${(q.items ?? []).map((h) => `<code>${escapeHtml(h)}</code>`).join(' ')}`}</li>`).join('')}</ul>`);
   }
   fixedChapter('corrections', 'Corrections', 'What was changed after the first draft?', model.corrections.length === 0 ? '<p>No corrections are recorded.</p>'
-    : table(['Date', 'Item', 'Before', 'After', 'Reason'], model.corrections.map((c) => [escapeHtml(c.date), t(c.item), t(c.before), t(c.after), escapeHtml(c.reason)])));
+    : table('Corrections', ['Date', 'Item', 'Before', 'After', 'Reason'], model.corrections.map((c) => [escapeHtml(c.date), t(c.item), t(c.before), t(c.after), escapeHtml(c.reason)])));
 
   const mapEv = (list: Evidence[]): { path: string; lines?: string; symbol?: string }[] =>
     list.flatMap((e) => ('path' in e ? [{ path: where(e), lines: e.lines, symbol: e.symbol }] : []));
