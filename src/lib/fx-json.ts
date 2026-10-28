@@ -73,5 +73,74 @@ export function parseFxJson(raw: unknown): FxJsonResult {
     } else problems.push({ key: 'hooks', reason: 'hooks must be an object' });
   }
 
+  const sf = input.get('system_flow');
+  if (sf !== undefined) {
+    const parsed = parseSystemFlow(sf, problems);
+    if (parsed) value.system_flow = parsed;
+  }
+
   return { ok: true, value, problems };
+}
+
+type SystemFlow = NonNullable<FxJson['system_flow']>;
+type ThemeKind = NonNullable<SystemFlow['theme']>['kind'];
+const THEME_KINDS: ThemeKind[] = ['docs-css', 'mkdocs-material', 'tailwind', 'app-css', 'brand', 'fx'];
+const themeKind = (v: unknown): ThemeKind | undefined => THEME_KINDS.find((k) => k === v);
+const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+// A bad part is dropped and listed; the good parts stay.
+function parseSystemFlow(sf: unknown, problems: { key: string; reason: string }[]): SystemFlow | null {
+  if (!isObj(sf)) {
+    problems.push({ key: 'system_flow', reason: 'system_flow must be an object with output, theme, roots and diagrams' });
+    return null;
+  }
+  const out: SystemFlow = {};
+  const bad = (key: string, reason: string): void => { problems.push({ key: `system_flow.${key}`, reason }); };
+  const { output, theme, roots, diagrams } = sf;
+  if (output !== undefined) {
+    if (isObj(output) && typeof output.site === 'string' && typeof output.markdown === 'string') out.output = { site: output.site, markdown: output.markdown };
+    else bad('output', 'output must have site and markdown strings');
+  }
+  if (theme !== undefined) {
+    const kind = isObj(theme) ? themeKind(theme.kind) : undefined;
+    if (isObj(theme) && typeof theme.source === 'string' && kind) out.theme = { source: theme.source, kind };
+    else bad('theme', `theme must have a source string and a kind of ${THEME_KINDS.join(', ')}`);
+  }
+  if (roots !== undefined) {
+    if (isObj(roots)) {
+      out.roots = {};
+      for (const [id, p] of Object.entries(roots)) {
+        if (typeof p === 'string') out.roots[id] = p;
+        else bad(`roots.${id}`, 'a root path must be a string');
+      }
+    } else bad('roots', 'roots must be an object');
+  }
+  if (diagrams !== undefined) {
+    if (isObj(diagrams)) {
+      const d: NonNullable<SystemFlow['diagrams']> = {};
+      if (diagrams.prefer !== undefined) {
+        if (diagrams.prefer === 'cheap' || diagrams.prefer === 'fast' || diagrams.prefer === 'detailed') d.prefer = diagrams.prefer;
+        else bad('diagrams.prefer', 'prefer must be cheap, fast or detailed');
+      }
+      if (diagrams.archify !== undefined) {
+        if (typeof diagrams.archify === 'string') d.archify = diagrams.archify;
+        else bad('diagrams.archify', 'archify must be a string');
+      }
+      if (diagrams.svg !== undefined) {
+        if (Array.isArray(diagrams.svg) && diagrams.svg.every((s) => typeof s === 'string')) d.svg = diagrams.svg;
+        else bad('diagrams.svg', 'svg must be an array of strings');
+      }
+      if (diagrams.pageLimits !== undefined) {
+        if (isObj(diagrams.pageLimits)) {
+          d.pageLimits = {};
+          for (const [name, n] of Object.entries(diagrams.pageLimits)) {
+            if (typeof n === 'number' && Number.isInteger(n) && n >= 1 && n <= 8) d.pageLimits[name] = n;
+            else bad(`diagrams.pageLimits.${name}`, 'a page limit must be an integer from 1 to 8');
+          }
+        } else bad('diagrams.pageLimits', 'pageLimits must be an object');
+      }
+      out.diagrams = d;
+    } else bad('diagrams', 'diagrams must be an object');
+  }
+  return out;
 }

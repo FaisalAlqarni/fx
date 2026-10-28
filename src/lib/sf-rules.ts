@@ -4,7 +4,7 @@ import type { Item, ItemKind, Model, Problem } from './sf-model.js';
 
 type Origin = Map<string, { file: string; pointer: string }>;
 
-const KIND_WORD: Record<ItemKind, string> = {
+export const KIND_WORD: Record<ItemKind, string> = {
   node: 'node', edge: 'edge', group: 'group', participant: 'participant', message: 'message', step: 'step',
   sql: 'store row', cache: 'store row', memory: 'store row', files: 'store row', client: 'store row',
   catalogue: 'catalogue entry', inventory: 'inventory entry', rule: 'rule', bullet: 'bullet',

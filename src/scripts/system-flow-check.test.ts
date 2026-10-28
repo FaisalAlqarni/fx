@@ -159,7 +159,7 @@ fails('one participant twice in a sequence', (f) => f.fragment('engine', { seque
   const f = sfFixture();
   const meta = `${JSON.stringify({ schemaVersion: 1, meta: { roots: [{ id: 'backend' }] } })}\n`;
   f.put('host', 'site/model/fragments/meta.json', meta);
-  f.fxJson({ system_flow: { output: { site: 'site' } } });
+  f.fxJson({ system_flow: { output: { site: 'site', markdown: 'docs/system' } } });
   let r = f.run(['check']);
   assert.strictEqual(r.status, 0, `.fx.json site\n${r.stderr}`);
   assert.strictEqual(out(r.stdout).fragments, 1, '.fx.json site: one fragment');

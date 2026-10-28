@@ -77,4 +77,20 @@ assert.ok(dfOk.ok);
 assert.strictEqual(dfOk.value.docs_first_run, 'declined');
 assert.deepStrictEqual(dfOk.problems, []);
 
+const block = { output: { site: 'docs/system-flow', markdown: 'docs/system' }, theme: { source: 'docs/assets/docs.css', kind: 'docs-css' }, roots: { guide: '../advantage-guide' } };
+const sfProblems = (system_flow: unknown) => {
+  const r = parseFxJson({ system_flow });
+  assert.ok(r.ok);
+  return r.problems;
+};
+assert.deepStrictEqual(sfProblems(block), []);
+assert.deepStrictEqual(sfProblems({ ...block, diagrams: { prefer: 'detailed', pageLimits: { 'seq-turn': 5 }, svg: ['arch-engine'] } }), []);
+assert.deepStrictEqual(sfProblems('x'), [{ key: 'system_flow', reason: 'system_flow must be an object with output, theme, roots and diagrams' }]);
+assert.deepStrictEqual(sfProblems({ roots: { guide: 5 } }), [{ key: 'system_flow.roots.guide', reason: 'a root path must be a string' }]);
+assert.deepStrictEqual(sfProblems({ diagrams: { prefer: 'max' } }), [{ key: 'system_flow.diagrams.prefer', reason: 'prefer must be cheap, fast or detailed' }]);
+assert.deepStrictEqual(sfProblems({ diagrams: { pageLimits: { 'seq-turn': 9 } } }), [{ key: 'system_flow.diagrams.pageLimits.seq-turn', reason: 'a page limit must be an integer from 1 to 8' }]);
+const kept = parseFxJson({ system_flow: { roots: { guide: 5, mobile: '../m' } } });
+assert.ok(kept.ok);
+assert.deepStrictEqual(kept.value.system_flow, { roots: { mobile: '../m' } });
+
 console.log('fx-json.test.js: ok');

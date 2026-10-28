@@ -210,7 +210,7 @@ fails(
   const meta = `${JSON.stringify({ schemaVersion: 1, meta: { roots: [{ id: "backend" }] } })}
 `;
   f.put("host", "site/model/fragments/meta.json", meta);
-  f.fxJson({ system_flow: { output: { site: "site" } } });
+  f.fxJson({ system_flow: { output: { site: "site", markdown: "docs/system" } } });
   let r = f.run(["check"]);
   assert.strictEqual(r.status, 0, `.fx.json site
 ${r.stderr}`);

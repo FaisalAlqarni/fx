@@ -39,6 +39,12 @@ export interface FxJson {
   scratch_migrate: 'declined';
   docs_first_run: 'declined';
   hooks: { stop_check?: boolean; loop_nudge?: boolean; edit_rules?: boolean };
+  system_flow?: {
+    output?: { site: string; markdown: string };
+    theme?: { source: string; kind: 'docs-css' | 'mkdocs-material' | 'tailwind' | 'app-css' | 'brand' | 'fx' };
+    roots?: Record<string, string>;
+    diagrams?: { prefer?: 'cheap' | 'fast' | 'detailed'; archify?: string; pageLimits?: Record<string, number>; svg?: string[] };
+  };
 }
 
 // What src/lib/fx-json.ts parseFxJson returns: a bad key is dropped from `value`
