@@ -27,6 +27,7 @@
 - `area-brief.md`: `## Prose`, `2 to 4 sentences`, `4 to 8 bullets`, `at most 40 words`, `120 to 200 words`, `at least 100 words`, `one sentence of 6 to 30 words`, `look`, `short`, `reply`, `codeMap`, `Prose: <chapter ids written>`, `Glossary candidates`, `no "who uses it"`.
 - `fragment-guide.md`: `look`, the five looks `service`, `store`, `client`, `external`, `security`, `term:<id>`, `code:<id>`, `chapters.json declares every section`, `a scalar set in two fragments is an error`.
 - `check-and-report.md`: `Prose`, `words per chapter`, `glossary`, `lifelines`, `at most 2 rounds`, `merge the chapter into a neighbour, or drop it`, `There is no flag that waives the floor`, `a chapter with the 120 to 200 words warning goes back to its writer once`, `ask each area for more glossary candidates, one round`.
+- `area-brief.md` and `planning.md`: `fx-humanize` and `before returning` (owner, 2026-10-29: the agent that writes chapter prose, leads, bullets, captions, glossary definitions and code-map lines, invokes `fx-humanize` on it before it returns; the controller does the same for the Start here prose it writes).
 - `interview.md`: `at least 100 words`, `goes back to its writer` (an answer that drops a chapter below the floor sends that chapter back to its writer).
 - `SKILL.md`: `system-flow migrate`, `Bring the prose up to date`, `glossary.json`, `only on a clean working tree`, `git restore -- <site>/model/fragments`; `skill-size` keeps it under 20,000 bytes.
 - `skills/fx-docs/SKILL.md`: ``every node or participant it adds carries `look` ``, `Bring the prose up to date`; `skill-size` keeps it under 20,000 bytes.
@@ -41,6 +42,7 @@
 - [ ] A fresh lane run is told, at each step, who writes which prose and what floor it must meet.
 - [ ] The rerun path brings a version-1 site up to date through `migrate`, only on a clean tree, with the undo named.
 - [ ] fx-docs, meeting a model below the floor, stops and names the rerun choice.
+- [ ] Every writer of site prose, area agent and controller, runs `fx-humanize` on it before returning.
 - [ ] `scripts/check-all` passes.
 
 ## Steps
