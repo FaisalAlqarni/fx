@@ -101,3 +101,7 @@ archify's own browser check ran inside each `finalize` call and passed (stage `b
 
 1. `check` does not enforce the level-0 id rule (`level0`, `l0-<area id>`); a model with the old ids passes.
 2. The build shortens sublabels and labels in the archify spec only; the page and Markdown keep the long text. This is by design, and it means an archify page can show shorter text than the index page for the same node.
+
+## (a) Shamel.Backend
+
+The measured numbers, the checks and the calibration are in `proof/results-a.md`.
