@@ -315,9 +315,14 @@ const detectOf = (f, env = {}) => (0, import_json.parseJson)(f.run(["detect"], e
   assert.strictEqual(detectOf(f).archify, null);
   fs.mkdirSync(path.join(f.base, "empty-cfg", "skills", "archify"), { recursive: true });
   assert.strictEqual(detectOf(f, { CLAUDE_CONFIG_DIR: path.join(f.base, "empty-cfg") }).archify, null);
-  const tools = fake(f, path.join(f.host, "tools", "archify"));
+  fake(f, path.join(f.host, "tools", "archify"));
   f.fxJson({ system_flow: { diagrams: { archify: "tools/archify" } } });
-  assert.deepStrictEqual(detectOf(f).archify, { dir: tools, version: "0.0.0-fake", via: ".fx.json" });
+  const named = f.run(["detect"]);
+  assert.strictEqual(named.status, 1, named.stdout);
+  assert.ok(named.stderr.includes("/system_flow/diagrams/archify"), named.stderr);
+  assert.strictEqual(run(f, []).status, 1, "build refuses it too");
+  assert.deepStrictEqual(logOf(f), [], "the repo copy never ran");
+  f.fxJson({});
   const home = fake(f, path.join(f.home, ".claude", "skills", "archify"));
   assert.strictEqual(detectOf(f).archify.via, "HOME");
   assert.strictEqual(detectOf(f).archify.dir, home);
@@ -385,6 +390,15 @@ const detectOf = (f, env = {}) => (0, import_json.parseJson)(f.run(["detect"], e
   assert.strictEqual(reason(o, "arch-engine").reason, "archify architecture, 2 components, shortened: api sublabel, db label");
   assert.strictEqual(reason(o, "seq-turn").reason, "archify sequence, 14 messages in 2 pages, shortened: api label");
   assert.strictEqual(reason(o, "arch-system").reason, "archify architecture, 2 components");
+}
+{
+  const f = setup();
+  const empty = path.join(f.base, "no-archify");
+  fs.mkdirSync(empty);
+  const r = run(f, ["--archify", empty]);
+  assert.strictEqual(r.status, 1, r.stdout);
+  assert.strictEqual(r.stderr, `system-flow: build: --archify ${empty} has no bin/archify.mjs
+`);
 }
 {
   const f = setup();

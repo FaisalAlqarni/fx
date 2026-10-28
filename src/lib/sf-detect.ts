@@ -102,7 +102,7 @@ export function detect(hostRoot: string, repos: string[]): { detected: Detected;
   const mkdocs = dc.kind === 'mkdocs'
     ? { nav: [`- System flow: ${site}/index.html`, `- System docs: ${rel(output.markdown)}/index.md`], excludeDocs: [`${site}/README.md`, `${site}/model/`, `${site}/diagrams/src/`] }
     : null;
-  return { detected: { docsConfig: dc, output, mkdocs, theme: { source: theme.source, kind: theme.kind }, archify: cfg.config?.diagrams?.prefer === 'cheap' ? null : findArchify(hostRoot, process.env, cfg.config), roots: rootList }, problems };
+  return { detected: { docsConfig: dc, output, mkdocs, theme: { source: theme.source, kind: theme.kind }, archify: cfg.config?.diagrams?.prefer === 'cheap' ? null : findArchify(process.env), roots: rootList }, problems };
 }
 
 // Replaces system_flow.output and system_flow.theme and adds roots not listed yet; every other key stays.

@@ -122,10 +122,8 @@ function parseSystemFlow(sf: unknown, problems: { key: string; reason: string }[
         if (diagrams.prefer === 'cheap' || diagrams.prefer === 'fast' || diagrams.prefer === 'detailed') d.prefer = diagrams.prefer;
         else bad('diagrams.prefer', 'prefer must be cheap, fast or detailed');
       }
-      if (diagrams.archify !== undefined) {
-        if (typeof diagrams.archify === 'string') d.archify = diagrams.archify;
-        else bad('diagrams.archify', 'archify must be a string');
-      }
+      // A repo file is never run (security review S1): archify comes from --archify or the config dirs only.
+      if (diagrams.archify !== undefined) bad('diagrams.archify', 'archify is not read from .fx.json; pass --archify <dir> or install it in $CLAUDE_CONFIG_DIR/skills/archify or ~/.claude/skills/archify');
       if (diagrams.svg !== undefined) {
         if (Array.isArray(diagrams.svg) && diagrams.svg.every((s) => typeof s === 'string')) d.svg = diagrams.svg;
         else bad('diagrams.svg', 'svg must be an array of strings');

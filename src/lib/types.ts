@@ -43,7 +43,7 @@ export interface FxJson {
     output?: { site: string; markdown: string };
     theme?: { source: string; kind: 'docs-css' | 'mkdocs-material' | 'tailwind' | 'app-css' | 'brand' | 'fx' };
     roots?: Record<string, string>;
-    diagrams?: { prefer?: 'cheap' | 'fast' | 'detailed'; archify?: string; pageLimits?: Record<string, number>; svg?: string[] };
+    diagrams?: { prefer?: 'cheap' | 'fast' | 'detailed'; pageLimits?: Record<string, number>; svg?: string[] };
   };
 }
 

@@ -38,10 +38,12 @@ Markdown only; an HTML page never loads it.
 
 `system-flow build` runs archify itself; the lane does not write archify files by hand.
 
-- **Finding archify.** `--archify <dir>` when given. Otherwise, unless the saved
-  preference is `cheap`, the first folder holding `bin/archify.mjs` among
-  `$CLAUDE_CONFIG_DIR/skills/archify`, `$HOME/.claude/skills/archify` and the folder
-  `.fx.json` `system_flow.diagrams.archify` names. `system-flow detect` prints the
+- **Finding archify.** `--archify <dir>` when given; a folder without
+  `bin/archify.mjs` stops the build with an error naming it. Otherwise, unless the
+  saved preference is `cheap`, the first folder holding `bin/archify.mjs` among
+  `$CLAUDE_CONFIG_DIR/skills/archify` and `$HOME/.claude/skills/archify`. A path in
+  the repo is never run, so `.fx.json` cannot name one: check reports a
+  `system_flow.diagrams.archify` key as an error. `system-flow detect` prints the
   pick; the lane passes it as `--archify`.
 - **Sources come from evidence.** Every primary element of a spec gets `sources`
   filled from its evidence, at most 3 ranges. Evidence from another root goes to the

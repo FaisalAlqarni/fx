@@ -323,14 +323,14 @@ ${items.join('\n')}
 }
 
 // ---------------------------------------------------------------- running archify
-const hasArchify = (dir: string): boolean => fs.existsSync(path.join(dir, 'bin', 'archify.mjs'));
+export const hasArchify = (dir: string): boolean => fs.existsSync(path.join(dir, 'bin', 'archify.mjs'));
 
-// The lookup order of the Global Constraints: $CLAUDE_CONFIG_DIR, then $HOME, then .fx.json; a folder without bin/archify.mjs is skipped.
-export function findArchify(hostRoot: string, env: NodeJS.ProcessEnv, fx: FxJson['system_flow']): { dir: string; version: string | null; via: 'CLAUDE_CONFIG_DIR' | 'HOME' | '.fx.json' } | null {
-  const tries: ['CLAUDE_CONFIG_DIR' | 'HOME' | '.fx.json', string | undefined][] = [
+// The lookup order: $CLAUDE_CONFIG_DIR, then $HOME/.claude; a folder without bin/archify.mjs is skipped.
+// Never a path from the repo: a cloned repo's files are not run (security review S1).
+export function findArchify(env: NodeJS.ProcessEnv): { dir: string; version: string | null; via: 'CLAUDE_CONFIG_DIR' | 'HOME' } | null {
+  const tries: ['CLAUDE_CONFIG_DIR' | 'HOME', string | undefined][] = [
     ['CLAUDE_CONFIG_DIR', env.CLAUDE_CONFIG_DIR ? path.join(env.CLAUDE_CONFIG_DIR, 'skills', 'archify') : undefined],
     ['HOME', env.HOME ? path.join(env.HOME, '.claude', 'skills', 'archify') : undefined],
-    ['.fx.json', fx?.diagrams?.archify ? path.resolve(hostRoot, fx.diagrams.archify) : undefined],
   ];
   for (const [via, dir] of tries) {
     if (!dir || !hasArchify(dir)) continue;

@@ -16,7 +16,7 @@ import type { Depth } from './sf-estimate.js';
 import type { Coverage } from './sf-coverage.js';
 import { layoutAll } from './sf-layout.js';
 import { renderPage } from './sf-page.js';
-import { applyThemeBlock, deepDiagrams, findArchify, outsideRefs, pickLine, runArchify, svgPage } from './sf-diagrams.js';
+import { applyThemeBlock, deepDiagrams, findArchify, hasArchify, outsideRefs, pickLine, runArchify, svgPage } from './sf-diagrams.js';
 import type { ArchifyRun, DeepDiagram } from './sf-diagrams.js';
 import { detectTheme, themeCss } from './sf-theme.js';
 import type { Theme } from './sf-theme.js';
@@ -163,6 +163,7 @@ export async function layoutChecked(model: Model): Promise<{ figures: FigureSpec
 
 export async function build(opts: { hostRoot: string; site: string; markdown: string; docsDir?: string | null; only?: string[]; archify?: string; archifyTimeout?: number; flags?: DiagramFlags }): Promise<BuildResult> {
   const result: BuildResult = { ok: false, problems: [], written: [], collisions: [], diagrams: [], layout: [], pageBytes: null, coverage: null, theme: null, depth: null, rebuilt: { docs: [], figures: [], diagrams: [] } };
+  if (opts.archify !== undefined && !hasArchify(opts.archify)) throw new Error(`--archify ${opts.archify} has no bin/archify.mjs`);
   const checked = checkModel(opts.hostRoot, opts.site, 'build');
   result.problems = checked.problems;
   if (checked.problems.some((p) => p.level === 'error')) return result;
@@ -251,7 +252,7 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   const limits = { ...saved.pageLimits, ...flags.pageLimits };
   const svgNames = [...new Set([...(saved.svg ?? []), ...(flags.svg ?? [])])].sort();
   // An explicit --archify wins over cheap; cheap only skips the lookup.
-  const archify = opts.archify ?? (prefer === 'cheap' ? undefined : findArchify(opts.hostRoot, process.env, checked.config)?.dir);
+  const archify = opts.archify ?? (prefer === 'cheap' ? undefined : findArchify(process.env)?.dir);
 
   const pages = path.posix.join(opts.site, 'diagrams');
   const generatedJson = (old: string): boolean => { try { return parseJson(old) !== null; } catch { return false; } };
