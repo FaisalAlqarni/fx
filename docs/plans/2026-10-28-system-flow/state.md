@@ -345,3 +345,6 @@ Task 18c: fix round 1/5: controller re-review (4 lines): 2 addressed, 0 open
 Task 18c: minor (deferred): fragment-guide.md does not state that sequence and flow ids may not end in -p and digits; agents learn it from the check error.
 Task 18c: cost unavailable (no transcript recorded)
 Task 18c: complete (commits cb724c4..1e26404 and 1297459, review clean after 1 fix round)
+Exit gate trial 2: check-all at fd2df9c exit 0, ALL GREEN, 772 lines read (141 gates; one SKIP: opencode 1.x row, its own rule with opencode 2.1.4 on PATH). Every skills/*/SKILL.md under 20,000 bytes. Not yet the exit gate: main is not merged in and tasks 20 and 21 are open.
+Task 21: parked: blocked by task 20 (its prep, run and results follow task 20's measured constants); its run step needs the session controller like task 20's.
+Stopped: every task not depending on the task 20 run step is complete (01 to 19, 18a, 18b, 18c; coverage audit done and routed). Remaining, in order: controller visual check of the 6 smoke pages; controller runs proof/run-a.md steps 1 to 3 and copies the transcript to /tmp/claude-1000/sf-build/proof-a-20261028-1/transcript.jsonl; then task 20 results (steps 4 to 7) and review; task 21 prep, run, results; merge fx main (6e2d88b, ADR 0065, version 0.8.0) into system-flow; final branch review and its fix wave; exit gate check-all.
