@@ -422,7 +422,9 @@ function authorCanvas(dir: string, spec: string, timeoutS: number): string | nul
   const failed = `archify validate failed: ${r.stdout.trim().slice(0, 200) || `exit ${r.status}`}`;
   let vb: unknown;
   try { vb = (parseJson(r.stdout) as { viewBox?: unknown }).viewBox; } catch { return failed; }
-  if (r.status !== 0 || !Array.isArray(vb) || typeof vb[0] !== 'number' || typeof vb[1] !== 'number') return failed;
+  // validate exits 1 on a diagnostic of the auto canvas yet still prints its layout, and the authored canvas repairs
+  // some of those (a route past the left edge moves inside with the shift), so the exit status is not read.
+  if (!Array.isArray(vb) || typeof vb[0] !== 'number' || typeof vb[1] !== 'number') return failed;
   const doc = parseJson(fs.readFileSync(spec, 'utf8')) as { meta: Obj; components: { pos: [number, number] }[] };
   const shift = Math.max(0, Math.ceil((READ_WIDTH - vb[0]) / 2));
   for (const c of doc.components) c.pos = [c.pos[0] + shift, c.pos[1]];

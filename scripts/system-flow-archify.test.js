@@ -38,7 +38,7 @@ const a = process.argv.slice(2);
 // archify validate --layout-json: the auto canvas, FAKE_VIEWBOX or 600 by 400; FAKE_VALIDATE_FAIL or FAKE_VALIDATE_HANG names a spec.
 if (a[0] === 'validate' && process.env.FAKE_VALIDATE_HANG === path.basename(a[2], '.json')) await new Promise((r) => setTimeout(r, 60000));
 if (a[0] === 'validate' && process.env.FAKE_VALIDATE_FAIL === path.basename(a[2], '.json')) { process.stdout.write('{"ok":false}'); process.exit(1); }
-if (a[0] === 'validate') { process.stdout.write(JSON.stringify({ ok: true, viewBox: JSON.parse(process.env.FAKE_VIEWBOX || '[600, 400]') })); process.exit(0); } // ts-gate-ok: plain JS inside the fake
+if (a[0] === 'validate') { const bad = process.env.FAKE_VALIDATE_DIAG === path.basename(a[2], '.json'); process.stdout.write(JSON.stringify({ ok: !bad, viewBox: JSON.parse(process.env.FAKE_VIEWBOX || '[600, 400]') })); process.exit(bad ? 1 : 0); } // ts-gate-ok: plain JS inside the fake
 const [, type, specPath, out] = a;
 const spec = JSON.parse(fs.readFileSync(specPath, 'utf8')); // ts-gate-ok: plain JS inside the fake
 const name = path.basename(out, '.html');
@@ -166,7 +166,7 @@ const reason = (o, name) => o.diagrams.find((d) => d.name === name);
   const page = read(f, `${SITE}/index.html`);
   for (const [key, first] of [["seq-turn", "seq-turn"], ["level-engine", "arch-engine"]]) {
     const card = new RegExp(`<figure class="card" id="fig-${key}">[\\s\\S]*?</figure>`).exec(page)?.[0] ?? "";
-    assert.ok(card.includes(`<a class="deep" href="diagrams/${first}.html">Open in archify</a>`), `${key} card: ${card}`);
+    assert.ok(card.includes(`<a class="deep" href="diagrams/${first}.html"><span class="wide">Open in archify</span><span class="narrow">Open full diagram (best on a wide screen)</span></a>`), `${key} card: ${card}`);
   }
 }
 {
@@ -456,6 +456,12 @@ const detectOf = (f, env = {}) => (0, import_json.parseJson)(f.run(["detect"], e
   const h = ok(g, ["--archify", fake(g, "fake"), "--archify-timeout", "1"], { FAKE_VALIDATE_HANG: "arch-engine" });
   assert.strictEqual(reason(h, "arch-engine").reason, "archify architecture, 2 components, auto canvas: archify validate timed out after 1 s");
   assert.ok((Date.now() - t0) / 1e3 < 30, "the canvas call stopped at the 1 s timeout");
+}
+{
+  const f = setup();
+  const o = ok(f, ["--archify", fake(f, "fake")], { FAKE_VALIDATE_DIAG: "arch-engine" });
+  assert.deepStrictEqual((0, import_json.parseJson)(read(f, `${D}/src/arch-engine.json`)).meta.viewBox, [1e3, 400]);
+  assert.strictEqual(reason(o, "arch-engine").reason, "archify architecture, 2 components");
 }
 {
   const f = setup();
