@@ -151,6 +151,12 @@ assert.ok(/^## Branch pass$/m.test(raw(finalReview)), `${finalReview}: the branc
   all('check-and-report.md', ['words per chapter (id, words, lead sentences, bullets), the average words per chapter, the glossary size and the lifelines drawn inline.',
     '**Prose:** a block beside Depth, from `BuildResult.prose`']);
   has(docs, 'every node or participant it adds carries `look`', 'fx-docs sets look on what it adds');
+  // F7: on a version-1 model stale, query and verify fail before any migrate instruction is reached, so check runs first.
+  all('SKILL.md', ['run step 1, then `system-flow check`.',
+    'When `check` prints `run system-flow migrate`, the model is version 1 and `stale` cannot read it: offer only "Bring the prose up to date" and stop until the owner picks it.']);
+  assert.ok(section(docs, '### Model path').includes('2. `node <skill base directory>/../../scripts/system-flow --root <worktree> query --diff <merge-base>`') &&
+    /2\. `node [^`]*query --diff[^]*?When `query` fails on `run system-flow migrate`, stop\.[^]*?3\. /.test(section(docs, '### Model path')),
+    'fx-docs stops at step 2, where query is the first command a version-1 model fails');
   has(docs, 'Bring the prose up to date', 'fx-docs points a prose floor failure to the rerun choice');
   has(docs, 'system-flow migrate', 'fx-docs names the migrate hint it stops on');
 

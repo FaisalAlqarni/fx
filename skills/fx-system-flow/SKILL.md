@@ -61,10 +61,12 @@ Before step 1, look for `<site>/model/fragments/` at the site folder
 `.fx.json` `system_flow.output.site` names (default `docs/system-flow`).
 
 - **None:** run steps 1 to 6.
-- **Present:** run step 1, then `system-flow stale` and read
-  `<site>/model/coverage.json`. Offer the owner these choices (add "Bring the
-  prose up to date" when `check` prints `schemaVersion 1: run system-flow
-  migrate` or a prose problem) and stop until they pick:
+- **Present:** run step 1, then `system-flow check`. When `check` prints `run
+  system-flow migrate`, the model is version 1 and `stale` cannot read it:
+  offer only "Bring the prose up to date" and stop until the owner picks it.
+  Otherwise run `system-flow stale` and read `<site>/model/coverage.json`.
+  Offer the owner these choices (add "Bring the prose up to date" when `check`
+  printed a prose problem) and stop until they pick:
   1. **Refresh stale.** For each handle `stale` lists, reread the cited code,
      fix the item in the fragment that owns it, run
      `system-flow check --fragment <file>`, then

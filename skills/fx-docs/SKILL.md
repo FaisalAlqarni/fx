@@ -78,6 +78,10 @@ the Markdown path alone.
 1. `node <skill base directory>/../../scripts/system-flow --root <worktree> detect` prints the site folder and an `archify` field when archify is found.
 2. `node <skill base directory>/../../scripts/system-flow --root <worktree> query --diff <merge-base>` lists the model items citing a changed path, in
    every root, and prints the `added` paths per root.
+   When `query` fails on `run system-flow migrate`, stop. The model is version 1
+   and every later step fails on it too. Do not run `migrate` and do not write
+   the owed prose: the owner reruns `/fx:fx-system-flow` and picks "Bring the
+   prose up to date". Report that and the failing lines.
 3. For each new engine, job or integration among the added paths, add an
    inventory entry to the fragments, with evidence. Each added entry is a
    re-read item in steps 4 and 5, like the listed ones.
@@ -96,10 +100,9 @@ the Markdown path alone.
    items. Run it as a tracked background command and wait for its exit before
    reading its output: an archify build can run past the 10 minute cap on a
    foreground command, which kills it partway.
-   When `build --only` fails on `schemaVersion 1: run system-flow migrate` or on
-   a chapter below the prose floor, stop. Do not run `migrate` and do not write
-   the owed prose: the owner reruns `/fx:fx-system-flow` and picks "Bring the
-   prose up to date". Report that and the failing lines.
+   When `build --only` fails on a chapter below the prose floor, stop and do not
+   write the owed prose: the owner picks "Bring the prose up to date", as in
+   step 2. Report that and the failing lines.
 6. `node <skill base directory>/../../scripts/system-flow --root <worktree> stale` lists every other item to recheck. List them; do not rewrite them.
 7. List each inventory entry that no chapter covers as uncovered, with a pointer
    to `/fx:fx-system-flow`.
