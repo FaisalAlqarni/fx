@@ -32,7 +32,7 @@ body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.6 "Avenir Nex
 #theme{align-self:start;margin:0 8px 12px}
 #menu-bar{display:flex;flex-direction:column;min-block-size:0;flex:0 1 auto}
 #menu-bar>summary{cursor:pointer;font:600 14px system-ui,sans-serif;color:var(--ink);background:var(--panel);border:1.5px solid var(--rule);border-radius:999px;padding:6px 16px;margin:0 8px;inline-size:max-content}
-#menu{overflow:auto;min-block-size:0;block-size:100%;overscroll-behavior:contain}
+#menu{overflow:auto;min-block-size:0;block-size:100%;overscroll-behavior:contain;padding:4px 6px}
 #menu .gl{font:700 12px/1.4 system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:16px 8px 4px}
 #menu ol,#menu ul{list-style:none;margin:0;padding:0}
 #menu a{display:flex;gap:10px;padding:5px 8px;border-radius:6px;color:var(--muted);text-decoration:none;font-size:15px;line-height:1.35}
@@ -71,6 +71,9 @@ th,td{text-align:start;vertical-align:top;padding:6px 10px;border-block-end:1px 
 th{color:var(--accent)}
 a{color:var(--accent)}
 :focus-visible{outline:3px solid var(--alert);outline-offset:2px}
+.skip{position:absolute;inset-inline-start:8px;inset-block-start:-60px;z-index:30;padding:8px 14px;background:var(--panel);border:1.5px solid var(--rule);border-radius:8px}
+.skip:focus{inset-block-start:8px}
+main:focus{outline:none}
 button{font:600 14px system-ui,sans-serif;color:var(--ink);background:var(--panel);border:1.5px solid var(--rule);border-radius:999px;padding:6px 16px;min-block-size:36px;cursor:pointer}
 button:hover,#menu-bar>summary:hover{border-color:var(--accent)}
 .toolrow{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
@@ -157,6 +160,7 @@ h2{font-size:30px}
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Skip to the content</a>
 <div class="wrap">
 <aside id="side">
 <p class="menu-name"><!-- slot: NAME --></p>
@@ -171,7 +175,7 @@ h2{font-size:30px}
 </nav>
 </details>
 </aside>
-<main>
+<main id="main" tabindex="-1">
 <header>
 <h1><!-- slot: TITLE --></h1>
 <!-- slot: HEADER -->
@@ -211,16 +215,23 @@ h2{font-size:30px}
     ev.textContent = all ? "Close all evidence boxes" : "Open all evidence boxes";
   });
 
-  // Open at 900px and up, closed below; below it a chosen link or Escape closes the list and returns focus.
+  // Open at 900px and up, closed below. Below it the open panel makes main inert; Escape closes it and returns focus
+  // to Chapters, and a chosen link closes it and focus goes to the target's heading.
   var bar = document.getElementById("menu-bar"), menu = document.getElementById("menu"), sum = bar.querySelector("summary");
-  var wide = matchMedia('(min-width: 900px)');
+  var main = document.querySelector("main"), wide = matchMedia('(min-width: 900px)');
   function fit() { bar.open = wide.matches; }
   fit();
   wide.addEventListener("change", fit);
-  // Focus moves after the link's own navigation, which would otherwise take it back to the body.
-  function close() { if (wide.matches || !bar.open) return; bar.open = false; setTimeout(function () { sum.focus({ preventScroll: true }); }, 0); }
-  menu.addEventListener("click", function (e) { if (e.target.closest("a")) close(); });
-  bar.addEventListener("keydown", function (e) { if (e.key === "Escape") close(); });
+  bar.addEventListener("toggle", function () { main.inert = bar.open && !wide.matches; });
+  menu.addEventListener("click", function (e) {
+    var a = e.target.closest("a"), el = a && document.getElementById(a.getAttribute("href").slice(1));
+    if (!a) return;
+    if (!wide.matches) bar.open = false;
+    var h = el && (el.querySelector("h2") || el);
+    // After the link's own navigation, which would otherwise leave focus on the closed panel.
+    if (h) setTimeout(function () { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }, 0);
+  });
+  bar.addEventListener("keydown", function (e) { if (e.key === "Escape" && !wide.matches && bar.open) { bar.open = false; sum.focus(); } });
 
   // Filter: chapters match on title, question and lead, Reference items on their name; matching parts show under the
   // chapter that draws them and matching terms under the glossary. Built with textContent, never markup from the index.

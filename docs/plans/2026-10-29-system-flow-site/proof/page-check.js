@@ -35,11 +35,13 @@ const flag = (name) => {
 };
 const siteOnly = args.includes("--site");
 if (siteOnly) args.splice(args.indexOf("--site"), 1);
+const a11yOnly = args.includes("--a11y");
+if (a11yOnly) args.splice(args.indexOf("--a11y"), 1);
 const measureProfile = flag("--measure");
 const outDir = flag("--out-dir");
 const [file, out] = args;
 if (file === void 0 || out === void 0 || siteOnly && measureProfile !== void 0 || measureProfile !== void 0 && measureProfile !== "owner" && measureProfile !== "fx") {
-  process.stderr.write("usage: page-check.js [--site | --measure owner|fx] [--out-dir <dir>] <index.html> <out.json>\n");
+  process.stderr.write("usage: page-check.js [--site | --a11y | --measure owner|fx] [--out-dir <dir>] <index.html> <out.json>\n");
   process.exit(2);
 }
 const url = (0, import_url.pathToFileURL)(path.resolve(file)).href;
@@ -269,6 +271,47 @@ async function deepTheme(browser) {
   }
   record("deepTheme", ours.length > 0 && bad.length === 0, ours.length === 0 ? "no fx SVG deep page found" : `${ours.length - bad.length} of ${ours.length} SVG deep pages toggle and keep the theme${bad.length ? `; ${bad.join("; ")}` : ""}`);
 }
+async function a11y(browser) {
+  const focused = (page) => page.evaluate(() => {
+    const a = document.activeElement;
+    return a === null ? "" : `${a.tagName.toLowerCase()}${a.id ? `#${a.id}` : ""}${a.className ? `.${a.className}` : ""} in ${a.closest("[id]")?.id ?? ""}`;
+  });
+  {
+    const { page, ctx } = await open(browser, 390, 844);
+    const href = await page.evaluate(() => [...document.querySelectorAll("#menu ol a")].pop()?.getAttribute("href") ?? "");
+    await page.press("#menu-bar > summary", "Enter");
+    const inertOpen = await page.evaluate(() => document.querySelector("main")?.inert ?? null);
+    await page.press(`#menu a[href="${href}"]`, "Enter");
+    await page.waitForTimeout(500);
+    const after = await page.evaluate((h) => ({
+      open: document.getElementById("menu-bar")?.open ?? null,
+      inert: document.querySelector("main")?.inert ?? null,
+      onHeading: document.activeElement === document.querySelector(`${h} h2`)
+    }), href);
+    record("menuLinkFocus", after.open === false && after.onHeading, `${href} by Enter at 390: panel open ${after.open}, focus on its h2 ${after.onHeading} (${await focused(page)})`);
+    record("panelInert", inertOpen === true && after.inert === false, `main inert with the panel open ${inertOpen}, after it closes ${after.inert}`);
+    await ctx.close();
+  }
+  {
+    const { page, ctx } = await open(browser, 1440, 900);
+    await page.keyboard.press("Tab");
+    const first = await page.evaluate(() => {
+      const a = document.activeElement;
+      const r = a?.getBoundingClientRect();
+      return { href: a?.getAttribute("href") ?? "", shown: r !== void 0 && r.width > 1 && r.top >= 0 };
+    });
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(300);
+    const onMain = await page.evaluate(() => document.activeElement === document.querySelector("main#main"));
+    record("skipLink", first.href === "#main" && first.shown && onMain, `first Tab: ${first.href || "no link"}, visible ${first.shown}; Enter puts focus on main#main ${onMain}`);
+    const ring = await page.evaluate(() => {
+      const m = document.getElementById("menu")?.getBoundingClientRect(), a = document.querySelector("#menu ol a")?.getBoundingClientRect();
+      return m === void 0 || a === void 0 ? null : { left: Math.round(a.left - m.left), right: Math.round(m.left + m.width - (a.left + a.width)) };
+    });
+    record("menuRing", ring !== null && ring.left >= 5 && ring.right >= 5, `menu link to menu edge: ${ring?.left} px start, ${ring?.right} px end (the ring needs 5)`);
+    await ctx.close();
+  }
+}
 function finish() {
   fs.writeFileSync(out, `${JSON.stringify(results, null, 2)}
 `);
@@ -283,6 +326,7 @@ async function site() {
     await siteChecks(browser, consoleErrors, false);
     await termLinks(browser);
     await deepTheme(browser);
+    await a11y(browser);
     record("console", consoleErrors.length === 0, consoleErrors.length === 0 ? "0 errors at 1440 and 390" : consoleErrors.join(" | "));
     results.browser = { pass: true, detail: `chromium ${browser.version()}` };
   } finally {
@@ -363,11 +407,11 @@ async function main() {
       const opened = await isOpen(page) === true && await page.isVisible('#menu a[href="#ch-05-s1"]');
       await page.click('#menu a[href="#ch-05-s1"]');
       await page.waitForTimeout(300);
-      const after = await page.evaluate(() => ({ open: document.getElementById("menu-bar")?.open ?? null, focus: document.activeElement === document.querySelector("#menu-bar > summary") }));
+      const after = await page.evaluate(() => ({ open: document.getElementById("menu-bar")?.open ?? null, focus: document.activeElement === document.querySelector("#ch-05-s1 h2") }));
       record(
         "phoneBar",
         closed && sum !== null && Math.abs(sum.top) < 1 && themeVisible && th !== null && Math.abs(th.top - sum.top) <= 8 && opened && after.open === false && after.focus,
-        `closed at load ${closed}; summary top ${sum?.top}, theme top ${th?.top} visible ${themeVisible}; summary opens list ${opened}; after a link: open ${after.open}, focus on summary ${after.focus}`
+        `closed at load ${closed}; summary top ${sum?.top}, theme top ${th?.top} visible ${themeVisible}; summary opens list ${opened}; after a link: open ${after.open}, focus on the chapter's h2 ${after.focus}`
       );
       const width = await page.evaluate(() => document.documentElement.scrollWidth);
       record("pageWidth", width <= 390, `scrollWidth ${width} at 390`);
@@ -675,6 +719,7 @@ async function main() {
     await siteChecks(browser, consoleErrors, true);
     await termLinks(browser);
     await deepTheme(browser);
+    await a11y(browser);
     record("console", consoleErrors.length === 0, consoleErrors.length === 0 ? "0 errors at 1440 and 390" : consoleErrors.join(" | "));
     results.browser = { pass: true, detail: `chromium ${browser.version()}` };
   } finally {
@@ -1211,7 +1256,16 @@ async function measure(name) {
     await browser.close();
   }
 }
-(siteOnly ? site() : measureProfile === void 0 ? main() : measure(measureProfile)).catch((e) => {
+async function a11yRun() {
+  const browser = await chromium.launch();
+  try {
+    await a11y(browser);
+  } finally {
+    await browser.close();
+  }
+  finish();
+}
+(a11yOnly ? a11yRun() : siteOnly ? site() : measureProfile === void 0 ? main() : measure(measureProfile)).catch((e) => {
   process.stderr.write(`page-check: ${e instanceof Error ? e.stack : String(e)}
 `);
   process.exit(1);

@@ -1,6 +1,7 @@
 // Run: NODE_PATH=<PW>/node_modules PLAYWRIGHT_BROWSERS_PATH=<PW>/browsers node docs/plans/2026-10-29-system-flow-site/proof/page-check.js <index.html> <out.json>
 // Site mode: ... page-check.js --site <index.html> <out.json> runs only the checks that find their own targets on any built
 // site (arrowStyle, fitAt1440, panelEscape, termLinks, deepTheme); the default mode runs them too, after checks bound to the fixture's ids.
+// A11y mode: ... page-check.js --a11y <index.html> <out.json> runs only the accessibility checks; the default and --site modes run them last.
 // Measure mode: ... page-check.js --measure owner|fx [--out-dir <dir>] <index.html> <out.json> prints no checks of its own; it writes the
 // numbers of the design's Proof table (see measure() below) and, with --out-dir, one screenshot per width and theme.
 // Opens a built system flow site in Chromium and checks the page shell: the sticky menu, the scroll spy,
@@ -16,7 +17,7 @@ type Check = { pass: boolean; detail: string };
 // line would give DOM globals to every Node source under src/ (tests/gates/ts-toolchain.test.sh).
 type Rect = { top: number; bottom: number; left: number; width: number; height: number };
 type El = {
-  getBoundingClientRect(): Rect; getAttribute(n: string): string | null; hasAttribute(n: string): boolean; scrollTop: number; scrollHeight: number; clientHeight: number; open: boolean;
+  getBoundingClientRect(): Rect; tagName: string; inert: boolean; getAttribute(n: string): string | null; hasAttribute(n: string): boolean; scrollTop: number; scrollHeight: number; clientHeight: number; open: boolean;
   textContent: string | null; className: string; disabled: boolean; scrollLeft: number; scrollWidth: number; clientWidth: number; id: string; innerHTML: string;
   querySelector(s: string): El | null; querySelectorAll(s: string): Iterable<El>; append(e: El): void; contains(e: El): boolean; closest(s: string): El | null; setAttribute(n: string, v: string): void; remove(): void;
 };
@@ -39,6 +40,7 @@ type Page = {
   click(sel: string): Promise<void>;
   fill(sel: string, value: string): Promise<void>;
   press(sel: string, key: string): Promise<void>;
+  keyboard: { press(key: string): Promise<void> };
   isVisible(sel: string): Promise<boolean>;
   on(ev: string, fn: (x: { type?: () => string; text?: () => string; message?: string }) => void): void;
   screenshot(o: { path: string }): Promise<unknown>;
@@ -56,11 +58,14 @@ const flag = (name: string): string | undefined => {
 };
 const siteOnly = args.includes('--site');
 if (siteOnly) args.splice(args.indexOf('--site'), 1);
+// --a11y runs only the accessibility checks (a11y() below), on any built site.
+const a11yOnly = args.includes('--a11y');
+if (a11yOnly) args.splice(args.indexOf('--a11y'), 1);
 const measureProfile = flag('--measure');
 const outDir = flag('--out-dir');
 const [file, out] = args;
 if (file === undefined || out === undefined || (siteOnly && measureProfile !== undefined) || (measureProfile !== undefined && measureProfile !== 'owner' && measureProfile !== 'fx')) {
-  process.stderr.write('usage: page-check.js [--site | --measure owner|fx] [--out-dir <dir>] <index.html> <out.json>\n');
+  process.stderr.write('usage: page-check.js [--site | --a11y | --measure owner|fx] [--out-dir <dir>] <index.html> <out.json>\n');
   process.exit(2);
 }
 const url = pathToFileURL(path.resolve(file)).href;
@@ -282,6 +287,50 @@ async function deepTheme(browser: Browser): Promise<void> {
   record('deepTheme', ours.length > 0 && bad.length === 0, ours.length === 0 ? 'no fx SVG deep page found' : `${ours.length - bad.length} of ${ours.length} SVG deep pages toggle and keep the theme${bad.length ? `; ${bad.join('; ')}` : ''}`);
 }
 
+// The final review's accessibility findings (findings/final-lens-a11y.md), checked by keyboard and computed style on any built site.
+async function a11y(browser: Browser): Promise<void> {
+  const focused = (page: Page) => page.evaluate(() => {
+    const a = document.activeElement as El | null;
+    return a === null ? '' : `${a.tagName.toLowerCase()}${a.id ? `#${a.id}` : ''}${a.className ? `.${a.className}` : ''} in ${a.closest('[id]')?.id ?? ''}`;
+  });
+  // 1 and 2: below 900 px, a menu link closes the panel and focus lands on the target's heading; main is inert while the panel is open.
+  {
+    const { page, ctx } = await open(browser, 390, 844);
+    const href = await page.evaluate(() => [...document.querySelectorAll('#menu ol a')].pop()?.getAttribute('href') ?? '');
+    await page.press('#menu-bar > summary', 'Enter');
+    const inertOpen = await page.evaluate(() => document.querySelector('main')?.inert ?? null);
+    await page.press(`#menu a[href="${href}"]`, 'Enter');
+    await page.waitForTimeout(500);
+    const after = await page.evaluate((h: string) => ({
+      open: document.getElementById('menu-bar')?.open ?? null, inert: document.querySelector('main')?.inert ?? null,
+      onHeading: document.activeElement === document.querySelector(`${h} h2`),
+    }), href);
+    record('menuLinkFocus', after.open === false && after.onHeading, `${href} by Enter at 390: panel open ${after.open}, focus on its h2 ${after.onHeading} (${await focused(page)})`);
+    record('panelInert', inertOpen === true && after.inert === false, `main inert with the panel open ${inertOpen}, after it closes ${after.inert}`);
+    await ctx.close();
+  }
+  // 14: the first Tab reaches a skip link to main; the menu's own padding leaves room for the 5 px focus ring.
+  {
+    const { page, ctx } = await open(browser, 1440, 900);
+    await page.keyboard.press('Tab');
+    const first = await page.evaluate(() => {
+      const a = document.activeElement as El | null;
+      const r = a?.getBoundingClientRect();
+      return { href: a?.getAttribute('href') ?? '', shown: r !== undefined && r.width > 1 && r.top >= 0 };
+    });
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(300);
+    const onMain = await page.evaluate(() => document.activeElement === document.querySelector('main#main'));
+    record('skipLink', first.href === '#main' && first.shown && onMain, `first Tab: ${first.href || 'no link'}, visible ${first.shown}; Enter puts focus on main#main ${onMain}`);
+    const ring = await page.evaluate(() => {
+      const m = document.getElementById('menu')?.getBoundingClientRect(), a = document.querySelector('#menu ol a')?.getBoundingClientRect();
+      return m === undefined || a === undefined ? null : { left: Math.round(a.left - m.left), right: Math.round(m.left + m.width - (a.left + a.width)) };
+    });
+    record('menuRing', ring !== null && ring.left >= 5 && ring.right >= 5, `menu link to menu edge: ${ring?.left} px start, ${ring?.right} px end (the ring needs 5)`);
+    await ctx.close();
+  }
+}
+
 // Writes the results and exits 1 when any check failed.
 function finish(): never {
   fs.writeFileSync(out as string, `${JSON.stringify(results, null, 2)}\n`);
@@ -297,6 +346,7 @@ async function site(): Promise<void> {
     await siteChecks(browser, consoleErrors, false);
     await termLinks(browser);
     await deepTheme(browser);
+    await a11y(browser);
     record('console', consoleErrors.length === 0, consoleErrors.length === 0 ? '0 errors at 1440 and 390' : consoleErrors.join(' | '));
     results.browser = { pass: true, detail: `chromium ${browser.version()}` };
   } finally {
@@ -375,9 +425,9 @@ async function main(): Promise<void> {
       const opened = (await isOpen(page)) === true && await page.isVisible('#menu a[href="#ch-05-s1"]');
       await page.click('#menu a[href="#ch-05-s1"]');
       await page.waitForTimeout(300);
-      const after = await page.evaluate(() => ({ open: document.getElementById('menu-bar')?.open ?? null, focus: document.activeElement === document.querySelector('#menu-bar > summary') }));
+      const after = await page.evaluate(() => ({ open: document.getElementById('menu-bar')?.open ?? null, focus: document.activeElement === document.querySelector('#ch-05-s1 h2') }));
       record('phoneBar', closed && sum !== null && Math.abs(sum.top) < 1 && themeVisible && th !== null && Math.abs(th.top - sum.top) <= 8 && opened && after.open === false && after.focus,
-        `closed at load ${closed}; summary top ${sum?.top}, theme top ${th?.top} visible ${themeVisible}; summary opens list ${opened}; after a link: open ${after.open}, focus on summary ${after.focus}`);
+        `closed at load ${closed}; summary top ${sum?.top}, theme top ${th?.top} visible ${themeVisible}; summary opens list ${opened}; after a link: open ${after.open}, focus on the chapter's h2 ${after.focus}`);
       const width = await page.evaluate(() => document.documentElement.scrollWidth);
       record('pageWidth', width <= 390, `scrollWidth ${width} at 390`);
       consoleErrors.push(...errors.map((e) => `390: ${e}`));
@@ -681,6 +731,7 @@ async function main(): Promise<void> {
     await siteChecks(browser, consoleErrors, true);
     await termLinks(browser);
     await deepTheme(browser);
+    await a11y(browser);
 
     record('console', consoleErrors.length === 0, consoleErrors.length === 0 ? '0 errors at 1440 and 390' : consoleErrors.join(' | '));
     results.browser = { pass: true, detail: `chromium ${browser.version()}` };
@@ -1191,4 +1242,10 @@ async function measure(name: string): Promise<void> {
   }
 }
 
-(siteOnly ? site() : measureProfile === undefined ? main() : measure(measureProfile)).catch((e: unknown) => { process.stderr.write(`page-check: ${e instanceof Error ? e.stack : String(e)}\n`); process.exit(1); });
+async function a11yRun(): Promise<void> {
+  const browser = await chromium.launch();
+  try { await a11y(browser); } finally { await browser.close(); }
+  finish();
+}
+
+(a11yOnly ? a11yRun() : siteOnly ? site() : measureProfile === undefined ? main() : measure(measureProfile)).catch((e: unknown) => { process.stderr.write(`page-check: ${e instanceof Error ? e.stack : String(e)}\n`); process.exit(1); });
