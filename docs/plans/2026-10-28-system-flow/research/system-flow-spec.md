@@ -169,7 +169,7 @@ Anatomy:
 | `diagrams/flow-<id>[-p2,-p3]` | 12 | sequence (actors and stores as participants) | 8 store flows plus split pages |
 | stray | 1 | | `diagrams/tmpf99eh7ra.html` (leftover temp output, no spec) |
 
-Totals over all 58 specs: 299 components, 324 connections, 156 participants, 201 messages, 4 boundaries, 78 cards, 8 segments. Quality profile: showcase 51, standard 2.
+Totals over all 58 specs: 299 components, 324 connections, 156 participants, 201 messages, 4 boundaries, 78 cards, 8 segments. Quality profile: `showcase` 51, `standard` 2.
 
 **Spec shape.** `schema_version: 1`, `diagram_type`, `meta {title, output, quality_profile, viewBox, column_fit}`, then `components[] {id, type, label, pos, size}` and `connections[] {id, from, to, label, labelAt?}` (architecture) or `participants[] {id, type, label}` and `messages[] {id, from, to, y, label, variant}` with optional `segments[]` (sequence). Every spec ends with `cards[]`: "Steps" (each step with a short `[file.ts:lines]` citation) and "Participants" or "Deeper diagrams (+)".
 
