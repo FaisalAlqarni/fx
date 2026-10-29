@@ -36,7 +36,7 @@ const FAKE = `import fs from 'node:fs';
 import path from 'node:path';
 const a = process.argv.slice(2);
 // archify validate --layout-json: the auto canvas, FAKE_VIEWBOX or 600 by 400.
-if (a[0] === 'validate') { process.stdout.write(JSON.stringify({ ok: true, viewBox: JSON.parse(process.env.FAKE_VIEWBOX || '[600, 400]') })); process.exit(0); }
+if (a[0] === 'validate') { process.stdout.write(JSON.stringify({ ok: true, viewBox: JSON.parse(process.env.FAKE_VIEWBOX || '[600, 400]') })); process.exit(0); } // ts-gate-ok: plain JS inside the fake
 const [, type, specPath, out] = a;
 const spec = JSON.parse(fs.readFileSync(specPath, 'utf8')); // ts-gate-ok: plain JS inside the fake
 const name = path.basename(out, '.html');
