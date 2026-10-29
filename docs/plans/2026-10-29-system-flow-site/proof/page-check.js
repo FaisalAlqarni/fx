@@ -523,6 +523,44 @@ async function a11y(browser) {
     record("regions", ok, lines.join("; "));
   }
   {
+    const { page, ctx } = await open(browser, 1440, 900, true, "reduce");
+    const loose = (sel) => page.evaluate((q) => {
+      const AR = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/g;
+      const n = (t) => (t ?? "").match(AR)?.length ?? 0;
+      const els = [...document.querySelectorAll(q)];
+      const all = els.reduce((a, e) => a + n(e.textContent), 0);
+      const wrapped = els.reduce((a, e) => a + (e.closest('[lang="ar"]') ? n(e.textContent) : [...e.querySelectorAll('[lang="ar"]')].filter((x) => x.tagName.toLowerCase() === "tspan" || x.getAttribute("dir") === "rtl").reduce((b, x) => b + n(x.textContent), 0)), 0);
+      return { all, loose: all - wrapped };
+    }, sel);
+    const svgText = await loose(".fig svg text");
+    const k = await page.evaluate(() => [...document.querySelectorAll(".fig svg text")].find((t) => /[\u0600-\u06FF]/.test(t.textContent ?? "") && t.closest('figure.card[id^="fig-seq-"]') !== null)?.closest("figure.card")?.id.slice(4) ?? "");
+    let narr = { all: 0, loose: 0 };
+    if (k !== "") {
+      const steps = Number((await count(page, k)).split(" / ")[1]);
+      for (let i = 0; i < steps; i++) {
+        await press(page, k, "next");
+        const one = await loose(`#fig-${k} .narr`);
+        narr = { all: narr.all + one.all, loose: narr.loose + one.loose };
+      }
+    }
+    const word = await page.evaluate(() => {
+      const idx = JSON.parse(document.getElementById("site-index")?.textContent ?? "{}");
+      return /[\u0600-\u06FF]+/.exec((idx.parts ?? []).map((p) => p.label).join(" "))?.[0] ?? "";
+    });
+    let menu = { all: 0, loose: 0 };
+    if (word !== "") {
+      await page.fill("#filter", word);
+      menu = await loose("#menu li.part");
+    }
+    const any = svgText.all + narr.all + menu.all;
+    record(
+      "arabic",
+      any > 0 && svgText.loose + narr.loose + menu.loose === 0,
+      any === 0 ? "no Arabic in figures or parts" : `Arabic letters outside lang="ar": figure text ${svgText.loose} of ${svgText.all}; ${k || "no sequence"} narration ${narr.loose} of ${narr.all}; filter "${word}" results ${menu.loose} of ${menu.all}`
+    );
+    await ctx.close();
+  }
+  {
     const index = path.resolve(file);
     const html = fs.readFileSync(index, "utf8");
     const deep = [...new Set([...html.matchAll(/<a class="deep" href="(diagrams\/[^"]+\.html)"/g)].map((m) => m[1]))].filter((rel) => fs.existsSync(path.join(path.dirname(index), rel)) && fs.readFileSync(path.join(path.dirname(index), rel), "utf8").includes('href="../assets/theme.css"'));
@@ -552,7 +590,7 @@ async function a11y(browser) {
       await page.goto(url);
       const bg = await page.evaluate(() => {
         const sw = document.querySelector(".legend .sw.leaves");
-        return sw === null ? null : getComputedStyle(sw).backgroundImage;
+        return sw === null ? null : getComputedStyle(sw).backgroundImage ?? "";
       });
       const solid = [];
       for (const rel of deep) {

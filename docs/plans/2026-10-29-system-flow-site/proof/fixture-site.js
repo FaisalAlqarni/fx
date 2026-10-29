@@ -37,8 +37,8 @@ f.fragment("proof", {
     title: "A wide hand-off",
     chapter: "s1",
     summary: "The request passes through six parts from the client to the mailer.",
-    participants: lanes.map((id) => ({ id, label: `Part ${id}`, look: id === "mail" ? "external" : "service", evidence })),
-    messages: lanes.slice(1).map((to, i) => ({ n: i + 1, from: lanes[i], to, label: `Hands the request to ${to}.`, evidence }))
+    participants: lanes.map((id) => ({ id, label: id === "mail" ? "Part mail \u0627\u0644\u0628\u0631\u064A\u062F" : `Part ${id}`, look: id === "mail" ? "external" : "service", evidence })),
+    messages: lanes.slice(1).map((to, i) => ({ n: i + 1, from: lanes[i], to, label: to === "mail" ? "Sends \u0631\u0633\u0627\u0644\u0629 \u062C\u062F\u064A\u062F\u0629 to mail." : `Hands the request to ${to}.`, evidence }))
   }],
   levels: { diagrams: [{
     id: "tall",
@@ -47,7 +47,7 @@ f.fragment("proof", {
     title: "A tall chain",
     summary: "Seven parts pass a job down one column from the first to the last.",
     groups: [],
-    nodes: tall.map((id) => ({ id, label: `Step ${id}`, kind: "backend", look: "service", role: "Passes the job on", evidence })),
+    nodes: tall.map((id) => ({ id, label: id === "t7" ? "Step t7 \u0627\u0644\u0623\u062E\u064A\u0631" : `Step ${id}`, kind: "backend", look: "service", role: "Passes the job on", evidence })),
     edges: tall.slice(1).map((to, i) => ({ from: tall[i], to, label: "passes", evidence })),
     layout: Object.fromEntries(tall.map((id, row) => [id, { col: 0, row }]))
   }] }

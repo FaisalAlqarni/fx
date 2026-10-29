@@ -526,6 +526,40 @@ async function a11y(browser: Browser): Promise<void> {
     }
     record('regions', ok, lines.join('; '));
   }
+  // 8: every Arabic run in figure text, narration and filter results sits in an element with lang="ar" (and dir="rtl" in HTML).
+  {
+    const { page, ctx } = await open(browser, 1440, 900, true, 'reduce');
+    // The Arabic letters of `sel`'s elements that no lang="ar" element (itself or inside it) holds.
+    const loose = (sel: string) => page.evaluate((q: string) => {
+      const AR = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/g;
+      const n = (t: string | null): number => (t ?? '').match(AR)?.length ?? 0;
+      const els = [...document.querySelectorAll(q)];
+      const all = els.reduce((a, e) => a + n(e.textContent), 0);
+      const wrapped = els.reduce((a, e) => a + (e.closest('[lang="ar"]') ? n(e.textContent) : [...e.querySelectorAll('[lang="ar"]')].filter((x) => x.tagName.toLowerCase() === 'tspan' || x.getAttribute('dir') === 'rtl').reduce((b, x) => b + n(x.textContent), 0)), 0);
+      return { all, loose: all - wrapped };
+    }, sel);
+    const svgText = await loose('.fig svg text');
+    const k = await page.evaluate(() => [...document.querySelectorAll('.fig svg text')].find((t) => /[\u0600-\u06FF]/.test(t.textContent ?? '') && t.closest('figure.card[id^="fig-seq-"]') !== null)?.closest('figure.card')?.id.slice(4) ?? '');
+    let narr = { all: 0, loose: 0 };
+    if (k !== '') {
+      const steps = Number((await count(page, k)).split(' / ')[1]);
+      for (let i = 0; i < steps; i++) {
+        await press(page, k, 'next');
+        const one = await loose(`#fig-${k} .narr`);
+        narr = { all: narr.all + one.all, loose: narr.loose + one.loose };
+      }
+    }
+    const word = await page.evaluate(() => {
+      const idx = JSON.parse(document.getElementById('site-index')?.textContent ?? '{}') as { parts?: { label: string }[] }; // ts-gate-ok: the page's own index
+      return /[\u0600-\u06FF]+/.exec((idx.parts ?? []).map((p) => p.label).join(' '))?.[0] ?? '';
+    });
+    let menu = { all: 0, loose: 0 };
+    if (word !== '') { await page.fill('#filter', word); menu = await loose('#menu li.part'); }
+    const any = svgText.all + narr.all + menu.all;
+    record('arabic', any > 0 && svgText.loose + narr.loose + menu.loose === 0,
+      any === 0 ? 'no Arabic in figures or parts' : `Arabic letters outside lang="ar": figure text ${svgText.loose} of ${svgText.all}; ${k || 'no sequence'} narration ${narr.loose} of ${narr.all}; filter "${word}" results ${menu.loose} of ${menu.all}`);
+    await ctx.close();
+  }
   // 9 and review F10: the theme button's name is its visible text, on the index and on every fx SVG deep page. 7: a deep
   // page whose steps animate has a pause button that stops them.
   {
@@ -558,7 +592,7 @@ async function a11y(browser: Browser): Promise<void> {
       const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
       const page = await ctx.newPage();
       await page.goto(url);
-      const bg = await page.evaluate(() => { const sw = document.querySelector('.legend .sw.leaves'); return sw === null ? null : (getComputedStyle as unknown as (e: unknown) => Record<string, string>)(sw).backgroundImage; });
+      const bg = await page.evaluate(() => { const sw = document.querySelector('.legend .sw.leaves'); return sw === null ? null : (getComputedStyle as unknown as (e: unknown) => Record<string, string>)(sw).backgroundImage ?? ''; });
       const solid: string[] = [];
       for (const rel of deep) {
         await page.goto(pathToFileURL(path.join(path.dirname(index), rel)).href);

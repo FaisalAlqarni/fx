@@ -80,6 +80,24 @@ function button(cls: string, text: string, onClick: () => void, label?: string):
 
 const REST = 'Press Play, or step with Next.';
 
+// Arabic runs with the spaces between their words, as sf-page.ts wrapArabic finds them.
+const AR = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+(?:[ \u00A0]+[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+)*/g;
+// Appends text to el with each Arabic run in its own element marked lang="ar" and right to left (a span, or a tspan in an svg).
+function put(el: Element, text: string): void {
+  let i = 0;
+  for (const m of text.matchAll(AR)) {
+    el.append(text.slice(i, m.index));
+    const inSvg = el instanceof SVGElement;
+    const run = inSvg ? document.createElementNS(SVG_NS, 'tspan') : document.createElement('span');
+    run.setAttribute('lang', 'ar');
+    if (inSvg) { run.setAttribute('direction', 'rtl'); run.setAttribute('unicode-bidi', 'embed'); } else run.setAttribute('dir', 'rtl');
+    run.textContent = m[0];
+    el.append(run);
+    i = m.index + m[0].length;
+  }
+  el.append(text.slice(i));
+}
+
 // card: figure.card; fig: its .fig scroller; ctl: its .ctl bar.
 function mountFigure(card: Element, fig: Element, ctl: Element, spec: FigureSpec): void {
   const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -122,7 +140,7 @@ function mountFigure(card: Element, fig: Element, ctl: Element, spec: FigureSpec
       svg('title', {}, g).textContent = l.title;
       svg('rect', { x: l.x - l.w / 2, y: 14, width: l.w, height: 44, rx: 8, ...lookAttrs(l.look) }, g);
       l.lines.forEach((line, i) => {
-        svg('text', { x: l.x, y: 36 + (i - (l.lines.length - 1) / 2) * 15 + 4, 'text-anchor': 'middle', fill: 'var(--ink)', 'font-size': 13 }, g).textContent = line;
+        put(svg('text', { x: l.x, y: 36 + (i - (l.lines.length - 1) / 2) * 15 + 4, 'text-anchor': 'middle', fill: 'var(--ink)', 'font-size': 13 }, g), line);
       });
       svg('line', { x1: l.x, y1: 58, x2: l.x, y2: spec.height - 12, stroke: 'var(--rule)', 'stroke-width': 1.2, 'stroke-dasharray': '4 4' }, g);
       nodeEls.set(l.id, g);
@@ -134,17 +152,17 @@ function mountFigure(card: Element, fig: Element, ctl: Element, spec: FigureSpec
         'marker-end': `url(#${spec.key}-${r.mode === 'async' ? 'open' : 'arrow'})`, ...(r.leaves ? { 'stroke-dasharray': '12 4 2 4' } : r.reply ? { 'stroke-dasharray': '6 4' } : {}),
       }, r.leaves ? ['var(--warn)', 2.4] : ['var(--muted)', 1.6], r.label, (t) => {
         svg('tspan', { 'font-weight': 'bold' }, t).textContent = String(r.n);
-        t.appendChild(document.createTextNode(` ${r.text}`));
+        put(t, ` ${r.text}`);
       }, 'start');
     }
   } else {
     for (const g of spec.groups) {
       svg('rect', { x: g.x, y: g.y, width: g.w, height: g.h, rx: 12, fill: 'none', stroke: 'var(--muted)', 'stroke-dasharray': '5 4' }, root);
-      svg('text', { x: g.x + 10, y: g.y + 16, fill: 'var(--muted)', 'font-size': 12 }, root).textContent = g.label;
+      put(svg('text', { x: g.x + 10, y: g.y + 16, fill: 'var(--muted)', 'font-size': 12 }, root), g.label);
     }
     for (const e of spec.edges) {
       arrow(e.id, e.d, { 'marker-end': `url(#${spec.key}-arrow)`, ...(e.mode === 'async' ? { 'stroke-dasharray': '6 4' } : {}) },
-        ['var(--muted)', 1.6], e.label, (t) => { t.textContent = e.label?.text ?? ''; }, 'middle');
+        ['var(--muted)', 1.6], e.label, (t) => put(t, e.label?.text ?? ''), 'middle');
     }
     for (const n of spec.nodes) {
       const g = svg('g', {}, root);
@@ -153,9 +171,9 @@ function mountFigure(card: Element, fig: Element, ctl: Element, spec: FigureSpec
       // The label lines over the 12 px second line (role or kind), the block centred in the box.
       const top = n.y + n.h / 2 - ((n.lines.length - 1) * 15.5 + 15) / 2 + 4;
       n.lines.forEach((line, i) => {
-        svg('text', { x: n.x + n.w / 2, y: top + i * 15.5, 'text-anchor': 'middle', fill: 'var(--ink)', 'font-size': 13.5 }, g).textContent = line;
+        put(svg('text', { x: n.x + n.w / 2, y: top + i * 15.5, 'text-anchor': 'middle', fill: 'var(--ink)', 'font-size': 13.5 }, g), line);
       });
-      if (n.sub) svg('text', { x: n.x + n.w / 2, y: top + n.lines.length * 15.5, 'text-anchor': 'middle', fill: 'var(--muted)', 'font-size': 12 }, g).textContent = n.sub;
+      if (n.sub) put(svg('text', { x: n.x + n.w / 2, y: top + n.lines.length * 15.5, 'text-anchor': 'middle', fill: 'var(--muted)', 'font-size': 12 }, g), n.sub);
       nodeEls.set(n.id, g);
     }
   }
@@ -176,7 +194,7 @@ function mountFigure(card: Element, fig: Element, ctl: Element, spec: FigureSpec
     const size = document.createElement('span');
     size.className = 'narr-size';
     size.setAttribute('aria-hidden', 'true');
-    size.textContent = s ? s.caption : REST;
+    put(size, s ? s.caption : REST);
     if (s?.where) { const code = document.createElement('code'); code.textContent = s.where; size.append(' ', code); }
     narrBox.append(size);
   }
@@ -236,9 +254,10 @@ function mountFigure(card: Element, fig: Element, ctl: Element, spec: FigureSpec
     for (const [id, el] of nodeEls) el.toggleAttribute('data-off', !all && !seen.has(id));
     const step = spec.steps[at];
     counter.textContent = `${at + 1} / ${spec.steps.length}`;
-    narr.textContent = step ? step.caption : REST;
+    narr.textContent = '';
+    put(narr, step ? step.caption : REST);
     if (step?.where) { const code = document.createElement('code'); code.textContent = step.where; narr.append(' ', code); }
-    said.textContent = spoken ? narr.textContent : '';
+    said.replaceChildren(...(spoken ? [...narr.childNodes].map((x) => x.cloneNode(true)) : []));
     moveToken(step);
     follow(step);
   }

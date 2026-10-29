@@ -250,11 +250,24 @@ h2{font-size:30px}
   var idx = idxEl ? JSON.parse(idxEl.textContent) : { chapters: [], parts: [], terms: [] };
   var info = {};
   idx.chapters.forEach(function (c) { info[c.id] = [c.title, c.question, c.lead].join(" ").toLowerCase(); });
+  // Arabic runs get lang="ar" and dir="rtl", as the build's wrapArabic gives the page's own text.
+  var AR = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+(?:[ \u00A0]+[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+)*/g;
+  function put(el, text) {
+    var i = 0, m, s;
+    AR.lastIndex = 0;
+    while ((m = AR.exec(text))) {
+      el.appendChild(document.createTextNode(text.slice(i, m.index)));
+      s = document.createElement("span"); s.lang = "ar"; s.dir = "rtl"; s.textContent = m[0];
+      el.appendChild(s);
+      i = m.index + m[0].length;
+    }
+    el.appendChild(document.createTextNode(text.slice(i)));
+  }
   function item(cls, href, label, mark) {
     var li = document.createElement("li"), a = document.createElement("a");
     li.className = cls; a.setAttribute("href", href);
     if (mark) { var g = document.createElement("span"); g.className = "g"; g.textContent = mark; a.appendChild(g); }
-    a.appendChild(document.createTextNode(label));
+    put(a, label);
     li.appendChild(a);
     return li;
   }
