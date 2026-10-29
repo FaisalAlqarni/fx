@@ -77,7 +77,7 @@ The work is on `<branch>` in `<worktree path>`. What next?
 1. Merge it into `<base branch>` locally
 2. Push the branch and open a pull request
 3. Leave it as it is, I will handle it
-4. Run `fx-docs` on the branch first (say "with pages" for HTML pages too)
+4. Update only the docs this branch touched with `fx-docs` (say "with pages" for HTML pages too)
 5. Write ADRs for the candidates with `fx-adr`
 
 Which?
@@ -88,6 +88,11 @@ with at least one ADR candidate; renumber so the list has no gap. On 4, run
 the docs step as [final-review.md](./final-review.md) says, review its commits
 with the branch pass, then show the menu again. On 5, invoke `fx-adr` for the
 candidates the owner picks, then show the menu again.
+
+When the repo has no evidence-bearing docs, put the first full run on its own
+line above the menu, never inside option 4: "For a full documentation site of
+this system, type `/fx:fx-system-flow`." Option 4 updates docs; it does not
+write the site.
 
 **Why an offer rather than a rule.** A prohibition invites the reading that
 found its way around it: a measured run treated "commit it" as the say-so that

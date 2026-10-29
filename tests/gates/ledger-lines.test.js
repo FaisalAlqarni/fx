@@ -84,7 +84,7 @@ assert.ok(impl.includes("For those, park the task and continue: read [status.md]
 const completion = ref("completion.md");
 const menu = completion.slice(completion.indexOf("1. Merge it into"), completion.indexOf("Which?"));
 assert.ok(menu.includes("1. Merge it into") && menu.includes("2. Push the branch and open a pull request") && menu.includes("3. Leave it as it is, I will handle it"), "the menu has three options");
-assert.ok(menu.includes("4. Run `fx-docs` on the branch") && menu.includes("5. Write ADRs for the candidates with `fx-adr`"), "the menu carries the conditional docs and ADR options");
+assert.ok(menu.includes("4. Update only the docs this branch touched with `fx-docs`") && menu.includes("5. Write ADRs for the candidates with `fx-adr`"), "the menu carries the conditional docs and ADR options");
 assert.ok(!menu.includes("6. "), "the menu offers no sixth option");
 assert.ok(completion.includes("Discard only when the owner asks for it: list the branch, its commits and the worktree path, and act only after the owner types the word discard."), "discard needs the listing and the typed word");
 assert.ok(status.includes("Task <NN>: unparked: <owner answer>"), "status.md defines the unparked line");
@@ -96,6 +96,11 @@ const readme = fs.readFileSync(path.join(root, "README.md"), "utf8").replace(/\s
 assert.ok(readme.includes("three options: merge | push and open a PR | leave it. Discard happens only when you type it."), "README shows the three-option menu");
 const retro = completion.indexOf("`/fx:fx-retro` reviews this build");
 assert.ok(retro >= 0 && retro < completion.indexOf("1. Merge it into"), "the fx-retro line comes before the menu");
+{
+  const c = completion.replace(/\s+/g, " ");
+  assert.ok(c.includes("4. Update only the docs this branch touched with `fx-docs`"), "option 4 says it only updates branch docs");
+  assert.ok(c.includes("never inside option 4"), "the first full run sits on its own line, outside option 4");
+}
 const setup = ref("setup.md").replace(/\s+/g, " ");
 assert.ok(setup.includes("Before task 01, check the test command can start."), "setup.md checks the test runner before task 01");
 for (const o of ["1. You install the runner (<the exact command or package>), then I retry", '2. Build on review alone: every task ledgered "tests written, not run"', "3. Stop here"]) {
