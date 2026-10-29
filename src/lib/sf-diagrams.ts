@@ -116,7 +116,8 @@ function architecture(d: Diagram, fig: FigureSpec, roots: Map<string, Root>): De
   });
   const boundaries = groups.map((g) => ({ kind: 'region', label: g.label, wraps: g.wraps.map(aid) }));
   const name = `arch-${d.id}`;
-  // No viewBox: archify's own canvas then covers frames, routes, labels and the legend on the right and at the bottom.
+  // No viewBox here: runArchify's canvas pass (authorCanvas) writes one from archify's own layout, which covers frames,
+  // routes, labels and the legend, widened to 1000.
   const spec = {
     schema_version: 1, diagram_type: 'architecture',
     meta: { title: d.title, subtitle: d.summary, output: `${name}.html`, quality_profile: 'showcase', ...(repo ? { repository: repo } : {}) },
