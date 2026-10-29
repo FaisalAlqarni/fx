@@ -135,7 +135,7 @@ const page = read(f, `${SITE}/index.html`);
 }
 {
   const tables = page.match(/<table>/g) ?? [];
-  const wrapped = [...page.matchAll(/<div class="table-scroll" role="region" aria-label="([^"]+)" tabindex="0"><table>/g)].map((m) => m[1]);
+  const wrapped = [...page.matchAll(/<div class="table-scroll" role="region" aria-label="([^"]+)"><table>/g)].map((m) => m[1]);
   assert.ok(tables.length >= 4, `${tables.length} tables`);
   assert.strictEqual(wrapped.length, tables.length, "every table is wrapped");
   assert.ok(wrapped.includes("Store: sql") && wrapped.includes("Corrections"), wrapped.join(","));
@@ -221,9 +221,9 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">\u0645\u0631\u062D\u06
   for (const key of keys) {
     const c = card(page, key);
     const [title, summary] = want.get(key) ?? ["", ""];
-    assert.strictEqual(strip2(/^\s*<h3>([\s\S]*?)<\/h3>/.exec(c)?.[1] ?? "").replace(/&lt;/g, "<").replace(/&gt;/g, ">"), title, `${key} title`);
+    assert.strictEqual(strip2(/^\s*<h3 id="fig-[^"]+-title">([\s\S]*?)<\/h3>/.exec(c)?.[1] ?? "").replace(/&lt;/g, "<").replace(/&gt;/g, ">"), title, `${key} title`);
     assert.strictEqual(strip2(/<p class="cap">([\s\S]*?)<\/p>/.exec(c)?.[1] ?? ""), summary, `${key} caption`);
-    assert.ok(/<div class="fig" role="region" tabindex="0" aria-label="[^"]+"><noscript>This figure needs JavaScript\. The link below opens the full diagram\.<\/noscript><\/div>/.test(c), `${key} scroller`);
+    assert.ok(new RegExp(`<div class="fig" role="region" aria-labelledby="fig-${key}-title"><noscript>This figure needs JavaScript\\. The link below opens the full diagram\\.</noscript></div>`).test(c), `${key} scroller`);
     const ctl = new RegExp(`<div class="ctl" data-fx-flow="${key}">([\\s\\S]*?)</div>`).exec(c)?.[1] ?? "";
     assert.strictEqual((ctl.match(/<a class="deep" /g) ?? []).length, 1, `${key} bar holds one deep link`);
   }

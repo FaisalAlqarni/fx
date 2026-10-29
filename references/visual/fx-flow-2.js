@@ -60,8 +60,10 @@
       width: spec.width,
       height: spec.height,
       role: "img",
-      "aria-label": card.querySelector("h3")?.textContent ?? spec.key
+      "aria-label": `Diagram, ${spec.steps.length} steps`,
+      ...spec.steps.length > 0 ? { "aria-describedby": `${spec.key}-desc` } : {}
     });
+    if (spec.steps.length > 0) svg("desc", { id: `${spec.key}-desc` }, root).textContent = spec.steps.map((s) => s.caption).join(" ");
     const defs = svg("defs", {}, root);
     const marker = svg("marker", { id: `${spec.key}-arrow`, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, defs);
     svg("path", { d: "M0 0L10 5L0 10z", fill: "var(--muted)" }, marker);
@@ -264,7 +266,7 @@
     }));
     if (spec.steps.length === 0) for (const b of [playBtn, next, reset]) b.disabled = true;
     ctl.setAttribute("role", "group");
-    ctl.setAttribute("aria-label", `${card.querySelector("h3")?.textContent ?? spec.key} controls`);
+    ctl.setAttribute("aria-label", "Figure player");
     const deep = ctl.querySelector("a.deep");
     for (const el of [playBtn, back, next, reset, narrBox, counter, said]) ctl.insertBefore(el, deep);
     fig.append(root);

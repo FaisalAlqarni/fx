@@ -27,9 +27,10 @@ const chapterId = (i: number, s: Section): string => `ch-${nn(i + 1)}-${s.id}`;
 // A section with a Start here role is in Start here; every other section is How it works.
 const group = (s: Section): 'start' | 'how' => (s.role === undefined ? 'how' : 'start');
 
-// Each table scrolls inside its own region, named for screen readers and reachable by keyboard; the table stays a table.
+// Each table scrolls inside its own region, named for screen readers; the page script gives it a Tab stop only when it
+// overflows. The table stays a table.
 const table = (label: string, head: string[], rows: string[][], cls = ''): string =>
-  `<div class="table-scroll" role="region" aria-label="${escapeHtml(label)}" tabindex="0"><table${cls === '' ? '' : ` class="${cls}"`}><thead><tr>${head.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  `<div class="table-scroll" role="region" aria-label="${escapeHtml(label)}"><table${cls === '' ? '' : ` class="${cls}"`}><thead><tr>${head.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 
 export function renderPage(input: Input): string {
   const { model, roots } = input;
@@ -135,8 +136,8 @@ export function renderPage(input: Input): string {
         const label = page?.renderer === 'archify' ? 'Open in archify' : 'Open full diagram';
         parts.push([
           `<figure class="card" id="fig-${escapeHtml(key)}">`,
-          `<h3>${t(prefix + title)}</h3><p class="cap">${lt(t(summary))}</p>`,
-          `<div class="fig" role="region" tabindex="0" aria-label="${escapeHtml(title)}, scrolls sideways"><noscript>This figure needs JavaScript. The link below opens the full diagram.</noscript></div>`,
+          `<h3 id="fig-${escapeHtml(key)}-title">${t(prefix + title)}</h3><p class="cap">${lt(t(summary))}</p>`,
+          `<div class="fig" role="region" aria-labelledby="fig-${escapeHtml(key)}-title"><noscript>This figure needs JavaScript. The link below opens the full diagram.</noscript></div>`,
           `<div class="ctl" data-fx-flow="${escapeHtml(key)}"><a class="deep" href="diagrams/${escapeHtml(page?.name ?? base)}.html">${label}</a></div>`,
           '</figure>',
         ].join('\n'));
@@ -199,7 +200,7 @@ export function renderPage(input: Input): string {
   const glossary = [...model.glossary].sort((a, b) => a.term.toLowerCase().localeCompare(b.term.toLowerCase()));
   fixedChapter('glossary', 'Glossary', 'What do the words on this page mean?',
     `<p>The words this site uses, in the meaning the code gives them. ${glossary.length} terms.</p>` +
-    `<div class="table-scroll" role="region" aria-label="Glossary" tabindex="0"><table class="glossary"><thead><tr>${['Term', 'Tag', 'Meaning', 'Evidence'].map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${
+    `<div class="table-scroll" role="region" aria-label="Glossary"><table class="glossary"><thead><tr>${['Term', 'Tag', 'Meaning', 'Evidence'].map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${
       glossary.map((g) => `<tr id="term-${escapeHtml(g.id)}"><td>${t(g.term)}</td><td><span class="tag">${escapeHtml(g.tag)}</span></td><td>${t(g.meaning)}</td><td>${evCell(g)}</td></tr>`).join('')}</tbody></table></div>`);
   fixedChapter('rules-in-force', 'Rules in force', 'Which decisions must every change respect?', model.rules.length === 0 ? '<p>No rules are listed.</p>'
     : `<ul class="facts">${model.rules.map((r) => `<li>${t(r.text)}${r.adr === undefined ? '' : ` (<code>${escapeHtml(where(r.adr))}</code>)`}${r.decision === undefined ? '' : ` ${t(r.decision)}`} ${evCell(r)}</li>`).join('')}</ul>`);

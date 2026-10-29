@@ -497,6 +497,32 @@ async function a11y(browser) {
     record("unreachedContrast", ok, lines.join("; "));
   }
   {
+    const lines = [];
+    let ok = true;
+    for (const [w, h] of [[1440, 900], [390, 844]]) {
+      const { page, ctx } = await open(browser, w, h, true, "reduce");
+      const r = await page.evaluate(() => {
+        const byId = (id) => id === null ? null : document.getElementById(id);
+        const tab = [...document.querySelectorAll(".fig, .table-scroll")].filter((el) => el.hasAttribute("tabindex") !== el.scrollWidth > el.clientWidth + 1).map((el) => `${el.closest("[id]")?.id ?? "?"} ${el.className} tabindex ${el.getAttribute("tabindex")} overflow ${el.scrollWidth}/${el.clientWidth}`);
+        const names = [...document.querySelectorAll("figure.card")].flatMap((c) => {
+          const fig = c.querySelector(".fig"), svg = c.querySelector(".fig svg");
+          const label = byId(fig?.getAttribute("aria-labelledby") ?? null);
+          const desc = byId(svg?.getAttribute("aria-describedby") ?? null)?.textContent ?? "";
+          const out2 = [];
+          if (label === null || label !== c.querySelector("h3") || fig?.hasAttribute("aria-label")) out2.push(`${c.id}: region not named by its h3`);
+          if ((svg?.getAttribute("aria-label") ?? "") === (c.querySelector("h3")?.textContent ?? "")) out2.push(`${c.id}: svg repeats the title`);
+          if (desc.trim() === "") out2.push(`${c.id}: svg description "${desc.slice(0, 30)}"`);
+          return out2;
+        });
+        return { regions: [...document.querySelectorAll(".fig, .table-scroll")].length, scrolls: [...document.querySelectorAll(".fig[tabindex], .table-scroll[tabindex]")].length, tab, names };
+      });
+      ok &&= r.regions > 0 && r.tab.length === 0 && r.names.length === 0;
+      lines.push(`${w}: ${r.scrolls} of ${r.regions} regions take a Tab stop${r.tab.length ? `; wrong: ${r.tab.slice(0, 4).join(", ")}` : ""}${r.names.length ? `; ${r.names.slice(0, 4).join(", ")}` : ""}`);
+      await ctx.close();
+    }
+    record("regions", ok, lines.join("; "));
+  }
+  {
     const index = path.resolve(file);
     const html = fs.readFileSync(index, "utf8");
     const deep = [...new Set([...html.matchAll(/<a class="deep" href="(diagrams\/[^"]+\.html)"/g)].map((m) => m[1]))].filter((rel) => fs.existsSync(path.join(path.dirname(index), rel)) && fs.readFileSync(path.join(path.dirname(index), rel), "utf8").includes('href="../assets/theme.css"'));

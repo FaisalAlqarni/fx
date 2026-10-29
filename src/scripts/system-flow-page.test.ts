@@ -92,10 +92,10 @@ const page = read(f, `${SITE}/index.html`);
   assert.ok(!page.includes('fx-flow-1'), 'no fx-flow-1 on the page');
 }
 
-// Each table scrolls in its own labelled region a keyboard can reach; the template has no page-wide table rule (A20).
+// Each table scrolls in its own labelled region (the page script adds a Tab stop when it overflows); the template has no page-wide table rule (A20).
 {
   const tables = page.match(/<table>/g) ?? [];
-  const wrapped = [...page.matchAll(/<div class="table-scroll" role="region" aria-label="([^"]+)" tabindex="0"><table>/g)].map((m) => m[1]);
+  const wrapped = [...page.matchAll(/<div class="table-scroll" role="region" aria-label="([^"]+)"><table>/g)].map((m) => m[1]);
   assert.ok(tables.length >= 4, `${tables.length} tables`);
   assert.strictEqual(wrapped.length, tables.length, 'every table is wrapped');
   assert.ok(wrapped.includes('Store: sql') && wrapped.includes('Corrections'), wrapped.join(','));
@@ -205,9 +205,10 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">مرحبا</span>'));
   for (const key of keys) {
     const c = card(page, key);
     const [title, summary] = want.get(key) ?? ['', ''];
-    assert.strictEqual(strip(/^\s*<h3>([\s\S]*?)<\/h3>/.exec(c)?.[1] ?? '').replace(/&lt;/g, '<').replace(/&gt;/g, '>'), title, `${key} title`);
+    assert.strictEqual(strip(/^\s*<h3 id="fig-[^"]+-title">([\s\S]*?)<\/h3>/.exec(c)?.[1] ?? '').replace(/&lt;/g, '<').replace(/&gt;/g, '>'), title, `${key} title`);
     assert.strictEqual(strip(/<p class="cap">([\s\S]*?)<\/p>/.exec(c)?.[1] ?? ''), summary, `${key} caption`);
-    assert.ok(/<div class="fig" role="region" tabindex="0" aria-label="[^"]+"><noscript>This figure needs JavaScript\. The link below opens the full diagram\.<\/noscript><\/div>/.test(c), `${key} scroller`);
+    // The region is named by the card's h3 alone (a11y 12).
+    assert.ok(new RegExp(`<div class="fig" role="region" aria-labelledby="fig-${key}-title"><noscript>This figure needs JavaScript\\. The link below opens the full diagram\\.</noscript></div>`).test(c), `${key} scroller`);
     const ctl = new RegExp(`<div class="ctl" data-fx-flow="${key}">([\\s\\S]*?)</div>`).exec(c)?.[1] ?? '';
     assert.strictEqual((ctl.match(/<a class="deep" /g) ?? []).length, 1, `${key} bar holds one deep link`);
   }

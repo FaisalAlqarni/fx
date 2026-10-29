@@ -238,6 +238,11 @@ h2{font-size:30px}
   });
   bar.addEventListener("keydown", function (e) { if (e.key === "Escape" && !wide.matches && bar.open) { bar.open = false; sum.focus(); } });
 
+  // A scroll region takes a Tab stop only while its content overflows it, so a keyboard can scroll it.
+  function stop(el) { if (el.scrollWidth > el.clientWidth + 1) el.setAttribute("tabindex", "0"); else el.removeAttribute("tabindex"); }
+  var scrollers = document.querySelectorAll(".fig, .table-scroll"), ro = "ResizeObserver" in window && new ResizeObserver(function (es) { es.forEach(function (x) { stop(x.target); }); });
+  scrollers.forEach(function (el) { stop(el); if (ro) ro.observe(el); });
+
   // Filter: chapters match on title, question and lead, Reference items on their name; matching parts show under the
   // chapter that draws them and matching terms under the glossary. Built with textContent, never markup from the index.
   var filter = document.getElementById("filter"), fcount = document.getElementById("filter-count");
