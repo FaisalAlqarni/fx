@@ -561,6 +561,19 @@ async function a11y(browser) {
     await ctx.close();
   }
   {
+    const seen = [];
+    let ok = true;
+    for (const [w, h, want] of [[1440, 900, "Open in archify"], [390, 844, "Open full diagram (best on a wide screen)"]]) {
+      const { page, ctx } = await open(browser, w, h, true, "reduce");
+      const texts = await page.evaluate(() => [...document.querySelectorAll("a.deep")].filter((a) => a.querySelector(".narrow") !== null || /archify/.test(a.textContent ?? "")).map((a) => a.innerText.trim()));
+      const off = texts.filter((x) => x !== want);
+      ok &&= off.length === 0;
+      seen.push(`${w}: ${texts.length - off.length} of ${texts.length} archify links read "${want}"${off.length ? ` (others: ${[...new Set(off)].join(" | ")})` : ""}`);
+      await ctx.close();
+    }
+    record("deepLinkText", ok, seen.join("; "));
+  }
+  {
     const index = path.resolve(file);
     const html = fs.readFileSync(index, "utf8");
     const deep = [...new Set([...html.matchAll(/<a class="deep" href="(diagrams\/[^"]+\.html)"/g)].map((m) => m[1]))].filter((rel) => fs.existsSync(path.join(path.dirname(index), rel)) && fs.readFileSync(path.join(path.dirname(index), rel), "utf8").includes('href="../assets/theme.css"'));

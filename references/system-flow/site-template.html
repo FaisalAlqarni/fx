@@ -123,6 +123,7 @@ footer{margin-block-start:80px;color:var(--muted);font-size:14px}
 .ctl .narr-size{visibility:hidden}
 .ctl .count{font:600 13px "SF Mono",Menlo,Consolas,monospace;color:var(--muted);white-space:nowrap}
 .ctl .deep{font-size:14px;white-space:nowrap}
+.deep .narrow{display:none}
 .fxm-bar{display:flex;flex-wrap:wrap;gap:6px;margin-block-end:8px}
 .fxm-bar button[aria-current]{background:var(--accent);color:var(--paper);border-color:var(--accent)}
 .fxm-body{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
@@ -160,6 +161,8 @@ html{scroll-padding-block-start:56px}
 section.chapter{padding-block-start:56px}
 h2{font-size:30px}
 .ctl .narr-box{order:1;flex-basis:100%}
+.deep .wide{display:none}
+.deep .narrow{display:inline}
 }
 @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}.react-flow__edge.animated path{animation:none}}
 </style>

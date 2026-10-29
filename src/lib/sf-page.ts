@@ -133,7 +133,8 @@ export function renderPage(input: Input): string {
       if (claim(key, i)) {
         const base = deepBase(key);
         const page = input.deep.find((d) => d.name === base) ?? input.deep.find((d) => d.name === `${base}-p1`);
-        const label = page?.renderer === 'archify' ? 'Open in archify' : 'Open full diagram';
+        // archify fits its canvas to the window, so below 900 px the page says the diagram reads best on a wide screen.
+        const label = page?.renderer === 'archify' ? '<span class="wide">Open in archify</span><span class="narrow">Open full diagram (best on a wide screen)</span>' : 'Open full diagram';
         parts.push([
           `<figure class="card" id="fig-${escapeHtml(key)}">`,
           `<h3 id="fig-${escapeHtml(key)}-title">${t(prefix + title)}</h3><p class="cap">${lt(t(summary))}</p>`,

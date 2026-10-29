@@ -560,6 +560,21 @@ async function a11y(browser: Browser): Promise<void> {
       any === 0 ? 'no Arabic in figures or parts' : `Arabic letters outside lang="ar": figure text ${svgText.loose} of ${svgText.all}; ${k || 'no sequence'} narration ${narr.loose} of ${narr.all}; filter "${word}" results ${menu.loose} of ${menu.all}`);
     await ctx.close();
   }
+  // Review F5: an archify card's link reads "Open in archify" at 1440 and says the diagram is best on a wide screen at 390.
+  {
+    const seen: string[] = [];
+    let ok = true;
+    for (const [w, h, want] of [[1440, 900, 'Open in archify'], [390, 844, 'Open full diagram (best on a wide screen)']] as const) {
+      const { page, ctx } = await open(browser, w, h, true, 'reduce');
+      const texts = await page.evaluate(() => [...document.querySelectorAll('a.deep')].filter((a) => a.querySelector('.narrow') !== null || /archify/.test(a.textContent ?? ''))
+        .map((a) => (a as unknown as { innerText: string }).innerText.trim()));
+      const off = texts.filter((x) => x !== want);
+      ok &&= off.length === 0;
+      seen.push(`${w}: ${texts.length - off.length} of ${texts.length} archify links read "${want}"${off.length ? ` (others: ${[...new Set(off)].join(' | ')})` : ''}`);
+      await ctx.close();
+    }
+    record('deepLinkText', ok, seen.join('; '));
+  }
   // 9 and review F10: the theme button's name is its visible text, on the index and on every fx SVG deep page. 7: a deep
   // page whose steps animate has a pause button that stops them.
   {

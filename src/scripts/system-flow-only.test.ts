@@ -158,7 +158,7 @@ const changed = (before: ReturnType<typeof snap>, after: ReturnType<typeof snap>
 const deepLink = (f: Fx, key: string): string => {
   const page = fs.readFileSync(path.join(f.host, 'docs/system-flow/index.html'), 'utf8');
   const c = new RegExp(`<figure class="card" id="fig-${key}">[\\s\\S]*?</figure>`).exec(page)?.[0] ?? '';
-  return /<a class="deep" [^>]*>[^<]*<\/a>/.exec(c)?.[0] ?? `no card ${key}`;
+  return /<a class="deep" [^>]*>(?:[^<]|<span[^>]*>[^<]*<\/span>)*<\/a>/.exec(c)?.[0] ?? `no card ${key}`;
 };
 {
   const f = setup();
@@ -189,9 +189,9 @@ fs.writeFileSync(a[3], '<!doctype html><html><body>archify page</body></html>');
   const r = f.run(['build', '--archify', fake]);
   assert.strictEqual(r.status, 0, `${r.stdout}${r.stderr}`);
   assert.ok(fs.existsSync(path.join(f.host, 'docs/system-flow/diagrams/seq-turn-p2.html')), 'turn is paged');
-  assert.strictEqual(deepLink(f, 'seq-turn'), '<a class="deep" href="diagrams/seq-turn.html">Open in archify</a>', 'the full build');
+  assert.strictEqual(deepLink(f, 'seq-turn'), '<a class="deep" href="diagrams/seq-turn.html"><span class="wide">Open in archify</span><span class="narrow">Open full diagram (best on a wide screen)</span></a>', 'the full build');
   only(f, 'bullet:b1');
-  assert.strictEqual(deepLink(f, 'seq-turn'), '<a class="deep" href="diagrams/seq-turn.html">Open in archify</a>', 'the --only build');
+  assert.strictEqual(deepLink(f, 'seq-turn'), '<a class="deep" href="diagrams/seq-turn.html"><span class="wide">Open in archify</span><span class="narrow">Open full diagram (best on a wide screen)</span></a>', 'the --only build');
 }
 {
   // A first build run with --only: no deep page is on disk, so each card links a page that does not exist, and the build says so.
