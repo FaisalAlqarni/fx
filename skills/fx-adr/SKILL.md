@@ -85,7 +85,8 @@ copy the ADR into the brain. Never approve or review proposals.
 
 ## 6. Commits
 
-Invoked standalone: write the files and stage nothing. Inside `fx-implement`:
+Invoke the fx-humanize lane in file mode on the ADR once it is written, before
+anything is staged. Invoked standalone: write the files and stage nothing. Inside `fx-implement`:
 commit the ADR with the task that made the decision.
 
 ## 7. "Is this ADR still current?"

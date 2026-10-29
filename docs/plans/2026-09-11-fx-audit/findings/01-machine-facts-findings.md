@@ -229,7 +229,7 @@ None. No ruling assigned to this task (A, E, F, G) was violated.
   such file or directory` where the task's own text predicts `bash:
   scripts/check-all: No such file or directory` (no `line 1:` prefix). This
   is just a shell-invocation-shape difference (`bash -c` vs. direct exec) and
-  not a defect, but it's worth noting for anyone diffing the report against
+  not a defect, but it matters to anyone diffing the report against
   the task text expecting an exact string match.
 
 ## Assessment

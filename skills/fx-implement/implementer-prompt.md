@@ -1,6 +1,7 @@
 # Implementer Subagent Prompt Template
 
 Dispatch one implementer per task. Fill every `[PLACEHOLDER]`.
+`[FX_SCRIPTS]`: `<skill base directory>/../../scripts`, absolute.
 
 ```markdown
 Subagent (general-purpose):
@@ -54,6 +55,9 @@ Subagent (general-purpose):
     the whole branch. Where `.fx.json` has no `test_scope`, `test_all` is the
     only option and you run that instead.
 
+    Then run `python3 -I [FX_SCRIPTS]/check-prose --diff HEAD` and fix each
+    hit before you commit.
+
     **A command that may outlast a foreground call is launched in the
     background, and then your turn ends.** Do not sit in a wait loop: a
     process you launched and did not track cannot wake you, so the work
@@ -64,12 +68,10 @@ Subagent (general-purpose):
 
     Every line you write is covered: code comments, test names, commit
     messages, ledger entries, your report. No inflated claims, no "it's not
-    X, it's Y", no stock AI vocabulary (*delve, leverage, robust, seamless,
-    comprehensive, crucial*), no vague attribution, no sales register, no em
-    or en dashes. Lead with the main point, say who acts, one term for one
+    X, it's Y", no stock AI vocabulary, no vague attribution, no sales
+    register, no em or en dashes. Lead with the main point, say who acts, one term for one
     thing. Never claim more than the thing does: ask what would have to break
     for the claim to fail, and narrow the words until something would.
-    (prose-gate: quoting)
 
     ## Commits
 

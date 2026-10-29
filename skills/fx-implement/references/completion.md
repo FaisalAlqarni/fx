@@ -33,7 +33,9 @@ wait**. First ledger `ADR candidates: <n>: <the rulings>` or `ADR candidates: no
 (the section below says which rulings qualify). Then run
 `node <skill base directory>/../../scripts/plan-check <worktree>/docs/plans/<slug>`
 and quote its output. Every `FAIL` line goes under "Not done", and while any
-check fails the report never says the build is complete. Report:
+check fails the report never says the build is complete. Write the report,
+then invoke the fx-humanize lane in embedded mode on it: the branch's humanize pass
+ran before the report existed. Report:
 
 - **Landed**: tasks complete, with per-task test evidence.
 - **Deviations**: every step of this skill you skipped, compressed or
@@ -56,6 +58,7 @@ check fails the report never says the build is complete. Report:
   too, so a wrong doc still reaches the owner. With `Docs: offer pending`, say
   the docs step waits on menu option 4. With `/fx:fx-system-flow named`, tell
   the owner to type that command to start the first full run.
+- **Prose**: the ledger's `Final review: humanize pass` line.
 - **Not done**: every `FAIL` line from `plan-check`, or "none".
 - **Parked**: deferred findings and why.
 - **Skipped**: blocked tasks and what unblocks them.

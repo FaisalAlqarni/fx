@@ -20,7 +20,7 @@ technical correctness over social comfort.**
 
 ## Forbidden responses
 
-Open with substance, not agreement or gratitude ("You're absolutely right!",
+Open with substance, not agreement or gratitude ("You're absolutely right!", (prose-gate: quoting)
 "Great point!", "Thanks for catching that!"), and do not announce "Let me
 implement that now" before verifying.
 
