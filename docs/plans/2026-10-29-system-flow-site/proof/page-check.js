@@ -334,6 +334,28 @@ async function a11y(browser) {
     }
     record("scrollPadding", ok, lines.join("; "));
   }
+  {
+    const { page, ctx } = await open(browser, 1440, 900);
+    const live = (k2) => page.evaluate((key) => [...document.querySelectorAll(key === void 0 ? ".ctl" : `#fig-${key} .ctl`)].map((c) => ({
+      said: [...c.querySelectorAll("[aria-live]")].map((x) => x.textContent ?? "").join(""),
+      narrLive: c.querySelector(".narr")?.hasAttribute("aria-live") ?? false,
+      narr: c.querySelector(".narr")?.textContent ?? ""
+    })), k2);
+    const atMount = await live();
+    const k = await page.evaluate(() => [...document.querySelectorAll(".ctl[data-fx-flow]")].map((c) => c.getAttribute("data-fx-flow") ?? "").find((x) => x.startsWith("seq-")) ?? "");
+    await figToMiddle(page, k);
+    const played = await until(page, k, (c) => c.startsWith("2 "), 5e3);
+    const auto = (await live(k))[0];
+    await press(page, k, "next");
+    const user = (await live(k))[0];
+    const silent = atMount.every((x) => x.said === "" && !x.narrLive);
+    record(
+      "liveRegions",
+      atMount.length > 0 && silent && played && auto?.said === "" && user !== void 0 && user.said !== "" && user.said === user.narr,
+      `${atMount.length} bars silent at mount ${silent}; ${k} autoplayed to step 2 ${played}, said "${auto?.said}"; after Next said "${user?.said}"`
+    );
+    await ctx.close();
+  }
 }
 function finish() {
   fs.writeFileSync(out, `${JSON.stringify(results, null, 2)}

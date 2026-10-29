@@ -3,7 +3,7 @@
 // figure key) and one card per figure: figure.card > div.fig (the scroller) and
 // div.ctl[data-fx-flow="<key>"] (the bar, holding a.deep). This file draws the SVG at 1:1
 // into .fig, a box figure (nodes and edges) or a lifeline sequence (lanes and rows), puts
-// Play or Pause, Back, Next, Reset, the aria-live narration and the count before a.deep,
+// Play or Pause, Back, Next, Reset, the narration, the count and a live region for the reader's own steps before a.deep,
 // steps every 1.6 s, plays the first time the figure reaches the middle of the window,
 // pauses while the card is off screen, scrolls .fig sideways to the active arrow, and
 // plays nothing on its own under reduced motion.
@@ -159,7 +159,10 @@ function mountFigure(card: Element, fig: Element, ctl: Element, spec: FigureSpec
 
   const narr = document.createElement('span');
   narr.className = 'narr';
-  narr.setAttribute('aria-live', 'polite');
+  // The narration is not live: autoplay would speak every 1.6 s. A step the reader takes is copied into `said`.
+  const said = document.createElement('span');
+  said.className = 'vh';
+  said.setAttribute('aria-live', 'polite');
   // Every caption sits hidden in the same grid cell as the live one, so the bar is as tall as its longest caption from
   // the start: a step never changes the card's height, and the page below does not move while a figure plays.
   const narrBox = document.createElement('span');
@@ -211,7 +214,7 @@ function mountFigure(card: Element, fig: Element, ctl: Element, spec: FigureSpec
     fig.scrollTo({ left: Math.max(0, (left + right) / 2 - fig.clientWidth / 2), behavior: reduced ? 'instant' : 'smooth' });
   }
 
-  function paint(): void {
+  function paint(spoken = false): void {
     const seen = new Set<string>();
     const lit = new Set<string>();
     spec.steps.forEach((s, i) => {
@@ -230,13 +233,14 @@ function mountFigure(card: Element, fig: Element, ctl: Element, spec: FigureSpec
     counter.textContent = `${at + 1} / ${spec.steps.length}`;
     narr.textContent = step ? step.caption : REST;
     if (step?.where) { const code = document.createElement('code'); code.textContent = step.where; narr.append(' ', code); }
+    said.textContent = spoken ? narr.textContent : '';
     moveToken(step);
     follow(step);
   }
 
-  function go(i: number): void {
+  function go(i: number, spoken = false): void {
     at = Math.max(-1, Math.min(last, i));
-    paint();
+    paint(spoken);
   }
   // Stops playback; the button reads Play again.
   function halt(): void {
@@ -245,11 +249,12 @@ function mountFigure(card: Element, fig: Element, ctl: Element, spec: FigureSpec
     playBtn.textContent = 'Play';
   }
   // Shows the next step at once (step 1 again from the last step), then one step every 1.6 s; the last step stops it for good.
-  function play(): void {
+  // spoken: the reader pressed Play, so its first step is announced; the steps that follow are not.
+  function play(spoken = false): void {
     started = true;
     parked = false;
     halt();
-    go(at >= last ? 0 : at + 1);
+    go(at >= last ? 0 : at + 1, spoken);
     if (at >= last) return;
     playBtn.textContent = 'Pause';
     timer = window.setInterval(() => {
@@ -259,15 +264,15 @@ function mountFigure(card: Element, fig: Element, ctl: Element, spec: FigureSpec
   }
   // A reader's own action: autoplay and the card observer leave the figure alone from here on.
   const by = (f: () => void) => (): void => { started = true; parked = false; f(); };
-  const playBtn = button('play', 'Play', () => (timer === undefined ? play() : by(halt)()));
-  const back = button('back', '\u2039', by(() => { halt(); go(at - 1); }), 'Back');
-  const next = button('next', '\u203A', by(() => { halt(); go(at + 1); }), 'Next');
-  const reset = button('reset', 'Reset', by(() => { halt(); go(-1); }));
+  const playBtn = button('play', 'Play', () => (timer === undefined ? play(true) : by(halt)()));
+  const back = button('back', '\u2039', by(() => { halt(); go(at - 1, true); }), 'Back');
+  const next = button('next', '\u203A', by(() => { halt(); go(at + 1, true); }), 'Next');
+  const reset = button('reset', 'Reset', by(() => { halt(); go(-1, true); }));
   if (spec.steps.length === 0) for (const b of [playBtn, next, reset]) b.disabled = true;
   ctl.setAttribute('role', 'group');
   ctl.setAttribute('aria-label', `${card.querySelector('h3')?.textContent ?? spec.key} controls`);
   const deep = ctl.querySelector('a.deep');
-  for (const el of [playBtn, back, next, reset, narrBox, counter]) ctl.insertBefore(el, deep);
+  for (const el of [playBtn, back, next, reset, narrBox, counter, said]) ctl.insertBefore(el, deep);
   fig.append(root);
   paint();
   // The sticky bar must not cover a focused part of its own card: each keeps a scroll margin as tall as the bar.

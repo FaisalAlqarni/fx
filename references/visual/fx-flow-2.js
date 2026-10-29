@@ -137,7 +137,9 @@
     const token = svg("circle", { r: 6, fill: "var(--accent)", opacity: 0 }, root);
     const narr = document.createElement("span");
     narr.className = "narr";
-    narr.setAttribute("aria-live", "polite");
+    const said = document.createElement("span");
+    said.className = "vh";
+    said.setAttribute("aria-live", "polite");
     const narrBox = document.createElement("span");
     narrBox.className = "narr-box";
     narrBox.append(narr);
@@ -190,7 +192,7 @@
       if (left >= fig.scrollLeft && right <= fig.scrollLeft + fig.clientWidth) return;
       fig.scrollTo({ left: Math.max(0, (left + right) / 2 - fig.clientWidth / 2), behavior: reduced ? "instant" : "smooth" });
     }
-    function paint() {
+    function paint(spoken = false) {
       const seen = /* @__PURE__ */ new Set();
       const lit = /* @__PURE__ */ new Set();
       spec.steps.forEach((s, i) => {
@@ -216,23 +218,24 @@
         code.textContent = step.where;
         narr.append(" ", code);
       }
+      said.textContent = spoken ? narr.textContent : "";
       moveToken(step);
       follow(step);
     }
-    function go(i) {
+    function go(i, spoken = false) {
       at = Math.max(-1, Math.min(last, i));
-      paint();
+      paint(spoken);
     }
     function halt() {
       if (timer !== void 0) clearInterval(timer);
       timer = void 0;
       playBtn.textContent = "Play";
     }
-    function play() {
+    function play(spoken = false) {
       started = true;
       parked = false;
       halt();
-      go(at >= last ? 0 : at + 1);
+      go(at >= last ? 0 : at + 1, spoken);
       if (at >= last) return;
       playBtn.textContent = "Pause";
       timer = window.setInterval(() => {
@@ -245,24 +248,24 @@
       parked = false;
       f();
     };
-    const playBtn = button("play", "Play", () => timer === void 0 ? play() : by(halt)());
+    const playBtn = button("play", "Play", () => timer === void 0 ? play(true) : by(halt)());
     const back = button("back", "\u2039", by(() => {
       halt();
-      go(at - 1);
+      go(at - 1, true);
     }), "Back");
     const next = button("next", "\u203A", by(() => {
       halt();
-      go(at + 1);
+      go(at + 1, true);
     }), "Next");
     const reset = button("reset", "Reset", by(() => {
       halt();
-      go(-1);
+      go(-1, true);
     }));
     if (spec.steps.length === 0) for (const b of [playBtn, next, reset]) b.disabled = true;
     ctl.setAttribute("role", "group");
     ctl.setAttribute("aria-label", `${card.querySelector("h3")?.textContent ?? spec.key} controls`);
     const deep = ctl.querySelector("a.deep");
-    for (const el of [playBtn, back, next, reset, narrBox, counter]) ctl.insertBefore(el, deep);
+    for (const el of [playBtn, back, next, reset, narrBox, counter, said]) ctl.insertBefore(el, deep);
     fig.append(root);
     paint();
     const clear = () => {

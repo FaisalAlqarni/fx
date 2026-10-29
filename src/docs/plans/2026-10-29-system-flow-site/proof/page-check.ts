@@ -354,6 +354,25 @@ async function a11y(browser: Browser): Promise<void> {
     }
     record('scrollPadding', ok, lines.join('; '));
   }
+  // 4: no figure speaks at mount or while it autoplays; a step the reader takes is announced once, in the card's live region.
+  {
+    const { page, ctx } = await open(browser, 1440, 900);
+    const live = (k?: string) => page.evaluate((key: string | undefined) => [...document.querySelectorAll(key === undefined ? '.ctl' : `#fig-${key} .ctl`)].map((c) => ({
+      said: [...c.querySelectorAll('[aria-live]')].map((x) => x.textContent ?? '').join(''), narrLive: c.querySelector('.narr')?.hasAttribute('aria-live') ?? false,
+      narr: c.querySelector('.narr')?.textContent ?? '',
+    })), k);
+    const atMount = await live();
+    const k = await page.evaluate(() => [...document.querySelectorAll('.ctl[data-fx-flow]')].map((c) => c.getAttribute('data-fx-flow') ?? '').find((x) => x.startsWith('seq-')) ?? '');
+    await figToMiddle(page, k);
+    const played = await until(page, k, (c) => c.startsWith('2 '), 5000);
+    const auto = (await live(k))[0];
+    await press(page, k, 'next');
+    const user = (await live(k))[0];
+    const silent = atMount.every((x) => x.said === '' && !x.narrLive);
+    record('liveRegions', atMount.length > 0 && silent && played && auto?.said === '' && user !== undefined && user.said !== '' && user.said === user.narr,
+      `${atMount.length} bars silent at mount ${silent}; ${k} autoplayed to step 2 ${played}, said "${auto?.said}"; after Next said "${user?.said}"`);
+    await ctx.close();
+  }
 }
 
 // Writes the results and exits 1 when any check failed.
