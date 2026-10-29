@@ -127,7 +127,8 @@ function mountFigure(card: Element, fig: Element, ctl: Element, spec: FigureSpec
     for (const r of spec.rows) {
       const y = r.y + 28;
       arrow(r.id, r.self ? `M${r.x1} ${y}h28v20h-28` : `M${r.x1} ${y}H${r.x2}`, {
-        'marker-end': `url(#${spec.key}-${r.mode === 'async' ? 'open' : 'arrow'})`, ...(r.reply ? { 'stroke-dasharray': '6 4' } : {}),
+        // A leaving call is dash-dot as well as warn-coloured, so it never differs by colour alone; a reply is dashed.
+        'marker-end': `url(#${spec.key}-${r.mode === 'async' ? 'open' : 'arrow'})`, ...(r.leaves ? { 'stroke-dasharray': '12 4 2 4' } : r.reply ? { 'stroke-dasharray': '6 4' } : {}),
       }, r.leaves ? ['var(--warn)', 2.4] : ['var(--muted)', 1.6], r.label, (t) => {
         svg('tspan', { 'font-weight': 'bold' }, t).textContent = String(r.n);
         t.appendChild(document.createTextNode(` ${r.text}`));

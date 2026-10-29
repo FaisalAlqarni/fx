@@ -150,7 +150,8 @@ async function siteChecks(browser, consoleErrors, fixture) {
       }
       rows.forEach((r, i) => {
         const a = got[i];
-        if (r.reply !== !!a.dash) bad.push(`${k} #${i + 1}: reply ${r.reply}, dash ${a.dash}`);
+        const dash = r.leaves ? "12 4 2 4" : r.reply ? "6 4" : null;
+        if (a.dash !== dash) bad.push(`${k} #${i + 1}: reply ${r.reply}, leaves ${r.leaves}, dash ${a.dash} (want ${dash})`);
         if (r.leaves && (a.stroke !== "var(--warn)" || a.width !== "2.4")) bad.push(`${k} #${i + 1}: leaving call stroke ${a.stroke}, width ${a.width}`);
         if (!r.leaves && (a.stroke === "var(--warn)" || a.width !== "1.6")) bad.push(`${k} #${i + 1}: plain arrow stroke ${a.stroke}, width ${a.width}`);
         if (r.reply) replies++;
@@ -459,6 +460,27 @@ async function a11y(browser) {
       await ctx.close();
     }
     record("themeName", named.length === 0, named.length === 0 ? `no aria-label on #theme in index.html and ${deep.length} SVG deep pages` : named.join("; "));
+    const legend = await (async () => {
+      const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+      const page = await ctx.newPage();
+      await page.goto(url);
+      const bg = await page.evaluate(() => {
+        const sw = document.querySelector(".legend .sw.leaves");
+        return sw === null ? null : getComputedStyle(sw).backgroundImage;
+      });
+      const solid = [];
+      for (const rel of deep) {
+        await page.goto((0, import_url.pathToFileURL)(path.join(path.dirname(index), rel)).href);
+        solid.push(...await page.evaluate((r) => [...document.querySelectorAll(".edge.leaves")].filter((e) => !/^12(px)?,? 4/.test(getComputedStyle(e).strokeDasharray ?? "")).map(() => r), rel));
+      }
+      await ctx.close();
+      return { bg, solid };
+    })();
+    record(
+      "leavingDash",
+      legend.bg === null || legend.bg.includes("repeating-linear-gradient") && legend.solid.length === 0,
+      legend.bg === null ? "no leaving call on this site" : `legend swatch ${legend.bg.slice(0, 40)}; deep page leaving arrows without the dash-dot: ${legend.solid.length}`
+    );
     record("deepPause", animated > 0 && pauses.length === 0, animated === 0 ? "no animated SVG deep page found" : `${animated - pauses.length} of ${animated} animated deep pages pause${pauses.length ? `; ${pauses.join("; ")}` : ""}`);
   }
 }
