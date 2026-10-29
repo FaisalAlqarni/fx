@@ -101,6 +101,22 @@ try {
   g('add', '.');
   g('commit', '-qm', 'next');
   assert.strictEqual(run(['--diff', 'HEAD'], repo).status, 0, '--diff with nothing added exits 0');
+
+  // A non-ASCII name and a name with a space (git ends its +++ line with a tab) are read, tracked or not (final review, unprimed 8).
+  fs.writeFileSync(path.join(repo, 'caf\u00e9.md'), 'Plain.\n');
+  fs.writeFileSync(path.join(repo, 'a b.md'), 'Plain.\n');
+  g('add', '.');
+  g('commit', '-qm', 'names');
+  fs.writeFileSync(path.join(repo, 'caf\u00e9.md'), 'Plain.\nWe delve here.\n');
+  fs.writeFileSync(path.join(repo, 'a b.md'), 'Plain.\nWe delve here.\n');
+  fs.writeFileSync(path.join(repo, 'n\u00e9w.md'), 'We delve here.\n');
+  const q = run(['--diff', 'HEAD'], repo);
+  for (const name of ['caf\u00e9.md:2: stock word', 'a b.md:2: stock word', 'n\u00e9w.md:1: stock word']) assert.ok(q.out.includes(name), `--diff reads ${name}:\n${q.out}`);
+
+  // A ref that looks like an option never reaches git as one (final review, security 2).
+  const out = path.join(dir, 'written-by-git');
+  run(['--diff', `--output=${out}`], repo);
+  assert.ok(!fs.existsSync(out), '--diff passes --end-of-options before the ref');
 } finally {
   fs.rmSync(dir, { recursive: true, force: true });
 }
