@@ -87,9 +87,12 @@ assert.ok(retro >= 0 && retro < completion.indexOf('1. Merge it into'), 'the fx-
 // E2E bug 7: a test command that cannot start is asked about before task 01, not found at the exit gate.
 const setup = ref('setup.md').replace(/\s+/g, ' ');
 assert.ok(setup.includes('Before task 01, check the test command can start.'), 'setup.md checks the test runner before task 01');
-for (const o of ['1. Install or fix the runner, then I retry (recommended)', '2. Build on review alone: every task ledgered "tests written, not run"', '3. Stop here']) {
+for (const o of ['1. You install the runner (<the exact command or package>), then I retry', '2. Build on review alone: every task ledgered "tests written, not run"', '3. Stop here']) {
   assert.ok(setup.includes(o), `setup.md offers: ${o}`);
 }
+// 2026-10-29 e2e: the run recommended option 1 with no root and no install route, then waited for an admin that never came.
+assert.ok(setup.includes('first try to install it yourself without root'), 'setup.md tries a user-space install before asking');
+assert.ok(setup.includes('otherwise mark option 2 recommended'), 'option 1 is recommended only with a nameable install');
 assert.ok(setup.includes('Ruling: test runner:'), 'the answer is recorded as a Ruling line');
 // E2E bug 9: an uncommitted plan dir is moved into the worktree, so one copy exists.
 assert.ok(setup.includes('**Fix:** move `docs/plans/<slug>/` into the worktree'), 'setup.md moves the plan dir, not copies it');

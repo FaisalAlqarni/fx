@@ -53,16 +53,25 @@ Asking here would turn every new project into a stall. Ask only when
 
 **Before task 01, check the test command can start.** Take the first word of
 `test_scope`, or of `test_all` when there is no `test_scope`: a name must
-resolve with `command -v`, a path must exist. When it does not, stop and ask
-the owner once:
+resolve with `command -v`, a path must exist. When it does not, first try to
+install it yourself without root: a version manager, a source build into a
+prefix under the scratch or the user's own space, or a portable database
+started on a local port. Ledger what you installed and where, and go on with
+no question when the command now starts. When that fails, stop and ask the
+owner once, naming what you tried:
 
 ```markdown
-The test command `<first word>` cannot run here. How should the build go?
+The test command `<first word>` cannot run here. I tried <what>, which failed
+because <why>. How should the build go?
 
-1. Install or fix the runner, then I retry (recommended)
+1. You install the runner (<the exact command or package>), then I retry
 2. Build on review alone: every task ledgered "tests written, not run"
 3. Stop here
 ```
+
+Mark option 1 recommended only when you can name the exact install the owner
+runs; otherwise mark option 2 recommended, so an unattended build goes on
+instead of waiting for an install nobody will make.
 
 Ledger the answer as `Ruling: test runner: <1, 2 or 3>: <owner's words>`.
 A build that finds this at the exit gate has spent every task on tests that

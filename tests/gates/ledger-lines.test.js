@@ -98,9 +98,11 @@ const retro = completion.indexOf("`/fx:fx-retro` reviews this build");
 assert.ok(retro >= 0 && retro < completion.indexOf("1. Merge it into"), "the fx-retro line comes before the menu");
 const setup = ref("setup.md").replace(/\s+/g, " ");
 assert.ok(setup.includes("Before task 01, check the test command can start."), "setup.md checks the test runner before task 01");
-for (const o of ["1. Install or fix the runner, then I retry (recommended)", '2. Build on review alone: every task ledgered "tests written, not run"', "3. Stop here"]) {
+for (const o of ["1. You install the runner (<the exact command or package>), then I retry", '2. Build on review alone: every task ledgered "tests written, not run"', "3. Stop here"]) {
   assert.ok(setup.includes(o), `setup.md offers: ${o}`);
 }
+assert.ok(setup.includes("first try to install it yourself without root"), "setup.md tries a user-space install before asking");
+assert.ok(setup.includes("otherwise mark option 2 recommended"), "option 1 is recommended only with a nameable install");
 assert.ok(setup.includes("Ruling: test runner:"), "the answer is recorded as a Ruling line");
 assert.ok(setup.includes("**Fix:** move `docs/plans/<slug>/` into the worktree"), "setup.md moves the plan dir, not copies it");
 assert.ok(!/copy `docs\/plans/.test(setup), "setup.md no longer copies the plan dir");
