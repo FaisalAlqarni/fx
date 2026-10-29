@@ -312,7 +312,8 @@ for (const [n, first] of [['seq-turn', 1], ['seq-turn-p2', 9], ['flow-first', 1]
   assert.ok(key, 'the page template stores the theme');
   for (const n of ['arch-engine', 'seq-turn']) {
     const html = read(f, `${D}/${n}.html`);
-    const code = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join('\n');
+    // The head script applies the stored theme; the body's theme button is checked in the browser (page-check deepTheme).
+    const code = [...html.slice(0, html.indexOf('</head>')).matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join('\n');
     const run = (stored: Record<string, string>): Record<string, string> => {
       const attrs: Record<string, string> = {};
       const document = { documentElement: { setAttribute: (k: string, v: string) => { attrs[k] = v; } } };

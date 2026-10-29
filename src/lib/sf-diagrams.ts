@@ -318,7 +318,8 @@ export function svgPage(d: DeepDiagram, figure: FigureSpec, page: number): strin
   };
   const items = animated ? mine.flatMap((n) => item(figure.steps[n - 1], n)) : figure.steps.flatMap((s) => item(s));
   const title = escapeHtml(spec.meta.title);
-  // The head script is page-template.html's: it applies the theme index.html stored under fx-theme (same origin).
+  // The head script is page-template.html's: it applies the theme index.html stored under fx-theme (same origin). The
+// theme button is index.html's toggle, writing the same key.
   // Node text is 13 px: the svg never shrinks below 12/13 of its width, and a narrow screen scrolls it in .scroll.
   return `<!doctype html>
 ${GENERATED}
@@ -333,6 +334,7 @@ ${GENERATED}
 <style>
 body{margin:0;padding:1.5rem;background:var(--paper);color:var(--ink);font:16px/1.5 system-ui,sans-serif;overflow-wrap:anywhere}
 a{color:var(--accent)}
+#theme{font:inherit;color:var(--ink);background:var(--panel);border:1.5px solid var(--rule);border-radius:999px;padding:4px 14px;margin-inline-start:12px;cursor:pointer}
 .scroll{max-inline-size:100%;overflow-x:auto}
 svg{max-inline-size:100%;block-size:auto;background:var(--panel);border:1px solid var(--rule);border-radius:8px}
 svg text{font-size:13px;fill:var(--ink)} svg .muted{fill:var(--muted);font-size:12px}
@@ -347,7 +349,7 @@ ${keyframes}
 </style>
 </head>
 <body>
-<p><a href="../index.html">Back to the system page</a></p>
+<p><a href="../index.html">Back to the system page</a> <button id="theme" type="button" aria-label="Change theme">Theme</button></p>
 <h1>${title}</h1>
 ${d.pages > 1 ? `<p>Page ${page} of ${d.pages}</p>\n` : ''}<div class="scroll">
 <svg role="img" aria-label="${title}" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" style="min-inline-size:${Math.ceil((width * 12) / 13)}px" xmlns="http://www.w3.org/2000/svg">
@@ -358,6 +360,19 @@ ${body}
 <ol>
 ${items.join('\n')}
 </ol>
+<script>
+(function () {
+  var root = document.documentElement, btn = document.getElementById("theme");
+  function dark() { var t = root.getAttribute("data-theme"); return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; }
+  function paint() { btn.textContent = "Theme: " + (dark() ? "dark" : "light"); }
+  paint();
+  btn.addEventListener("click", function () {
+    var n = dark() ? "light" : "dark"; root.setAttribute("data-theme", n);
+    try { localStorage.setItem("fx-theme", n); } catch (e) {}
+    paint();
+  });
+})();
+</script>
 </body>
 </html>
 `;

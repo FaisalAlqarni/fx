@@ -1,6 +1,6 @@
 // Run: NODE_PATH=<PW>/node_modules PLAYWRIGHT_BROWSERS_PATH=<PW>/browsers node docs/plans/2026-10-29-system-flow-site/proof/page-check.js <index.html> <out.json>
 // Site mode: ... page-check.js --site <index.html> <out.json> runs only the checks that find their own targets on any built
-// site (arrowStyle, fitAt1440, panelEscape, termLinks); the default mode runs them too, after checks bound to the fixture's ids.
+// site (arrowStyle, fitAt1440, panelEscape, termLinks, deepTheme); the default mode runs them too, after checks bound to the fixture's ids.
 // Measure mode: ... page-check.js --measure owner|fx [--out-dir <dir>] <index.html> <out.json> prints no checks of its own; it writes the
 // numbers of the design's Proof table (see measure() below) and, with --out-dir, one screenshot per width and theme.
 // Opens a built system flow site in Chromium and checks the page shell: the sticky menu, the scroll spy,
@@ -256,6 +256,32 @@ async function termLinks(browser: Browser): Promise<void> {
   record('termLinks', pass, lines.join('; '));
 }
 
+// Every fx SVG deep page (it links ../assets/theme.css; archify pages bring their own toggle) has the index's theme button:
+// a click flips data-theme, stores it under fx-theme, and the page opened again keeps it.
+async function deepTheme(browser: Browser): Promise<void> {
+  const index = path.resolve(file as string);
+  const html = fs.readFileSync(index, 'utf8');
+  const deep = [...new Set([...html.matchAll(/<a class="deep" href="(diagrams\/[^"]+\.html)"/g)].map((m) => m[1] as string))];
+  const ours = deep.filter((rel) => fs.existsSync(path.join(path.dirname(index), rel)) && fs.readFileSync(path.join(path.dirname(index), rel), 'utf8').includes('href="../assets/theme.css"'));
+  const bad: string[] = [];
+  for (const rel of ours) {
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const page = await ctx.newPage();
+    const href = pathToFileURL(path.join(path.dirname(index), rel)).href;
+    await page.goto(href);
+    const has = await page.isVisible('#theme');
+    if (!has) { bad.push(`${rel}: no #theme`); await ctx.close(); continue; }
+    const before = await page.evaluate(() => document.documentElement.dataset.theme ?? '');
+    await page.click('#theme');
+    const after = await page.evaluate(() => [document.documentElement.dataset.theme ?? '', localStorage.getItem('fx-theme') ?? '']);
+    await page.goto(href);
+    const kept = await page.evaluate(() => document.documentElement.dataset.theme ?? '');
+    if (after[0] === before || after[0] === '' || after[1] !== after[0] || kept !== after[0]) bad.push(`${rel}: ${before || 'system'} then ${after.join('/')}, reopened ${kept}`);
+    await ctx.close();
+  }
+  record('deepTheme', ours.length > 0 && bad.length === 0, ours.length === 0 ? 'no fx SVG deep page found' : `${ours.length - bad.length} of ${ours.length} SVG deep pages toggle and keep the theme${bad.length ? `; ${bad.join('; ')}` : ''}`);
+}
+
 // Writes the results and exits 1 when any check failed.
 function finish(): never {
   fs.writeFileSync(out as string, `${JSON.stringify(results, null, 2)}\n`);
@@ -270,6 +296,7 @@ async function site(): Promise<void> {
   try {
     await siteChecks(browser, consoleErrors, false);
     await termLinks(browser);
+    await deepTheme(browser);
     record('console', consoleErrors.length === 0, consoleErrors.length === 0 ? '0 errors at 1440 and 390' : consoleErrors.join(' | '));
     results.browser = { pass: true, detail: `chromium ${browser.version()}` };
   } finally {
@@ -653,6 +680,7 @@ async function main(): Promise<void> {
     }
     await siteChecks(browser, consoleErrors, true);
     await termLinks(browser);
+    await deepTheme(browser);
 
     record('console', consoleErrors.length === 0, consoleErrors.length === 0 ? '0 errors at 1440 and 390' : consoleErrors.join(' | '));
     results.browser = { pass: true, detail: `chromium ${browser.version()}` };

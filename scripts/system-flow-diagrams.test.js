@@ -318,7 +318,7 @@ function rest() {
     assert.ok(key, "the page template stores the theme");
     for (const n of ["arch-engine", "seq-turn"]) {
       const html = read(f, `${D}/${n}.html`);
-      const code = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join("\n");
+      const code = [...html.slice(0, html.indexOf("</head>")).matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join("\n");
       const run = (stored) => {
         const attrs = {};
         const document = { documentElement: { setAttribute: (k, v) => {

@@ -242,6 +242,33 @@ async function termLinks(browser) {
   }
   record("termLinks", pass, lines.join("; "));
 }
+async function deepTheme(browser) {
+  const index = path.resolve(file);
+  const html = fs.readFileSync(index, "utf8");
+  const deep = [...new Set([...html.matchAll(/<a class="deep" href="(diagrams\/[^"]+\.html)"/g)].map((m) => m[1]))];
+  const ours = deep.filter((rel) => fs.existsSync(path.join(path.dirname(index), rel)) && fs.readFileSync(path.join(path.dirname(index), rel), "utf8").includes('href="../assets/theme.css"'));
+  const bad = [];
+  for (const rel of ours) {
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const page = await ctx.newPage();
+    const href = (0, import_url.pathToFileURL)(path.join(path.dirname(index), rel)).href;
+    await page.goto(href);
+    const has = await page.isVisible("#theme");
+    if (!has) {
+      bad.push(`${rel}: no #theme`);
+      await ctx.close();
+      continue;
+    }
+    const before = await page.evaluate(() => document.documentElement.dataset.theme ?? "");
+    await page.click("#theme");
+    const after = await page.evaluate(() => [document.documentElement.dataset.theme ?? "", localStorage.getItem("fx-theme") ?? ""]);
+    await page.goto(href);
+    const kept = await page.evaluate(() => document.documentElement.dataset.theme ?? "");
+    if (after[0] === before || after[0] === "" || after[1] !== after[0] || kept !== after[0]) bad.push(`${rel}: ${before || "system"} then ${after.join("/")}, reopened ${kept}`);
+    await ctx.close();
+  }
+  record("deepTheme", ours.length > 0 && bad.length === 0, ours.length === 0 ? "no fx SVG deep page found" : `${ours.length - bad.length} of ${ours.length} SVG deep pages toggle and keep the theme${bad.length ? `; ${bad.join("; ")}` : ""}`);
+}
 function finish() {
   fs.writeFileSync(out, `${JSON.stringify(results, null, 2)}
 `);
@@ -255,6 +282,7 @@ async function site() {
   try {
     await siteChecks(browser, consoleErrors, false);
     await termLinks(browser);
+    await deepTheme(browser);
     record("console", consoleErrors.length === 0, consoleErrors.length === 0 ? "0 errors at 1440 and 390" : consoleErrors.join(" | "));
     results.browser = { pass: true, detail: `chromium ${browser.version()}` };
   } finally {
@@ -646,6 +674,7 @@ async function main() {
     }
     await siteChecks(browser, consoleErrors, true);
     await termLinks(browser);
+    await deepTheme(browser);
     record("console", consoleErrors.length === 0, consoleErrors.length === 0 ? "0 errors at 1440 and 390" : consoleErrors.join(" | "));
     results.browser = { pass: true, detail: `chromium ${browser.version()}` };
   } finally {
