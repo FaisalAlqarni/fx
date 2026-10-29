@@ -596,6 +596,22 @@ async function a11y(browser: Browser): Promise<void> {
     }
     record('deepLinkText', ok, seen.join('; '));
   }
+  // Review F9: a box node's whole role, cut on its second line to fit, rides in the node's svg <title>.
+  {
+    const { page, ctx } = await open(browser, 1440, 900, true, 'reduce');
+    const r = await page.evaluate(() => {
+      const specs = JSON.parse(document.getElementById('diagrams')?.textContent ?? '{}') as Record<string, { lanes?: unknown[]; nodes: { title?: string }[] }>; // ts-gate-ok: the page's own figure data
+      let want = 0, got = 0;
+      for (const [k, spec] of Object.entries(specs)) {
+        if (spec.lanes) continue;
+        const titles = [...document.querySelectorAll(`#fig-${k} .fig svg g > title`)].map((t) => t.textContent ?? '');
+        for (const n of spec.nodes) if (n.title !== undefined) { want++; if (titles.includes(n.title)) got++; }
+      }
+      return { want, got };
+    });
+    record('nodeTitles', r.want > 0 && r.got === r.want, `${r.got} of ${r.want} box nodes with a role carry it as their svg title`);
+    await ctx.close();
+  }
   // 9 and review F10: the theme button's name is its visible text, on the index and on every fx SVG deep page. 7: a deep
   // page whose steps animate has a pause button that stops them.
   {

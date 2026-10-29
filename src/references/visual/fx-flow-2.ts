@@ -12,7 +12,7 @@
 // (the gate test, node) it only exports fxFlow.
 
 type Look = 'service' | 'store' | 'client' | 'external' | 'security';
-interface FigNode { id: string; x: number; y: number; w: number; h: number; lines: string[]; sub: string; look: Look; kind: string; primary: boolean; store: boolean }
+interface FigNode { id: string; x: number; y: number; w: number; h: number; lines: string[]; sub: string; title?: string; look: Look; kind: string; primary: boolean; store: boolean }
 interface FigEdge { id: string; d: string; mode: 'sync' | 'async'; label: { x: number; y: number; w: number; h: number; text: string } | null }
 interface FigGroup { id: string; label: string; x: number; y: number; w: number; h: number }
 interface FigLane { id: string; x: number; w: number; lines: string[]; title: string; look: Look }
@@ -166,6 +166,8 @@ function mountFigure(card: Element, fig: Element, ctl: Element, spec: FigureSpec
     }
     for (const n of spec.nodes) {
       const g = svg('g', {}, root);
+      // The whole role: the second line is cut to the box.
+      if (n.title !== undefined) svg('title', {}, g).textContent = n.title;
       svg('rect', { x: n.x, y: n.y, width: n.w, height: n.h, rx: n.store ? 4 : 10, ...lookAttrs(n.look), ...(n.primary ? {} : { stroke: 'var(--muted)', 'stroke-dasharray': '5 4' }) }, g);
       if (n.look === 'store') svg('path', { d: `M${n.x} ${n.y + 8}h${n.w}`, stroke: 'var(--ink)', 'stroke-width': 1.2 }, g);
       // The label lines over the 12 px second line (role or kind), the block centred in the box.

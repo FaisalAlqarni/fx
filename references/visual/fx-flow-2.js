@@ -143,6 +143,7 @@
       }
       for (const n of spec.nodes) {
         const g = svg("g", {}, root);
+        if (n.title !== void 0) svg("title", {}, g).textContent = n.title;
         svg("rect", { x: n.x, y: n.y, width: n.w, height: n.h, rx: n.store ? 4 : 10, ...lookAttrs(n.look), ...n.primary ? {} : { stroke: "var(--muted)", "stroke-dasharray": "5 4" } }, g);
         if (n.look === "store") svg("path", { d: `M${n.x} ${n.y + 8}h${n.w}`, stroke: "var(--ink)", "stroke-width": 1.2 }, g);
         const top = n.y + n.h / 2 - ((n.lines.length - 1) * 15.5 + 15) / 2 + 4;

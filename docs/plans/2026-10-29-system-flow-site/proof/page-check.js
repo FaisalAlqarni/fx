@@ -592,6 +592,24 @@ async function a11y(browser) {
     record("deepLinkText", ok, seen.join("; "));
   }
   {
+    const { page, ctx } = await open(browser, 1440, 900, true, "reduce");
+    const r = await page.evaluate(() => {
+      const specs = JSON.parse(document.getElementById("diagrams")?.textContent ?? "{}");
+      let want = 0, got = 0;
+      for (const [k, spec] of Object.entries(specs)) {
+        if (spec.lanes) continue;
+        const titles = [...document.querySelectorAll(`#fig-${k} .fig svg g > title`)].map((t) => t.textContent ?? "");
+        for (const n of spec.nodes) if (n.title !== void 0) {
+          want++;
+          if (titles.includes(n.title)) got++;
+        }
+      }
+      return { want, got };
+    });
+    record("nodeTitles", r.want > 0 && r.got === r.want, `${r.got} of ${r.want} box nodes with a role carry it as their svg title`);
+    await ctx.close();
+  }
+  {
     const index = path.resolve(file);
     const html = fs.readFileSync(index, "utf8");
     const deep = [...new Set([...html.matchAll(/<a class="deep" href="(diagrams\/[^"]+\.html)"/g)].map((m) => m[1]))].filter((rel) => fs.existsSync(path.join(path.dirname(index), rel)) && fs.readFileSync(path.join(path.dirname(index), rel), "utf8").includes('href="../assets/theme.css"'));
