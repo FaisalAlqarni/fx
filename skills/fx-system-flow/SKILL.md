@@ -149,10 +149,11 @@ pasted text to the absolute path it resolves to from the sidecar's own folder,
 since a subagent has no skill base directory.
 
 A subagent returns when `system-flow check --fragment <its file>` exits 0, or
-after its 2 fix rounds. Collect its open questions, its depth line, its `Prose:` line and its
+after its 2 fix rounds. Collect its open questions, its depth line, its `Prose:` and `Humanized:` lines and its
 `Glossary candidates`.
 
-When an area returns, set `children: "<area id>-l1"` on its level-0 node in
+When an area returns, read its `Humanized:` line as check-and-report.md "Humanized prose" says,
+then set `children: "<area id>-l1"` on its level-0 node in
 `level0.json`, and add the area's diagrams to the `diagrams` of the chapters
 that show them in `chapters.json`; check both with `--fragment`.
 

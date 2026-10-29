@@ -1,8 +1,20 @@
 # Check and report
 
-Step 6, after the final build exits 0. The visual check follows
+"Humanized prose" applies in steps 3 and 4; the rest is step 6, after the
+final build exits 0. The visual check follows
 `../../references/visual/visual-check.md`; the archify rules follow
 `../../references/visual/archify-adapter.md`.
+
+## Humanized prose
+
+Before the draft build, read the `Humanized:` line of every area's return.
+Where the line is missing, or leaves out a chapter its `Prose:` line names,
+invoke `fx-humanize` yourself on that area's leads, bullets, captions, glossary
+candidates and code-map lines, then run `system-flow check --fragment <file>`
+on the files you changed. Invoke it yourself on the Start here prose, the
+glossary and `meta.intro` you write. Run the draft build only when every area's
+prose is humanized, by its agent or by you. The report lists one line per area:
+`Humanized: <area id> by <area agent | controller>`.
 
 ## Visual check
 

@@ -209,6 +209,18 @@ assert.ok(/^## Branch pass$/m.test(raw(finalReview)), `${finalReview}: the branc
   has(docs, "every node or participant it adds carries `look`", "fx-docs sets look on what it adds");
   has(docs, "Bring the prose up to date", "fx-docs points a prose floor failure to the rerun choice");
   has(docs, "system-flow migrate", "fx-docs names the migrate hint it stops on");
+  all("area-brief.md", [
+    "`Humanized: <chapter ids, captions, glossary candidates, code-map lines>`",
+    "A return without this line is incomplete: the controller runs `fx-humanize` on your prose itself."
+  ]);
+  all("check-and-report.md", [
+    "## Humanized prose",
+    "Before the draft build, read the `Humanized:` line of every area's return.",
+    "Where the line is missing, or leaves out a chapter its `Prose:` line names, invoke `fx-humanize` yourself on that area's leads, bullets, captions, glossary candidates and code-map lines",
+    "Invoke it yourself on the Start here prose, the glossary and `meta.intro`",
+    "`Humanized: <area id> by <area agent | controller>`"
+  ]);
+  all("SKILL.md", ['When an area returns, read its `Humanized:` line as check-and-report.md "Humanized prose" says']);
   has(`${sf}/check-and-report.md`, "section <id>: <n> words of lead, bullets and not owned; at least 100 required", "the floor message is quoted");
   const adr66 = "docs/adr/0066-a-system-model-is-the-record-for-the-system-flow-site.md";
   for (const t of ["site template", "Start here", "schema version 2", "lifelines"]) has(adr66, t, `ADR 0066 holds ${t}`);

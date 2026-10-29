@@ -114,10 +114,13 @@ In this order, nothing else:
 1. `Fragment: <path>` and `check --fragment: exit 0` (or the last stderr lines).
 2. `Depth: levels <n>/<planned>, diagrams <n>/<planned>, sequences <n>/<planned>, store flows <n>/<planned>`, then one line per shortfall saying why.
 3. `Prose: <chapter ids written>`, the section ids you wrote a lead and bullets for.
-4. `Glossary candidates`: 3 to 8 terms the code gives a particular meaning, one
+4. `Humanized: <chapter ids, captions, glossary candidates, code-map lines>`,
+   the prose you ran `fx-humanize` on, naming every chapter of line 3. A return
+   without this line is incomplete: the controller runs `fx-humanize` on your prose itself.
+5. `Glossary candidates`: 3 to 8 terms the code gives a particular meaning, one
    JSON line each: `{"term","tag","meaning","evidence"}`. `tag` is one of
    `model`, `service`, `job`, `store`, `message`, `external`, `concept`;
    `evidence` is the entry list of the fragment guide. The controller writes
    `glossary.json` from them.
-5. Open questions, each as `<question id>: <text> | recommended: <answer> | items: <handle>, ...`. Every question has a recommended answer and the handles of the items it settles.
-6. Items left `unconfirmed`, by handle.
+6. Open questions, each as `<question id>: <text> | recommended: <answer> | items: <handle>, ...`. Every question has a recommended answer and the handles of the items it settles.
+7. Items left `unconfirmed`, by handle.
