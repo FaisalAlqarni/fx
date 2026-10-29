@@ -156,4 +156,10 @@ assert.strictEqual(setup({ adrStatus: 'Partly superseded by 0002' }).run(['check
   const md = renderRules(model, new Map(), 'backend', 'docs/system').text;
   assert.ok(md.includes('](../adr/a%28b%29%25.md))'), md);
 }
+{ // A numeric decision reads "decision N" in rules-in-force.md; a phrase is written as it is (final review, unprimed 5)
+  const model = { rules: [{ id: 'r1', text: 'Use X.', decision: '3' }, { id: 'r2', text: 'Keep Y.', decision: 'Keep Y always' }] } as unknown as Model;
+  const md = renderRules(model, new Map(), 'backend', 'docs/system').text;
+  assert.ok(md.includes('- r1: Use X. decision 3\n'), md);
+  assert.ok(md.includes('- r2: Keep Y. Keep Y always\n'), md);
+}
 console.log('system-flow-coverage.test.js: ok');

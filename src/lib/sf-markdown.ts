@@ -5,6 +5,7 @@ import { execFileSync } from 'child_process';
 import { COMMIT } from './sf-evidence.js';
 import type { Root } from './sf-evidence.js';
 import type { Coverage } from './sf-coverage.js';
+import { decisionText } from './sf-model.js';
 import type { Evidence, Evidenced, Model, Section, Sequence, StoreFlow } from './sf-model.js';
 
 export const GENERATED = '<!-- fx-system-flow generated: edit the model, then rebuild -->';
@@ -217,7 +218,7 @@ export function renderRules(model: Model, roots: Map<string, Root>, hostId: stri
     const adr = r.adr === undefined ? '' : (r.adr.root ?? hostId) === hostId
       ? ` ([${prose(r.adr.path)}](${linkTarget(posix(path.relative(markdownRoot, r.adr.path)))}))`
       : ` (@${prose(r.adr.root ?? '')}/${prose(r.adr.path)})`;
-    body.push(`- ${r.id}: ${prose(r.text)}${adr}${r.decision === undefined ? '' : ` ${prose(r.decision)}`}`);
+    body.push(`- ${r.id}: ${prose(r.text)}${adr}${r.decision === undefined ? '' : ` ${prose(decisionText(r.decision))}`}`);
     const line = evidenceLine(r.evidence ?? [], hostId);
     if (line !== '') body.push(`  ${line}`);
   }

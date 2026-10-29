@@ -223,6 +223,9 @@ function duplicates(model: Model): Problem[] {
   return problems;
 }
 
+// A rule's decision as a reader sees it: a number names the ADR's numbered item, a phrase stands as written.
+export const decisionText = (d: string): string => (/^\d+$/.test(d) ? `decision ${d}` : d);
+
 export function itemsOf(model: Model): Item[] {
   return collect(model).map(({ item }) => item);
 }

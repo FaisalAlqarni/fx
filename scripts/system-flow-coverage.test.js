@@ -210,4 +210,10 @@ ${outcome.stderr}`);
   const md = (0, import_sf_markdown.renderRules)(model, /* @__PURE__ */ new Map(), "backend", "docs/system").text;
   assert.ok(md.includes("](../adr/a%28b%29%25.md))"), md);
 }
+{
+  const model = { rules: [{ id: "r1", text: "Use X.", decision: "3" }, { id: "r2", text: "Keep Y.", decision: "Keep Y always" }] };
+  const md = (0, import_sf_markdown.renderRules)(model, /* @__PURE__ */ new Map(), "backend", "docs/system").text;
+  assert.ok(md.includes("- r1: Use X. decision 3\n"), md);
+  assert.ok(md.includes("- r2: Keep Y. Keep Y always\n"), md);
+}
 console.log("system-flow-coverage.test.js: ok");
