@@ -16,7 +16,7 @@ const LABEL = '<script>alert(1)</script>';
 function setup(o: { catalogue?: boolean; questions?: boolean } = {}): Fx {
   const f = sfFixture();
   f.fxJson({});
-  f.fragment('meta', { schemaVersion: 2, meta: { title: 'Fixture', purpose: 'A fixture system.', roots: [{ id: 'backend' }] } });
+  f.fragment('meta', { schemaVersion: 2, meta: { title: 'Fixture', purpose: 'A fixture system.', roots: [{ id: 'backend' }], conventions: ['Store keys read table:column.'] } });
   f.fragment('level0', {
     levels: { root: 'engine', diagrams: [{
       id: 'engine', level: 0, title: 'Engine', summary: 'The engine.', groups: [],
@@ -69,6 +69,14 @@ const sandbox = (file: string): Record<string, { [k: string]: (x: unknown) => un
 const f = setup();
 const out = build(f);
 const page = read(f, `${SITE}/index.html`);
+
+// The code chapter's stores overview: the conventions note as p.note and a Shown in cell that links to its chapter.
+{
+  const c = chapter(page, 'ch-04-start-code');
+  assert.ok(c.includes('<p class="note">Store keys read table:column.</p>'), 'the conventions note');
+  const row = /<tr>(?:(?!<\/tr>)[\s\S])*?<td>sql<\/td>[\s\S]*?<\/tr>/.exec(c)?.[0] ?? '';
+  assert.ok(row.includes('<a href="#ch-05-s1">Links</a>'), `the sql row links its chapter: ${row}`);
+}
 
 // Loads: only files under assets/ that exist, no network.
 {

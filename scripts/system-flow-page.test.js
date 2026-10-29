@@ -35,7 +35,7 @@ const LABEL = "<script>alert(1)</script>";
 function setup(o = {}) {
   const f2 = (0, import_sf_fixture.sfFixture)();
   f2.fxJson({});
-  f2.fragment("meta", { schemaVersion: 2, meta: { title: "Fixture", purpose: "A fixture system.", roots: [{ id: "backend" }] } });
+  f2.fragment("meta", { schemaVersion: 2, meta: { title: "Fixture", purpose: "A fixture system.", roots: [{ id: "backend" }], conventions: ["Store keys read table:column."] } });
   f2.fragment("level0", {
     levels: { root: "engine", diagrams: [{
       id: "engine",
@@ -115,6 +115,12 @@ const sandbox = (file) => {
 const f = setup();
 const out = build(f);
 const page = read(f, `${SITE}/index.html`);
+{
+  const c = chapter(page, "ch-04-start-code");
+  assert.ok(c.includes('<p class="note">Store keys read table:column.</p>'), "the conventions note");
+  const row = /<tr>(?:(?!<\/tr>)[\s\S])*?<td>sql<\/td>[\s\S]*?<\/tr>/.exec(c)?.[0] ?? "";
+  assert.ok(row.includes('<a href="#ch-05-s1">Links</a>'), `the sql row links its chapter: ${row}`);
+}
 {
   const refs = [...page.matchAll(/\s(?:src|href)="([^"]*)"/g)].map((m) => m[1] ?? "").filter((r) => !r.startsWith("#") && !r.startsWith("diagrams/"));
   assert.ok(refs.every((r) => r.startsWith("assets/")), refs.join(","));

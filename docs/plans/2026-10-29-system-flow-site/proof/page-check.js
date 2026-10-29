@@ -506,6 +506,56 @@ async function main() {
       }
       record("labels", small.length === 0, small.length === 0 ? "every figure text is 12 px or more at 1440 and 390" : small.join("; "));
     }
+    {
+      const { page, ctx, errors } = await open(browser, 1440, 900, true, "reduce");
+      const K = "seq-turn";
+      const arrows = () => page.evaluate((k) => [...document.querySelectorAll(`#fig-${k} svg path[marker-end]`)].map((p) => ({
+        dash: p.getAttribute("stroke-dasharray"),
+        stroke: p.getAttribute("stroke"),
+        computed: getComputedStyle(p).stroke,
+        width: p.getAttribute("stroke-width")
+      })), K);
+      const before = await arrows();
+      await press(page, K, "next");
+      const after = await arrows();
+      const reply = before[4], leave = before[3], plain = before[0];
+      const replyOk = before.length === 5 && !!reply?.dash && !plain?.dash;
+      const leaveOk = !!leave && !!plain && leave.stroke === "var(--warn)" && leave.width === "2.4" && leave.computed !== plain.computed;
+      const activeOk = after[0]?.width === "2.8" && after[1]?.width === "1.6";
+      const caps = await page.evaluate(() => [...document.querySelectorAll('#fig-level-system svg g > path[stroke-width="1.2"]')].length);
+      record(
+        "arrowStyle",
+        replyOk && leaveOk && activeOk && caps > 0,
+        `reply dash ${reply?.dash}, plain dash ${plain?.dash}; leaving stroke ${leave?.stroke} (${leave?.computed}) vs plain ${plain?.computed}, width ${leave?.width}; after Next active width ${after[0]?.width}, next arrow ${after[1]?.width}; ${caps} cap lines in fig-level-system`
+      );
+      consoleErrors.push(...errors.map((x) => `arrowStyle: ${x}`));
+      await ctx.close();
+    }
+    {
+      const { page, ctx } = await open(browser, 1440, 900, true, "reduce");
+      const figs = await page.evaluate(() => [...document.querySelectorAll(".card")].map((c) => {
+        const fig = c.querySelector(".fig"), svg = c.querySelector(".fig svg");
+        return { id: c.id, svg: svg ? svg.getBoundingClientRect().width : -1, sw: fig?.scrollWidth ?? 0, cw: fig?.clientWidth ?? 0 };
+      }));
+      const small = figs.filter((g) => g.svg > 0 && g.svg <= 860);
+      const bad = small.filter((g) => g.sw > g.cw);
+      record(
+        "fitAt1440",
+        small.length > 0 && bad.length === 0,
+        small.length === 0 ? "no figure at most 860 px wide found" : `${small.length} figures at most 860 px: ${small.map((g) => `${g.id} ${Math.round(g.svg)} in ${g.cw}`).join(", ")}${bad.length ? `; overflow: ${bad.map((g) => `${g.id} ${g.sw}>${g.cw}`).join(", ")}` : ""}`
+      );
+      await ctx.close();
+    }
+    {
+      const { page, ctx } = await open(browser, 390, 844);
+      await page.click("#menu-bar > summary");
+      const opened = await isOpen(page) === true;
+      await page.press('#menu a[href="#ch-05-s1"]', "Escape");
+      await page.waitForTimeout(100);
+      const after = await page.evaluate(() => ({ open: document.getElementById("menu-bar")?.open ?? null, focus: document.activeElement === document.querySelector("#menu-bar > summary") }));
+      record("panelEscape", opened && after.open === false && after.focus, `opened ${opened}; after Escape: open ${after.open}, focus on summary ${after.focus}`);
+      await ctx.close();
+    }
     record("console", consoleErrors.length === 0, consoleErrors.length === 0 ? "0 errors at 1440 and 390" : consoleErrors.join(" | "));
     results.browser = { pass: true, detail: `chromium ${browser.version()}` };
   } finally {

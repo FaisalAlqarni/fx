@@ -82,7 +82,7 @@ export function sfFixture() {
   // A model that meets the prose floor: the four Start here sections then s1, each at 120 words
   // (start-what 140 with its not-owned bullets), a request sequence, a 15-term glossary and a code map.
   const goodSet = (): void => {
-    fragment('meta', { schemaVersion: 2, meta: { name: 'Fixture', title: 'Fixture system', intro: INTRO, roots: [{ id: 'backend' }] } });
+    fragment('meta', { schemaVersion: 2, meta: { name: 'Fixture', title: 'Fixture system', intro: INTRO, roots: [{ id: 'backend' }], conventions: ['Store keys read table:column.'] } });
     fragment('level0', {
       levels: {
         root: 'system',

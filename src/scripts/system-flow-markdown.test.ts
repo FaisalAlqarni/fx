@@ -65,6 +65,7 @@ for (const rel of ['start-here/index.md', 'start-here/start-what.md', 'start-her
   const l = lines(f, 'start-here/start-code.md');
   assert.ok(l.includes('| Store kind | Rows | Shown in |'), 'stores overview header');
   assert.ok(l.some((x) => x.startsWith('| sql | 1 |')), 'one sql row');
+  assert.ok(l.includes('- Store keys read table:column.'), 'the conventions note');
   assert.ok(l.includes('| Folder | What it owns | Start reading at |'), 'code map header');
   assert.ok(l.includes('| app/ | The application code. | `app/x.rb:1-4` `Link` |'), l.join('\n'));
 }

@@ -104,7 +104,7 @@ function sfFixture() {
   const fxJson = (data) => put("host", ".fx.json", `${JSON.stringify(data, null, 2)}
 `);
   const goodSet = () => {
-    fragment("meta", { schemaVersion: 2, meta: { name: "Fixture", title: "Fixture system", intro: INTRO, roots: [{ id: "backend" }] } });
+    fragment("meta", { schemaVersion: 2, meta: { name: "Fixture", title: "Fixture system", intro: INTRO, roots: [{ id: "backend" }], conventions: ["Store keys read table:column."] } });
     fragment("level0", {
       levels: {
         root: "system",
