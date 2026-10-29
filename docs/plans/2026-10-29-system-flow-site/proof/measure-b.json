@@ -1,0 +1,229 @@
+{
+  "chapters": 19,
+  "proseWordsAvg": 186.8,
+  "proseWords": [
+    {
+      "id": "ch-01-start-what",
+      "words": 145
+    },
+    {
+      "id": "ch-02-start-parts",
+      "words": 163
+    },
+    {
+      "id": "ch-03-start-request",
+      "words": 191
+    },
+    {
+      "id": "ch-04-start-code",
+      "words": 167
+    },
+    {
+      "id": "ch-05-sign-in-and-tenancy",
+      "words": 213
+    },
+    {
+      "id": "ch-06-cross-engine-events",
+      "words": 193
+    },
+    {
+      "id": "ch-07-billing",
+      "words": 171
+    },
+    {
+      "id": "ch-08-shared-ui",
+      "words": 159
+    },
+    {
+      "id": "ch-09-campaign-runtime",
+      "words": 212
+    },
+    {
+      "id": "ch-10-delivery-and-tracking",
+      "words": 207
+    },
+    {
+      "id": "ch-11-customer-data",
+      "words": 212
+    },
+    {
+      "id": "ch-12-campaign-studio",
+      "words": 192
+    },
+    {
+      "id": "ch-13-short-links",
+      "words": 196
+    },
+    {
+      "id": "ch-14-mobile-measurement",
+      "words": 183
+    },
+    {
+      "id": "ch-15-surveys",
+      "words": 190
+    },
+    {
+      "id": "ch-16-runtime-topology",
+      "words": 192
+    },
+    {
+      "id": "ch-17-android-sdk",
+      "words": 201
+    },
+    {
+      "id": "ch-18-demo-store",
+      "words": 193
+    },
+    {
+      "id": "ch-19-user-guide",
+      "words": 169
+    }
+  ],
+  "chaptersWithLeadAndBullets": 19,
+  "glossary": 39,
+  "lifelines": 19,
+  "sequences": 19,
+  "menu": {
+    "sticky": {
+      "pass": true,
+      "detail": "#side top -0.375 after scrolling to the end at 1440"
+    },
+    "widthPx": 240,
+    "groups": 3,
+    "current": {
+      "pass": true,
+      "detail": "ch-01-start-what: true (scrollY 500); ch-10-delivery-and-tracking: true (scrollY 94653); ch-19-user-guide: true (scrollY 179934)"
+    },
+    "phoneBar": {
+      "pass": true,
+      "detail": "closed at load true; summary top 0 after scrolling 1500; opens the list true; after a link: open false, focus on summary true"
+    },
+    "resize": {
+      "pass": true,
+      "detail": "open at 390: false; open with link visible within 500 ms at 1440: true; closed again at 390: true"
+    },
+    "noScript": {
+      "pass": true,
+      "detail": "1440: link reachable true; 390: closed at load true, summary shows the link true"
+    }
+  },
+  "filter": {
+    "term": {
+      "pass": true,
+      "detail": "1440: \"jwt_token cookie\" gives terms #term-term-jwt-token-cookie, count \"2 matches\"; 390: \"jwt_token cookie\" gives terms #term-term-jwt-token-cookie, count \"2 matches\""
+    },
+    "chapter": {
+      "pass": true,
+      "detail": "1440: \"What Advantage is\" gives chapters #ch-01-start-what; 390: \"What Advantage is\" gives chapters #ch-01-start-what"
+    },
+    "part": {
+      "pass": true,
+      "detail": "1440: \"Core platform\" gives parts [{\"text\":\"Core platform\",\"under\":\"#ch-02-start-parts\"}]; 390: \"Core platform\" gives parts [{\"text\":\"Core platform\",\"under\":\"#ch-02-start-parts\"}]"
+    },
+    "none": {
+      "pass": true,
+      "detail": "1440: count \"Nothing matches\", chapters 0; 390: count \"Nothing matches\", chapters 0"
+    },
+    "clear": {
+      "pass": true,
+      "detail": "1440: 23 of 23 chapter links back; li.part and li.term left 0; 390: 23 of 23 chapter links back; li.part and li.term left 0"
+    },
+    "termLink": {
+      "pass": true,
+      "detail": "1440: #term-term-engine in view true; 390: #term-term-engine in view true"
+    }
+  },
+  "cards": {
+    "figures": 86,
+    "barInCard": {
+      "pass": true,
+      "detail": "1440 light no-preference: 0 outside; 1440 light reduce: 0 outside; 1440 dark no-preference: 0 outside; 1440 dark reduce: 0 outside; 390 light no-preference: 0 outside; 390 light reduce: 0 outside; 390 dark no-preference: 0 outside; 390 dark reduce: 0 outside"
+    },
+    "barInView": {
+      "pass": true,
+      "detail": "figure 76 at 1440 x 600: 0.1: card 60..2311, bar 421..600; 0.5: card -825..1426, bar 421..600; 0.9: card -1711..540, bar 360..539"
+    },
+    "sideways": {
+      "pass": true,
+      "detail": "figure 0: scrollWidth 656, clientWidth 356; after 13 Next scrollLeft 300; page scrollWidth 390"
+    }
+  },
+  "autoplay": {
+    "within3s": {
+      "pass": true,
+      "detail": "1440 light: 86 of 86 reached step 1; 1440 dark: 86 of 86 reached step 1; 390 light: 86 of 86 reached step 1; 390 dark: 86 of 86 reached step 1"
+    },
+    "pauses": {
+      "pass": true,
+      "detail": "1440: figure 59 out of view true; 1 / 5 then 1 / 5; 390: figure 59 out of view true; 1 / 5 then 1 / 5"
+    },
+    "resumes": {
+      "pass": true,
+      "detail": "1440: from 1 / 5 to 2 / 5; 390: from 1 / 5 to 2 / 5"
+    },
+    "noResumeAtEnd": {
+      "pass": true,
+      "detail": "1440: reached the end true; after the return 5 / 5, button Play; 390: reached the end true; after the return 5 / 5, button Play"
+    },
+    "reducedMotion": {
+      "pass": true,
+      "detail": "1440: 0 / 5 3 s after reaching the middle; 390: 0 / 5 3 s after reaching the middle"
+    }
+  },
+  "labelsMinPx": 12,
+  "pageScrollAt390": false,
+  "consoleErrors": 0,
+  "player": {
+    "rest": {
+      "pass": true,
+      "detail": "1440 light: 0 / 5, button Play; 1440 dark: 0 / 5, button Play; 390 light: 0 / 5, button Play; 390 dark: 0 / 5, button Play"
+    },
+    "next": {
+      "pass": true,
+      "detail": "1440 light: 1 / 5 after one Next; 1440 dark: 1 / 5 after one Next; 390 light: 1 / 5 after one Next; 390 dark: 1 / 5 after one Next"
+    },
+    "back": {
+      "pass": true,
+      "detail": "1440 light: 0 / 5 after Next then Back; 1440 dark: 0 / 5 after Next then Back; 390 light: 0 / 5 after Next then Back; 390 dark: 0 / 5 after Next then Back"
+    },
+    "reset": {
+      "pass": true,
+      "detail": "1440 light: after 4 Next 4 / 5; after Reset 0 / 5, button Play; 2 s later 0 / 5; 1440 dark: after 4 Next 4 / 5; after Reset 0 / 5, button Play; 2 s later 0 / 5; 390 light: after 4 Next 4 / 5; after Reset 0 / 5, button Play; 2 s later 0 / 5; 390 dark: after 4 Next 4 / 5; after Reset 0 / 5, button Play; 2 s later 0 / 5"
+    },
+    "resetWhilePlaying": {
+      "pass": true,
+      "detail": "1440 light: reached 2 / 5 true; after Reset 0 / 5; 2 s later 0 / 5; 1440 dark: reached 2 / 5 true; after Reset 0 / 5; 2 s later 0 / 5; 390 light: reached 2 / 5 true; after Reset 0 / 5; 2 s later 0 / 5; 390 dark: reached 2 / 5 true; after Reset 0 / 5; 2 s later 0 / 5"
+    },
+    "playPause": {
+      "pass": true,
+      "detail": "1440 light: on Play button Pause; reached 2 / 5 true; on Pause button Play; 2 s later 2 / 5 (was 2 / 5); 1440 dark: on Play button Pause; reached 2 / 5 true; on Pause button Play; 2 s later 2 / 5 (was 2 / 5); 390 light: on Play button Pause; reached 2 / 5 true; on Pause button Play; 2 s later 2 / 5 (was 2 / 5); 390 dark: on Play button Pause; reached 2 / 5 true; on Pause button Play; 2 s later 2 / 5 (was 2 / 5)"
+    },
+    "interval": {
+      "pass": true,
+      "detail": "1440 light: at once 1 / 5; 1.0 s 1 / 5; 2.0 s 2 / 5; 1440 dark: at once 1 / 5; 1.0 s 1 / 5; 2.0 s 2 / 5; 390 light: at once 1 / 5; 1.0 s 1 / 5; 2.0 s 2 / 5; 390 dark: at once 1 / 5; 1.0 s 1 / 5; 2.0 s 2 / 5"
+    },
+    "endStops": {
+      "pass": true,
+      "detail": "1440 light: 7.5 s after Play 5 / 5, button Play; 2 s later 5 / 5; 1440 dark: 7.5 s after Play 5 / 5, button Play; 2 s later 5 / 5; 390 light: 7.5 s after Play 5 / 5, button Play; 2 s later 5 / 5; 390 dark: 7.5 s after Play 5 / 5, button Play; 2 s later 5 / 5"
+    },
+    "restart": {
+      "pass": true,
+      "detail": "1440 light: 5 Next gives 5 / 5; Play gives 1 / 5 within 3 s true; 1440 dark: 5 Next gives 5 / 5; Play gives 1 / 5 within 3 s true; 390 light: 5 Next gives 5 / 5; Play gives 1 / 5 within 3 s true; 390 dark: 5 Next gives 5 / 5; Play gives 1 / 5 within 3 s true"
+    },
+    "emptyFigure": {
+      "pass": true,
+      "detail": "{\"count\":\"0 / 0\",\"narr\":\"Press Play, or step with Next.\",\"play\":\"Play\",\"pressed\":false,\"disabled\":[\"play\",\"next\",\"reset\"]}; console errors 0"
+    }
+  },
+  "extras": {
+    "themeToggle": {
+      "pass": true,
+      "detail": "after one click dark/dark, after two light/light"
+    },
+    "evidenceAll": {
+      "pass": true,
+      "detail": "19 of 19 details.evidence open"
+    }
+  },
+  "browser": "chromium 130.0.6723.31"
+}
