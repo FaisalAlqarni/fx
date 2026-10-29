@@ -325,6 +325,16 @@ async function a11y(browser: Browser): Promise<void> {
     record('widenInert', inert === false && opened === true, `menu opened at 390, widened to 1440: main inert ${inert}; first evidence summary ${clicked}, open ${opened}`);
     await ctx.close();
   }
+  // Review N2: at 390 with the panel open, the skip link closes the panel and puts focus on main.
+  {
+    const { page, ctx } = await open(browser, 390, 844);
+    await page.click('#menu-bar > summary');
+    await page.press('a.skip', 'Enter');
+    await page.waitForTimeout(300);
+    const s = await page.evaluate(() => ({ open: document.getElementById('menu-bar')?.open ?? null, onMain: document.activeElement === document.querySelector('main#main') }));
+    record('skipPanel', s.open === false && s.onMain, `skip link by Enter at 390 with the panel open: panel open ${s.open}, focus on main#main ${s.onMain} (${await focused(page)})`);
+    await ctx.close();
+  }
   // 14: the first Tab reaches a skip link to main; the menu's own padding leaves room for the 5 px focus ring.
   {
     const { page, ctx } = await open(browser, 1440, 900);

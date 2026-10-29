@@ -243,6 +243,8 @@ h2{font-size:30px}
     // After the link's own navigation, which would otherwise leave focus on the closed panel.
     if (h) setTimeout(function () { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }, 0);
   });
+  // The skip link jumps into main, so main cannot stay inert behind an open phone panel.
+  document.querySelector(".skip").addEventListener("click", function () { if (!wide.matches) bar.open = false; main.inert = false; });
   bar.addEventListener("keydown", function (e) { if (e.key === "Escape" && !wide.matches && bar.open) { bar.open = false; sum.focus(); } });
 
   // A scroll region takes a Tab stop only while its content overflows it, so a keyboard can scroll it.

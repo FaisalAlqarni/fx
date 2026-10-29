@@ -310,6 +310,15 @@ async function a11y(browser) {
     await ctx.close();
   }
   {
+    const { page, ctx } = await open(browser, 390, 844);
+    await page.click("#menu-bar > summary");
+    await page.press("a.skip", "Enter");
+    await page.waitForTimeout(300);
+    const s = await page.evaluate(() => ({ open: document.getElementById("menu-bar")?.open ?? null, onMain: document.activeElement === document.querySelector("main#main") }));
+    record("skipPanel", s.open === false && s.onMain, `skip link by Enter at 390 with the panel open: panel open ${s.open}, focus on main#main ${s.onMain} (${await focused(page)})`);
+    await ctx.close();
+  }
+  {
     const { page, ctx } = await open(browser, 1440, 900);
     await page.keyboard.press("Tab");
     const first = await page.evaluate(() => {
