@@ -329,6 +329,31 @@ async function a11y(browser: Browser): Promise<void> {
     record('menuRing', ring !== null && ring.left >= 5 && ring.right >= 5, `menu link to menu edge: ${ring?.left} px start, ${ring?.right} px end (the ring needs 5)`);
     await ctx.close();
   }
+  // 3: sticky bars cannot cover a focused item: scroll padding under the phone bar, and a card's focusable parts keep
+  // a scroll margin at least as tall as the card's bar. 5: the filter count stays in the tree while empty.
+  {
+    const lines: string[] = [];
+    let ok = true;
+    for (const [w, h] of [[1440, 900], [390, 844]] as const) {
+      const { page, ctx } = await open(browser, w, h, true, 'reduce');
+      const m = await page.evaluate(() => {
+        const css = getComputedStyle as unknown as (e: unknown) => Record<string, string>;
+        const bar = document.querySelector('#menu-bar > summary')?.getBoundingClientRect().height ?? 0;
+        const short = [...document.querySelectorAll('figure.card')].flatMap((c) => {
+          const ctl = c.querySelector('.ctl')?.getBoundingClientRect().height ?? 0;
+          return [...c.querySelectorAll('.fig, .cap a')].filter((el) => parseFloat(css(el).scrollMarginBlockEnd ?? '0') < ctl).map((el) => `${c.id} ${el.className || 'a'} ${css(el).scrollMarginBlockEnd} < ${Math.round(ctl)}`);
+        });
+        const count = document.getElementById('filter-count');
+        return { top: parseFloat(css(document.documentElement).scrollPaddingBlockStart ?? '0') || 0, bar, short, countShown: count !== null && css(count).display !== 'none' };
+      });
+      const pass = (w > 900 || m.top >= m.bar) && m.short.length === 0;
+      ok &&= pass;
+      lines.push(`${w}: scroll padding ${m.top} px for a ${Math.round(m.bar)} px bar; ${m.short.length === 0 ? 'every card margin covers its bar' : m.short.slice(0, 4).join(', ')}`);
+      if (w === 390) record('filterCount', m.countShown, `#filter-count empty: display ${m.countShown ? 'kept' : 'none'}`);
+      await ctx.close();
+    }
+    record('scrollPadding', ok, lines.join('; '));
+  }
 }
 
 // Writes the results and exits 1 when any check failed.

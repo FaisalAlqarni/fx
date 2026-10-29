@@ -265,6 +265,11 @@
     for (const el of [playBtn, back, next, reset, narrBox, counter]) ctl.insertBefore(el, deep);
     fig.append(root);
     paint();
+    const clear = () => {
+      for (const el of card.querySelectorAll(".fig, .cap a")) el.style.scrollMarginBlockEnd = `${ctl.getBoundingClientRect().height}px`;
+    };
+    clear();
+    if (typeof ResizeObserver === "function") new ResizeObserver(clear).observe(ctl);
     if (!reduced && spec.steps.length > 0 && typeof IntersectionObserver === "function") {
       const band = new IntersectionObserver((entries) => {
         if (entries.some((en) => en.isIntersecting)) {

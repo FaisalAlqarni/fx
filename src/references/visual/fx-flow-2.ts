@@ -270,6 +270,10 @@ function mountFigure(card: Element, fig: Element, ctl: Element, spec: FigureSpec
   for (const el of [playBtn, back, next, reset, narrBox, counter]) ctl.insertBefore(el, deep);
   fig.append(root);
   paint();
+  // The sticky bar must not cover a focused part of its own card: each keeps a scroll margin as tall as the bar.
+  const clear = (): void => { for (const el of card.querySelectorAll<HTMLElement>('.fig, .cap a')) el.style.scrollMarginBlockEnd = `${ctl.getBoundingClientRect().height}px`; };
+  clear();
+  if (typeof ResizeObserver === 'function') new ResizeObserver(clear).observe(ctl);
 
   if (!reduced && spec.steps.length > 0 && typeof IntersectionObserver === 'function') {
     // Plays the first time any part of .fig enters the middle band of the window.

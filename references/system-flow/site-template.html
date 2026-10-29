@@ -40,7 +40,8 @@ body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.6 "Avenir Nex
 #menu a:hover,#menu a[aria-current]{color:var(--ink);background:var(--accent-tint)}
 #filter{display:block;inline-size:calc(100% - 16px);margin:4px 8px 0;font:15px system-ui,sans-serif;color:var(--ink);background:var(--panel);border:1.5px solid var(--rule);border-radius:8px;padding:6px 10px;min-block-size:36px}
 #filter-count{margin:4px 8px 0;font-size:13px;color:var(--muted)}
-#filter-count:empty{display:none}
+/* Visually hidden, still read: the empty filter count stays a live region, and the player's announcements live here. */
+.vh,#filter-count:empty{position:absolute;inline-size:1px;block-size:1px;margin:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 #menu li.part a,#menu li.term a{padding-inline-start:30px;font-size:14px}
 #menu .g{font:700 11px/1.9 "SF Mono",Menlo,Consolas,monospace;color:var(--accent)}
 @media (min-width: 900px){
@@ -150,7 +151,8 @@ footer{margin-block-start:80px;color:var(--muted);font-size:14px}
 #menu-bar[open]>summary::after{transform:rotate(225deg);margin-block-start:4px}
 #menu{position:absolute;inset-inline:0;inset-block-start:100%;block-size:auto;max-block-size:calc(100vh - 100%);padding:4px 16px 16px;background:var(--paper);border-block-end:1px solid var(--rule)}
 main{padding:8px 16px 96px}
-section.chapter{padding-block-start:56px;scroll-margin-block-start:56px}
+html{scroll-padding-block-start:56px}
+section.chapter{padding-block-start:56px}
 h2{font-size:30px}
 .fxm-body{grid-template-columns:minmax(0,1fr)}
 .fxm-canvas{block-size:420px}
