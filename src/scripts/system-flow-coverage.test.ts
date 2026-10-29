@@ -119,7 +119,7 @@ assert.strictEqual(setup({ adrStatus: 'Partly superseded by 0002' }).run(['check
   const adr = '# 2. Y\n\nStatus: accepted\n\n## Decision\n\n1. Use X.\n2. Keep Y.\n   3. A nested step.\n\n## Consequences\n\n4. Not a decision.\n';
   const run = (decision: string) => { const f = setup({ ruleAdr: 'docs/adr/0002-y.md', ruleDecision: decision }); f.put('host', 'docs/adr/0002-y.md', adr); f.commit('host', 'adr'); return f.run(['check']); };
   assert.strictEqual(run('2').status, 0, run('2').stderr);
-  for (const [d, why] of [['3', 'has no decision 3'], ['4', 'has no decision 4'], ['Keep Y', 'numbers its decisions; cite one by number, not Keep Y']]) {
+  for (const [d, why] of <[string, string][]>[['3', 'has no decision 3'], ['4', 'has no decision 4'], ['Keep Y', 'numbers its decisions; cite one by number, not Keep Y']]) {
     const r = run(d);
     assert.strictEqual(r.status, 1, d);
     assert.ok(r.stderr.trimEnd().endsWith(`rule r1: ADR docs/adr/0002-y.md ${why}`), r.stderr);
