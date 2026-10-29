@@ -18,7 +18,7 @@ references tree. fx's own kit files sit beside this file.
 | `elkjs-0.9.3.bundled.js` | elkjs | 0.9.3 | `elkjs/lib/elk.bundled.js` | `https://registry.npmjs.org/elkjs/-/elkjs-0.9.3.tgz` | `b0745abd7f23cd91690a1587e377edbe19fd7233c783300290936720546216d4` | `LICENSE-elkjs` |
 | `fx-tokens-1.css` | fx | 0.7.0 |  |  | `5039daa841abe2b61dd062da9ff80c7408d2098c3d06b6eae502c7d81ea8b4d8` |  |
 | `fx-map-1.js` | fx | 0.7.0 |  |  | `5270743f34aa8baa67f4bc9a1ac6cb117236c06aef5aab46aeeb21bb210fb04b` |  |
-| `fx-map-2.js` | fx | 0.9.0 |  |  | `353b0cb4f3d73fe1916e8b39a3990cdf50f600cd18594fb515c2d660e3b10f01` |  |
+| `fx-map-2.js` | fx | 0.9.0 |  |  | `d4658aae6eb4daad533a24b9a5e2bd3f7080e0a0543c6435bbda69fbf65e511c` |  |
 | `fx-flow-2.js` | fx | 0.9.0 |  |  | `894e3d39f80a6bf4e8c83913ca5bd119b9c99d316767da1799c2f317bbb9f77a` |  |
 
 React and React DOM are MIT and share one licence file. React Flow is MIT. elkjs is

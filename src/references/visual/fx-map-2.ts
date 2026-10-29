@@ -196,14 +196,14 @@ function mount(host: Element, data: MapData): void {
     const edge = sel?.kind === 'edge' ? cur.edges[Number(sel.id.slice(1))] : undefined;
     let panel: unknown = h('p', { className: 'fxm-muted' }, 'Select a node or an edge to see its evidence.');
     if (node) {
-      panel = h('div', null, h('h4', null, node.label), h('p', { className: 'fxm-muted' }, node.kind),
+      panel = h('div', null, h('h3', null, node.label), h('p', { className: 'fxm-muted' }, node.kind),
         node.role ? h('p', null, node.role) : null,
         node.primary ? null : h('p', { className: 'fxm-muted' }, 'Context node: part of another area, drawn for reference.'),
         node.children === undefined ? null : h('button', { type: 'button', onClick: () => open(node.children ?? data.root) }, 'Open next level'),
-        h('h5', null, 'Evidence'), evidenceList(node.evidence));
+        h('h4', null, 'Evidence'), evidenceList(node.evidence));
     } else if (edge) {
-      panel = h('div', null, h('h4', null, `${edge.from} to ${edge.to}`), h('p', { className: 'fxm-muted' }, edge.mode), edge.label ? h('p', null, edge.label) : null,
-        h('h5', null, 'Evidence'), evidenceList(edge.evidence));
+      panel = h('div', null, h('h3', null, `${edge.from} to ${edge.to}`), h('p', { className: 'fxm-muted' }, edge.mode), edge.label ? h('p', null, edge.label) : null,
+        h('h4', null, 'Evidence'), evidenceList(edge.evidence));
     }
     const crumbs = path.map((id, i) => h('button', {
       key: id, type: 'button', 'aria-current': i === path.length - 1 ? 'true' : undefined,

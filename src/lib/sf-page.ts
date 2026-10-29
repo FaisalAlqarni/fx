@@ -84,12 +84,12 @@ export function renderPage(input: Input): string {
   const storeTable = (kind: string, ids: Set<string> | null): string => {
     const rows = model.stores[kind as keyof Model['stores']].filter((r) => ids === null || ids.has(r.id));
     const cols = storeCols[kind] ?? [];
-    return rows.length === 0 ? '' : `<h4>Store: ${escapeHtml(kind)}</h4>${table(`Store: ${kind}`, ['Id', ...cols.map(([h]) => h), 'Evidence'], rows.map((r) => [t(r.id), ...cols.map(([, k]) => t((r as unknown as Record<string, string | undefined>)[k])), evCell(r)]))}`;
+    return rows.length === 0 ? '' : `<h3>Store: ${escapeHtml(kind)}</h3>${table(`Store: ${kind}`, ['Id', ...cols.map(([h]) => h), 'Evidence'], rows.map((r) => [t(r.id), ...cols.map(([, k]) => t((r as unknown as Record<string, string | undefined>)[k])), evCell(r)]))}`;
   };
   const CAT_KINDS = ['stream', 'gateway', 'queue', 'scheduler', 'cache', 'integration', 'component'];
   const catTable = (kind: string, ids: Set<string> | null): string => {
     const rows = model.catalogue.filter((c) => c.kind === kind && (ids === null || ids.has(c.id)));
-    return rows.length === 0 ? '' : `<h4>${escapeHtml(kind)}</h4>${table(kind, ['Name', 'Role', 'Owner', 'Connects', 'Evidence'], rows.map((c) => [t(c.name), t(c.role), t(c.owner), t((c.connects ?? []).join(', ')), evCell(c)]))}`;
+    return rows.length === 0 ? '' : `<h3>${escapeHtml(kind)}</h3>${table(kind, ['Name', 'Role', 'Owner', 'Connects', 'Evidence'], rows.map((c) => [t(c.name), t(c.role), t(c.owner), t((c.connects ?? []).join(', ')), evCell(c)]))}`;
   };
 
   // Chapter 04's own content: one row per non-empty store kind with the chapters that show it, the notation
@@ -159,7 +159,7 @@ export function renderPage(input: Input): string {
     if (s.role === 'parts') parts.push('<div id="map"><div id="map-root"><noscript>The map needs JavaScript. The chapters hold the same facts.</noscript></div></div>', ...CAT_KINDS.map((k) => catTable(k, null)));
     if (s.role === 'code') parts.push(codeChapter());
     for (const f of flows) {
-      parts.push(`<h4>Store flow: ${t(f.trigger)}</h4>`, table(`Store flow: ${f.trigger}`, ['#', 'Actor', 'Op', 'Store', 'Key', 'When', 'Evidence'], f.steps.map((st) => [String(st.n), t(st.actor), t(st.op), t(st.store), t(st.key), t(st.when), evCell(st)])));
+      parts.push(`<h3>Store flow: ${t(f.trigger)}</h3>`, table(`Store flow: ${f.trigger}`, ['#', 'Actor', 'Op', 'Store', 'Key', 'When', 'Evidence'], f.steps.map((st) => [String(st.n), t(st.actor), t(st.op), t(st.store), t(st.key), t(st.when), evCell(st)])));
     }
     const refs = new Set(s.storeRefs ?? []);
     if (refs.size > 0) for (const kind of Object.keys(storeCols)) parts.push(storeTable(kind, refs));
@@ -185,7 +185,7 @@ export function renderPage(input: Input): string {
     evGroup('Stores', Object.values(model.stores).flat().filter((r) => have.has(`store:${r.id}`)).map((r) => ({ label: r.id, o: r as Evidenced })));
     evGroup('Components', model.catalogue.filter((c) => have.has(`catalogue:${c.id}`)).map((c) => ({ label: c.name, o: c as Evidenced })));
     const n = groups.reduce((a, g) => a + g.rows.length, 0);
-    if (n > 0) parts.push(`<details class="evidence"><summary>Files and locations (${n})</summary>${groups.map((g) => `<h4>${escapeHtml(g.title)}</h4><ul>${g.rows.join('')}</ul>`).join('')}</details>`);
+    if (n > 0) parts.push(`<details class="evidence"><summary>Files and locations (${n})</summary>${groups.map((g) => `<h3>${escapeHtml(g.title)}</h3><ul>${g.rows.join('')}</ul>`).join('')}</details>`);
     parts.push('</section>');
     return parts.join('\n');
   };
@@ -240,12 +240,13 @@ export function renderPage(input: Input): string {
     terms: model.glossary.map((g) => ({ id: g.id, term: g.term, aliases: g.aliases ?? [] })),
   };
 
-  const links = (list: { id: string; title: string }[]): string => list.map((c) => `<li><a href="#${c.id}">${c.title}</a></li>`).join('');
-  const listed = model.sections.map((s, i) => ({ id: chapterId(i, s), title: t(s.title), group: group(s) }));
+  // n: the chapter number, written in the markup so the filter never renumbers what it leaves.
+  const links = (list: { id: string; title: string; n?: string }[]): string => list.map((c) => `<li><a href="#${c.id}">${c.n === undefined ? '' : `<span class="n">${c.n}</span>`}${c.title}</a></li>`).join('');
+  const listed = model.sections.map((s, i) => ({ id: chapterId(i, s), title: t(s.title), group: group(s), n: nn(i + 1) }));
   const menu = ([['start', 'Start here', 'ol'], ['how', 'How it works', 'ol'], ['ref', 'Reference', 'ul']] as const)
     .map(([g, h, tag]) => [g, h, tag, g === 'ref' ? links(fixed) : links(listed.filter((c) => c.group === g))] as const)
     .filter(([, , , items]) => items !== '')
-    .map(([g, h, tag, items]) => `<section class="group" data-group="${g}">\n<h2>${h}</h2>\n<${tag}>${items}</${tag}>\n</section>`).join('\n');
+    .map(([g, h, tag, items]) => `<section class="group" data-group="${g}">\n<p class="gl">${h}</p>\n<${tag}>${items}</${tag}>\n</section>`).join('\n');
 
   const name = escapeHtml(model.meta.name ?? model.meta.title ?? 'the system');
   const rootList = model.meta.roots.map((r) => `${escapeHtml(r.label ?? r.id)}${roots.get(r.id)?.host ? ' (this repository)' : ''}`).join(', ');

@@ -191,22 +191,22 @@
         panel = h(
           "div",
           null,
-          h("h4", null, node.label),
+          h("h3", null, node.label),
           h("p", { className: "fxm-muted" }, node.kind),
           node.role ? h("p", null, node.role) : null,
           node.primary ? null : h("p", { className: "fxm-muted" }, "Context node: part of another area, drawn for reference."),
           node.children === void 0 ? null : h("button", { type: "button", onClick: () => open(node.children ?? data.root) }, "Open next level"),
-          h("h5", null, "Evidence"),
+          h("h4", null, "Evidence"),
           evidenceList(node.evidence)
         );
       } else if (edge) {
         panel = h(
           "div",
           null,
-          h("h4", null, `${edge.from} to ${edge.to}`),
+          h("h3", null, `${edge.from} to ${edge.to}`),
           h("p", { className: "fxm-muted" }, edge.mode),
           edge.label ? h("p", null, edge.label) : null,
-          h("h5", null, "Evidence"),
+          h("h4", null, "Evidence"),
           evidenceList(edge.evidence)
         );
       }

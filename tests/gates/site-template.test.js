@@ -51,6 +51,8 @@ assert.ok(
   "at 900px and up, #menu-bar::details-content is shown inside @supports selector(::details-content)"
 );
 assert.ok(css.includes("@media (max-width: 899.98px)"), "a narrow block below 900px exists");
+assert.ok(!/counter-(?:reset|increment)|counter\(/.test(css), "no CSS counter numbers the menu");
+assert.ok(rule("#menu a .n") !== "" && rule("#menu .gl") !== "", "the menu styles its markup numbers and group labels");
 assert.ok(rule(".card") !== "", "a .card rule exists");
 assert.ok(!/(?:^|;)\s*overflow(?:-x|-y)?\s*:/.test(rule(".card")), ".card holds no overflow declaration");
 for (const part of ["position:sticky", "bottom:0"]) assert.ok(rule(".ctl").includes(part), `.ctl rule holds ${part}`);

@@ -250,8 +250,8 @@ assert.ok(page.includes('Reply: <span lang="ar" dir="rtl">مرحبا</span>'));
   for (const e of cov.entries) assert.ok(covHtml.includes(`>${e.name}<`), `coverage row ${e.name}`);
   for (const [k, c] of Object.entries(cov.counts)) assert.ok(covHtml.includes(`<td>${k}</td><td>${c.covered}</td><td>${c.total}</td>`), `coverage count ${k}`);
   const s1 = chapter(pg, 'ch-05-s1');
-  assert.ok(/Store flow: A link is opened<\/h4>\s*<div class="table-scroll"[^>]*><table>[\s\S]*?<td>1<\/td><td>api<\/td><td>read<\/td><td>sql<\/td><td>links:\{id\}<\/td>/.test(s1), 'flow step row');
-  assert.ok(/Store: sql<\/h4>\s*<div class="table-scroll"[^>]*><table>[\s\S]*?<td>links-table<\/td><td>links<\/td>/.test(s1), 'storeRefs row');
+  assert.ok(/Store flow: A link is opened<\/h3>\s*<div class="table-scroll"[^>]*><table>[\s\S]*?<td>1<\/td><td>api<\/td><td>read<\/td><td>sql<\/td><td>links:\{id\}<\/td>/.test(s1), 'flow step row');
+  assert.ok(/Store: sql<\/h3>\s*<div class="table-scroll"[^>]*><table>[\s\S]*?<td>links-table<\/td><td>links<\/td>/.test(s1), 'storeRefs row');
 }
 
 // Design, Layout: dropped arrows are listed under the figure; the map still holds every edge.
@@ -296,12 +296,17 @@ assert.ok(/<aside id="side">\s*<p class="menu-name">Fixture<\/p>\s*<p class="men
 // Menu groups: Start here and How it works numbered lists, Reference unnumbered, in that order.
 {
   const menu = /<nav id="menu" aria-label="Chapters">([\s\S]*?)<\/nav>/.exec(site)?.[1] ?? '';
-  const groups = [...menu.matchAll(/<section class="group" data-group="(\w+)">\s*<h2>([^<]*)<\/h2>\s*<(ol|ul)>([\s\S]*?)<\/\3>\s*<\/section>/g)];
+  // The group names are labels, not headings: the menu comes before the page's h1 (a11y 13).
+  const groups = [...menu.matchAll(/<section class="group" data-group="(\w+)">\s*<p class="gl">([^<]*)<\/p>\s*<(ol|ul)>([\s\S]*?)<\/\3>\s*<\/section>/g)];
   assert.deepStrictEqual(groups.map((m) => [m[1], m[2], m[3]]), [['start', 'Start here', 'ol'], ['how', 'How it works', 'ol'], ['ref', 'Reference', 'ul']]);
   const hrefs = (h: string | undefined): string[] => [...(h ?? '').matchAll(/<a href="#([^"]+)">/g)].map((m) => m[1] ?? '');
   assert.deepStrictEqual(hrefs(groups[0]?.[4]), ['ch-01-start-what', 'ch-02-start-parts', 'ch-03-start-request', 'ch-04-start-code']);
   assert.deepStrictEqual(hrefs(groups[1]?.[4]), ['ch-05-s1']);
   assert.deepStrictEqual(hrefs(groups[2]?.[4]), ['glossary', 'rules-in-force', 'coverage', 'corrections']);
+  // The chapter number is in the markup, so the filter hiding chapter 01 leaves 05 as 05 (unprimed 4); Reference is unnumbered.
+  const nums = (h: string | undefined): string[] => [...(h ?? '').matchAll(/<a href="#[^"]+"><span class="n">(\d+)<\/span>/g)].map((m) => m[1] ?? '');
+  assert.deepStrictEqual([...nums(groups[0]?.[4]), ...nums(groups[1]?.[4])], ['01', '02', '03', '04', '05']);
+  assert.deepStrictEqual(nums(groups[2]?.[4]), []);
   // Every chapter is reachable from the menu, and every menu link lands on a chapter.
   const chapters = [...site.matchAll(/<section class="chapter" id="([^"]+)" data-group="(start|how|ref)">/g)];
   assert.deepStrictEqual(chapters.map((m) => m[1]), groups.flatMap((g) => hrefs(g[4])));
@@ -331,6 +336,14 @@ assert.ok(site.includes('<html lang="en" dir="ltr">'));
   assert.strictEqual(facts.length, 4);
   assert.ok(facts[0]?.includes('<code class="at">app/x.rb:4</code>'), facts[0]);
   assert.strictEqual(strip(facts[0]?.replace(/<code class="at">[\s\S]*?<\/code>/, '') ?? '').trim(), want?.bullets[0]?.text);
+}
+
+// Heading order (a11y 13): no heading before the h1, and none deeper than one level below the one before it.
+for (const [name, html] of [['site', site], ['page', page]] as const) {
+  const levels = [...html.matchAll(/<h([1-6])[\s>]/g)].map((m) => Number(m[1]));
+  assert.strictEqual(levels[0], 1, `${name}: the first heading is the h1, not ${levels[0]}`);
+  const jumps = levels.flatMap((l, i) => (i > 0 && l > (levels[i - 1] as number) + 1 ? [`h${levels[i - 1]} then h${l}`] : []));
+  assert.deepStrictEqual(jumps, [], `${name}: heading levels skip`);
 }
 
 // Escape: a lead with markup renders as text.

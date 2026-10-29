@@ -33,6 +33,9 @@ assert.ok(tpl.includes("matchMedia('(min-width: 900px)')"), 'the script follows 
 assert.ok(/@media \(min-width: 900px\)\s*\{\s*@supports selector\(::details-content\)\s*\{[^}]*#menu-bar::details-content\{[^}]*content-visibility:visible[^}]*display:block/.test(css),
   'at 900px and up, #menu-bar::details-content is shown inside @supports selector(::details-content)');
 assert.ok(css.includes('@media (max-width: 899.98px)'), 'a narrow block below 900px exists');
+// Chapter numbers are markup from the build: a CSS counter renumbers the chapters the filter leaves (unprimed 4).
+assert.ok(!/counter-(?:reset|increment)|counter\(/.test(css), 'no CSS counter numbers the menu');
+assert.ok(rule('#menu a .n') !== '' && rule('#menu .gl') !== '', 'the menu styles its markup numbers and group labels');
 
 // Cards: the bar sticks to the window while any part of its card is on screen, so the card must not be a scroll
 // container; the figure scrolls sideways in .fig at 1:1, never shrunk.
