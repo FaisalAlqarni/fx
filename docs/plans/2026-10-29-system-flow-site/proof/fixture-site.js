@@ -31,6 +31,7 @@ f.goodSet();
 const evidence = [{ path: "app/x.rb", lines: "1-4", symbol: "Link#expired?" }];
 const lanes = ["client", "edge", "api", "queue", "worker", "mail"];
 const tall = ["t1", "t2", "t3", "t4", "t5", "t6", "t7"];
+const flat = { f1: [0, 0], f2: [0, 1], f3: [0, 2], f4: [1, 2] };
 f.fragment("proof", {
   sequences: [{
     id: "wide",
@@ -50,11 +51,21 @@ f.fragment("proof", {
     nodes: tall.map((id) => ({ id, label: id === "t7" ? "Step t7 \u0627\u0644\u0623\u062E\u064A\u0631" : `Step ${id}`, kind: "backend", look: "service", role: "Passes the job on", evidence })),
     edges: tall.slice(1).map((to, i) => ({ from: tall[i], to, label: "passes", evidence })),
     layout: Object.fromEntries(tall.map((id, row) => [id, { col: 0, row }]))
+  }, {
+    id: "flat",
+    level: 1,
+    parent: "system",
+    title: "A fan-out",
+    summary: "One part hands a job to two parts that sit side by side below it.",
+    groups: [],
+    nodes: Object.keys(flat).map((id) => ({ id, label: `Step ${id}`, kind: "backend", look: "service", role: "Passes the job on", evidence })),
+    edges: [["f1", "f2"], ["f2", "f3"], ["f2", "f4"]].map(([from, to]) => ({ from, to, label: "passes", evidence })),
+    layout: Object.fromEntries(Object.entries(flat).map(([id, [col, row]]) => [id, { col, row }]))
   }] }
 });
 const file = path.join(f.host, "docs/system-flow/model/fragments/chapters.json");
 const chapters = JSON.parse(fs.readFileSync(file, "utf8"));
-for (const s of chapters.sections) if (s.id === "s1") s.diagrams = [...s.diagrams ?? [], "tall"];
+for (const s of chapters.sections) if (s.id === "s1") s.diagrams = [...s.diagrams ?? [], "tall", "flat"];
 f.fragment("chapters", chapters);
 const r = f.run(["build", "--prefer", "cheap"]);
 if (r.status !== 0) {

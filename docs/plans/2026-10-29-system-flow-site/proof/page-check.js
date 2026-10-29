@@ -1066,6 +1066,15 @@ async function main() {
         d0.sw > d0.cw && last === "5 / 5" && d1.left > 0 && d1.page <= 390,
         `.fig scrollWidth ${d0.sw}, clientWidth ${d0.cw}; at ${last} scrollLeft ${d1.left}; page scrollWidth ${d1.page}`
       );
+      const flatDims = () => page.evaluate(() => {
+        const f = document.querySelector("#fig-level-flat .fig");
+        return { sw: f?.scrollWidth ?? 0, cw: f?.clientWidth ?? 0, left: f?.scrollLeft ?? 0 };
+      });
+      const f0 = await flatDims();
+      for (let i = 0; i < 4; i++) await press(page, "level-flat", "next");
+      await page.waitForTimeout(300);
+      const f1 = await flatDims();
+      record("sidewaysBox", f0.sw > f0.cw && f1.left > 0, `box figure .fig scrollWidth ${f0.sw}, clientWidth ${f0.cw}; after 4 Next scrollLeft ${f1.left}`);
       const inCard = await page.evaluate(() => [...document.querySelectorAll("figure.card")].map((c) => {
         const r = c.getBoundingClientRect(), b = c.querySelector(".ctl")?.getBoundingClientRect();
         return b !== void 0 && b.top >= r.top - 0.5 && b.bottom <= r.bottom + 0.5 ? "" : c.id;

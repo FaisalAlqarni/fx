@@ -226,16 +226,19 @@ function mountFigure(card: Element, fig: Element, ctl: Element, spec: FigureSpec
     frame = requestAnimationFrame(tick);
   }
 
-  // Scrolls .fig sideways (never the page) so the active arrow and its label are in view.
+  // Scrolls .fig sideways (never the page) so the whole active step is in view: its arrows and labels, and for a box figure its
+  // nodes. Centred; a step wider than .fig starts at its left edge. Only .fig moves, so the page stays where it is.
   function follow(step: FigStep | undefined): void {
-    const a = step ? arrows.get(step.edges[0] ?? '') : undefined;
-    if (!a || fig.scrollWidth <= fig.clientWidth) return;
+    if (!step || fig.scrollWidth <= fig.clientWidth) return;
+    const els = [...step.edges.flatMap((id) => arrows.get(id)?.els ?? []), ...(spec.lanes ? [] : step.nodes.map((id) => nodeEls.get(id)).filter((el) => el !== undefined))];
+    if (els.length === 0) return;
     const f = fig.getBoundingClientRect();
-    const boxes = a.els.map((el) => el.getBoundingClientRect());
+    const boxes = els.map((el) => el.getBoundingClientRect());
     const left = Math.min(...boxes.map((b) => b.left)) - f.left + fig.scrollLeft;
     const right = Math.max(...boxes.map((b) => b.right)) - f.left + fig.scrollLeft;
     if (left >= fig.scrollLeft && right <= fig.scrollLeft + fig.clientWidth) return;
-    fig.scrollTo({ left: Math.max(0, (left + right) / 2 - fig.clientWidth / 2), behavior: reduced ? 'instant' : 'smooth' });
+    const to = right - left >= fig.clientWidth ? left : (left + right) / 2 - fig.clientWidth / 2;
+    fig.scrollTo({ left: Math.max(0, to), behavior: reduced ? 'instant' : 'smooth' });
   }
 
   function paint(spoken = false): void {
