@@ -418,7 +418,10 @@ const READ_WIDTH = 1000;
 // Returns why the auto canvas stayed, or null when the authored one was written.
 function authorCanvas(dir: string, spec: string, timeoutS: number): string | null {
   const r = spawnSync(process.execPath, [path.join(dir, 'bin', 'archify.mjs'), 'validate', 'architecture', spec, '--layout-json'], { encoding: 'utf8', timeout: timeoutS * 1000, killSignal: 'SIGKILL' });
-  if (r.error || r.signal) return `archify validate timed out after ${timeoutS} s`;
+  const code = (r.error as NodeJS.ErrnoException | undefined)?.code;
+  // An error is read before the signal: output past the buffer (ENOBUFS) also kills the call with SIGKILL.
+  if (code === 'ETIMEDOUT' || (!r.error && r.signal)) return `archify validate timed out after ${timeoutS} s`;
+  if (r.error) return `archify validate failed: ${r.error.message}`;
   const failed = `archify validate failed: ${r.stdout.trim().slice(0, 200) || `exit ${r.status}`}`;
   let vb: unknown;
   try { vb = (parseJson(r.stdout) as { viewBox?: unknown }).viewBox; } catch { return failed; }
