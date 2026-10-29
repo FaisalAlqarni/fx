@@ -83,6 +83,7 @@ stays beside the fragments:
 ```json
 {
   "chapters": 13,
+  "adrs": 24,
   "areas": [
     { "id": "engine", "root": "host", "files": 320, "filesToRead": 140,
       "levels": 3, "diagrams": 7, "sequences": 2, "storeFlows": 1 }
@@ -96,6 +97,8 @@ stays beside the fragments:
 - `levels`, `diagrams`, `sequences`, `storeFlows`: the proposed depth.
 - `root`: a root id from `detect`.
 - `chapters`: the total chapter count, the four Start here chapters included.
+- `adrs`: the ADR files across every root that the rules pass will read whole.
+  The estimate adds a cost per ADR; leave it out only when no root has ADRs.
 
 Run `system-flow estimate <site>/model/plan.json`. It prints tokens and
 minutes per area and in total, its `note` on the constants, and `warnings`.

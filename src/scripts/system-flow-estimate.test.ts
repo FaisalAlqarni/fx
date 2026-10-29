@@ -18,43 +18,52 @@ function estimate(plan: unknown) {
   return { f, r, out: r.status === 0 ? (parseJson(r.stdout) as Obj) : {} };
 }
 
-// two areas, cost from filesToRead; the controller per area; archify per figure page, run one at a time
+// two areas, cost from filesToRead; the controller per area and per area squared; archify per figure page, run one at a time.
+// By hand: A 10 * 38,400 + 3 * 70,200 = 594,600; B 768,000 + 140,400 = 908,400; controller 2 * 2,411,000 + 4 * 75,800 = 5,125,200.
+// Minutes: 24.5 + 2 * 2.05 + (1.845 + 2.43) / 2 lanes + 5 pages * 0.2 = 31.7.
 {
   const { r, out } = estimate({ areas: [area('A', 120, 10, 2, 2, 1, 0), area('B', 300, 20, 1, 1, 0, 1)], chapters: 4 });
   assert.strictEqual(r.status, 0, r.stderr);
-  assert.deepStrictEqual(out.areas, [{ id: 'A', tokens: 645000, minutes: 1.8 }, { id: 'B', tokens: 710000, minutes: 2.4 }]);
-  assert.deepStrictEqual(out.total, { tokens: 6355000, minutes: 35.8, archifyMinutes: 1 });
+  assert.deepStrictEqual(out.areas, [{ id: 'A', tokens: 594600, minutes: 1.8 }, { id: 'B', tokens: 908400, minutes: 2.4 }]);
+  assert.deepStrictEqual(out.total, { tokens: 6628200, minutes: 31.7, archifyMinutes: 1 });
   assert.strictEqual(out.constants.calibrated, true);
-  assert.strictEqual(out.note, 'constants measured on 2026-10-29 from proof runs (a) and (b); the split between per-file and per-figure cost is unproven');
+  assert.strictEqual(out.note, 'constants measured on 2026-10-29 from proof runs (a) and (b) of that day; both land within 1% of tokens and minutes, and a third repo may not');
   assert.deepStrictEqual(out.warnings, []);
+}
+// each ADR the rules pass reads adds 28,900 tokens
+{
+  const { out } = estimate({ areas: [area('A', 120, 10, 2, 2, 1, 0), area('B', 300, 20, 1, 1, 0, 1)], chapters: 4, adrs: 10 });
+  assert.strictEqual(out.total.tokens, 6628200 + 289000);
 }
 // files does not drive cost, only the split warning
 {
   const { out } = estimate({ areas: [area('A', 5000, 10, 2, 2, 1, 0)], chapters: 1 });
-  assert.deepStrictEqual(out.areas, [{ id: 'A', tokens: 645000, minutes: 1.8 }]);
+  assert.deepStrictEqual(out.areas, [{ id: 'A', tokens: 594600, minutes: 1.8 }]);
   assert.deepStrictEqual(out.warnings, ['area A has 5000 files; split it into sub-areas of at most 400']);
-  assert.strictEqual(out.total.minutes, 35.1, 'one area runs alone');
+  assert.strictEqual(out.total.minutes, 29, 'one area runs alone: 24.5 + 2.05 + 1.845 + 0.6');
 }
 // parallel is capped by the area count and by 4
 {
   const { out } = estimate({ areas: ['a', 'b', 'c', 'd', 'e', 'f'].map((i) => area(i, 10, 10, 1, 0, 0, 0)), chapters: 1 });
-  assert.deepStrictEqual(out.areas[0], { id: 'a', tokens: 210000, minutes: 0.9 });
-  assert.strictEqual(out.total.minutes, 34.1);
+  assert.deepStrictEqual(out.areas[0], { id: 'a', tokens: 384000, minutes: 0.9 });
+  assert.strictEqual(out.total.minutes, 38.2, '24.5 + 6 * 2.05 + 6 * 0.9 / 4');
 }
-// Proof run (a) of 2026-10-29, Shamel.Backend, its plan.json: 16,744,779 tokens (controller and four area
-// agents, deduplicated by request id) and 41.4 minutes from the first step's start to the last step's end, its
-// archify builds included. Within 10% of both.
+// Proof run (a) of 2026-10-29, Shamel.Backend, its plan.json and its 15 ADRs: 16,744,779 tokens (controller and four
+// area agents, deduplicated by request id) and 41.4 minutes from the first step's start to the last step's end, its
+// archify builds included.
 {
-  const { out } = estimate({ areas: [area('mobile-api', 30, 22, 2, 4, 2, 0), area('conversations', 34, 24, 2, 3, 1, 0), area('shaheen', 32, 14, 3, 5, 1, 1), area('twk-framework', 88, 40, 2, 4, 1, 1)], chapters: 9 });
-  assert.ok(Math.abs(out.total.tokens / 16744779 - 1) <= 0.1, `tokens ${out.total.tokens}`);
-  assert.ok(Math.abs(out.total.minutes / 41.4 - 1) <= 0.1, `minutes ${out.total.minutes}`);
+  const { out } = estimate({ areas: [area('mobile-api', 30, 22, 2, 4, 2, 0), area('conversations', 34, 24, 2, 3, 1, 0), area('shaheen', 32, 14, 3, 5, 1, 1), area('twk-framework', 88, 40, 2, 4, 1, 1)], chapters: 9, adrs: 15 });
+  assert.ok(Math.abs(out.total.tokens / 16744779 - 1) <= 0.02, `tokens ${out.total.tokens}`);
+  assert.ok(Math.abs(out.total.minutes / 41.4 - 1) <= 0.02, `minutes ${out.total.minutes}`);
 }
-// Run (b) of 2026-10-28 (archify minutes apart: that lane measured almost no archify time), four Advantage roots: 12 areas, 617 files to read, 77 figures; 49,415,523 tokens, 52.7 minutes.
+// Proof run (b) of 2026-10-29, four Advantage roots, its plan.json (13 areas, 630 files to read, 80 figures) and 66 ADRs:
+// 75,867,997 tokens (controller 44,158,295, 13 area agents 29,804,697, rules agent 1,905,005) and 87.7 minutes from the
+// step stamps, archify included.
 {
-  const areas = Array.from({ length: 12 }, (_, i) => area(`a${i}`, 100, i === 11 ? 56 : 51, 2, i === 11 ? 11 : 6, 0, 0));
-  const { out } = estimate({ areas, chapters: 12 });
-  assert.ok(Math.abs(out.total.tokens / 49415523 - 1) <= 0.12, `tokens ${out.total.tokens}`);
-  assert.ok(Math.abs((out.total.minutes - out.total.archifyMinutes) / 52.7 - 1) <= 0.1, `minutes ${out.total.minutes}`);
+  const plan = [['core-platform', 70, 9], ['core-billing', 50, 8], ['core-ui', 25, 1], ['engagement-runtime', 90, 13], ['engagement-data', 70, 10], ['engagement-studio', 45, 5], ['shortlink', 80, 10], ['measurement', 55, 7], ['survey', 40, 5], ['platform', 45, 4], ['android-sdk', 30, 5], ['store-app', 15, 2], ['guide', 15, 1]] as const;
+  const { out } = estimate({ areas: plan.map(([id, read, figs]) => area(id, read, read, 2, figs, 0, 0)), chapters: 19, adrs: 66 });
+  assert.ok(Math.abs(out.total.tokens / 75867997 - 1) <= 0.02, `tokens ${out.total.tokens}`);
+  assert.ok(Math.abs(out.total.minutes / 87.7 - 1) <= 0.02, `minutes ${out.total.minutes}`);
 }
 // malformed and missing
 {

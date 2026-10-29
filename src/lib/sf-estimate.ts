@@ -5,21 +5,25 @@ import { parseJson } from './json.js';
 import { validate } from './sf-schema.js';
 import type { Item, Model, Problem } from './sf-model.js';
 
-// Refit on 2026-10-29 from proof run (a) of that day (Shamel.Backend: 4 areas, 100 files to read, 23 figures,
-// 16,744,779 tokens, 41.4 minutes start to end with its archify builds and its own visual check) and run (b) of
-// 2026-10-28 (four Advantage roots: 12 areas, 617 files, 77 figures, 49,415,523 tokens, 52.7 minutes). Per-file and
-// per-figure tokens solve the two runs' area-agent totals (5,453,295 and 24,206,220); the controller's per-area
-// tokens sit between the runs (2.82M and 2.10M per area). Minutes: the controller's fixed time and a shared scale on
-// the area terms fit both runs. Both runs land within 10% of tokens and 1% of minutes.
-// archify runs one call at a time after the areas: 145 receipts in about 28 minutes on run (b)'s rebuild.
-export const ESTIMATE = { calibrated: true, measuredOn: '2026-10-29', tokensPerFile: 21000, tokensPerFigure: 145000, controllerTokensPerArea: 2500000, minutesPerFile: 0.09, minutesPerFigure: 0.315, controllerMinutes: 32.7, archifyMinutesPerPage: 0.2, parallel: 4 };
-export type Plan = { areas: { id: string; root: string; files: number; filesToRead: number; levels: number; diagrams: number; sequences: number; storeFlows: number }[]; chapters: number };
+// Refit on 2026-10-29 from that day's two proof runs. Run (a): Shamel.Backend, 4 areas, 100 files to read, 23 figures,
+// 15 ADRs; 16,744,779 tokens (controller 11,291,484, area agents 5,453,295), 41.4 minutes. Run (b): four Advantage roots,
+// 13 areas, 630 files, 80 figures, 66 ADRs; 75,867,997 tokens (controller 44,158,295, area agents 29,804,697, rules agent
+// 1,905,005), 87.7 minutes. Per-file and per-figure tokens solve the two area-agent totals; per ADR is run (b)'s rules
+// agent over 66 ADRs. The controller grows faster than its areas (2.82M per area on (a), 3.40M on (b): more chapters
+// to trim and more agents to answer), so it is a * areas + b * areas^2 fitted to both controllers less their ADR
+// term; its minutes are a fixed part plus a part per area. Both runs land within 1% of tokens and minutes; the
+// earlier fit was 32% low on run (b), so a third repo may land well outside 1%.
+// archify runs one call at a time after the areas: 145 receipts in about 28 minutes on the 10-28 run (b)'s rebuild.
+export const ESTIMATE = { calibrated: true, measuredOn: '2026-10-29', tokensPerFile: 38400, tokensPerFigure: 70200, controllerTokensPerArea: 2411000, controllerTokensPerAreaSquared: 75800, tokensPerAdr: 28900, minutesPerFile: 0.09, minutesPerFigure: 0.315, controllerMinutes: 24.5, controllerMinutesPerArea: 2.05, archifyMinutesPerPage: 0.2, parallel: 4 };
+// adrs: the ADR files the rules pass reads whole; absent is 0.
+export type Plan = { areas: { id: string; root: string; files: number; filesToRead: number; levels: number; diagrams: number; sequences: number; storeFlows: number }[]; chapters: number; adrs?: number };
 
 const count = { type: 'integer', minimum: 0 };
 const PLAN_SCHEMA = {
   type: 'object', required: ['areas', 'chapters'],
   properties: {
     chapters: count,
+    adrs: count,
     areas: {
       type: 'array',
       items: {
@@ -49,15 +53,16 @@ export function estimate(plan: Plan) {
     return { id: a.id, tokens: a.filesToRead * c.tokensPerFile + figures * c.tokensPerFigure, minutes: a.filesToRead * c.minutesPerFile + figures * c.minutesPerFigure };
   });
   const sum = (f: (a: { tokens: number; minutes: number }) => number): number => areas.reduce((n, a) => n + f(a), 0);
-  const lanes = Math.max(1, Math.min(c.parallel, areas.length));
+  const n = areas.length;
+  const lanes = Math.max(1, Math.min(c.parallel, n));
   const round = (n: number): number => Math.round(n * 10) / 10;
   // One page per figure at least; a long sequence or flow adds pages the plan does not count.
   const archifyMinutes = round(plan.areas.reduce((n, a) => n + a.diagrams + a.sequences + a.storeFlows, 0) * c.archifyMinutesPerPage);
   return {
     areas: areas.map((a) => ({ ...a, minutes: round(a.minutes) })),
-    total: { tokens: sum((a) => a.tokens) + c.controllerTokensPerArea * plan.areas.length, minutes: round(c.controllerMinutes + sum((a) => a.minutes) / lanes + archifyMinutes), archifyMinutes },
+    total: { tokens: sum((a) => a.tokens) + c.controllerTokensPerArea * n + c.controllerTokensPerAreaSquared * n * n + c.tokensPerAdr * (plan.adrs ?? 0), minutes: round(c.controllerMinutes + c.controllerMinutesPerArea * n + sum((a) => a.minutes) / lanes + archifyMinutes), archifyMinutes },
     constants: c,
-    note: c.calibrated ? `constants measured on ${c.measuredOn} from proof runs (a) and (b); the split between per-file and per-figure cost is unproven` : 'constants are guesses until proof run (a) calibrates them',
+    note: c.calibrated ? `constants measured on ${c.measuredOn} from proof runs (a) and (b) of that day; both land within 1% of tokens and minutes, and a third repo may not` : 'constants are guesses until proof run (a) calibrates them',
     warnings: plan.areas.filter((a) => a.files > 400).map((a) => `area ${a.id} has ${a.files} files; split it into sub-areas of at most 400`),
   };
 }
