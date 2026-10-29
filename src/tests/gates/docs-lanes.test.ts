@@ -151,6 +151,8 @@ assert.ok(/^## Branch pass$/m.test(raw(finalReview)), `${finalReview}: the branc
   all('check-and-report.md', ['words per chapter (id, words, lead sentences, bullets), the average words per chapter, the glossary size and the lifelines drawn inline.',
     '**Prose:** a block beside Depth, from `BuildResult.prose`']);
   has(docs, 'every node or participant it adds carries `look`', 'fx-docs sets look on what it adds');
+  // F8: humanize applies to prose a writer authored, never to files build generates and rewrites.
+  has(docs, 'invoke the fx-humanize lane in file mode on each hand-written doc you wrote or changed, and on the prose you wrote into model fragments. Never run it on a generated file', 'fx-docs humanizes fragment prose, never generated files');
   // F7: on a version-1 model stale, query and verify fail before any migrate instruction is reached, so check runs first.
   all('SKILL.md', ['run step 1, then `system-flow check`.',
     'When `check` prints `run system-flow migrate`, the model is version 1 and `stale` cannot read it: offer only "Bring the prose up to date" and stop until the owner picks it.']);

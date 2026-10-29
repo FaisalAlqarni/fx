@@ -45,8 +45,11 @@ question in the repo's callout form, never as a fact. Each doc ends with one
 marker, `<!-- fx-docs verified: <40-character commit> -->`. Rewrite it to HEAD
 after you have verified every claim in that doc, and only then.
 
-Before you commit a doc you wrote or changed, invoke the fx-humanize lane in file
-mode on it. It changes prose only, so evidence lines and the marker stay.
+Before you commit, invoke the fx-humanize lane in file mode on each hand-written
+doc you wrote or changed, and on the prose you wrote into model fragments.
+Never run it on a generated file (one carrying the `fx-system-flow generated`
+marker): `build` rewrites it from the fragments. It changes prose only, so
+evidence lines and the marker stay.
 
 ## 2. Layout and flavour
 
