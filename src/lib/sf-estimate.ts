@@ -5,12 +5,14 @@ import { parseJson } from './json.js';
 import { validate } from './sf-schema.js';
 import type { Item, Model, Problem } from './sf-model.js';
 
-// Refit on 2026-10-28 from proof runs (a) (Shamel.Backend: 3 areas, 83 files, 24 figures, 12,813,063 tokens, 20.3 min)
-// and (b) (four Advantage roots: 12 areas, 617 files, 77 figures, 49,415,523 tokens, 52.7 min). The controller's
-// tokens scale by area count (run (b): 25,209,303 over 12 areas). Two runs cannot split per-file from per-figure cost,
-// so that split keeps run (a)'s ratio and is unproven; both runs land within 12% of tokens and 2% of minutes.
+// Refit on 2026-10-29 from proof run (a) of that day (Shamel.Backend: 4 areas, 100 files to read, 23 figures,
+// 16,744,779 tokens, 41.4 minutes start to end with its archify builds and its own visual check) and run (b) of
+// 2026-10-28 (four Advantage roots: 12 areas, 617 files, 77 figures, 49,415,523 tokens, 52.7 minutes). Per-file and
+// per-figure tokens solve the two runs' area-agent totals (5,453,295 and 24,206,220); the controller's per-area
+// tokens sit between the runs (2.82M and 2.10M per area). Minutes: the controller's fixed time and a shared scale on
+// the area terms fit both runs. Both runs land within 10% of tokens and 1% of minutes.
 // archify runs one call at a time after the areas: 145 receipts in about 28 minutes on run (b)'s rebuild.
-export const ESTIMATE = { calibrated: true, measuredOn: '2026-10-28', tokensPerFile: 37000, tokensPerFigure: 93000, controllerTokensPerArea: 2100000, minutesPerFile: 0.2, minutesPerFigure: 0.7, controllerMinutes: 9.4, archifyMinutesPerPage: 0.2, parallel: 4 };
+export const ESTIMATE = { calibrated: true, measuredOn: '2026-10-29', tokensPerFile: 21000, tokensPerFigure: 145000, controllerTokensPerArea: 2500000, minutesPerFile: 0.09, minutesPerFigure: 0.315, controllerMinutes: 32.7, archifyMinutesPerPage: 0.2, parallel: 4 };
 export type Plan = { areas: { id: string; root: string; files: number; filesToRead: number; levels: number; diagrams: number; sequences: number; storeFlows: number }[]; chapters: number };
 
 const count = { type: 'integer', minimum: 0 };

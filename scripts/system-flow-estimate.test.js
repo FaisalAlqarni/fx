@@ -39,27 +39,27 @@ function estimate(plan) {
 {
   const { r, out } = estimate({ areas: [area("A", 120, 10, 2, 2, 1, 0), area("B", 300, 20, 1, 1, 0, 1)], chapters: 4 });
   assert.strictEqual(r.status, 0, r.stderr);
-  assert.deepStrictEqual(out.areas, [{ id: "A", tokens: 649e3, minutes: 4.1 }, { id: "B", tokens: 926e3, minutes: 5.4 }]);
-  assert.deepStrictEqual(out.total, { tokens: 5775e3, minutes: 15.2, archifyMinutes: 1 });
+  assert.deepStrictEqual(out.areas, [{ id: "A", tokens: 645e3, minutes: 1.8 }, { id: "B", tokens: 71e4, minutes: 2.4 }]);
+  assert.deepStrictEqual(out.total, { tokens: 6355e3, minutes: 35.8, archifyMinutes: 1 });
   assert.strictEqual(out.constants.calibrated, true);
-  assert.strictEqual(out.note, "constants measured on 2026-10-28 from proof runs (a) and (b); the split between per-file and per-figure cost is unproven");
+  assert.strictEqual(out.note, "constants measured on 2026-10-29 from proof runs (a) and (b); the split between per-file and per-figure cost is unproven");
   assert.deepStrictEqual(out.warnings, []);
 }
 {
   const { out } = estimate({ areas: [area("A", 5e3, 10, 2, 2, 1, 0)], chapters: 1 });
-  assert.deepStrictEqual(out.areas, [{ id: "A", tokens: 649e3, minutes: 4.1 }]);
+  assert.deepStrictEqual(out.areas, [{ id: "A", tokens: 645e3, minutes: 1.8 }]);
   assert.deepStrictEqual(out.warnings, ["area A has 5000 files; split it into sub-areas of at most 400"]);
-  assert.strictEqual(out.total.minutes, 14.1, "one area runs alone");
+  assert.strictEqual(out.total.minutes, 35.1, "one area runs alone");
 }
 {
   const { out } = estimate({ areas: ["a", "b", "c", "d", "e", "f"].map((i) => area(i, 10, 10, 1, 0, 0, 0)), chapters: 1 });
-  assert.deepStrictEqual(out.areas[0], { id: "a", tokens: 37e4, minutes: 2 });
-  assert.strictEqual(out.total.minutes, 12.4);
+  assert.deepStrictEqual(out.areas[0], { id: "a", tokens: 21e4, minutes: 0.9 });
+  assert.strictEqual(out.total.minutes, 34.1);
 }
 {
-  const { out } = estimate({ areas: [area("mobile-api", 30, 20, 2, 4, 3, 0), area("core", 66, 28, 3, 5, 2, 1), area("twk-framework", 88, 35, 2, 5, 1, 3)], chapters: 9 });
-  assert.ok(Math.abs(out.total.tokens / 12813063 - 1) <= 0.12, `tokens ${out.total.tokens}`);
-  assert.ok(Math.abs((out.total.minutes - out.total.archifyMinutes) / (1217 / 60) - 1) <= 0.1, `minutes ${out.total.minutes}`);
+  const { out } = estimate({ areas: [area("mobile-api", 30, 22, 2, 4, 2, 0), area("conversations", 34, 24, 2, 3, 1, 0), area("shaheen", 32, 14, 3, 5, 1, 1), area("twk-framework", 88, 40, 2, 4, 1, 1)], chapters: 9 });
+  assert.ok(Math.abs(out.total.tokens / 16744779 - 1) <= 0.1, `tokens ${out.total.tokens}`);
+  assert.ok(Math.abs(out.total.minutes / 41.4 - 1) <= 0.1, `minutes ${out.total.minutes}`);
 }
 {
   const areas = Array.from({ length: 12 }, (_, i) => area(`a${i}`, 100, i === 11 ? 56 : 51, 2, i === 11 ? 11 : 6, 0, 0));

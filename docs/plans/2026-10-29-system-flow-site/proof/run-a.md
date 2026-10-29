@@ -42,4 +42,4 @@ Site (a) measure JSON: /tmp/claude-1000/sf2-build/proof-a2-2026-10-29-1/measure-
 
 ## Decisions answered during the run
 
-None yet. The controller records here any answer given to a stopped run.
+None beyond the two fixed prompts above: step 2 approved the plan and the MkDocs lines, step 3 took the recommended answer for all 3 questions. No run stopped for a prose floor or a short glossary.

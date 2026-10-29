@@ -1,6 +1,6 @@
 # System flow site: proof results
 
-Parts (a) and (b) are added by tasks 12 and 13. This file holds the two parts task 11 owns.
+Parts (a) and (b) are added by tasks 12 and 13. This file holds the two parts task 11 owns and part (a).
 
 Scratch root `/tmp/claude-1000/sf2-build/proof-site/`. Every command below ran with `TMPDIR=/tmp/claude-1000/sf2-build/tmp HOME=/tmp/claude-1000/sf2-build/home npm_config_cache=/tmp/claude-1000/sf2-build/npm scripts/scratch-env` in front, and `NODE_PATH=<PW>/node_modules PLAYWRIGHT_BROWSERS_PATH=<PW>/browsers` for the browser runs. Chromium is the Playwright build under `<PW>/browsers`.
 
@@ -130,3 +130,7 @@ Diff of the fragments against the commit (`git diff`, then each file compared as
 ## Nothing written under /mnt
 
 `find /mnt/c/Users/Faisal/Desktop/system-flow -newer <SCRATCH>/proof-site/stamp | wc -l` printed `0` after the owner run.
+
+## (a) Shamel.Backend
+
+The full results are in `proof/results-a.md`: build and evidence checks, the comparison table, the browser and visual checks, cost against the estimate and the recalibration. Every Proof table pass line passes. Failed: the visual check's text-fits line (archify node subtitles at 2.3 to 6 px, cut off) and its glossary-link line (2 of 41 links per width stop out of view). Not run on site (a): page-check's default-mode checks, the map level walk, right to left.
