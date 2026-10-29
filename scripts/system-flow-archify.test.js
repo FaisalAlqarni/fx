@@ -35,6 +35,8 @@ const ev = (p, lines, symbol) => [{ path: p, lines, symbol }];
 const FAKE = `import fs from 'node:fs';
 import path from 'node:path';
 const a = process.argv.slice(2);
+// archify validate --layout-json: the auto canvas, FAKE_VIEWBOX or 600 by 400.
+if (a[0] === 'validate') { process.stdout.write(JSON.stringify({ ok: true, viewBox: JSON.parse(process.env.FAKE_VIEWBOX || '[600, 400]') })); process.exit(0); }
 const [, type, specPath, out] = a;
 const spec = JSON.parse(fs.readFileSync(specPath, 'utf8')); // ts-gate-ok: plain JS inside the fake
 const name = path.basename(out, '.html');
@@ -397,8 +399,9 @@ const detectOf = (f, env = {}) => (0, import_json.parseJson)(f.run(["detect"], e
   };
   const arch = (0, import_json.parseJson)(read(f, `${D}/src/arch-engine.json`));
   const c = (id) => arch.components.find((x) => x.id === id);
-  cutOf(ROLE, c("api").sublabel);
-  assert.ok([...c("api").sublabel].length * 3.6 <= c("api").size[0] - 8, c("api").sublabel);
+  assert.strictEqual(c("api").sublabel, void 0);
+  assert.strictEqual(c("db").sublabel, "Stores rows");
+  assert.deepStrictEqual(arch.cards.find((x) => x.title === "Parts")?.items, [`API: ${ROLE}`]);
   cutOf(LABEL, c("db").label);
   assert.ok([...c("db").label].length * 6.6 <= c("db").size[0] + 8, c("db").label);
   for (const n of ["seq-turn", "seq-turn-p2"]) {
@@ -408,9 +411,22 @@ const detectOf = (f, env = {}) => (0, import_json.parseJson)(f.run(["detect"], e
     cutOf(PART, p.label);
     assert.ok([...p.label].length * 6.8 <= box + 6, `${n} ${p.label} ${box}`);
   }
-  assert.strictEqual(reason(o, "arch-engine").reason, "archify architecture, 2 components, shortened: api sublabel, db label");
+  assert.strictEqual(reason(o, "arch-engine").reason, "archify architecture, 2 components, shortened: db label");
   assert.strictEqual(reason(o, "seq-turn").reason, "archify sequence, 14 messages in 2 pages, shortened: api label");
   assert.strictEqual(reason(o, "arch-system").reason, "archify architecture, 2 components");
+}
+{
+  const f = setup();
+  const a = fake(f, "fake");
+  ok(f, ["--archify", a]);
+  const narrow = (0, import_json.parseJson)(read(f, `${D}/src/arch-engine.json`));
+  assert.deepStrictEqual(narrow.meta.viewBox, [1e3, 400]);
+  const f2 = setup();
+  ok(f2, ["--archify", fake(f2, "fake")], { FAKE_VIEWBOX: "[1100, 500]" });
+  const wide = (0, import_json.parseJson)(read(f2, `${D}/src/arch-engine.json`));
+  assert.deepStrictEqual(wide.meta.viewBox, [1100, 500]);
+  assert.deepStrictEqual(narrow.components.map((x) => x.pos[0] - 200), wide.components.map((x) => x.pos[0]));
+  assert.deepStrictEqual(narrow.components.map((x) => x.pos[1]), wide.components.map((x) => x.pos[1]));
 }
 {
   const f = setup();

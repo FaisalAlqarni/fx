@@ -3,7 +3,7 @@
 import * as fs from 'fs';
 import { parseJson } from './json.js';
 import * as path from 'path';
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import type { Theme } from './sf-theme.js';
 import type { FxJson } from './types.js';
 import type { Diagram, Evidence, FigureSpec, FigureStep, FileEvidence, Model, StoreFlow } from './sf-model.js';
@@ -89,6 +89,7 @@ function architecture(d: Diagram, fig: FigureSpec, roots: Map<string, Root>): De
   const repo = repository(roots.get(own));
   const byId = new Map(d.nodes.map((n) => [n.id, n]));
   const shortened: string[] = [];
+  const parts: string[] = [];
   const known = new Set(d.nodes.map((n) => n.id));
   const groups = d.groups.flatMap((g) => { const wraps = g.members.filter((x) => known.has(x)); return wraps.length ? [{ label: g.label, wraps }] : []; });
   // archify 3.2.0 frames a boundary 30 px around its members' box (boundaryRect) and widens it to fit its title at up to
@@ -105,10 +106,12 @@ function architecture(d: Diagram, fig: FigureSpec, roots: Map<string, Root>): De
   const components = fig.nodes.map((n) => {
     const m = byId.get(n.id);
     const sources = m && m.primary !== false ? sourcesOf(m.evidence, linked(own, repo), host, rest, m.label) : undefined;
-    // archify 3.2.0: a label needs units * 6.6 px within width + 8 (component-label-overflow); a sublabel units * 6 px * 0.6
-    // within width - 8 at its 6 px minimum (component-sublabel-overflow).
+    // archify 3.2.0: a label needs units * 6.6 px within width + 8 (component-label-overflow). A subtitle is drawn at
+    // 9 px only when units * 9 * 0.6 fit within width - 8, and shrinks to 6 px when not; a role that long goes whole
+    // to the Parts card instead (the 1000 px canvas in runArchify puts 9 px at 12 px).
     const label = fit(m?.label ?? n.id, Math.floor((n.w + 8) / 6.6), `${n.id} label`, shortened);
-    const sublabel = m?.role ? fit(m.role, Math.floor((n.w - 8) / 3.6), `${n.id} sublabel`, shortened) : undefined;
+    const sublabel = m?.role && units(m.role) * 5.4 <= n.w - 8 ? m.role : undefined;
+    if (m?.role && !sublabel) parts.push(`${m.label}: ${m.role}`);
     return { id: aid(n.id), type: componentType(m?.kind ?? n.kind), label, ...(sublabel ? { sublabel } : {}), ...(sources ? { sources } : {}), pos: [n.x + dx, n.y + dy], size: [n.w, n.h] };
   });
   const boundaries = groups.map((g) => ({ kind: 'region', label: g.label, wraps: g.wraps.map(aid) }));
@@ -121,7 +124,7 @@ function architecture(d: Diagram, fig: FigureSpec, roots: Map<string, Root>): De
     ...(boundaries.length ? { boundaries } : {}),
     // The figure's short label: the layout made room for it, and archify places it on its own route.
     connections: d.edges.map((e) => ({ from: aid(e.from), to: aid(e.to), label: shortLabel(e.label, e.short), ...(e.mode === 'async' ? { variant: 'dashed' } : {}) })),
-    ...(rest.length ? { cards: evCard(rest) } : {}),
+    ...(rest.length || parts.length ? { cards: [...(parts.length ? [{ dot: 'cyan', title: 'Parts', items: parts }] : []), ...evCard(rest)] } : {}),
   };
   return { name, kind: 'architecture', source: `diagram:${d.id}`, spec, pages: 1, owningRoot: own, shortened };
 }
@@ -379,6 +382,22 @@ export function findArchify(env: NodeJS.ProcessEnv): { dir: string; version: str
   return null;
 }
 
+// archify 3.2.0 fits an automatic architecture canvas to the window height, which drew 11 px labels at 6 to 9 px. An
+// authored viewBox fills the page's 1349 px column at 1440 instead; 1000 wide draws archify's 9 px subtitle at 12 px
+// there. The canvas comes from archify's own layout, widened to 1000 with the parts centred.
+const READ_WIDTH = 1000;
+function authorCanvas(dir: string, spec: string): void {
+  const r = spawnSync(process.execPath, [path.join(dir, 'bin', 'archify.mjs'), 'validate', 'architecture', spec, '--layout-json'], { encoding: 'utf8', timeout: 60000 });
+  let vb: unknown;
+  try { vb = (parseJson(r.stdout) as { viewBox?: unknown }).viewBox; } catch { return; } // finalize reports the failure
+  if (!Array.isArray(vb) || typeof vb[0] !== 'number' || typeof vb[1] !== 'number') return;
+  const doc = parseJson(fs.readFileSync(spec, 'utf8')) as { meta: Obj; components: { pos: [number, number] }[] };
+  const shift = Math.max(0, Math.ceil((READ_WIDTH - vb[0]) / 2));
+  for (const c of doc.components) c.pos = [c.pos[0] + shift, c.pos[1]];
+  doc.meta.viewBox = [vb[0] + 2 * shift, vb[1]];
+  fs.writeFileSync(spec, `${JSON.stringify(doc, null, 2)}\n`);
+}
+
 // Runs `finalize` for each job, one at a time: archify's delivery lock rejects a second call in the same folder
 // (delivery/concurrent-attempt). Each job names its receipt (ruling 17). A call past timeoutS is killed.
 export type ArchifyRun = { name: string; ok: boolean; receipt: string | null; timedOut: boolean; json: string; stderr: string };
@@ -389,6 +408,7 @@ export async function runArchify(dir: string, jobs: { name: string; kind: 'archi
     // The build rewrites each page with its theme block after archify's browser check, so that check's evidence never
     // matches the page again and archify refuses to replace it (viewer/evidence-path-conflict) on the next build.
     fs.rmSync(j.check, { force: true });
+    if (j.kind === 'architecture') authorCanvas(dir, j.spec);
     const args = [path.join(dir, 'bin', 'archify.mjs'), 'finalize', j.kind, j.spec, j.out, '--repo-root', j.repoRoot, '--quality', 'showcase', '--receipt', receipt, '--json'];
     let stdout = '', stderr = '', timedOut = false, settled = false;
     // Its own process group: archify's stages inherit these pipes, so the timeout kills the group, not one process.

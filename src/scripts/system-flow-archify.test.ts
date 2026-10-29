@@ -21,6 +21,8 @@ const ev = (p: string, lines: string, symbol: string) => [{ path: p, lines, symb
 const FAKE = `import fs from 'node:fs';
 import path from 'node:path';
 const a = process.argv.slice(2);
+// archify validate --layout-json: the auto canvas, FAKE_VIEWBOX or 600 by 400.
+if (a[0] === 'validate') { process.stdout.write(JSON.stringify({ ok: true, viewBox: JSON.parse(process.env.FAKE_VIEWBOX || '[600, 400]') })); process.exit(0); }
 const [, type, specPath, out] = a;
 const spec = JSON.parse(fs.readFileSync(specPath, 'utf8')); // ts-gate-ok: plain JS inside the fake
 const name = path.basename(out, '.html');
@@ -352,7 +354,8 @@ const detectOf = (f: Fx, env: Record<string, string> = {}): Obj => parseJson(f.r
   assert.strictEqual(fxDoc(f).system_flow.diagrams.prefer, 'cheap');
 }
 
-{ // Labels past archify's measured limits are cut with an ellipsis in the spec, and the reason names each one
+{ // Labels past archify's measured limits are cut with an ellipsis in the spec; a role too long for a 9 px subtitle
+  // is no subtitle and the Parts card keeps it whole; the reason names each cut
   const f = setup();
   const lvl = parseJson(read(f, `${SITE}/model/fragments/level0.json`)) as Obj;
   const [api, db] = lvl.levels.diagrams[1].nodes;
@@ -369,9 +372,11 @@ const detectOf = (f: Fx, env: Record<string, string> = {}): Obj => parseJson(f.r
   const cutOf = (whole: string, got: string): void => { assert.ok(got.endsWith('...') && whole.startsWith(got.slice(0, -3)), got); };
   const arch = parseJson(read(f, `${D}/src/arch-engine.json`)) as Obj;
   const c = (id: string): Obj => arch.components.find((x: Obj) => x.id === id);
-  // archify 3.2.0: a sublabel needs units * 6 px * 0.6 within width - 8; a label units * 6.6 within width + 8.
-  cutOf(ROLE, c('api').sublabel);
-  assert.ok([...c('api').sublabel].length * 3.6 <= c('api').size[0] - 8, c('api').sublabel);
+  // archify 3.2.0 draws a subtitle at 9 px when units * 9 * 0.6 fit within width - 8, smaller when not; a label
+  // needs units * 6.6 within width + 8.
+  assert.strictEqual(c('api').sublabel, undefined);
+  assert.strictEqual(c('db').sublabel, 'Stores rows');
+  assert.deepStrictEqual(arch.cards.find((x: Obj) => x.title === 'Parts')?.items, [`API: ${ROLE}`]);
   cutOf(LABEL, c('db').label);
   assert.ok([...c('db').label].length * 6.6 <= c('db').size[0] + 8, c('db').label);
   for (const n of ['seq-turn', 'seq-turn-p2']) {
@@ -382,9 +387,24 @@ const detectOf = (f: Fx, env: Record<string, string> = {}): Obj => parseJson(f.r
     cutOf(PART, p.label);
     assert.ok([...p.label].length * 6.8 <= box + 6, `${n} ${p.label} ${box}`);
   }
-  assert.strictEqual(reason(o, 'arch-engine').reason, 'archify architecture, 2 components, shortened: api sublabel, db label');
+  assert.strictEqual(reason(o, 'arch-engine').reason, 'archify architecture, 2 components, shortened: db label');
   assert.strictEqual(reason(o, 'seq-turn').reason, 'archify sequence, 14 messages in 2 pages, shortened: api label');
   assert.strictEqual(reason(o, 'arch-system').reason, 'archify architecture, 2 components');
+}
+
+{ // finalize gets archify's own canvas as an authored viewBox at least 1000 wide, the parts centred in it, so the page
+  // fills its column instead of shrinking to the window height
+  const f = setup();
+  const a = fake(f, 'fake');
+  ok(f, ['--archify', a]);
+  const narrow = parseJson(read(f, `${D}/src/arch-engine.json`)) as Obj;
+  assert.deepStrictEqual(narrow.meta.viewBox, [1000, 400]);
+  const f2 = setup();
+  ok(f2, ['--archify', fake(f2, 'fake')], { FAKE_VIEWBOX: '[1100, 500]' });
+  const wide = parseJson(read(f2, `${D}/src/arch-engine.json`)) as Obj;
+  assert.deepStrictEqual(wide.meta.viewBox, [1100, 500]);
+  assert.deepStrictEqual(narrow.components.map((x: Obj) => x.pos[0] - 200), wide.components.map((x: Obj) => x.pos[0]));
+  assert.deepStrictEqual(narrow.components.map((x: Obj) => x.pos[1]), wide.components.map((x: Obj) => x.pos[1]));
 }
 
 { // An --archify folder without bin/archify.mjs is an error naming the path

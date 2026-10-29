@@ -217,6 +217,7 @@ const deepLink = (f, key) => {
   fs.mkdirSync(path.join(fake, "bin"), { recursive: true });
   fs.writeFileSync(path.join(fake, "bin", "archify.mjs"), `import fs from 'node:fs';
 const a = process.argv.slice(2);
+if (a[0] !== 'finalize') process.exit(1);
 fs.writeFileSync(a[a.indexOf('--receipt') + 1], '{}');
 fs.writeFileSync(a[3], '<!doctype html><html><body>archify page</body></html>');
 `);
