@@ -158,3 +158,16 @@ Exit trial 1 (check-all at bf822a7, before task 11's fix and task 14): EXIT 0, A
 Task 11: fix round 1/5: controller re-review (3 lines): 1 addressed, 0 open
 Task 11: cost unavailable (no transcript recorded)
 Task 11: complete (commits 8f81765..01dd512, review clean after fix round 1). Files: proof/page-check.ts measure mode, proof/compare.ts and its test, check-all line, results.md Baseline and Migration, built JS.
+Task 14: dispatched 6d4eda7 2026-10-29T03:12:54+03:00
+Task 12: dispatched (prep, steps 1 and 2 only) 6d4eda7 2026-10-29T03:13:14+03:00
+Task 12: prep complete (commit c1c9779, proof/run-a.md); run folder /tmp/claude-1000/sf2-build/proof-a2-2026-10-29-1 ready (home/.claude/skills made per C6; stamp check 0 newer files under /mnt source; scratch repo HEAD 4cd0689).
+Task 12: parked: run step needs the session controller. Commands: docs/plans/2026-10-29-system-flow-site/proof/run-a.md Setup (install -m 600 credential, cp -rL archify), Runs 1 to 3 (claude -p --plugin-dir /development/fx/.worktrees/system-flow, then --resume twice), Teardown (copy transcript, find -delete the credential copy). After it, dispatch an agent for task 12 steps 4 to 7 (results, estimate recalibration, scope, commit), then task 13.
+Task 14: minor (deferred): fitAt1440 passes with 42 px slack (856 in 898), so only a large card-padding regression fails it.
+Task 14: minor (deferred): arrowStyle cap query matches any g > path with stroke-width 1.2, not specifically a store node.
+Task 14: minor (deferred): no mutation RED run for fitAt1440, panelEscape or the Shown in link assertion.
+Task 14: ⚠️ resolved by controller: the reviewer judged by reading that fitAt1440, panelEscape and the Shown in assertion each fail on the regression the audit names; the implementer showed RED for arrowStyle and the conventions note. Accepted; the looseness is ledgered as Minors for the final review.
+Task 14: cost unavailable (no transcript recorded)
+Task 14: complete (commits c1c9779..8e840a3, review clean). Files: proof/page-check.ts (arrowStyle, fitAt1440, panelEscape), system-flow-page and markdown tests, fixture if needed, built JS.
+Exit trial 2 (check-all at 8e840a3, after task 14): EXIT 0, ALL GREEN, 787 lines read; same lines as trial 1 once temp paths, pids and timings are filtered (diff empty). Every skills/*/SKILL.md under 20,000 bytes (largest skills/fx-setup/SKILL.md 19,989, unchanged on this branch). Log: /tmp/claude-1000/sf2-build/check-all-8e840a3.log.
+Final branch review: not run by this controller (session controller runs it after merging main). Deferred minors and the coverage-audit ruling above are its input.
+Blocked: task 12 run step (parked, session controller), then task 12 steps 4 to 7 and task 13.
