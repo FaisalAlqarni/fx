@@ -610,7 +610,10 @@ async function measure(name) {
   }
   const toMid = (page, i) => page.evaluate((a) => {
     const el = document.querySelector(`${a.f} ${a.area}`);
-    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2, behavior: "instant" });
+    if (el) {
+      const r = el.getBoundingClientRect();
+      window.scrollTo({ top: r.top + r.height / 2 + window.scrollY - window.innerHeight / 2, behavior: "instant" });
+    }
   }, { f: fig(i), area: P.area });
   const away = (page, i) => page.evaluate((f) => {
     const c = document.querySelector(f);

@@ -589,7 +589,8 @@ async function measure(name: string): Promise<void> {
   }
   const toMid = (page: Page, i: number): Promise<void> => page.evaluate((a: { f: string; area: string }) => {
     const el = document.querySelector(`${a.f} ${a.area}`);
-    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2, behavior: 'instant' });
+    // The box centre goes to the window middle; a box taller than the window shows its middle part (the owner's observer needs 30% of it).
+    if (el) { const r = el.getBoundingClientRect(); window.scrollTo({ top: r.top + r.height / 2 + window.scrollY - window.innerHeight / 2, behavior: 'instant' }); }
   }, { f: fig(i), area: P.area });
   // Scrolls until no part of the figure is visible (above it when the page allows, else below); returns whether none is.
   const away = (page: Page, i: number): Promise<boolean> => page.evaluate((f: string) => {

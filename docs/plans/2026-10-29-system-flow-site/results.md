@@ -36,16 +36,16 @@ JSON: `<SCRATCH>/proof-site/owner.json`. Screenshots at 1440 and 390, light and 
 | Reading prose per chapter, sorted | 39, 54, 66, 69, 97, 101, 116, 117, 120, 120, 120, 123, 137, 141, 143, 144, 172, 189, 248 |
 | Chapters with a lead and 4 to 8 bullets | 0 (no leads; 16 of 19 chapters have 4 to 8 bullets) |
 | Glossary | none (`null`) |
-| Sequences drawn as lifelines | 0 of 13. The 13 sequence figures are drawn as boxes and numbered arrows; none has a dashed vertical line under a participant |
+| Sequences drawn as lifelines | 0 of 13. The check looks for an svg `line` with a `stroke-dasharray` attribute (how fx-flow-2 draws a lifeline). The 13 sequence figures are numbered box flows and the page has no lifeline drawing |
 | Side menu | `nav` sticky at the top, 230 px wide; current chapter marked after scrolling to chapters 1, 10 and 19; no groups (`null`); no top bar (`null`) |
 | Filter | none (`null`) |
 | Cards: bar inside its card | yes, all 44 figures, at both widths |
 | Cards: bar stays in view with the tall card (figure 16 at 1440 x 600) | no. The bar sits at the foot of the card: the card runs 60..2203 and the bar 2037..2088 at the first scroll position |
-| Autoplay at 1440 | 38 of 44 figures reach step 1 within 3 s of reaching the middle; figures 1, 2, 3, 12, 16 and 33 stay at step 0 (cause not investigated) |
-| Autoplay at 390 | 44 of 44 |
-| Pauses when scrolled away | yes |
-| Resumes on return | no (figure 9 stays at 1 / 6 after the return) |
-| Reduced motion | nothing plays on its own |
+| Autoplay at 1440 | 44 of 44 figures reach step 1 within 3 s of the figure box centre reaching the window middle, in light and dark. A box taller than the window shows its middle part there; figures 1, 2, 3, 12, 16 and 33 (boxes 1582 px and taller) are such boxes, and an earlier run that put the box top at the middle missed them because of the measure, not the page |
+| Autoplay at 390 | 44 of 44, light and dark |
+| Pauses when scrolled away | yes, read on figure 9 only (the figure with the fewest steps of at least 3) |
+| Resumes on return | no, read on figure 9 only (it stays at 1 / 6 after the return) |
+| Reduced motion | nothing plays on figure 9 within 3 s of its middle at 1440 and 390 (read on that figure only) |
 | Smallest figure text | 12.5 px |
 | Page-level horizontal scroll at 390 | none |
 | Console errors | 0 in all 8 states |
@@ -72,7 +72,7 @@ node docs/plans/2026-10-29-system-flow-site/proof/page-check.js --measure fx --o
 | menu | 240 px, 3 groups, sticky, current marked, phone bar, resize, no-script: all pass |
 | filter | term, chapter, part, none, clear, term link: all pass at 1440 and 390 |
 | cards | bar in card, bar in view, sideways at 390: pass |
-| autoplay | within 3 s, pauses, resumes, no resume at the end, reduced motion: pass |
+| autoplay | within 3 s (4 of 4 figures, both widths and themes), pauses, resumes, no resume at the end, reduced motion: pass (the last four read on figure 1) |
 | labelsMinPx / pageScrollAt390 / consoleErrors | 12 / false / 0 |
 | player | rest, next, back, reset, resetWhilePlaying, playPause, interval, endStops, restart, emptyFigure: all `pass: true` |
 
@@ -87,7 +87,7 @@ Both tables side by side (`compare.js <owner.json> <fixture.json>`; the fixture 
 | Side menu | sticky, 230 to 250 px, three groups, current marked, top bar opens and closes | 230 px, - groups, sticky true, current true, bar - | 240 px, 3 groups, sticky true, current true, bar true | yes |
 | Filter | term, chapter and part narrow; clearing restores | - | 6 of 6 | yes |
 | Cards | bar inside its card and in view with it | 1 of 2 | 3 of 3 | yes |
-| Autoplay | step 1 within 3 s at both widths; pauses when away | 2 of 4 | 5 of 5 | yes |
+| Autoplay | step 1 within 3 s at both widths; pauses when away | 3 of 4 | 5 of 5 | yes |
 | Labels (smallest figure text, px) | 12 or more | 12.5 | 12 | yes |
 | Page width | no sideways scroll at 390 | fits | fits | yes |
 | Console errors | 0 | 0 | 0 | yes |
