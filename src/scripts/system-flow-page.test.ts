@@ -44,7 +44,7 @@ function setup(o: { catalogue?: boolean; questions?: boolean } = {}): Fx {
     storeFlows: [{ id: 'first', trigger: 'A link is opened', chapter: 's1', steps: [{ n: 1, actor: 'api', op: 'read', store: 'sql', key: 'links:{id}', evidence: ev('app/x.rb', '4', 'expired?') }] }],
   });
   if (o.catalogue !== false) f.fragment('catalogue', { catalogue: [{ id: 'q1', kind: 'queue', name: 'Main queue', role: 'Holds jobs', evidence: ev('app/y.rb', '1', 'Y') }] });
-  f.fragment('rules', { rules: [{ id: 'r1', text: 'Links expire.', evidence: ev('app/x.rb', '4', 'expired?') }] });
+  f.fragment('rules', { rules: [{ id: 'r1', text: 'Links expire.', decision: '3', evidence: ev('app/x.rb', '4', 'expired?') }] });
   f.fragment('inventory', { inventory: [{ id: 'job-a', kind: 'job', name: 'Job A', evidence: ev('app/x.rb', '1-4', 'Link') }, { id: 'job-b', kind: 'job', name: 'Job B', evidence: ev('app/y.rb', '1', 'Y') }] });
   f.fragment('corrections', { corrections: [{ id: 'c1', date: '2026-10-01', item: 'bullet:b1', before: 'Links never expire.', after: 'Links expire.', reason: 'owner' }] });
   if (o.questions) f.fragment('questions', { questions: [{ id: 'q1', text: 'Who prunes expired links?', recommended: 'The nightly job.', items: ['node:api'] }] });
@@ -346,6 +346,9 @@ for (const [name, html] of [['site', site], ['page', page]] as const) {
   const jumps = levels.flatMap((l, i) => (i > 0 && l > (levels[i - 1] as number) + 1 ? [`h${levels[i - 1]} then h${l}`] : []));
   assert.deepStrictEqual(jumps, [], `${name}: heading levels skip`);
 }
+
+// A numeric decision reads "decision 3", as rules-in-force.md writes it (final review, unprimed 5).
+assert.ok(/<li>Links expire\. decision 3 /.test(chapter(page, 'rules-in-force')), chapter(page, 'rules-in-force'));
 
 // Escape: a lead with markup renders as text.
 assert.ok(chapter(page, 'ch-06-s2').includes('&lt;b&gt;x&lt;/b&gt;') && !page.includes('<b>x</b>'), 'the lead is escaped');

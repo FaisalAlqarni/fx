@@ -3,6 +3,7 @@
 import { sectionItems } from './sf-coverage.js';
 import type { Coverage } from './sf-coverage.js';
 import type { Root as EvRoot } from './sf-evidence.js';
+import { decisionText, sectionFlows, sectionSeqs } from './sf-model.js';
 import type { Evidence, Evidenced, FileEvidence, FigureSpec, Look, Model, Section } from './sf-model.js';
 import type { Theme } from './sf-theme.js';
 
@@ -72,8 +73,6 @@ export function renderPage(input: Input): string {
   // The first section to list a figure draws it; later ones link to it.
   const drawnBy = new Map<string, number>();
   const claim = (key: string, i: number): boolean => { if (!drawnBy.has(key)) drawnBy.set(key, i); return drawnBy.get(key) === i; };
-  const sectionSeqs = (s: Section) => model.sequences.filter((q) => (s.sequences ?? []).includes(q.id) || q.chapter === s.id);
-  const sectionFlows = (s: Section) => model.storeFlows.filter((f) => (s.storeFlows ?? []).includes(f.id) || f.chapter === s.id);
 
   const storeCols: Record<string, [string, string][]> = {
     sql: [['Table', 'table'], ['Database', 'database'], ['Purpose', 'purpose'], ['Written by', 'writtenBy'], ['Read by', 'readBy'], ['When', 'when']],
@@ -98,7 +97,7 @@ export function renderPage(input: Input): string {
   const codeChapter = (): string => {
     const stores = Object.entries(model.stores).filter(([, rows]) => rows.length > 0).map(([kind, rows]) => {
       const ids = new Set((rows as { id: string }[]).map((r) => r.id));
-      const shown = model.sections.map((s, i) => ({ s, i })).filter(({ s }) => (s.storeRefs ?? []).some((r) => ids.has(r)) || sectionFlows(s).some((f) => f.steps.some((st) => st.store === kind)));
+      const shown = model.sections.map((s, i) => ({ s, i })).filter(({ s }) => (s.storeRefs ?? []).some((r) => ids.has(r)) || sectionFlows(model, s).some((f) => f.steps.some((st) => st.store === kind)));
       return [escapeHtml(kind), String(rows.length), shown.map(({ s, i }) => `<a href="#${chapterId(i, s)}">${t(s.title)}</a>`).join(', ')];
     });
     const out = [stores.length === 0 ? '' : table('Where data lives', ['Store kind', 'Rows', 'Shown in'], stores, 'stores'),
@@ -153,8 +152,8 @@ export function renderPage(input: Input): string {
       }
     };
     const diagrams = model.levels.diagrams.filter((d) => (s.diagrams ?? []).includes(d.id));
-    const seqs = sectionSeqs(s);
-    const flows = sectionFlows(s);
+    const seqs = sectionSeqs(model, s);
+    const flows = sectionFlows(model, s);
     for (const d of diagrams) figure(`level-${d.id}`, d.title, d.summary);
     for (const q of seqs) figure(`seq-${q.id}`, q.title, q.summary, 'Sequence: ');
     for (const f of flows) figure(`flow-${f.id}`, f.trigger, f.summary, 'Store flow: ');
@@ -204,7 +203,7 @@ export function renderPage(input: Input): string {
     `<div class="table-scroll" role="region" aria-label="Glossary"><table class="glossary"><thead><tr>${['Term', 'Tag', 'Meaning', 'Evidence'].map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${
       glossary.map((g) => `<tr id="term-${escapeHtml(g.id)}"><td>${t(g.term)}</td><td><span class="tag">${escapeHtml(g.tag)}</span></td><td>${t(g.meaning)}</td><td>${evCell(g)}</td></tr>`).join('')}</tbody></table></div>`);
   fixedChapter('rules-in-force', 'Rules in force', 'Which decisions must every change respect?', model.rules.length === 0 ? '<p>No rules are listed.</p>'
-    : `<ul class="facts">${model.rules.map((r) => `<li>${t(r.text)}${r.adr === undefined ? '' : ` (<code>${escapeHtml(where(r.adr))}</code>)`}${r.decision === undefined ? '' : ` ${t(r.decision)}`} ${evCell(r)}</li>`).join('')}</ul>`);
+    : `<ul class="facts">${model.rules.map((r) => `<li>${t(r.text)}${r.adr === undefined ? '' : ` (<code>${escapeHtml(where(r.adr))}</code>)`}${r.decision === undefined ? '' : ` ${t(decisionText(r.decision))}`} ${evCell(r)}</li>`).join('')}</ul>`);
   const title = new Map(model.sections.map((s, i) => [s.id, { s, i }]));
   const unknown = model.questions.length === 0 ? ''
     : `<h3>Not known yet</h3><ul class="facts">${model.questions.map((q) => `<li>${t(q.text)}${q.answer === undefined ? '' : ` Answer: ${t(q.answer)}`}${q.recommended === undefined ? '' : ` Recommended: ${t(q.recommended)}`}${(q.items ?? []).length === 0 ? '' : ` Items: ${(q.items ?? []).map((h) => `<code>${escapeHtml(h)}</code>`).join(' ')}`}</li>`).join('')}</ul>`;
