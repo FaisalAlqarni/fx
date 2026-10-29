@@ -174,7 +174,13 @@ checked the same way. List every ADR in every root's ADR folder whose status
 does not open with Superseded, Deprecated or Ignored. Write one rule per
 numbered decision, summarised in one sentence, with `adr` and `decision` (the
 number, or the lead phrase of an unnumbered ADR), and the ADR's own evidence
-lines when it has them.
+lines when it has them. Read each ADR whole with the Read tool, one ADR per
+call; never through `head`, `cut`, `awk` or one listing of many ADRs, whose
+output is capped and clipped. A subagent that writes the rules gets this rule
+in its brief and returns `ADRs read whole: <n> of <n>`. The controller takes
+the rules only when both numbers equal the ADRs in force. `check` fails a rule
+whose `decision` is a number the ADR has no numbered item for under its
+Decision heading, or a phrase where the ADR numbers its decisions.
 
 ### 4. Build the draft
 

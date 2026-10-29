@@ -127,7 +127,32 @@ export function checkRuleAdrs(model: Model, roots: Map<string, Root>): Problem[]
     if (root.missing || root.refused !== undefined) continue;
     const text = readCited(root, r.adr.path);
     const why = text === null ? 'not found' : adrStatus(text) === 'superseded' ? 'is superseded' : null;
-    if (why !== null) out.push({ ...originOf(r), message: `rule ${r.id}: ADR ${r.adr.path} ${why}`, level: 'error' });
+    const problem = why ?? (text === null ? null : decisionProblem(text, r.decision));
+    if (problem !== null) out.push({ ...originOf(r), message: `rule ${r.id}: ADR ${r.adr.path} ${problem}`, level: 'error' });
+  }
+  return out;
+}
+
+// A rule names a decision the ADR really has, so a summary written from a clipped read still points at a real item.
+function decisionProblem(text: string, decision: string | undefined): string | null {
+  const numbers = decisionNumbers(text);
+  if (decision !== undefined && /^\d+$/.test(decision)) return numbers.has(decision) ? null : `has no decision ${decision}`;
+  return numbers.size === 0 ? null : `numbers its decisions; cite one by number, not ${decision ?? 'none'}`;
+}
+
+// Top-level numbered items under the first Decision heading (MADR's Decision Drivers is not one), up to the next heading at its level or above.
+// shortcut: numbers continued in a later section (fx's own "Still in force") are not seen; widen the scan when an ADR cites one.
+function decisionNumbers(text: string): Set<string> {
+  const lines = text.split('\n');
+  const at = lines.findIndex((l) => /^#{1,6}\s+decisions?\b(?!\s+drivers)/i.test(l));
+  const out = new Set<string>();
+  if (at < 0) return out;
+  const level = (lines[at] ?? '').indexOf(' ');
+  for (const l of lines.slice(at + 1)) {
+    const h = /^(#+)\s/.exec(l);
+    if (h && (h[1] ?? '').length <= level) break;
+    const m = /^ {0,2}(\d+)\.\s/.exec(l);
+    if (m) out.add(m[1] ?? '');
   }
   return out;
 }

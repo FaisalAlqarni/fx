@@ -163,6 +163,11 @@ assert.ok(/^## Branch pass$/m.test(raw(finalReview)), `${finalReview}: the branc
     'Invoke it yourself on the Start here prose, the glossary and `meta.intro`', '`Humanized: <area id> by <area agent | controller>`']);
   all('SKILL.md', ['When an area returns, read its `Humanized:` line as check-and-report.md "Humanized prose" says']);
 
+  // Proof run (b): the rules writer read 66 ADRs through clipped shell dumps (awk substr, cut -c) and got 4 of 25 decisions wrong.
+  all('SKILL.md', ['Read each ADR whole with the Read tool, one ADR per call; never through `head`, `cut`, `awk` or one listing of many ADRs, whose output is capped and clipped.',
+    'A subagent that writes the rules gets this rule in its brief and returns `ADRs read whole: <n> of <n>`.',
+    '`check` fails a rule whose `decision` is a number the ADR has no numbered item for under its Decision heading, or a phrase where the ADR numbers its decisions.']);
+
   // The quoted sentence of task 03's table, never reworded.
   has(`${sf}/check-and-report.md`, 'section <id>: <n> words of lead, bullets and not owned; at least 100 required', 'the floor message is quoted');
 

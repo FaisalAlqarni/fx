@@ -221,6 +221,11 @@ assert.ok(/^## Branch pass$/m.test(raw(finalReview)), `${finalReview}: the branc
     "`Humanized: <area id> by <area agent | controller>`"
   ]);
   all("SKILL.md", ['When an area returns, read its `Humanized:` line as check-and-report.md "Humanized prose" says']);
+  all("SKILL.md", [
+    "Read each ADR whole with the Read tool, one ADR per call; never through `head`, `cut`, `awk` or one listing of many ADRs, whose output is capped and clipped.",
+    "A subagent that writes the rules gets this rule in its brief and returns `ADRs read whole: <n> of <n>`.",
+    "`check` fails a rule whose `decision` is a number the ADR has no numbered item for under its Decision heading, or a phrase where the ADR numbers its decisions."
+  ]);
   has(`${sf}/check-and-report.md`, "section <id>: <n> words of lead, bullets and not owned; at least 100 required", "the floor message is quoted");
   const adr66 = "docs/adr/0066-a-system-model-is-the-record-for-the-system-flow-site.md";
   for (const t of ["site template", "Start here", "schema version 2", "lifelines"]) has(adr66, t, `ADR 0066 holds ${t}`);

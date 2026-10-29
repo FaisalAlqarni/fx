@@ -75,7 +75,7 @@ Status: ${o.adrStatus ?? "accepted, 2026-01-01"}
       { id: "s2", title: "Engines", question: "What is in A?", diagrams: ["system"], ...o.second ? { covers: ["job-sweep"], bullets: [bullet("b2", ev("app/jobs/sweep.rb", "1", "Sweep"))] } : {} }
     ]
   });
-  f.fragment("rules", { rules: [{ id: "r1", text: "Use X.", adr: { path: o.ruleAdr ?? "docs/adr/0001-x.md", ...o.ruleAdrRoot === void 0 ? {} : { root: o.ruleAdrRoot } }, decision: "Decision 1: use X", evidence: ev("app/x.rb", "4", "expired?") }] });
+  f.fragment("rules", { rules: [{ id: "r1", text: "Use X.", adr: { path: o.ruleAdr ?? "docs/adr/0001-x.md", ...o.ruleAdrRoot === void 0 ? {} : { root: o.ruleAdrRoot } }, decision: o.ruleDecision ?? "Decision 1: use X", evidence: ev("app/x.rb", "4", "expired?") }] });
   f.floor();
   return f;
 }
@@ -154,6 +154,21 @@ assert.strictEqual(setup({ adrStatus: "Partly superseded by 0002" }).run(["check
   const r = setup({ ruleAdr: "docs/adr/0009-gone.md" }).run(["check"]);
   assert.strictEqual(r.status, 1);
   assert.ok(r.stderr.trimEnd().endsWith("rule r1: ADR docs/adr/0009-gone.md not found"), r.stderr);
+}
+{
+  const adr = "# 2. Y\n\nStatus: accepted\n\n## Decision\n\n1. Use X.\n2. Keep Y.\n   3. A nested step.\n\n## Consequences\n\n4. Not a decision.\n";
+  const run = (decision) => {
+    const f = setup({ ruleAdr: "docs/adr/0002-y.md", ruleDecision: decision });
+    f.put("host", "docs/adr/0002-y.md", adr);
+    f.commit("host", "adr");
+    return f.run(["check"]);
+  };
+  assert.strictEqual(run("2").status, 0, run("2").stderr);
+  for (const [d, why] of [["3", "has no decision 3"], ["4", "has no decision 4"], ["Keep Y", "numbers its decisions; cite one by number, not Keep Y"]]) {
+    const r = run(d);
+    assert.strictEqual(r.status, 1, d);
+    assert.ok(r.stderr.trimEnd().endsWith(`rule r1: ADR docs/adr/0002-y.md ${why}`), r.stderr);
+  }
 }
 {
   const r = setup({ ruleAdrRoot: "nope" }).run(["check"]);

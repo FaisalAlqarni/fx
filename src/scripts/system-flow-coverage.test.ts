@@ -14,7 +14,7 @@ type Ev = { root?: string; path: string; lines?: string; symbol: string };
 const ev = (p: string, lines: string, symbol: string, root?: string): Ev[] => [{ ...(root === undefined ? {} : { root }), path: p, lines, symbol }];
 const lines30 = Array.from({ length: 30 }, (_, i) => (i === 0 ? 'class Sweep' : `  # line ${i + 1}`)).join('\n') + '\n';
 
-type Opts = { bullet?: Ev[]; covers?: string[]; second?: boolean; adrStatus?: string; ruleAdr?: string; ruleAdrRoot?: string; bare?: boolean };
+type Opts = { bullet?: Ev[]; covers?: string[]; second?: boolean; adrStatus?: string; ruleAdr?: string; ruleAdrRoot?: string; ruleDecision?: string; bare?: boolean };
 // Inventory: one entry of each kind. Section s1 holds a bullet; s2 lists the system diagram.
 function setup(o: Opts = {}): Fx {
   const f = sfFixture();
@@ -52,7 +52,7 @@ function setup(o: Opts = {}): Fx {
       { id: 's2', title: 'Engines', question: 'What is in A?', diagrams: ['system'], ...(o.second ? { covers: ['job-sweep'], bullets: [bullet('b2', ev('app/jobs/sweep.rb', '1', 'Sweep'))] } : {}) },
     ],
   });
-  f.fragment('rules', { rules: [{ id: 'r1', text: 'Use X.', adr: { path: o.ruleAdr ?? 'docs/adr/0001-x.md', ...(o.ruleAdrRoot === undefined ? {} : { root: o.ruleAdrRoot }) }, decision: 'Decision 1: use X', evidence: ev('app/x.rb', '4', 'expired?') }] });
+  f.fragment('rules', { rules: [{ id: 'r1', text: 'Use X.', adr: { path: o.ruleAdr ?? 'docs/adr/0001-x.md', ...(o.ruleAdrRoot === undefined ? {} : { root: o.ruleAdrRoot }) }, decision: o.ruleDecision ?? 'Decision 1: use X', evidence: ev('app/x.rb', '4', 'expired?') }] });
   f.floor();
   return f;
 }
@@ -115,6 +115,16 @@ assert.strictEqual(setup({ adrStatus: 'Partly superseded by 0002' }).run(['check
   assert.ok(r.stderr.trimEnd().endsWith('rule r1: ADR docs/adr/0009-gone.md not found'), r.stderr);
 }
 
+{ // A rule cites a numbered decision that exists under its ADR's Decision heading, so a rule written from a clipped read names a real item
+  const adr = '# 2. Y\n\nStatus: accepted\n\n## Decision\n\n1. Use X.\n2. Keep Y.\n   3. A nested step.\n\n## Consequences\n\n4. Not a decision.\n';
+  const run = (decision: string) => { const f = setup({ ruleAdr: 'docs/adr/0002-y.md', ruleDecision: decision }); f.put('host', 'docs/adr/0002-y.md', adr); f.commit('host', 'adr'); return f.run(['check']); };
+  assert.strictEqual(run('2').status, 0, run('2').stderr);
+  for (const [d, why] of [['3', 'has no decision 3'], ['4', 'has no decision 4'], ['Keep Y', 'numbers its decisions; cite one by number, not Keep Y']]) {
+    const r = run(d);
+    assert.strictEqual(r.status, 1, d);
+    assert.ok(r.stderr.trimEnd().endsWith(`rule r1: ADR docs/adr/0002-y.md ${why}`), r.stderr);
+  }
+}
 { // An ADR root that names no root in meta.roots is an error, never skipped (final fix A5)
   const r = setup({ ruleAdrRoot: 'nope' }).run(['check']);
   assert.strictEqual(r.status, 1, r.stdout);
