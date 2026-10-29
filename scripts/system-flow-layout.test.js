@@ -272,6 +272,15 @@ async function main() {
     assert.ok(!fig.steps[0]?.caption.includes("app/x.rb"), fig.steps[0]?.caption);
   }
   {
+    const role30 = "Keeps each link and its expiry";
+    assert.strictEqual(role30.length, 30);
+    const f = setup({ id: "system", level: 0, nodes: [{ ...node("link"), role: role30, kind: "an-unusually-long-kind-name-here", look: "client" }, { ...node("db"), role: "Rows", kind: "database", look: "store" }], edges: [edge("link", "db")] });
+    built(f);
+    const fig = await figure(f, "level-system");
+    for (const n of fig.nodes) assert.ok([...n.sub].length * 6.6 <= n.w - 12, `${n.id}: "${n.sub}" fits ${n.w} px at 12 px`);
+    assert.deepStrictEqual(fig.nodes.map((n) => n.title), [role30, "Rows"]);
+  }
+  {
     const f = setup({ id: "system", level: 0, nodes: [node("api"), node("db")], edges: [edge("api", "db")] });
     f.fragment("flows", {
       storeFlows: [{

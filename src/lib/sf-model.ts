@@ -278,7 +278,8 @@ export type FigureSpec = {
   key: string; // level-<diagram id> | seq-<sequence id> | flow-<flow id>
   kind: 'level' | 'sequence' | 'flow';
   width: number; height: number; direction: 'RIGHT' | 'DOWN';
-  nodes: { id: string; x: number; y: number; w: number; h: number; lines: string[]; sub: string; look: Look; kind: string; primary: boolean; store: boolean }[];
+  // title: the whole role, which the second line (sub) may not show.
+  nodes: { id: string; x: number; y: number; w: number; h: number; lines: string[]; sub: string; title?: string; look: Look; kind: string; primary: boolean; store: boolean }[];
   edges: { id: string; d: string; mode: 'sync' | 'async'; label: { x: number; y: number; w: number; h: number; text: string } | null }[];
   groups: { id: string; label: string; x: number; y: number; w: number; h: number }[];
   lanes?: FigureLane[]; rows?: FigureRow[]; // a sequence only, with nodes, edges and groups empty; a step's edges name rows

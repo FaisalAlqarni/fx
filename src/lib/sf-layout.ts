@@ -38,7 +38,7 @@ function ruleShort(label: string, max = 26): string {
 export function shortLabel(label: string, short?: string): string { return short ?? ruleShort(label); }
 
 // ---------------------------------------------------------------- figure inputs
-type FNode = { id: string; label: string; kind: string; sub: string; look: Look; primary: boolean; store: boolean };
+type FNode = { id: string; label: string; kind: string; role?: string; look: Look; primary: boolean; store: boolean };
 type FEdge = { id: string; from: string; to: string; label: string; mode: 'sync' | 'async' };
 type FGroup = { id: string; label: string; members: string[]; groups: string[] };
 type Input = {
@@ -52,8 +52,13 @@ const where = (evidence: Evidence[]): string | null => {
   const e = evidence.find((x) => 'path' in x);
   return e && 'path' in e ? (e.lines ? `${e.path}:${e.lines}` : e.path) : null;
 };
-// The node's second line: its role while that fits, else its kind.
-const subOf = (role: string, kind: string): string => (role.length <= 26 ? role : kind);
+// The node's second line at 12 px (6.6 px a character) in a box w wide: its role while that fits, else its kind, cut
+// with ... when even that does not fit. Called once the layout has fixed w.
+const subOf = (role: string | undefined, kind: string, w: number): string => {
+  const n = Math.floor((w - 12) / 6.6);
+  if (role !== undefined && role.length <= n) return role;
+  return kind.length <= n ? kind : `${kind.slice(0, Math.max(0, n - 3)).trimEnd()}...`;
+};
 
 // Derived edge ids: <diagram>:<from>><to>, with #2, #3 for a repeated pair.
 function edgeIds(d: Diagram): string[] {
@@ -71,7 +76,7 @@ function levelInput(d: Diagram): Input {
   const edges = d.edges.map((e, i): FEdge => ({ id: ids[i] ?? '', from: e.from, to: e.to, label: shortLabel(e.label, e.short), mode: e.mode ?? 'sync' }));
   return {
     key: `level-${d.id}`, kind: 'level',
-    nodes: d.nodes.map((n) => ({ id: n.id, label: n.label, kind: n.kind, sub: subOf(n.role, n.kind), look: n.look, primary: n.primary !== false, store: false })),
+    nodes: d.nodes.map((n) => ({ id: n.id, label: n.label, kind: n.kind, role: n.role, look: n.look, primary: n.primary !== false, store: false })),
     edges, groups: d.groups.map((g) => ({ id: g.id, label: g.label, members: g.members, groups: g.groups ?? [] })),
     ...(d.layout ? { hints: d.layout } : {}),
     steps: (drawn, order) => order.flatMap((id) => {
@@ -96,7 +101,7 @@ function flowInput(f: Model['storeFlows'][number]): Input {
   }
   return {
     key: `flow-${f.id}`, kind: 'flow', groups: [],
-    nodes: [...actors.map((id): FNode => ({ id, label: id, kind: 'actor', sub: 'actor', look: 'service', primary: true, store: false })), ...stores.map((id): FNode => ({ id, label: id, kind: 'store', sub: 'store', look: 'store', primary: true, store: true }))],
+    nodes: [...actors.map((id): FNode => ({ id, label: id, kind: 'actor', look: 'service', primary: true, store: false })), ...stores.map((id): FNode => ({ id, label: id, kind: 'store', look: 'store', primary: true, store: true }))],
     edges: [...pairs.values()].map((p) => ({ id: p.id, from: p.from, to: p.to, label: p.ops.size > 1 ? 'read, write' : [...p.ops].join(''), mode: 'sync' })),
     steps: (drawn) => f.steps.map((s) => {
       const id = pairs.get(`${s.actor}|${s.store}`)?.id ?? '';
@@ -366,7 +371,7 @@ async function figureOf(input: Input): Promise<{ spec: FigureSpec; line: LayoutL
   const order = [...lay.rects.entries()].sort(([, p], [, q]) => (lay.dir === 'RIGHT' ? p.x - q.x || p.y - q.y : p.y - q.y || p.x - q.x)).map(([id]) => id);
   const spec: FigureSpec = {
     key: input.key, kind: input.kind, width: Math.ceil(lay.W), height: Math.ceil(lay.H), direction: lay.dir,
-    nodes: input.nodes.map((n) => { const r = lay.rects.get(n.id) ?? { x: 0, y: 0, w: 0, h: 0, lines: [] }; return { id: n.id, ...round(r), lines: r.lines, sub: n.sub, look: n.look, kind: n.kind, primary: n.primary, store: n.store }; }),
+    nodes: input.nodes.map((n) => { const r = lay.rects.get(n.id) ?? { x: 0, y: 0, w: 0, h: 0, lines: [] }; return { id: n.id, ...round(r), lines: r.lines, sub: subOf(n.role, n.kind, Math.round(r.w)), ...(n.role === undefined ? {} : { title: n.role }), look: n.look, kind: n.kind, primary: n.primary, store: n.store }; }),
     edges: edges.map((e) => {
       const l = labels.get(e.id);
       return { id: e.id, d: roundedPath((lay.routes.get(e.id) ?? []).map(([x, y]): Pt => [r1(x), r1(y)])), mode: e.mode, label: l ? { ...round(l), text: l.lines.join(' ') } : null };

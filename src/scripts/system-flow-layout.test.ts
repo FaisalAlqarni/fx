@@ -275,6 +275,17 @@ async function main(): Promise<void> {
     assert.ok(!fig.steps[0]?.caption.includes('app/x.rb'), fig.steps[0]?.caption);
   }
 
+  // The second line is fitted to the box's own width once the layout knows it, and the whole role stays in title (final review F9).
+  {
+    const role30 = 'Keeps each link and its expiry';
+    assert.strictEqual(role30.length, 30);
+    const f = setup({ id: 'system', level: 0, nodes: [{ ...node('link'), role: role30, kind: 'an-unusually-long-kind-name-here', look: 'client' }, { ...node('db'), role: 'Rows', kind: 'database', look: 'store' }], edges: [edge('link', 'db')] });
+    built(f);
+    const fig = await figure(f, 'level-system');
+    for (const n of fig.nodes) assert.ok([...n.sub].length * 6.6 <= n.w - 12, `${n.id}: "${n.sub}" fits ${n.w} px at 12 px`);
+    assert.deepStrictEqual(fig.nodes.map((n) => (n as { title?: string }).title), [role30, 'Rows']);
+  }
+
   // Store flow: the actor and its stores, one arrow per actor and store, labelled by operation.
   {
     const f = setup({ id: 'system', level: 0, nodes: [node('api'), node('db')], edges: [edge('api', 'db')] });
