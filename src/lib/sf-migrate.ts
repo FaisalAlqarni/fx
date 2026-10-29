@@ -12,7 +12,8 @@ const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !
 
 const LOOKS: [Look, string[]][] = [
   ['client', ['client', 'app', 'browser', 'mobile', 'portal', 'ui']],
-  ['store', ['store', 'db', 'database', 'sql', 'cache', 'redis', 'bucket', 'files', 'storage']],
+  // A queue holds messages until a consumer takes them: data at rest, so a store, as fragment-guide.md lists it.
+  ['store', ['store', 'db', 'database', 'sql', 'cache', 'redis', 'bucket', 'files', 'storage', 'queue']],
   ['external', ['external', 'outside', 'third-party', 'saas']],
   ['security', ['security', 'auth', 'identity', 'check']],
 ];

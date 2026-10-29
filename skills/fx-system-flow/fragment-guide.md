@@ -129,7 +129,7 @@ and is one of five:
 | Look | For |
 |---|---|
 | `service` | code of this system: a service, job, worker, controller |
-| `store` | a database, cache, queue or file store |
+| `store` | a database, cache, queue or file store (a queue holds messages until a consumer takes them) |
 | `client` | a browser, phone app or other caller of the system |
 | `external` | a system outside this one |
 | `security` | an identity or access check |

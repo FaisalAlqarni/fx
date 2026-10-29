@@ -4,6 +4,7 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import { parseJson } from '../lib/json.js';
+import { lookOf } from '../lib/sf-migrate.js';
 import { sfFixture } from '../tests/helpers/sf-fixture.js';
 
 type Fx = ReturnType<typeof sfFixture>;
@@ -106,6 +107,9 @@ const failed = bad.run(['migrate']);
 assert.strictEqual(failed.status, 1, failed.stdout);
 assert.match(failed.stderr, new RegExp(`^${F}/level0.json:/levels/diagrams/0/nodes/0/kind: `, 'm'));
 assert.deepStrictEqual(bytes(bad), badBytes, 'every fragment is unchanged');
+
+// A queue holds messages until a consumer takes them, so it is drawn as a store, as fragment-guide.md says (final review F11).
+for (const k of ['queue', 'Queue']) assert.strictEqual(lookOf(k), 'store', k);
 
 // No folder, and usage.
 const none = sfFixture().run(['--site', 'nowhere', 'migrate']);
