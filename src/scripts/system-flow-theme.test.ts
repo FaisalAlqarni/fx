@@ -49,6 +49,13 @@ const TEAL = '    - scheme: default\n      primary: teal\n      accent: teal\n  
   assert.deepStrictEqual(b.fallbacks, [{ theme: 'dark', slot: '--ink', against: '--paper', ratio: 1.2, used: '#e6edf3' }]);
   assert.ok(b.dark.includes('--ink: #e6edf3'));
 }
+{ // Muted text on a panel, and the focus ring (--alert) on paper and panel (final review, a11y contrast note)
+  const f = make({ 'docs/assets/docs.css': css('--surface:#e8e8e8; --muted:#6b6b6b; --danger:#f0b0a0;', '') });
+  assert.deepStrictEqual(built(f).fallbacks, [
+    { theme: 'light', slot: '--muted', against: '--panel', ratio: 4.35, used: '#5b6472' },
+    { theme: 'light', slot: '--alert', against: '--paper', ratio: 1.84, used: '#b45309' },
+  ]);
+}
 { // No dark variant: skipped
   const f = make({ 'docs/assets/docs.css': ':root { --bg:#ffffff; --ink:#111111; --accent:#0a7d6e; }\n' });
   assert.deepStrictEqual(detected(f), { source: 'fx', kind: 'fx' });

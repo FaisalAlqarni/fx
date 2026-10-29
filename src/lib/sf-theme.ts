@@ -247,7 +247,9 @@ function chosenPick(root: string, docsDir: string, yml: string, c: { source: str
 
 // ---- detection
 
-const PAIRS: [string, string, number][] = [['--ink', '--paper', 4.5], ['--ink', '--panel', 4.5], ['--muted', '--paper', 4.5], ['--accent', '--paper', 4.5], ['--accent', '--panel', 3]];
+// Muted is text on cards and the player's unreached steps, so it is checked on the panel too; --alert is the focus ring.
+const PAIRS: [string, string, number][] = [['--ink', '--paper', 4.5], ['--ink', '--panel', 4.5], ['--muted', '--paper', 4.5], ['--accent', '--paper', 4.5], ['--accent', '--panel', 3],
+  ['--muted', '--panel', 4.5], ['--alert', '--paper', 3], ['--alert', '--panel', 3]];
 
 // With `chosen` (.fx.json system_flow.theme), that source is read and nothing else is tried.
 export function detectTheme(hostRoot: string, docsDir: string | null, chosen?: { source: string; kind: Theme['kind'] }): Theme {

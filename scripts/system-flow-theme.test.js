@@ -73,6 +73,13 @@ const TEAL = "    - scheme: default\n      primary: teal\n      accent: teal\n  
   assert.ok(b.dark.includes("--ink: #e6edf3"));
 }
 {
+  const f = make({ "docs/assets/docs.css": css("--surface:#e8e8e8; --muted:#6b6b6b; --danger:#f0b0a0;", "") });
+  assert.deepStrictEqual(built(f).fallbacks, [
+    { theme: "light", slot: "--muted", against: "--panel", ratio: 4.35, used: "#5b6472" },
+    { theme: "light", slot: "--alert", against: "--paper", ratio: 1.84, used: "#b45309" }
+  ]);
+}
+{
   const f = make({ "docs/assets/docs.css": ":root { --bg:#ffffff; --ink:#111111; --accent:#0a7d6e; }\n" });
   assert.deepStrictEqual(detected(f), { source: "fx", kind: "fx" });
   const b = built(f);
