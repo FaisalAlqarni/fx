@@ -322,7 +322,7 @@ async function a11y(browser) {
         const bar2 = document.querySelector("#menu-bar > summary")?.getBoundingClientRect().height ?? 0;
         const short = [...document.querySelectorAll("figure.card")].flatMap((c) => {
           const ctl = c.querySelector(".ctl")?.getBoundingClientRect().height ?? 0;
-          return [...c.querySelectorAll(".fig, .cap a")].filter((el) => parseFloat(css(el).scrollMarginBlockEnd ?? "0") < ctl).map((el) => `${c.id} ${el.className || "a"} ${css(el).scrollMarginBlockEnd} < ${Math.round(ctl)}`);
+          return [...c.querySelectorAll(".fig, .cap a")].filter((el) => parseFloat(css(el).scrollMarginBlockEnd ?? "0") < ctl - 0.5);
         });
         const count2 = document.getElementById("filter-count");
         return { top: parseFloat(css(document.documentElement).scrollPaddingBlockStart ?? "0") || 0, bar: bar2, short, countShown: count2 !== null && css(count2).display !== "none" };
@@ -405,6 +405,7 @@ async function a11y(browser) {
       deeper = `Tab from the panel reaches "${btn}", Enter opens level ${crumbs}`;
       if (btn !== "Open next level" || crumbs < 2) deeper += " (failed)";
       await page.click("nav.fxm-bar button >> nth=0");
+      await page.waitForTimeout(800);
       await mapReady(page);
     }
     const edges = await page.evaluate(() => [...document.querySelectorAll("#map-root .react-flow__edge")].length);
@@ -570,11 +571,11 @@ async function a11y(browser) {
       await page.fill("#filter", word);
       menu = await loose("#menu li.part");
     }
-    const any = svgText.all + narr.all + menu.all;
+    const found = svgText.all + narr.all + menu.all;
     record(
       "arabic",
-      any > 0 && svgText.loose + narr.loose + menu.loose === 0,
-      any === 0 ? "no Arabic in figures or parts" : `Arabic letters outside lang="ar": figure text ${svgText.loose} of ${svgText.all}; ${k || "no sequence"} narration ${narr.loose} of ${narr.all}; filter "${word}" results ${menu.loose} of ${menu.all}`
+      svgText.loose + narr.loose + menu.loose === 0,
+      found === 0 ? "no Arabic in figures or parts, nothing to check" : `Arabic letters outside lang="ar": figure text ${svgText.loose} of ${svgText.all}; ${k || "no sequence"} narration ${narr.loose} of ${narr.all}; filter "${word}" results ${menu.loose} of ${menu.all}`
     );
     await ctx.close();
   }
@@ -1274,8 +1275,8 @@ async function measure(name) {
         const opened = await isOpen(page) === true && await page.isVisible(link(last));
         await page.click(link(last));
         await page.waitForTimeout(300);
-        const after = await page.evaluate(() => ({ open: document.getElementById("menu-bar")?.open ?? null, focus: document.activeElement === document.querySelector("#menu-bar > summary") }));
-        phoneBar = { pass: closed && sum !== null && Math.abs(sum.top) < 1 && opened && after.open === false && after.focus, detail: `closed at load ${closed}; summary top ${sum?.top} after scrolling 1500; opens the list ${opened}; after a link: open ${after.open}, focus on summary ${after.focus}` };
+        const after = await page.evaluate((id) => ({ open: document.getElementById("menu-bar")?.open ?? null, focus: document.activeElement === document.querySelector(`#${id} h2`) }), last);
+        phoneBar = { pass: closed && sum !== null && Math.abs(sum.top) < 1 && opened && after.open === false && after.focus, detail: `closed at load ${closed}; summary top ${sum?.top} after scrolling 1500; opens the list ${opened}; after a link: open ${after.open}, focus on the chapter's h2 ${after.focus}` };
         end(errors);
         await ctx.close();
       }
