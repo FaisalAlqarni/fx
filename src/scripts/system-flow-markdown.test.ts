@@ -65,9 +65,22 @@ for (const rel of ['start-here/index.md', 'start-here/start-what.md', 'start-her
   const l = lines(f, 'start-here/start-code.md');
   assert.ok(l.includes('| Store kind | Rows | Shown in |'), 'stores overview header');
   assert.ok(l.some((x) => x.startsWith('| sql | 1 |')), 'one sql row');
+  assert.ok(!l.some((x) => /^\| (cache|memory|files|client) \| 0 \|/.test(x)), `no row for an empty store kind, as on the page\n${l.join('\n')}`);
   assert.ok(l.includes('- Store keys read table:column.'), 'the conventions note');
   assert.ok(l.includes('| Folder | What it owns | Start reading at |'), 'code map header');
   assert.ok(l.includes('| app/ | The application code. | `app/x.rb:1-4` `Link` |'), l.join('\n'));
+}
+
+// A chapter's sequences are the ones it lists and the ones that name it, as on the page (final review, unprimed 7).
+{
+  const g = built((x) => {
+    const file = path.join(x.host, F, 'chapters.json');
+    const ch = parseJson(fs.readFileSync(file, 'utf8')) as Obj;
+    ((ch.sections as Obj[]).find((sec) => sec.id === 's1') as Obj).sequences = ['turn'];
+    fs.writeFileSync(file, JSON.stringify(ch));
+  });
+  const l = lines(g, 's1.md');
+  assert.ok(l.includes('## Sequences') && l.some((x) => x.includes('A visit')), l.join('\n'));
 }
 
 // Captions: the sequence summary in italics, right before its Mermaid fence.

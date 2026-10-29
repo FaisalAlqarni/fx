@@ -5,7 +5,7 @@ import { execFileSync } from 'child_process';
 import { COMMIT } from './sf-evidence.js';
 import type { Root } from './sf-evidence.js';
 import type { Coverage } from './sf-coverage.js';
-import { decisionText } from './sf-model.js';
+import { decisionText, sectionFlows, sectionSeqs } from './sf-model.js';
 import type { Evidence, Evidenced, Model, Section, Sequence, StoreFlow } from './sf-model.js';
 
 export const GENERATED = '<!-- fx-system-flow generated: edit the model, then rebuild -->';
@@ -101,9 +101,9 @@ const linkTarget = (p: string): string => p.split('/').map((s) => encodeURICompo
 // The code chapter: one row per store kind with the chapters that show it, the notation note, then the code map by root.
 function codeBlocks(model: Model, hostId: string): string[] {
   const title = new Map(model.sections.map((s) => [s.id, s.title]));
-  const stores = Object.entries(model.stores).map(([kind, rows]) => {
+  const stores = Object.entries(model.stores).filter(([, rows]) => rows.length > 0).map(([kind, rows]) => {
     const ids = new Set((rows as { id: string }[]).map((r) => r.id));
-    const shown = model.sections.filter((s) => (s.storeRefs ?? []).some((r) => ids.has(r)) || model.storeFlows.some((f) => f.chapter === s.id && f.steps.some((st) => st.store === kind)));
+    const shown = model.sections.filter((s) => (s.storeRefs ?? []).some((r) => ids.has(r)) || sectionFlows(model, s).some((f) => f.steps.some((st) => st.store === kind)));
     return [kind, String(ids.size), cell(shown.map((s) => title.get(s.id)).join(', '))];
   });
   const out = ['## Where data lives', '', ...table(['Store kind', 'Rows', 'Shown in'], stores), ''];
@@ -134,8 +134,8 @@ export function renderMarkdown(model: Model, roots: Map<string, Root>, hostId: s
 
   for (const s of model.sections) {
     const dir = path.posix.dirname(secPath(s));
-    const sequences = model.sequences.filter((q) => q.chapter === s.id);
-    const flows = model.storeFlows.filter((f) => f.chapter === s.id);
+    const sequences = sectionSeqs(model, s);
+    const flows = sectionFlows(model, s);
     const bullets = s.bullets ?? [];
     const body = [`# ${prose(s.title)}`, '', prose(s.question), '', ...(s.lead === undefined ? [] : [prose(s.lead), ''])];
     for (const b of bullets) {

@@ -223,6 +223,10 @@ function duplicates(model: Model): Problem[] {
   return problems;
 }
 
+// A chapter's figures: the ones it lists and the ones that name it as their chapter; the page and the Markdown both read these.
+export const sectionSeqs = (model: Model, s: Section): Sequence[] => model.sequences.filter((q) => (s.sequences ?? []).includes(q.id) || q.chapter === s.id);
+export const sectionFlows = (model: Model, s: Section): StoreFlow[] => model.storeFlows.filter((f) => (s.storeFlows ?? []).includes(f.id) || f.chapter === s.id);
+
 // A rule's decision as a reader sees it: a number names the ADR's numbered item, a phrase stands as written.
 export const decisionText = (d: string): string => (/^\d+$/.test(d) ? `decision ${d}` : d);
 
