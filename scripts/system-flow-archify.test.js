@@ -387,7 +387,7 @@ const detectOf = (f, env = {}) => (0, import_json.parseJson)(f.run(["detect"], e
   const lvl = (0, import_json.parseJson)(read(f, `${SITE}/model/fragments/level0.json`));
   const [api, db] = lvl.levels.diagrams[1].nodes;
   const ROLE = "Sends prompts and reads answers over HTTP, SSE or SignalR to the backend.";
-  const LABEL = "Primary relational database cluster";
+  const LABEL = "Primary relational database cluster for every region";
   api.role = ROLE;
   db.label = LABEL;
   f.fragment("level0", lvl);
@@ -403,7 +403,7 @@ const detectOf = (f, env = {}) => (0, import_json.parseJson)(f.run(["detect"], e
   const c = (id) => arch.components.find((x) => x.id === id);
   assert.strictEqual(c("api").sublabel, void 0);
   assert.strictEqual(c("db").sublabel, "Stores rows");
-  assert.deepStrictEqual(arch.cards.find((x) => x.title === "Parts")?.items, [`API: ${ROLE}`]);
+  assert.deepStrictEqual(arch.cards.find((x) => x.title === "Parts")?.items, [`API: ${ROLE}`, `${LABEL}: Stores rows`]);
   cutOf(LABEL, c("db").label);
   assert.ok([...c("db").label].length * 6.6 <= c("db").size[0] + 8, c("db").label);
   for (const n of ["seq-turn", "seq-turn-p2"]) {
@@ -416,6 +416,22 @@ const detectOf = (f, env = {}) => (0, import_json.parseJson)(f.run(["detect"], e
   assert.strictEqual(reason(o, "arch-engine").reason, "archify architecture, 2 components, shortened: db label");
   assert.strictEqual(reason(o, "seq-turn").reason, "archify sequence, 14 messages in 2 pages, shortened: api label");
   assert.strictEqual(reason(o, "arch-system").reason, "archify architecture, 2 components");
+}
+{
+  const f = setup();
+  const lvl = (0, import_json.parseJson)(read(f, `${SITE}/model/fragments/level0.json`));
+  const LONG = "Primary relational database node";
+  assert.strictEqual(LONG.length, 32);
+  lvl.levels.diagrams[1].nodes[1].label = LONG;
+  f.fragment("level0", lvl);
+  const o = ok(f, ["--archify", fake(f, "fake")]);
+  const arch = (0, import_json.parseJson)(read(f, `${D}/src/arch-engine.json`));
+  const db = arch.components.find((x) => x.id === "db");
+  assert.strictEqual(db.label, LONG);
+  assert.ok(32 * 6.6 <= db.size[0] + 8, `box ${db.size[0]} holds 32 units`);
+  const boxes = arch.components.map((x) => ({ x0: x.pos[0], x1: x.pos[0] + x.size[0], y0: x.pos[1], y1: x.pos[1] + x.size[1] }));
+  for (const [i, a] of boxes.entries()) for (const b of boxes.slice(i + 1)) assert.ok(a.x1 <= b.x0 || b.x1 <= a.x0 || a.y1 <= b.y0 || b.y1 <= a.y0, `boxes overlap: ${JSON.stringify([a, b])}`);
+  assert.strictEqual(reason(o, "arch-engine").reason, "archify architecture, 2 components");
 }
 {
   const f = setup();

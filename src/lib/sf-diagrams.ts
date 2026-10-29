@@ -92,26 +92,35 @@ function architecture(d: Diagram, fig: FigureSpec, roots: Map<string, Root>): De
   const parts: string[] = [];
   const known = new Set(d.nodes.map((n) => n.id));
   const groups = d.groups.flatMap((g) => { const wraps = g.members.filter((x) => known.has(x)); return wraps.length ? [{ label: g.label, wraps }] : []; });
+  // archify 3.2.0 needs units * 6.6 px within width + 8 for a label (component-label-overflow). A box grows to its label,
+  // up to 1.6 times its laid-out width, and every centre spreads by the same factor, so grown boxes keep the layout's gaps.
+  const need = (id: string): number => Math.ceil(units(byId.get(id)?.label ?? id) * 6.6 - 8);
+  const sx = Math.min(1.6, Math.max(1, ...fig.nodes.map((n) => need(n.id) / n.w)));
+  const boxes = fig.nodes.map((n) => {
+    const w = Math.max(n.w, Math.min(need(n.id), Math.round(n.w * sx)));
+    return { ...n, x: Math.round((n.x + n.w / 2) * sx - w / 2), w };
+  });
   // archify 3.2.0 frames a boundary 30 px around its members' box (boundaryRect) and widens it to fit its title at up to
   // 9 px (0.6 px a unit + 18); it never moves a frame back from the left or top edge, so everything shifts right and down.
   let dx = 0, dy = 0;
   for (const g of groups) {
-    const m = fig.nodes.filter((n) => g.wraps.includes(n.id));
+    const m = boxes.filter((n) => g.wraps.includes(n.id));
     const x0 = Math.min(...m.map((n) => n.x)), x1 = Math.max(...m.map((n) => n.x + n.w));
     const title = Math.max(30, units(g.label) * 9 * 0.6 + 10) + 8;
     dx = Math.max(dx, EDGE + 30 + Math.max(0, title - (x1 - x0 + 60)) / 2 - x0);
     dy = Math.max(dy, EDGE + 30 - Math.min(...m.map((n) => n.y)));
   }
   dx = Math.ceil(dx); dy = Math.ceil(dy);
-  const components = fig.nodes.map((n) => {
+  const components = boxes.map((n) => {
     const m = byId.get(n.id);
     const sources = m && m.primary !== false ? sourcesOf(m.evidence, linked(own, repo), host, rest, m.label) : undefined;
-    // archify 3.2.0: a label needs units * 6.6 px within width + 8 (component-label-overflow). A subtitle is drawn at
-    // 9 px only when units * 9 * 0.6 fit within width - 8, and shrinks to 6 px when not; a role that long goes whole
-    // to the Parts card instead (the 1000 px canvas in runArchify puts 9 px at 12 px).
+    // Only a label past the 1.6 cap is cut. A subtitle is drawn at 9 px only when units * 9 * 0.6 fit within width - 8,
+    // and shrinks to 6 px when not; a role that long goes whole to the Parts card instead (the 1000 px canvas in
+    // runArchify puts 9 px at 12 px).
     const label = fit(m?.label ?? n.id, Math.floor((n.w + 8) / 6.6), `${n.id} label`, shortened);
     const sublabel = m?.role && units(m.role) * 5.4 <= n.w - 8 ? m.role : undefined;
-    if (m?.role && !sublabel) parts.push(`${m.label}: ${m.role}`);
+    // A cut label or a role too long for the subtitle: the Parts card keeps both whole.
+    if (m && (label !== m.label || (m.role && !sublabel))) parts.push(m.role ? `${m.label}: ${m.role}` : m.label);
     return { id: aid(n.id), type: componentType(m?.kind ?? n.kind), label, ...(sublabel ? { sublabel } : {}), ...(sources ? { sources } : {}), pos: [n.x + dx, n.y + dy], size: [n.w, n.h] };
   });
   const boundaries = groups.map((g) => ({ kind: 'region', label: g.label, wraps: g.wraps.map(aid) }));
