@@ -180,7 +180,7 @@ const { out, err } = build(f);
 // render-architecture.mjs boundaryRect: a frame is the members' box padded 30 px left, right and top, 20 more at the bottom.
 // render-sequence.mjs spreadColumnGeometry: lifeline centres on an authored width; noteLayout: a note wraps 7 px text
 // (4.2 px a unit) inside one lane gap less 30 px, its bottom at y + 22 + 11 per extra line, and the next message must
-// sit 22 px below it; legendRequiredHeight: content bottom + 12 + 86; a `showcase` message label is units * 6.6 + 12 wide.
+// sit 22 px below it; legendRequiredHeight: content bottom + 12 + 86; a `showcase` message label is units * 6.6 + 12 wide. (prose-gate: quoting: archify quality profile name)
 const seqColumns = (w: number, count: number) => {
   const box = Math.max(86, Math.min(190, Math.round((w - 124) / count) - 24));
   const margin = Math.max(40, Math.min(62, w - 40 - (count * box + (count - 1) * 16)));

@@ -107,7 +107,7 @@ One TypeScript CLI beside `docs-index`, built by `scripts/build` into an extensi
 | `stale` | Every item whose cited lines changed since the commit it was verified at, per root, with the reason (`shifted`, `changed`, `deleted`, `unverified`). |
 | `verify <item id>... \| --all` | Records the current HEAD of each cited root as the item's verified commit, after the agent has re-read it. |
 
-The CLI runs archify itself when `--archify <dir>` names an installed archify (the lane finds it and passes it): it writes each spec, then runs `node <dir>/bin/archify.mjs finalize <type> <spec> <out> --repo-root <root> --quality showcase --receipt <site>/diagrams/<name>.receipt.json --json`, one at a time (archify's delivery lock rejects concurrent calls in one folder), and reports the receipt path without parsing it. Without `--archify` it renders every deep diagram as SVG.
+The CLI runs archify itself when `--archify <dir>` names an installed archify (the lane finds it and passes it): it writes each spec, then runs `node <dir>/bin/archify.mjs finalize <type> <spec> <out> --repo-root <root> --quality showcase --receipt <site>/diagrams/<name>.receipt.json --json`, one at a time (archify's delivery lock rejects concurrent calls in one folder), and reports the receipt path without parsing it. Without `--archify` it renders every deep diagram as SVG. <!-- prose-gate: quoting: archify quality profile name -->
 
 ### The model
 

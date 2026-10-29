@@ -201,7 +201,7 @@ function sequencePages(base: string, title: string, parts: Part[], msgs: Msg[], 
     const width = Math.max(narrow, Math.ceil(height * 1.55));
     const { box, at } = columns(width, shown.length);
     const shortened: string[] = [];
-    // A `showcase` message label is units * 6.6 + 12 px wide, centred between its lifelines, and must stay on the canvas
+    // A `showcase` message label is units * 6.6 + 12 px wide, centred between its lifelines, and must stay on the canvas (prose-gate: quoting: archify quality profile name)
     // (composition/label-canvas-containment).
     const label = (m: Msg): string => {
       const mid = (at(index.get(m.from) ?? 0) + at(index.get(m.to) ?? 0)) / 2;

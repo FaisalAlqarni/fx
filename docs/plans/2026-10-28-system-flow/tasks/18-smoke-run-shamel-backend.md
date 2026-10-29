@@ -29,7 +29,7 @@
 - Layout: `layout-report.json` has every figure at `crossings <= 1` and `width <= 860`; the lines are copied into `results.md`.
 - Visual check per `references/visual/visual-check.md`: `index.html` and every deep diagram at 1440 and 390, light and dark, archify outputs included, each pass or failure listed. Without a browser in this session, record `Visual check: not run: no browser`, name every page, and say the controller runs it before task 20 starts.
 
-**Risks:** archify's `finalize --quality showcase` may need a browser or packages that the scratch HOME lacks; record the exact error, fall back to SVG for that diagram through the CLI's own fallback, and report it as a finding for task 20 rather than working around it. A symbol in Shamel.Backend's C# that the verifier's last-segment rule cannot find (generic types, `partial` classes) is a finding: record it and cite a line that holds the name.
+**Risks:** archify's `finalize --quality showcase` may need a browser or packages that the scratch HOME lacks; record the exact error, fall back to SVG for that diagram through the CLI's own fallback, and report it as a finding for task 20 rather than working around it. A symbol in Shamel.Backend's C# that the verifier's last-segment rule cannot find (generic types, `partial` classes) is a finding: record it and cite a line that holds the name. <!-- prose-gate: quoting: archify quality profile name -->
 
 **Idempotency:** each run writes a new scratch folder named `<SCRATCH>/smoke-<date>-<n>`; nothing is reused or deleted. `results.md` `## Smoke` is rewritten whole on a rerun.
 

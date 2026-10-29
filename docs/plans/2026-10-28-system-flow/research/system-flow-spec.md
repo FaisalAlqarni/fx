@@ -169,7 +169,7 @@ Anatomy:
 | `diagrams/flow-<id>[-p2,-p3]` | 12 | sequence (actors and stores as participants) | 8 store flows plus split pages |
 | stray | 1 | | `diagrams/tmpf99eh7ra.html` (leftover temp output, no spec) |
 
-Totals over all 58 specs: 299 components, 324 connections, 156 participants, 201 messages, 4 boundaries, 78 cards, 8 segments. Quality profile: `showcase` 51, `standard` 2.
+Totals over all 58 specs: 299 components, 324 connections, 156 participants, 201 messages, 4 boundaries, 78 cards, 8 segments. Quality profile: `showcase` 51, `standard` 2. <!-- prose-gate: quoting: archify quality profile name -->
 
 **Spec shape.** `schema_version: 1`, `diagram_type`, `meta {title, output, quality_profile, viewBox, column_fit}`, then `components[] {id, type, label, pos, size}` and `connections[] {id, from, to, label, labelAt?}` (architecture) or `participants[] {id, type, label}` and `messages[] {id, from, to, y, label, variant}` with optional `segments[]` (sequence). Every spec ends with `cards[]`: "Steps" (each step with a short `[file.ts:lines]` citation) and "Participants" or "Deeper diagrams (+)".
 
@@ -179,7 +179,7 @@ Totals over all 58 specs: 299 components, 324 connections, 156 participants, 201
 
 **Visual checks.** 57 of 58 have `*.visual-check.{json,html}` plus four PNGs (1440x900 and 2048x1320, light and dark). Missing: `arch-data-stores`. What the receipt checks per viewport: page overflow X/Y, reader and diagram width versus viewBox, minimum projected node text size (at least 6 px; arch-backend's smallest is 9.0 px, "F5 load balancer"), legend and navigation dock overlap, dock-to-stage gap (at least 10 px), viewer chrome reserve. Status on all present receipts: `containment pass`, `visualReview: pending`. **No archify check runs at 390 px**, and screenshot 7 shows the sequence cut off on the right and the toolbar clipped at 390.
 
-What archify needs as input (from `~/.claude/skills/archify/SKILL.md` and `references/repository-authoring.md`): a candidate JSON of one of 10 types against `schemas/<type>.schema.json`, an output path, then `node bin/archify.mjs finalize <type> <candidate> <out.html> [--repo-root <root>] --quality showcase --json`. Gates: validate, deliver, strict check, real-browser check; optional `visual-check` capture. For repository diagrams it wants `sources` (at most three ranges) on primary elements only. Label length limits apply (common schema: 35 and 80 char fields, notes 140).
+What archify needs as input (from `~/.claude/skills/archify/SKILL.md` and `references/repository-authoring.md`): a candidate JSON of one of 10 types against `schemas/<type>.schema.json`, an output path, then `node bin/archify.mjs finalize <type> <candidate> <out.html> [--repo-root <root>] --quality showcase --json`. Gates: validate, deliver, strict check, real-browser check; optional `visual-check` capture. For repository diagrams it wants `sources` (at most three ranges) on primary elements only. Label length limits apply (common schema: 35 and 80 char fields, notes 140). <!-- prose-gate: quoting: archify quality profile name -->
 
 ---
 
