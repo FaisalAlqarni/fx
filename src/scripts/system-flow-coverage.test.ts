@@ -125,6 +125,18 @@ assert.strictEqual(setup({ adrStatus: 'Partly superseded by 0002' }).run(['check
     assert.ok(r.stderr.trimEnd().endsWith(`rule r1: ADR docs/adr/0002-y.md ${why}`), r.stderr);
   }
 }
+{ // Decision numbers come from the Decision heading's own section: a fenced line and a deeper subsection are not decisions (final review, unprimed 2)
+  const adr = '# 3. Z\n\nStatus: accepted\n\n## Decision\n\n1. Use X.\n\n```\n2. A fenced line.\n```\n\n### Details\n\n3. A subsection item.\n';
+  const madr = '# 4. W\n\nStatus: accepted\n\n## Decision Outcome\n\nChosen option: use X.\n\n### Consequences\n\n1. Good, because it is simple.\n';
+  const run = (text: string, decision: string) => { const f = setup({ ruleAdr: 'docs/adr/0003-z.md', ruleDecision: decision }); f.put('host', 'docs/adr/0003-z.md', text); f.commit('host', 'adr'); return f.run(['check']); };
+  for (const d of ['2', '3']) {
+    const r = run(adr, d);
+    assert.strictEqual(r.status, 1, d);
+    assert.ok(r.stderr.trimEnd().endsWith(`rule r1: ADR docs/adr/0003-z.md has no decision ${d}`), r.stderr);
+  }
+  const outcome = run(madr, 'Use X');
+  assert.strictEqual(outcome.status, 0, `a MADR outcome with numbered consequences takes a phrase\n${outcome.stderr}`);
+}
 { // An ADR root that names no root in meta.roots is an error, never skipped (final fix A5)
   const r = setup({ ruleAdrRoot: 'nope' }).run(['check']);
   assert.strictEqual(r.status, 1, r.stdout);

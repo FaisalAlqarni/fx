@@ -140,17 +140,19 @@ function decisionProblem(text: string, decision: string | undefined): string | n
   return numbers.size === 0 ? null : `numbers its decisions; cite one by number, not ${decision ?? 'none'}`;
 }
 
-// Top-level numbered items under the first Decision heading (MADR's Decision Drivers is not one), up to the next heading at its level or above.
+// Top-level numbered items in the first Decision heading's own section (MADR's Decision Drivers is not one): the section ends at the
+// next heading of any level, so a subsection's list (MADR's Consequences) is not read as decisions, and fenced lines are skipped.
 // shortcut: numbers continued in a later section (fx's own "Still in force") are not seen; widen the scan when an ADR cites one.
 function decisionNumbers(text: string): Set<string> {
   const lines = text.split('\n');
   const at = lines.findIndex((l) => /^#{1,6}\s+decisions?\b(?!\s+drivers)/i.test(l));
   const out = new Set<string>();
   if (at < 0) return out;
-  const level = (lines[at] ?? '').indexOf(' ');
+  let fence = false;
   for (const l of lines.slice(at + 1)) {
-    const h = /^(#+)\s/.exec(l);
-    if (h && (h[1] ?? '').length <= level) break;
+    if (/^\s{0,3}(```|~~~)/.test(l)) { fence = !fence; continue; }
+    if (fence) continue;
+    if (/^#{1,6}\s/.test(l)) break;
     const m = /^ {0,2}(\d+)\.\s/.exec(l);
     if (m) out.add(m[1] ?? '');
   }

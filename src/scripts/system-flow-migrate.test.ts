@@ -23,6 +23,7 @@ const v1 = (change: (f: Fx) => void = () => undefined): Fx => {
     participants: [{ id: 'cache', label: 'Cache', kind: 'cache', ...U }, { id: 'svc', label: 'Service', ...U }],
     messages: [{ n: 1, from: 'svc', to: 'cache', label: 'The service reads the cache.', ...U }] }] });
   f.fragment('chapters', { sections: [{ id: 's1', title: 'Pages', question: 'How is a page served?' }] });
+  f.fragment('rules', { rules: [{ id: 'r1', text: 'Pages are cached.', adr: { path: 'docs/adr/0009-gone.md' }, decision: '1', ...U }] });
   change(f);
   return f;
 };
@@ -59,6 +60,7 @@ for (const n of NAMES) assert.deepStrictEqual(stripped(read(f, n)), stripped(n =
 // Owed is what check fails on.
 assert.ok(out.owed.includes(`${F}/meta.json:/meta: meta.intro missing`), out.owed.join('\n'));
 assert.ok(out.owed.includes(`${F}/chapters.json:/sections: Start here role what missing`), out.owed.join('\n'));
+assert.ok(out.owed.some((l) => l.endsWith('rule r1: ADR docs/adr/0009-gone.md not found')), `owed holds the rule check too\n${out.owed.join('\n')}`);
 const checked = f.run(['check']);
 assert.strictEqual(checked.status, 1);
 assert.doesNotMatch(checked.stderr, /run system-flow migrate/, 'the hint is gone');

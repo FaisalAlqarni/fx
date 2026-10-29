@@ -2,9 +2,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { parseJson } from './json.js';
-import { SCHEMA_FILE, mergeFragments, writeAll } from './sf-model.js';
-import type { Fragment, Look, Problem } from './sf-model.js';
-import { checkProse } from './sf-prose.js';
+import { checkModel } from './sf-build.js';
+import { SCHEMA_FILE, writeAll } from './sf-model.js';
+import type { Look, Problem } from './sf-model.js';
 import { validate } from './sf-schema.js';
 
 type Obj = Record<string, unknown>;
@@ -53,20 +53,19 @@ export function migrate(hostRoot: string, site: string): { rewritten: string[]; 
       problems.push({ file, pointer: '', message: `invalid JSON: ${(e as Error).message}`, level: 'error' });
     }
   }
-  const fragments: Fragment[] = [];
   const todo: [string, string][] = [];
   for (const [name, data] of parsed) {
     const file = path.relative(hostRoot, path.join(dir, name));
     // upgrade() is idempotent, so every fragment goes through it and only a changed one is written.
     const next = upgrade(data);
-    fragments.push({ file, data: next });
     if (JSON.stringify(next) === JSON.stringify(data)) continue;
     for (const e of validate(schema, next)) problems.push({ file, pointer: e.pointer, message: e.message, level: 'error' });
     todo.push([name, `${JSON.stringify(next, null, 2)}\n`]);
   }
   if (problems.length > 0) return { rewritten: [], owed: [], problems };
-  const owed = checkProse(mergeFragments(fragments).model, 'whole').filter((p) => p.level === 'error')
-    .map((p) => (p.file === '' ? `system-flow: check: ${p.message}` : `${p.file}:${p.pointer}: ${p.message}`));
   const rewritten = writeAll(hostRoot, todo.map(([name, text]): [string, string] => [path.join(dir, name), text])).map((f) => path.relative(hostRoot, f)).sort();
+  // Owed is every error check now prints on the migrated files, rules and evidence included, not only the prose.
+  const owed = checkModel(hostRoot, site, 'check').problems.filter((p) => p.level === 'error')
+    .map((p) => (p.file === '' ? `system-flow: check: ${p.message}` : `${p.file}:${p.pointer}: ${p.message}`));
   return { rewritten, owed, problems };
 }
