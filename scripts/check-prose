@@ -107,9 +107,7 @@ def hits(line):
     """(pattern, excerpt) for each tell on one line of prose."""
     low = line.lower().replace('’', "'")
     out = [('dash', line.strip())] if '—' in line or '–' in line else []
-    # A word inside an inline code span is a name (a flag, a config value), not prose.
-    words = re.sub(r'`[^`]*`', ' ', low)
-    return out, [(label, line.strip()) for label, rx in PATTERNS if rx.search(words)]
+    return out, [(label, line.strip()) for label, rx in PATTERNS if rx.search(low)]
 
 
 # Comment syntax per file kind. A `#` or `//` opens a comment only at the start

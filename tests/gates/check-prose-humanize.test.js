@@ -118,14 +118,6 @@ ${r.out}`);
   assert.strictEqual(c.status, 0, `a clean file exits 0:
 ${c.out}`);
   const cleanMd = write("clean.md", "# Title\n\nA plain sentence.\n");
-  const span = write("span.md", "# Title\n\nRun `archify finalize --quality showcase` first.\n\nThis page is a showcase of the flow.\n");
-  const sp = run([span]);
-  assert.strictEqual(sp.status, 1, `prose outside the span still fails:
-${sp.out}`);
-  assert.ok(sp.out.includes(`${span}:5: stock word`), `line 5 flagged:
-${sp.out}`);
-  assert.ok(!sp.out.includes(`${span}:3: `), `the code span on line 3 is not flagged:
-${sp.out}`);
   assert.strictEqual(run([cleanMd]).status, 0, "a clean Markdown file exits 0");
   const repo = path.join(dir, "repo");
   fs.mkdirSync(repo);
