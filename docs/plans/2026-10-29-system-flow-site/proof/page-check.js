@@ -435,6 +435,32 @@ async function a11y(browser) {
     }
     record("mapLayout", ok, lines.join("; "));
   }
+  {
+    const index = path.resolve(file);
+    const html = fs.readFileSync(index, "utf8");
+    const deep = [...new Set([...html.matchAll(/<a class="deep" href="(diagrams\/[^"]+\.html)"/g)].map((m) => m[1]))].filter((rel) => fs.existsSync(path.join(path.dirname(index), rel)) && fs.readFileSync(path.join(path.dirname(index), rel), "utf8").includes('href="../assets/theme.css"'));
+    const named = [];
+    const pauses = [];
+    let animated = 0;
+    for (const rel of ["index.html", ...deep]) {
+      const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+      const page = await ctx.newPage();
+      await page.goto((0, import_url.pathToFileURL)(path.join(path.dirname(index), rel)).href);
+      const label = await page.evaluate(() => document.getElementById("theme")?.getAttribute("aria-label") ?? null);
+      if (label !== null) named.push(`${rel}: aria-label "${label}"`);
+      const moving = await page.evaluate(() => [...document.querySelectorAll('svg [style*="animation:"]')].length);
+      if (rel !== "index.html" && moving > 0) {
+        animated++;
+        const has = await page.isVisible("#pause");
+        if (has) await page.click("#pause");
+        const st = await page.evaluate(() => ({ state: getComputedStyle(document.querySelector('svg [style*="animation:"]')).animationPlayState, pressed: document.getElementById("pause")?.getAttribute("aria-pressed") ?? "" }));
+        if (!has || st.state !== "paused" || st.pressed !== "true") pauses.push(`${rel}: pause button ${has}, then ${st.state}, aria-pressed ${st.pressed}`);
+      }
+      await ctx.close();
+    }
+    record("themeName", named.length === 0, named.length === 0 ? `no aria-label on #theme in index.html and ${deep.length} SVG deep pages` : named.join("; "));
+    record("deepPause", animated > 0 && pauses.length === 0, animated === 0 ? "no animated SVG deep page found" : `${animated - pauses.length} of ${animated} animated deep pages pause${pauses.length ? `; ${pauses.join("; ")}` : ""}`);
+  }
 }
 function finish() {
   fs.writeFileSync(out, `${JSON.stringify(results, null, 2)}

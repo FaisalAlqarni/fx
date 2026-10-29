@@ -443,6 +443,35 @@ async function a11y(browser: Browser): Promise<void> {
     }
     record('mapLayout', ok, lines.join('; '));
   }
+  // 9 and review F10: the theme button's name is its visible text, on the index and on every fx SVG deep page. 7: a deep
+  // page whose steps animate has a pause button that stops them.
+  {
+    const index = path.resolve(file as string);
+    const html = fs.readFileSync(index, 'utf8');
+    const deep = [...new Set([...html.matchAll(/<a class="deep" href="(diagrams\/[^"]+\.html)"/g)].map((m) => m[1] as string))]
+      .filter((rel) => fs.existsSync(path.join(path.dirname(index), rel)) && fs.readFileSync(path.join(path.dirname(index), rel), 'utf8').includes('href="../assets/theme.css"'));
+    const named: string[] = [];
+    const pauses: string[] = [];
+    let animated = 0;
+    for (const rel of ['index.html', ...deep]) {
+      const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+      const page = await ctx.newPage();
+      await page.goto(pathToFileURL(path.join(path.dirname(index), rel)).href);
+      const label = await page.evaluate(() => document.getElementById('theme')?.getAttribute('aria-label') ?? null);
+      if (label !== null) named.push(`${rel}: aria-label "${label}"`);
+      const moving = await page.evaluate(() => [...document.querySelectorAll('svg [style*="animation:"]')].length);
+      if (rel !== 'index.html' && moving > 0) {
+        animated++;
+        const has = await page.isVisible('#pause');
+        if (has) await page.click('#pause');
+        const st = await page.evaluate(() => ({ state: (getComputedStyle as unknown as (e: unknown) => Record<string, string>)(document.querySelector('svg [style*="animation:"]')).animationPlayState, pressed: document.getElementById('pause')?.getAttribute('aria-pressed') ?? '' }));
+        if (!has || st.state !== 'paused' || st.pressed !== 'true') pauses.push(`${rel}: pause button ${has}, then ${st.state}, aria-pressed ${st.pressed}`);
+      }
+      await ctx.close();
+    }
+    record('themeName', named.length === 0, named.length === 0 ? `no aria-label on #theme in index.html and ${deep.length} SVG deep pages` : named.join('; '));
+    record('deepPause', animated > 0 && pauses.length === 0, animated === 0 ? 'no animated SVG deep page found' : `${animated - pauses.length} of ${animated} animated deep pages pause${pauses.length ? `; ${pauses.join('; ')}` : ''}`);
+  }
 }
 
 // Writes the results and exits 1 when any check failed.

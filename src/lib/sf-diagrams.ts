@@ -335,7 +335,7 @@ ${GENERATED}
 <style>
 body{margin:0;padding:1.5rem;background:var(--paper);color:var(--ink);font:16px/1.5 system-ui,sans-serif;overflow-wrap:anywhere}
 a{color:var(--accent)}
-#theme{font:inherit;color:var(--ink);background:var(--panel);border:1.5px solid var(--rule);border-radius:999px;padding:4px 14px;margin-inline-start:12px;cursor:pointer}
+#theme,#pause{font:inherit;color:var(--ink);background:var(--panel);border:1.5px solid var(--rule);border-radius:999px;padding:4px 14px;margin-inline-start:12px;cursor:pointer}
 .scroll{max-inline-size:100%;overflow-x:auto}
 svg{max-inline-size:100%;block-size:auto;background:var(--panel);border:1px solid var(--rule);border-radius:8px}
 svg text{font-size:13px;fill:var(--ink)} svg .muted{fill:var(--muted);font-size:12px}
@@ -346,11 +346,12 @@ svg text{font-size:13px;fill:var(--ink)} svg .muted{fill:var(--muted);font-size:
 .lane.external{stroke:var(--muted);stroke-dasharray:5 4;fill:color-mix(in srgb,var(--muted) 14%,var(--panel))}
 .life{stroke:var(--rule);stroke-width:1.2;stroke-dasharray:4 4} .msg .edge.leaves{--rest:var(--warn);--rest-w:2.4}
 ${keyframes}
-@media (prefers-reduced-motion:reduce){.edge{animation:none!important}}
+.paused .edge{animation-play-state:paused!important}
+@media (prefers-reduced-motion:reduce){.edge{animation:none!important}#pause{display:none}}
 </style>
 </head>
 <body>
-<p><a href="../index.html">Back to the system page</a> <button id="theme" type="button" aria-label="Change theme">Theme</button></p>
+<p><a href="../index.html">Back to the system page</a> <button id="theme" type="button">Theme</button>${keyframes === '' ? '' : ' <button id="pause" type="button" aria-pressed="false">Pause animation</button>'}</p>
 <h1>${title}</h1>
 ${d.pages > 1 ? `<p>Page ${page} of ${d.pages}</p>\n` : ''}<div class="scroll">
 <svg role="img" aria-label="${title}" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" style="min-inline-size:${Math.ceil((width * 12) / 13)}px" xmlns="http://www.w3.org/2000/svg">
@@ -372,6 +373,9 @@ ${items.join('\n')}
     try { localStorage.setItem("fx-theme", n); } catch (e) {}
     paint();
   });
+  // The steps loop for as long as the page is open, so the reader can stop them (WCAG 2.2.2).
+  var pz = document.getElementById("pause");
+  if (pz) pz.addEventListener("click", function () { pz.setAttribute("aria-pressed", String(root.classList.toggle("paused"))); });
 })();
 </script>
 </body>
