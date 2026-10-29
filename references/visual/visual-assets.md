@@ -19,7 +19,7 @@ references tree. fx's own kit files sit beside this file.
 | `fx-tokens-1.css` | fx | 0.7.0 |  |  | `5039daa841abe2b61dd062da9ff80c7408d2098c3d06b6eae502c7d81ea8b4d8` |  |
 | `fx-map-1.js` | fx | 0.7.0 |  |  | `5270743f34aa8baa67f4bc9a1ac6cb117236c06aef5aab46aeeb21bb210fb04b` |  |
 | `fx-map-2.js` | fx | 0.9.0 |  |  | `cafc00a24a6c950f350a355eb83a0ce58e5fba95a7e941e642121866cd456bd9` |  |
-| `fx-flow-2.js` | fx | 0.9.0 |  |  | `9aaa75487721e906a92257cfd2ce7e861f497c781852e0bcb9718c8ea4895afb` |  |
+| `fx-flow-2.js` | fx | 0.9.0 |  |  | `611522535c663b06e3e8b05e5d216f55983903b11f54b0984b5d17825fdf1fec` |  |
 
 React and React DOM are MIT and share one licence file. React Flow is MIT. elkjs is
 EPL-2.0. Each licence is carried verbatim in fx's `vendor/` folder.

@@ -111,6 +111,9 @@ footer{margin-block-start:80px;color:var(--muted);font-size:14px}
 .card .cap{margin:4px 12px 8px;font-size:15px;color:var(--muted)}
 .fig{overflow-x:auto;padding:0 12px 8px}
 .fig svg{display:block}
+/* A step the player has not reached: muted, never faded, so text keeps 4.5:1 and lines 3:1 on the panel. */
+.fig path[data-off],.fig g[data-off]>rect,.fig g[data-off]>path{stroke:var(--muted)}
+.fig text[data-off],.fig g[data-off]>text{fill:var(--muted)}
 .ctl{position:sticky;bottom:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 12px;background:var(--panel);border-block-start:1px solid var(--rule);border-end-start-radius:12px;border-end-end-radius:12px}
 .ctl button{min-block-size:36px;min-inline-size:36px;padding:6px 12px}
 .ctl button.play{min-inline-size:84px;background:var(--accent);border-color:var(--accent);color:var(--paper)}

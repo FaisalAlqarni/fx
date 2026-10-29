@@ -437,6 +437,66 @@ async function a11y(browser) {
     record("mapLayout", ok, lines.join("; "));
   }
   {
+    const lines = [];
+    let ok = true;
+    for (const scheme of ["light", "dark"]) {
+      const { page, ctx } = await open(browser, 1440, 900, true, "reduce", scheme);
+      const keys = await page.evaluate(() => [...document.querySelectorAll(".ctl[data-fx-flow]")].map((c) => c.getAttribute("data-fx-flow") ?? ""));
+      for (const k of keys) await press(page, k, "next");
+      const r = await page.evaluate(() => {
+        const css = getComputedStyle;
+        const rgb = (v) => {
+          const m = /rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)/.exec(v) ?? /color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)/.exec(v);
+          if (!m) return null;
+          const n2 = [m[1], m[2], m[3]].map(Number);
+          return v.startsWith("color(") ? n2.map((x) => x * 255) : n2;
+        };
+        const lum = (c) => {
+          const l = c.map((x) => x / 255).map((x) => x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4);
+          return 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2];
+        };
+        const ratio = (a, b) => {
+          const [x, y] = [lum(a), lum(b)];
+          return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+        };
+        const up = (e) => e.parentElement;
+        const alpha = (el) => {
+          let o = 1;
+          for (let e = el; e !== null && e.tagName.toLowerCase() !== "svg"; e = up(e)) o *= Number(css(e).opacity ?? 1);
+          return o;
+        };
+        const mix = (c, bg, o) => c.map((x, i) => o * x + (1 - o) * bg[i]);
+        let worstText = 99, worstLine = 99, n = 0;
+        const bad = [];
+        for (const card of document.querySelectorAll("figure.card")) {
+          const panel = rgb(css(card).backgroundColor ?? "") ?? [255, 255, 255];
+          for (const t of card.querySelectorAll(".fig svg text")) {
+            const box2 = up(t)?.querySelector(":scope > rect");
+            const bg = (box2 ? rgb(css(box2).fill ?? "") : null) ?? panel;
+            const c = rgb(css(t).fill ?? "");
+            if (!c) continue;
+            const q = ratio(mix(c, bg, alpha(t)), bg);
+            n++;
+            if (q < worstText) worstText = q;
+            if (q < 4.5) bad.push(`${card.id} text "${(t.textContent ?? "").slice(0, 20)}" ${q.toFixed(2)}`);
+          }
+          for (const p of card.querySelectorAll(".fig svg path[marker-end], .fig svg g > rect")) {
+            const c = rgb(css(p).stroke ?? "");
+            if (!c) continue;
+            const q = ratio(mix(c, panel, alpha(p)), panel);
+            if (q < worstLine) worstLine = q;
+            if (q < 3) bad.push(`${card.id} ${p.tagName} ${q.toFixed(2)}`);
+          }
+        }
+        return { n, worstText: worstText.toFixed(2), worstLine: worstLine.toFixed(2), bad };
+      });
+      ok &&= r.n > 0 && r.bad.length === 0;
+      lines.push(`${scheme}: ${r.n} texts at step 1, lowest text ${r.worstText}, lowest arrow or box ${r.worstLine}${r.bad.length ? `; under: ${r.bad.slice(0, 6).join(", ")}` : ""}`);
+      await ctx.close();
+    }
+    record("unreachedContrast", ok, lines.join("; "));
+  }
+  {
     const index = path.resolve(file);
     const html = fs.readFileSync(index, "utf8");
     const deep = [...new Set([...html.matchAll(/<a class="deep" href="(diagrams\/[^"]+\.html)"/g)].map((m) => m[1]))].filter((rel) => fs.existsSync(path.join(path.dirname(index), rel)) && fs.readFileSync(path.join(path.dirname(index), rel), "utf8").includes('href="../assets/theme.css"'));

@@ -445,6 +445,58 @@ async function a11y(browser: Browser): Promise<void> {
     }
     record('mapLayout', ok, lines.join('; '));
   }
+  // 10: at step 1, the steps not reached yet keep 4.5:1 for text and 3:1 for arrows and boxes, in both themes.
+  {
+    const lines: string[] = [];
+    let ok = true;
+    for (const scheme of ['light', 'dark'] as const) {
+      const { page, ctx } = await open(browser, 1440, 900, true, 'reduce', scheme);
+      const keys = await page.evaluate(() => [...document.querySelectorAll('.ctl[data-fx-flow]')].map((c) => c.getAttribute('data-fx-flow') ?? ''));
+      for (const k of keys) await press(page, k, 'next');
+      const r = await page.evaluate(() => {
+        const css = getComputedStyle as unknown as (e: unknown) => Record<string, string>;
+        const rgb = (v: string): number[] | null => {
+          const m = /rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)/.exec(v) ?? /color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)/.exec(v);
+          if (!m) return null;
+          const n = [m[1], m[2], m[3]].map(Number);
+          return v.startsWith('color(') ? n.map((x) => x * 255) : n;
+        };
+        const lum = (c: number[]): number => { const l = c.map((x) => x / 255).map((x) => (x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4)); return 0.2126 * (l[0] as number) + 0.7152 * (l[1] as number) + 0.0722 * (l[2] as number); };
+        const ratio = (a: number[], b: number[]): number => { const [x, y] = [lum(a), lum(b)]; return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+        const up = (e: El): El | null => (e as unknown as { parentElement: El | null }).parentElement;
+        // The opacity of the element and every ancestor up to its svg, multiplied.
+        const alpha = (el: El): number => { let o = 1; for (let e: El | null = el; e !== null && e.tagName.toLowerCase() !== 'svg'; e = up(e)) o *= Number(css(e).opacity ?? 1); return o; };
+        const mix = (c: number[], bg: number[], o: number): number[] => c.map((x, i) => o * x + (1 - o) * (bg[i] as number));
+        let worstText = 99, worstLine = 99, n = 0;
+        const bad: string[] = [];
+        for (const card of document.querySelectorAll('figure.card')) {
+          const panel = rgb(css(card).backgroundColor ?? '') ?? [255, 255, 255];
+          for (const t of card.querySelectorAll('.fig svg text')) {
+            const box = up(t)?.querySelector(':scope > rect');
+            const bg = (box ? rgb(css(box).fill ?? '') : null) ?? panel;
+            const c = rgb(css(t).fill ?? '');
+            if (!c) continue;
+            const q = ratio(mix(c, bg, alpha(t)), bg);
+            n++;
+            if (q < worstText) worstText = q;
+            if (q < 4.5) bad.push(`${card.id} text "${(t.textContent ?? '').slice(0, 20)}" ${q.toFixed(2)}`);
+          }
+          for (const p of card.querySelectorAll('.fig svg path[marker-end], .fig svg g > rect')) {
+            const c = rgb(css(p).stroke ?? '');
+            if (!c) continue;
+            const q = ratio(mix(c, panel, alpha(p)), panel);
+            if (q < worstLine) worstLine = q;
+            if (q < 3) bad.push(`${card.id} ${p.tagName} ${q.toFixed(2)}`);
+          }
+        }
+        return { n, worstText: worstText.toFixed(2), worstLine: worstLine.toFixed(2), bad };
+      });
+      ok &&= r.n > 0 && r.bad.length === 0;
+      lines.push(`${scheme}: ${r.n} texts at step 1, lowest text ${r.worstText}, lowest arrow or box ${r.worstLine}${r.bad.length ? `; under: ${r.bad.slice(0, 6).join(', ')}` : ''}`);
+      await ctx.close();
+    }
+    record('unreachedContrast', ok, lines.join('; '));
+  }
   // 9 and review F10: the theme button's name is its visible text, on the index and on every fx SVG deep page. 7: a deep
   // page whose steps animate has a pause button that stops them.
   {

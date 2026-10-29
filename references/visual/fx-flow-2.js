@@ -205,12 +205,12 @@
       });
       const all = at < 0;
       for (const [id, a] of arrows) {
-        for (const el of a.els) el.setAttribute("opacity", all || seen.has(id) ? "1" : "0.25");
+        for (const el of [a.path, a.label]) el?.toggleAttribute("data-off", !all && !seen.has(id));
         a.path.setAttribute("stroke", lit.has(id) ? "var(--accent)" : a.rest[0]);
         a.path.setAttribute("stroke-width", String(lit.has(id) ? 2.8 : a.rest[1]));
         a.label?.setAttribute("font-weight", lit.has(id) ? "bold" : "normal");
       }
-      for (const [id, el] of nodeEls) el.setAttribute("opacity", all || seen.has(id) ? "1" : "0.35");
+      for (const [id, el] of nodeEls) el.toggleAttribute("data-off", !all && !seen.has(id));
       const step = spec.steps[at];
       counter.textContent = `${at + 1} / ${spec.steps.length}`;
       narr.textContent = step ? step.caption : REST;
