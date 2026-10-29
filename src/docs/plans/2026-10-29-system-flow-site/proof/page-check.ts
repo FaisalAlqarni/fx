@@ -312,6 +312,19 @@ async function a11y(browser: Browser): Promise<void> {
     record('panelInert', inertOpen === true && after.inert === false, `main inert with the panel open ${inertOpen}, after it closes ${after.inert}`);
     await ctx.close();
   }
+  // Review N1: the panel opened at 390 and the window widened to 1440 leaves main usable, an evidence summary takes a click.
+  {
+    const { page, ctx } = await open(browser, 390, 844);
+    await page.click('#menu-bar > summary');
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.waitForTimeout(300);
+    const inert = await page.evaluate(() => document.querySelector('main')?.inert ?? null);
+    let clicked = 'clicked';
+    await Promise.race([page.click('details.evidence > summary'), page.waitForTimeout(2000).then(() => { throw new Error('click timed out'); })]).catch((e: unknown) => { clicked = e instanceof Error ? e.message : String(e); });
+    const opened = await page.evaluate(() => document.querySelector('details.evidence')?.open ?? null);
+    record('widenInert', inert === false && opened === true, `menu opened at 390, widened to 1440: main inert ${inert}; first evidence summary ${clicked}, open ${opened}`);
+    await ctx.close();
+  }
   // 14: the first Tab reaches a skip link to main; the menu's own padding leaves room for the 5 px focus ring.
   {
     const { page, ctx } = await open(browser, 1440, 900);

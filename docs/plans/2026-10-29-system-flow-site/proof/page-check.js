@@ -294,6 +294,22 @@ async function a11y(browser) {
     await ctx.close();
   }
   {
+    const { page, ctx } = await open(browser, 390, 844);
+    await page.click("#menu-bar > summary");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.waitForTimeout(300);
+    const inert = await page.evaluate(() => document.querySelector("main")?.inert ?? null);
+    let clicked = "clicked";
+    await Promise.race([page.click("details.evidence > summary"), page.waitForTimeout(2e3).then(() => {
+      throw new Error("click timed out");
+    })]).catch((e) => {
+      clicked = e instanceof Error ? e.message : String(e);
+    });
+    const opened = await page.evaluate(() => document.querySelector("details.evidence")?.open ?? null);
+    record("widenInert", inert === false && opened === true, `menu opened at 390, widened to 1440: main inert ${inert}; first evidence summary ${clicked}, open ${opened}`);
+    await ctx.close();
+  }
+  {
     const { page, ctx } = await open(browser, 1440, 900);
     await page.keyboard.press("Tab");
     const first = await page.evaluate(() => {

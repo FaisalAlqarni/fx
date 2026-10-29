@@ -230,7 +230,8 @@ h2{font-size:30px}
   // to Chapters, and a chosen link closes it and focus goes to the target's heading.
   var bar = document.getElementById("menu-bar"), menu = document.getElementById("menu"), sum = bar.querySelector("summary");
   var main = document.querySelector("main"), wide = matchMedia('(min-width: 900px)');
-  function fit() { bar.open = wide.matches; }
+  // Also clears inert: widening an already open panel sets open to true again, which fires no toggle event.
+  function fit() { bar.open = wide.matches; main.inert = false; }
   fit();
   wide.addEventListener("change", fit);
   bar.addEventListener("toggle", function () { main.inert = bar.open && !wide.matches; });
