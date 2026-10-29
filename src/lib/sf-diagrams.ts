@@ -401,29 +401,35 @@ export function findArchify(env: NodeJS.ProcessEnv): { dir: string; version: str
 // authored viewBox fills the page's 1349 px column at 1440 instead; 1000 wide draws archify's 9 px subtitle at 12 px
 // there. The canvas comes from archify's own layout, widened to 1000 with the parts centred.
 const READ_WIDTH = 1000;
-function authorCanvas(dir: string, spec: string): void {
-  const r = spawnSync(process.execPath, [path.join(dir, 'bin', 'archify.mjs'), 'validate', 'architecture', spec, '--layout-json'], { encoding: 'utf8', timeout: 60000 });
+// Returns why the auto canvas stayed, or null when the authored one was written.
+function authorCanvas(dir: string, spec: string, timeoutS: number): string | null {
+  const r = spawnSync(process.execPath, [path.join(dir, 'bin', 'archify.mjs'), 'validate', 'architecture', spec, '--layout-json'], { encoding: 'utf8', timeout: timeoutS * 1000, killSignal: 'SIGKILL' });
+  if (r.error || r.signal) return `archify validate timed out after ${timeoutS} s`;
+  const failed = `archify validate failed: ${r.stdout.trim().slice(0, 200) || `exit ${r.status}`}`;
   let vb: unknown;
-  try { vb = (parseJson(r.stdout) as { viewBox?: unknown }).viewBox; } catch { return; } // finalize reports the failure
-  if (!Array.isArray(vb) || typeof vb[0] !== 'number' || typeof vb[1] !== 'number') return;
+  try { vb = (parseJson(r.stdout) as { viewBox?: unknown }).viewBox; } catch { return failed; }
+  if (r.status !== 0 || !Array.isArray(vb) || typeof vb[0] !== 'number' || typeof vb[1] !== 'number') return failed;
   const doc = parseJson(fs.readFileSync(spec, 'utf8')) as { meta: Obj; components: { pos: [number, number] }[] };
   const shift = Math.max(0, Math.ceil((READ_WIDTH - vb[0]) / 2));
   for (const c of doc.components) c.pos = [c.pos[0] + shift, c.pos[1]];
   doc.meta.viewBox = [vb[0] + 2 * shift, vb[1]];
   fs.writeFileSync(spec, `${JSON.stringify(doc, null, 2)}\n`);
+  return null;
 }
 
 // Runs `finalize` for each job, one at a time: archify's delivery lock rejects a second call in the same folder
 // (delivery/concurrent-attempt). Each job names its receipt (ruling 17). A call past timeoutS is killed.
-export type ArchifyRun = { name: string; ok: boolean; receipt: string | null; timedOut: boolean; json: string; stderr: string };
-export async function runArchify(dir: string, jobs: { name: string; kind: 'architecture' | 'sequence'; spec: string; out: string; repoRoot: string; receipt: string; check: string }[], timeoutS = 600): Promise<ArchifyRun[]> {
+// canvas: why the auto canvas stayed (null when authored, or for a sequence or a spec the build did not write).
+export type ArchifyRun = { name: string; ok: boolean; receipt: string | null; timedOut: boolean; json: string; stderr: string; canvas: string | null };
+export async function runArchify(dir: string, jobs: { name: string; kind: 'architecture' | 'sequence'; spec: string; out: string; repoRoot: string; receipt: string; check: string; ours: boolean }[], timeoutS = 600): Promise<ArchifyRun[]> {
   const results: ArchifyRun[] = [];
   const one = (j: (typeof jobs)[number]): Promise<void> => new Promise((resolve) => {
     const receipt = j.receipt;
     // The build rewrites each page with its theme block after archify's browser check, so that check's evidence never
     // matches the page again and archify refuses to replace it (viewer/evidence-path-conflict) on the next build.
     fs.rmSync(j.check, { force: true });
-    if (j.kind === 'architecture') authorCanvas(dir, j.spec);
+    // A spec the build did not write (a collision) is never rewritten here.
+    const canvas = j.kind === 'architecture' && j.ours ? authorCanvas(dir, j.spec, timeoutS) : null;
     const args = [path.join(dir, 'bin', 'archify.mjs'), 'finalize', j.kind, j.spec, j.out, '--repo-root', j.repoRoot, '--quality', 'showcase', '--receipt', receipt, '--json'];
     let stdout = '', stderr = '', timedOut = false, settled = false;
     // Its own process group: archify's stages inherit these pipes, so the timeout kills the group, not one process.
@@ -439,7 +445,7 @@ export async function runArchify(dir: string, jobs: { name: string; kind: 'archi
       settled = true;
       clearTimeout(timer);
       if (error) stderr += `${error.message}\n`;
-      results[jobs.indexOf(j)] = { name: j.name, ok: !timedOut && code === 0 && fs.existsSync(j.out), receipt: fs.existsSync(receipt) ? receipt : null, timedOut, json: stdout.trim(), stderr: stderr.trimEnd().split('\n').slice(-20).join('\n') };
+      results[jobs.indexOf(j)] = { name: j.name, ok: !timedOut && code === 0 && fs.existsSync(j.out), receipt: fs.existsSync(receipt) ? receipt : null, timedOut, json: stdout.trim(), stderr: stderr.trimEnd().split('\n').slice(-20).join('\n'), canvas };
       resolve();
     };
     child.on('error', (e) => done(null, e));

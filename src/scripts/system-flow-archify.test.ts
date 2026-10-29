@@ -21,7 +21,9 @@ const ev = (p: string, lines: string, symbol: string) => [{ path: p, lines, symb
 const FAKE = `import fs from 'node:fs';
 import path from 'node:path';
 const a = process.argv.slice(2);
-// archify validate --layout-json: the auto canvas, FAKE_VIEWBOX or 600 by 400.
+// archify validate --layout-json: the auto canvas, FAKE_VIEWBOX or 600 by 400; FAKE_VALIDATE_FAIL or FAKE_VALIDATE_HANG names a spec.
+if (a[0] === 'validate' && process.env.FAKE_VALIDATE_HANG === path.basename(a[2], '.json')) await new Promise((r) => setTimeout(r, 60000));
+if (a[0] === 'validate' && process.env.FAKE_VALIDATE_FAIL === path.basename(a[2], '.json')) { process.stdout.write('{"ok":false}'); process.exit(1); }
 if (a[0] === 'validate') { process.stdout.write(JSON.stringify({ ok: true, viewBox: JSON.parse(process.env.FAKE_VIEWBOX || '[600, 400]') })); process.exit(0); } // ts-gate-ok: plain JS inside the fake
 const [, type, specPath, out] = a;
 const spec = JSON.parse(fs.readFileSync(specPath, 'utf8')); // ts-gate-ok: plain JS inside the fake
@@ -405,6 +407,28 @@ const detectOf = (f: Fx, env: Record<string, string> = {}): Obj => parseJson(f.r
   assert.deepStrictEqual(wide.meta.viewBox, [1100, 500]);
   assert.deepStrictEqual(narrow.components.map((x: Obj) => x.pos[0] - 200), wide.components.map((x: Obj) => x.pos[0]));
   assert.deepStrictEqual(narrow.components.map((x: Obj) => x.pos[1]), wide.components.map((x: Obj) => x.pos[1]));
+}
+
+{ // A canvas archify could not lay out is named in the reason, and the canvas call keeps the build's timeout (final review, unprimed 3)
+  const f = setup();
+  const o = ok(f, ['--archify', fake(f, 'fake')], { FAKE_VALIDATE_FAIL: 'arch-engine' });
+  assert.strictEqual(reason(o, 'arch-engine').reason, 'archify architecture, 2 components, auto canvas: archify validate failed: {"ok":false}');
+  assert.strictEqual(reason(o, 'arch-system').reason, 'archify architecture, 2 components');
+  const g = setup();
+  const t0 = Date.now();
+  const h = ok(g, ['--archify', fake(g, 'fake'), '--archify-timeout', '1'], { FAKE_VALIDATE_HANG: 'arch-engine' });
+  assert.strictEqual(reason(h, 'arch-engine').reason, 'archify architecture, 2 components, auto canvas: archify validate timed out after 1 s');
+  assert.ok((Date.now() - t0) / 1000 < 30, 'the canvas call stopped at the 1 s timeout');
+}
+
+{ // A hand-written spec in diagrams/src is a collision and the canvas pass never rewrites it (final review, security 1)
+  const f = setup();
+  const own = 'A hand-written spec, not JSON.\n';
+  fs.mkdirSync(path.join(f.host, D, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(f.host, D, 'src', 'arch-engine.json'), own);
+  const r = run(f, ['--archify', fake(f, 'fake')]);
+  assert.strictEqual(read(f, `${D}/src/arch-engine.json`), own);
+  assert.match(r.stderr, new RegExp(`${D}/src/arch-engine.json exists without the generated marker`), `the build reports the collision\n${r.stdout}${r.stderr}`);
 }
 
 { // An --archify folder without bin/archify.mjs is an error naming the path

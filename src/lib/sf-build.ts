@@ -280,7 +280,7 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   const receiptOf = (d: DeepDiagram, retry: boolean): string => path.posix.join(pages, `${d.name}${retry ? '.retry' : ''}.receipt.json`);
   const w = (rel: string): string => writable(opts.hostRoot, path.join(opts.hostRoot, rel));
   const jobsOf = (ds: DeepDiagram[], retry: boolean) => ds.map((d) => ({
-    name: d.name, kind: d.kind, spec: path.join(opts.hostRoot, pages, 'src', `${d.name}.json`),
+    name: d.name, kind: d.kind, spec: w(path.posix.join(pages, 'src', `${d.name}.json`)), ours: !result.collisions.includes(path.posix.join(pages, 'src', `${d.name}.json`)),
     out: w(path.posix.join(pages, `${d.name}.html`)), repoRoot: checked.roots.get(d.owningRoot)?.dir ?? opts.hostRoot,
     receipt: w(receiptOf(d, retry)), check: w(path.posix.join(pages, `${d.name}.browser-check.json`)),
   }));
@@ -294,7 +294,7 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
   for (const g of groups) writeSpecs(g);
   const live = archify === undefined ? [] : groups.filter((g) => svgReason(g) === null);
   // why: the fallback reason of a failed call, from what archify left behind.
-  type Run = { ok: boolean; why: string };
+  type Run = { ok: boolean; why: string; canvas: string | null };
   const timeoutS = opts.archifyTimeout ?? 600;
   const runAll = async (gs: DeepDiagram[][], retry: boolean): Promise<Map<string, Run[]>> => {
     const rs = await runArchify(archify as string, jobsOf(gs.flat(), retry), timeoutS);
@@ -303,7 +303,7 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
       const r = rs[i] as ArchifyRun;
       const why = r.timedOut ? `archify timed out after ${timeoutS} s`
         : `archify failed: ${r.receipt === null ? 'no receipt' : receiptOf(d, retry)}${r.json ? `; result: ${r.json}` : ''}${r.stderr ? `; stderr: ${r.stderr.split('\n').join(' | ')}` : ''}`;
-      byGroup.set(d.source, [...(byGroup.get(d.source) ?? []), { ok: r.ok, why }]);
+      byGroup.set(d.source, [...(byGroup.get(d.source) ?? []), { ok: r.ok, why, canvas: r.canvas }]);
     });
     return byGroup;
   };
@@ -340,7 +340,8 @@ export async function build(opts: { hostRoot: string; site: string; markdown: st
     } else if (attempt?.every((r) => r.ok)) {
       renderer = 'archify'; shown = done;
       const cut = [...new Set(done.flatMap((d) => d.shortened))];
-      const tail = `${retried.has(g0.source) ? ', retried at 5 per page' : ''}${cut.length ? `, shortened: ${cut.join(', ')}` : ''}`;
+      const canvas = attempt.find((r) => r.canvas !== null)?.canvas;
+      const tail = `${retried.has(g0.source) ? ', retried at 5 per page' : ''}${cut.length ? `, shortened: ${cut.join(', ')}` : ''}${canvas ? `, auto canvas: ${canvas}` : ''}`;
       line = g0.kind === 'architecture'
         ? pickLine(g0.name, 'archify architecture', `${(g0.spec as { components: unknown[] }).components.length} components${tail}`)
         : pickLine(g0.name, 'archify sequence', `${msgs(done)} messages in ${done.length} pages${tail}`);
