@@ -78,7 +78,7 @@ interface ReactDomApi { createRoot(el: Element): { render(node: unknown): void }
 interface FlowApi { default: unknown; Controls: unknown }
 interface ElkNode { id: string; x?: number; y?: number; width?: number; height?: number; children?: ElkNode[]; edges?: { id: string; sources: string[]; targets: string[] }[]; layoutOptions?: Record<string, string> }
 interface ElkApi { layout(g: ElkNode): Promise<ElkNode> }
-interface FlowNode { id: string; position: { x: number; y: number }; data: { label: unknown }; sourcePosition: string; targetPosition: string; style: object; zIndex?: number; selectable?: boolean }
+interface FlowNode { id: string; position: { x: number; y: number }; data: { label: unknown }; sourcePosition: string; targetPosition: string; style: object; zIndex?: number; selectable?: boolean; focusable?: boolean }
 interface FlowEdge { id: string; source: string; target: string; label?: string; type: string; markerEnd: object; style: object; animated?: boolean }
 interface Flow { nodes: FlowNode[]; edges: FlowEdge[] }
 type Picked = { kind: 'node' | 'edge'; id: string } | null;
@@ -87,6 +87,9 @@ const NODE_W = 200;
 const NODE_H = 64;
 const PAD = 22;
 const FADED = 0.45;
+// Below this canvas width the map starts at the top left at MIN_ZOOM instead of fitting the whole level, whose labels would be too small to read.
+const NARROW = 600;
+const MIN_ZOOM = 0.6;
 
 // Boxes of a level's groups from the laid-out member positions; a group holds its member nodes and its child groups.
 function groupBoxes(level: Level, pos: Map<string, { x: number; y: number }>): Map<string, { x: number; y: number; w: number; h: number }> {
@@ -119,6 +122,7 @@ function mount(host: Element, data: MapData): void {
   const elk = new Elk();
   const h = R.createElement;
   const levels = new Map(data.levels.map((l) => [l.id, l]));
+  let toPanel = false; // a key picked the node or edge, so the next render focuses the panel
 
   function layout(level: Level): Promise<Flow> {
     const g: ElkNode = {
@@ -133,7 +137,7 @@ function mount(host: Element, data: MapData): void {
       const groupNodes: FlowNode[] = level.groups.flatMap((gr) => {
         const bx = boxes.get(gr.id);
         return bx ? [{
-          id: `group:${gr.id}`, position: { x: bx.x, y: bx.y }, sourcePosition: 'right', targetPosition: 'left', zIndex: -1, selectable: false,
+          id: `group:${gr.id}`, position: { x: bx.x, y: bx.y }, sourcePosition: 'right', targetPosition: 'left', zIndex: -1, selectable: false, focusable: false,
           style: { width: bx.w, height: bx.h, border: '1.5px dashed var(--muted)', background: 'transparent', borderRadius: 14 },
           data: { label: h('div', { className: 'fxm-group' }, gr.label) },
         }] : [];
@@ -191,6 +195,23 @@ function mount(host: Element, data: MapData): void {
       edges: flow.edges.filter((e) => (showContext || (!contextIds.has(e.source) && !contextIds.has(e.target))) && (allArrows || touches(e))),
     };
     const open = (id: string) => { setPath(levelPath(data, id)); setSel(null); };
+    // Enter or Space on a focused node or edge picks it, as a click does, and moves focus to its panel.
+    const onKey = (e: { key: string; target: unknown; preventDefault(): void }): void => {
+      if ((e.key !== 'Enter' && e.key !== ' ') || !(e.target instanceof Element)) return;
+      const n = e.target.closest('.react-flow__node');
+      const id = n ? n.getAttribute('data-id') : e.target.closest('.react-flow__edge')?.getAttribute('data-testid')?.replace(/^rf__edge-/, '');
+      if (!id || id.startsWith('group:')) return;
+      e.preventDefault();
+      toPanel = true;
+      setSel({ kind: n ? 'node' : 'edge', id });
+    };
+    R.useEffect(() => {
+      if (!toPanel) return;
+      toPanel = false;
+      host.querySelector<HTMLElement>('.fxm-panel')?.focus();
+    }, [sel]);
+    const narrow = host.clientWidth < NARROW;
+    const corner = shown === null ? { x: 0, y: 0 } : { x: Math.min(0, ...shown.nodes.map((n) => n.position.x)), y: Math.min(0, ...shown.nodes.map((n) => n.position.y)) };
 
     const node = sel?.kind === 'node' ? cur.nodes.find((n) => n.id === sel.id) : undefined;
     const edge = sel?.kind === 'edge' ? cur.edges[Number(sel.id.slice(1))] : undefined;
@@ -216,15 +237,16 @@ function mount(host: Element, data: MapData): void {
         h('button', { type: 'button', 'aria-pressed': showContext, onClick: () => setShowContext(!showContext) }, 'Show context nodes'),
         h('button', { type: 'button', 'aria-pressed': allArrows, onClick: () => setAllArrows(!allArrows) }, 'Show all arrows')),
       h('div', { className: 'fxm-body' },
-        h('div', { className: 'fxm-canvas' }, shown
+        h('div', { className: 'fxm-canvas', onKeyDown: onKey }, shown
           ? h(RF.default, {
-            key: curId, nodes: shown.nodes, edges: shown.edges, fitView: true, fitViewOptions: { padding: 0.1 }, minZoom: 0.2, nodesDraggable: false, nodesConnectable: false,
+            key: curId, nodes: shown.nodes, edges: shown.edges, nodesDraggable: false, nodesConnectable: false,
+            ...(narrow ? { minZoom: MIN_ZOOM, defaultViewport: { x: 12 - corner.x * MIN_ZOOM, y: 12 - corner.y * MIN_ZOOM, zoom: MIN_ZOOM } } : { fitView: true, fitViewOptions: { padding: 0.1 }, minZoom: 0.2 }),
             onNodeClick: (_e: unknown, n: { id: string }) => setSel({ kind: 'node', id: n.id }),
             onEdgeClick: (_e: unknown, ed: { id: string }) => setSel({ kind: 'edge', id: ed.id }),
             onPaneClick: () => setSel(null),
           }, h(RF.Controls, null))
           : h('p', { className: 'fxm-muted' }, failed === null ? 'Laying out the map.' : `The map could not be laid out: ${failed}`)),
-        h('aside', { className: 'fxm-panel', 'aria-live': 'polite' }, panel)));
+        h('aside', { className: 'fxm-panel', 'aria-live': 'polite', tabIndex: -1 }, panel)));
   }
 
   RD.createRoot(host).render(h(App));

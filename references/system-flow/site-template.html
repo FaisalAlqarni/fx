@@ -122,9 +122,11 @@ footer{margin-block-start:80px;color:var(--muted);font-size:14px}
 .ctl .deep{font-size:14px;white-space:nowrap}
 .fxm-bar{display:flex;flex-wrap:wrap;gap:6px;margin-block-end:8px}
 .fxm-bar button[aria-current]{background:var(--accent);color:var(--paper);border-color:var(--accent)}
-.fxm-body{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px}
-.fxm-canvas{block-size:520px;border:1px solid var(--rule);border-radius:12px;background:var(--panel);overflow:hidden}
-.fxm-panel{border:1px solid var(--rule);border-radius:12px;background:var(--panel);padding:10px 14px;font-size:14.5px;max-block-size:520px;overflow:auto}
+.fxm-body{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.fxm-canvas{block-size:640px;border:1px solid var(--rule);border-radius:12px;background:var(--panel);overflow:hidden}
+.fxm-panel{border:1px solid var(--rule);border-radius:12px;background:var(--panel);padding:10px 14px;font-size:14.5px}
+/* React Flow's dash animation runs forever; ten 0.5 s runs end it within 5 s, and reduced motion stops it. */
+.react-flow__edge.animated path{animation-iteration-count:10}
 .fxm-panel h3{margin:0 0 2px;color:var(--ink)}.fxm-panel h4{margin:10px 0 2px;color:var(--accent)}
 .fxm-panel ul{padding-inline-start:18px;margin:4px 0}
 .fxm-group{font-size:12px;color:var(--muted);padding:2px 8px}
@@ -154,11 +156,9 @@ main{padding:8px 16px 96px}
 html{scroll-padding-block-start:56px}
 section.chapter{padding-block-start:56px}
 h2{font-size:30px}
-.fxm-body{grid-template-columns:minmax(0,1fr)}
-.fxm-canvas{block-size:420px}
 .ctl .narr-box{order:1;flex-basis:100%}
 }
-@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}.react-flow__edge.animated path{animation:none}}
 </style>
 </head>
 <body>

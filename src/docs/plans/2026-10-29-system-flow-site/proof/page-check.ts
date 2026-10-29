@@ -373,6 +373,76 @@ async function a11y(browser: Browser): Promise<void> {
       `${atMount.length} bars silent at mount ${silent}; ${k} autoplayed to step 2 ${played}, said "${auto?.said}"; after Next said "${user?.said}"`);
     await ctx.close();
   }
+  // The map. 6: Enter on a node or an edge opens its evidence and moves focus to the panel, whose Open next level a key
+  // reaches; group boxes take no focus. 7: animated edges stop within 5 s and do not move under reduced motion.
+  // Review F4: the panel sits under a 640 px canvas at every width; at 390 the map starts top left at zoom 0.6 or more.
+  const mapReady = async (page: Page): Promise<boolean> => {
+    for (let t = 0; t < 8000; t += 100) { if (await page.evaluate(() => document.querySelector('#map-root .react-flow__node') !== null)) return true; await page.waitForTimeout(100); }
+    return false;
+  };
+  const NODE = '#map-root .react-flow__node:not([data-id^="group:"])';
+  {
+    const { page, ctx } = await open(browser, 1440, 900);
+    const ready = await mapReady(page);
+    const groupsFocusable = await page.evaluate(() => [...document.querySelectorAll('#map-root .react-flow__node[data-id^="group:"]')].filter((g) => g.hasAttribute('tabindex')).length);
+    const want = await page.evaluate((s: string) => document.querySelector(`${s} .fxm-label`)?.textContent ?? '', NODE);
+    await page.press(`${NODE} >> nth=0`, 'Enter');
+    await page.waitForTimeout(200);
+    const panel = () => page.evaluate(() => ({ h: document.querySelector('.fxm-panel h3')?.textContent ?? '', inPanel: (document.activeElement as El | null)?.closest('.fxm-panel') != null }));
+    const byNode = await panel();
+    const opener = await page.evaluate((s: string) => [...document.querySelectorAll(s)].findIndex((n) => n.querySelector('.fxm-open') !== null), NODE);
+    let deeper = 'no node opens a level';
+    if (opener >= 0) {
+      await page.press(`${NODE} >> nth=${opener}`, 'Enter');
+      await page.waitForTimeout(200);
+      await page.keyboard.press('Tab');
+      const btn = await page.evaluate(() => (document.activeElement as El | null)?.textContent ?? '');
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(300);
+      const crumbs = await page.evaluate(() => [...document.querySelectorAll('nav.fxm-bar button')].length);
+      deeper = `Tab from the panel reaches "${btn}", Enter opens level ${crumbs}`;
+      if (btn !== 'Open next level' || crumbs < 2) deeper += ' (failed)';
+      await page.click('nav.fxm-bar button >> nth=0');
+      await mapReady(page);
+    }
+    const edges = await page.evaluate(() => [...document.querySelectorAll('#map-root .react-flow__edge')].length);
+    if (edges > 0) await page.press('#map-root .react-flow__edge >> nth=0', 'Enter');
+    await page.waitForTimeout(200);
+    const byEdge = await panel();
+    record('mapKeyboard', ready && groupsFocusable === 0 && byNode.h === want && want !== '' && byNode.inPanel && !deeper.endsWith('(failed)') && edges > 0 && byEdge.h.includes(' to ') && byEdge.inPanel,
+      `map drawn ${ready}; focusable group boxes ${groupsFocusable}; Enter on a node shows "${byNode.h}" (want "${want}"), focus in the panel ${byNode.inPanel}; ${deeper}; Enter on an edge shows "${byEdge.h}", focus in the panel ${byEdge.inPanel}`);
+    await ctx.close();
+  }
+  {
+    const lines: string[] = [];
+    let ok = true;
+    for (const [w, h, motion] of [[1440, 900, 'no-preference'], [390, 844, 'reduce']] as const) {
+      const { page, ctx } = await open(browser, w, h, true, motion);
+      await mapReady(page);
+      await page.waitForTimeout(300);
+      const m = await page.evaluate(() => {
+        const css = getComputedStyle as unknown as (e: unknown) => Record<string, string>;
+        const rf = document.querySelector('#map-root .react-flow');
+        const probe = document.createElement('div');
+        probe.innerHTML = '<svg><g class="react-flow__edge animated"><path d="M0 0h9"></path></g></svg>';
+        rf?.append(probe);
+        const p = probe.querySelector('path');
+        const anim = p === null ? 'no probe' : `${css(p).animationName} x ${css(p).animationIterationCount}`;
+        probe.remove();
+        const c = document.querySelector('.fxm-canvas')?.getBoundingClientRect(), pn = document.querySelector('.fxm-panel')?.getBoundingClientRect();
+        const vp = /scale\(([\d.]+)\)/.exec((document.querySelector('#map-root .react-flow__viewport') as unknown as { style: { transform: string } } | null)?.style.transform ?? '');
+        const nodes = [...document.querySelectorAll('#map-root .react-flow__node')].map((n) => n.getBoundingClientRect());
+        return { anim, stacked: c !== undefined && pn !== undefined && pn.top >= c.top + c.height - 1, canvasH: Math.round(c?.height ?? 0), zoom: Number(vp?.[1] ?? 0),
+          left: c === undefined || nodes.length === 0 ? -1 : Math.round(Math.min(...nodes.map((r) => r.left)) - c.left), top: c === undefined || nodes.length === 0 ? -1 : Math.round(Math.min(...nodes.map((r) => r.top)) - c.top) };
+      });
+      const still = motion === 'reduce' ? m.anim.startsWith('none') : !m.anim.endsWith('infinite') && !m.anim.startsWith('none');
+      const fits = m.stacked && m.canvasH === 640 && (w > 900 || (m.zoom >= 0.59 && m.left >= 0 && m.left <= 40 && m.top >= 0 && m.top <= 40));
+      ok &&= still && fits;
+      lines.push(`${w} (${motion}): animated edge ${m.anim}; panel under the canvas ${m.stacked}, canvas ${m.canvasH} px; zoom ${m.zoom}, first node at ${m.left}, ${m.top} from the canvas corner`);
+      await ctx.close();
+    }
+    record('mapLayout', ok, lines.join('; '));
+  }
 }
 
 // Writes the results and exits 1 when any check failed.

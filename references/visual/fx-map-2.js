@@ -49,6 +49,8 @@
   const NODE_H = 64;
   const PAD = 22;
   const FADED = 0.45;
+  const NARROW = 600;
+  const MIN_ZOOM = 0.6;
   function groupBoxes(level, pos) {
     const byId = new Map(level.groups.map((g) => [g.id, g]));
     const boxes = /* @__PURE__ */ new Map();
@@ -86,6 +88,7 @@
     const elk = new Elk();
     const h = R.createElement;
     const levels = new Map(data.levels.map((l) => [l.id, l]));
+    let toPanel = false;
     function layout(level) {
       const g = {
         id: "root",
@@ -105,6 +108,7 @@
             targetPosition: "left",
             zIndex: -1,
             selectable: false,
+            focusable: false,
             style: { width: bx.w, height: bx.h, border: "1.5px dashed var(--muted)", background: "transparent", borderRadius: 14 },
             data: { label: h("div", { className: "fxm-group" }, gr.label) }
           }] : [];
@@ -184,6 +188,22 @@
         setPath(levelPath(data, id));
         setSel(null);
       };
+      const onKey = (e) => {
+        if (e.key !== "Enter" && e.key !== " " || !(e.target instanceof Element)) return;
+        const n = e.target.closest(".react-flow__node");
+        const id = n ? n.getAttribute("data-id") : e.target.closest(".react-flow__edge")?.getAttribute("data-testid")?.replace(/^rf__edge-/, "");
+        if (!id || id.startsWith("group:")) return;
+        e.preventDefault();
+        toPanel = true;
+        setSel({ kind: n ? "node" : "edge", id });
+      };
+      R.useEffect(() => {
+        if (!toPanel) return;
+        toPanel = false;
+        host.querySelector(".fxm-panel")?.focus();
+      }, [sel]);
+      const narrow = host.clientWidth < NARROW;
+      const corner = shown === null ? { x: 0, y: 0 } : { x: Math.min(0, ...shown.nodes.map((n) => n.position.x)), y: Math.min(0, ...shown.nodes.map((n) => n.position.y)) };
       const node = sel?.kind === "node" ? cur.nodes.find((n) => n.id === sel.id) : void 0;
       const edge = sel?.kind === "edge" ? cur.edges[Number(sel.id.slice(1))] : void 0;
       let panel = h("p", { className: "fxm-muted" }, "Select a node or an edge to see its evidence.");
@@ -232,20 +252,18 @@
         h(
           "div",
           { className: "fxm-body" },
-          h("div", { className: "fxm-canvas" }, shown ? h(RF.default, {
+          h("div", { className: "fxm-canvas", onKeyDown: onKey }, shown ? h(RF.default, {
             key: curId,
             nodes: shown.nodes,
             edges: shown.edges,
-            fitView: true,
-            fitViewOptions: { padding: 0.1 },
-            minZoom: 0.2,
             nodesDraggable: false,
             nodesConnectable: false,
+            ...narrow ? { minZoom: MIN_ZOOM, defaultViewport: { x: 12 - corner.x * MIN_ZOOM, y: 12 - corner.y * MIN_ZOOM, zoom: MIN_ZOOM } } : { fitView: true, fitViewOptions: { padding: 0.1 }, minZoom: 0.2 },
             onNodeClick: (_e, n) => setSel({ kind: "node", id: n.id }),
             onEdgeClick: (_e, ed) => setSel({ kind: "edge", id: ed.id }),
             onPaneClick: () => setSel(null)
           }, h(RF.Controls, null)) : h("p", { className: "fxm-muted" }, failed === null ? "Laying out the map." : `The map could not be laid out: ${failed}`)),
-          h("aside", { className: "fxm-panel", "aria-live": "polite" }, panel)
+          h("aside", { className: "fxm-panel", "aria-live": "polite", tabIndex: -1 }, panel)
         )
       );
     }
