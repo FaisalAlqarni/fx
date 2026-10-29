@@ -40,6 +40,7 @@ type Page = {
   click(sel: string): Promise<void>;
   fill(sel: string, value: string): Promise<void>;
   press(sel: string, key: string): Promise<void>;
+  focus(sel: string): Promise<void>;
   keyboard: { press(key: string): Promise<void> };
   isVisible(sel: string): Promise<boolean>;
   on(ev: string, fn: (x: { type?: () => string; text?: () => string; message?: string }) => void): void;
