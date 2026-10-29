@@ -103,7 +103,7 @@ Diagram `summary` keeps its field and narrows its meaning: one sentence saying w
 2. Every node and participant gets `look` from its `kind` by a fixed table: `client`, `app`, `browser`, `mobile`, `portal`, `ui` to `client`; `store`, `db`, `database`, `sql`, `cache`, `redis`, `bucket`, `files`, `storage` to `store`; `external`, `outside`, `third-party`, `saas` to `external`; `security`, `auth`, `identity`, `check` to `security`; anything else to `service`. Matching is case-insensitive on the whole kind.
 3. `meta.name` is copied from `meta.title` when absent.
 
-It changes no label, fact or evidence, so no corrections entry is owed. It is idempotent: a version-2 fragment is left byte for byte. It prints JSON with the files rewritten and `owed`: the prose the model still lacks (Start here roles missing, chapters without lead or within the bullet floor, sequences and store flows without `summary`, glossary size, roots without a code map entry, `meta.intro`), the same list `check` would fail on. The lane's rerun path offers "Bring the prose up to date", which writes exactly the owed list.
+It changes no label, fact or evidence, so no corrections entry is owed. The lane runs it only on a clean working tree (`git status --porcelain` prints nothing), so its undo, `git restore -- <site>/model/fragments`, cannot lose other work. It is idempotent: a version-2 fragment is left byte for byte. It prints JSON with the files rewritten and `owed`: the prose the model still lacks (Start here roles missing, chapters without lead or within the bullet floor, sequences and store flows without `summary`, glossary size, roots without a code map entry, `meta.intro`), the same list `check` would fail on. The lane's rerun path offers "Bring the prose up to date", which writes exactly the owed list.
 
 `check` and `build` on a version-1 fragment fail with one problem per file: `schemaVersion 1: run system-flow migrate`. A fragment newer than the CLI is rejected as today.
 
@@ -130,7 +130,7 @@ Run on the merged model by `check` and `build`. With `--fragment`, the rules tha
 
 Sentences are counted by splitting on `.`, `?` or `!` followed by a space or the end, outside backticks, with `e.g.` and `i.e.` not ending a sentence (`shortcut: a rule-based splitter; replace it if a real lead is miscounted in a proof run`). Words are whitespace-separated tokens.
 
-A prose problem points at the fragment that holds the offending field, or at `chapters.json` when the field is missing, so it goes back to the chapter's writer.
+A prose problem points at the fragment that holds the offending field, or at `chapters.json` when the field is missing, so it goes back to the chapter's writer. A chapter that passes with the 120 to 200 words warning goes back to its writer once, then the build runs again; a second warning stands.
 
 ### Who writes what
 
@@ -166,7 +166,7 @@ Writing rules, in the area brief and the planning sidecar, for every lead and bu
 3. **Shared ids:** `chapters.json` (with `role` on the first four) and `level0.json`, each checked with `--fragment`.
 4. **Investigate:** each area writes its fragment, figures with `summary` and `look`, its chapters' lead and bullets as merged sections, its `codeMap`; returns glossary candidates.
 5. **Start here and glossary:** the controller writes the `what`, `parts` and `code` prose in `chapters.json`, `glossary.json`, and the final `meta.intro`; each checked with `--fragment`.
-6. **Build:** merge (sections combine), schema, cross-references, prose rules, evidence; layout (ELK for level and flow figures, the lifeline grid for sequences); page from the site template; Markdown; deep diagrams; `BuildResult` with the prose block.
+6. **Build:** merge (sections combine), schema, cross-references, prose rules, evidence; layout (ELK for level and flow figures, the lifeline grid for sequences); deep diagrams; then the page from the site template, written after the deep diagrams so each card's link names the renderer of its page (with `--only`, a figure this build did not render reads its deep page from disk: an SVG page carries the generated marker, an archify page does not); Markdown; `BuildResult` with the prose block.
 7. **Interview, rebuild, visual check, report**, as today.
 
 ### The site template
@@ -175,21 +175,23 @@ Writing rules, in the area brief and the planning sidecar, for every lead and bu
 
 Slots: `TITLE`, `NAME`, `HEADER` (intro, how to read, roots and date), `LEGEND`, `MENU`, `CHAPTERS`, `MAP_DATA`, `DIAGRAMS`, `SITE_INDEX`, `FOOTER`. The fixed "how to read" paragraph lives in the template, written generically: figures play when scrolled to and the bar under each drives them; terms link to the glossary; each chapter's "Files and locations" holds the evidence; "Open in archify" opens the full diagram.
 
-The template carries its own inline script (theme toggle under `fx-theme`, menu, filter, scroll spy, evidence toggle), as the original did. It is not a kit file: it is never copied into a repo, only read by `build`.
+The template carries its own inline script (theme toggle under `fx-theme`, menu, filter, scroll spy, evidence toggle, a Tab stop on each scroll region only while it overflows), as the original did.
+
+The page is `<html lang="en" dir="ltr">`; every Arabic run in repository text is wrapped in `<span lang="ar" dir="rtl">` by the build, and the same rule applies to text the scripts add (figure labels as `<tspan lang="ar" direction="rtl">`, narration, filter results). Every chapter section carries `data-group` (`start`, `how` or `ref`), which the menu groups and the measure script read. A skip link to `main#main` is the first Tab stop. The theme button's name is its visible text ("Theme: dark" or "Theme: light"), never an `aria-label`. It is not a kit file: it is never copied into a repo, only read by `build`.
 
 **Layout at 1440:** the original's grid: a 240 px menu column, 40 px gap, `main` up to 900 px, 1228 px total with padding, centred. The menu is `position: sticky; top: 0; max-block-size: 100vh; overflow: auto`. Card content width is 870 px, so every box figure (at most 860 px) fits at 1:1.
 
-**Menu.** Name and "System flow, generated by fx" at the top, the theme toggle, the filter box, then three groups with headings. Start here and How it works items are numbered `01` onward by a CSS counter in the accent colour; Reference items (Glossary, Rules in force, Coverage, Corrections) are unnumbered. The scroll spy marks the chapter in the middle band of the window (`rootMargin: -40% 0px -55% 0px`) with the tinted background and `aria-current="location"`, and scrolls the menu itself (never the page) to keep it visible.
+**Menu.** Name and "System flow, generated by fx" at the top, the theme toggle, the filter box, then three groups, each under a label (`p.gl`, not a heading: the menu comes before the page's `h1`). Start here and How it works items carry their number `01` onward in the markup (`span.n`, accent colour), so filtering never renumbers what it leaves; Reference items (Glossary, Rules in force, Coverage, Corrections) are unnumbered. The menu has 6 px of inline padding so a link's focus ring is not clipped. The scroll spy marks the chapter in the middle band of the window (`rootMargin: -40% 0px -55% 0px`) with the tinted background and `aria-current="location"`, and scrolls the menu itself (never the page) to keep it visible.
 
-**Filter.** A `type="search"` input labelled "Filter chapters, parts, terms". `build` writes a small inline index: per chapter its number, title, question and lead; per part (every node label in every level) the chapter that draws its diagram, else chapter `start-parts`; per glossary term its anchor. Typing narrows the menu, case-insensitively on substrings: chapters that match stay with their number, parts show under their chapter, terms show as `G` items linking to `#term-<id>`; an `aria-live` line says how many match, or "Nothing matches". Escape or an empty box restores the full menu.
+**Filter.** A `type="search"` input labelled "Filter chapters, parts, terms". `build` writes a small inline index: per chapter its number, title, question and lead; per part (every node label in every level) the chapter that draws its diagram, else chapter `start-parts`; per glossary term its anchor. Typing narrows the menu, case-insensitively on substrings: chapters that match stay with their number, parts show under their chapter, terms show as `G` items linking to `#term-<id>`; an `aria-live` line `p#filter-count` reads "1 match", "<n> matches" or "Nothing matches", and stays in the page, visually hidden, while the box is empty, so its first count is announced. Escape or an empty box restores the full menu.
 
-**Below 900 px:** one column. The menu becomes a sticky top bar with the name and a "Chapters" control. The control is a `<details>` element, so the list opens without JavaScript; with JavaScript, choosing a link or pressing Escape closes it and returns focus. The open panel holds the filter and the grouped list, scrolls on its own, and is at most the window height. The theme toggle moves into the bar.
+**Below 900 px:** one column. The menu becomes a sticky top bar with the name and a "Chapters" control. The control is a `<details>` element, so the list opens without JavaScript; with JavaScript, `main` is inert while the panel is open, Escape closes it and returns focus to "Chapters", and choosing a link closes it and moves focus to the target chapter's `h2` (or the glossary row). The open panel holds the filter and the grouped list, scrolls on its own, and is at most the window height. `html` has a 56 px `scroll-padding-block-start` so the bar never covers a focused item. The theme toggle moves into the bar.
 
 **Chapter head:** an eyebrow with the number and the question (as in the mockup), the H2 title, the lead, then the bullets. Under each bullet its first evidence entry as `path:lines` in small mono; the full list stays in the chapter's collapsed "Files and locations (n)" box.
 
 **Header:** H1 `meta.title`, `meta.intro`, the how-to-read paragraph, roots, model date and chapter count, an "Open all evidence boxes" button, and the legend.
 
-**Legend by look,** one item per look the model uses plus the moving step: "Part of <name>", "Data or files", "Phone or browser", "Outside <name>", "Security or identity check", "Call that leaves <name>", "Step in flight". Context nodes stay dashed, as today.
+**Legend by look,** one item per look the model uses plus the moving step: "Part of <name>", "Data or files", "Phone or browser", "Outside <name>", "Security or identity check", "Call that leaves <name>" (its swatch dash-dot, as the arrow), "Step in flight". Context nodes stay dashed, as today.
 
 **Footer:** that the page is generated, the record (`model/fragments/`), the two rebuild commands, and that it runs offline.
 
@@ -198,7 +200,7 @@ The template carries its own inline script (theme toggle under `fx-theme`, menu,
 | Group | Chapter | Content beyond lead and bullets |
 |---|---|---|
 | Start here | 01 What it is | "Not owned here" list (`notOwned`), each with its evidence |
-| Start here | 02 The parts and how they fit | The level-0 card; the React Flow map explorer (today's chapter 00, unchanged in behaviour); the component catalogue tables (today's Components chapter) |
+| Start here | 02 The parts and how they fit | The level-0 card; the React Flow map explorer (today's chapter 00; its evidence panel sits under a 640 px canvas at every width, Enter or Space on a node or edge opens its evidence and moves focus to the panel, and below 600 px of canvas the map starts at its top left at zoom 0.6 instead of fitting the level); the component catalogue tables (today's Components chapter) |
 | Start here | 03 One request, end to end | The main request's lifeline card; the lead and bullets tell it as a story in order |
 | Start here | 04 Where data lives and where to start in the code | A stores overview (one row per store kind with its row count and the chapters that show it, then `meta.conventions` as the key notation note); the code map table grouped by root: folder, what it owns, start reading at (`path:lines symbol` of the first file entry) |
 | How it works | 05 onward | The system's chapters: cards for their diagrams, sequences and store flows, store flow tables, store tables, catalogue tables, Files and locations, as today |
@@ -215,9 +217,9 @@ Every inline figure (level diagram, lifeline sequence, store flow) is one card, 
 
 ```html
 <figure class="card" id="fig-<key>">
-  <h3>Sequence: create a prompt</h3>
+  <h3 id="fig-<key>-title">Sequence: create a prompt</h3>
   <p class="cap">What happens between the app's POST and the 202 it gets back. Step 4 is the only call that leaves the service.</p>
-  <div class="fig" role="region" tabindex="0" aria-label="create a prompt, scrolls sideways">  <!-- the SVG goes here -->
+  <div class="fig" role="region" aria-labelledby="fig-<key>-title">  <!-- the SVG goes here; tabindex="0" only while it overflows -->
   </div>
   <div class="ctl" data-fx-flow="<key>">  <!-- the bar goes here; holds the archify link without JavaScript -->
     <a class="deep" href="diagrams/seq-<id>.html">Open in archify</a>
@@ -225,11 +227,11 @@ Every inline figure (level diagram, lifeline sequence, store flow) is one card, 
 </figure>
 ```
 
-The title, caption and link render without JavaScript; a `<noscript>` line in `.fig` says the figure needs JavaScript and the link opens the full diagram. The link reads "Open in archify" when the deep diagram was rendered by archify and "Open full diagram" when it fell back to SVG.
+The title, caption and link render without JavaScript; a `<noscript>` line in `.fig` says the figure needs JavaScript and the link opens the full diagram. The link reads "Open in archify" when the deep diagram was rendered by archify and "Open full diagram" when it fell back to SVG. Below 900 px an archify link reads "Open full diagram (best on a wide screen)", since archify fits its canvas to the phone width. The SVG is `role="img"` named "Diagram, <n> steps", with the step captions as its `desc`; the region takes its name from the `h3` alone.
 
-**Control bar,** inside the card under a top rule, `position: sticky; bottom: 0` with the panel background, so it stays on screen while any part of a tall card is: Play or Pause (one button that toggles: it reads Pause while the figure is playing; filled accent, at least 84 px wide), Back and Next (icon buttons with `aria-label`s), Reset (returns the figure to rest before step 1 and stops playback), the narration, the count `4 / 7` and the deep link at the end. All targets at least 36 px. The narration is one sentence, `aria-live="polite"`: "Step 4: <from> to <to>: <message label>." followed by the first evidence as a code chip, built from text nodes, never from HTML. Before the first step it reads "Press Play, or step with Next." Reset is kept (owner, 2026-10-29). Back from step 1 also returns to the figure at rest, and Play at the end restarts.
+**Control bar,** inside the card under a top rule, `position: sticky; bottom: 0` with the panel background, so it stays on screen while any part of a tall card is: Play or Pause (one button that toggles: it reads Pause while the figure is playing; filled accent, at least 84 px wide), Back and Next (icon buttons with `aria-label`s), Reset (returns the figure to rest before step 1 and stops playback), the narration, the count `4 / 7` and the deep link at the end. All targets at least 36 px. The narration is one sentence: "Step 4: <from> to <to>: <message label>." followed by the first evidence as a code chip, built from text nodes, never from HTML. It is not a live region: a visually hidden `aria-live="polite"` span in the bar repeats it only for a step the reader takes (Play, Back, Next, Reset), never at mount or during autoplay. The sticky bar's height is kept as a scroll margin on the card's focusable parts, so it never covers them. Before the first step it reads "Press Play, or step with Next." Reset is kept (owner, 2026-10-29). Back from step 1 also returns to the figure at rest, and Play at the end restarts.
 
-**Autoplay:** play starts the first time any part of the `.fig` box enters the middle band of the window (`rootMargin: -40% 0px -40% 0px`, threshold 0), whatever the figure's height. It pauses when no part of the card is visible and resumes on return if the reader had not paused it. Under reduced motion nothing plays on its own and the token does not move.
+**Autoplay:** play starts the first time any part of the `.fig` box enters the middle band of the window (`rootMargin: -40% 0px -40% 0px`, threshold 0), whatever the figure's height, and shows one step every 1.6 s. Autoplay starts a figure once, and never after the reader touched any of its controls. It pauses when no part of the card is visible and resumes on return only what it paused itself. The last step stops playback for good: the figure stays on its last step, nothing resumes it, and Play from there restarts at step 1. Under reduced motion nothing plays on its own and the token does not move. A step not reached yet is drawn in `--muted` (text and lines), never faded, so it keeps 4.5:1 for text and 3:1 for lines; the contrast check holds `--muted` on `--panel` to 4.5:1.
 
 **Scale:** an SVG is drawn at 1:1, never shrunk, so no label renders under 12 px. When the card is narrower than the figure, `.fig` scrolls sideways inside the card; the bar is outside the scroller and never scrolls away. At each step the player scrolls `.fig` sideways (not the page) so the active arrow is in view, instantly under reduced motion.
 
@@ -246,17 +248,17 @@ Layout is a deterministic grid computed at build time (no ELK), written as a `Fi
 | Participant box | `c - 12` wide, 44 px tall, label 13 px on at most 2 lines, cut with an ellipsis and the full label as `<title>` |
 | Row | 40 px per message, 56 px for a self-call (a loop 28 px to the right of the lifeline); first row at y 72 |
 | Arrow label | `<n>` in bold then `short` (else the label cut at 26 characters on clause or word boundaries), 12 px, above the arrow from the calling lifeline with a panel halo; may run past the arrow's end, never past the figure's edge |
-| Styles | Call: solid line, filled head. Async: solid line, open head. Reply (`reply: true`): dashed. Leaving call (the target participant's look is `external`): `--warn` stroke 2.4 px and the legend item. External participants tinted. Active step: accent, 2.8 px, label bold |
+| Styles | Call: solid line, filled head. Async: solid line, open head. Reply (`reply: true`): dashed. Leaving call (the target participant's look is `external`): `--warn` stroke 2.4 px, dash-dot `12 4 2 4` (so it never differs by colour alone), and the legend item. External participants tinted. Active step: accent, 2.8 px, label bold |
 
 **The 860 rule.** With up to 8 participants, `c` is at least 104 and the figure is at most `8 × 104 + 28 = 860` px, inside the 870 px card at 1:1. With 9 to 12 participants the figure is 964 to 1276 px and scrolls sideways inside the card at 1440 as well; the check caps a sequence at 12 participants. The existing models fit the no-scroll case: 4 to 7 participants in both proof models, at most 9 in the owner's (`research/facts.md`). The layout report line for a sequence gives width, participants, messages and `scrolls at 860: yes|no`; crossings do not apply.
 
 **The 390 rule.** The card's content is about 332 px wide at 390 (16 px page padding, 12 px card padding, 1 px border). A 6-participant sequence (`c` = 138, 856 px) shows about two and a half lifelines at a time and scrolls sideways inside the card; text stays at 12 px and up. The page itself never scrolls sideways. The bar wraps to two rows (buttons, count and link; then the narration at full width) and stays under the scroller.
 
-The SVG fallback deep page draws sequences from the same lifeline geometry, one page per 8 messages as today. archify sequence pages are unchanged and stay separate linked pages, never embedded (ADR 0066 decision 3).
+The SVG fallback deep page draws sequences from the same lifeline geometry, one page per 8 messages as today. Its step highlight loops while the page is open, so the page has a "Pause animation" button (`aria-pressed`), hidden under reduced motion, where the highlight does not run. The map's animated async edges run React Flow's dash animation ten times (5 s), and not at all under reduced motion. archify sequence pages are unchanged and stay separate linked pages, never embedded (ADR 0066 decision 3).
 
 ### Kit files
 
-The player changes bytes, so under the renaming rule it becomes `fx-flow-2.js` (built from `src/references/visual/fx-flow-2.ts`), with its row and checksum in `visual-assets.md`; `fx-flow-1.js` and its source are removed, since no released page loads it. This matters even before merge: the copy rule never overwrites an existing `assets/fx-flow-1.js`, so a regenerated proof site would keep the old player. `fx-map-2.js` and `fx-tokens-1.css` are unchanged.
+The player changes bytes, so under the renaming rule it becomes `fx-flow-2.js` (built from `src/references/visual/fx-flow-2.ts`), with its row and checksum in `visual-assets.md`; `fx-flow-1.js` and its source are removed, since no released page loads it. This matters even before merge: the copy rule never overwrites an existing `assets/fx-flow-1.js`, so a regenerated proof site would keep the old player. `fx-map-2.js` was never on main, so its changes from the final review (keyboard, motion, stacked panel) stay under that name with a new checksum; `fx-tokens-1.css` is unchanged.
 
 ### Markdown
 
@@ -333,14 +335,14 @@ Scratch copies only, under the session scratchpad through `scripts/scratch-env`;
 
 | Measure | Pass line for both new sites |
 |---|---|
-| Reading prose per chapter (question, lead, bullets) | average at least 120 words; the owner's page measured beside it |
+| Reading prose per chapter (question, lead, bullets) | average at least 120 words of readingWords (question, lead and bullets as rendered, reading chapters only); `check`'s floor of 100 is on floorWords (lead, bullets and not-owned, as the model holds them); the owner's page measured beside it |
 | Chapters with a lead and 4 to 8 bullets | every chapter |
 | Glossary size | 15 to 40 |
 | Sequences drawn inline as lifelines | every model sequence |
 | Side menu | sticky at 1440, 230 to 250 px wide, three groups, current chapter marked after scrolling to three chapters; sticky top bar at 390 that opens and closes |
 | Filter | typing a known term narrows to the matching chapter, part and term; clearing restores the menu |
 | Cards | every figure inside a card whose box contains its bar; the bar stays in the viewport while the card is |
-| Autoplay | every figure reaches step 1 within 3 s of its box reaching the middle of the window, at both widths; it pauses when scrolled away |
+| Autoplay | every figure reaches step 1 within 3 s of its box reaching the middle of the window (measured with the box's centre at the window's middle; a box taller than the window shows its middle part), at both widths; it pauses when scrolled away |
 | Labels | no figure text under 12 px computed size at either width |
 | Page width | no page-level horizontal scroll at 390 |
 | Console | 0 errors on every page and width |
