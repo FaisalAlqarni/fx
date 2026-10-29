@@ -145,7 +145,7 @@ assert.ok(/^## Branch pass$/m.test(raw(finalReview)), `${finalReview}: the branc
     '`short` (the code-ish name on the arrow), and `reply` set to `true` on a reply.',
     'one `codeMap` entry for each folder of your area that a newcomer opens first: `root`, `path` (a folder ending in `/`), `owns` (one sentence) and evidence']);
   all('fragment-guide.md', ['`look` is required on every node and participant.',
-    '| `service` | code of this system: a service, job, worker, controller |', '| `store` | a database, cache, queue or file store |',
+    '| `service` | code of this system: a service, job, worker, controller |', '| `store` | a database, cache, queue or file store (a queue holds messages until a consumer takes them) |',
     '| `client` | a browser, phone app or other caller of the system |', '| `external` | a system outside this one |',
     '| `security` | an identity or access check |']);
   all('check-and-report.md', ['words per chapter (id, words, lead sentences, bullets), the average words per chapter, the glossary size and the lifelines drawn inline.',
