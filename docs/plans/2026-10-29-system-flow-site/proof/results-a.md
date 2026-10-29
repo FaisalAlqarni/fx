@@ -137,3 +137,34 @@ Minutes are from the start and end stamps of the three `claude -p` steps: 2 min 
 1. Visual check, text fits: the archify architecture pages render node subtitles at 2.3 to 6 px, cut off at the box edge, at their default view.
 2. Visual check, glossary links: 2 of 41 links per width do not bring their row into view.
 3. Not run on site (a): page-check's default-mode checks (arrowStyle, fitAt1440, panelEscape), the map level walk, evidence per node and edge, right to left, theme after reload.
+
+## After fixes
+
+Fix round on 2026-10-29, commits `69f9d66` (archify text), `55bd2fb` (page-check `--site`), `8a635eb` (humanize pass), `4691bb8` (term links), `88bacd8` (theme button on SVG pages). The site was rebuilt with the CLI and the run's archify (`CLAUDE_CONFIG_DIR=<RUN>/home/.claude`): exit 0, `problems: []`, 23 archify pages and 3 SVG fallbacks (`<RUN>/results/build4.out`). `arch-twk-framework-l1` now renders in archify; the other three fall back for the reasons they had before (route above the canvas, edges through nodes, desktop readability of a 7 px edge label).
+
+The build keeps a site's existing `assets/fx-flow-2.js` and never overwrites it, so the first rebuild (`build3.out`) still served the old player. That file was moved to `<RUN>/stale-assets/` and the build run again (`build4.out`), which copied the current one. A site built before this round keeps the old player, with the new page CSS, until its asset is replaced.
+
+| Failed line | Cause | Fix | After |
+|---|---|---|---|
+| archify node text 2.3 to 6 px, subtitles cut | fx cut each role to fit archify's 6 px subtitle floor, and archify fits an automatic canvas to the window height (scale 0.83 on `arch-level0`) | a role that does not fit a 9 px subtitle goes whole to a Parts card; each spec gets archify's own canvas (`validate --layout-json`) as an authored viewBox at least 1000 wide, parts centred | 1440: 15 archify architecture pages, scale 1.34 to 1.35, smallest node text 12.1 to 14.8 px, no subtitle cut. Still cut: 3 labels on `arch-twk-framework-l2-security` (`AddSecurityForMob...`, `UseSecurityForMob...`, `Authorized contro...`), shortened by fx because archify rejects a label wider than its box. 390: scale 0.33, node text 3 to 3.7 px; archify fits the canvas to the phone width, and the wider canvas makes it smaller than before (2.8 px on `arch-level0`). Reading it there takes archify's zoom |
+| 2 of 41 term links out of view | the player's narration changed a card's height at each step, so figures autoplaying during the smooth scroll moved the target; and the glossary's scroll box clipped row 1's scroll margin at its top edge, under the phone bar | captions stacked in one grid cell so the bar keeps its tallest height; 40 px padding above the glossary table | `termLinks`: 41 of 41 at 1440 and 41 of 41 at 390, in 3 runs (`<RUN>/results/site-after.json`) |
+| page-check default mode fixture-bound | targets named by fixture ids | `page-check.js --site` finds its targets on the page | run on site (a), below |
+| fx-humanize skipped by 3 of 4 areas | the pass was a request with nothing checking it | `Humanized:` return line; the controller checks it per area and humanizes missing prose itself before the draft build | gate assertions in `docs-lanes` |
+| no theme button on SVG deep pages | `svgPage` had only the head script | the index's toggle, same `fx-theme` key | `deepTheme`: 3 of 3 SVG pages toggle, store and keep the theme on reopen |
+
+`page-check.js --site <RUN>/.../index.html` (exit 0, `<RUN>/results/site-after.json`):
+
+| Check | Result |
+|---|---|
+| arrowStyle | 5 sequence cards: 16 reply arrows dashed, 4 leaving calls in `var(--warn)` at 2.4 (computed colour differs from plain), `seq-mobile-api-seq-prompt` after Next 2.8 then 1.6; 11 cap lines in 17 level cards, one per store node |
+| fitAt1440 | 23 figures at most 860 px, none overflows its 898 px card |
+| panelEscape | Escape on the open phone panel closes it, focus on the summary |
+| termLinks | 41 of 41 at 1440, 41 of 41 at 390 |
+| deepTheme | 3 of 3 SVG deep pages |
+| console | 0 errors |
+
+The fixture site: default mode passes every check, arrowStyle with 2 sequence cards, 1 reply, 2 leaving calls and 1 cap line (run before termLinks and deepTheme existed); `--site` on a fresh fixture passes termLinks 34 of 34 at both widths and deepTheme 4 of 4.
+
+`page-check.js --measure fx` (exit 0) and `compare.js owner-2.json <RUN>/measure-a-after.json` (exit 0): every Proof pass line still passes, with the same figures as before the fixes (prose 183.8 words, 9 of 9 chapters, glossary 24, lifelines 5 of 5, side menu, filter 6 of 6, cards 3 of 3, autoplay 5 of 5, labels 12 px, fits at 390, 0 console errors, player 10 of 10).
+
+Node text measure: `<RUN>/results/nodetext-after.out`, summary in `nodetext-after.summary`.
