@@ -168,3 +168,39 @@ The fixture site: default mode passes every check, arrowStyle with 2 sequence ca
 `page-check.js --measure fx` (exit 0) and `compare.js owner-2.json <RUN>/measure-a-after.json` (exit 0): every Proof pass line still passes, with the same figures as before the fixes (prose 183.8 words, 9 of 9 chapters, glossary 24, lifelines 5 of 5, side menu, filter 6 of 6, cards 3 of 3, autoplay 5 of 5, labels 12 px, fits at 390, 0 console errors, player 10 of 10).
 
 Node text measure: `<RUN>/results/nodetext-after.out`, summary in `nodetext-after.summary`.
+
+## After the final fix wave
+
+Fixer B's commits, one per item or tight group: `d5ef280` (a11y 13, unprimed 4), `58a11a7` (a11y 1, 2, 14), `2484adb` (a11y 3, 5), `0b22bfb` (a11y 4), `9a5f265` (a11y 6, 7, review F4), `ea25c6a` (a11y 7 deep pages, a11y 9, review F10), `9931753` (a11y 11), `3553865` (contrast pairs), `c3e80cc` (a11y 10), `a678881` (a11y 12), `26f90ef` (a11y 8), `e03d369` (review F5), `3098ad6` (design: the seven unstated rules), `ca8fd6d` (map focus ring, found by the keyboard walk), `4257532` (unprimed 5 and 7 on the page), `d6f84a8` (review F9 in the player), `4f729d2` and `d5ec794` (page-check). `page-check.js --a11y` holds one check per finding; the default and `--site` modes run them last.
+
+Rebuild: site (a) with the CLI, `HOME=<RUN>/home CLAUDE_CONFIG_DIR=<RUN>/home/.claude`, at `d6f84a8`: exit 0, `problems: []`, 23 archify pages and 3 SVG fallbacks (`<RUN>/results/build-fb2.out`). The build never overwrites a kit file already in `assets/`, so the old `fx-flow-2.js` and `fx-map-2.js` were moved to `<RUN>/stale-assets/fb2/` first and the build copied the current ones. A first rebuild at `3098ad6` (`build-fb1.out`) was the same: exit 0, no problems.
+
+Before the rebuild, `--a11y` on the site as fixer A had last built it (new page, old kit files) failed 8 checks: scrollPadding, liveRegions, mapKeyboard, mapLayout, unreachedContrast, regions, arabic and deepLinkText.
+
+`page-check.js --site` (exit 0, `<RUN>/results/site-fb2c.json`), every check passes:
+
+| Check | Result |
+|---|---|
+| arrowStyle | 5 sequence cards, 16 reply arrows dashed, 4 leaving calls warn at 2.4 and dash-dot, 11 cap lines in 17 level cards |
+| fitAt1440, panelEscape, termLinks, deepTheme | 23 figures fit; Escape closes the panel with focus on Chapters; 41 of 41 term links in view at 1440 and 390; 3 of 3 SVG deep pages keep the theme |
+| menuLinkFocus, panelInert (a11y 1, 2) | at 390 a menu link by Enter closes the panel and focus lands on the chapter's h2; main inert while the panel is open, not after |
+| skipLink, menuRing (a11y 14) | the first Tab reaches "Skip to the content", Enter focuses main; 6 px between a menu link and the menu edge |
+| scrollPadding, filterCount (a11y 3, 5) | 56 px scroll padding under the 48 px phone bar; every card's focusable parts keep a scroll margin as tall as its bar at both widths; the empty count stays in the tree |
+| liveRegions (a11y 4) | 24 bars silent at mount and during autoplay; Next announces its step once |
+| mapKeyboard (a11y 6) | node and edge show the ring on focus; Enter opens the evidence and moves focus to the panel; Tab reaches Open next level and Enter opens level 2; group boxes take no focus |
+| mapLayout (a11y 7, F4) | panel under a 640 px canvas at both widths; animated edges run 10 times, none under reduced motion; at 390 zoom 0.6, first node 20 px and 13 px from the canvas corner |
+| unreachedContrast (a11y 10) | 765 texts at step 1: lowest text 4.92 light, 4.81 dark; lowest arrow or box 5.17 light, 6.51 dark |
+| regions (a11y 12) | Tab stops on 2 of 32 regions at 1440 and 25 of 32 at 390, only those that overflow; each figure named by its h3, its svg described by its steps |
+| arabic (a11y 8) | site (a) has no Arabic in figures or parts; the fixture's 22 figure letters, 16 narration letters and 6 filter letters are all inside lang="ar" |
+| deepLinkText (F5) | 21 archify links read "Open in archify" at 1440 and "Open full diagram (best on a wide screen)" at 390 |
+| nodeTitles (F9), themeName (a11y 9, F10), leavingDash (a11y 11), deepPause (a11y 7) | 199 of 199 roles in svg titles; no aria-label on any theme button; legend swatch and deep pages dash-dot; 1 of 1 animated deep page pauses |
+| console | 0 errors |
+
+The first `--site` run failed two checks on the check itself: scrollPadding compared a margin computed to 3 decimals with an unrounded bar height (179.312 against 179.3), and arabic required Arabic to exist. Both fixed in `d5ec794`. One later run failed mapKeyboard on the edge: the check pressed Enter while the root level was still being laid out after leaving level 2; the check now waits past the relayout and passed in 3 runs.
+
+`page-check.js --measure fx --out-dir <RUN>/shots-fb3` at 1440 and 390, light and dark, reduced motion on and off (exit 0), and `compare.js owner-2.json <RUN>/measure-a-fb3.json` (exit 0): every Proof pass line passes with the same figures as before, side menu included (240 px, 3 groups, current marked, phone bar opens and closes, a link puts focus on the chapter heading). Autoplay 24 of 24 figures at both widths and themes, labels 12 px, no page scroll at 390, 0 console errors, player 10 of 10. The first measure run failed `menu.phoneBar` because it still expected focus back on Chapters after a link; that is the a11y 1 change, and the line now expects the chapter's h2. Screenshots: `<RUN>/shots-fb3/fx-<1440|390>-<light|dark>.png`.
+
+Keyboard walk (`<RUN>/results/kwalk-fb2.json`, script in the session scratchpad):
+
+- 1440, Tab from the top: skip link, Theme, Chapters, the filter, the 14 menu links, the evidence button, term links, a card's Play, Back, Next, Reset and archify link, then into the map: every map node and edge is reached and shows the ring, and Enter on a node opens "Conversations core" with focus in the panel. 1 of 44 stops is flagged: a map edge whose midpoint lies under a node box, so the ring shows on its visible part only.
+- 390: Enter on Chapters opens the panel and makes main inert; Tab reaches the filter; typing "Answe" reads "35 matches"; Tab and Enter on a result close the panel with focus on the chapter's h2; Enter on a term link brings its glossary row into view below the bar; a card's controls go Play, Back, Next, Reset, the archify link (reading the narrow text); Enter on Next shows 1 / 5 and announces the step; Escape from the filter closes the panel with focus on Chapters.
