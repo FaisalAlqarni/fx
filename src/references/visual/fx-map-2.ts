@@ -186,6 +186,12 @@ function mount(host: Element, data: MapData): void {
       }
       return () => { dead = true; };
     }, [curId]);
+    // Above the early return: React needs the same hooks on every render.
+    R.useEffect(() => {
+      if (!toPanel) return;
+      toPanel = false;
+      host.querySelector<HTMLElement>('.fxm-panel')?.focus();
+    }, [sel]);
     if (!cur) return null;
     const contextIds = new Set(cur.nodes.filter((n) => !n.primary).map((n) => n.id));
     const touches = (e: Flow['edges'][number]) => sel?.kind === 'node' ? e.source === sel.id || e.target === sel.id : sel?.kind === 'edge' ? e.id === sel.id : true;
@@ -205,11 +211,6 @@ function mount(host: Element, data: MapData): void {
       toPanel = true;
       setSel({ kind: n ? 'node' : 'edge', id });
     };
-    R.useEffect(() => {
-      if (!toPanel) return;
-      toPanel = false;
-      host.querySelector<HTMLElement>('.fxm-panel')?.focus();
-    }, [sel]);
     const narrow = host.clientWidth < NARROW;
     const corner = shown === null ? { x: 0, y: 0 } : { x: Math.min(0, ...shown.nodes.map((n) => n.position.x)), y: Math.min(0, ...shown.nodes.map((n) => n.position.y)) };
 

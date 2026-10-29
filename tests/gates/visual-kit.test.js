@@ -277,7 +277,7 @@ const lifeline = (over = {}) => ({
 assert.deepStrictEqual(plain(flow.validateFigure(lifeline())), []);
 assert.deepStrictEqual(plain(flow.validateFigure(lifeline({ steps: [{ edges: ["turn#9"], nodes: ["client", "api"], caption: "c", where: null }] }))), ["figure seq-turn: step 0 names a missing row turn#9"]);
 const textOf = (n) => typeof n === "string" ? n : Array.isArray(n) ? n.map(textOf).join("") : n !== null && typeof n === "object" && "children" in n ? textOf(n.children) : "";
-function mountWith(layout) {
+function mountWith(layout, d = data([l0, l1]), c = ctx) {
   const state = [];
   const deps = [];
   let slot = 0;
@@ -301,10 +301,10 @@ function mountWith(layout) {
         render();
       }];
     },
-    useEffect: (f, d) => {
+    useEffect: (f, d2) => {
       const i = slot++;
-      if (JSON.stringify(deps[i]) !== JSON.stringify(d)) {
-        deps[i] = d;
+      if (JSON.stringify(deps[i]) !== JSON.stringify(d2)) {
+        deps[i] = d2;
         effects.push(f);
       }
     }
@@ -313,14 +313,19 @@ function mountWith(layout) {
     app = el.type;
     render();
   } }) };
-  Object.assign(ctx, { React, ReactDOM, ReactFlow: { default: "flow", Controls: "controls" }, ELK: class {
+  Object.assign(c, { React, ReactDOM, ReactFlow: { default: "flow", Controls: "controls" }, ELK: class {
     layout = layout;
   } });
-  ctx.fxMap.mount({}, data([l0, l1]));
-  return () => textOf(tree2);
+  c.fxMap.mount({}, d);
+  return Object.assign(() => textOf(tree2), { hooks: () => slot });
 }
 const failed = mountWith(() => Promise.reject(new Error("elk broke")));
 assert.ok(failed().includes("Laying out the map."), "the canvas waits for the layout");
+const map2ctx = load("fx-map-2.js");
+const withLevel = mountWith(() => new Promise(() => void 0), data([l0, l1]), map2ctx);
+const noLevel = mountWith(() => new Promise(() => void 0), { root: "zz", levels: [l0] }, map2ctx);
+assert.strictEqual(noLevel(), "", "no current level renders nothing");
+assert.strictEqual(noLevel.hooks(), withLevel.hooks(), "fx-map-2 calls the same hooks with and without a current level");
 setTimeout(() => {
   assert.ok(failed().includes("The map could not be laid out: Error: elk broke"), `a failed layout shows an error: ${failed()}`);
   console.log("visual-kit: OK");
