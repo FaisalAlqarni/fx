@@ -121,3 +121,40 @@ Task 07: fix round 1/5 (1 addressed, 0 open: none; commits a7142ce..8c7c456)
 Task 07: minor (deferred): missing-deep-page warning shows only in the stdout JSON, not on stderr
 Task 07: cost unavailable (no transcript recorded)
 Task 07: complete (commits 2534415..8c7c456, review clean after fix round 1). Files: sf-page.ts cards, fx-flow-2.ts player (checksum row updated), sf-build.ts write order and --only deep lookup with a missing-page warning, sf-diagrams svgPage marker, site template, page/only/archify tests, site-template and visual-kit gates, page-check (30 checks), built JS.
+Task 08: dispatched b5f912a 2026-10-29T01:49:48+03:00
+Task 08: implementer agent a953adfaaab93329c (opus, Capable because: term linking on escaped HTML, new chapters, filter with browser checks). Blocked: 10 and 11 wait on 08.
+Task 10: dispatched f678edc 2026-10-29T02:08:45+03:00
+Task 08: reviewer adc1330be0dc4f22b and fx-lens-security a3f1c197cd20a0d63 dispatched (tripwire: security, repository strings into HTML via term links, glossary rows, inline index). Task 10: implementer a7a0453da34d63cc3 (sonnet), parallel; file list disjoint from 08. Blocked: 11 waits on 08's review (both touch page-check.ts).
+Task 08: lens security: 0 findings (findings/08-lens-security.md).
+Task 08: minor (deferred): filter count writes "1 match" where the contract says "<n> matches"; readers of the count must accept both.
+Task 08: minor (deferred): the stores table "Shown in" links are not asserted by system-flow-site.test.ts.
+Task 08: minor (deferred): a model with no parts section drops the map and catalogue and leaves site-index parts pointing at chapter "" (build --only only).
+Task 08: ⚠️ resolved by controller: Markdown output is task 09's (complete, review clean); task 08's file list names no sf-markdown.ts change. Chromium run evidence is in the report. No gap.
+Task 08: cost unavailable (no transcript recorded)
+Task 08: complete (commits b5f912a..f678edc, review clean, security lens 0). Files: sf-page.ts chapters and term links, site template filter, site and page tests, site-template gate, page-check filter and term checks, built JS.
+Task 11: dispatched f678edc 2026-10-29T02:10:07+03:00
+Task 11: implementer a229d672a8175cefe (sonnet), parallel with task 10 (disjoint files).
+Task 10: reviewer a5b449cd53e974f7f dispatched.
+Task 10: minor (deferred): area-brief.md does not tell writers that message `short` is capped at 26 characters.
+Task 10: minor (deferred): no fresh-agent baseline run of the new skill wording; text gates only.
+Task 10: minor (deferred): ADR 0066 status line omits that Still in force was renumbered 8 to 12.
+Ruling: in task 10's fix, the owner-mandated assertions of the two phrases `fx-humanize` and `before returning` (owner change 2026-10-29) stay as the owner stated them; ruling C9's full-sentence rule applies to the other single-word assertions. Why: the owner named those two phrases; the gate may additionally pin the full sentence. Cost if wrong: a weak gate on two phrases, caught by the re-review.
+Task 10: fix round 1/5 dispatched to implementer a7a0453da34d63cc3 (resume); open: spec ❌ C9 half applied (Important). FIX_BASE 6e27070 2026-10-29T02:14:06+03:00
+Task 10: fix round 1/5 (2 addressed, 0 open: ; commits 6e27070..8f81765)
+Task 10: cost unavailable (no transcript recorded)
+Task 10: complete (commits f678edc..8f81765, review clean after fix round 1). Files: skills/fx-system-flow SKILL.md and five sidecars, skills/fx-docs/SKILL.md, ADR 0066 amended in place (fx-adr not listed by this runtime; repo convention followed), docs-lanes gate.
+Task 11: reviewer a1e32d185b37e2462 dispatched. Exit trial (check-all) launched at bf822a7 in parallel.
+Task 11: minor (deferred): results.md "reduced motion" and "pauses when away" rest on one figure; name it or check all figures.
+Task 11: minor (deferred): lifeline detector is `line[stroke-dasharray]` attribute only; results.md wording claims a dashed vertical line under a participant.
+Task 11: review finding verified by controller: src/docs/plans/2026-10-29-system-flow-site/proof/page-check.ts:590-593 toMid scrolls the area's top (getBoundingClientRect().top - innerHeight/2) to the window middle.
+Ruling: page-check's toMid centres the figure box in the window (box centre at the window middle) for both owner and fx measures; task 07 step text "scroll each card's .fig top to the window's middle" is the procedure for short figures, and centring is the same position or a more visible one for every box. Why: a tall box with a 0.3 threshold never fires with its top at the middle (reviewer measured six owner figures of 1582 to 1954 px), so the old procedure measures the tool, not the page. Cost if wrong: an fx autoplay that fires only on top-crossing would pass a check it should fail, caught by the fx measure rerun in this fix round and by task 12's proof run.
+Task 11: fix round 1/5 dispatched to implementer a229d672a8175cefe (resume); open: Important toMid defect; rerun owner and fixture measures and rewrite the autoplay rows in results.md. FIX_BASE bf822a7 2026-10-29T02:52:56+03:00
+Coverage audit: agent adb5d3ecbdb2e0a5a dispatched (findings/coverage-audit.md), parallel with task 11 fix round 1 and the check-all exit trial.
+Coverage audit: 6 gaps (G1, G2 medium; G3 to G6 low) and 7 unstated rules, in findings/coverage-audit.md.
+Correction: the controller's Task 05 ⚠️ line said fx-flow-2 drawing "is checked in the browser by proof/page-check.js from task 06 on"; the audit shows page-check counts only lifeline dasharrays (page-check.ts:633), not arrow styling. That resolution was wrong; G1 owns it now.
+Ruling: G1, G2, G4 and G5's Escape case become task 14 (tasks/14-coverage-checks.md), blocked by 07, 08, 11, run before the proof. Why: medium gaps let a styling or padding regression pass every check; the low ones are cheap in the same file. Cost if wrong: one extra task, caught by its review.
+Ruling: G3 (story 2 "each in a sentence or two"), G6 (header roots, date, count, how-to-read text, menu number to chapter number) and the 7 unstated rules (end stop, 1.6 s, page after deep diagrams, migrate on a clean tree, one return round on the words warning, test-side contracts, autoplay position) are not built here; they go to the owner and the final review as design amendments. Why: they change the approved design's text or need an owner decision; the code already behaves per the tasks. Cost if wrong: a design that undersays what the code does, caught by the final branch review reading this line.
+Exit trial 1 (check-all at bf822a7, before task 11's fix and task 14): EXIT 0, ALL GREEN, 787 lines read; all 21 system-flow suites, skill-size, visual-kit, site-template, docs-lanes OK. Noise only: MODULE_TYPELESS_PACKAGE_JSON warnings from the opencode plugin tests and expected [fx] failure lines from negative-path hook tests. Log: /tmp/claude-1000/sf2-build/check-all-bf822a7.log. A second run follows task 14.
+Task 11: fix round 1/5: controller re-review (3 lines): 1 addressed, 0 open
+Task 11: cost unavailable (no transcript recorded)
+Task 11: complete (commits 8f81765..01dd512, review clean after fix round 1). Files: proof/page-check.ts measure mode, proof/compare.ts and its test, check-all line, results.md Baseline and Migration, built JS.
