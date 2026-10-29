@@ -245,3 +245,9 @@ Fixer B design (3098ad6): the seven unstated rules and the a11y behaviour; check
 Fixer B proof (a): rebuilt at d6f84a8, exit 0, 23 archify and 3 SVG pages; --site exit 0 all checks; --measure fx and compare exit 0; keyboard walk in results-a.md "After the final fix wave".
 Fixer B check-all: EXIT 0, ALL GREEN at d5ec794 plus these notes (log in the session scratchpad, fb/check-all.log).
 Final review: humanize pass 1750ea1 (no rewrites needed; check-prose OK, check-all ALL GREEN)
+Fixer N1 (f0b85b3): page-check widenInert (a11y). RED "menu opened at 390, widened to 1440: main inert true; first evidence summary click timed out, open false"; GREEN "main inert false; first evidence summary clicked, open true".
+Fixer N2 (11d7196): page-check skipPanel (a11y). RED "skip link by Enter at 390 with the panel open: panel open true, focus on main#main false (body in )"; GREEN "panel open false, focus on main#main true".
+Fixer N3 (5ececd9): visual-kit, fx-map-2 hook count with and without a current level. RED "actual: 7, expected: 8"; GREEN "visual-kit: OK". New fx-map-2.js checksum 3fb533fa... in visual-assets.md.
+Fixer N4 (46f4675): system-flow-archify, a validate that floods stdout (ENOBUFS). RED "auto canvas: archify validate timed out after 600 s"; GREEN "archify validate failed: spawnSync ... ENOBUFS". The error is read before the signal, since ENOBUFS also sets SIGKILL.
+Fixer N5 (815b471): system-flow-coverage, decisions under ### subsections. RED "rule r1: ADR docs/adr/0003-z.md has no decision 2"; GREEN ok, Consequences item 3 and next-section item 4 still refused. The old "### Details is not a decision" expectation now reads it as one.
+Fixer N1 to N5: full page-check on a fresh fixture 58 of 58 pass; check-all EXIT 0, ALL GREEN at 815b471 (/tmp/claude-1000/sf2-build/check-all-n.log).
