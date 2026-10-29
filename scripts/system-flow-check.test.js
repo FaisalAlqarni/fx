@@ -419,7 +419,7 @@ passes("a term and a code map entry", (f) => f.fragment("extra", { glossary: [te
   f.fragment("glossary", { glossary: [{ ...term, evidence: [{ path: "app/" }] }] });
   const r = f.run(["check"]);
   assert.strictEqual(r.status, 1);
-  assert.ok(r.stderr.split("\n").includes(`${F}/glossary.json:/glossary/0/evidence/0: glossary term expires: a folder entry is allowed only on catalogue and inventory entries`), r.stderr);
+  assert.ok(r.stderr.split("\n").includes(`${F}/glossary.json:/glossary/0/evidence/0: glossary term expires: a folder entry is allowed only on catalogue, inventory and code map entries`), r.stderr);
 }
 const b2 = { id: "b2", text: "Expired links answer 410.", evidence: [{ path: "app/x.rb", lines: "4", symbol: "expired?" }] };
 const area = (f, section) => f.fragment("links", { sections: [{ id: "s1", ...section }] });

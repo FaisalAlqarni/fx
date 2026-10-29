@@ -95,7 +95,7 @@ fails('bad lines on a folder', [good], `${F}/inventory.json:/inventory/0/evidenc
 const inventory = (p: string) => (f: Fx) => f.fragment('inventory', { inventory: [{ id: 'inv', kind: 'store', name: 'N', evidence: [{ path: p }] }] });
 passes('folder on inventory', [good], inventory('app/'));
 fails('folder missing on inventory', [good], `${F}/inventory.json:/inventory/0/evidence/0: inventory:inv: backend/nope/: folder missing`, inventory('nope/'));
-fails('folder on a node', [{ path: 'app/' }], `${NODE0}: node link: a folder entry is allowed only on catalogue and inventory entries`);
+fails('folder on a node', [{ path: 'app/' }], `${NODE0}: node link: a folder entry is allowed only on catalogue, inventory and code map entries`);
 
 // A path that leaves its root is rejected before any read, in git and plain roots alike.
 {

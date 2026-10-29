@@ -108,6 +108,15 @@ const guide = (f: Fx): void => {
 fails('a cited root with no code map entry', guide, 'chapters.json', '/sections/3', 'section start-code: root guide has no code map entry; items cite it');
 passes('a cited root with a code map entry', (f) => { guide(f); edit(f, 'app', (a) => { a.codeMap.push({ id: 'guide', root: 'guide', path: 'docs/', owns: 'The guide.', unconfirmed: true }); }); });
 
+// Code map evidence: a folder entry and a file entry, the first file being where to start reading (final review F6).
+const appMap = (evidence: Obj[]) => (f: Fx) => edit(f, 'app', (a) => { a.codeMap[0].evidence = evidence; });
+fails('a code map entry with no folder entry', appMap(LINK), 'app.json', '/codeMap/0/evidence', 'code map entry app: evidence has no folder entry (a path ending in /)');
+fails('a code map entry with no file entry', appMap([{ path: 'app/' }]), 'app.json', '/codeMap/0/evidence', 'code map entry app: evidence has no file entry; the first file entry is where to start reading');
+passes('a code map entry with a folder entry and a file entry', appMap([...LINK, { path: 'app/' }]));
+// A folder entry on any other item names every kind that may hold one (final review F12).
+fails('a folder entry on a bullet', s1((s) => { s.bullets[0].evidence = [{ path: 'app/' }]; }), 'chapters.json', '/sections/4/bullets/0/evidence/0',
+  'bullet b1: a folder entry is allowed only on catalogue, inventory and code map entries');
+
 // Captions.
 const summary = (text: string) => (f: Fx) => edit(f, 'app', (a) => { a.sequences[0].summary = text; });
 fails('a 5-word summary', summary(sentence(5)), 'app.json', '/sequences/0/summary', 'sequence turn: summary has 5 words; 6 to 30 required');

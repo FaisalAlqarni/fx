@@ -201,6 +201,21 @@ passes("a cited root with a code map entry", (f) => {
     a.codeMap.push({ id: "guide", root: "guide", path: "docs/", owns: "The guide.", unconfirmed: true });
   });
 });
+const appMap = (evidence) => (f) => edit(f, "app", (a) => {
+  a.codeMap[0].evidence = evidence;
+});
+fails("a code map entry with no folder entry", appMap(LINK), "app.json", "/codeMap/0/evidence", "code map entry app: evidence has no folder entry (a path ending in /)");
+fails("a code map entry with no file entry", appMap([{ path: "app/" }]), "app.json", "/codeMap/0/evidence", "code map entry app: evidence has no file entry; the first file entry is where to start reading");
+passes("a code map entry with a folder entry and a file entry", appMap([...LINK, { path: "app/" }]));
+fails(
+  "a folder entry on a bullet",
+  s1((s) => {
+    s.bullets[0].evidence = [{ path: "app/" }];
+  }),
+  "chapters.json",
+  "/sections/4/bullets/0/evidence/0",
+  "bullet b1: a folder entry is allowed only on catalogue, inventory and code map entries"
+);
 const summary = (text) => (f) => edit(f, "app", (a) => {
   a.sequences[0].summary = text;
 });

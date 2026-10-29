@@ -45,6 +45,15 @@ export function checkProse(model: Model, mode: 'whole' | 'fragment'): Problem[] 
   for (const { item } of collect(model)) for (const e of item.evidence) if ('path' in e) cited.add(e.root ?? hostId);
   const mapped = new Set(model.codeMap.map((c) => c.root));
 
+  // design.md, code map: evidence holds a folder entry and a file entry; the first file entry is where to start reading.
+  for (const c of model.codeMap) {
+    if (c.unconfirmed === true) continue;
+    const paths = (c.evidence ?? []).flatMap((e) => ('path' in e ? [e.path] : []));
+    const at = under(originOf(c), 'evidence');
+    if (!paths.some((p) => p.endsWith('/'))) err(at, `code map entry ${c.id}: evidence has no folder entry (a path ending in /)`);
+    if (!paths.some((p) => !p.endsWith('/'))) err(at, `code map entry ${c.id}: evidence has no file entry; the first file entry is where to start reading`);
+  }
+
   for (const s of sections) {
     const decl = originOf(s);
     const leadAt = fieldOrigin(s, 'lead');
