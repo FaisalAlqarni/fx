@@ -244,3 +244,4 @@ Fixer B U5, U7 page side (4257532): RED "<li>Links expire. 3 <code>"; GREEN "sys
 Fixer B design (3098ad6): the seven unstated rules and the a11y behaviour; check-prose OK.
 Fixer B proof (a): rebuilt at d6f84a8, exit 0, 23 archify and 3 SVG pages; --site exit 0 all checks; --measure fx and compare exit 0; keyboard walk in results-a.md "After the final fix wave".
 Fixer B check-all: EXIT 0, ALL GREEN at d5ec794 plus these notes (log in the session scratchpad, fb/check-all.log).
+Final review: humanize pass 1750ea1 (no rewrites needed; check-prose OK, check-all ALL GREEN)
