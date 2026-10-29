@@ -388,6 +388,26 @@ async function a11y(browser: Browser): Promise<void> {
     const ready = await mapReady(page);
     const groupsFocusable = await page.evaluate(() => [...document.querySelectorAll('#map-root .react-flow__node[data-id^="group:"]')].filter((g) => g.hasAttribute('tabindex')).length);
     const want = await page.evaluate((s: string) => document.querySelector(`${s} .fxm-label`)?.textContent ?? '', NODE);
+    // 2.4.7: a focused node shows the page's 3 px ring, a focused edge draws its path in the ring colour.
+    const ringOf = (sel: string) => page.evaluate((q: string) => {
+      const css = getComputedStyle as unknown as (e: unknown) => Record<string, string> & { getPropertyValue(n: string): string };
+      const el = document.querySelector(q);
+      if (el === null) return 'none';
+      const p = el.querySelector('.react-flow__edge-path');
+      if (p === null) return `${css(el).outlineStyle} ${css(el).outlineWidth}`;
+      // The ring colour as the browser writes a computed colour, for comparison with the path's stroke.
+      const probe = document.createElement('i');
+      probe.setAttribute('style', 'color:var(--alert)');
+      document.body.append(probe);
+      const ring = css(probe).color;
+      probe.remove();
+      return css(p).stroke === ring ? 'ring colour' : `${css(p).stroke}, ring ${ring}`;
+    }, sel);
+    await page.focus(`${NODE} >> nth=0`);
+    const nodeRing = await ringOf(`${NODE}:focus`);
+    await page.focus('#map-root .react-flow__edge >> nth=0');
+    const edgeRing = await ringOf('#map-root .react-flow__edge:focus');
+    const ringed = nodeRing.startsWith('solid 3px') && edgeRing === 'ring colour';
     await page.press(`${NODE} >> nth=0`, 'Enter');
     await page.waitForTimeout(200);
     const panel = () => page.evaluate(() => ({ h: document.querySelector('.fxm-panel h3')?.textContent ?? '', inPanel: (document.activeElement as El | null)?.closest('.fxm-panel') != null }));
@@ -411,8 +431,8 @@ async function a11y(browser: Browser): Promise<void> {
     if (edges > 0) await page.press('#map-root .react-flow__edge >> nth=0', 'Enter');
     await page.waitForTimeout(200);
     const byEdge = await panel();
-    record('mapKeyboard', ready && groupsFocusable === 0 && byNode.h === want && want !== '' && byNode.inPanel && !deeper.endsWith('(failed)') && edges > 0 && byEdge.h.includes(' to ') && byEdge.inPanel,
-      `map drawn ${ready}; focusable group boxes ${groupsFocusable}; Enter on a node shows "${byNode.h}" (want "${want}"), focus in the panel ${byNode.inPanel}; ${deeper}; Enter on an edge shows "${byEdge.h}", focus in the panel ${byEdge.inPanel}`);
+    record('mapKeyboard', ready && ringed && groupsFocusable === 0 && byNode.h === want && want !== '' && byNode.inPanel && !deeper.endsWith('(failed)') && edges > 0 && byEdge.h.includes(' to ') && byEdge.inPanel,
+      `map drawn ${ready}; focused node outline ${nodeRing}, focused edge path ${edgeRing}; focusable group boxes ${groupsFocusable}; Enter on a node shows "${byNode.h}" (want "${want}"), focus in the panel ${byNode.inPanel}; ${deeper}; Enter on an edge shows "${byEdge.h}", focus in the panel ${byEdge.inPanel}`);
     await ctx.close();
   }
   {

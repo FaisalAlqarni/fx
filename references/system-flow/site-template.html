@@ -145,6 +145,9 @@ footer{margin-block-start:80px;color:var(--muted);font-size:14px}
 .react-flow__edge-textbg{fill:var(--panel)}
 .react-flow__controls-button{background:var(--panel);color:var(--ink);border-block-end:1px solid var(--rule)}
 .react-flow__controls-button svg{fill:var(--ink)}
+/* React Flow removes the focus outline; a node or edge reached by Tab shows the page's ring (WCAG 2.4.7). */
+#map-root .react-flow__node:focus-visible{outline:3px solid var(--alert);outline-offset:2px}
+#map-root .react-flow__edge:focus-visible .react-flow__edge-path{stroke:var(--alert);stroke-width:3}
 @media (max-width: 899.98px){
 .wrap{display:block;padding:0}
 #side{flex-direction:row;align-items:center;gap:10px;z-index:20;block-size:auto;max-block-size:none;padding:0 16px;background:var(--paper);border-block-end:1px solid var(--rule)}
