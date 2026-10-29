@@ -138,6 +138,21 @@
     const narr = document.createElement("span");
     narr.className = "narr";
     narr.setAttribute("aria-live", "polite");
+    const narrBox = document.createElement("span");
+    narrBox.className = "narr-box";
+    narrBox.append(narr);
+    for (const s of [...spec.steps, void 0]) {
+      const size = document.createElement("span");
+      size.className = "narr-size";
+      size.setAttribute("aria-hidden", "true");
+      size.textContent = s ? s.caption : REST;
+      if (s?.where) {
+        const code = document.createElement("code");
+        code.textContent = s.where;
+        size.append(" ", code);
+      }
+      narrBox.append(size);
+    }
     const counter = document.createElement("span");
     counter.className = "count";
     const last = spec.steps.length - 1;
@@ -247,7 +262,7 @@
     ctl.setAttribute("role", "group");
     ctl.setAttribute("aria-label", `${card.querySelector("h3")?.textContent ?? spec.key} controls`);
     const deep = ctl.querySelector("a.deep");
-    for (const el of [playBtn, back, next, reset, narr, counter]) ctl.insertBefore(el, deep);
+    for (const el of [playBtn, back, next, reset, narrBox, counter]) ctl.insertBefore(el, deep);
     fig.append(root);
     paint();
     if (!reduced && spec.steps.length > 0 && typeof IntersectionObserver === "function") {

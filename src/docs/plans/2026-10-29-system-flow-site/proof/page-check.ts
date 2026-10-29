@@ -1,6 +1,6 @@
 // Run: NODE_PATH=<PW>/node_modules PLAYWRIGHT_BROWSERS_PATH=<PW>/browsers node docs/plans/2026-10-29-system-flow-site/proof/page-check.js <index.html> <out.json>
 // Site mode: ... page-check.js --site <index.html> <out.json> runs only the checks that find their own targets on any built
-// site (arrowStyle, fitAt1440, panelEscape); the default mode runs them too, after checks bound to the fixture's ids.
+// site (arrowStyle, fitAt1440, panelEscape, termLinks); the default mode runs them too, after checks bound to the fixture's ids.
 // Measure mode: ... page-check.js --measure owner|fx [--out-dir <dir>] <index.html> <out.json> prints no checks of its own; it writes the
 // numbers of the design's Proof table (see measure() below) and, with --out-dir, one screenshot per width and theme.
 // Opens a built system flow site in Chromium and checks the page shell: the sticky menu, the scroll spy,
@@ -14,21 +14,23 @@ import { pathToFileURL } from 'url';
 type Check = { pass: boolean; detail: string };
 // The DOM names the page.evaluate callbacks use, declared module-local: a `/// <reference lib="dom" />`
 // line would give DOM globals to every Node source under src/ (tests/gates/ts-toolchain.test.sh).
-type Rect = { top: number; bottom: number; width: number; height: number };
+type Rect = { top: number; bottom: number; left: number; width: number; height: number };
 type El = {
   getBoundingClientRect(): Rect; getAttribute(n: string): string | null; hasAttribute(n: string): boolean; scrollTop: number; scrollHeight: number; clientHeight: number; open: boolean;
   textContent: string | null; className: string; disabled: boolean; scrollLeft: number; scrollWidth: number; clientWidth: number; id: string; innerHTML: string;
-  querySelector(s: string): El | null; querySelectorAll(s: string): Iterable<El>; append(e: El): void; closest(s: string): El | null; setAttribute(n: string, v: string): void; remove(): void;
+  querySelector(s: string): El | null; querySelectorAll(s: string): Iterable<El>; append(e: El): void; contains(e: El): boolean; closest(s: string): El | null; setAttribute(n: string, v: string): void; remove(): void;
 };
 declare const getComputedStyle: (e: El) => { fontSize: string; stroke: string };
 declare const fxFlow: { mount(root?: El): void };
 declare const document: {
   createElement(tag: string): El; body: El;
-  getElementById(id: string): El | null; querySelector(s: string): El | null; querySelectorAll(s: string): Iterable<El>;
+  getElementById(id: string): El | null; querySelector(s: string): El | null; querySelectorAll(s: string): Iterable<El>; elementFromPoint(x: number, y: number): El | null;
   documentElement: { scrollHeight: number; scrollWidth: number; dataset: Record<string, string | undefined> }; activeElement: unknown;
 };
 declare const window: { scrollY: number; innerHeight: number; innerWidth: number; scrollTo(o: { top: number; behavior: 'instant' }): void };
 declare const localStorage: { getItem(k: string): string | null };
+declare const location: { hash: string; pathname: string; reload(): void };
+declare const history: { replaceState(data: null, unused: string, url: string): void };
 type Page = {
   goto(url: string): Promise<unknown>;
   evaluate<T, A = unknown>(fn: (arg: A) => T, arg?: A): Promise<T>;
@@ -218,6 +220,42 @@ async function siteChecks(browser: Browser, consoleErrors: string[], fixture: bo
   }
 }
 
+// Every term link, clicked from the page top at 1440 x 900 and 390 x 844, leaves its glossary row fully in the window and
+// clear of the sticky menu and bar: the points just inside the row's top and bottom edges hit the row itself.
+async function termLinks(browser: Browser): Promise<void> {
+  const lines: string[] = [];
+  let pass = true;
+  for (const [w, h] of [[1440, 900], [390, 844]] as const) {
+    const { page, ctx } = await open(browser, w, h);
+    const n = await page.evaluate(() => [...document.querySelectorAll('main a.term')].length);
+    const bad: string[] = [];
+    for (let i = 0; i < n; i++) {
+      await page.evaluate(() => { history.replaceState(null, '', location.pathname); window.scrollTo({ top: 0, behavior: 'instant' }); });
+      await page.click(`main a.term >> nth=${i}`);
+      // Smooth scrolling ends when scrollY holds still for 400 ms.
+      let last = -1, still = 0;
+      for (let t = 0; t < 10000 && still < 400; t += 100) {
+        await page.waitForTimeout(100);
+        const y = await page.evaluate(() => window.scrollY);
+        still = y === last ? still + 100 : 0;
+        last = y;
+      }
+      const r = await page.evaluate(() => {
+        const row = document.getElementById(location.hash.slice(1));
+        if (!row) return { id: location.hash, top: NaN, bottom: NaN, hit: false };
+        const b = row.getBoundingClientRect();
+        const inside = (y: number): boolean => { const e = document.elementFromPoint(b.left + 6, y); return e !== null && row.contains(e); };
+        return { id: row.id, top: Math.round(b.top), bottom: Math.round(b.bottom), hit: b.top >= 0 && b.bottom <= window.innerHeight && inside(b.top + 3) && inside(b.bottom - 3) };
+      });
+      if (!r.hit) bad.push(`#${i + 1} ${r.id} top ${r.top} bottom ${r.bottom}`);
+    }
+    if (n === 0 || bad.length) pass = false;
+    lines.push(`${w}: ${n - bad.length} of ${n} land in view${bad.length ? ` (out: ${bad.join(', ')})` : ''}`);
+    await ctx.close();
+  }
+  record('termLinks', pass, lines.join('; '));
+}
+
 // Writes the results and exits 1 when any check failed.
 function finish(): never {
   fs.writeFileSync(out as string, `${JSON.stringify(results, null, 2)}\n`);
@@ -231,6 +269,7 @@ async function site(): Promise<void> {
   const consoleErrors: string[] = [];
   try {
     await siteChecks(browser, consoleErrors, false);
+    await termLinks(browser);
     record('console', consoleErrors.length === 0, consoleErrors.length === 0 ? '0 errors at 1440 and 390' : consoleErrors.join(' | '));
     results.browser = { pass: true, detail: `chromium ${browser.version()}` };
   } finally {
@@ -613,6 +652,7 @@ async function main(): Promise<void> {
       record('labels', small.length === 0, small.length === 0 ? 'every figure text is 12 px or more at 1440 and 390' : small.join('; '));
     }
     await siteChecks(browser, consoleErrors, true);
+    await termLinks(browser);
 
     record('console', consoleErrors.length === 0, consoleErrors.length === 0 ? '0 errors at 1440 and 390' : consoleErrors.join(' | '));
     results.browser = { pass: true, detail: `chromium ${browser.version()}` };

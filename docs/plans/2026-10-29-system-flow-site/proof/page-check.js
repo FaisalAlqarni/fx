@@ -204,6 +204,44 @@ async function siteChecks(browser, consoleErrors, fixture) {
     await ctx.close();
   }
 }
+async function termLinks(browser) {
+  const lines = [];
+  let pass = true;
+  for (const [w, h] of [[1440, 900], [390, 844]]) {
+    const { page, ctx } = await open(browser, w, h);
+    const n = await page.evaluate(() => [...document.querySelectorAll("main a.term")].length);
+    const bad = [];
+    for (let i = 0; i < n; i++) {
+      await page.evaluate(() => {
+        history.replaceState(null, "", location.pathname);
+        window.scrollTo({ top: 0, behavior: "instant" });
+      });
+      await page.click(`main a.term >> nth=${i}`);
+      let last = -1, still = 0;
+      for (let t = 0; t < 1e4 && still < 400; t += 100) {
+        await page.waitForTimeout(100);
+        const y = await page.evaluate(() => window.scrollY);
+        still = y === last ? still + 100 : 0;
+        last = y;
+      }
+      const r = await page.evaluate(() => {
+        const row = document.getElementById(location.hash.slice(1));
+        if (!row) return { id: location.hash, top: NaN, bottom: NaN, hit: false };
+        const b = row.getBoundingClientRect();
+        const inside = (y) => {
+          const e = document.elementFromPoint(b.left + 6, y);
+          return e !== null && row.contains(e);
+        };
+        return { id: row.id, top: Math.round(b.top), bottom: Math.round(b.bottom), hit: b.top >= 0 && b.bottom <= window.innerHeight && inside(b.top + 3) && inside(b.bottom - 3) };
+      });
+      if (!r.hit) bad.push(`#${i + 1} ${r.id} top ${r.top} bottom ${r.bottom}`);
+    }
+    if (n === 0 || bad.length) pass = false;
+    lines.push(`${w}: ${n - bad.length} of ${n} land in view${bad.length ? ` (out: ${bad.join(", ")})` : ""}`);
+    await ctx.close();
+  }
+  record("termLinks", pass, lines.join("; "));
+}
 function finish() {
   fs.writeFileSync(out, `${JSON.stringify(results, null, 2)}
 `);
@@ -216,6 +254,7 @@ async function site() {
   const consoleErrors = [];
   try {
     await siteChecks(browser, consoleErrors, false);
+    await termLinks(browser);
     record("console", consoleErrors.length === 0, consoleErrors.length === 0 ? "0 errors at 1440 and 390" : consoleErrors.join(" | "));
     results.browser = { pass: true, detail: `chromium ${browser.version()}` };
   } finally {
@@ -606,6 +645,7 @@ async function main() {
       record("labels", small.length === 0, small.length === 0 ? "every figure text is 12 px or more at 1440 and 390" : small.join("; "));
     }
     await siteChecks(browser, consoleErrors, true);
+    await termLinks(browser);
     record("console", consoleErrors.length === 0, consoleErrors.length === 0 ? "0 errors at 1440 and 390" : consoleErrors.join(" | "));
     results.browser = { pass: true, detail: `chromium ${browser.version()}` };
   } finally {

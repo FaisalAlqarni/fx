@@ -99,6 +99,8 @@ a.term{color:inherit;text-decoration:underline dotted;text-underline-offset:3px}
 a.term:hover{color:var(--accent)}
 .tag{display:inline-block;font-size:12px;line-height:1.6;padding:0 8px;border-radius:999px;background:var(--accent-tint);color:var(--ink);white-space:nowrap}
 table.glossary tr{scroll-margin-block-start:72px}
+/* The glossary's scroll box clips a row's 72px scroll margin at its own top edge; 40px of padding keeps row 1 below the phone bar. */
+.table-scroll:has(>table.glossary){padding-block-start:40px}
 table.glossary tr:target{background:var(--accent-tint)}
 table.code-map td:last-child,table.stores td:first-child{white-space:nowrap}
 footer{margin-block-start:80px;color:var(--muted);font-size:14px}
@@ -112,7 +114,9 @@ footer{margin-block-start:80px;color:var(--muted);font-size:14px}
 .ctl button{min-block-size:36px;min-inline-size:36px;padding:6px 12px}
 .ctl button.play{min-inline-size:84px;background:var(--accent);border-color:var(--accent);color:var(--paper)}
 .ctl button:disabled{opacity:.45;cursor:default}
-.ctl .narr{flex:1 1 240px;min-inline-size:0;font-size:14.5px}
+.ctl .narr-box{display:grid;flex:1 1 240px;min-inline-size:0;font-size:14.5px}
+.ctl .narr-box>*{grid-area:1/1}
+.ctl .narr-size{visibility:hidden}
 .ctl .count{font:600 13px "SF Mono",Menlo,Consolas,monospace;color:var(--muted);white-space:nowrap}
 .ctl .deep{font-size:14px;white-space:nowrap}
 .fxm-bar{display:flex;flex-wrap:wrap;gap:6px;margin-block-end:8px}
@@ -150,7 +154,7 @@ section.chapter{padding-block-start:56px;scroll-margin-block-start:56px}
 h2{font-size:30px}
 .fxm-body{grid-template-columns:minmax(0,1fr)}
 .fxm-canvas{block-size:420px}
-.ctl .narr{order:1;flex-basis:100%}
+.ctl .narr-box{order:1;flex-basis:100%}
 }
 @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
 </style>
