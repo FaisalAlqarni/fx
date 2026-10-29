@@ -33,11 +33,13 @@ const flag = (name) => {
   args.splice(i, v === void 0 ? 1 : 2);
   return v ?? "";
 };
+const siteOnly = args.includes("--site");
+if (siteOnly) args.splice(args.indexOf("--site"), 1);
 const measureProfile = flag("--measure");
 const outDir = flag("--out-dir");
 const [file, out] = args;
-if (file === void 0 || out === void 0 || measureProfile !== void 0 && measureProfile !== "owner" && measureProfile !== "fx") {
-  process.stderr.write("usage: page-check.js [--measure owner|fx] [--out-dir <dir>] <index.html> <out.json>\n");
+if (file === void 0 || out === void 0 || siteOnly && measureProfile !== void 0 || measureProfile !== void 0 && measureProfile !== "owner" && measureProfile !== "fx") {
+  process.stderr.write("usage: page-check.js [--site | --measure owner|fx] [--out-dir <dir>] <index.html> <out.json>\n");
   process.exit(2);
 }
 const url = (0, import_url.pathToFileURL)(path.resolve(file)).href;
@@ -124,6 +126,103 @@ const cardAway = (page, key) => page.evaluate((k) => {
   return n.bottom <= 0 || n.top >= window.innerHeight;
 }, key);
 const isOpen = (page) => page.evaluate(() => document.getElementById("menu-bar")?.open ?? null);
+async function siteChecks(browser, consoleErrors, fixture) {
+  {
+    const { page, ctx, errors } = await open(browser, 1440, 900, true, "reduce");
+    const arrows = (k) => page.evaluate((key) => [...document.querySelectorAll(`#fig-${key} svg path[marker-end]`)].map((p) => ({
+      dash: p.getAttribute("stroke-dasharray"),
+      stroke: p.getAttribute("stroke"),
+      computed: getComputedStyle(p).stroke,
+      width: p.getAttribute("stroke-width")
+    })), k);
+    const specs = await page.evaluate(() => JSON.parse(document.getElementById("diagrams")?.textContent ?? "{}"));
+    const seqs = await page.evaluate(() => [...document.querySelectorAll('figure.card[id^="fig-seq-"]')].map((c) => c.id.slice(4)));
+    const bad = [];
+    let replies = 0, leaves = 0, plainComputed = "";
+    for (const k of seqs) {
+      const rows = specs[k]?.rows ?? [];
+      const got = await arrows(k);
+      if (got.length !== rows.length) {
+        bad.push(`${k}: ${got.length} arrows for ${rows.length} rows`);
+        continue;
+      }
+      rows.forEach((r, i) => {
+        const a = got[i];
+        if (r.reply !== !!a.dash) bad.push(`${k} #${i + 1}: reply ${r.reply}, dash ${a.dash}`);
+        if (r.leaves && (a.stroke !== "var(--warn)" || a.width !== "2.4")) bad.push(`${k} #${i + 1}: leaving call stroke ${a.stroke}, width ${a.width}`);
+        if (!r.leaves && (a.stroke === "var(--warn)" || a.width !== "1.6")) bad.push(`${k} #${i + 1}: plain arrow stroke ${a.stroke}, width ${a.width}`);
+        if (r.reply) replies++;
+        if (r.leaves) leaves++;
+        if (!r.leaves && !plainComputed) plainComputed = a.computed;
+      });
+      for (const [i, r] of rows.entries()) if (r.leaves && got[i].computed === plainComputed) bad.push(`${k} #${i + 1}: leaving call drawn in the plain colour ${plainComputed}`);
+    }
+    const first = seqs.find((k) => (specs[k]?.rows ?? []).length >= 2);
+    let active = "no sequence with 2 rows";
+    if (first !== void 0) {
+      await press(page, first, "next");
+      const after = await arrows(first);
+      const rest = (specs[first]?.rows ?? [])[1]?.leaves ? "2.4" : "1.6";
+      if (after[0]?.width !== "2.8" || after[1]?.width !== rest) bad.push(`${first} after Next: widths ${after[0]?.width}, ${after[1]?.width} (want 2.8, ${rest})`);
+      active = `${first} after Next: ${after[0]?.width}, ${after[1]?.width}`;
+    }
+    const levels = await page.evaluate(() => [...document.querySelectorAll('figure.card[id^="fig-level-"]')].map((c) => ({ k: c.id.slice(4), caps: [...c.querySelectorAll('svg g > path[stroke-width="1.2"]')].length })));
+    const capBad = levels.filter((l) => l.caps !== (specs[l.k]?.nodes ?? []).filter((n) => n.look === "store").length);
+    const stores = levels.reduce((n, l) => n + l.caps, 0);
+    const pass = seqs.length > 0 && first !== void 0 && bad.length === 0 && capBad.length === 0 && (!fixture || replies > 0 && leaves > 0 && stores > 0);
+    record(
+      "arrowStyle",
+      pass,
+      `${seqs.length} sequence cards: ${replies} reply arrows dashed, ${leaves} leaving calls in var(--warn) at 2.4 (computed ${leaves ? "differs from" : "no leaving call to compare with"} plain ${plainComputed}); ${active}; ${stores} cap lines in ${levels.length} level cards${bad.length ? `; wrong: ${bad.slice(0, 8).join("; ")}` : ""}${capBad.length ? `; cap lines off in ${capBad.map((l) => l.k).join(", ")}` : ""}`
+    );
+    consoleErrors.push(...errors.map((x) => `arrowStyle: ${x}`));
+    await ctx.close();
+  }
+  {
+    const { page, ctx } = await open(browser, 1440, 900, true, "reduce");
+    const figs = await page.evaluate(() => [...document.querySelectorAll(".card")].map((c) => {
+      const fig = c.querySelector(".fig"), svg = c.querySelector(".fig svg");
+      return { id: c.id, svg: svg ? svg.getBoundingClientRect().width : -1, sw: fig?.scrollWidth ?? 0, cw: fig?.clientWidth ?? 0 };
+    }));
+    const small = figs.filter((g) => g.svg > 0 && g.svg <= 860);
+    const bad = small.filter((g) => g.sw > g.cw);
+    record(
+      "fitAt1440",
+      small.length > 0 && bad.length === 0,
+      small.length === 0 ? "no figure at most 860 px wide found" : `${small.length} figures at most 860 px: ${small.map((g) => `${g.id} ${Math.round(g.svg)} in ${g.cw}`).join(", ")}${bad.length ? `; overflow: ${bad.map((g) => `${g.id} ${g.sw}>${g.cw}`).join(", ")}` : ""}`
+    );
+    await ctx.close();
+  }
+  {
+    const { page, ctx } = await open(browser, 390, 844);
+    await page.click("#menu-bar > summary");
+    const opened = await isOpen(page) === true;
+    await page.press("#menu a >> nth=0", "Escape");
+    await page.waitForTimeout(100);
+    const after = await page.evaluate(() => ({ open: document.getElementById("menu-bar")?.open ?? null, focus: document.activeElement === document.querySelector("#menu-bar > summary") }));
+    record("panelEscape", opened && after.open === false && after.focus, `opened ${opened}; after Escape: open ${after.open}, focus on summary ${after.focus}`);
+    await ctx.close();
+  }
+}
+function finish() {
+  fs.writeFileSync(out, `${JSON.stringify(results, null, 2)}
+`);
+  const failed = Object.entries(results).filter(([, c]) => !c.pass).map(([n]) => n);
+  console.log(failed.length === 0 ? "OK" : `FAILED: ${failed.join(", ")}`);
+  process.exit(failed.length === 0 ? 0 : 1);
+}
+async function site() {
+  const browser = await chromium.launch();
+  const consoleErrors = [];
+  try {
+    await siteChecks(browser, consoleErrors, false);
+    record("console", consoleErrors.length === 0, consoleErrors.length === 0 ? "0 errors at 1440 and 390" : consoleErrors.join(" | "));
+    results.browser = { pass: true, detail: `chromium ${browser.version()}` };
+  } finally {
+    await browser.close();
+  }
+  finish();
+}
 async function main() {
   const browser = await chromium.launch();
   const consoleErrors = [];
@@ -246,10 +345,10 @@ async function main() {
     }
     {
       const lines = { filterTerm: [], filterPart: [], filterNone: [], filterClear: [], termLink: [] };
-      const failed2 = /* @__PURE__ */ new Set();
+      const failed = /* @__PURE__ */ new Set();
       const say = (name, pass, detail) => {
         lines[name]?.push(detail);
-        if (!pass) failed2.add(name);
+        if (!pass) failed.add(name);
       };
       for (const [w, h] of [[1440, 900], [390, 844]]) {
         const { page, ctx, errors } = await open(browser, w, h);
@@ -288,7 +387,7 @@ async function main() {
         consoleErrors.push(...errors.map((e) => `${w} filter: ${e}`));
         await ctx.close();
       }
-      for (const [name, l] of Object.entries(lines)) record(name, l.length === 2 && !failed2.has(name), l.join("; "));
+      for (const [name, l] of Object.entries(lines)) record(name, l.length === 2 && !failed.has(name), l.join("; "));
     }
     {
       const { page, ctx, errors } = await open(browser, 1440, 900, true, "reduce");
@@ -506,66 +605,13 @@ async function main() {
       }
       record("labels", small.length === 0, small.length === 0 ? "every figure text is 12 px or more at 1440 and 390" : small.join("; "));
     }
-    {
-      const { page, ctx, errors } = await open(browser, 1440, 900, true, "reduce");
-      const K = "seq-turn";
-      const arrows = () => page.evaluate((k) => [...document.querySelectorAll(`#fig-${k} svg path[marker-end]`)].map((p) => ({
-        dash: p.getAttribute("stroke-dasharray"),
-        stroke: p.getAttribute("stroke"),
-        computed: getComputedStyle(p).stroke,
-        width: p.getAttribute("stroke-width")
-      })), K);
-      const before = await arrows();
-      await press(page, K, "next");
-      const after = await arrows();
-      const reply = before[4], leave = before[3], plain = before[0];
-      const replyOk = before.length === 5 && !!reply?.dash && !plain?.dash;
-      const leaveOk = !!leave && !!plain && leave.stroke === "var(--warn)" && leave.width === "2.4" && leave.computed !== plain.computed;
-      const activeOk = after[0]?.width === "2.8" && after[1]?.width === "1.6";
-      const caps = await page.evaluate(() => [...document.querySelectorAll('#fig-level-system svg g > path[stroke-width="1.2"]')].length);
-      record(
-        "arrowStyle",
-        replyOk && leaveOk && activeOk && caps > 0,
-        `reply dash ${reply?.dash}, plain dash ${plain?.dash}; leaving stroke ${leave?.stroke} (${leave?.computed}) vs plain ${plain?.computed}, width ${leave?.width}; after Next active width ${after[0]?.width}, next arrow ${after[1]?.width}; ${caps} cap lines in fig-level-system`
-      );
-      consoleErrors.push(...errors.map((x) => `arrowStyle: ${x}`));
-      await ctx.close();
-    }
-    {
-      const { page, ctx } = await open(browser, 1440, 900, true, "reduce");
-      const figs = await page.evaluate(() => [...document.querySelectorAll(".card")].map((c) => {
-        const fig = c.querySelector(".fig"), svg = c.querySelector(".fig svg");
-        return { id: c.id, svg: svg ? svg.getBoundingClientRect().width : -1, sw: fig?.scrollWidth ?? 0, cw: fig?.clientWidth ?? 0 };
-      }));
-      const small = figs.filter((g) => g.svg > 0 && g.svg <= 860);
-      const bad = small.filter((g) => g.sw > g.cw);
-      record(
-        "fitAt1440",
-        small.length > 0 && bad.length === 0,
-        small.length === 0 ? "no figure at most 860 px wide found" : `${small.length} figures at most 860 px: ${small.map((g) => `${g.id} ${Math.round(g.svg)} in ${g.cw}`).join(", ")}${bad.length ? `; overflow: ${bad.map((g) => `${g.id} ${g.sw}>${g.cw}`).join(", ")}` : ""}`
-      );
-      await ctx.close();
-    }
-    {
-      const { page, ctx } = await open(browser, 390, 844);
-      await page.click("#menu-bar > summary");
-      const opened = await isOpen(page) === true;
-      await page.press('#menu a[href="#ch-05-s1"]', "Escape");
-      await page.waitForTimeout(100);
-      const after = await page.evaluate(() => ({ open: document.getElementById("menu-bar")?.open ?? null, focus: document.activeElement === document.querySelector("#menu-bar > summary") }));
-      record("panelEscape", opened && after.open === false && after.focus, `opened ${opened}; after Escape: open ${after.open}, focus on summary ${after.focus}`);
-      await ctx.close();
-    }
+    await siteChecks(browser, consoleErrors, true);
     record("console", consoleErrors.length === 0, consoleErrors.length === 0 ? "0 errors at 1440 and 390" : consoleErrors.join(" | "));
     results.browser = { pass: true, detail: `chromium ${browser.version()}` };
   } finally {
     await browser.close();
   }
-  fs.writeFileSync(out, `${JSON.stringify(results, null, 2)}
-`);
-  const failed = Object.entries(results).filter(([, c]) => !c.pass).map(([n]) => n);
-  console.log(failed.length === 0 ? "OK" : `FAILED: ${failed.join(", ")}`);
-  process.exit(failed.length === 0 ? 0 : 1);
+  finish();
 }
 const PROFILES = {
   owner: {
@@ -1096,7 +1142,7 @@ async function measure(name) {
     await browser.close();
   }
 }
-(measureProfile === void 0 ? main() : measure(measureProfile)).catch((e) => {
+(siteOnly ? site() : measureProfile === void 0 ? main() : measure(measureProfile)).catch((e) => {
   process.stderr.write(`page-check: ${e instanceof Error ? e.stack : String(e)}
 `);
   process.exit(1);
