@@ -42,7 +42,7 @@ assert.match(hint.stderr, /schemaVersion 1: run system-flow migrate/, 'check on 
 const r = f.run(['migrate']);
 assert.strictEqual(r.status, 0, `migrate exits 0\n${r.stdout}${r.stderr}`);
 const out = parseJson(r.stdout) as { rewritten: string[]; owed: string[] };
-assert.deepStrictEqual(out.rewritten, [...NAMES].sort().map((n) => `${F}/${n}.json`), 'the four files, sorted');
+assert.deepStrictEqual(out.rewritten, ['level0', 'meta', 'turns'].map((n) => `${F}/${n}.json`), 'the changed files, sorted; chapters.json holds nothing to upgrade');
 
 // Looks, version and name.
 assert.deepStrictEqual(read(f, 'level0').levels.diagrams[0].nodes.map((n: Obj) => n.look), ['store', 'client', 'external', 'security', 'service']);
@@ -85,6 +85,17 @@ fs.writeFileSync(path_(mixed, 'turns'), JSON.stringify({ schemaVersion: 2, seque
 const mixedOut = mixed.run(['migrate']);
 assert.strictEqual(mixedOut.status, 0, mixedOut.stderr);
 assert.deepStrictEqual((parseJson(mixedOut.stdout) as { rewritten: string[] }).rewritten, [`${F}/chapters.json`]);
+
+// An area fragment with no schemaVersion under a version-2 meta.json: check hints, migrate adds the look.
+const area = v1((g) => g.fragment('meta', { schemaVersion: 2, meta: { name: 'Shop', roots: [{ id: 'backend' }] } }));
+fs.writeFileSync(path_(area, 'turns'), JSON.stringify({ schemaVersion: 2, sequences: [] }));
+fs.writeFileSync(path_(area, 'chapters'), JSON.stringify({ schemaVersion: 2, sections: [{ id: 's1', title: 'Pages', question: 'How is a page served?' }] }));
+const areaHint = area.run(['check']);
+assert.match(areaHint.stderr, new RegExp(`^${F}/level0.json:/levels/diagrams/0/nodes/0: look missing: run system-flow migrate$`, 'm'), areaHint.stderr);
+const areaOut = area.run(['migrate']);
+assert.strictEqual(areaOut.status, 0, areaOut.stderr);
+assert.deepStrictEqual((parseJson(areaOut.stdout) as { rewritten: string[] }).rewritten, [`${F}/level0.json`], 'only the changed fragment is written');
+assert.deepStrictEqual(read(area, 'level0').levels.diagrams[0].nodes.map((n: Obj) => n.look), ['store', 'client', 'external', 'security', 'service']);
 
 // All or nothing: a fragment that cannot become valid stops every write.
 const bad = v1((g) => g.fragment('level0', { levels: { root: 'system', diagrams: [{ id: 'system', level: 0, title: 'System', summary: 'The shop keeps its data in a database.', groups: [], nodes: [node('db', 42)], edges: [] }] } }));

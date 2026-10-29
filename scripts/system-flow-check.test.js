@@ -366,7 +366,7 @@ const L0 = "docs/system-flow/model/fragments/level0.json:/levels/diagrams/0";
   f.fragment("level0", l);
   const r = f.run(["check"]);
   assert.strictEqual(r.status, 1);
-  assert.ok(r.stderr.split("\n").includes(`${L0}/nodes/1: required property look missing`), r.stderr);
+  assert.ok(r.stderr.split("\n").includes(`${L0}/nodes/1: look missing: run system-flow migrate`), r.stderr);
 }
 fails(
   "a look out of the enum",
@@ -376,7 +376,7 @@ fails(
 fails(
   "a participant with no look",
   (f) => f.fragment("engine", { sequences: [{ ...tripSeq, participants: [{ id: "api", label: "API", evidence: ev }] }] }),
-  /engine\.json:\/sequences\/0\/participants\/0: required property look missing$/m
+  /engine\.json:\/sequences\/0\/participants\/0: look missing: run system-flow migrate$/m
 );
 fails(
   "a message short label of 27 characters",

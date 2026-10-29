@@ -53,16 +53,15 @@ export function migrate(hostRoot: string, site: string): { rewritten: string[]; 
       problems.push({ file, pointer: '', message: `invalid JSON: ${(e as Error).message}`, level: 'error' });
     }
   }
-  // As the loader reads it: a version-1 meta.json makes every fragment a version-1 fragment.
-  const metaV1 = parsed.get('meta.json')?.schemaVersion === 1;
   const fragments: Fragment[] = [];
   const todo: [string, string][] = [];
   for (const [name, data] of parsed) {
     const file = path.relative(hostRoot, path.join(dir, name));
-    if (!metaV1 && data.schemaVersion !== 1) { fragments.push({ file, data }); continue; }
+    // upgrade() is idempotent, so every fragment goes through it and only a changed one is written.
     const next = upgrade(data);
-    for (const e of validate(schema, next)) problems.push({ file, pointer: e.pointer, message: e.message, level: 'error' });
     fragments.push({ file, data: next });
+    if (JSON.stringify(next) === JSON.stringify(data)) continue;
+    for (const e of validate(schema, next)) problems.push({ file, pointer: e.pointer, message: e.message, level: 'error' });
     todo.push([name, `${JSON.stringify(next, null, 2)}\n`]);
   }
   if (problems.length > 0) return { rewritten: [], owed: [], problems };

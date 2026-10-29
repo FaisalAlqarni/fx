@@ -103,7 +103,8 @@ export function loadFragments(dir: string, hostRoot: string): { fragments: Fragm
     if (errors.length === 0 && (data.schemaVersion as number) > SCHEMA_VERSION) {
       errors.push({ pointer: '/schemaVersion', message: `schemaVersion ${data.schemaVersion} is newer than this CLI (${SCHEMA_VERSION})` });
     }
-    for (const e of errors) problems.push({ file, pointer: e.pointer, message: e.message, level: 'error' });
+    // A node or participant with no look is a version-1 shape that migrate repairs (final review, unprimed 1).
+    for (const e of errors) problems.push({ file, pointer: e.pointer, message: e.message === 'required property look missing' ? 'look missing: run system-flow migrate' : e.message, level: 'error' });
     if (errors.length === 0) fragments.push({ file, data });
   }
   return { fragments, problems };
