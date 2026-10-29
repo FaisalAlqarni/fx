@@ -179,7 +179,7 @@ assert.strictEqual(setup({ adrStatus: "Partly superseded by 0002" }).run(["check
     f.commit("host", "adr");
     return f.run(["check"]);
   };
-  for (const d of ["2", "3"]) {
+  for (const d of ["2"]) {
     const r = run(adr, d);
     assert.strictEqual(r.status, 1, d);
     assert.ok(r.stderr.trimEnd().endsWith(`rule r1: ADR docs/adr/0003-z.md has no decision ${d}`), r.stderr);
@@ -187,6 +187,15 @@ assert.strictEqual(setup({ adrStatus: "Partly superseded by 0002" }).run(["check
   const outcome = run(madr, "Use X");
   assert.strictEqual(outcome.status, 0, `a MADR outcome with numbered consequences takes a phrase
 ${outcome.stderr}`);
+  const subs = "# 5. V\n\nStatus: accepted\n\n## Decision\n\n### Storage\n\n1. Keep rows.\n\n### Access\n\n2. Read through the API.\n\n### Consequences\n\n3. Slower reads.\n\n## Notes\n\n4. Not a decision.\n";
+  const cited = run(subs, "2");
+  assert.strictEqual(cited.status, 0, `decision 2 under ### Access
+${cited.stderr}`);
+  for (const d of ["3", "4"]) {
+    const r = run(subs, d);
+    assert.strictEqual(r.status, 1, d);
+    assert.ok(r.stderr.trimEnd().endsWith(`rule r1: ADR docs/adr/0003-z.md has no decision ${d}`), r.stderr);
+  }
 }
 {
   const r = setup({ ruleAdrRoot: "nope" }).run(["check"]);
