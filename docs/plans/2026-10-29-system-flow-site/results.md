@@ -113,6 +113,8 @@ After (`check`, exit 1, as it must be: the prose is still owed):
 | Lines containing `run system-flow migrate` | 0 |
 | `check` error lines vs `owed` | both 62 lines; equal as sets (0 only in one, 0 only in the other) |
 
+Rerun after the final fix wave (U1, U2: migrate writes only changed fragments and owes every error `check` prints, rules and evidence included) on a fresh copy, `/tmp/claude-1000/sf2-build/migrate-u2-2026-10-29-1/Shamel.Backend` (HEAD bddfc3c): before, 10 hint lines; `migrate` exit 0, `rewritten` 5 (core, level0, meta, mobile-api, twk-framework; the other 5 hold nothing to upgrade and keep their bytes); after, `check` exit 1 with 0 hint lines; `owed` and the `check` error lines both 62, equal as sets. The table below holds for the rerun: same `look` counts, no other key changed. Before U2, `owed` came from the prose check alone, so equality held only while the rules and evidence passed.
+
 Diff of the fragments against the commit (`git diff`, then each file compared as parsed JSON):
 
 | File | `look` added | `schemaVersion` | `meta.name` | Other keys changed or removed |
