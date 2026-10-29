@@ -81,6 +81,12 @@ try {
   const c = run([clean]);
   assert.strictEqual(c.status, 0, `a clean file exits 0:\n${c.out}`);
   const cleanMd = write('clean.md', '# Title\n\nA plain sentence.\n');
+  // A stock word inside an inline code span is a name (a flag, a config value), not prose.
+  const span = write('span.md', '# Title\n\nRun `archify finalize --quality showcase` first.\n\nThis page is a showcase of the flow.\n');
+  const sp = run([span]);
+  assert.strictEqual(sp.status, 1, `prose outside the span still fails:\n${sp.out}`);
+  assert.ok(sp.out.includes(`${span}:5: stock word`), `line 5 flagged:\n${sp.out}`);
+  assert.ok(!sp.out.includes(`${span}:3: `), `the code span on line 3 is not flagged:\n${sp.out}`);
   assert.strictEqual(run([cleanMd]).status, 0, 'a clean Markdown file exits 0');
 
   // --diff <ref>: only lines added since ref, untracked files included.
