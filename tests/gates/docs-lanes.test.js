@@ -66,7 +66,7 @@ has(finalReview, "/fx:fx-system-flow", "the first-run offer names the user-invok
 assert.ok(!/owner away/i.test(read(finalReview)), `${finalReview}: no "owner away" skip`);
 has(finalReview, "Docs: offer pending", "an offer the controller cannot put now is ledgered as pending");
 has(finalReview, "Never ledger `Docs: not run` without the owner's answer or the declined key", "not run needs an answer or the declined key");
-has(completion, "Run `fx-docs` on the branch", "a pending docs offer is a completion menu option");
+has(completion, "4. Update only the docs this branch touched with `fx-docs`", "a pending docs offer is a completion menu option");
 has(completion, "**ADR candidates**", "the completion report has an ADR candidates section");
 has(completion, "ADR candidates: none", "zero candidates are stated, not omitted");
 has(completion, "Write ADRs for the candidates with `fx-adr`", "the ADR offer is a completion menu option");
@@ -249,5 +249,16 @@ assert.ok(/^## Branch pass$/m.test(raw(finalReview)), `${finalReview}: the branc
   for (const f of ["SKILL.md", "planning.md", "area-brief.md", "fragment-guide.md", "check-and-report.md", "interview.md"].map((n) => `${sf}/${n}`).concat([docs, adr66])) {
     assert.ok(!/[\u2013\u2014]/.test(raw(f)), `${f}: no en or em dash`);
   }
+}
+{
+  const c = "skills/research/community.md";
+  has(c, "## Community evidence", "community findings get their own section");
+  has(c, "single-source", "a claim nobody repeats is labelled single-source");
+  has(c, "/.rss", "Reddit is read through its public RSS feeds");
+  has(c, "not used: it needs Reddit's approval under its Responsible Builder Policy", "no Reddit API");
+  has(c, "A mirror or aggregator of Reddit counts as a search snippet", "a Reddit mirror is a snippet, never a read thread");
+  has(c, "never a path on this machine", "the note names the rules file without a local path");
+  assert.ok(!/cookie[s]? (?:from|of) (?:your|the owner)/i.test(read(c)), `${c}: never uses the owner's cookies`);
+  has("skills/research/SKILL.md", "community.md", "the lane points at the community reference");
 }
 console.log("docs-lanes: OK");

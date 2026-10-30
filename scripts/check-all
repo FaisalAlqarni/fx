@@ -42,6 +42,8 @@ run ts-toolchain.test.sh   bash tests/gates/ts-toolchain.test.sh
 run check-handwritten-js  scripts/check-handwritten-js
 run check-handwritten-js.test.sh bash tests/gates/check-handwritten-js.test.sh
 run agent-model.test.js    node tests/gates/agent-model.test.js
+run docs-lanes.test.js     node tests/gates/docs-lanes.test.js
+run check-all-coverage.test.js node tests/gates/check-all-coverage.test.js
 run build-cost.test.js     node scripts/build-cost.test.js
 run plan-check.test.js     node scripts/plan-check.test.js
 run system-flow-check.test.js node scripts/system-flow-check.test.js
