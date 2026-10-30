@@ -1,0 +1,1 @@
+Before we pick a job backend for a new Rails 8 app: what are people actually reporting about Solid Queue in production compared with Sidekiq? Find the community benchmarks, experience reports and known problems.
