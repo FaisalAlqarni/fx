@@ -4,7 +4,7 @@ What other people report: reviews, benchmarks they ran, experience reports, issu
 
 ## The note gets its own section
 
-Put community findings under a `## Community evidence` heading, after the primary-source findings. Facts from official docs, source code or specs stay in their own sections; a community item never backs a sentence there.
+Put community findings under a `## Community evidence` heading, after the primary-source findings. When the note says which rules it followed, it names this file as fx's research community reference, never a path on this machine: notes get committed to the owner's repositories. Facts from official docs, source code or specs stay in their own sections; a community item never backs a sentence there.
 
 Each item carries:
 
@@ -40,3 +40,5 @@ Unauthenticated Reddit JSON returns 403, and the API route is not used: it needs
 2. Read a thread and its comments at `https://www.reddit.com/r/<sub>/comments/<id>/.rss`, or a subreddit's top posts at `https://www.reddit.com/r/<sub>/top/.rss?t=month`. Avoid `search.rss`: it is rate limited and unreliable.
 3. Send a descriptive User-Agent, for example `fx-research/1 (public RSS reader)`. The budget is tiny (one request can leave `X-Ratelimit-Remaining` at 0), so wait at least `X-Ratelimit-Reset` seconds, and never less than a few seconds, between requests.
 4. On a 429, stop reading Reddit and say in the note which threads went unread.
+
+A mirror or aggregator of Reddit counts as a search snippet, never a read thread: find the same thread on reddit.com and read it through its feed, or label the item `snippet only`.
